@@ -702,11 +702,35 @@ function wireComp(root){
   });
 }
 /* حالة المباراة تُشتق من التاريخ والوقت — لا تُكتب يدوياً */
+/* توحيد صيغة الوقت: أرقام عربية، و«م/مساءً/PM» تُحوّل لنظام ٢٤ ساعة */
+function normTime(t){
+  if(!t) return null;
+  let x = String(t).trim()
+    .replace(/[\u0660-\u0669]/g, d=>String.fromCharCode(d.charCodeAt(0)-0x0660+48))
+    .replace(/[\u06F0-\u06F9]/g, d=>String.fromCharCode(d.charCodeAt(0)-0x06F0+48));
+  const pm = /(م|مساء|مساءً|p\.?m\.?)/i.test(x);
+  const am = /(ص|صباح|صباحاً|a\.?m\.?)/i.test(x);
+  const mt = x.match(/(\d{1,2})\s*[:.]\s*(\d{2})/);
+  if(!mt) return null;
+  let h = +mt[1]; const mi = +mt[2];
+  if(h>23 || mi>59) return null;
+  if(pm && h<12) h += 12;
+  if(am && h===12) h = 0;
+  return String(h).padStart(2,"0")+":"+String(mi).padStart(2,"0");
+}
 function kickoffTS(m){
   if(!m || !m.date) return null;
-  const t = (m.time && /^\d{1,2}:\d{2}/.test(m.time)) ? m.time : "23:59";
+  const t = normTime(m.time) || "23:59";
   const d = new Date(String(m.date)+"T"+t+":00");
   return isNaN(d.getTime()) ? null : d.getTime();
+}
+/* وقت الإقفال بصيغة مقروءة — نفس الحساب الذي يقفل فعلاً */
+function stampLabel(ts){
+  if(ts===null || ts===undefined) return "—";
+  const d = new Date(ts);
+  let h = d.getHours(); const mi = String(d.getMinutes()).padStart(2,"0");
+  const ap = h>=12 ? "م" : "ص"; h = h%12 || 12;
+  return `${AR_DOW[d.getDay()]} ${d.getDate()} ${AR_MON[d.getMonth()]} · ${h}:${mi} ${ap}`;
 }
 function isUpcoming(m){
   if(matchGoals(m).length) return false;      /* فيها أهداف = أُقيمت */
@@ -2458,12 +2482,32 @@ function renderAdmin(){
       <div class="stat"><span>مشتركون في الترتيب</span><span class="v">${BOARD&&BOARD.rows?Object.keys(BOARD.rows).length:0}</span></div>
       <div class="stat"><span>آخر جولة محتسبة</span><span class="v">${BOARD&&BOARD.lastRound?BOARD.lastRound:"—"}</span></div>
       <div style="height:12px"></div>
-      ${(()=>{ const o=openRound(); return o
-        ? `<div class="stat"><span>الجولة القادمة</span><span class="v">${o.round}${o.lockAt?" · تُقفل "+esc(dayLabel(o.matches[0].date))+(o.matches[0].time?" "+esc(o.matches[0].time):""):" · بلا وقت"}</span></div>
-           <div style="height:10px"></div>
-           <button class="btn ghost" id="opGo" style="width:100%">افتح توقعات الجولة ${o.round}</button>
-           <div style="height:14px"></div>`
-        : ""; })()}
+      ${(()=>{
+        const rs=[...new Set(MATCHES.map(m=>+m.round||0))].filter(Boolean).sort((a,b)=>a-b);
+        const cur = ROUNDMETA;
+        const auto = openRound();
+        const def = cur ? +cur.round : (auto ? auto.round : (rs[rs.length-1]||1));
+        const defMs = cur && cur.lockAt ? cur.lockAt : (auto && auto.lockAt ? auto.lockAt : null);
+        const dISO = defMs ? new Date(defMs - new Date().getTimezoneOffset()*60000).toISOString() : "";
+        return `
+        <div class="stat"><span>الحالة الآن</span><span class="v" style="font-size:.8rem">${
+          cur ? (cur.open ? `مفتوحة · الجولة ${cur.round}` : `مغلقة · الجولة ${cur.round}`) : "لم تُفتح أي جولة"}</span></div>
+        <div class="stat"><span>الإقفال المحفوظ</span><span class="v" style="font-size:.78rem">${
+          cur && cur.lockAt ? esc(stampLabel(cur.lockAt)) : "—"}</span></div>
+        <div style="height:12px"></div>
+        <div class="fgrid">
+          <div class="fld"><label>جولة التوقعات</label>
+            <select id="opRound">${rs.map(r=>`<option value="${r}" ${r===def?"selected":""}>الجولة ${r}</option>`).join("")}</select></div>
+          <div class="fld"><label>تاريخ ووقت الإقفال</label>
+            <input type="datetime-local" id="opLock" value="${dISO.slice(0,16)}"></div>
+        </div>
+        <p class="hint" style="margin:0 0 10px">يُملأ تلقائياً من أول مباراة في الجولة، وتقدر تعدّله كما تشاء — تمديداً أو تقديماً.</p>
+        <div style="display:flex;gap:8px">
+          <button class="btn" id="opGo" style="flex:1">فتح التوقعات</button>
+          <button class="btn ghost" id="opShut" style="flex:none">أغلقها الآن</button>
+        </div>
+        <div style="height:16px"></div>`;
+      })()}
       <div class="fld"><label>الجولة</label>
         <select id="scRound">${[...new Set(MATCHES.filter(m=>!isUpcoming(m)).map(m=>+m.round||0))]
           .sort((a,b)=>b-a).map(r=>`<option value="${r}">الجولة ${r}</option>`).join("")}</select></div>
@@ -2747,10 +2791,22 @@ function renderAdmin(){
   wireStaff();
   const op=$("#opGo");
   if(op) op.onclick=async()=>{
+    const r=$("#opRound").value, v=$("#opLock").value;
+    if(!v){ toast("حدد تاريخ ووقت الإقفال","err"); return; }
     busy(op,true,"جارٍ الفتح…");
-    const res=await publishRound();
+    const res=await publishRound(r, new Date(v).getTime(), true);
     busy(op,false);
     toast(res.msg, res.ok?"ok":"err");
+    if(res.ok) renderAdmin();
+  };
+  const osh=$("#opShut");
+  if(osh) osh.onclick=async()=>{
+    const r=$("#opRound").value;
+    busy(osh,true,"…");
+    const res=await publishRound(r, Date.now(), false);
+    busy(osh,false);
+    toast(res.msg, res.ok?"ok":"err");
+    if(res.ok) renderAdmin();
   };
   const ff=$("#fanFind");
   if(ff) ff.oninput=()=>{ $("#fanList").innerHTML=fanListHTML(ff.value.trim()); wireFanList(); };
@@ -2853,11 +2909,39 @@ function openRound(){
   const up = MATCHES.filter(isUpcoming).filter(m=>kickoffTS(m)!==null);
   if(!up.length) return null;
   const r = Math.min(...up.map(m=>+m.round||0));
-  const ms = MATCHES.filter(m=>(+m.round||0)===r).sort((a,b)=>(kickoffTS(a)||0)-(kickoffTS(b)||0));
+  const ms = MATCHES.filter(m=>(+m.round||0)===r)
+    .sort((a,b)=>(kickoffTS(a) ?? Infinity) - (kickoffTS(b) ?? Infinity));
   const first = ms.find(m=>kickoffTS(m)!==null);
-  return {round:r, matches:ms, lockAt:first?kickoffTS(first):null, month:monthOf(first?first.date:"")};
+  return {round:r, matches:ms, lockMatch:first||null,
+          lockAt:first?kickoffTS(first):null, month:monthOf(first?first.date:"")};
+}
+/* الجولة المعروضة للتوقع: ما فتحه المالك يدوياً، وإلا الجولة القادمة تلقائياً */
+function predRound(){
+  if(ROUNDMETA && ROUNDMETA.open){
+    const ms = MATCHES.filter(m=>(+m.round||0)===+ROUNDMETA.round)
+      .sort((a,b)=>(kickoffTS(a) ?? Infinity)-(kickoffTS(b) ?? Infinity));
+    if(ms.length) return {round:+ROUNDMETA.round, matches:ms, lockMatch:ms[0],
+                          lockAt:ROUNDMETA.lockAt, month:ROUNDMETA.month||monthOf(ms[0].date),
+                          manual:true};
+  }
+  if(ROUNDMETA && ROUNDMETA.open===false) return null;   /* أُغلقت يدوياً */
+  return openRound();
 }
 const isLocked = o => !o || o.lockAt===null || Date.now() >= o.lockAt;
+
+async function loadRoundMeta(){
+  if(!fbDb) return;
+  try{
+    const cur = await fbDb.collection("rounds").doc("current").get();
+    if(!cur.exists){ ROUNDMETA=null; return; }
+    const rk = cur.data().rk;
+    const d = await fbDb.collection("rounds").doc(rk).get();
+    if(!d.exists){ ROUNDMETA=null; return; }
+    const v = d.data();
+    ROUNDMETA = {round:v.round, month:v.month, open:v.open!==false,
+                 lockAt: v.lockAt && v.lockAt.toMillis ? v.lockAt.toMillis() : null};
+  }catch(e){ ROUNDMETA=null; }
+}
 
 /* ===== الحساب العام ===== */
 function authErr(e){
@@ -2934,7 +3018,7 @@ async function saveFanName(name){
 
 /* ===== التوقعات ===== */
 async function loadMyPred(){
-  const o = openRound();
+  const o = predRound();
   if(!o || !FAN || !fbDb){ MYPRED=null; return; }
   try{
     const id = roundKey(o.round) + "_" + FAN.uid;
@@ -2943,7 +3027,7 @@ async function loadMyPred(){
   }catch(e){ MYPRED=null; }
 }
 async function savePred(picks, scorer){
-  const o = openRound();
+  const o = predRound();
   if(!o || !FAN) return false;
   if(isLocked(o)){ toast("أُقفلت التوقعات — بدأت مباريات الجولة","err"); return false; }
   const id = roundKey(o.round) + "_" + FAN.uid;
@@ -2990,21 +3074,26 @@ async function toggleFan(uid){
   catch(e){ return false; }
 }
 
-/* نشر وقت إقفال الجولة — قواعد الأمان تمنع أي توقع بعده */
-async function publishRound(){
-  const o = openRound();
+/* فتح أو إغلاق جولة التوقعات — قواعد الأمان تمنع أي توقع خارج هذه الحدود */
+async function publishRound(round, lockMs, open){
   if(!isOwner || !fbDb) return {ok:false, msg:"غير مصرّح"};
-  if(!o) return {ok:false, msg:"لا توجد جولة قادمة"};
-  if(o.lockAt===null) return {ok:false, msg:"عبّي تاريخ ووقت أول مباراة في الجولة أولاً"};
+  const r = +round;
+  if(!r) return {ok:false, msg:"اختر الجولة"};
+  if(open && !lockMs) return {ok:false, msg:"حدد تاريخ ووقت الإقفال"};
+  const ms = MATCHES.filter(m=>(+m.round||0)===r);
+  const month = ms.length ? monthOf(ms.sort((a,b)=>(kickoffTS(a)??Infinity)-(kickoffTS(b)??Infinity))[0].date) : "";
+  const rk = roundKey(r);
   try{
-    await fbDb.collection("rounds").doc(roundKey(o.round)).set({
-      round:o.round, month:o.month, open:true,
-      lockAt: firebase.firestore.Timestamp.fromDate(new Date(o.lockAt)),
-      lockLabel: new Date(o.lockAt).toISOString()
+    await fbDb.collection("rounds").doc(rk).set({
+      round:r, month, open:!!open,
+      lockAt: firebase.firestore.Timestamp.fromDate(new Date(lockMs || Date.now())),
+      lockLabel: new Date(lockMs || Date.now()).toISOString()
     });
-    ROUNDMETA = {round:o.round, lockAt:o.lockAt, month:o.month, open:true};
-    return {ok:true, msg:`فُتحت توقعات الجولة ${o.round}`};
-  }catch(e){ return {ok:false, msg:"تعذّر فتح الجولة — تحقق من قواعد الأمان"}; }
+    await fbDb.collection("rounds").doc("current").set({rk, round:r, open:!!open});
+    ROUNDMETA = {round:r, month, open:!!open, lockAt: lockMs || Date.now()};
+    return {ok:true, msg: open ? `فُتحت توقعات الجولة ${r} حتى ${stampLabel(lockMs)}`
+                               : `أُغلقت توقعات الجولة ${r}`};
+  }catch(e){ return {ok:false, msg:"تعذّر الحفظ — تأكد أن قواعد الأمان منشورة"}; }
 }
 
 /* احتساب جولة — يشغّله المالك بعد إدخال النتائج */
@@ -3066,7 +3155,7 @@ function fanListHTML(q){
 /* ===== واجهة التبويب ===== */
 function renderPredict(){
   const box = $("#v-predict");
-  const o = openRound(), locked = isLocked(o);
+  const o = predRound(), locked = isLocked(o);
 
   if(!FAN){ box.innerHTML = authCard(); wireAuth(); return; }
 
@@ -3092,7 +3181,8 @@ function renderPredict(){
       <p class="hint">${locked
         ? "أُقفلت هذه الجولة ببداية أول مباراة. هذي توقعاتك المسجّلة."
         : `نتيجة مطابقة ${PT_EXACT} نقاط · اتجاه صحيح نقطتان · هداف الجولة ${PT_SCORER} نقاط. تُقفل التوقعات مع صافرة أول مباراة.`}</p>
-      ${o.lockAt && !locked ? `<div class="lockbar">تُقفل ${esc(dayLabel(o.matches[0].date))}${o.matches[0].time?" · "+esc(o.matches[0].time):""}</div>` : ""}
+      ${o.lockAt && !locked ? `<div class="lockbar">تُقفل ${esc(stampLabel(o.lockAt))}${
+        o.lockMatch?` — مع انطلاق ${esc(o.lockMatch.home)} ضد ${esc(o.lockMatch.away)}`:""}</div>` : ""}
 
       ${o.matches.map((m,i)=>{
         const k = m.home+"|"+m.away, v = picks[k] || [0,0];
@@ -3313,6 +3403,7 @@ async function bootData(){
   await bootData();
   watchSeason();
   await loadBoard();
+  await loadRoundMeta();
   paintRail(); paintHeader(); paintFoot(); go("home");
 })();
 </script>
