@@ -900,8 +900,8 @@ function downloadJSON(){
   setTimeout(()=>URL.revokeObjectURL(u),4000);
 }
 async function persistData(){
-  try{ await window.storage.set("zain_data", JSON.stringify(dataObject())); }catch(e){}
-  await fbSaveSeason();
+  await localSet("zain_data", JSON.stringify(dataObject()));
+  return await fbSaveSeason();
 }
 
 let PENDING=null;
@@ -967,6 +967,47 @@ function showReport(d, fname){
 
 
 
+/* ================= ضغط الصور قبل الحفظ ================= */
+/* الصور الأصلية تزن مئات الكيلوبايتات، ووثيقة Firestore محدودة بميغابايت واحد.
+   نصغّرها إلى الحجم المعروض فعلاً فتصير بضعة كيلوبايتات مع حفظ الشفافية. */
+function compressImage(file, maxDim, quality){
+  return new Promise((res,rej)=>{
+    const fr=new FileReader();
+    fr.onerror=()=>rej(new Error("تعذّرت قراءة الملف"));
+    fr.onload=()=>{
+      const img=new Image();
+      img.onerror=()=>rej(new Error("الملف ليس صورة صالحة"));
+      img.onload=()=>{
+        try{
+          const sc=Math.min(1, maxDim/Math.max(img.width,img.height));
+          const w=Math.max(1,Math.round(img.width*sc)), h=Math.max(1,Math.round(img.height*sc));
+          const c=document.createElement("canvas"); c.width=w; c.height=h;
+          c.getContext("2d").drawImage(img,0,0,w,h);
+          let out=""; 
+          try{ out=c.toDataURL("image/webp", quality); }catch(e){}
+          if(!out || out.indexOf("data:image/webp")!==0) out=c.toDataURL("image/png");
+          res(out);
+        }catch(e){ rej(e); }
+      };
+      img.src=fr.result;
+    };
+    fr.readAsDataURL(file);
+  });
+}
+const dataUrlKB = u => Math.round((String(u||"").length*0.75)/1024);
+function assetsKB(){ return Math.round(JSON.stringify(assetsObject()).length/1024); }
+
+/* يلتقط صورة من حقل ملف، يضغطها، ويعيد رسالة النتيجة */
+async function takeImage(file, maxDim, quality, label){
+  if(!file) return null;
+  const before=Math.round(file.size/1024);
+  try{
+    const url=await compressImage(file, maxDim, quality);
+    const after=dataUrlKB(url);
+    return {url, msg:`${label}: ${before} ك.ب ← ${after} ك.ب`};
+  }catch(e){ return {url:null, msg:`تعذّرت معالجة ${label}: ${e.message}`}; }
+}
+
 /* ================= السحابة — Firebase ================= */
 const FB_CONFIG = {
   apiKey: "AIzaSyD_ZzAE4HEKPIuAKCmta8tzN5KOa8IUfuo",
@@ -1020,7 +1061,9 @@ async function fbSaveAssets(){
   if(!fbDb || !isAdmin) return false;
   const payload=assetsObject();
   const size=JSON.stringify(payload).length;
-  if(size > 900000){ SYNCMSG="الصور كبيرة جداً للسحابة ("+Math.round(size/1024)+" ك.ب) — صغّرها."; return false; }
+  if(size > 900000){
+    SYNCMSG="⚠️ الصور تجاوزت حد السحابة ("+Math.round(size/1024)+" ك.ب من 1024). اضغط «إعادة ضغط كل الصور» أو احذف بعضها.";
+    return false; }
   try{ await fbDb.collection("seasons").doc("assets").set(payload); return true; }
   catch(e){ SYNCMSG="تعذّر حفظ الصور: "+(e.code||e.message); return false; }
 }
@@ -1225,7 +1268,32 @@ function renderMatchAdmin(){
     if(k==="goals") EDIT.goals.push({sc:"",p:"",a:"",m:"",x:0,det:"",bp:"",zone:""});
     if(k==="cards") EDIT.cards.push({club:"",p:"",m:"",type:"إنذار"});
     if(k==="pens")  EDIT.pens.push({by:"",p:"",m:"",res:"سجلت",place:""});
-    const pc=$("#pushCloud");
+    const rc2=$("#recompress");
+  if(rc2) rc2.onclick=async()=>{
+    SYNCMSG="جارٍ إعادة الضغط…"; renderAdmin();
+    const before=assetsKB();
+    const shrink=(u,dim,q)=>new Promise(r=>{
+      if(!u){ r(u); return; }
+      const img=new Image();
+      img.onload=()=>{ try{
+          const sc=Math.min(1,dim/Math.max(img.width,img.height));
+          const w=Math.max(1,Math.round(img.width*sc)), h=Math.max(1,Math.round(img.height*sc));
+          const c=document.createElement("canvas"); c.width=w; c.height=h;
+          c.getContext("2d").drawImage(img,0,0,w,h);
+          let o=""; try{ o=c.toDataURL("image/webp",q); }catch(e){}
+          r(o && o.indexOf("data:image/webp")===0 ? o : c.toDataURL("image/png"));
+        }catch(e){ r(u); } };
+      img.onerror=()=>r(u); img.src=u; });
+    for(const k of Object.keys(LOGOS))  LOGOS[k]  = await shrink(LOGOS[k],160,0.9);
+    for(const k of Object.keys(PHOTOS)) PHOTOS[k] = await shrink(PHOTOS[k],220,0.85);
+    BRAND  = await shrink(BRAND,300,0.9);
+    LEAGUE = await shrink(LEAGUE,180,0.9);
+    const after=assetsKB();
+    const ok=await persist();
+    SYNCMSG = ok ? `تم الضغط: ${before} ك.ب ← ${after} ك.ب · حُفظ في السحابة ✅`
+                 : (SYNCMSG||`تم الضغط إلى ${after} ك.ب لكن الحفظ فشل.`);
+    paintHeader(); renderAdmin(); renderAll(); };
+  const pc=$("#pushCloud");
   if(pc) pc.onclick=async()=>{ SYNCMSG="جارٍ الرفع…"; renderAdmin();
     const a=await fbSaveSeason(); const b=await fbSaveAssets();
     if(a&&!SYNCMSG.startsWith("تعذّر")) SYNCMSG = b?"رُفعت البيانات والصور بنجاح.":"رُفعت البيانات، وتعذّر رفع الصور.";
@@ -1804,7 +1872,11 @@ function renderAdmin(){
       <div class="stat"><span>الحساب</span><span class="v" style="font-size:.78rem;direction:ltr">${esc(FBUSER?FBUSER.email:"—")}</span></div>
       <div class="stat"><span>وثيقة الموسم</span><span class="v" style="font-size:.78rem;direction:ltr">seasons/${esc(seasonId())}</span></div>
       <div style="height:12px"></div>
+      <div class="stat"><span>حجم الصور المخزّنة</span><span class="v" id="akb" style="font-size:.82rem">${assetsKB()} ك.ب من 1024</span></div>
+      <div style="height:12px"></div>
       <button class="btn" id="pushCloud">⬆ رفع البيانات الحالية إلى السحابة</button>
+      <div style="height:8px"></div>
+      <button class="btn ghost" id="recompress">🗜 إعادة ضغط كل الصور</button>
       <div style="height:8px"></div>
       <button class="btn ghost" id="pullCloud">⬇ جلب أحدث نسخة من السحابة</button>
       <p class="hint" style="margin:10px 0 0">كل حفظ أو تعديل يُرفع تلقائياً. هذان الزران للحالات الاستثنائية فقط.</p>
@@ -1935,23 +2007,28 @@ function renderAdmin(){
     </div>`;
 
   document.querySelectorAll('.logocell input[type=file]').forEach(inp=>{
-    inp.onchange=e=>{
+    inp.onchange=async e=>{
       const f=e.target.files[0]; if(!f) return;
-      if(f.size>600*1024){ alert("حجم الصورة كبير — استخدم صورة أصغر من 600 كيلوبايت."); return; }
-      const fr=new FileReader();
-      fr.onload=()=>{ LOGOS[inp.dataset.club]=fr.result; persist(); renderAdmin(); renderAll(); };
-      fr.readAsDataURL(f);
+      const r=await takeImage(f,160,0.9,"شعار "+inp.dataset.club);
+      if(!r.url){ SYNCMSG=r.msg; renderAdmin(); return; }
+      LOGOS[inp.dataset.club]=r.url;
+      SYNCMSG=r.msg+" · جارٍ الحفظ…"; renderAdmin();
+      const ok=await persist();
+      SYNCMSG = ok ? r.msg+" · حُفظ في السحابة ✅" : (SYNCMSG||"تعذّر الحفظ في السحابة");
+      renderAdmin(); renderAll();
     };
   });
   renderMatchAdmin();
   document.querySelectorAll("[data-photo]").forEach(inp=>{
-    inp.onchange=e=>{ const f=e.target.files[0]; if(!f) return;
-      if(f.size>500*1024){ alert("استخدم صورة أصغر من 500 كيلوبايت."); return; }
-      const fr=new FileReader();
-      fr.onload=()=>{ const n=inp.dataset.photo;
-        PHOTOS[n]=fr.result; PAV[n]=PAV[n]||{z:100,x:50,y:50};
-        persist(); renderAdmin(); renderAll(); };
-      fr.readAsDataURL(f); };
+    inp.onchange=async e=>{ const f=e.target.files[0]; if(!f) return;
+      const n=inp.dataset.photo;
+      const r=await takeImage(f,220,0.85,"صورة "+n);
+      if(!r.url){ SYNCMSG=r.msg; renderAdmin(); return; }
+      PHOTOS[n]=r.url; PAV[n]=PAV[n]||{z:100,x:50,y:50};
+      SYNCMSG=r.msg+" · جارٍ الحفظ…"; renderAdmin();
+      const ok=await persist();
+      SYNCMSG = ok ? r.msg+" · حُفظ في السحابة ✅" : (SYNCMSG||"تعذّر الحفظ في السحابة");
+      renderAdmin(); renderAll(); };
   });
   const po=$("#photosOn");
   if(po) po.onchange=e=>{ PHOTOSON=e.target.checked; persist(); renderAdmin(); renderAll(); };
@@ -1986,17 +2063,23 @@ function renderAdmin(){
     renderAdmin();
   };
   const lu=$("#leagueUp");
-  if(lu) lu.onchange=e=>{ const f=e.target.files[0]; if(!f) return;
-    if(f.size>600*1024){ alert("استخدم صورة أصغر من 600 كيلوبايت."); return; }
-    const fr=new FileReader(); fr.onload=()=>{ LEAGUE=fr.result; persist(); paintHeader(); renderAdmin(); };
-    fr.readAsDataURL(f); };
+  if(lu) lu.onchange=async e=>{ const f=e.target.files[0]; if(!f) return;
+    const r=await takeImage(f,180,0.9,"شعار الدوري");
+    if(!r.url){ SYNCMSG=r.msg; renderAdmin(); return; }
+    LEAGUE=r.url; SYNCMSG=r.msg+" · جارٍ الحفظ…"; renderAdmin();
+    const ok=await persist();
+    SYNCMSG = ok ? r.msg+" · حُفظ ✅" : (SYNCMSG||"تعذّر الحفظ في السحابة");
+    paintHeader(); renderAdmin(); };
   const lr=$("#leagueReset");
   if(lr) lr.onclick=()=>{ LEAGUE=LEAGUE_DEFAULT; persist(); paintHeader(); renderAdmin(); };
   const bu=$("#brandUp");
-  if(bu) bu.onchange=e=>{ const f=e.target.files[0]; if(!f) return;
-    if(f.size>900*1024){ alert("استخدم صورة أصغر من 900 كيلوبايت."); return; }
-    const fr=new FileReader(); fr.onload=()=>{ BRAND=fr.result; persist(); renderAdmin(); renderAll(); paintFoot(); };
-    fr.readAsDataURL(f); };
+  if(bu) bu.onchange=async e=>{ const f=e.target.files[0]; if(!f) return;
+    const r=await takeImage(f,300,0.9,"شعار العلامة");
+    if(!r.url){ SYNCMSG=r.msg; renderAdmin(); return; }
+    BRAND=r.url; SYNCMSG=r.msg+" · جارٍ الحفظ…"; renderAdmin();
+    const ok=await persist();
+    SYNCMSG = ok ? r.msg+" · حُفظ ✅" : (SYNCMSG||"تعذّر الحفظ في السحابة");
+    renderAdmin(); renderAll(); paintFoot(); };
   const br=$("#brandReset");
   if(br) br.onclick=()=>{ BRAND=BRAND_DEFAULT; persist(); renderAdmin(); renderAll(); paintFoot(); };
   const gs=$("#gscale");
@@ -2023,9 +2106,19 @@ function renderAdmin(){
 }
 
 /* ================= التخزين ================= */
+function localSet(k,v){
+  try{ if(window.storage&&window.storage.set) return window.storage.set(k,v); }catch(e){}
+  try{ localStorage.setItem(k,v); }catch(e){}
+  return null;
+}
+async function localGet(k){
+  try{ if(window.storage&&window.storage.get){ const r=await window.storage.get(k); if(r&&r.value) return r.value; } }catch(e){}
+  try{ return localStorage.getItem(k); }catch(e){}
+  return null;
+}
 async function persist(){
-  try{ await window.storage.set("zain_admin", JSON.stringify({LOGOS,LASTUPDATE,GSCALE,LSCALE,LOGOBG,BRAND,PHOTOS,LEAGUE,PAV,PHOTOSON,PAVSIZE})); }catch(e){}
-  await fbSaveAssets();
+  await localSet("zain_admin", JSON.stringify({LOGOS,LASTUPDATE,GSCALE,LSCALE,LOGOBG,BRAND,PHOTOS,LEAGUE,PAV,PHOTOSON,PAVSIZE}));
+  return await fbSaveAssets();
 }
 async function restore(){
   try{
@@ -2070,8 +2163,8 @@ async function bootData(){
   const cands=[];
   const cloud = await fbLoad(seasonId());
   if(cloud && cloud.clubs && cloud.matches) cands.push([cloud,"السحابة (Firestore)"]);
-  try{ const r=await window.storage.get("zain_data"); if(r&&r.value){
-    const d=JSON.parse(r.value); if(d.clubs&&d.matches) cands.push([d,"نسخة محلية محفوظة"]); } }catch(e){}
+  try{ const v=await localGet("zain_data"); if(v){
+    const d=JSON.parse(v); if(d.clubs&&d.matches) cands.push([d,"نسخة محلية محفوظة"]); } }catch(e){}
   try{
     const res=await fetch("./data.json",{cache:"no-store"});
     if(res.ok){ const d=await res.json(); if(d.clubs&&d.goals&&d.matches) cands.push([d,"data.json المنشور"]); }
