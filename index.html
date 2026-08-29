@@ -254,11 +254,25 @@ label.lb{display:block;font-size:.72rem;color:var(--slate);margin:0 0 6px}
 .cardpill.y{background:#E9B949}.cardpill.r{background:#E0644F}
 .ctag{font-size:.62rem;color:var(--slate);display:inline-flex;align-items:center;gap:2px}
 /* صور اللاعبين */
-.pav{width:32px;height:32px;border-radius:50%;flex:none;object-fit:cover;background:var(--navy-800);
-  box-shadow:inset 0 0 0 1.5px rgba(95,178,232,.4)}
-.pavph{width:32px;height:32px;border-radius:50%;flex:none;display:grid;place-items:center;
-  background:var(--navy-800);color:var(--slate);font-size:.7rem;font-weight:700;
-  box-shadow:inset 0 0 0 1.5px rgba(143,166,196,.3)}
+.pav{display:inline-block;border-radius:50%;flex:none;overflow:hidden;background:var(--navy-800);
+  box-shadow:inset 0 0 0 1.5px rgba(95,178,232,.4);vertical-align:middle}
+.pav img{width:100%;height:100%;object-fit:cover;display:block;transform-origin:center}
+.pavph{border-radius:50%;flex:none;display:grid;place-items:center;
+  background:var(--navy-800);color:var(--slate);font-weight:700;
+  box-shadow:inset 0 0 0 1.5px rgba(143,166,196,.3);vertical-align:middle}
+.tune{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px dashed rgba(143,166,196,.16)}
+.tune:last-child{border:0}
+.tune .tprev{flex:none}
+.tune .tbody{flex:1;min-width:0}
+.tune .tnm{font-size:.8rem;font-weight:600;margin-bottom:6px}
+.tune .trow{display:grid;grid-template-columns:34px 1fr 40px;align-items:center;gap:7px;margin-bottom:5px}
+.tune .trow span{font-size:.64rem;color:var(--slate)}
+.tune .trow span:last-child{text-align:left;font-variant-numeric:tabular-nums}
+.tune .rng{height:4px}
+.tune .tdel{flex:none;width:28px;height:28px;border-radius:8px;background:rgba(224,100,79,.14);
+  border:1px solid rgba(224,100,79,.35);color:var(--loss);font-size:.85rem}
+.toggle{display:flex;align-items:center;gap:10px;cursor:pointer;font-size:.86rem}
+.toggle input{width:20px;height:20px;accent-color:var(--sky)}
 .photogrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:10px}
 .photocell{background:var(--navy-800);border:1px dashed rgba(143,166,196,.35);border-radius:10px;padding:10px;text-align:center}
 .photocell .nm{font-size:.7rem;margin-top:6px;font-weight:600}
@@ -423,7 +437,10 @@ let PENS = [
 
 /* نسخة أصلية للرجوع إليها */
 const SEED = JSON.parse(JSON.stringify({SEASON,CLUBS,MATCHES,GOALS,PENS,CARDS:[]}));
-let PHOTOS = {};   /* صور اللاعبين — يرفعها المدير */
+let PHOTOS = {};        /* صور اللاعبين — يرفعها المدير */
+let PAV = {};           /* تأطير كل صورة: تكبير وموضع */
+let PHOTOSON = true;    /* إظهار الصور — أطفئه لمظهر موحّد */
+let PAVSIZE = 32;       /* قطر الصورة بالبكسل */
 const PZONES = ["يسار أعلى","وسط أعلى","يمين أعلى","يسار أسفل","وسط أسفل","يمين أسفل","خارج المرمى"];
 /* قوائم الإدخال — مطابقة لورقة الإعدادات، وتُحدَّث تلقائياً عند رفع ملف الإكسل */
 let LIST = {
@@ -989,13 +1006,15 @@ async function fbSaveSeason(){
   try{ await fbDb.collection("seasons").doc(seasonId()).set(dataObject()); SYNCMSG="حُفظت في السحابة"; return true; }
   catch(e){ SYNCMSG="تعذّر الحفظ في السحابة: "+(e.code||e.message); return false; }
 }
-function assetsObject(){ return {LOGOS,PHOTOS,BRAND,LEAGUE,GSCALE,LSCALE,LOGOBG,updated:new Date().toISOString()}; }
+function assetsObject(){ return {LOGOS,PHOTOS,BRAND,LEAGUE,GSCALE,LSCALE,LOGOBG,PAV,PHOTOSON,PAVSIZE,updated:new Date().toISOString()}; }
 function applyAssets(a){
   if(!a) return;
   LOGOS=a.LOGOS||LOGOS; PHOTOS=a.PHOTOS||PHOTOS;
   BRAND=a.BRAND||BRAND; LEAGUE=a.LEAGUE||LEAGUE;
   GSCALE=a.GSCALE||GSCALE; LSCALE=a.LSCALE||LSCALE;
+  PAV=a.PAV||PAV; PAVSIZE=a.PAVSIZE||PAVSIZE;
   if(a.LOGOBG!==undefined) LOGOBG=a.LOGOBG;
+  if(a.PHOTOSON!==undefined) PHOTOSON=a.PHOTOSON;
 }
 async function fbSaveAssets(){
   if(!fbDb || !isAdmin) return false;
@@ -1351,11 +1370,17 @@ function exportBar(mode, club, title){
 }
 
 /* ================= صورة اللاعب ================= */
-function pav(name){
-  const src=PHOTOS[name];
-  if(src) return `<img class="pav" src="${src}" alt="${esc(name)}">`;
+function pavStyle(name){
+  const a=PAV[name]||{z:100,x:50,y:50};
+  return `object-position:${a.x}% ${a.y}%;transform:scale(${(a.z/100).toFixed(2)})`;
+}
+function pav(name, size){
+  const S=size||PAVSIZE;
+  const src = PHOTOSON ? PHOTOS[name] : null;
+  if(src) return `<span class="pav" style="width:${S}px;height:${S}px">
+    <img src="${src}" alt="${esc(name)}" style="${pavStyle(name)}"></span>`;
   const ini=(name||"").trim().split(/\s+/).slice(0,2).map(w=>w[0]||"").join("");
-  return `<span class="pavph">${esc(ini||"؟")}</span>`;
+  return `<span class="pavph" style="width:${S}px;height:${S}px;font-size:${Math.round(S*0.34)}px">${esc(ini||"؟")}</span>`;
 }
 
 /* ================= خريطة المرمى لركلات الجزاء ================= */
@@ -1806,10 +1831,38 @@ function renderAdmin(){
     <div id="dataReport"></div>
 
     <h2 class="sec">صور الهدافين</h2>
-    <p class="hint">ارفع صورة كل لاعب (مربّعة تفضّل). تظهر في قائمة الهدافين وفي بطاقة النادي. ارفع فقط ما لديك حق استخدامه.</p>
+    <div class="card pad" style="margin-bottom:12px">
+      <label class="toggle">
+        <input type="checkbox" id="photosOn" ${PHOTOSON?"checked":""}>
+        <span>إظهار صور اللاعبين في الموقع</span>
+      </label>
+      <p class="hint" style="margin:8px 0 0">أطفئه لتظهر كل الأسماء بحروفها الأولى بشكل موحّد — أنظف من خليط صور وحروف حين لا تكتمل الصور.</p>
+      <div style="height:14px"></div>
+      <label class="lb">حجم الصورة — <b id="pvVal">${PAVSIZE}px</b></label>
+      <input type="range" id="pavsize" class="rng" min="26" max="46" step="2" value="${PAVSIZE}">
+      <div style="height:12px"></div>
+      <div class="prevrow">${scorers().filter(x=>x.g>0).slice(0,10).map(x=>pav(x.n)).join("")}</div>
+    </div>
+    ${Object.keys(PHOTOS).length?`
+    <h2 class="sec">ضبط تأطير الوجوه</h2>
+    <p class="hint">التكبير يقرّب الوجه، والأفقي والرأسي يحرّكان مركز القص. المعاينة حيّة.</p>
+    <div class="card pad">${Object.keys(PHOTOS).map(n=>{
+      const a=PAV[n]||{z:100,x:50,y:50};
+      return `<div class="tune">
+        <div class="tprev" id="tp-${esc(n)}">${pav(n,54)}</div>
+        <div class="tbody">
+          <div class="tnm">${esc(n)}</div>
+          <div class="trow"><span>تكبير</span><input type="range" class="rng" data-tune="${esc(n)}|z" min="100" max="260" step="5" value="${a.z}"><span id="tv-z-${esc(n)}">${a.z}%</span></div>
+          <div class="trow"><span>أفقي</span><input type="range" class="rng" data-tune="${esc(n)}|x" min="0" max="100" step="2" value="${a.x}"><span id="tv-x-${esc(n)}">${a.x}%</span></div>
+          <div class="trow"><span>رأسي</span><input type="range" class="rng" data-tune="${esc(n)}|y" min="0" max="100" step="2" value="${a.y}"><span id="tv-y-${esc(n)}">${a.y}%</span></div>
+        </div>
+        <button class="tdel" data-unphoto="${esc(n)}" title="حذف الصورة">✕</button>
+      </div>`;}).join("")}</div>
+    <div style="height:14px"></div>`:""}
+    <p class="hint">ارفع صورة كل لاعب. الوجه في الوسط أفضل، وإن لم يكن فاضبطه بالمنزلقات أعلاه. ارفع فقط ما لديك حق استخدامه.</p>
     <div class="photogrid">${(()=>{const L=scorers().filter(x=>x.g>0).slice(0,24);
       return L.length?L.map(x=>`<label class="photocell">
-        ${PHOTOS[x.n]?`<img src="${PHOTOS[x.n]}" style="border-radius:50%;object-fit:cover">`:`<div class="ph pavph" style="width:54px;height:54px;font-size:1rem">${esc((x.n||"").trim().split(/\s+/).slice(0,2).map(w=>w[0]||"").join(""))}</div>`}
+        <div style="display:flex;justify-content:center">${pav(x.n,54)}</div>
         <div class="nm">${esc(x.n)}</div>
         <div class="up">${PHOTOS[x.n]?"تغيير":"+ رفع صورة"}</div>
         <input type="file" accept="image/*" data-photo="${esc(x.n)}" style="display:none">
@@ -1895,11 +1948,33 @@ function renderAdmin(){
     inp.onchange=e=>{ const f=e.target.files[0]; if(!f) return;
       if(f.size>500*1024){ alert("استخدم صورة أصغر من 500 كيلوبايت."); return; }
       const fr=new FileReader();
-      fr.onload=()=>{ PHOTOS[inp.dataset.photo]=fr.result; persist(); renderAdmin(); renderAll(); };
+      fr.onload=()=>{ const n=inp.dataset.photo;
+        PHOTOS[n]=fr.result; PAV[n]=PAV[n]||{z:100,x:50,y:50};
+        persist(); renderAdmin(); renderAll(); };
       fr.readAsDataURL(f); };
   });
+  const po=$("#photosOn");
+  if(po) po.onchange=e=>{ PHOTOSON=e.target.checked; persist(); renderAdmin(); renderAll(); };
+  const pv=$("#pavsize");
+  if(pv){ pv.oninput=e=>{ PAVSIZE=+e.target.value; $("#pvVal").textContent=PAVSIZE+"px"; };
+          pv.onchange=()=>{ persist(); renderAdmin(); renderAll(); }; }
+  document.querySelectorAll("[data-tune]").forEach(r=>{
+    r.oninput=()=>{
+      const [n,k]=r.dataset.tune.split("|");
+      PAV[n]=PAV[n]||{z:100,x:50,y:50};
+      PAV[n][k]=+r.value;
+      const lab=$("#tv-"+k+"-"+CSS.escape(n)); if(lab) lab.textContent=r.value+"%";
+      const prev=$("#tp-"+CSS.escape(n));
+      if(prev){ const img=prev.querySelector("img"); if(img) img.style.cssText=pavStyle(n); }
+    };
+    r.onchange=()=>{ persist(); renderAll(); };
+  });
+  document.querySelectorAll("[data-unphoto]").forEach(b=>b.onclick=()=>{
+    const n=b.dataset.unphoto;
+    delete PHOTOS[n]; delete PAV[n];
+    persist(); renderAdmin(); renderAll(); });
   const cp=$("#clearPhotos");
-  if(cp) cp.onclick=()=>{ if(confirm("حذف كل صور اللاعبين؟")){ PHOTOS={}; persist(); renderAdmin(); renderAll(); } };
+  if(cp) cp.onclick=()=>{ if(confirm("حذف كل صور اللاعبين؟")){ PHOTOS={}; PAV={}; persist(); renderAdmin(); renderAll(); } };
   const du=$("#dataUp");
   if(du) du.onchange=e=>{ const f=e.target.files[0]; if(f) readDataFile(f); };
   const dj=$("#dlJSON"); if(dj) dj.onclick=downloadJSON;
@@ -1949,14 +2024,15 @@ function renderAdmin(){
 
 /* ================= التخزين ================= */
 async function persist(){
-  try{ await window.storage.set("zain_admin", JSON.stringify({LOGOS,LASTUPDATE,GSCALE,LSCALE,LOGOBG,BRAND,PHOTOS,LEAGUE})); }catch(e){}
+  try{ await window.storage.set("zain_admin", JSON.stringify({LOGOS,LASTUPDATE,GSCALE,LSCALE,LOGOBG,BRAND,PHOTOS,LEAGUE,PAV,PHOTOSON,PAVSIZE})); }catch(e){}
   await fbSaveAssets();
 }
 async function restore(){
   try{
     const r=await window.storage.get("zain_admin");
     if(r&&r.value){ const d=JSON.parse(r.value); LOGOS=d.LOGOS||{}; LASTUPDATE=d.LASTUPDATE||LASTUPDATE;
-      GSCALE=d.GSCALE||100; LSCALE=d.LSCALE||{}; LOGOBG=d.LOGOBG!==false; BRAND=d.BRAND||BRAND_DEFAULT; PHOTOS=d.PHOTOS||{}; LEAGUE=d.LEAGUE||LEAGUE_DEFAULT; }
+      GSCALE=d.GSCALE||100; LSCALE=d.LSCALE||{}; LOGOBG=d.LOGOBG!==false; BRAND=d.BRAND||BRAND_DEFAULT; PHOTOS=d.PHOTOS||{}; LEAGUE=d.LEAGUE||LEAGUE_DEFAULT;
+      PAV=d.PAV||{}; if(d.PHOTOSON!==undefined) PHOTOSON=d.PHOTOSON; PAVSIZE=d.PAVSIZE||32; }
   }catch(e){}
 }
 
