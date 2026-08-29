@@ -2897,6 +2897,7 @@ let MYPRED = null;     /* توقعات المشترك للجولة المفتو�
 let BOARD = null;      /* وثيقة الترتيب المجمّعة */
 let ROUNDMETA = null;  /* {round,lockAt,month,open} للجولة المفتوحة */
 let BOARDTAB = "season";
+let SCCLUB = "";        /* نادي الهداف المختار في نموذج التوقعات */
 let AUTHTAB = "name";   /* name | mail */
 let AUTHMODE = "in";    /* in | up */
 
@@ -3026,13 +3027,14 @@ async function loadMyPred(){
     MYPRED = s.exists ? s.data() : null;
   }catch(e){ MYPRED=null; }
 }
-async function savePred(picks, scorer){
+async function savePred(picks, scorer, scorerClub){
   const o = predRound();
   if(!o || !FAN) return false;
   if(isLocked(o)){ toast("أُقفلت التوقعات — بدأت مباريات الجولة","err"); return false; }
   const id = roundKey(o.round) + "_" + FAN.uid;
   const body = {uid:FAN.uid, name:FAN.name, rk:roundKey(o.round), round:o.round,
-                month:o.month, picks, scorer:scorer||"", ts:new Date().toISOString()};
+                month:o.month, picks, scorer:scorer||"", scorerClub:scorerClub||"",
+                ts:new Date().toISOString()};
   try{ await fbDb.collection("preds").doc(id).set(body); MYPRED=body; return true; }
   catch(e){
     toast((e&&e.code)==="permission-denied" ? "أُقفلت التوقعات لهذه الجولة" : "تعذّر الحفظ — أعد المحاولة","err");
@@ -3203,11 +3205,22 @@ function renderPredict(){
         </div>`;
       }).join("")}
 
-      <div class="fld" style="margin-top:12px"><label>هداف الجولة</label>
-        <select id="predScorer" ${locked?"disabled":""}>
-          <option value="">— اختر لاعباً —</option>
-          ${allSquadNames().map(n=>`<option value="${esc(n)}" ${MYPRED&&MYPRED.scorer===n?"selected":""}>${esc(n)}</option>`).join("")}
-        </select></div>
+      ${(()=>{
+        const clubs=[...new Set(o.matches.flatMap(m=>[m.home,m.away]))].filter(Boolean)
+          .sort((a,b)=>String(a).localeCompare(String(b),"ar"));
+        const sel = SCCLUB || (MYPRED&&MYPRED.scorerClub) || "";
+        return `<h2 class="sec" style="font-size:.92rem">هداف الجولة</h2>
+        <p class="hint">اختر النادي أولاً، وتظهر لك قائمة لاعبيه.</p>
+        <div class="fgrid">
+          <div class="fld"><label>النادي</label>
+            <select id="scClub" ${locked?"disabled":""}>
+              <option value="">— اختر النادي —</option>
+              ${clubs.map(c=>`<option value="${esc(c)}" ${sel===c?"selected":""}>${esc(c)}</option>`).join("")}
+            </select></div>
+          <div class="fld"><label>اللاعب</label>
+            <select id="predScorer" ${locked||!sel?"disabled":""}>${scorerOptions(sel)}</select></div>
+        </div>`;
+      })()}
 
       ${locked ? "" : `<div style="height:12px"></div>
         <button class="btn" id="sendPred" style="width:100%">${MYPRED?"تحديث توقعاتي":"أرسل توقعاتي"}</button>`}
@@ -3219,6 +3232,14 @@ function renderPredict(){
   wirePredict(o, locked);
 }
 
+function scorerOptions(club){
+  if(!club) return `<option value="">— اختر النادي أولاً —</option>`;
+  const ns = playersOf(club);
+  if(!ns.length) return `<option value="">— لا كشف لهذا النادي بعد —</option>`;
+  const cur = (MYPRED&&MYPRED.scorer)||"";
+  return `<option value="">— اختر اللاعب —</option>` +
+    ns.map(n=>`<option value="${esc(n)}" ${cur===n?"selected":""}>${esc(n)}</option>`).join("");
+}
 function allSquadNames(){
   const s = new Set();
   Object.values(SQUADS).forEach(a=>(a||[]).forEach(n=>s.add(n)));
@@ -3336,10 +3357,17 @@ function wirePredict(o, locked){
     const el=document.querySelector(`[data-v="${CSS.escape(k+"|"+s)}"]`);
     if(el) el.textContent=cur;
   });
+  const sc=$("#scClub");
+  if(sc) sc.onchange=()=>{
+    SCCLUB = sc.value;
+    const ps=$("#predScorer");
+    if(ps){ ps.innerHTML = scorerOptions(SCCLUB); ps.disabled = !SCCLUB; }
+  };
   const sp=$("#sendPred");
   if(sp) sp.onclick=async()=>{
+    const club = ($("#scClub")&&$("#scClub").value) || "";
     busy(sp,true,"جارٍ الإرسال…");
-    const ok = await savePred(picks, $("#predScorer").value);
+    const ok = await savePred(picks, $("#predScorer").value, club);
     busy(sp,false);
     if(ok){ toast("سُجّلت توقعاتك ✅","ok"); renderPredict(); }
   };
