@@ -177,6 +177,22 @@ label.lb{display:block;font-size:.72rem;color:var(--slate);margin:0 0 6px}
   color:#fff;border-radius:10px;padding:10px 12px;font-family:var(--body);font-size:.86rem;
   line-height:1.8;resize:vertical}
 .squadbox textarea:focus{outline:2px solid var(--sky);outline-offset:1px}
+.staffrow{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px dashed rgba(143,166,196,.16)}
+.staffrow:last-of-type{border:0}
+.staffrow .sm{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.staffrow .sm b{font-size:.86rem;color:#fff;font-weight:600}
+.staffrow .sm span{font-size:.72rem;color:var(--slate);direction:ltr;text-align:right}
+.staffrow .sm code{font-size:.62rem;color:var(--slate);direction:ltr;text-align:right;
+  opacity:.75;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.staffrow button{font-size:.7rem;border:1px solid rgba(143,166,196,.35);border-radius:8px;
+  padding:5px 10px;color:var(--mist);white-space:nowrap}
+.staffrow button.dl{border-color:rgba(224,100,79,.45);color:var(--loss)}
+.uidbox{background:var(--navy-800);border:1px solid rgba(95,178,232,.3);border-radius:10px;
+  padding:12px;margin-bottom:14px}
+.uidbox code{display:block;direction:ltr;text-align:left;font-size:.76rem;color:var(--sky);
+  background:rgba(6,21,41,.6);border-radius:7px;padding:9px 10px;margin-bottom:9px;
+  word-break:break-all}
+.cnt.off{color:var(--loss);background:rgba(224,100,79,.12);border-color:rgba(224,100,79,.4)}
 .cnt{display:inline-block;font-size:.62rem;color:var(--sky);background:rgba(95,178,232,.12);
   border:1px solid rgba(95,178,232,.3);border-radius:999px;padding:1px 7px;
   font-variant-numeric:tabular-nums}
@@ -538,6 +554,7 @@ let LIST = {
 const SETPIECE = /ركنية|ركلة حرة|رمية تماس|ركلة جزاء/;
 const catOf = det => SETPIECE.test(det||"") ? "كرات ثابتة" : "لعب مفتوح";
 let DATA_UPDATED = "2026-08-27T00:00:00Z";
+let DATA_BY = "";   /* بريد آخر من حفظ */
 let DATA_SOURCE  = "مضمّنة في الملف";
 
 /* لون افتراضي لكل نادٍ — يستبدله المدير بالشعار الرسمي */
@@ -985,6 +1002,7 @@ function applyData(d, source){
   SELR=null; SELDAY=null; CALM=null;
   applyComp();
   DATA_UPDATED = d.updated || new Date().toISOString();
+  DATA_BY = d.updatedBy || "";
   DATA_SOURCE  = source || "ملف بيانات";
   const mx = ALL.matches.length ? Math.max(...ALL.matches.map(m=>m.round)) : 0;
   if(!/الجولة/.test(LASTUPDATE)) LASTUPDATE = `الجولة ${mx}`;
@@ -996,7 +1014,8 @@ function dataObject(){
   return {season:SEASON, clubs:CLUBS,
           matches:ALL?ALL.matches:MATCHES, goals:ALL?ALL.goals:GOALS,
           pens:ALL?ALL.pens:PENS, cards:ALL?ALL.cards:CARDS, squads:SQUADS,
-          lastUpdate:LASTUPDATE, updated:new Date().toISOString()};
+          lastUpdate:LASTUPDATE, updated:new Date().toISOString(),
+          updatedBy:(FBUSER&&FBUSER.email)||""};
 }
 function downloadJSON(){
   const blob=new Blob([JSON.stringify(dataObject(),null,1)],{type:"application/json"});
@@ -1146,7 +1165,11 @@ const FB_CONFIG = {
   messagingSenderId: "574478199897",
   appId: "1:574478199897:web:dbd2b7dae6384503ea9548"
 };
-const ADMIN_UID = "iiTgVfDryXNLb9IrOyLkkNMHDxq2";
+const ADMIN_UID = "iiTgVfDryXNLb9IrOyLkkNMHDxq2";   /* المالك — صلاحية كاملة */
+let STAFF = {};      /* فريق العمل: { uid: {name, email, role, active} } */
+let isOwner = false; /* المالك وحده */
+let MYROLE = "";     /* دور الحساب الحالي: owner | editor | "" */
+const ROLE_AR = {owner:"مالك", editor:"محرّر"};
 let fbDb=null, fbAuth=null, FBUSER=null, FBSTATE="لم يُهيّأ", SYNCMSG="", LASTSYNC=null;
 
 function fbInit(){
@@ -1159,9 +1182,18 @@ function fbInit(){
        تلقائياً إلى نقل عادي يمرّ من الجدران النارية. */
     try{ fbDb.settings({ experimentalAutoDetectLongPolling:true, merge:true }); }catch(e){}
     FBSTATE="متصل";
-    fbAuth.onAuthStateChanged(u=>{
+    fbAuth.onAuthStateChanged(async u=>{
       FBUSER = u || null;
-      isAdmin = !!(u && u.uid===ADMIN_UID);
+      isOwner = !!(u && u.uid===ADMIN_UID);
+      MYROLE = ""; STAFF = {};
+      if(u){
+        const s = await fbLoad("staff");
+        STAFF = (s && s.members) || {};
+        const me = STAFF[u.uid];
+        MYROLE = isOwner ? "owner"
+               : (me && me.active!==false && me.role==="editor") ? "editor" : "";
+      }
+      isAdmin = isOwner || MYROLE==="editor";
       $("#adminBtn").classList.toggle("on", isAdmin);
       if(document.querySelector('nav.tabs button[aria-selected="true"]')?.dataset.v==="admin") renderAdmin();
     });
@@ -1188,6 +1220,14 @@ async function fbSaveSeason(){
   if(r==="timeout"){ SYNCMSG="الاتصال بطيء — حُفظ محلياً وسيُرسل تلقائياً عند عودة الشبكة."; return "pending"; }
   SYNCMSG="تعذّر الحفظ: "+((r.err&&(r.err.code||r.err.message))||"خطأ غير معروف"); return false;
 }
+async function fbSaveStaff(){
+  if(!fbDb || !isOwner) return false;
+  const r = await withTimeout(fbDb.collection("seasons").doc("staff")
+              .set({members:STAFF, updated:new Date().toISOString()}), 9000);
+  if(r==="ok"){ SYNCMSG=""; return true; }
+  if(r==="timeout"){ SYNCMSG="الاتصال بطيء — أعد المحاولة بعد قليل."; return "pending"; }
+  SYNCMSG="تعذّر حفظ فريق العمل: "+((r.err&&(r.err.code||r.err.message))||"خطأ غير معروف"); return false;
+}
 function assetsObject(){ return {LOGOS,PHOTOS,BRAND,LEAGUE,GSCALE,LSCALE,LOGOBG,PAV,PHOTOSON,PAVSIZE,updated:new Date().toISOString()}; }
 function applyAssets(a){
   if(!a) return;
@@ -1199,7 +1239,7 @@ function applyAssets(a){
   if(a.PHOTOSON!==undefined) PHOTOSON=a.PHOTOSON;
 }
 async function fbSaveAssets(){
-  if(!fbDb || !isAdmin) return false;
+  if(!fbDb || !isOwner) return false;   /* الشعارات والهوية للمالك وحده */
   const payload=assetsObject();
   const size=JSON.stringify(payload).length;
   if(size > 900000){
@@ -1457,6 +1497,7 @@ async function saveMatch(){
   stampComp(ALL);
   const have=compsPresent(); if(!have.includes(COMP)) COMP=have[0]||"الدوري";
   applyComp(); DATA_SOURCE="إدخال يدوي في الموقع"; DATA_UPDATED=new Date().toISOString();
+  DATA_BY=(FBUSER&&FBUSER.email)||"";
   EDIT=null; FORMERR="";
   toast("جارٍ حفظ المباراة…","busy",true);
   const okm = await persistData();
@@ -2164,14 +2205,122 @@ function renderAnalysis(){
 }
 
 /* ================= لوحة المدير ================= */
+/* ================= الكشوفات وفريق العمل — أقسام مشتركة ================= */
+function squadsSectionHTML(){
+  return `
+    <h2 class="sec">كشوفات اللاعبين</h2>
+    <p class="hint">اكتب أسماء لاعبي كل نادٍ — اسم في كل سطر. تظهر بعدها كقائمة منسدلة عند إدخال الأهداف والبطاقات وركلات الجزاء، ويبقى بإمكانك كتابة اسم جديد يدوياً في أي وقت.</p>
+    <div class="card pad">
+      ${CLUBS.map(c=>`<div class="squadbox">
+        <label class="lb"><b style="color:#fff">${esc(c)}</b> <span class="cnt">${(SQUADS[c]||[]).length}</span></label>
+        <textarea data-squad="${esc(c)}" rows="4" spellcheck="false"
+          placeholder="اسم اللاعب في كل سطر">${esc((SQUADS[c]||[]).join("\n"))}</textarea>
+      </div>`).join("")}
+      <div style="height:6px"></div>
+      <button class="btn" id="saveSquads">حفظ الكشوفات</button>
+      <p class="hint" style="margin:10px 0 0">الكشوفات تُحفظ مع بيانات الموسم وتُرفع للسحابة تلقائياً. إجمالي المسجّل الآن: ${squadTotal()} لاعباً.</p>
+    </div>`;
+}
+function wireSquads(){
+  const sqb=$("#saveSquads"); if(!sqb) return;
+  sqb.onclick=async()=>{
+    document.querySelectorAll("[data-squad]").forEach(t=>{
+      const seen=new Set(), names=[];
+      t.value.split("\n").map(x=>x.trim().replace(/\s+/g," ")).filter(Boolean)
+        .forEach(n=>{ if(!seen.has(n)){ seen.add(n); names.push(n); } });
+      if(names.length) SQUADS[t.dataset.squad]=names; else delete SQUADS[t.dataset.squad];
+    });
+    busy(sqb,true,"جارٍ الحفظ…");
+    const ok=await persistData();
+    busy(sqb,false);
+    if(ok===true){ LASTSYNC=new Date(); toast(`حُفظت الكشوفات · ${squadTotal()} لاعباً ✅`,"ok"); }
+    else if(ok==="pending") toast(SYNCMSG,"busy");
+    else toast(SYNCMSG||"حُفظت محلياً، وتعذّر رفعها للسحابة","err");
+    renderAdmin();
+  };
+}
+async function saveStaff(btn, msg){
+  if(btn) busy(btn,true,"جارٍ الحفظ…");
+  const ok=await fbSaveStaff();
+  if(btn) busy(btn,false);
+  toast(ok===true?msg:(SYNCMSG||"تعذّر الحفظ"), ok===true?"ok":"err");
+  renderAdmin();
+}
+function wireStaff(){
+  const add=$("#addStaff");
+  if(add) add.onclick=async()=>{
+    const name=($("#stName").value||"").trim();
+    const mail=($("#stMail").value||"").trim();
+    const uid =($("#stUid").value||"").trim();
+    if(!uid){ toast("الصق رمز الحساب (UID)","err"); return; }
+    if(uid===ADMIN_UID){ toast("هذا حسابك أنت — المالك مضاف أصلاً","err"); return; }
+    if(STAFF[uid]){ toast("هذا العضو مضاف مسبقاً","err"); return; }
+    STAFF[uid]={name, email:mail, role:"editor", active:true};
+    await saveStaff(add, `أُضيف ${name||"العضو"} كمحرّر ✅`);
+  };
+  document.querySelectorAll("[data-staff-toggle]").forEach(b=>b.onclick=async()=>{
+    const uid=b.dataset.staffToggle, m=STAFF[uid]; if(!m) return;
+    m.active = m.active===false;
+    await saveStaff(b, m.active?"فُعّل الحساب ✅":"أُوقف الحساب");
+  });
+  document.querySelectorAll("[data-staff-rm]").forEach(b=>b.onclick=async()=>{
+    const uid=b.dataset.staffRm;
+    if(!confirm(`حذف ${STAFF[uid]?.name||"هذا العضو"} من فريق العمل؟`)) return;
+    delete STAFF[uid];
+    await saveStaff(b, "حُذف العضو");
+  });
+}
+
+/* لوحة المحرّر — إدخال البيانات فقط، بلا هوية ولا ملفات ولا صلاحيات */
+function renderEditorAdmin(){
+  $("#v-admin").innerHTML=`
+    <div class="brandcard" style="border-color:rgba(95,178,232,.32)">
+      <div class="bt">
+        <b>${esc((STAFF[FBUSER.uid]&&STAFF[FBUSER.uid].name)||FBUSER.email)}</b>
+        <div class="handles"><span class="cnt">محرّر</span></div>
+      </div>
+    </div>
+    ${SYNCMSG?`<div class="formerr">${esc(SYNCMSG)}</div>`:""}
+
+    <h2 class="sec">إدارة المباريات</h2>
+    <p class="hint">أضف مباراة كاملة: الجولة والملعب والتاريخ والوقت، ثم الأهداف والبطاقات وركلات الجزاء. النتيجة تُحسب من الأهداف.</p>
+    <div id="matchAdmin"></div>
+
+    ${squadsSectionHTML()}
+
+    <h2 class="sec">حالة الحفظ</h2>
+    <div class="card pad">
+      <div class="stat"><span>الحساب</span><span class="v" style="font-size:.78rem;direction:ltr">${esc(FBUSER.email||"—")}</span></div>
+      <div class="stat"><span>الحالة</span><span class="v" style="font-size:.82rem">${esc(FBSTATE)}</span></div>
+      <div class="stat"><span>المحتوى</span><span class="v">${MATCHES.length} مباراة · ${GOALS.length} هدفاً</span></div>
+      <div class="stat"><span>آخر حفظ ناجح</span><span class="v" style="font-size:.8rem">${LASTSYNC?esc(LASTSYNC.toLocaleTimeString("ar-KW",{hour:"2-digit",minute:"2-digit"})):"—"}</span></div>
+      <div style="height:12px"></div>
+      <button class="btn ghost" id="logout">خروج</button>
+      <p class="hint" style="margin:10px 0 0">كل حفظ يُرفع للسحابة تلقائياً ويظهر للزوار مباشرة.</p>
+    </div>`;
+  renderMatchAdmin();
+  wireSquads();
+  const lo=$("#logout");
+  if(lo) lo.onclick=async()=>{
+    if(fbAuth && FBUSER){ try{ await fbAuth.signOut(); }catch(e){} }
+    isAdmin=false; isOwner=false; MYROLE="";
+    $("#adminBtn").classList.remove("on"); go("home");
+  };
+}
+
 function renderAdmin(){
   if(!isAdmin){
-    const wrongUser = FBUSER && FBUSER.uid!==ADMIN_UID;
+    const wrongUser = !!FBUSER;
     $("#v-admin").innerHTML=`
-      <h2 class="sec">دخول المدير</h2>
+      <h2 class="sec">دخول فريق العمل</h2>
       <div class="card pad">
         ${SYNCMSG?`<div class="formerr">${esc(SYNCMSG)}</div>`:""}
-        ${wrongUser?`<div class="formerr">هذا الحساب ليس حساب المدير.</div>`:""}
+        ${wrongUser?`<div class="formerr">هذا الحساب غير مصرّح له بالتحرير بعد.</div>
+          <div class="uidbox">
+            <label class="lb">أرسل هذا الرمز للمالك ليضيفك لفريق العمل</label>
+            <code id="myUid">${esc(FBUSER.uid)}</code>
+            <button class="btn ghost" id="copyUid">نسخ الرمز</button>
+          </div>`:""}
         <label class="lb">البريد الإلكتروني</label>
         <input type="text" id="em" autocomplete="username" inputmode="email" dir="ltr">
         <div style="height:10px"></div>
@@ -2193,8 +2342,14 @@ function renderAdmin(){
     $("#loginBtn").onclick=doLogin;
     $("#pw").onkeydown=e=>{ if(e.key==="Enter") doLogin(); };
     const so=$("#signOut"); if(so) so.onclick=()=>fbAuth.signOut();
+    const cu=$("#copyUid");
+    if(cu) cu.onclick=async()=>{
+      try{ await navigator.clipboard.writeText(FBUSER.uid); toast("نُسخ الرمز ✅","ok"); }
+      catch(e){ toast("انسخ الرمز يدوياً","err"); }
+    };
     return;
   }
+  if(!isOwner){ renderEditorAdmin(); return; }
   $("#v-admin").innerHTML=`
     <h2 class="sec">شعارات الأندية</h2>
     <p class="hint">ارفع الشعار الرسمي لكل نادٍ (PNG أو SVG بخلفية شفافة). يظهر فوراً في الجدول وبطاقات المباريات وصفحة النادي. ارفع فقط ما لديك إذن باستخدامه.</p>
@@ -2206,17 +2361,31 @@ function renderAdmin(){
         <input type="file" accept="image/*" data-club="${esc(c)}">
       </label>`).join("")}</div>
 
-    <h2 class="sec">كشوفات اللاعبين</h2>
-    <p class="hint">اكتب أسماء لاعبي كل نادٍ — اسم في كل سطر. تظهر بعدها كقائمة منسدلة عند إدخال الأهداف والبطاقات وركلات الجزاء، ويبقى بإمكانك كتابة اسم جديد يدوياً في أي وقت.</p>
+    ${squadsSectionHTML()}
+
+    <h2 class="sec">فريق العمل</h2>
+    <p class="hint">حسابات المحرّرين: يدخلون لإضافة المباريات والأهداف والبطاقات وركلات الجزاء والكشوفات فقط. الشعارات والهوية وملفات البيانات وفريق العمل تبقى لك وحدك.</p>
     <div class="card pad">
-      ${CLUBS.map(c=>`<div class="squadbox">
-        <label class="lb"><b style="color:#fff">${esc(c)}</b> <span class="cnt">${(SQUADS[c]||[]).length}</span></label>
-        <textarea data-squad="${esc(c)}" rows="4" spellcheck="false"
-          placeholder="اسم اللاعب في كل سطر">${esc((SQUADS[c]||[]).join("\n"))}</textarea>
-      </div>`).join("")}
-      <div style="height:6px"></div>
-      <button class="btn" id="saveSquads">حفظ الكشوفات</button>
-      <p class="hint" style="margin:10px 0 0">الكشوفات تُحفظ مع بيانات الموسم وتُرفع للسحابة تلقائياً. إجمالي المسجّل الآن: ${squadTotal()} لاعباً.</p>
+      ${Object.keys(STAFF).length?Object.entries(STAFF).map(([uid,m])=>`
+        <div class="staffrow">
+          <div class="sm">
+            <b>${esc(m.name||"بلا اسم")} <span class="cnt">${esc(ROLE_AR[m.role]||m.role||"محرّر")}</span>${m.active===false?' <span class="cnt off">موقوف</span>':""}</b>
+            <span>${esc(m.email||"—")}</span>
+            <code>${esc(uid)}</code>
+          </div>
+          <button data-staff-toggle="${esc(uid)}">${m.active===false?"تفعيل":"إيقاف"}</button>
+          <button class="dl" data-staff-rm="${esc(uid)}">حذف</button>
+        </div>`).join(""):'<span style="color:var(--slate)">لا أعضاء بعد.</span>'}
+      <div style="height:14px"></div>
+      <label class="lb">إضافة عضو</label>
+      <div class="fgrid">
+        <div class="fld"><label>الاسم</label><input type="text" id="stName"></div>
+        <div class="fld"><label>البريد الإلكتروني</label><input type="text" id="stMail" dir="ltr"></div>
+      </div>
+      <div class="fld"><label>رمز الحساب (UID)</label><input type="text" id="stUid" dir="ltr" placeholder="ينسخه العضو من شاشة الدخول"></div>
+      <div style="height:10px"></div>
+      <button class="btn" id="addStaff">إضافة العضو</button>
+      <p class="hint" style="margin:12px 0 0">الخطوات: أنشئ الحساب من Firebase Console ← Authentication ← Users ← Add user (بريد وكلمة مرور). يدخل العضو من صفحة «التحليل ← الإعدادات» فيظهر له رمز حسابه، يرسله لك، وتضيفه هنا.</p>
     </div>
 
     <h2 class="sec">المزامنة السحابية</h2>
@@ -2257,6 +2426,7 @@ function renderAdmin(){
       <div class="stat"><span>المصدر الحالي</span><span class="v" style="font-size:.8rem">${esc(DATA_SOURCE)}</span></div>
       <div class="stat"><span>آخر تحديث للبيانات</span><span class="v" style="font-size:.8rem;direction:ltr">${esc(DATA_UPDATED.slice(0,16).replace("T"," "))}</span></div>
       <div class="stat"><span>المحتوى</span><span class="v">${MATCHES.length} مباراة · ${GOALS.length} هدفاً</span></div>
+      <div class="stat"><span>آخر من حفظ</span><span class="v" style="font-size:.78rem;direction:ltr">${esc(DATA_BY||"—")}</span></div>
       <div style="height:14px"></div>
       <label class="btn" style="display:block;cursor:pointer;text-align:center">⬆ رفع ملف الجولة (xlsx أو json)
         <input type="file" id="dataUp" accept=".xlsx,.xlsm,.json" style="display:none"></label>
@@ -2457,22 +2627,8 @@ function renderAdmin(){
   const br=$("#brandReset");
   if(br) br.onclick=()=>{ BRAND=BRAND_DEFAULT; persist(); renderAdmin(); renderAll(); paintFoot(); };
   wireAdminIO();
-  const sqb=$("#saveSquads");
-  if(sqb) sqb.onclick=async()=>{
-    document.querySelectorAll("[data-squad]").forEach(t=>{
-      const seen=new Set(), names=[];
-      t.value.split("\n").map(s=>s.trim().replace(/\s+/g," ")).filter(Boolean)
-        .forEach(n=>{ if(!seen.has(n)){ seen.add(n); names.push(n); } });
-      if(names.length) SQUADS[t.dataset.squad]=names; else delete SQUADS[t.dataset.squad];
-    });
-    busy(sqb,true,"جارٍ الحفظ…");
-    const ok=await persistData();
-    busy(sqb,false);
-    if(ok===true){ LASTSYNC=new Date(); toast(`حُفظت الكشوفات · ${squadTotal()} لاعباً ✅`,"ok"); }
-    else if(ok==="pending") toast(SYNCMSG,"busy");
-    else toast(SYNCMSG||"حُفظت محلياً، وتعذّر رفعها للسحابة","err");
-    renderAdmin();
-  };
+  wireSquads();
+  wireStaff();
   const gs=$("#gscale");
   if(gs){ gs.oninput=e=>{ GSCALE=+e.target.value; $("#gsVal").textContent=GSCALE+"%";
     document.querySelectorAll(".crest.has-logo img").forEach(img=>{
