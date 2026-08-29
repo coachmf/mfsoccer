@@ -971,9 +971,17 @@ function showReport(d, fname){
     <div style="height:12px"></div>
     <button class="btn" id="applyBtn">اعتماد هذه البيانات وتحديث الموقع</button>
     <p class="hint" style="margin-top:8px">${warn.length?"يمكنك الاعتماد رغم التنبيهات، لكن الأرقام قد تكون ناقصة. راجع الصفوف أعلاه في ملف الإكسل أولاً.":"لا توجد أخطاء بنيوية — البيانات جاهزة للاعتماد."}</p>`;
-  $("#applyBtn").onclick=async()=>{
+  $("#applyBtn").onclick=async(ev)=>{
+    const btn=ev.currentTarget;
+    busy(btn,true,"جارٍ الاعتماد…");
     applyData(PENDING, "ملف مرفوع: "+fname);
-    await persistData();
+    paintRail(); renderAll();
+    const ok=await persistData();
+    busy(btn,false);
+    if(ok===true){ LASTSYNC=new Date();
+      toast(`اعتُمدت البيانات: ${MATCHES.length} مباراة و${GOALS.length} هدفاً · حُفظت في السحابة ✅`,"ok"); }
+    else if(ok==="pending") toast(SYNCMSG,"busy");
+    else toast(SYNCMSG||"اعتُمدت محلياً، لكن تعذّر الحفظ في السحابة","err");
     renderAdmin();
   };
 }
@@ -987,7 +995,8 @@ function toast(msg, kind, sticky){
   t.className=""; t.textContent=msg;
   t.classList.add(kind||"ok","on");
   clearTimeout(toastTimer);
-  if(!sticky) toastTimer=setTimeout(()=>t.classList.remove("on"), kind==="err"?7000:4000);
+  /* حتى الإشعار "الملتصق" له عمر أقصى — لا شيء يبقى معلّقاً على الشاشة */
+  toastTimer=setTimeout(()=>t.classList.remove("on"), sticky?12000:(kind==="err"?7000:3500));
 }
 function busy(btn, on, label){
   if(!btn) return;
@@ -1064,6 +1073,12 @@ function fbInit(){
   }catch(e){ FBSTATE="تعذّر التهيئة"; return false; }
 }
 const seasonId = () => String(SEASON||"2026-2027").replace(/\//g,"-");
+/* Firestore يطبّق الكتابة محلياً فوراً، لكن الوعد لا يُحسم إلا بتأكيد الخادم.
+   بلا اتصال يبقى معلّقاً بلا نهاية — فنسابقه بمهلة. */
+function withTimeout(p, ms){
+  return Promise.race([ p.then(()=>"ok").catch(e=>({err:e})),
+                        new Promise(r=>setTimeout(()=>r("timeout"), ms)) ]);
+}
 
 async function fbLoad(docId){
   if(!fbDb) return null;
@@ -1072,8 +1087,10 @@ async function fbLoad(docId){
 }
 async function fbSaveSeason(){
   if(!fbDb || !isAdmin) return false;
-  try{ await fbDb.collection("seasons").doc(seasonId()).set(dataObject()); SYNCMSG="حُفظت في السحابة"; return true; }
-  catch(e){ SYNCMSG="تعذّر الحفظ في السحابة: "+(e.code||e.message); return false; }
+  const r = await withTimeout(fbDb.collection("seasons").doc(seasonId()).set(dataObject()), 9000);
+  if(r==="ok"){ SYNCMSG=""; return true; }
+  if(r==="timeout"){ SYNCMSG="الاتصال بطيء — حُفظ محلياً وسيُرسل تلقائياً عند عودة الشبكة."; return "pending"; }
+  SYNCMSG="تعذّر الحفظ: "+((r.err&&(r.err.code||r.err.message))||"خطأ غير معروف"); return false;
 }
 function assetsObject(){ return {LOGOS,PHOTOS,BRAND,LEAGUE,GSCALE,LSCALE,LOGOBG,PAV,PHOTOSON,PAVSIZE,updated:new Date().toISOString()}; }
 function applyAssets(a){
@@ -1092,8 +1109,10 @@ async function fbSaveAssets(){
   if(size > 900000){
     SYNCMSG="⚠️ الصور تجاوزت حد السحابة ("+Math.round(size/1024)+" ك.ب من 1024). اضغط «إعادة ضغط كل الصور» أو احذف بعضها.";
     return false; }
-  try{ await fbDb.collection("seasons").doc("assets").set(payload); return true; }
-  catch(e){ SYNCMSG="تعذّر حفظ الصور: "+(e.code||e.message); return false; }
+  const r = await withTimeout(fbDb.collection("seasons").doc("assets").set(payload), 9000);
+  if(r==="ok"){ SYNCMSG=""; return true; }
+  if(r==="timeout"){ SYNCMSG="الاتصال بطيء — حُفظت الصور محلياً وستُرسل عند عودة الشبكة."; return "pending"; }
+  SYNCMSG="تعذّر حفظ الصور: "+((r.err&&(r.err.code||r.err.message))||"خطأ غير معروف"); return false;
 }
 const AUTH_MSG = {
   "auth/invalid-email":"صيغة البريد غير صحيحة.",
@@ -1268,7 +1287,8 @@ async function saveMatch(){
   EDIT=null; FORMERR="";
   toast("جارٍ حفظ المباراة…","busy",true);
   const okm = await persistData();
-  if(okm){ LASTSYNC=new Date(); toast(`حُفظت المباراة: ${m.home} ضد ${m.away} · في السحابة`,"ok"); }
+  if(okm===true){ LASTSYNC=new Date(); toast(`حُفظت المباراة: ${m.home} ضد ${m.away} ✅`,"ok"); }
+  else if(okm==="pending") toast(SYNCMSG,"busy");
   else toast(SYNCMSG||"حُفظت محلياً، لكن تعذّر الحفظ في السحابة","err");
   paintRail(); renderAll(); renderMatchAdmin();
 }
@@ -1322,8 +1342,9 @@ function renderMatchAdmin(){
     const after=assetsKB();
     const ok=await persist();
     busy(rc2,false);
-    if(ok){ LASTSYNC=new Date(); SYNCMSG="";
+    if(ok===true){ LASTSYNC=new Date(); SYNCMSG="";
       toast(`تم الضغط: ${before} ك.ب ← ${after} ك.ب · حُفظ في السحابة`,"ok"); }
+    else if(ok==="pending") toast(`ضُغطت إلى ${after} ك.ب · ${SYNCMSG}`,"busy");
     else toast(SYNCMSG||`ضُغطت إلى ${after} ك.ب لكن الحفظ في السحابة فشل`,"err");
     paintHeader(); renderAdmin(); renderAll(); };
   const pc=$("#pushCloud");
@@ -1334,10 +1355,10 @@ function renderMatchAdmin(){
     SYNCMSG="";
     const a=await fbSaveSeason(); const b=await fbSaveAssets();
     busy(pc,false);
-    if(a&&b){ LASTSYNC=new Date(); SYNCMSG="";
+    if(a===true&&b===true){ LASTSYNC=new Date(); SYNCMSG="";
       toast(`رُفع كل شيء: ${MATCHES.length} مباراة و${GOALS.length} هدفاً و${assetsKB()} ك.ب صوراً`,"ok"); }
-    else if(a){ LASTSYNC=new Date();
-      toast(SYNCMSG||"رُفعت البيانات، لكن تعذّر رفع الصور","err"); }
+    else if(a==="pending"||b==="pending") toast(SYNCMSG||"الاتصال بطيء — سيكتمل الرفع تلقائياً","busy");
+    else if(a===true) toast(SYNCMSG||"رُفعت البيانات، لكن تعذّر رفع الصور","err");
     else toast(SYNCMSG||"تعذّر الرفع إلى السحابة","err");
     renderAdmin(); };
   const pl=$("#pullCloud");
@@ -2062,11 +2083,12 @@ function renderAdmin(){
       const r=await takeImage(f,160,0.9,"شعار "+inp.dataset.club);
       if(!r.url){ SYNCMSG=r.msg; renderAdmin(); return; }
       LOGOS[inp.dataset.club]=r.url;
-      toast(r.msg+" · جارٍ الحفظ…","busy",true);
-      const ok=await persist();
-      if(ok){ LASTSYNC=new Date(); toast(r.msg+" · حُفظ في السحابة","ok"); }
-      else toast(SYNCMSG||"تعذّر الحفظ في السحابة","err");
       renderAdmin(); renderAll();
+      const ok=await persist();
+      if(ok===true){ LASTSYNC=new Date(); toast(r.msg+" · حُفظ ✅","ok"); }
+      else if(ok==="pending") toast(SYNCMSG,"busy");
+      else toast(SYNCMSG||"تعذّر الحفظ في السحابة","err");
+      renderAdmin();
     };
   });
   renderMatchAdmin();
@@ -2076,11 +2098,12 @@ function renderAdmin(){
       const r=await takeImage(f,220,0.85,"صورة "+n);
       if(!r.url){ SYNCMSG=r.msg; renderAdmin(); return; }
       PHOTOS[n]=r.url; PAV[n]=PAV[n]||{z:100,x:50,y:50};
-      toast(r.msg+" · جارٍ الحفظ…","busy",true);
+      renderAdmin(); renderAll();
       const ok=await persist();
-      if(ok){ LASTSYNC=new Date(); toast(r.msg+" · حُفظ في السحابة","ok"); }
+      if(ok===true){ LASTSYNC=new Date(); toast(r.msg+" · حُفظ ✅","ok"); }
+      else if(ok==="pending") toast(SYNCMSG,"busy");
       else toast(SYNCMSG||"تعذّر الحفظ في السحابة","err");
-      renderAdmin(); renderAll(); };
+      renderAdmin(); };
   });
   const po=$("#photosOn");
   if(po) po.onchange=e=>{ PHOTOSON=e.target.checked; persist(); renderAdmin(); renderAll(); };
@@ -2118,22 +2141,24 @@ function renderAdmin(){
   if(lu) lu.onchange=async e=>{ const f=e.target.files[0]; if(!f) return;
     const r=await takeImage(f,180,0.9,"شعار الدوري");
     if(!r.url){ SYNCMSG=r.msg; renderAdmin(); return; }
-    LEAGUE=r.url; toast(r.msg+" · جارٍ الحفظ…","busy",true);
+    LEAGUE=r.url; paintHeader(); renderAdmin();
     const ok=await persist();
-    if(ok){ LASTSYNC=new Date(); toast(r.msg+" · حُفظ في السحابة","ok"); }
+    if(ok===true){ LASTSYNC=new Date(); toast(r.msg+" · حُفظ ✅","ok"); }
+    else if(ok==="pending") toast(SYNCMSG,"busy");
     else toast(SYNCMSG||"تعذّر الحفظ في السحابة","err");
-    paintHeader(); renderAdmin(); };
+    renderAdmin(); };
   const lr=$("#leagueReset");
   if(lr) lr.onclick=()=>{ LEAGUE=LEAGUE_DEFAULT; persist(); paintHeader(); renderAdmin(); };
   const bu=$("#brandUp");
   if(bu) bu.onchange=async e=>{ const f=e.target.files[0]; if(!f) return;
     const r=await takeImage(f,300,0.9,"شعار العلامة");
     if(!r.url){ SYNCMSG=r.msg; renderAdmin(); return; }
-    BRAND=r.url; toast(r.msg+" · جارٍ الحفظ…","busy",true);
+    BRAND=r.url; renderAdmin(); renderAll(); paintFoot();
     const ok=await persist();
-    if(ok){ LASTSYNC=new Date(); toast(r.msg+" · حُفظ في السحابة","ok"); }
+    if(ok===true){ LASTSYNC=new Date(); toast(r.msg+" · حُفظ ✅","ok"); }
+    else if(ok==="pending") toast(SYNCMSG,"busy");
     else toast(SYNCMSG||"تعذّر الحفظ في السحابة","err");
-    renderAdmin(); renderAll(); paintFoot(); };
+    renderAdmin(); };
   const br=$("#brandReset");
   if(br) br.onclick=()=>{ BRAND=BRAND_DEFAULT; persist(); renderAdmin(); renderAll(); paintFoot(); };
   const gs=$("#gscale");
