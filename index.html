@@ -135,6 +135,14 @@ tbody tr.rel{box-shadow:inset 3px 0 0 rgba(224,100,79,.7)}
 .mside b{font-size:.9rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .score{font-family:var(--display);font-weight:700;font-size:1.25rem;font-variant-numeric:tabular-nums;
   background:var(--navy-800);border-radius:9px;padding:3px 12px;flex:none;letter-spacing:.05em}
+.score.soon{font-size:.95rem;color:var(--sand);background:rgba(233,185,73,.12);
+  border:1px solid rgba(233,185,73,.35);direction:ltr}
+.match.soon{border-color:rgba(233,185,73,.35);background:rgba(14,43,82,.45)}
+.mstat{font-size:.62rem;font-weight:700;padding:2px 8px;border-radius:999px;white-space:nowrap}
+.mstat.soon{color:var(--sand);background:rgba(233,185,73,.14);border:1px solid rgba(233,185,73,.4)}
+.mstat.live{color:#EAFBF3;background:#1D6B4E;border:1px solid #35A47C}
+.cday.soon{border-color:rgba(233,185,73,.55);background:rgba(233,185,73,.13)}
+.cday .dd.g{color:var(--sand)}
 .mmeta{padding:0 14px 10px;font-size:.7rem;color:var(--slate);display:flex;gap:10px;flex-wrap:wrap}
 .goals{border-top:1px solid rgba(143,166,196,.14);padding:10px 14px;display:grid;gap:6px;font-size:.8rem}
 .gline{display:flex;align-items:center;gap:8px}
@@ -575,6 +583,26 @@ function wireComp(root){
     go(document.querySelector('nav.tabs button[aria-selected="true"]').dataset.v);
   });
 }
+/* حالة المباراة تُشتق من التاريخ والوقت — لا تُكتب يدوياً */
+function kickoffTS(m){
+  if(!m || !m.date) return null;
+  const t = (m.time && /^\d{1,2}:\d{2}/.test(m.time)) ? m.time : "23:59";
+  const d = new Date(String(m.date)+"T"+t+":00");
+  return isNaN(d.getTime()) ? null : d.getTime();
+}
+function isUpcoming(m){
+  if(matchGoals(m).length) return false;      /* فيها أهداف = أُقيمت */
+  const k=kickoffTS(m);
+  return k!==null && k > Date.now();
+}
+function isLive(m){
+  if(isUpcoming(m)) return false;
+  const k=kickoffTS(m);
+  if(k===null || !m.time) return false;
+  const n=Date.now();
+  return n>=k && n < k+2*60*60*1000;
+}
+const playedMatches = () => MATCHES.filter(m=>!isUpcoming(m));
 const matchGoals = m => GOALS.filter(g=>g.r===m.round &&
   ((g.sc===m.home&&g.cd===m.away)||(g.sc===m.away&&g.cd===m.home))).sort((a,b)=>abs(a)-abs(b));
 
@@ -582,7 +610,7 @@ const matchGoals = m => GOALS.filter(g=>g.r===m.round &&
 function standings(){
   const t = {};
   CLUBS.forEach(c=>t[c]={c,P:0,W:0,D:0,L:0,GF:0,GA:0,Pts:0,form:[],hP:0,hPts:0,aP:0,aPts:0,cs:0,fts:0});
-  MATCHES.forEach(m=>{
+  playedMatches().forEach(m=>{
     const H=t[m.home], A=t[m.away]; if(!H||!A) return;
     H.P++;A.P++;H.GF+=m.hg;H.GA+=m.ag;A.GF+=m.ag;A.GA+=m.hg;
     H.hP++;A.aP++;
@@ -602,7 +630,7 @@ function scorers(){
   return Object.values(p).sort((a,b)=>b.g-a.g||b.a-a.a);
 }
 function firstGoals(){
-  return MATCHES.map(m=>{
+  return playedMatches().map(m=>{
     const gs=matchGoals(m);
     if(!gs.length) return {m,first:null,res:null};
     const first=gs[0].sc;
@@ -1374,7 +1402,7 @@ function renderMatchAdmin(){
       <button class="btn" data-act="new">+ إضافة مباراة جديدة</button>
       <h2 class="sec">المباريات المسجّلة (${list.length})</h2>
       <div class="card pad">${list.length?list.map(m=>`<div class="mrow">
-        <div class="mm"><b>${esc(m.home)} ${m.hg} - ${m.ag} ${esc(m.away)}</b>
+        <div class="mm"><b>${esc(m.home)} ${isUpcoming(m)?"مقابل":`${m.hg} - ${m.ag}`} ${esc(m.away)}${isUpcoming(m)?' <span class="mstat soon">لم تبدأ</span>':""}</b>
           <span>الجولة ${m.round} · ${esc(compOf(m))} · ${esc(m.date||"بلا تاريخ")}${m.venue?" · "+esc(m.venue):""}</span></div>
         <button data-edit="${esc(mkey(m))}">تعديل</button>
         <button class="dl" data-rm="${esc(mkey(m))}">حذف</button>
@@ -1499,7 +1527,7 @@ function rr(ctx,x,y,w,h,r){ ctx.beginPath();
   ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); }
 
 function cardData(mode, club){
-  const T=standings(), tg=GOALS.length, pl=MATCHES.length;
+  const T=standings(), tg=GOALS.length, pl=playedMatches().length;
   if(mode==="club"){
     const st=clubStats(club), r=st.row, pos=T.findIndex(x=>x.c===club)+1;
     const L={w:"ف",d:"ت",l:"خ"};
@@ -1517,8 +1545,8 @@ function cardData(mode, club){
   const top=scorers()[0];
   const fg=firstGoals().filter(x=>x.first);
   return {title:"ملخص الدوري", sub:`الجولة ${Math.max(...MATCHES.map(m=>m.round))} · ${SEASON}`, rows:[
-    ["إجمالي الأهداف", `${tg} في ${pl} مباريات`],
-    ["معدل أهداف المباراة", (tg/pl).toFixed(2)],
+    ["إجمالي الأهداف", `${tg} في ${mw(pl)}`],
+    ["معدل أهداف المباراة", pl?(tg/pl).toFixed(2):"—"],
     ["المتصدر", `${T[0].c} (${T[0].Pts})`],
     ["الهدّاف", top?`${top.n} (${top.g})`:"—"],
     ["نصيب الكرات الثابتة", `${pct(sp,tg)}%`],
@@ -1675,16 +1703,19 @@ function calendarBar(){
   const base=calMonth();
   const [Y,Mo]=base.split("-").map(Number);
   const days=new Date(Y,Mo,0).getDate();
-  const counts={};
-  MATCHES.forEach(m=>{ if(m.date && m.date.startsWith(base)) counts[m.date]=(counts[m.date]||0)+1; });
+  const counts={}, soonDays={};
+  MATCHES.forEach(m=>{ if(m.date && m.date.startsWith(base)){
+    counts[m.date]=(counts[m.date]||0)+1;
+    if(isUpcoming(m)) soonDays[m.date]=(soonDays[m.date]||0)+1; } });
   const lead=new Date(Y,Mo-1,1).getDay();          /* 0 = الأحد */
   const cells=[];
   for(let i=0;i<lead;i++) cells.push('<div class="cday blank"></div>');
   for(let d=1; d<=days; d++){
     const iso=`${Y}-${String(Mo).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
     const n=counts[iso]||0;
-    cells.push(`<button class="cday ${n?"has":"off"}" data-day="${iso}" ${n?"":"disabled"} aria-pressed="${SELDAY===iso}">
-      <div class="dn">${d}</div><div class="dd">${n?"●".repeat(Math.min(n,3)):""}</div></button>`);
+    const sn=soonDays[iso]||0;
+    cells.push(`<button class="cday ${n?(sn===n?"has soon":"has"):"off"}" data-day="${iso}" ${n?"":"disabled"} aria-pressed="${SELDAY===iso}">
+      <div class="dn">${d}</div><div class="dd${sn?" g":""}">${n?"●".repeat(Math.min(n,3)):""}</div></button>`);
   }
   const total=Object.values(counts).reduce((a,b)=>a+b,0);
   return `<div class="calbar">
@@ -1696,7 +1727,7 @@ function calendarBar(){
       </div></div>
     <div class="caldow">${AR_DOW.map(d=>`<span>${d}</span>`).join("")}</div>
     <div class="caldays">${cells.join("")}</div>
-    <p class="hint" style="margin:8px 0 0">${total?`${mw(total)} في هذا الشهر — اضغط أي يوم مضيء لعرض مبارياته.`:"لا مباريات في هذا الشهر."}</p>
+    <p class="hint" style="margin:8px 0 0">${total?`${mw(total)} في هذا الشهر — اضغط أي يوم مضيء لعرض مبارياته.${Object.keys(soonDays).length?" الأيام الذهبية مبارياتها لم تبدأ بعد.":""}`:"لا مباريات في هذا الشهر."}</p>
   </div>`;
 }
 
@@ -1714,16 +1745,18 @@ function roundStrip(){
 }
 
 function roundSummary(list){
-  const goals=list.reduce((a,m)=>a+m.hg+m.ag,0);
+  const soon=list.filter(isUpcoming).length;
+  const done=list.filter(m=>!isUpcoming(m));
+  const goals=done.reduce((a,m)=>a+m.hg+m.ag,0);
   const keys=new Set(list.map(m=>m.round+"|"+m.home+"|"+m.away));
   const inScope=x=>list.some(m=>m.round===x.r&&(m.home===x.club||m.away===x.club));
   const yc=CARDS.filter(x=>/إنذار/.test(x.type||"")&&inScope(x)).length;
   const rc=CARDS.filter(x=>/طرد/.test(x.type||"")&&inScope(x)).length;
   return `<div class="rsum">
-    <div><div class="n">${list.length}</div><div class="l">مباريات</div></div>
+    <div><div class="n">${done.length}</div><div class="l">أُقيمت</div></div>
+    <div><div class="n" style="${soon?"color:var(--sand)":""}">${soon}</div><div class="l">لم تبدأ</div></div>
     <div><div class="n">${goals}</div><div class="l">أهداف</div></div>
-    <div><div class="n">${yc}</div><div class="l">إنذارات</div></div>
-    <div><div class="n">${rc}</div><div class="l">طرد</div></div>
+    <div><div class="n">${yc+rc}</div><div class="l">بطاقات</div></div>
   </div>`;
 }
 
@@ -1736,7 +1769,7 @@ function formPills(f){
 }
 
 function renderHome(){
-  const T=standings(), tg=GOALS.length, played=MATCHES.length;
+  const T=standings(), tg=GOALS.length, played=playedMatches().length, soon=MATCHES.length-played;
   const hs=headlines();
   $("#v-home").innerHTML = `
   <div class="brandcard">
@@ -1752,8 +1785,8 @@ function renderHome(){
   ${compChips()}
   ${exportBar("league",null,"ملخص "+(COMP==="الكل"?"المسابقات":COMP))}
   <div class="kpis">
-    <div class="kpi"><div class="k">إجمالي الأهداف</div><div class="v">${tg}</div><div class="d">${played} مباراة</div></div>
-    <div class="kpi"><div class="k">معدل أهداف المباراة</div><div class="v">${(tg/played).toFixed(2)}</div><div class="d">هدف لكل مباراة</div></div>
+    <div class="kpi"><div class="k">إجمالي الأهداف</div><div class="v">${tg}</div><div class="d">${mw(played)} أُقيمت${soon?` · ${soon} قادمة`:""}</div></div>
+    <div class="kpi"><div class="k">معدل أهداف المباراة</div><div class="v">${played?(tg/played).toFixed(2):"—"}</div><div class="d">هدف لكل مباراة</div></div>
     <div class="kpi"><div class="k">الكرات الثابتة</div><div class="v">${pct(GOALS.filter(g=>g.cat==="كرات ثابتة").length,tg)}%</div><div class="d">من أهداف الدوري</div></div>
     <div class="kpi"><div class="k">المتصدر</div><div class="v" style="font-size:1.05rem;line-height:2.1">${esc(T[0].c)}</div><div class="d">${T[0].Pts} نقطة</div></div>
   </div>
@@ -1768,7 +1801,7 @@ function renderHome(){
       <td>${r.GF}</td><td>${r.GA}</td><td>${r.GD>0?"+":""}${r.GD}</td>
       <td style="color:#fff;font-weight:700">${r.Pts}</td><td>${formPills(r.form)}</td></tr>`).join("")}
     </tbody></table></div></div>
-  <p class="hint">${mw(MATCHES.length)} · الترتيب يُرتَّب بالنقاط ثم فارق الأهداف ثم الأهداف المسجلة.</p>
+  <p class="hint">${mw(played)} أُقيمت${soon?` · ${soon} لم تبدأ بعد ولا تُحتسب في الجدول`:""} · الترتيب بالنقاط ثم فارق الأهداف ثم الأهداف المسجلة.</p>
 
   <h2 class="sec">أرقام لافتة</h2>
   <div class="card pad">${hs.map(h=>`<div class="head-story">
@@ -1782,23 +1815,30 @@ function renderMatches(){
   let list = MATCHES.slice();
   if(SELDAY) list = list.filter(m=>m.date===SELDAY);
   else if(SELR!==null) list = list.filter(m=>m.round===SELR);
-  list.sort((a,b)=> (b.round-a.round) || String(a.date).localeCompare(String(b.date)));
+  list.sort((a,b)=>{
+    const ua=isUpcoming(a), ub=isUpcoming(b);
+    if(ua!==ub) return ua?-1:1;                                   /* القادم أولاً */
+    if(ua) return (kickoffTS(a)||0)-(kickoffTS(b)||0);            /* الأقرب موعداً */
+    return (b.round-a.round) || String(b.date).localeCompare(String(a.date));
+  });
 
   const matchCards = list.map(m=>{
     const gs=matchGoals(m);
     const mc=CARDS.filter(x=>x.r===m.round && (x.club===m.home||x.club===m.away));
     const y=mc.filter(x=>/إنذار/.test(x.type||"")).length, r=mc.filter(x=>/طرد/.test(x.type||"")).length;
-    return `<div class="match">
+    const soon=isUpcoming(m), live=isLive(m);
+    return `<div class="match${soon?" soon":""}">
       <div class="mhead">
         <div class="mside">${crest(m.home)}<b>${esc(m.home)}</b></div>
-        <div class="score">${m.hg} - ${m.ag}</div>
+        <div class="score${soon?" soon":""}">${soon ? (m.time?esc(m.time):"—") : `${m.hg} - ${m.ag}`}</div>
         <div class="mside away">${crest(m.away)}<b>${esc(m.away)}</b></div>
       </div>
       <div class="mmeta">
+        ${soon?'<span class="mstat soon">لم تبدأ</span>':live?'<span class="mstat live">جارية الآن</span>':""}
         <span>${esc(m.date)}${m.time?` — ${esc(m.time)}`:""}</span><span>·</span><span>الجولة ${m.round}</span>
         ${m.venue?`<span>·</span><span>${esc(m.venue)}</span>`:""}
         ${COMP==="الكل"?`<span>·</span><span>${esc(compOf(m))}</span>`:""}
-        <span>·</span><span>${gw(gs.length)}</span>
+        ${soon?"":`<span>·</span><span>${gw(gs.length)}</span>`}
         ${y?`<span class="ctag">${y}<i class="cardpill y"></i></span>`:""}
         ${r?`<span class="ctag">${r}<i class="cardpill r"></i></span>`:""}
       </div>
