@@ -329,6 +329,46 @@ label.lb{display:block;font-size:.72rem;color:var(--slate);margin:0 0 6px}
 .goalsvg .zn{stroke:rgba(143,166,196,.3);stroke-width:.6}
 .goalsvg text{font-family:var(--body);font-weight:700;font-size:7px;fill:#fff;text-anchor:middle;dominant-baseline:central;paint-order:stroke;stroke:rgba(6,21,41,.6);stroke-width:1.6}
 .goalsvg text.sm{font-size:4px;font-weight:500;fill:var(--slate);stroke:none}
+/* ---------- بطاقة المباراة القادمة ---------- */
+.nextm{position:relative;display:block;width:100%;text-align:right;
+  background:linear-gradient(135deg,#12386A 0%,#0A2242 55%,#061529 100%);
+  border:1px solid rgba(95,178,232,.32);border-radius:16px;overflow:hidden;
+  margin-bottom:16px;box-shadow:0 10px 26px rgba(6,21,41,.55);
+  transition:border-color .18s,transform .18s}
+.nextm:hover{border-color:var(--sky);transform:translateY(-1px)}
+.nextm::before{content:"";position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(120% 130% at 50% -30%,rgba(95,178,232,.22),transparent 62%)}
+.nextm-top{position:relative;display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+  padding:10px 14px;border-bottom:1px solid rgba(143,166,196,.16);
+  font-size:.68rem;color:var(--slate)}
+.nextm-tag{display:inline-flex;align-items:center;gap:6px;font-family:var(--display);
+  font-weight:600;font-size:.68rem;color:var(--sand);background:rgba(233,185,73,.12);
+  border:1px solid rgba(233,185,73,.4);border-radius:999px;padding:3px 10px}
+.nextm-tag i{width:6px;height:6px;border-radius:50%;background:var(--sand);flex:none;
+  box-shadow:0 0 0 3px rgba(233,185,73,.2)}
+.nextm-body{position:relative;display:grid;grid-template-columns:1fr auto 1fr;
+  align-items:center;gap:10px;padding:16px 14px 14px}
+.nextm-team{display:flex;flex-direction:column;align-items:center;gap:9px;min-width:0}
+.nextm-team b{font-family:var(--display);font-weight:600;font-size:.86rem;color:#fff;
+  text-align:center;line-height:1.35;overflow-wrap:anywhere}
+.nextm .crest.lg{width:66px;height:66px;border-radius:18px}
+.nextm .crest.has-logo{box-shadow:inset 0 0 0 1px rgba(143,166,196,.28),0 6px 16px rgba(6,21,41,.5)}
+.nextm-mid{display:flex;flex-direction:column;align-items:center;gap:3px;flex:none;padding:0 4px}
+.nextm-vs{font-family:var(--display);font-size:.62rem;color:var(--sky);letter-spacing:.14em;
+  direction:ltr;unicode-bidi:isolate}
+.nextm-time{font-family:var(--display);font-weight:700;font-size:1.2rem;color:#fff;
+  font-variant-numeric:tabular-nums;direction:ltr;unicode-bidi:isolate}
+.nextm-cd{font-size:.66rem;color:var(--sand);font-weight:600;white-space:nowrap}
+.nextm-foot{position:relative;display:flex;gap:9px;flex-wrap:wrap;align-items:center;
+  padding:9px 14px;font-size:.68rem;color:var(--slate);
+  border-top:1px solid rgba(143,166,196,.14);background:rgba(6,21,41,.35)}
+.nextm-foot .go{margin-inline-start:auto;color:var(--sky);font-weight:600}
+@media(min-width:640px){
+  .nextm .crest.lg{width:80px;height:80px;border-radius:20px}
+  .nextm-team b{font-size:.98rem}
+  .nextm-time{font-size:1.45rem}
+}
+
 /* ---------- العلامة والتصدير ---------- */
 .brandcard{display:flex;align-items:center;gap:14px;background:linear-gradient(120deg,#0E2B52,#061529);
   border:1px solid rgba(233,185,73,.3);border-radius:var(--r);padding:14px 16px;margin-bottom:16px}
@@ -1681,7 +1721,7 @@ function goalMap(list){
     <text class="sm" x="59" y="4">العارضة</text>
     <text class="sm" x="59" y="69">خارج إطار المرمى</text>
   </svg></div>`;
-  if(!has) return `${svg}<div class="note" style="margin-top:12px"><b>لا توجد بيانات مواضع بعد.</b> أضف عمود «مكان التسديد» في ورقة «سجل ركلات الجزاء» بالقيم: ${PZONES.join(" · ")} — وسيمتلئ المرمى تلقائياً.</div>`;
+  if(!has) return svg;
   const scored=list.filter(x=>/سجل/.test(x.res||"")).length;
   return `${svg}<div class="card pad" style="margin-top:12px">
     <div class="stat"><span>مجموع الركلات</span><span class="v">${list.length}</span></div>
@@ -1768,6 +1808,52 @@ function formPills(f){
   return `<div class="pillrow">${last.map(x=>`<span class="pl ${x}">${L[x]}</span>`).join("")}</div>`;
 }
 
+/* ================= بطاقة المباراة القادمة ================= */
+function nextMatch(){
+  return MATCHES.filter(m=>isUpcoming(m) && kickoffTS(m)!==null)
+                .sort((a,b)=>kickoffTS(a)-kickoffTS(b))[0] || null;
+}
+function dayLabel(dstr){
+  const d=new Date(String(dstr)+"T12:00:00");
+  if(isNaN(d.getTime())) return esc(dstr||"");
+  return `${AR_DOW[d.getDay()]} ${d.getDate()} ${AR_MON[d.getMonth()]}`;
+}
+function countdown(ts){
+  const ms = ts - Date.now();
+  if(ms<=0) return "";
+  const mins=Math.floor(ms/60000), hrs=Math.floor(mins/60), days=Math.floor(hrs/24);
+  if(days>=1) return days===1?"بعد يوم واحد":days===2?"بعد يومين":days<=10?`بعد ${days} أيام`:`بعد ${days} يوماً`;
+  if(hrs>=1)  return hrs===1?"بعد ساعة":hrs===2?"بعد ساعتين":`بعد ${hrs} ساعات`;
+  return mins<=1?"بعد دقيقة":`بعد ${mins} دقيقة`;
+}
+function nextMatchCard(){
+  const m=nextMatch();
+  if(!m) return "";
+  const cd=countdown(kickoffTS(m));
+  return `<button type="button" class="nextm" id="nextmCard"
+      aria-label="المباراة القادمة — ${esc(m.home)} أمام ${esc(m.away)}">
+    <div class="nextm-top">
+      <span class="nextm-tag"><i></i>المباراة القادمة</span>
+      <span>الجولة ${m.round}</span>
+      ${COMP==="الكل"?`<span>·</span><span>${esc(compOf(m))}</span>`:""}
+    </div>
+    <div class="nextm-body">
+      <div class="nextm-team">${crest(m.home,true)}<b>${esc(m.home)}</b></div>
+      <div class="nextm-mid">
+        <span class="nextm-vs">VS</span>
+        <span class="nextm-time">${m.time?esc(m.time):"—"}</span>
+        ${cd?`<span class="nextm-cd">${cd}</span>`:""}
+      </div>
+      <div class="nextm-team">${crest(m.away,true)}<b>${esc(m.away)}</b></div>
+    </div>
+    <div class="nextm-foot">
+      <span>${dayLabel(m.date)}</span>
+      ${m.venue?`<span>·</span><span>${esc(m.venue)}</span>`:""}
+      <span class="go">التفاصيل ›</span>
+    </div>
+  </button>`;
+}
+
 function renderHome(){
   const T=standings(), tg=GOALS.length, played=playedMatches().length, soon=MATCHES.length-played;
   const hs=headlines();
@@ -1783,6 +1869,7 @@ function renderHome(){
     </div>
   </div>
   ${compChips()}
+  ${nextMatchCard()}
   ${exportBar("league",null,"ملخص "+(COMP==="الكل"?"المسابقات":COMP))}
   <div class="kpis">
     <div class="kpi"><div class="k">إجمالي الأهداف</div><div class="v">${tg}</div><div class="d">${mw(played)} أُقيمت${soon?` · ${soon} قادمة`:""}</div></div>
@@ -1809,6 +1896,8 @@ function renderHome(){
       <div class="tx"><b>${esc(h.t)}</b><span>${esc(h.d)}</span></div></div>`).join("")}</div>
   <p class="hint">كل رقم هنا يُحتسب لحظياً من سجل الأهداف — لا يُكتب يدوياً.</p>`;
   wireComp($("#v-home"));
+  const nb=$("#nextmCard");
+  if(nb) nb.onclick=()=>{ SELR=null; SELDAY=null; go("matches"); };
 }
 
 function renderMatches(){
@@ -2029,11 +2118,7 @@ function renderAnalysis(){
     <div class="card pad">${bars(zones,"z",mxZ,true)}</div>
 
     <h2 class="sec">وضعية التسجيل</h2>
-    <div class="card pad">${bars(bp,"b",mxB)}</div>
-
-    <div class="note" style="margin-top:18px" id="analysisNote">
-      <b>ملاحظة على النسخة التجريبية:</b> البيانات المعروضة هي الجولة الأولى كاملة (${gw(tg)} في ${mw(MATCHES.length)}) كما وردت في ملف الاستوديو التحليلي. كل النسب تُعاد حسابها آلياً مع كل هدف يُضاف.
-    </div>`;
+    <div class="card pad">${bars(bp,"b",mxB)}</div>`;
   renderLeagueHeat();
   wireComp($("#v-analysis"));
 }
