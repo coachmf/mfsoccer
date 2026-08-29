@@ -273,6 +273,18 @@ label.lb{display:block;font-size:.72rem;color:var(--slate);margin:0 0 6px}
   border:1px solid rgba(224,100,79,.35);color:var(--loss);font-size:.85rem}
 .toggle{display:flex;align-items:center;gap:10px;cursor:pointer;font-size:.86rem}
 .toggle input{width:20px;height:20px;accent-color:var(--sky)}
+/* إشعار الحفظ */
+#toast{position:fixed;left:50%;transform:translateX(-50%) translateY(140%);
+  bottom:calc(var(--nav-h) + 16px + env(safe-area-inset-bottom));z-index:200;
+  max-width:min(560px,92vw);padding:13px 18px;border-radius:12px;
+  font-size:.84rem;font-weight:600;line-height:1.5;text-align:center;
+  box-shadow:0 10px 34px rgba(0,0,0,.5);transition:transform .28s ease,opacity .28s ease;opacity:0}
+#toast.on{transform:translateX(-50%) translateY(0);opacity:1}
+#toast.ok{background:#1D6B4E;color:#EAFBF3;border:1px solid #35A47C}
+#toast.err{background:#7A2B21;color:#FFE3DF;border:1px solid #E0644F}
+#toast.busy{background:#123B6B;color:#DCEEFB;border:1px solid #5FB2E8}
+@media(min-width:900px){#toast{bottom:24px}}
+.btn[disabled]{opacity:.55}
 .photogrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:10px}
 .photocell{background:var(--navy-800);border:1px dashed rgba(143,166,196,.35);border-radius:10px;padding:10px;text-align:center}
 .photocell .nm{font-size:.7rem;margin-top:6px;font-weight:600}
@@ -374,6 +386,7 @@ label.lb{display:block;font-size:.72rem;color:var(--slate);margin:0 0 6px}
 </nav>
 
 <div class="printonly" id="printHead"></div>
+<div id="toast" role="status" aria-live="polite"></div>
 <main>
   <section class="view on" id="v-home"></section>
   <section class="view" id="v-matches"></section>
@@ -967,6 +980,21 @@ function showReport(d, fname){
 
 
 
+/* ================= إشعار مرئي ================= */
+let toastTimer=null;
+function toast(msg, kind, sticky){
+  const t=$("#toast"); if(!t) return;
+  t.className=""; t.textContent=msg;
+  t.classList.add(kind||"ok","on");
+  clearTimeout(toastTimer);
+  if(!sticky) toastTimer=setTimeout(()=>t.classList.remove("on"), kind==="err"?7000:4000);
+}
+function busy(btn, on, label){
+  if(!btn) return;
+  if(on){ btn.dataset.orig=btn.dataset.orig||btn.textContent; btn.textContent=label||"جارٍ التنفيذ…"; btn.disabled=true; }
+  else { if(btn.dataset.orig) btn.textContent=btn.dataset.orig; btn.disabled=false; }
+}
+
 /* ================= ضغط الصور قبل الحفظ ================= */
 /* الصور الأصلية تزن مئات الكيلوبايتات، ووثيقة Firestore محدودة بميغابايت واحد.
    نصغّرها إلى الحجم المعروض فعلاً فتصير بضعة كيلوبايتات مع حفظ الشفافية. */
@@ -1018,7 +1046,7 @@ const FB_CONFIG = {
   appId: "1:574478199897:web:dbd2b7dae6384503ea9548"
 };
 const ADMIN_UID = "iiTgVfDryXNLb9IrOyLkkNMHDxq2";
-let fbDb=null, fbAuth=null, FBUSER=null, FBSTATE="لم يُهيّأ", SYNCMSG="";
+let fbDb=null, fbAuth=null, FBUSER=null, FBSTATE="لم يُهيّأ", SYNCMSG="", LASTSYNC=null;
 
 function fbInit(){
   if(typeof firebase==="undefined"){ FBSTATE="مكتبة السحابة غير متاحة"; return false; }
@@ -1238,7 +1266,10 @@ async function saveMatch(){
   const have=compsPresent(); if(!have.includes(COMP)) COMP=have[0]||"الدوري";
   applyComp(); DATA_SOURCE="إدخال يدوي في الموقع"; DATA_UPDATED=new Date().toISOString();
   EDIT=null; FORMERR="";
-  await persistData();
+  toast("جارٍ حفظ المباراة…","busy",true);
+  const okm = await persistData();
+  if(okm){ LASTSYNC=new Date(); toast(`حُفظت المباراة: ${m.home} ضد ${m.away} · في السحابة`,"ok"); }
+  else toast(SYNCMSG||"حُفظت محلياً، لكن تعذّر الحفظ في السحابة","err");
   paintRail(); renderAll(); renderMatchAdmin();
 }
 
@@ -1270,7 +1301,7 @@ function renderMatchAdmin(){
     if(k==="pens")  EDIT.pens.push({by:"",p:"",m:"",res:"سجلت",place:""});
     const rc2=$("#recompress");
   if(rc2) rc2.onclick=async()=>{
-    SYNCMSG="جارٍ إعادة الضغط…"; renderAdmin();
+    busy(rc2,true,"جارٍ الضغط…"); toast("جارٍ إعادة ضغط الصور…","busy",true);
     const before=assetsKB();
     const shrink=(u,dim,q)=>new Promise(r=>{
       if(!u){ r(u); return; }
@@ -1290,20 +1321,35 @@ function renderMatchAdmin(){
     LEAGUE = await shrink(LEAGUE,180,0.9);
     const after=assetsKB();
     const ok=await persist();
-    SYNCMSG = ok ? `تم الضغط: ${before} ك.ب ← ${after} ك.ب · حُفظ في السحابة ✅`
-                 : (SYNCMSG||`تم الضغط إلى ${after} ك.ب لكن الحفظ فشل.`);
+    busy(rc2,false);
+    if(ok){ LASTSYNC=new Date(); SYNCMSG="";
+      toast(`تم الضغط: ${before} ك.ب ← ${after} ك.ب · حُفظ في السحابة`,"ok"); }
+    else toast(SYNCMSG||`ضُغطت إلى ${after} ك.ب لكن الحفظ في السحابة فشل`,"err");
     paintHeader(); renderAdmin(); renderAll(); };
   const pc=$("#pushCloud");
-  if(pc) pc.onclick=async()=>{ SYNCMSG="جارٍ الرفع…"; renderAdmin();
+  if(pc) pc.onclick=async()=>{
+    if(!fbDb){ toast("السحابة غير متاحة — افتح الموقع من نطاقه المنشور","err"); return; }
+    if(!isAdmin){ toast("سجّل الدخول أولاً","err"); return; }
+    busy(pc,true,"جارٍ الرفع…"); toast("جارٍ الرفع إلى السحابة…","busy",true);
+    SYNCMSG="";
     const a=await fbSaveSeason(); const b=await fbSaveAssets();
-    if(a&&!SYNCMSG.startsWith("تعذّر")) SYNCMSG = b?"رُفعت البيانات والصور بنجاح.":"رُفعت البيانات، وتعذّر رفع الصور.";
+    busy(pc,false);
+    if(a&&b){ LASTSYNC=new Date(); SYNCMSG="";
+      toast(`رُفع كل شيء: ${MATCHES.length} مباراة و${GOALS.length} هدفاً و${assetsKB()} ك.ب صوراً`,"ok"); }
+    else if(a){ LASTSYNC=new Date();
+      toast(SYNCMSG||"رُفعت البيانات، لكن تعذّر رفع الصور","err"); }
+    else toast(SYNCMSG||"تعذّر الرفع إلى السحابة","err");
     renderAdmin(); };
   const pl=$("#pullCloud");
   if(pl) pl.onclick=async()=>{
+    busy(pl,true,"جارٍ الجلب…"); toast("جارٍ الجلب من السحابة…","busy",true);
     const d=await fbLoad(seasonId()); const a=await fbLoad("assets");
-    if(!d){ SYNCMSG="لا توجد نسخة في السحابة بعد."; renderAdmin(); return; }
+    busy(pl,false);
+    if(!d){ toast("لا توجد نسخة في السحابة بعد","err"); return; }
     applyAssets(a); applyData(d,"السحابة (Firestore)");
-    SYNCMSG="تم الجلب من السحابة."; paintHeader(); paintFoot(); renderAdmin(); };
+    LASTSYNC=new Date();
+    toast(`جُلبت ${MATCHES.length} مباراة و${GOALS.length} هدفاً من السحابة`,"ok");
+    paintHeader(); paintFoot(); renderAdmin(); };
   renderMatchAdmin();
   });
   box.querySelectorAll("[data-del]").forEach(b=>b.onclick=()=>{
@@ -1442,11 +1488,14 @@ function pavStyle(name){
   const a=PAV[name]||{z:100,x:50,y:50};
   return `object-position:${a.x}% ${a.y}%;transform:scale(${(a.z/100).toFixed(2)})`;
 }
-function pav(name, size){
+function pav(name, size, placeholder){
   const S=size||PAVSIZE;
   const src = PHOTOSON ? PHOTOS[name] : null;
   if(src) return `<span class="pav" style="width:${S}px;height:${S}px">
     <img src="${src}" alt="${esc(name)}" style="${pavStyle(name)}"></span>`;
+  /* بلا صورة: لا يظهر شيء — شعار النادي وحده بجانب الاسم.
+     الحروف الأولى تُعرض في لوحة المدير فقط لتمييز من ينقصه صورة. */
+  if(!placeholder) return "";
   const ini=(name||"").trim().split(/\s+/).slice(0,2).map(w=>w[0]||"").join("");
   return `<span class="pavph" style="width:${S}px;height:${S}px;font-size:${Math.round(S*0.34)}px">${esc(ini||"؟")}</span>`;
 }
@@ -1873,6 +1922,7 @@ function renderAdmin(){
       <div class="stat"><span>وثيقة الموسم</span><span class="v" style="font-size:.78rem;direction:ltr">seasons/${esc(seasonId())}</span></div>
       <div style="height:12px"></div>
       <div class="stat"><span>حجم الصور المخزّنة</span><span class="v" id="akb" style="font-size:.82rem">${assetsKB()} ك.ب من 1024</span></div>
+      <div class="stat"><span>آخر مزامنة ناجحة</span><span class="v" style="font-size:.8rem">${LASTSYNC?esc(LASTSYNC.toLocaleTimeString("ar-KW",{hour:"2-digit",minute:"2-digit"})):"—"}</span></div>
       <div style="height:12px"></div>
       <button class="btn" id="pushCloud">⬆ رفع البيانات الحالية إلى السحابة</button>
       <div style="height:8px"></div>
@@ -1913,7 +1963,7 @@ function renderAdmin(){
       <label class="lb">حجم الصورة — <b id="pvVal">${PAVSIZE}px</b></label>
       <input type="range" id="pavsize" class="rng" min="26" max="46" step="2" value="${PAVSIZE}">
       <div style="height:12px"></div>
-      <div class="prevrow">${scorers().filter(x=>x.g>0).slice(0,10).map(x=>pav(x.n)).join("")}</div>
+      <div class="prevrow">${scorers().filter(x=>x.g>0).slice(0,10).map(x=>pav(x.n,0,true)).join("")}</div>
     </div>
     ${Object.keys(PHOTOS).length?`
     <h2 class="sec">ضبط تأطير الوجوه</h2>
@@ -1934,7 +1984,7 @@ function renderAdmin(){
     <p class="hint">ارفع صورة كل لاعب. الوجه في الوسط أفضل، وإن لم يكن فاضبطه بالمنزلقات أعلاه. ارفع فقط ما لديك حق استخدامه.</p>
     <div class="photogrid">${(()=>{const L=scorers().filter(x=>x.g>0).slice(0,24);
       return L.length?L.map(x=>`<label class="photocell">
-        <div style="display:flex;justify-content:center">${pav(x.n,54)}</div>
+        <div style="display:flex;justify-content:center">${pav(x.n,54,true)}</div>
         <div class="nm">${esc(x.n)}</div>
         <div class="up">${PHOTOS[x.n]?"تغيير":"+ رفع صورة"}</div>
         <input type="file" accept="image/*" data-photo="${esc(x.n)}" style="display:none">
@@ -2012,9 +2062,10 @@ function renderAdmin(){
       const r=await takeImage(f,160,0.9,"شعار "+inp.dataset.club);
       if(!r.url){ SYNCMSG=r.msg; renderAdmin(); return; }
       LOGOS[inp.dataset.club]=r.url;
-      SYNCMSG=r.msg+" · جارٍ الحفظ…"; renderAdmin();
+      toast(r.msg+" · جارٍ الحفظ…","busy",true);
       const ok=await persist();
-      SYNCMSG = ok ? r.msg+" · حُفظ في السحابة ✅" : (SYNCMSG||"تعذّر الحفظ في السحابة");
+      if(ok){ LASTSYNC=new Date(); toast(r.msg+" · حُفظ في السحابة","ok"); }
+      else toast(SYNCMSG||"تعذّر الحفظ في السحابة","err");
       renderAdmin(); renderAll();
     };
   });
@@ -2025,9 +2076,10 @@ function renderAdmin(){
       const r=await takeImage(f,220,0.85,"صورة "+n);
       if(!r.url){ SYNCMSG=r.msg; renderAdmin(); return; }
       PHOTOS[n]=r.url; PAV[n]=PAV[n]||{z:100,x:50,y:50};
-      SYNCMSG=r.msg+" · جارٍ الحفظ…"; renderAdmin();
+      toast(r.msg+" · جارٍ الحفظ…","busy",true);
       const ok=await persist();
-      SYNCMSG = ok ? r.msg+" · حُفظ في السحابة ✅" : (SYNCMSG||"تعذّر الحفظ في السحابة");
+      if(ok){ LASTSYNC=new Date(); toast(r.msg+" · حُفظ في السحابة","ok"); }
+      else toast(SYNCMSG||"تعذّر الحفظ في السحابة","err");
       renderAdmin(); renderAll(); };
   });
   const po=$("#photosOn");
@@ -2066,9 +2118,10 @@ function renderAdmin(){
   if(lu) lu.onchange=async e=>{ const f=e.target.files[0]; if(!f) return;
     const r=await takeImage(f,180,0.9,"شعار الدوري");
     if(!r.url){ SYNCMSG=r.msg; renderAdmin(); return; }
-    LEAGUE=r.url; SYNCMSG=r.msg+" · جارٍ الحفظ…"; renderAdmin();
+    LEAGUE=r.url; toast(r.msg+" · جارٍ الحفظ…","busy",true);
     const ok=await persist();
-    SYNCMSG = ok ? r.msg+" · حُفظ ✅" : (SYNCMSG||"تعذّر الحفظ في السحابة");
+    if(ok){ LASTSYNC=new Date(); toast(r.msg+" · حُفظ في السحابة","ok"); }
+    else toast(SYNCMSG||"تعذّر الحفظ في السحابة","err");
     paintHeader(); renderAdmin(); };
   const lr=$("#leagueReset");
   if(lr) lr.onclick=()=>{ LEAGUE=LEAGUE_DEFAULT; persist(); paintHeader(); renderAdmin(); };
@@ -2076,9 +2129,10 @@ function renderAdmin(){
   if(bu) bu.onchange=async e=>{ const f=e.target.files[0]; if(!f) return;
     const r=await takeImage(f,300,0.9,"شعار العلامة");
     if(!r.url){ SYNCMSG=r.msg; renderAdmin(); return; }
-    BRAND=r.url; SYNCMSG=r.msg+" · جارٍ الحفظ…"; renderAdmin();
+    BRAND=r.url; toast(r.msg+" · جارٍ الحفظ…","busy",true);
     const ok=await persist();
-    SYNCMSG = ok ? r.msg+" · حُفظ ✅" : (SYNCMSG||"تعذّر الحفظ في السحابة");
+    if(ok){ LASTSYNC=new Date(); toast(r.msg+" · حُفظ في السحابة","ok"); }
+    else toast(SYNCMSG||"تعذّر الحفظ في السحابة","err");
     renderAdmin(); renderAll(); paintFoot(); };
   const br=$("#brandReset");
   if(br) br.onclick=()=>{ BRAND=BRAND_DEFAULT; persist(); renderAdmin(); renderAll(); paintFoot(); };
