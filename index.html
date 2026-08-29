@@ -171,6 +171,15 @@ select,input[type=text],input[type=password]{
 }
 select:focus,input:focus{outline:2px solid var(--sky);outline-offset:1px}
 label.lb{display:block;font-size:.72rem;color:var(--slate);margin:0 0 6px}
+.squadbox{padding:10px 0;border-bottom:1px dashed rgba(143,166,196,.16)}
+.squadbox:last-of-type{border:0}
+.squadbox textarea{width:100%;background:var(--navy-800);border:1px solid rgba(143,166,196,.3);
+  color:#fff;border-radius:10px;padding:10px 12px;font-family:var(--body);font-size:.86rem;
+  line-height:1.8;resize:vertical}
+.squadbox textarea:focus{outline:2px solid var(--sky);outline-offset:1px}
+.cnt{display:inline-block;font-size:.62rem;color:var(--sky);background:rgba(95,178,232,.12);
+  border:1px solid rgba(95,178,232,.3);border-radius:999px;padding:1px 7px;
+  font-variant-numeric:tabular-nums}
 
 .stat{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px dashed rgba(143,166,196,.16);font-size:.85rem}
 .stat:last-child{border:0}
@@ -461,6 +470,7 @@ const COMPS = ["الدوري","كأس الأمير","كأس سمو ولي الع
 let COMP = "الدوري";
 let CARDS = [];
 let ALL = null;
+let SQUADS = {};   /* كشوفات اللاعبين: { "النادي": ["اسم", ...] } */
 let CLUBS = ["القادسية","الكويت","العربي","كاظمة","السالمية","النصر","الجهراء","الساحل","الفحيحيل","التضامن","الشباب","الصليبخات"];
 
 let MATCHES = [
@@ -968,6 +978,7 @@ function buildFromWorkbook(wb){
 function applyData(d, source){
   SEASON = d.season || SEASON;
   ALL = stampComp({matches:d.matches||[], goals:d.goals||[], pens:d.pens||[], cards:d.cards||[]});
+  SQUADS = d.squads || SQUADS || {};   /* ملف بلا كشوفات لا يمسح الكشوفات الحالية */
   CLUBS = d.clubs;
   const have = compsPresent();
   if(!have.includes(COMP)) COMP = have[0] || "الدوري";
@@ -984,7 +995,7 @@ function applyData(d, source){
 function dataObject(){
   return {season:SEASON, clubs:CLUBS,
           matches:ALL?ALL.matches:MATCHES, goals:ALL?ALL.goals:GOALS,
-          pens:ALL?ALL.pens:PENS, cards:ALL?ALL.cards:CARDS,
+          pens:ALL?ALL.pens:PENS, cards:ALL?ALL.cards:CARDS, squads:SQUADS,
           lastUpdate:LASTUPDATE, updated:new Date().toISOString()};
 }
 function downloadJSON(){
@@ -1285,10 +1296,33 @@ function loadEdit(m){
     pens:ps.map(x=>({by:x.by,p:x.p,m:x.m,res:x.res,place:x.place||""}))};
 }
 
+/* أسماء لاعبي نادٍ: الكشف المُدخل + كل اسم ظهر له في السجلات */
+function playersOf(club){
+  if(!club) return [];
+  const s=new Set((SQUADS[club]||[]).map(x=>String(x).trim()).filter(Boolean));
+  (ALL?.goals||[]).forEach(g=>{ if(g.sc===club){ if(g.p) s.add(g.p); if(g.a) s.add(g.a); } });
+  (ALL?.cards||[]).forEach(x=>{ if(x.club===club && x.p) s.add(x.p); });
+  (ALL?.pens ||[]).forEach(x=>{ if(x.by===club && x.p) s.add(x.p); });
+  return [...s].sort((a,b)=>String(a).localeCompare(String(b),"ar"));
+}
+function playersOfSides(sides){
+  const s=new Set(); (sides||[]).forEach(c=>playersOf(c).forEach(n=>s.add(n)));
+  return [...s].sort((a,b)=>String(a).localeCompare(String(b),"ar"));
+}
+function squadTotal(){ return Object.values(SQUADS).reduce((a,b)=>a+(b?b.length:0),0); }
+
 function fld(label, key, kind, list, val){
   const v = val==null?"":val;
   if(kind==="select") return `<div class="fld"><label>${label}</label>
     <select data-k="${key}">${opt(list, v, "اختر")}</select></div>`;
+  if(kind==="combo"){
+    const id="dl_"+key.replace(/[^A-Za-z0-9_]/g,"_");
+    const names=(list||[]);
+    return `<div class="fld"><label>${label}${names.length?` <span class="cnt">${names.length}</span>`:""}</label>
+      <input type="text" data-k="${key}" value="${esc(v)}" list="${id}" autocomplete="off"
+             placeholder="${names.length?"اختر من القائمة أو اكتب":"اكتب الاسم"}">
+      <datalist id="${id}">${names.map(n=>`<option value="${esc(n)}"></option>`).join("")}</datalist></div>`;
+  }
   return `<div class="fld"><label>${label}</label>
     <input type="${kind}" data-k="${key}" value="${esc(v)}"></div>`;
 }
@@ -1316,8 +1350,8 @@ function matchFormHTML(){
     <div class="idx">هدف ${i+1}${g.det?` · ${esc(catOf(g.det))}`:""}</div>
     <div class="fgrid">
       ${fld("الفريق المسجل","goals.${i}.sc".replace("${i}",i),"select",sides,g.sc)}
-      ${fld("اللاعب المسجل","goals."+i+".p","text",null,g.p)}
-      ${fld("صانع الهدف","goals."+i+".a","text",null,g.a)}
+      ${fld("اللاعب المسجل","goals."+i+".p","combo",g.sc?playersOf(g.sc):playersOfSides(sides),g.p)}
+      ${fld("صانع الهدف","goals."+i+".a","combo",g.sc?playersOf(g.sc):playersOfSides(sides),g.a)}
       ${fld("الدقيقة","goals."+i+".m","number",null,g.m)}
       ${fld("إضافي","goals."+i+".x","number",null,g.x)}
       ${fld("تفصيل طريقة التسجيل","goals."+i+".det","select",LIST.det,g.det)}
@@ -1332,7 +1366,7 @@ function matchFormHTML(){
     <div class="idx">بطاقة ${i+1}</div>
     <div class="fgrid">
       ${fld("النادي","cards."+i+".club","select",sides,x.club)}
-      ${fld("اللاعب","cards."+i+".p","text",null,x.p)}
+      ${fld("اللاعب","cards."+i+".p","combo",x.club?playersOf(x.club):playersOfSides(sides),x.p)}
       ${fld("الدقيقة","cards."+i+".m","number",null,x.m)}
       ${fld("النوع","cards."+i+".type","select",LIST.cardtype,x.type)}
     </div></div>`).join("")}
@@ -1344,7 +1378,7 @@ function matchFormHTML(){
     <div class="idx">ركلة ${i+1}</div>
     <div class="fgrid">
       ${fld("الفريق المنفّذ","pens."+i+".by","select",sides,x.by)}
-      ${fld("اللاعب المنفّذ","pens."+i+".p","text",null,x.p)}
+      ${fld("اللاعب المنفّذ","pens."+i+".p","combo",x.by?playersOf(x.by):playersOfSides(sides),x.p)}
       ${fld("الدقيقة","pens."+i+".m","number",null,x.m)}
       ${fld("النتيجة","pens."+i+".res","select",LIST.penres,x.res)}
       ${fld("مكان التسديد","pens."+i+".place","select",PZONES,x.place)}
@@ -1432,32 +1466,8 @@ async function saveMatch(){
   paintRail(); renderAll(); renderMatchAdmin();
 }
 
-function renderMatchAdmin(){
-  const box=$("#matchAdmin"); if(!box) return;
-  if(EDIT){
-    box.innerHTML = `<h2 class="sec">${EDIT.orig?"تعديل مباراة":"مباراة جديدة"}</h2>` + matchFormHTML();
-  } else {
-    const list=(ALL?.matches||[]).slice().sort((a,b)=>(b.round-a.round)||String(b.date).localeCompare(String(a.date)));
-    box.innerHTML = `
-      <button class="btn" data-act="new">+ إضافة مباراة جديدة</button>
-      <h2 class="sec">المباريات المسجّلة (${list.length})</h2>
-      <div class="card pad">${list.length?list.map(m=>`<div class="mrow">
-        <div class="mm"><b>${esc(m.home)} ${isUpcoming(m)?"مقابل":`${m.hg} - ${m.ag}`} ${esc(m.away)}${isUpcoming(m)?' <span class="mstat soon">لم تبدأ</span>':""}</b>
-          <span>الجولة ${m.round} · ${esc(compOf(m))} · ${esc(m.date||"بلا تاريخ")}${m.venue?" · "+esc(m.venue):""}</span></div>
-        <button data-edit="${esc(mkey(m))}">تعديل</button>
-        <button class="dl" data-rm="${esc(mkey(m))}">حذف</button>
-      </div>`).join(""):'<span style="color:var(--slate)">لا مباريات بعد.</span>'}</div>`;
-  }
-  box.querySelectorAll("[data-k]").forEach(el=>{
-    el.oninput=()=>setPath(el.dataset.k, el.value);
-    el.onchange=()=>{ setPath(el.dataset.k, el.value);
-      if(/^match\.(home|away)$/.test(el.dataset.k) || /\.det$/.test(el.dataset.k)) renderMatchAdmin(); };
-  });
-  box.querySelectorAll("[data-add]").forEach(b=>b.onclick=()=>{
-    const k=b.dataset.add;
-    if(k==="goals") EDIT.goals.push({sc:"",p:"",a:"",m:"",x:0,det:"",bp:"",zone:""});
-    if(k==="cards") EDIT.cards.push({club:"",p:"",m:"",type:"إنذار"});
-    if(k==="pens")  EDIT.pens.push({by:"",p:"",m:"",res:"سجلت",place:""});
+/* أزرار المزامنة والشعارات — كانت مدفونة داخل معالج «إضافة هدف» فلا تُربط أبداً */
+function wireAdminIO(){
     const da=$("#dlAssets");
   if(da) da.onclick=()=>{ downloadAssets(); toast("نزّل الملف — ارفعه إلى GitHub بجانب index.html","ok"); };
   const ua=$("#upAssets");
@@ -1541,6 +1551,36 @@ function renderMatchAdmin(){
     LASTSYNC=new Date();
     toast(`جُلبت ${MATCHES.length} مباراة و${GOALS.length} هدفاً من السحابة`,"ok");
     paintHeader(); paintFoot(); renderAdmin(); };
+}
+
+function renderMatchAdmin(){
+  const box=$("#matchAdmin"); if(!box) return;
+  if(EDIT){
+    box.innerHTML = `<h2 class="sec">${EDIT.orig?"تعديل مباراة":"مباراة جديدة"}</h2>` + matchFormHTML();
+  } else {
+    const list=(ALL?.matches||[]).slice().sort((a,b)=>(b.round-a.round)||String(b.date).localeCompare(String(a.date)));
+    box.innerHTML = `
+      <button class="btn" data-act="new">+ إضافة مباراة جديدة</button>
+      <h2 class="sec">المباريات المسجّلة (${list.length})</h2>
+      <div class="card pad">${list.length?list.map(m=>`<div class="mrow">
+        <div class="mm"><b>${esc(m.home)} ${isUpcoming(m)?"مقابل":`${m.hg} - ${m.ag}`} ${esc(m.away)}${isUpcoming(m)?' <span class="mstat soon">لم تبدأ</span>':""}</b>
+          <span>الجولة ${m.round} · ${esc(compOf(m))} · ${esc(m.date||"بلا تاريخ")}${m.venue?" · "+esc(m.venue):""}</span></div>
+        <button data-edit="${esc(mkey(m))}">تعديل</button>
+        <button class="dl" data-rm="${esc(mkey(m))}">حذف</button>
+      </div>`).join(""):'<span style="color:var(--slate)">لا مباريات بعد.</span>'}</div>`;
+  }
+  box.querySelectorAll("[data-k]").forEach(el=>{
+    el.oninput=()=>setPath(el.dataset.k, el.value);
+    el.onchange=()=>{ setPath(el.dataset.k, el.value);
+      if(/^match\.(home|away)$/.test(el.dataset.k) || /\.det$/.test(el.dataset.k)
+         || /^goals\.\d+\.sc$/.test(el.dataset.k) || /^cards\.\d+\.club$/.test(el.dataset.k)
+         || /^pens\.\d+\.by$/.test(el.dataset.k)) renderMatchAdmin(); };
+  });
+  box.querySelectorAll("[data-add]").forEach(b=>b.onclick=()=>{
+    const k=b.dataset.add;
+    if(k==="goals") EDIT.goals.push({sc:"",p:"",a:"",m:"",x:0,det:"",bp:"",zone:""});
+    if(k==="cards") EDIT.cards.push({club:"",p:"",m:"",type:"إنذار"});
+    if(k==="pens")  EDIT.pens.push({by:"",p:"",m:"",res:"سجلت",place:""});
   renderMatchAdmin();
   });
   box.querySelectorAll("[data-del]").forEach(b=>b.onclick=()=>{
@@ -2166,6 +2206,19 @@ function renderAdmin(){
         <input type="file" accept="image/*" data-club="${esc(c)}">
       </label>`).join("")}</div>
 
+    <h2 class="sec">كشوفات اللاعبين</h2>
+    <p class="hint">اكتب أسماء لاعبي كل نادٍ — اسم في كل سطر. تظهر بعدها كقائمة منسدلة عند إدخال الأهداف والبطاقات وركلات الجزاء، ويبقى بإمكانك كتابة اسم جديد يدوياً في أي وقت.</p>
+    <div class="card pad">
+      ${CLUBS.map(c=>`<div class="squadbox">
+        <label class="lb"><b style="color:#fff">${esc(c)}</b> <span class="cnt">${(SQUADS[c]||[]).length}</span></label>
+        <textarea data-squad="${esc(c)}" rows="4" spellcheck="false"
+          placeholder="اسم اللاعب في كل سطر">${esc((SQUADS[c]||[]).join("\n"))}</textarea>
+      </div>`).join("")}
+      <div style="height:6px"></div>
+      <button class="btn" id="saveSquads">حفظ الكشوفات</button>
+      <p class="hint" style="margin:10px 0 0">الكشوفات تُحفظ مع بيانات الموسم وتُرفع للسحابة تلقائياً. إجمالي المسجّل الآن: ${squadTotal()} لاعباً.</p>
+    </div>
+
     <h2 class="sec">المزامنة السحابية</h2>
     <div class="card pad">
       ${SYNCMSG?`<div class="formerr">${esc(SYNCMSG)}</div>`:""}
@@ -2403,6 +2456,23 @@ function renderAdmin(){
     renderAdmin(); };
   const br=$("#brandReset");
   if(br) br.onclick=()=>{ BRAND=BRAND_DEFAULT; persist(); renderAdmin(); renderAll(); paintFoot(); };
+  wireAdminIO();
+  const sqb=$("#saveSquads");
+  if(sqb) sqb.onclick=async()=>{
+    document.querySelectorAll("[data-squad]").forEach(t=>{
+      const seen=new Set(), names=[];
+      t.value.split("\n").map(s=>s.trim().replace(/\s+/g," ")).filter(Boolean)
+        .forEach(n=>{ if(!seen.has(n)){ seen.add(n); names.push(n); } });
+      if(names.length) SQUADS[t.dataset.squad]=names; else delete SQUADS[t.dataset.squad];
+    });
+    busy(sqb,true,"جارٍ الحفظ…");
+    const ok=await persistData();
+    busy(sqb,false);
+    if(ok===true){ LASTSYNC=new Date(); toast(`حُفظت الكشوفات · ${squadTotal()} لاعباً ✅`,"ok"); }
+    else if(ok==="pending") toast(SYNCMSG,"busy");
+    else toast(SYNCMSG||"حُفظت محلياً، وتعذّر رفعها للسحابة","err");
+    renderAdmin();
+  };
   const gs=$("#gscale");
   if(gs){ gs.oninput=e=>{ GSCALE=+e.target.value; $("#gsVal").textContent=GSCALE+"%";
     document.querySelectorAll(".crest.has-logo img").forEach(img=>{
