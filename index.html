@@ -2841,6 +2841,8 @@ let MYPRED = null;     /* توقعات المشترك للجولة المفتو�
 let BOARD = null;      /* وثيقة الترتيب المجمّعة */
 let ROUNDMETA = null;  /* {round,lockAt,month,open} للجولة المفتوحة */
 let BOARDTAB = "season";
+let AUTHTAB = "name";   /* name | mail */
+let AUTHMODE = "in";    /* in | up */
 
 const roundKey = r => seasonId() + "_" + r;
 const isAnonFan = () => !!(fbAuth && fbAuth.currentUser && fbAuth.currentUser.isAnonymous);
@@ -2858,25 +2860,14 @@ function openRound(){
 const isLocked = o => !o || o.lockAt===null || Date.now() >= o.lockAt;
 
 /* ===== الحساب العام ===== */
-async function fanSignInGoogle(){
-  if(!fbAuth) return;
-  const prov = new firebase.auth.GoogleAuthProvider();
-  try{ await fbAuth.signInWithPopup(prov); }
-  catch(e){
-    if(e && (e.code==="auth/popup-blocked" || e.code==="auth/operation-not-supported-in-this-environment")){
-      try{ await fbAuth.signInWithRedirect(prov); return; }catch(e2){}
-    }
-    toast(authErr(e),"err");
-  }
-}
 function authErr(e){
   const c = (e && e.code) || "";
   if(c==="auth/invalid-email") return "صيغة البريد غير صحيحة";
   if(c==="auth/missing-password" || c==="auth/weak-password") return "كلمة المرور قصيرة — ٦ أحرف على الأقل";
   if(c==="auth/email-already-in-use") return "هذا البريد مسجّل مسبقاً — سجّل الدخول بدل إنشاء حساب";
   if(c==="auth/invalid-credential" || c==="auth/wrong-password") return "البريد أو كلمة المرور غير صحيحة";
-  if(c==="auth/popup-closed-by-user") return "أُغلقت نافذة الدخول";
   if(c==="auth/network-request-failed") return "تعذّر الاتصال — تحقق من الشبكة";
+  if(c==="auth/operation-not-allowed") return "طريقة الدخول غير مفعّلة — فعّلها من Authentication ← Sign-in method";
   return "تعذّر الدخول: " + (c || "خطأ غير معروف");
 }
 async function fanSignInName(name){
@@ -2893,20 +2884,34 @@ async function fanSignInName(name){
       : authErr(e), "err");
   }
 }
-/* ترقية حساب الاسم إلى Google بلا فقدان النقاط — نفس المعرّف يبقى */
-async function linkToGoogle(){
-  const u = fbAuth && fbAuth.currentUser;
-  if(!u) return;
+async function fanEmailAuth(email, pass, name, mode){
+  if(!fbAuth) return;
   try{
-    await u.linkWithPopup(new firebase.auth.GoogleAuthProvider());
+    if(mode==="up"){
+      const cred = await fbAuth.createUserWithEmailAndPassword(email, pass);
+      if(cred.user && name) await cred.user.updateProfile({displayName:name});
+      if(cred.user) await fbDb.collection("fans").doc(cred.user.uid)
+        .set({name, joined:new Date().toISOString(), anon:false},{merge:true});
+    } else {
+      await fbAuth.signInWithEmailAndPassword(email, pass);
+    }
+  }catch(e){ toast(authErr(e),"err"); }
+}
+/* ترقية حساب الاسم إلى بريد وكلمة مرور — يشتغل داخل متصفحات التطبيقات */
+async function linkToEmail(email, pass){
+  const u = fbAuth && fbAuth.currentUser;
+  if(!u) return false;
+  try{
+    const cred = firebase.auth.EmailAuthProvider.credential(email, pass);
+    await u.linkWithCredential(cred);
     await fbDb.collection("fans").doc(u.uid).set({anon:false},{merge:true});
-    toast("رُبط حسابك بـGoogle ✅ نقاطك محفوظة","ok");
+    toast("رُبط حسابك ✅ تقدر تدخل من أي جهاز بنفس البريد","ok");
     await loadFan(fbAuth.currentUser); renderPredict();
+    return true;
   }catch(e){
-    const c=(e&&e.code)||"";
-    toast(c==="auth/credential-already-in-use"
-      ? "حساب Google هذا مربوط بمشترك آخر"
-      : authErr(e), "err");
+    toast((e&&e.code)==="auth/email-already-in-use"
+      ? "هذا البريد مستخدم لحساب آخر" : authErr(e), "err");
+    return false;
   }
 }
 async function loadFan(u){
@@ -3078,8 +3083,8 @@ function renderPredict(){
       <button class="lnk" id="fanOut">خروج</button>
     </div>
     ${isAnonFan() ? `<div class="anonbar">
-      نقاطك محفوظة على هذا المتصفح فقط.
-      <button class="lnk" id="linkG">اربطه بحساب Google</button>
+      نقاطك محفوظة على هذا المتصفح فقط — أضف بريداً لتدخل بها من أي جهاز.
+      <button class="lnk" id="linkM">أضف بريداً</button>
     </div>` : ""}
 
     <h2 class="sec">${o ? `توقعات الجولة ${o.round}` : "التوقعات"}</h2>
@@ -3132,21 +3137,34 @@ function allSquadNames(){
 }
 
 function authCard(){
+  const mail = AUTHTAB==="mail", up = AUTHMODE==="up";
   return `
     <h2 class="sec">تحدي التوقعات</h2>
     <p class="hint">توقّع نتائج الجولة قبل انطلاقها ونافس بقية الجمهور. نتيجة مطابقة ${PT_EXACT} نقاط، اتجاه صحيح نقطتان، وهداف الجولة ${PT_SCORER} نقاط.</p>
     <div class="card pad">
-      <button class="btn gbtn" id="gIn">
-        <svg viewBox="0 0 48 48" width="18" height="18" aria-hidden="true"><path fill="#4285F4" d="M45 24c0-1.6-.1-2.7-.4-3.9H24v7.1h12c-.2 1.9-1.5 4.7-4.4 6.6l6.7 5.2c4-3.7 6.7-9.1 6.7-15z"/><path fill="#34A853" d="M24 46c5.8 0 10.7-1.9 14.3-5.2l-6.8-5.3c-1.8 1.3-4.3 2.2-7.5 2.2-5.7 0-10.6-3.8-12.3-9l-7 5.4C8.3 41.1 15.6 46 24 46z"/><path fill="#FBBC05" d="M11.7 28.7c-.5-1.3-.7-2.7-.7-4.2s.3-2.9.7-4.2l-7-5.4C3.6 17.8 3 20.8 3 24s.6 6.2 1.7 9.1l7-4.4z"/><path fill="#EA4335" d="M24 10.6c3.2 0 5.4 1.4 6.6 2.5l5.9-5.8C32.9 4 28.8 2 24 2 15.6 2 8.3 6.9 4.7 14.1l7 5.4c1.7-5.2 6.6-8.9 12.3-8.9z"/></svg>
-        الدخول بحساب Google
-      </button>
-      <div class="orline"><i></i><span>أو</span><i></i></div>
-      <div class="fld"><label>الاسم الظاهر في جدول الترتيب</label>
-        <input type="text" id="auName" maxlength="24" placeholder="مثال: أبو فهد"></div>
-      <div style="height:10px"></div>
-      <button class="btn ghost" id="auGo" style="width:100%">ادخل بالاسم</button>
-      <p class="hint" style="margin:12px 0 0">
-        الدخول بالاسم يربط نقاطك بهذا المتصفح فقط. لو مسحت بيانات المتصفح أو انتقلت لجهاز ثاني تفقد نقاطك — تقدر تربطه بـGoogle لاحقاً من داخل حسابك بلا فقدان أي نقطة.</p>
+      <div class="bchips" style="margin-bottom:12px">
+        <button class="chip ${mail?"":"on"}" data-at="name">بالاسم فقط</button>
+        <button class="chip ${mail?"on":""}" data-at="mail">ببريد إلكتروني</button>
+      </div>
+
+      ${mail?`
+        ${up?`<div class="fld"><label>الاسم الظاهر في جدول الترتيب</label>
+          <input type="text" id="auName" maxlength="24" placeholder="مثال: أبو فهد"></div>`:""}
+        <div class="fld"><label>البريد الإلكتروني</label><input type="email" id="auMail" dir="ltr" autocomplete="email"></div>
+        <div class="fld"><label>كلمة المرور</label><input type="password" id="auPass" dir="ltr"></div>
+        <div style="height:10px"></div>
+        <button class="btn" id="auGo" style="width:100%">${up?"إنشاء حساب":"دخول"}</button>
+        <p class="hint" style="margin:12px 0 0;text-align:center">
+          ${up?"عندك حساب؟":"ما عندك حساب؟"}
+          <button class="lnk" id="auSwap">${up?"سجّل الدخول":"أنشئ حساباً"}</button></p>
+        <p class="hint" style="margin:8px 0 0">تدخل بنقاطك من أي جهاز، ويشتغل في كل المتصفحات.</p>
+      `:`
+        <div class="fld"><label>الاسم الظاهر في جدول الترتيب</label>
+          <input type="text" id="nmOnly" maxlength="24" placeholder="مثال: أبو فهد"></div>
+        <div style="height:10px"></div>
+        <button class="btn" id="nmGo" style="width:100%">ادخل بالاسم</button>
+        <p class="hint" style="margin:12px 0 0">أسرع طريقة، بلا بريد ولا كلمة مرور. نقاطك تبقى على هذا المتصفح فقط — وتقدر تضيف بريداً لاحقاً وتحتفظ بها كاملة.</p>
+      `}
     </div>`;
 }
 
@@ -3183,17 +3201,31 @@ const monthName = k => (AR_MONTHS_LB[String(k).slice(5,7)]||"") + " " + String(k
 
 /* ===== الربط ===== */
 function wireAuth(){
-  const g=$("#gIn"); if(g) g.onclick=()=>fanSignInGoogle();
+  document.querySelectorAll("[data-at]").forEach(b=>b.onclick=()=>{ AUTHTAB=b.dataset.at; renderPredict(); });
+  const sw=$("#auSwap"); if(sw) sw.onclick=()=>{ AUTHMODE = AUTHMODE==="up"?"in":"up"; renderPredict(); };
+  const nm=$("#nmGo");
+  if(nm) nm.onclick=async()=>{
+    const v=($("#nmOnly").value||"").trim().replace(/\s+/g," ");
+    if(v.length<2){ toast("اكتب اسماً من حرفين فأكثر","err"); return; }
+    busy(nm,true,"لحظة…"); await fanSignInName(v.slice(0,24)); busy(nm,false);
+  };
   const go=$("#auGo");
   if(go) go.onclick=async()=>{
-    const nm=($("#auName").value||"").trim().replace(/\s+/g," ");
-    if(nm.length<2){ toast("اكتب اسماً من حرفين فأكثر","err"); return; }
-    busy(go,true,"لحظة…"); await fanSignInName(nm.slice(0,24)); busy(go,false);
+    const mail=($("#auMail").value||"").trim(), pass=$("#auPass").value||"";
+    const name=$("#auName")?($("#auName").value||"").trim():"";
+    if(!mail || !pass){ toast("عبّي البريد وكلمة المرور","err"); return; }
+    if(AUTHMODE==="up" && name.length<2){ toast("اكتب الاسم الظاهر في الترتيب","err"); return; }
+    busy(go,true,"لحظة…"); await fanEmailAuth(mail,pass,name.slice(0,24),AUTHMODE); busy(go,false);
   };
 }
 function wirePredict(o, locked){
   const out=$("#fanOut"); if(out) out.onclick=()=>fbAuth.signOut();
-  const lg=$("#linkG"); if(lg) lg.onclick=()=>linkToGoogle();
+  const lm=$("#linkM");
+  if(lm) lm.onclick=async()=>{
+    const em=(prompt("البريد الإلكتروني:")||"").trim(); if(!em) return;
+    const pw=(prompt("كلمة مرور جديدة (٦ أحرف فأكثر):")||"").trim(); if(!pw) return;
+    await linkToEmail(em, pw);
+  };
   const en=$("#editName");
   if(en) en.onclick=async()=>{
     const n=(prompt("الاسم الظاهر في جدول الترتيب:", FAN.name)||"").trim();
