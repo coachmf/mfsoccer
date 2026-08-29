@@ -394,6 +394,55 @@ label.lb{display:block;font-size:.72rem;color:var(--slate);margin:0 0 6px}
   .nextm-time{font-size:1.45rem}
 }
 
+/* ---------- تحدي التوقعات ---------- */
+.fanbar{display:flex;align-items:center;gap:10px;background:var(--navy-800);
+  border:1px solid rgba(95,178,232,.28);border-radius:12px;padding:10px 13px;margin-bottom:6px}
+.fanbar .fi{flex:1;min-width:0;display:flex;flex-direction:column;line-height:1.35}
+.fanbar .fi b{font-family:var(--display);font-size:.88rem;color:#fff;font-weight:600;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fanbar .fi span{font-size:.68rem;color:var(--slate)}
+.lnk{background:none;border:0;color:var(--sky);font-family:var(--body);font-size:.72rem;
+  cursor:pointer;padding:2px;white-space:nowrap;text-decoration:underline}
+.gbtn{display:flex;align-items:center;justify-content:center;gap:9px;width:100%;
+  background:#fff;color:#1f1f1f}
+.orline{display:flex;align-items:center;gap:10px;margin:14px 0}
+.orline i{flex:1;height:1px;background:rgba(143,166,196,.2)}
+.orline span{font-size:.7rem;color:var(--slate)}
+.anonbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+  background:rgba(233,185,73,.09);border:1px solid rgba(233,185,73,.32);border-radius:10px;
+  padding:8px 12px;font-size:.71rem;color:var(--sand);margin-bottom:6px}
+.anonbar .lnk{color:var(--sand)}
+.lockbar{background:rgba(233,185,73,.1);border:1px solid rgba(233,185,73,.35);border-radius:10px;
+  padding:8px 12px;font-size:.72rem;color:var(--sand);margin-bottom:11px}
+.pm{display:flex;align-items:center;gap:8px;background:var(--navy-900);
+  border:1px solid rgba(143,166,196,.16);border-radius:12px;padding:11px 12px;margin-bottom:7px}
+.pm .tm{flex:1;min-width:0;font-size:.82rem;font-weight:600;overflow:hidden;
+  text-overflow:ellipsis;white-space:nowrap}
+.pm .tm.a{text-align:left}
+.pm .dsh{color:var(--slate);font-family:var(--display)}
+.stp{display:flex;align-items:center;gap:1px;flex:none}
+.stp button{width:28px;height:28px;border-radius:8px;border:1px solid rgba(143,166,196,.28);
+  background:none;color:var(--sky);font-size:.95rem;line-height:1;cursor:pointer;font-family:var(--display)}
+.stp button:disabled{opacity:.3;cursor:default}
+.stp .val{width:26px;text-align:center;font-family:var(--display);font-weight:700;
+  font-size:1.05rem;color:#fff;font-variant-numeric:tabular-nums}
+.bchips{display:flex;gap:6px;margin-bottom:10px;overflow-x:auto}
+.bchips .chip{flex:none;background:none;border:1px solid rgba(143,166,196,.3);border-radius:999px;
+  padding:6px 13px;font-family:var(--body);font-size:.74rem;color:var(--slate);cursor:pointer;
+  white-space:nowrap;transition:background .15s,color .15s}
+.bchips .chip.on{background:var(--sky);border-color:var(--sky);color:#04101f;font-weight:600}
+table.lb{width:100%;border-collapse:collapse;font-size:.82rem}
+table.lb th,table.lb td{padding:9px 11px;text-align:right;border-bottom:1px solid rgba(143,166,196,.13)}
+table.lb th{font-family:var(--display);font-weight:600;font-size:.7rem;color:var(--slate);
+  background:rgba(14,43,82,.5)}
+table.lb tr:last-child td{border-bottom:0}
+table.lb tr.me{background:rgba(95,178,232,.09)}
+table.lb tr.me td{color:#fff;font-weight:600}
+table.lb td.rk{font-family:var(--display);color:var(--slate);font-variant-numeric:tabular-nums}
+table.lb td.rk.top{color:var(--sand);font-weight:700}
+table.lb td.pt{font-family:var(--display);font-weight:700;color:var(--sky);
+  font-variant-numeric:tabular-nums}
+
 /* ---------- العلامة والتصدير ---------- */
 .brandcard{display:flex;align-items:center;gap:14px;background:linear-gradient(120deg,#0E2B52,#061529);
   border:1px solid rgba(233,185,73,.3);border-radius:var(--r);padding:14px 16px;margin-bottom:16px}
@@ -463,6 +512,7 @@ label.lb{display:block;font-size:.72rem;color:var(--slate);margin:0 0 6px}
     <button role="tab" data-v="matches" aria-selected="false"><span class="ic">⚽</span>المباريات</button>
     <button role="tab" data-v="clubs" aria-selected="false"><span class="ic">🛡</span>الأندية</button>
     <button role="tab" data-v="players" aria-selected="false"><span class="ic">★</span>اللاعبون</button>
+    <button role="tab" data-v="predict" aria-selected="false"><span class="ic">◈</span>التوقعات</button>
     <button role="tab" data-v="analysis" aria-selected="false"><span class="ic">◔</span>التحليل</button>
   </div>
 </nav>
@@ -474,6 +524,7 @@ label.lb{display:block;font-size:.72rem;color:var(--slate);margin:0 0 6px}
   <section class="view" id="v-matches"></section>
   <section class="view" id="v-clubs"></section>
   <section class="view" id="v-players"></section>
+  <section class="view" id="v-predict"></section>
   <section class="view" id="v-analysis"></section>
   <section class="view" id="v-admin"></section>
   <div class="sitefoot" id="siteFoot"></div>
@@ -1195,6 +1246,9 @@ function fbInit(){
       }
       isAdmin = isOwner || MYROLE==="editor";
       $("#adminBtn").classList.toggle("on", isAdmin);
+      await loadFan(u);
+      await loadMyPred();
+      if($("#v-predict") && $("#v-predict").classList.contains("on")) renderPredict();
       if(document.querySelector('nav.tabs button[aria-selected="true"]')?.dataset.v==="admin") renderAdmin();
     });
     return true;
@@ -1219,6 +1273,32 @@ async function fbSaveSeason(){
   if(r==="ok"){ SYNCMSG=""; return true; }
   if(r==="timeout"){ SYNCMSG="الاتصال بطيء — حُفظ محلياً وسيُرسل تلقائياً عند عودة الشبكة."; return "pending"; }
   SYNCMSG="تعذّر الحفظ: "+((r.err&&(r.err.code||r.err.message))||"خطأ غير معروف"); return false;
+}
+let SEASON_UNSUB=null, LASTSTAMP="", PENDING_REMOTE=null;
+/* استماع حيّ لوثيقة الموسم: أي حفظ من أي عضو يظهر عند الجميع فوراً بلا تحديث للصفحة */
+function watchSeason(){
+  if(!fbDb) return;
+  if(SEASON_UNSUB){ try{ SEASON_UNSUB(); }catch(e){} SEASON_UNSUB=null; }
+  try{
+    SEASON_UNSUB = fbDb.collection("seasons").doc(seasonId()).onSnapshot(snap=>{
+      if(!snap.exists || snap.metadata.hasPendingWrites) return;   /* تجاهل صدى كتابتنا */
+      const d=snap.data();
+      if(!d || !d.clubs || !d.matches) return;
+      const stamp=(d.updated||"")+"|"+(d.updatedBy||"");
+      if(stamp===LASTSTAMP) return;
+      LASTSTAMP=stamp;
+      if(EDIT){ PENDING_REMOTE=d; return; }   /* لا نقاطع نموذج مباراة مفتوحاً */
+      applyRemote(d);
+    }, ()=>{});
+  }catch(e){}
+}
+function applyRemote(d){
+  const mine=(FBUSER&&FBUSER.email)||"";
+  applyData(d,"السحابة (تحديث حيّ)");
+  if(d.updatedBy && d.updatedBy!==mine) toast(`وصل تحديث من ${d.updatedBy}`,"ok");
+}
+function flushRemote(){
+  if(PENDING_REMOTE && !EDIT){ const d=PENDING_REMOTE; PENDING_REMOTE=null; applyRemote(d); }
 }
 async function fbSaveStaff(){
   if(!fbDb || !isOwner) return false;
@@ -1504,7 +1584,7 @@ async function saveMatch(){
   if(okm===true){ LASTSYNC=new Date(); toast(`حُفظت المباراة: ${m.home} ضد ${m.away} ✅`,"ok"); }
   else if(okm==="pending") toast(SYNCMSG,"busy");
   else toast(SYNCMSG||"حُفظت محلياً، لكن تعذّر الحفظ في السحابة","err");
-  paintRail(); renderAll(); renderMatchAdmin();
+  paintRail(); renderAll(); renderMatchAdmin(); flushRemote();
 }
 
 /* أزرار المزامنة والشعارات — كانت مدفونة داخل معالج «إضافة هدف» فلا تُربط أبداً */
@@ -1629,7 +1709,7 @@ function renderMatchAdmin(){
   box.querySelectorAll("[data-act]").forEach(b=>b.onclick=()=>{
     const a=b.dataset.act;
     if(a==="new"){ EDIT=newEdit(); FORMERR=""; renderMatchAdmin(); }
-    if(a==="cancel"){ EDIT=null; FORMERR=""; renderMatchAdmin(); }
+    if(a==="cancel"){ EDIT=null; FORMERR=""; renderMatchAdmin(); flushRemote(); }
     if(a==="save") saveMatch();
   });
   box.querySelectorAll("[data-edit]").forEach(b=>b.onclick=()=>{
@@ -2246,6 +2326,15 @@ async function saveStaff(btn, msg){
   toast(ok===true?msg:(SYNCMSG||"تعذّر الحفظ"), ok===true?"ok":"err");
   renderAdmin();
 }
+function wireFanList(){
+  document.querySelectorAll("[data-fan]").forEach(b=>b.onclick=async()=>{
+    busy(b,true,"…");
+    const ok=await toggleFan(b.dataset.fan);
+    busy(b,false);
+    toast(ok?"حُدّث الجدول ✅":"تعذّر التحديث", ok?"ok":"err");
+    if(ok) renderAdmin();
+  });
+}
 function wireStaff(){
   const add=$("#addStaff");
   if(add) add.onclick=async()=>{
@@ -2362,6 +2451,33 @@ function renderAdmin(){
       </label>`).join("")}</div>
 
     ${squadsSectionHTML()}
+
+    <h2 class="sec">تحدي التوقعات</h2>
+    <p class="hint">بعد إدخال نتائج الجولة كاملة، احتسب نقاط الجمهور. الاحتساب يقرأ توقعات المشتركين ويحدّث جداول الترتيب — وإعادته على نفس الجولة آمنة ولا تُضاعف النقاط.</p>
+    <div class="card pad">
+      <div class="stat"><span>مشتركون في الترتيب</span><span class="v">${BOARD&&BOARD.rows?Object.keys(BOARD.rows).length:0}</span></div>
+      <div class="stat"><span>آخر جولة محتسبة</span><span class="v">${BOARD&&BOARD.lastRound?BOARD.lastRound:"—"}</span></div>
+      <div style="height:12px"></div>
+      ${(()=>{ const o=openRound(); return o
+        ? `<div class="stat"><span>الجولة القادمة</span><span class="v">${o.round}${o.lockAt?" · تُقفل "+esc(dayLabel(o.matches[0].date))+(o.matches[0].time?" "+esc(o.matches[0].time):""):" · بلا وقت"}</span></div>
+           <div style="height:10px"></div>
+           <button class="btn ghost" id="opGo" style="width:100%">افتح توقعات الجولة ${o.round}</button>
+           <div style="height:14px"></div>`
+        : ""; })()}
+      <div class="fld"><label>الجولة</label>
+        <select id="scRound">${[...new Set(MATCHES.filter(m=>!isUpcoming(m)).map(m=>+m.round||0))]
+          .sort((a,b)=>b-a).map(r=>`<option value="${r}">الجولة ${r}</option>`).join("")}</select></div>
+      <div style="height:10px"></div>
+      <button class="btn" id="scGo">احتسب نقاط الجمهور</button>
+    </div>
+
+    ${BOARD&&BOARD.rows&&Object.keys(BOARD.rows).length?`
+    <h2 class="sec">مشتركو التوقعات</h2>
+    <p class="hint">الإخفاء يشيل المشترك من الجدول العام ويحتفظ بنقاطه — للأسماء المسيئة. يمكن إظهاره في أي وقت.</p>
+    <div class="card pad">
+      <div class="fld"><label>بحث بالاسم</label><input type="text" id="fanFind" placeholder="اكتب جزءاً من الاسم"></div>
+      <div id="fanList">${fanListHTML("")}</div>
+    </div>`:""}
 
     <h2 class="sec">فريق العمل</h2>
     <p class="hint">حسابات المحرّرين: يدخلون لإضافة المباريات والأهداف والبطاقات وركلات الجزاء والكشوفات فقط. الشعارات والهوية وملفات البيانات وفريق العمل تبقى لك وحدك.</p>
@@ -2629,6 +2745,25 @@ function renderAdmin(){
   wireAdminIO();
   wireSquads();
   wireStaff();
+  const op=$("#opGo");
+  if(op) op.onclick=async()=>{
+    busy(op,true,"جارٍ الفتح…");
+    const res=await publishRound();
+    busy(op,false);
+    toast(res.msg, res.ok?"ok":"err");
+  };
+  const ff=$("#fanFind");
+  if(ff) ff.oninput=()=>{ $("#fanList").innerHTML=fanListHTML(ff.value.trim()); wireFanList(); };
+  wireFanList();
+  const sc=$("#scGo");
+  if(sc) sc.onclick=async()=>{
+    const r=$("#scRound").value; if(!r) return;
+    busy(sc,true,"جارٍ الاحتساب…");
+    const res=await scoreRound(r);
+    busy(sc,false);
+    toast(res.msg, res.ok?"ok":"err");
+    if(res.ok) renderAdmin();
+  };
   const gs=$("#gscale");
   if(gs){ gs.oninput=e=>{ GSCALE=+e.target.value; $("#gsVal").textContent=GSCALE+"%";
     document.querySelectorAll(".crest.has-logo img").forEach(img=>{
@@ -2696,7 +2831,400 @@ function downloadAssets(){
 }
 
 /* ================= التنقل ================= */
-const RENDER={home:renderHome,matches:renderMatches,clubs:renderClubs,players:renderPlayers,analysis:renderAnalysis,admin:renderAdmin};
+/* ================================================================
+   تحدي التوقعات — تسجيل الجمهور، التوقعات، جداول الترتيب
+   الاحتساب يتم من متصفح المالك (لا تتوفر Cloud Functions على Spark)
+   ================================================================ */
+const PT_EXACT = 5, PT_RIGHT = 2, PT_SCORER = 3;
+let FAN = null;        /* {uid,name,email} المشترك العام */
+let MYPRED = null;     /* توقعات المشترك للجولة المفتوحة */
+let BOARD = null;      /* وثيقة الترتيب المجمّعة */
+let ROUNDMETA = null;  /* {round,lockAt,month,open} للجولة المفتوحة */
+let BOARDTAB = "season";
+
+const roundKey = r => seasonId() + "_" + r;
+const isAnonFan = () => !!(fbAuth && fbAuth.currentUser && fbAuth.currentUser.isAnonymous);
+const monthOf  = d => String(d||"").slice(0,7);
+
+/* الجولة المفتوحة للتوقع: أقرب جولة فيها مباريات لم تُلعب بعد */
+function openRound(){
+  const up = MATCHES.filter(isUpcoming).filter(m=>kickoffTS(m)!==null);
+  if(!up.length) return null;
+  const r = Math.min(...up.map(m=>+m.round||0));
+  const ms = MATCHES.filter(m=>(+m.round||0)===r).sort((a,b)=>(kickoffTS(a)||0)-(kickoffTS(b)||0));
+  const first = ms.find(m=>kickoffTS(m)!==null);
+  return {round:r, matches:ms, lockAt:first?kickoffTS(first):null, month:monthOf(first?first.date:"")};
+}
+const isLocked = o => !o || o.lockAt===null || Date.now() >= o.lockAt;
+
+/* ===== الحساب العام ===== */
+async function fanSignInGoogle(){
+  if(!fbAuth) return;
+  const prov = new firebase.auth.GoogleAuthProvider();
+  try{ await fbAuth.signInWithPopup(prov); }
+  catch(e){
+    if(e && (e.code==="auth/popup-blocked" || e.code==="auth/operation-not-supported-in-this-environment")){
+      try{ await fbAuth.signInWithRedirect(prov); return; }catch(e2){}
+    }
+    toast(authErr(e),"err");
+  }
+}
+function authErr(e){
+  const c = (e && e.code) || "";
+  if(c==="auth/invalid-email") return "صيغة البريد غير صحيحة";
+  if(c==="auth/missing-password" || c==="auth/weak-password") return "كلمة المرور قصيرة — ٦ أحرف على الأقل";
+  if(c==="auth/email-already-in-use") return "هذا البريد مسجّل مسبقاً — سجّل الدخول بدل إنشاء حساب";
+  if(c==="auth/invalid-credential" || c==="auth/wrong-password") return "البريد أو كلمة المرور غير صحيحة";
+  if(c==="auth/popup-closed-by-user") return "أُغلقت نافذة الدخول";
+  if(c==="auth/network-request-failed") return "تعذّر الاتصال — تحقق من الشبكة";
+  return "تعذّر الدخول: " + (c || "خطأ غير معروف");
+}
+async function fanSignInName(name){
+  if(!fbAuth) return;
+  try{
+    const cred = await fbAuth.signInAnonymously();
+    if(cred.user) await cred.user.updateProfile({displayName:name});
+    await fbDb.collection("fans").doc(cred.user.uid).set(
+      {name, joined:new Date().toISOString(), anon:true}, {merge:true});
+  }catch(e){
+    const c=(e&&e.code)||"";
+    toast(c==="auth/operation-not-allowed"
+      ? "الدخول بالاسم غير مفعّل — فعّل Anonymous من إعدادات Authentication"
+      : authErr(e), "err");
+  }
+}
+/* ترقية حساب الاسم إلى Google بلا فقدان النقاط — نفس المعرّف يبقى */
+async function linkToGoogle(){
+  const u = fbAuth && fbAuth.currentUser;
+  if(!u) return;
+  try{
+    await u.linkWithPopup(new firebase.auth.GoogleAuthProvider());
+    await fbDb.collection("fans").doc(u.uid).set({anon:false},{merge:true});
+    toast("رُبط حسابك بـGoogle ✅ نقاطك محفوظة","ok");
+    await loadFan(fbAuth.currentUser); renderPredict();
+  }catch(e){
+    const c=(e&&e.code)||"";
+    toast(c==="auth/credential-already-in-use"
+      ? "حساب Google هذا مربوط بمشترك آخر"
+      : authErr(e), "err");
+  }
+}
+async function loadFan(u){
+  if(!u){ FAN=null; MYPRED=null; return; }
+  let name = u.displayName || "";
+  try{
+    const snap = await fbDb.collection("fans").doc(u.uid).get();
+    if(snap.exists && snap.data().name) name = snap.data().name;
+    else if(name) await fbDb.collection("fans").doc(u.uid).set({name, joined:new Date().toISOString()},{merge:true});
+  }catch(e){}
+  FAN = {uid:u.uid, name:name || (u.email||"مشترك").split("@")[0], email:u.email||""};
+}
+async function saveFanName(name){
+  if(!FAN) return false;
+  try{
+    await fbDb.collection("fans").doc(FAN.uid).set({name, joined:new Date().toISOString()},{merge:true});
+    FAN.name = name; return true;
+  }catch(e){ return false; }
+}
+
+/* ===== التوقعات ===== */
+async function loadMyPred(){
+  const o = openRound();
+  if(!o || !FAN || !fbDb){ MYPRED=null; return; }
+  try{
+    const id = roundKey(o.round) + "_" + FAN.uid;
+    const s = await fbDb.collection("preds").doc(id).get();
+    MYPRED = s.exists ? s.data() : null;
+  }catch(e){ MYPRED=null; }
+}
+async function savePred(picks, scorer){
+  const o = openRound();
+  if(!o || !FAN) return false;
+  if(isLocked(o)){ toast("أُقفلت التوقعات — بدأت مباريات الجولة","err"); return false; }
+  const id = roundKey(o.round) + "_" + FAN.uid;
+  const body = {uid:FAN.uid, name:FAN.name, rk:roundKey(o.round), round:o.round,
+                month:o.month, picks, scorer:scorer||"", ts:new Date().toISOString()};
+  try{ await fbDb.collection("preds").doc(id).set(body); MYPRED=body; return true; }
+  catch(e){
+    toast((e&&e.code)==="permission-denied" ? "أُقفلت التوقعات لهذه الجولة" : "تعذّر الحفظ — أعد المحاولة","err");
+    return false;
+  }
+}
+
+/* ===== الترتيب ===== */
+async function loadBoard(){
+  if(!fbDb) return;
+  try{
+    const s = await fbDb.collection("boards").doc(seasonId()).get();
+    BOARD = s.exists ? s.data() : null;
+  }catch(e){ BOARD=null; }
+}
+function boardRows(mode, key){
+  const rows = BOARD && BOARD.rows ? BOARD.rows : {};
+  const live = Object.entries(rows).filter(([,r])=>!r.h);
+  /* اسم متكرر؟ نلحق به آخر أربعة أحرف من المعرّف حتى يميّز المشترك نفسه سطره */
+  const seen = {};
+  live.forEach(([,r])=>{ const n=r.n||"مشترك"; seen[n]=(seen[n]||0)+1; });
+  return live.map(([uid,r])=>{
+    const n = r.n||"مشترك";
+    return {
+      uid,
+      name: seen[n]>1 ? n+" · "+uid.slice(-4) : n,
+      pts: mode==="season" ? (r.t||0) : mode==="round" ? ((r.r||{})[key]||0) : ((r.m||{})[key]||0)
+    };
+  }).sort((a,b)=> b.pts-a.pts || a.name.localeCompare(b.name,"ar"));
+}
+
+/* إخفاء مشترك من الجدول العام — للأسماء المسيئة. النقاط تبقى محفوظة ويمكن إظهاره. */
+async function toggleFan(uid){
+  if(!isOwner || !BOARD || !BOARD.rows || !BOARD.rows[uid]) return false;
+  const body = JSON.parse(JSON.stringify(BOARD));
+  body.rows[uid].h = !body.rows[uid].h;
+  body.updated = new Date().toISOString();
+  try{ await fbDb.collection("boards").doc(seasonId()).set(body); BOARD=body; return true; }
+  catch(e){ return false; }
+}
+
+/* نشر وقت إقفال الجولة — قواعد الأمان تمنع أي توقع بعده */
+async function publishRound(){
+  const o = openRound();
+  if(!isOwner || !fbDb) return {ok:false, msg:"غير مصرّح"};
+  if(!o) return {ok:false, msg:"لا توجد جولة قادمة"};
+  if(o.lockAt===null) return {ok:false, msg:"عبّي تاريخ ووقت أول مباراة في الجولة أولاً"};
+  try{
+    await fbDb.collection("rounds").doc(roundKey(o.round)).set({
+      round:o.round, month:o.month, open:true,
+      lockAt: firebase.firestore.Timestamp.fromDate(new Date(o.lockAt)),
+      lockLabel: new Date(o.lockAt).toISOString()
+    });
+    ROUNDMETA = {round:o.round, lockAt:o.lockAt, month:o.month, open:true};
+    return {ok:true, msg:`فُتحت توقعات الجولة ${o.round}`};
+  }catch(e){ return {ok:false, msg:"تعذّر فتح الجولة — تحقق من قواعد الأمان"}; }
+}
+
+/* احتساب جولة — يشغّله المالك بعد إدخال النتائج */
+async function scoreRound(r){
+  if(!isOwner || !fbDb) return {ok:false, msg:"غير مصرّح"};
+  const ms = MATCHES.filter(m=>(+m.round||0)===+r && !isUpcoming(m));
+  if(!ms.length) return {ok:false, msg:"لا توجد نتائج مسجّلة لهذه الجولة"};
+  const key = m => m.home+"|"+m.away;
+  const actual = {}; ms.forEach(m=>actual[key(m)] = [+m.hg||0, +m.ag||0]);
+  const month = monthOf(ms[0].date);
+  const scorers = new Set(GOALS.filter(g=>(+g.r||0)===+r).map(g=>g.p));
+
+  let snap;
+  try{ snap = await fbDb.collection("preds").where("rk","==",roundKey(r)).get(); }
+  catch(e){ return {ok:false, msg:"تعذّرت قراءة التوقعات"}; }
+
+  const rows = (BOARD && BOARD.rows) ? JSON.parse(JSON.stringify(BOARD.rows)) : {};
+  let n = 0;
+  snap.forEach(doc=>{
+    const p = doc.data(); if(!p || !p.uid) return;
+    let pts = 0;
+    Object.entries(p.picks||{}).forEach(([k,v])=>{
+      const a = actual[k]; if(!a) return;
+      const ph=+v[0]||0, pa=+v[1]||0;
+      if(ph===a[0] && pa===a[1]) pts += PT_EXACT;
+      else if(Math.sign(ph-pa) === Math.sign(a[0]-a[1])) pts += PT_RIGHT;
+    });
+    if(p.scorer && scorers.has(p.scorer)) pts += PT_SCORER;
+    const row = rows[p.uid] || {n:p.name||"مشترك", t:0, r:{}, m:{}};
+    row.n = p.name || row.n;
+    const prev = (row.r||{})[r] || 0;      /* إعادة الاحتساب لا تُضاعف النقاط */
+    row.r = row.r || {}; row.m = row.m || {};
+    row.r[r] = pts;
+    row.m[month] = Math.max(0, (row.m[month]||0) - prev + pts);
+    row.t = Math.max(0, (row.t||0) - prev + pts);
+    rows[p.uid] = row; n++;
+  });
+
+  const body = {rows, lastRound:+r, lastMonth:month, updated:new Date().toISOString()};
+  try{ await fbDb.collection("boards").doc(seasonId()).set(body); }
+  catch(e){ return {ok:false, msg:"تعذّر حفظ جدول الترتيب"}; }
+  BOARD = body;
+  return {ok:true, msg:`احتُسبت الجولة ${r} لـ ${n} مشتركاً`};
+}
+
+function fanListHTML(q){
+  const rows = Object.entries((BOARD&&BOARD.rows)||{})
+    .filter(([,r])=>!q || String(r.n||"").includes(q))
+    .sort((a,b)=>(b[1].t||0)-(a[1].t||0)).slice(0,30);
+  if(!rows.length) return `<span style="color:var(--slate);font-size:.78rem">لا نتائج.</span>`;
+  return rows.map(([uid,r])=>`<div class="staffrow">
+      <div class="sm"><b>${esc(r.n||"مشترك")}${r.h?' <span class="cnt off">مخفي</span>':""}</b>
+        <span style="direction:rtl">${r.t||0} نقطة</span>
+        <code>${esc(uid)}</code></div>
+      <button data-fan="${esc(uid)}">${r.h?"إظهار":"إخفاء"}</button>
+    </div>`).join("");
+}
+
+/* ===== واجهة التبويب ===== */
+function renderPredict(){
+  const box = $("#v-predict");
+  const o = openRound(), locked = isLocked(o);
+
+  if(!FAN){ box.innerHTML = authCard(); wireAuth(); return; }
+
+  const picks = (MYPRED && MYPRED.picks) || {};
+  const myRank = BOARD ? boardRows("season").findIndex(x=>x.uid===FAN.uid) + 1 : 0;
+
+  box.innerHTML = `
+    <div class="fanbar">
+      <div class="fi">
+        <b>${esc(FAN.name)}</b>
+        <span>${myRank ? "ترتيبك في الموسم: "+myRank : "لم تُحتسب لك نقاط بعد"}</span>
+      </div>
+      <button class="lnk" id="editName">تغيير الاسم</button>
+      <button class="lnk" id="fanOut">خروج</button>
+    </div>
+    ${isAnonFan() ? `<div class="anonbar">
+      نقاطك محفوظة على هذا المتصفح فقط.
+      <button class="lnk" id="linkG">اربطه بحساب Google</button>
+    </div>` : ""}
+
+    <h2 class="sec">${o ? `توقعات الجولة ${o.round}` : "التوقعات"}</h2>
+    ${!o ? `<div class="card pad" style="color:var(--slate);text-align:center">لا توجد جولة مفتوحة للتوقع حالياً.</div>` : `
+      <p class="hint">${locked
+        ? "أُقفلت هذه الجولة ببداية أول مباراة. هذي توقعاتك المسجّلة."
+        : `نتيجة مطابقة ${PT_EXACT} نقاط · اتجاه صحيح نقطتان · هداف الجولة ${PT_SCORER} نقاط. تُقفل التوقعات مع صافرة أول مباراة.`}</p>
+      ${o.lockAt && !locked ? `<div class="lockbar">تُقفل ${esc(dayLabel(o.matches[0].date))}${o.matches[0].time?" · "+esc(o.matches[0].time):""}</div>` : ""}
+
+      ${o.matches.map((m,i)=>{
+        const k = m.home+"|"+m.away, v = picks[k] || [0,0];
+        return `<div class="pm">
+          <span class="tm">${esc(m.home)}</span>
+          <div class="stp">
+            <button data-pk="${esc(k)}" data-side="0" data-d="1" ${locked?"disabled":""}>+</button>
+            <span class="val" data-v="${esc(k)}|0">${v[0]}</span>
+            <button data-pk="${esc(k)}" data-side="0" data-d="-1" ${locked?"disabled":""}>−</button>
+          </div>
+          <span class="dsh">−</span>
+          <div class="stp">
+            <button data-pk="${esc(k)}" data-side="1" data-d="1" ${locked?"disabled":""}>+</button>
+            <span class="val" data-v="${esc(k)}|1">${v[1]}</span>
+            <button data-pk="${esc(k)}" data-side="1" data-d="-1" ${locked?"disabled":""}>−</button>
+          </div>
+          <span class="tm a">${esc(m.away)}</span>
+        </div>`;
+      }).join("")}
+
+      <div class="fld" style="margin-top:12px"><label>هداف الجولة</label>
+        <select id="predScorer" ${locked?"disabled":""}>
+          <option value="">— اختر لاعباً —</option>
+          ${allSquadNames().map(n=>`<option value="${esc(n)}" ${MYPRED&&MYPRED.scorer===n?"selected":""}>${esc(n)}</option>`).join("")}
+        </select></div>
+
+      ${locked ? "" : `<div style="height:12px"></div>
+        <button class="btn" id="sendPred" style="width:100%">${MYPRED?"تحديث توقعاتي":"أرسل توقعاتي"}</button>`}
+    `}
+
+    <h2 class="sec">ترتيب الجمهور</h2>
+    ${boardBlock()}`;
+
+  wirePredict(o, locked);
+}
+
+function allSquadNames(){
+  const s = new Set();
+  Object.values(SQUADS).forEach(a=>(a||[]).forEach(n=>s.add(n)));
+  GOALS.forEach(g=>{ if(g.p) s.add(g.p); if(g.a) s.add(g.a); });
+  return [...s].sort((a,b)=>String(a).localeCompare(String(b),"ar"));
+}
+
+function authCard(){
+  return `
+    <h2 class="sec">تحدي التوقعات</h2>
+    <p class="hint">توقّع نتائج الجولة قبل انطلاقها ونافس بقية الجمهور. نتيجة مطابقة ${PT_EXACT} نقاط، اتجاه صحيح نقطتان، وهداف الجولة ${PT_SCORER} نقاط.</p>
+    <div class="card pad">
+      <button class="btn gbtn" id="gIn">
+        <svg viewBox="0 0 48 48" width="18" height="18" aria-hidden="true"><path fill="#4285F4" d="M45 24c0-1.6-.1-2.7-.4-3.9H24v7.1h12c-.2 1.9-1.5 4.7-4.4 6.6l6.7 5.2c4-3.7 6.7-9.1 6.7-15z"/><path fill="#34A853" d="M24 46c5.8 0 10.7-1.9 14.3-5.2l-6.8-5.3c-1.8 1.3-4.3 2.2-7.5 2.2-5.7 0-10.6-3.8-12.3-9l-7 5.4C8.3 41.1 15.6 46 24 46z"/><path fill="#FBBC05" d="M11.7 28.7c-.5-1.3-.7-2.7-.7-4.2s.3-2.9.7-4.2l-7-5.4C3.6 17.8 3 20.8 3 24s.6 6.2 1.7 9.1l7-4.4z"/><path fill="#EA4335" d="M24 10.6c3.2 0 5.4 1.4 6.6 2.5l5.9-5.8C32.9 4 28.8 2 24 2 15.6 2 8.3 6.9 4.7 14.1l7 5.4c1.7-5.2 6.6-8.9 12.3-8.9z"/></svg>
+        الدخول بحساب Google
+      </button>
+      <div class="orline"><i></i><span>أو</span><i></i></div>
+      <div class="fld"><label>الاسم الظاهر في جدول الترتيب</label>
+        <input type="text" id="auName" maxlength="24" placeholder="مثال: أبو فهد"></div>
+      <div style="height:10px"></div>
+      <button class="btn ghost" id="auGo" style="width:100%">ادخل بالاسم</button>
+      <p class="hint" style="margin:12px 0 0">
+        الدخول بالاسم يربط نقاطك بهذا المتصفح فقط. لو مسحت بيانات المتصفح أو انتقلت لجهاز ثاني تفقد نقاطك — تقدر تربطه بـGoogle لاحقاً من داخل حسابك بلا فقدان أي نقطة.</p>
+    </div>`;
+}
+
+function boardBlock(){
+  if(!BOARD || !BOARD.rows || !Object.keys(BOARD.rows).length)
+    return `<div class="card pad" style="color:var(--slate);text-align:center">
+      لم يُحتسب أي ترتيب بعد. يظهر الجدول بعد انتهاء أول جولة.</div>`;
+
+  const lastR = BOARD.lastRound, lastM = BOARD.lastMonth;
+  const months = [...new Set(Object.values(BOARD.rows).flatMap(r=>Object.keys(r.m||{})))].sort();
+  const key = BOARDTAB==="round" ? lastR : BOARDTAB==="month" ? (lastM||months[months.length-1]) : null;
+  const rows = boardRows(BOARDTAB, key).filter(r=>BOARDTAB==="season" || r.pts>0).slice(0,50);
+
+  return `
+    <div class="bchips">
+      <button class="chip ${BOARDTAB==="season"?"on":""}" data-bt="season">الموسم</button>
+      <button class="chip ${BOARDTAB==="round"?"on":""}" data-bt="round">الجولة ${lastR||""}</button>
+      <button class="chip ${BOARDTAB==="month"?"on":""}" data-bt="month">${key&&BOARDTAB==="month"?esc(monthName(key)):"الشهر"}</button>
+    </div>
+    <div class="card">
+      <table class="lb">
+        <thead><tr><th style="width:44px">#</th><th>المشترك</th><th style="width:64px">النقاط</th></tr></thead>
+        <tbody>${rows.length?rows.map((r,i)=>`<tr class="${FAN&&r.uid===FAN.uid?"me":""}">
+          <td class="rk ${i<3?"top":""}">${i+1}</td>
+          <td>${esc(r.name)}</td>
+          <td class="pt">${r.pts}</td>
+        </tr>`).join(""):`<tr><td colspan="3" style="color:var(--slate);text-align:center">لا نقاط في هذه الفترة.</td></tr>`}</tbody>
+      </table>
+    </div>`;
+}
+const AR_MONTHS_LB = {"01":"يناير","02":"فبراير","03":"مارس","04":"أبريل","05":"مايو","06":"يونيو",
+  "07":"يوليو","08":"أغسطس","09":"سبتمبر","10":"أكتوبر","11":"نوفمبر","12":"ديسمبر"};
+const monthName = k => (AR_MONTHS_LB[String(k).slice(5,7)]||"") + " " + String(k).slice(0,4);
+
+/* ===== الربط ===== */
+function wireAuth(){
+  const g=$("#gIn"); if(g) g.onclick=()=>fanSignInGoogle();
+  const go=$("#auGo");
+  if(go) go.onclick=async()=>{
+    const nm=($("#auName").value||"").trim().replace(/\s+/g," ");
+    if(nm.length<2){ toast("اكتب اسماً من حرفين فأكثر","err"); return; }
+    busy(go,true,"لحظة…"); await fanSignInName(nm.slice(0,24)); busy(go,false);
+  };
+}
+function wirePredict(o, locked){
+  const out=$("#fanOut"); if(out) out.onclick=()=>fbAuth.signOut();
+  const lg=$("#linkG"); if(lg) lg.onclick=()=>linkToGoogle();
+  const en=$("#editName");
+  if(en) en.onclick=async()=>{
+    const n=(prompt("الاسم الظاهر في جدول الترتيب:", FAN.name)||"").trim();
+    if(!n || n===FAN.name) return;
+    toast(await saveFanName(n.slice(0,24)) ? "حُدّث الاسم ✅" : "تعذّر تغيير الاسم","ok");
+    renderPredict();
+  };
+  document.querySelectorAll("[data-bt]").forEach(b=>b.onclick=()=>{ BOARDTAB=b.dataset.bt; renderPredict(); });
+
+  if(!o || locked) return;
+  const picks = (MYPRED && MYPRED.picks) || {};
+  o.matches.forEach(m=>{ const k=m.home+"|"+m.away; if(!picks[k]) picks[k]=[0,0]; });
+  document.querySelectorAll("[data-pk]").forEach(b=>b.onclick=()=>{
+    const k=b.dataset.pk, s=+b.dataset.side, d=+b.dataset.d;
+    const cur = picks[k][s] + d;
+    if(cur<0 || cur>9) return;
+    picks[k][s]=cur;
+    const el=document.querySelector(`[data-v="${CSS.escape(k+"|"+s)}"]`);
+    if(el) el.textContent=cur;
+  });
+  const sp=$("#sendPred");
+  if(sp) sp.onclick=async()=>{
+    busy(sp,true,"جارٍ الإرسال…");
+    const ok = await savePred(picks, $("#predScorer").value);
+    busy(sp,false);
+    if(ok){ toast("سُجّلت توقعاتك ✅","ok"); renderPredict(); }
+  };
+}
+
+
+const RENDER={home:renderHome,matches:renderMatches,clubs:renderClubs,players:renderPlayers,predict:renderPredict,analysis:renderAnalysis,admin:renderAdmin};
 function go(v){
   document.querySelectorAll(".view").forEach(s=>s.classList.remove("on"));
   $("#v-"+v).classList.add("on");
@@ -2739,8 +3267,11 @@ async function bootData(){
     if(res.ok){ const d=await res.json(); if(d.clubs&&d.goals&&d.matches) cands.push([d,"data.json المنشور"]); }
   }catch(e){}
   if(!cands.length) return;
-  cands.sort((a,b)=> new Date(b[0].updated||0) - new Date(a[0].updated||0));
-  applyData(cands[0][0], cands[0][1]);
+  /* السحابة هي المرجع متى ما وُجدت — ساعات الأجهزة تختلف فلا يُعتمد على الطابع الزمني */
+  const pick = cands.find(c=>c[1]==="السحابة (Firestore)")
+            || cands.sort((a,b)=> new Date(b[0].updated||0) - new Date(a[0].updated||0))[0];
+  LASTSTAMP=(pick[0].updated||"")+"|"+(pick[0].updatedBy||"");
+  applyData(pick[0], pick[1]);
 }
 (async()=>{
   fbInit();
@@ -2748,6 +3279,8 @@ async function bootData(){
   ALL = stampComp({matches:MATCHES, goals:GOALS, pens:PENS, cards:CARDS});
   applyComp();
   await bootData();
+  watchSeason();
+  await loadBoard();
   paintRail(); paintHeader(); paintFoot(); go("home");
 })();
 </script>
