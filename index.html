@@ -412,6 +412,10 @@ label.lb{display:block;font-size:.72rem;color:var(--slate);margin:0 0 6px}
   background:rgba(233,185,73,.09);border:1px solid rgba(233,185,73,.32);border-radius:10px;
   padding:8px 12px;font-size:.71rem;color:var(--sand);margin-bottom:6px}
 .anonbar .lnk{color:var(--sand)}
+.spark{display:flex;align-items:flex-end;gap:2px;height:70px;
+  background:rgba(6,21,41,.45);border-radius:9px;padding:7px}
+.spark i{flex:1;background:linear-gradient(180deg,var(--sky),rgba(95,178,232,.35));
+  border-radius:2px 2px 0 0;min-height:3px}
 .lockbar{background:rgba(233,185,73,.1);border:1px solid rgba(233,185,73,.35);border-radius:10px;
   padding:8px 12px;font-size:.72rem;color:var(--sand);margin-bottom:11px}
 .pm{display:flex;align-items:center;gap:8px;background:var(--navy-900);
@@ -2476,6 +2480,12 @@ function renderAdmin(){
 
     ${squadsSectionHTML()}
 
+    <h2 class="sec">الزيارات</h2>
+    <p class="hint">عدد الجلسات اليومية على الموقع. جلسة واحدة لكل زائر في كل مرة يفتح فيها الموقع من جديد.</p>
+    <div class="card pad" id="visBox">
+      <button class="btn ghost" id="visLoad">اعرض آخر ٣٠ يوماً</button>
+    </div>
+
     <h2 class="sec">تحدي التوقعات</h2>
     <p class="hint">بعد إدخال نتائج الجولة كاملة، احتسب نقاط الجمهور. الاحتساب يقرأ توقعات المشتركين ويحدّث جداول الترتيب — وإعادته على نفس الجولة آمنة ولا تُضاعف النقاط.</p>
     <div class="card pad">
@@ -2789,6 +2799,24 @@ function renderAdmin(){
   wireAdminIO();
   wireSquads();
   wireStaff();
+  const vl=$("#visLoad");
+  if(vl) vl.onclick=async()=>{
+    busy(vl,true,"جارٍ التحميل…");
+    const rows=await loadVisits(30);
+    busy(vl,false);
+    const tot=rows.reduce((s,r)=>s+r.v,0);
+    const act=rows.filter(r=>r.v>0).length;
+    const mx=Math.max(1,...rows.map(r=>r.v));
+    const last7=rows.slice(-7).reduce((s,r)=>s+r.v,0);
+    $("#visBox").innerHTML=`
+      <div class="stat"><span>آخر ٣٠ يوماً</span><span class="v">${tot} زيارة</span></div>
+      <div class="stat"><span>آخر ٧ أيام</span><span class="v">${last7} زيارة</span></div>
+      <div class="stat"><span>اليوم</span><span class="v">${rows[rows.length-1].v}</span></div>
+      <div class="stat"><span>متوسط اليوم النشط</span><span class="v">${act?Math.round(tot/act):0}</span></div>
+      <div style="height:14px"></div>
+      <div class="spark">${rows.map(r=>`<i style="height:${Math.max(3,Math.round(r.v/mx*100))}%" title="${r.d}: ${r.v}"></i>`).join("")}</div>
+      <p class="hint" style="margin:10px 0 0">العدّاد يبدأ من يوم رفع هذا الملف — ما قبله يظهر أصفاراً لأنه لم يُسجَّل.</p>`;
+  };
   const op=$("#opGo");
   if(op) op.onclick=async()=>{
     const r=$("#opRound").value, v=$("#opLock").value;
@@ -2887,6 +2915,36 @@ function downloadAssets(){
 }
 
 /* ================= التنقل ================= */
+/* ================= عدّاد الزوار =================
+   عدّاد يومي في Firestore. القواعد تسمح بزيادة واحدة فقط لكل طلب،
+   فلا يقدر أحد ينفخ الرقم دفعة واحدة. جلسة واحدة = زيارة واحدة. */
+let VISITS = null;
+const dayKey = d => { const x=d||new Date();
+  return x.getFullYear()+"-"+String(x.getMonth()+1).padStart(2,"0")+"-"+String(x.getDate()).padStart(2,"0"); };
+
+async function countVisit(){
+  if(!fbDb) return;
+  try{
+    if(sessionStorage.getItem("mf_seen")) return;   /* جلسة واحدة = زيارة واحدة */
+    sessionStorage.setItem("mf_seen","1");
+  }catch(e){}
+  const k = dayKey();
+  try{
+    await fbDb.collection("stats").doc(k).set(
+      {v: firebase.firestore.FieldValue.increment(1), d:k}, {merge:true});
+  }catch(e){}
+}
+async function loadVisits(days){
+  if(!fbDb) return [];
+  const out=[], n=days||30, keys=[];
+  for(let i=n-1;i>=0;i--){ const d=new Date(); d.setDate(d.getDate()-i); keys.push(dayKey(d)); }
+  try{
+    const snaps = await Promise.all(keys.map(k=>fbDb.collection("stats").doc(k).get()));
+    snaps.forEach((sn,i)=>out.push({d:keys[i], v: sn.exists ? (sn.data().v||0) : 0}));
+  }catch(e){}
+  VISITS = out; return out;
+}
+
 /* ================================================================
    تحدي التوقعات — تسجيل الجمهور، التوقعات، جداول الترتيب
    الاحتساب يتم من متصفح المالك (لا تتوفر Cloud Functions على Spark)
@@ -3432,6 +3490,7 @@ async function bootData(){
   watchSeason();
   await loadBoard();
   await loadRoundMeta();
+  countVisit();
   paintRail(); paintHeader(); paintFoot(); go("home");
 })();
 </script>
