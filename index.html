@@ -597,7 +597,9 @@ const PZONES = ["يسار أعلى","وسط أعلى","يمين أعلى","يس�
 let LIST = {
   det:["هجمة مرتدة","بناء من الخلف","اختراق فردي","تمريرة بينية","عرضية من اللعب المفتوح",
        "تسديدة من خارج المنطقة","خطأ دفاعي / استخلاص ضغط","متابعة كرة مرتدة",
-       "ركنية","ركلة حرة مباشرة","ركلة حرة غير مباشرة","رمية تماس","ركلة جزاء"],
+       "ركنية","ركلة حرة مباشرة","ركلة حرة غير مباشرة",
+       "ركلة حرة مرتدة من الحائط","ركلة حرة مرتدة من الحارس","متابعة ركنية مرتدة",
+       "رمية تماس","ركلة جزاء"],
   bp:["القدم اليمنى","القدم اليسرى","الرأس","هدف عكسي","غير ذلك"],
   zone:["منطقة المرمى - يسار","منطقة المرمى - وسط","منطقة المرمى - يمين",
         "داخل منطقة الجزاء - يسار","داخل منطقة الجزاء - وسط","داخل منطقة الجزاء - يمين",
@@ -607,6 +609,33 @@ let LIST = {
   cardtype:["إنذار","إنذار ثانٍ","طرد مباشر"]
 };
 const SETPIECE = /ركنية|ركلة حرة|رمية تماس|ركلة جزاء/;
+/* الإنذار الثاني إنذارٌ في عمود الإنذارات وطردٌ في عمود الطرد — كما تحتسبه الاتحادات */
+const isYellow = t => /إنذار/.test(t||"");
+const isRed    = t => /طرد/.test(t||"") || /إنذار\s*ثان/.test(t||"");
+/* ترقية آلية: الإنذار الثاني لنفس اللاعب في نفس المباراة يصير «إنذار ثانٍ» */
+/* هل هذه البطاقة هي الإنذار الثاني لنفس اللاعب في نفس المباراة؟ */
+function secondYellowAt(cards, idx){
+  const x=(cards||[])[idx]; if(!x || !x.p || !x.club) return false;
+  const t=x.type||"إنذار";
+  if(/ثان/.test(t)) return true;
+  if(!/إنذار/.test(t)) return false;
+  const same=(cards||[]).filter(y=>y && y.p===x.p && y.club===x.club && /إنذار/.test(y.type||"إنذار"));
+  if(same.length<2) return false;
+  const ordered=[...same].sort((a,b)=>(+a.m||0)-(+b.m||0));
+  return ordered.indexOf(x) >= 1;
+}
+function upgradeSecondYellows(cards){
+  const count = {};
+  return [...(cards||[])]
+    .sort((a,b)=>(+a.m||0)-(+b.m||0))
+    .map(x=>{
+      const t = x.type||"إنذار";
+      if(!/إنذار/.test(t) || /ثان/.test(t)) return x;
+      const k = (x.club||"")+"|"+(x.p||"");
+      count[k] = (count[k]||0)+1;
+      return count[k]>=2 ? {...x, type:"إنذار ثانٍ"} : x;
+    });
+}
 const catOf = det => SETPIECE.test(det||"") ? "كرات ثابتة" : "لعب مفتوح";
 let DATA_UPDATED = "2026-08-27T00:00:00Z";
 let DATA_BY = "";   /* بريد آخر من حفظ */
@@ -793,8 +822,8 @@ function clubStats(c){
   const fg = firstGoals();
   const scoredFirst = fg.filter(x=>x.first===c);
   const top = scorers().filter(p=>p.c===c)[0];
-  const yc = CARDS.filter(x=>x.club===c && /إنذار/.test(x.type||"")).length;
-  const rc = CARDS.filter(x=>x.club===c && /طرد/.test(x.type||"")).length;
+  const yc = CARDS.filter(x=>x.club===c && isYellow(x.type)).length;
+  const rc = CARDS.filter(x=>x.club===c && isRed(x.type)).length;
   return {row,gf,ga,timing,sp,scoredFirst,top,yc,rc,
     pen:gf.filter(g=>g.det==="ركلة جزاء").length,
     head:gf.filter(g=>g.bp==="الرأس").length,
@@ -1066,9 +1095,14 @@ function buildFromWorkbook(wb){
     });
   }
 
+  /* الإنذار الثاني في نفس المباراة يُرقّى تلقائياً — لكل مباراة على حدة */
+  const byMatch = {};
+  cards.forEach(c=>{ const k=c.r+"|"+c.comp; (byMatch[k]=byMatch[k]||[]).push(c); });
+  const cards2 = Object.values(byMatch).flatMap(g=>upgradeSecondYellows(g));
+
   const blank = goals.filter(g=>!g.det).length;
   const stale = goals.length>3 && blank >= goals.length*0.5;
-  return {season, clubs, matches, goals, pens, cards, warn, miss, stale};
+  return {season, clubs, matches, goals, pens, cards:cards2, warn, miss, stale};
 }
 
 function applyData(d, source){
@@ -1511,7 +1545,7 @@ function matchFormHTML(){
   <h2 class="sec">الإنذارات (${E.cards.length})</h2>
   ${E.cards.map((x,i)=>`<div class="subrow">
     <button class="del" data-del="cards.${i}" title="حذف">✕</button>
-    <div class="idx">بطاقة ${i+1}</div>
+    <div class="idx">بطاقة ${i+1}${secondYellowAt(E.cards,i)?' · <span style="color:var(--loss)">إنذار ثانٍ = طرد</span>':""}</div>
     <div class="fgrid">
       ${fld("النادي","cards."+i+".club","select",sides,x.club)}
       ${fld("اللاعب","cards."+i+".p","combo",x.club?playersOf(x.club):playersOfSides(sides),x.p)}
@@ -1592,7 +1626,8 @@ async function saveMatch(){
                     venue:m.venue, home:m.home, away:m.away, hg:0, ag:0});
   EDIT.goals.forEach(g=>ALL.goals.push({r:round, comp:m.comp, sc:g.sc, cd:other(g.sc), p:g.p, a:g.a||"",
       m:+g.m, x:+g.x||0, cat:catOf(g.det), det:g.det, bp:g.bp||"", zone:g.zone||""}));
-  EDIT.cards.forEach(x=>ALL.cards.push({r:round, comp:m.comp, club:x.club, p:x.p, m:+x.m||0, type:x.type}));
+  upgradeSecondYellows(EDIT.cards).forEach(x=>ALL.cards.push(
+      {r:round, comp:m.comp, club:x.club, p:x.p, m:+x.m||0, type:x.type}));
   EDIT.pens.forEach(x=>ALL.pens.push({r:round, comp:m.comp, by:x.by, vs:other(x.by), p:x.p,
       m:+x.m||0, res:x.res, place:x.place||""}));
   /* النتيجة تُشتق من الأهداف */
@@ -1979,8 +2014,8 @@ function roundSummary(list){
   const goals=done.reduce((a,m)=>a+m.hg+m.ag,0);
   const keys=new Set(list.map(m=>m.round+"|"+m.home+"|"+m.away));
   const inScope=x=>list.some(m=>m.round===x.r&&(m.home===x.club||m.away===x.club));
-  const yc=CARDS.filter(x=>/إنذار/.test(x.type||"")&&inScope(x)).length;
-  const rc=CARDS.filter(x=>/طرد/.test(x.type||"")&&inScope(x)).length;
+  const yc=CARDS.filter(x=>isYellow(x.type)&&inScope(x)).length;
+  const rc=CARDS.filter(x=>isRed(x.type)&&inScope(x)).length;
   return `<div class="rsum">
     <div><div class="n">${done.length}</div><div class="l">أُقيمت</div></div>
     <div><div class="n" style="${soon?"color:var(--sand)":""}">${soon}</div><div class="l">لم تبدأ</div></div>
@@ -2103,7 +2138,7 @@ function renderMatches(){
   const matchCards = list.map(m=>{
     const gs=matchGoals(m);
     const mc=CARDS.filter(x=>x.r===m.round && (x.club===m.home||x.club===m.away));
-    const y=mc.filter(x=>/إنذار/.test(x.type||"")).length, r=mc.filter(x=>/طرد/.test(x.type||"")).length;
+    const y=mc.filter(x=>isYellow(x.type)).length, r=mc.filter(x=>isRed(x.type)).length;
     const soon=isUpcoming(m), live=isLive(m);
     return `<div class="match${soon?" soon":""}">
       <div class="mhead">
@@ -2196,7 +2231,7 @@ function renderClubBody(c){
     <div class="stat"><span>الإنذارات <i class="cardpill y"></i></span><span class="v">${s.yc}</span></div>
     <div class="stat"><span>حالات الطرد <i class="cardpill r"></i></span><span class="v">${s.rc}</span></div>
     <div class="stat"><span>معدل الإنذارات لكل مباراة</span><span class="v">${r.P?(s.yc/r.P).toFixed(2):"—"}</span></div>
-    ${CARDS.length?`<div class="stat"><span>أكثر لاعبيه إنذاراً</span><span class="v">${(()=>{const q={};CARDS.filter(x=>x.club===c&&/إنذار/.test(x.type||"")).forEach(x=>q[x.p]=(q[x.p]||0)+1);const e=Object.entries(q).sort((a,b)=>b[1]-a[1])[0];return e?esc(e[0])+" ("+e[1]+")":"—";})()}</span></div>`:""}
+    ${CARDS.length?`<div class="stat"><span>أكثر لاعبيه إنذاراً</span><span class="v">${(()=>{const q={};CARDS.filter(x=>x.club===c&&isYellow(x.type)).forEach(x=>q[x.p]=(q[x.p]||0)+1);const e=Object.entries(q).sort((a,b)=>b[1]-a[1])[0];return e?esc(e[0])+" ("+e[1]+")":"—";})()}</span></div>`:""}
   </div>
   ${CARDS.length?"":`<p class="hint">لا توجد بيانات انضباط بعد — أضف ورقة «سجل الإنذارات» في ملف الاستوديو.</p>`}
 
@@ -2232,7 +2267,7 @@ function renderPlayers(){
   const row = (p,val,i) => `<tr><td><div class="teamcell"><span class="pos">${i+1}</span>${pav(p.n)}${crest(p.c)}<b>${esc(p.n)}</b></div></td>
     <td style="color:var(--slate)">${esc(p.c)}</td><td style="color:#fff;font-weight:700">${val}</td></tr>`;
   const disc={}; CARDS.forEach(x=>{ const k=x.p+"|"+x.club; (disc[k]??={n:x.p,c:x.club,y:0,r:0});
-    if(/طرد/.test(x.type||"")) disc[k].r++; else disc[k].y++; });
+    if(isYellow(x.type)) disc[k].y++; if(isRed(x.type)) disc[k].r++; });
   const DL=Object.values(disc).sort((a,b)=>b.r-a.r||b.y-a.y);
   $("#v-players").innerHTML=`
     ${compChips()}
