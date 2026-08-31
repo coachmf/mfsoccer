@@ -610,6 +610,10 @@ let LIST = {
 };
 const SETPIECE = /ركنية|ركلة حرة|رمية تماس|ركلة جزاء/;
 /* الإنذار الثاني إنذارٌ في عمود الإنذارات وطردٌ في عمود الطرد — كما تحتسبه الاتحادات */
+/* وسم الهدف العكسي: اسم المدافع الذي ارتدت عنه الكرة */
+const ogLabel = g => (g && g.bp==="هدف عكسي")
+  ? ` <span style="color:var(--loss);font-size:.72rem">هدف عكسي${g.og?" · ارتدت عن "+esc(g.og):""}</span>`
+  : "";
 const isYellow = t => /إنذار/.test(t||"");
 const isRed    = t => /طرد/.test(t||"") || /إنذار\s*ثان/.test(t||"");
 /* ترقية آلية: الإنذار الثاني لنفس اللاعب في نفس المباراة يصير «إنذار ثانٍ» */
@@ -1004,7 +1008,8 @@ function buildFromWorkbook(wb){
     if(!cat && det) cat = /ركلة جزاء|ركلة حرة|ركنية|رمية تماس|كرة ثابتة/.test(det) ? "كرات ثابتة" : "لعب مفتوح";
     const g={ r:cellNum(r[1]), sc, cd, p:cellStr(r[5]), a:cellStr(r[6]),
               m:cellNum(r[8]), x:cellNum(r[9]),
-              cat, det, bp:cellStr(r[14]), zone:cellStr(r[15]) };
+              cat, det, bp:cellStr(r[14]), zone:cellStr(r[15]),
+              og:cellStr(r[16]) };   /* عمود اختياري: اللاعب الذي ارتدت عنه الكرة */
     if(!clubs.includes(sc)) warn.push(`سجل الأهداف صف ${line}: نادٍ غير معروف «${sc}»`);
     if(!clubs.includes(cd)) warn.push(`سجل الأهداف صف ${line}: نادٍ غير معروف «${cd}»`);
     if(!g.r) warn.push(`سجل الأهداف صف ${line}: رقم الجولة فارغ`);
@@ -1538,6 +1543,8 @@ function matchFormHTML(){
       ${fld("إضافي","goals."+i+".x","number",null,g.x)}
       ${fld("تفصيل طريقة التسجيل","goals."+i+".det","select",LIST.det,g.det)}
       ${fld("وضعية التسجيل","goals."+i+".bp","select",LIST.bp,g.bp)}
+      ${g.bp==="هدف عكسي" ? fld("ارتدت عن (لاعب الفريق الخصم)","goals."+i+".og","combo",
+           playersOf(sides.find(c=>c!==g.sc) || ""), g.og) : ""}
       ${fld("منطقة التسجيل","goals."+i+".zone","select",LIST.zone,g.zone)}
     </div></div>`).join("")}
   <button class="addbtn" data-add="goals">+ إضافة هدف</button>
@@ -1625,7 +1632,8 @@ async function saveMatch(){
   ALL.matches.push({n:ALL.matches.length+1, round, comp:m.comp, date:m.date, time:m.time,
                     venue:m.venue, home:m.home, away:m.away, hg:0, ag:0});
   EDIT.goals.forEach(g=>ALL.goals.push({r:round, comp:m.comp, sc:g.sc, cd:other(g.sc), p:g.p, a:g.a||"",
-      m:+g.m, x:+g.x||0, cat:catOf(g.det), det:g.det, bp:g.bp||"", zone:g.zone||""}));
+      m:+g.m, x:+g.x||0, cat:catOf(g.det), det:g.det, bp:g.bp||"", zone:g.zone||"",
+      og: g.bp==="هدف عكسي" ? (g.og||"") : ""}));
   upgradeSecondYellows(EDIT.cards).forEach(x=>ALL.cards.push(
       {r:round, comp:m.comp, club:x.club, p:x.p, m:+x.m||0, type:x.type}));
   EDIT.pens.forEach(x=>ALL.pens.push({r:round, comp:m.comp, by:x.by, vs:other(x.by), p:x.p,
@@ -1757,12 +1765,12 @@ function renderMatchAdmin(){
     el.oninput=()=>setPath(el.dataset.k, el.value);
     el.onchange=()=>{ setPath(el.dataset.k, el.value);
       if(/^match\.(home|away)$/.test(el.dataset.k) || /\.det$/.test(el.dataset.k)
-         || /^goals\.\d+\.sc$/.test(el.dataset.k) || /^cards\.\d+\.club$/.test(el.dataset.k)
+         || /^goals\.\d+\.(sc|bp)$/.test(el.dataset.k) || /^cards\.\d+\.club$/.test(el.dataset.k)
          || /^pens\.\d+\.by$/.test(el.dataset.k)) renderMatchAdmin(); };
   });
   box.querySelectorAll("[data-add]").forEach(b=>b.onclick=()=>{
     const k=b.dataset.add;
-    if(k==="goals") EDIT.goals.push({sc:"",p:"",a:"",m:"",x:0,det:"",bp:"",zone:""});
+    if(k==="goals") EDIT.goals.push({sc:"",p:"",a:"",m:"",x:0,det:"",bp:"",zone:"",og:""});
     if(k==="cards") EDIT.cards.push({club:"",p:"",m:"",type:"إنذار"});
     if(k==="pens")  EDIT.pens.push({by:"",p:"",m:"",res:"سجلت",place:""});
   renderMatchAdmin();
@@ -2158,7 +2166,7 @@ function renderMatches(){
       ${gs.length?`<div class="goals">${gs.map(g=>`<div class="gline">
           <span class="gmin">${minLabel(g)}</span>
           ${crest(g.sc)}
-          <span style="flex:1">${esc(g.p)}${g.a?` <span style="color:var(--slate);font-size:.72rem">صناعة ${esc(g.a)}</span>`:""}</span>
+          <span style="flex:1">${esc(g.p)}${ogLabel(g)}${g.a?` <span style="color:var(--slate);font-size:.72rem">صناعة ${esc(g.a)}</span>`:""}</span>
           <span class="gtag">${esc(g.det)}</span></div>`).join("")}</div>`:""}
     </div>`;
   }).join("");
@@ -2256,7 +2264,7 @@ function renderClubBody(c){
   <h2 class="sec">أهداف النادي</h2>
   <div class="card pad">${s.gf.length?s.gf.map(g=>`<div class="gline" style="padding:6px 0;border-bottom:1px dashed rgba(143,166,196,.14)">
       <span class="gmin">${minLabel(g)}</span>
-      <span style="flex:1">${esc(g.p)} <span style="color:var(--slate);font-size:.72rem">ضد ${esc(g.cd)}</span></span>
+      <span style="flex:1">${esc(g.p)}${ogLabel(g)} <span style="color:var(--slate);font-size:.72rem">ضد ${esc(g.cd)}</span></span>
       <span class="gtag">${esc(g.zone)}</span></div>`).join(""):'<span style="color:var(--slate)">لا توجد أهداف مسجّلة بعد.</span>'}</div>`;
   renderClubHeat(c);
 }
