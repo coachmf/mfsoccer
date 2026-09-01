@@ -7,7 +7,33 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="mobile-web-app-capable" content="yes">
-<title>إحصائيات دوري زين الممتاز 2026/2027</title>
+<title>إحصائيات دوري زين الممتاز 2026/2027 | mfsoccer</title>
+<meta name="description" content="إحصائيات دوري زين الممتاز الكويتي لموسم 2026/2027 — أرقام المباريات والأهداف واللاعبين وجدول الترتيب، بإشراف CoachMF.">
+<meta name="author" content="Mohammed Alfailakawi — CoachMF">
+<link rel="canonical" href="https://mfsoccer.com/">
+
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="mfsoccer">
+<meta property="og:locale" content="ar_KW">
+<meta property="og:url" content="https://mfsoccer.com/">
+<meta property="og:title" content="إحصائيات دوري زين الممتاز 2026/2027">
+<meta property="og:description" content="أرقام المباريات والأهداف واللاعبين وجدول الترتيب — تحديث مستمر طوال الموسم.">
+<meta property="og:image" content="https://mfsoccer.com/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="إحصائيات دوري زين الممتاز 2026/2027 — mfsoccer.com">
+
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="إحصائيات دوري زين الممتاز 2026/2027">
+<meta name="twitter:description" content="أرقام المباريات والأهداف واللاعبين وجدول الترتيب — تحديث مستمر طوال الموسم.">
+<meta name="twitter:image" content="https://mfsoccer.com/og.png">
+
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="manifest" href="/site.webmanifest">
+<meta name="apple-mobile-web-app-title" content="mfsoccer">
+<meta name="application-name" content="mfsoccer">
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.12.2/firebase-app-compat.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.12.2/firebase-auth-compat.min.js"></script>
@@ -463,6 +489,28 @@ table.lb td.pt{font-family:var(--display);font-weight:700;color:var(--sky);
 .hchip svg{width:14px;height:14px;flex:none}
 .sitefoot .handles{margin:0}
 .sitefoot .hchip{font-size:.7rem;padding:3px 9px 3px 7px}
+
+/* ---------- واتساب: شريحة + زر عائم ---------- */
+.hchip.wa{border-color:rgba(53,164,124,.42);background:rgba(53,164,124,.12);color:#4FD1A0}
+.hchip.wa:hover{background:rgba(53,164,124,.22);border-color:#35A47C}
+.wafab{
+  position:fixed;left:14px;z-index:60;
+  bottom:calc(var(--nav-h) + 14px + env(safe-area-inset-bottom));
+  display:flex;align-items:center;gap:8px;
+  padding:10px 15px 10px 13px;border-radius:999px;
+  background:#1E7A5A;color:#EAFBF3;text-decoration:none;
+  font-family:var(--body);font-size:.78rem;font-weight:600;
+  border:1px solid rgba(79,209,160,.45);
+  box-shadow:0 8px 24px rgba(0,0,0,.45);
+  transition:transform .16s ease,background .16s ease;
+}
+.wafab:hover{background:#23906B;transform:translateY(-2px)}
+.wafab:active{transform:translateY(0)}
+.wafab .waic{display:flex;align-items:center}
+.wafab svg{width:19px;height:19px;flex:none}
+.wafab .lbl{white-space:nowrap}
+@media(max-width:400px){.wafab .lbl{display:none}.wafab{padding:12px}}
+@media(min-width:900px){.wafab{bottom:24px;left:24px}}
 .exportbar{display:flex;gap:8px;margin:14px 0 4px}
 .exportbar .btn{flex:1;display:flex;align-items:center;justify-content:center;gap:7px}
 .sitefoot{display:flex;align-items:center;justify-content:center;gap:10px;margin:34px 0 6px;
@@ -472,7 +520,7 @@ table.lb td.pt{font-family:var(--display);font-weight:700;color:var(--sky);
 @media print{
   @page{size:A4;margin:12mm}
   html,body{background:#061529!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;padding:0}
-  .topbar,nav.tabs,.exportbar,.segbar,.iconbtn,.sitefoot{display:none!important}
+  .topbar,nav.tabs,.exportbar,.segbar,.iconbtn,.sitefoot,.wafab{display:none!important}
   .printonly{display:flex!important;align-items:center;gap:14px;border-bottom:2px solid #E9B949;
     padding-bottom:10px;margin-bottom:16px}
   .printonly img{height:46px}
@@ -523,6 +571,9 @@ table.lb td.pt{font-family:var(--display);font-weight:700;color:var(--sky);
 
 <div class="printonly" id="printHead"></div>
 <div id="toast" role="status" aria-live="polite"></div>
+<a class="wafab" id="waFab" target="_blank" rel="noopener"
+   title="راسلنا على واتساب" aria-label="راسلنا على واتساب">
+  <span class="waic"></span><span class="lbl">اقتراح؟ راسلنا</span></a>
 <main>
   <section class="view on" id="v-home"></section>
   <section class="view" id="v-matches"></section>
@@ -671,6 +722,14 @@ const X_URL  = "https://x.com/coach_mf";
 const IG_SVG = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><rect x="2.6" y="2.6" width="18.8" height="18.8" rx="5.4"/><circle cx="12" cy="12" r="4.1"/><circle cx="17.5" cy="6.5" r="1.15" fill="currentColor" stroke="none"/></svg>`;
 const X_SVG  = `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.53 3H20.5l-6.49 7.42L21.75 21h-5.96l-4.67-6.1L5.75 21H2.78l6.94-7.93L2.5 3h6.1l4.22 5.58L17.53 3Zm-1.04 16.2h1.65L7.6 4.71H5.83l10.66 14.49Z"/></svg>`;
 const OWNER = "Mohammed Alfailakawi";
+
+/* ===== واتساب التواصل والاقتراحات =====
+   غيّر الرقم هنا فقط — بصيغة دولية بدون + وبدون أصفار وبدون مسافات.
+   مثال للكويت: 96599123456                                        */
+const WA_NUMBER = "96564444900";
+const WA_MSG    = "السلام عليكم، عندي اقتراح على موقع إحصائيات دوري زين الممتاز:";
+const WA_URL    = `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(WA_MSG)}`;
+const WA_SVG = `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2 22l5.28-1.38a9.87 9.87 0 0 0 4.76 1.21h.01c5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.82 9.82 0 0 0 12.04 2Zm0 18.14h-.01a8.2 8.2 0 0 1-4.18-1.15l-.3-.18-3.11.82.83-3.04-.2-.31a8.19 8.19 0 0 1-1.26-4.37c0-4.54 3.7-8.23 8.24-8.23 2.2 0 4.27.86 5.82 2.42a8.18 8.18 0 0 1 2.41 5.82c0 4.54-3.69 8.22-8.24 8.22Zm4.52-6.16c-.25-.12-1.47-.72-1.69-.81-.23-.08-.39-.12-.56.13-.16.24-.64.8-.78.97-.15.16-.29.18-.53.06-.25-.13-1.05-.39-1.99-1.23-.74-.65-1.23-1.46-1.38-1.71-.14-.25-.01-.38.11-.5.11-.11.25-.29.37-.44.13-.14.17-.25.25-.41.09-.17.04-.31-.02-.43-.06-.12-.56-1.34-.76-1.84-.2-.48-.4-.42-.56-.43h-.47c-.17 0-.43.06-.66.31-.22.25-.87.85-.87 2.07s.9 2.4 1.02 2.56c.12.17 1.76 2.68 4.26 3.76.6.26 1.06.41 1.42.52.6.19 1.14.16 1.57.1.48-.07 1.47-.6 1.68-1.18.21-.58.21-1.08.14-1.18-.06-.11-.22-.17-.47-.29Z"/></svg>`;
 let LOGOS = {};
 let GSCALE = 100;          /* حجم عام لكل الشعارات % */
 let LSCALE = {};           /* حجم دقيق لكل نادٍ % */
@@ -1444,7 +1503,7 @@ function diagAdvice(res){
   if(f("تحميل مكتبة Firebase") && !f("تحميل مكتبة Firebase").ok)
     return "مانع إعلانات أو برنامج حماية يحجب مكتبة Firebase. عطّله لهذا الموقع.";
   if(f("طريقة الفتح") && !f("طريقة الفتح").ok)
-    return "افتح الموقع من رابط mfsoccer.netlify.app لا من ملف على جهازك.";
+    return "افتح الموقع من رابط mfsoccer.com لا من ملف على جهازك.";
   if(f("تسجيل الدخول") && !f("تسجيل الدخول").ok) return "سجّل الدخول أولاً.";
   if(f("مطابقة حساب المدير") && !f("مطابقة حساب المدير").ok)
     return "هذا الحساب ليس المدير — الكتابة مرفوضة بالقواعد.";
@@ -2097,6 +2156,7 @@ function renderHome(){
       <div class="handles">
         <a class="hchip" href="${IG_URL}" target="_blank" rel="noopener">${IG_SVG}@coachmf</a>
         <a class="hchip" href="${X_URL}" target="_blank" rel="noopener">${X_SVG}@coach_mf</a>
+        <a class="hchip wa" href="${WA_URL}" target="_blank" rel="noopener">${WA_SVG}اقتراحاتكم</a>
       </div>
     </div>
   </div>
@@ -3487,11 +3547,14 @@ function renderAll(){ renderHome(); renderMatches(); if($("#clubSel")) renderClu
 
 function paintHeader(){ const el=$("#leagueMark"); if(el) el.src = LEAGUE; }
 function paintFoot(){
+  const fab=$("#waFab");
+  if(fab){ fab.href=WA_URL; fab.querySelector(".waic").innerHTML=WA_SVG; }
   $("#siteFoot").innerHTML = `<img src="${BRAND}" alt="${esc(OWNER)}">
     <span>© ${esc(OWNER)} · جميع الحقوق محفوظة</span>
     <div class="handles">
       <a class="hchip" href="${IG_URL}" target="_blank" rel="noopener">${IG_SVG}@coachmf</a>
       <a class="hchip" href="${X_URL}" target="_blank" rel="noopener">${X_SVG}@coach_mf</a>
+        <a class="hchip wa" href="${WA_URL}" target="_blank" rel="noopener">${WA_SVG}اقتراحاتكم</a>
     </div>`;
 }
 document.querySelectorAll('nav.tabs button').forEach(b=>b.onclick=()=>go(b.dataset.v));
