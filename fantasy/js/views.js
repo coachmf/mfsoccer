@@ -151,7 +151,7 @@ const VIEWS = {
       <div class="tabs">${hist.map(x=>`<button class="${x.gw===h.gw?'active':''}" onclick="VIEWS.ui.pointsGw=${x.gw};APP.render()">ج${x.gw}</button>`).join('')}</div></div>
     <div class="grid g4" style="margin-bottom:14px">
       <div class="statbox hi"><div class="v">${h.pts}</div><div class="l">نقاطك ${h.hits?`(خصم -${h.hits})`:''}</div></div>
-      <div class="statbox"><div class="v">${DB.gw(h.gw).avg}</div><div class="l">متوسط الجولة</div></div>
+      <div class="statbox"><div class="v">${DB.gw(h.gw).avg ?? '—'}</div><div class="l">متوسط الجولة</div></div>
       <div class="statbox"><div class="v">${Number(h.rank).toLocaleString('ar')}</div><div class="l">ترتيب الجولة</div></div>
       <div class="statbox"><div class="v">${h.benchPts}</div><div class="l">نقاط الدكة ${h.chip?`· كرت: ${DB.state.rules.chips[h.chip]?.label||h.chip}`:''}</div></div>
     </div>
@@ -759,8 +759,8 @@ const VIEWS = {
         const myIdx=rows.findIndex(r=>r.id===m.id);
         return `<div class="card" style="cursor:pointer" onclick="VIEWS.ui.leagueOpen='${l.id}';APP.render()">
           <div class="row spread"><h3 style="margin:0">${esc(l.name)}</h3>
-          <span class="pill">${l.global? (RANKS.POP+st.users.length).toLocaleString('ar') : rows.length} فريق</span></div>
-          <div class="muted" style="margin-top:8px">مركزك: <b style="color:var(--accent)">${l.global? (()=>{const t=DB.myTeam();const or_=RANKS.overallRank(st,TEAM.totalPoints(t),t.joinedGW);return typeof or_.rank==='number'?or_.rank.toLocaleString('ar'):'—';})() : myIdx>=0? myIdx+1:'—'}</b>
+          <span class="pill">${(l.global? RANKS.population(st) : rows.length).toLocaleString('ar')} فريق</span></div>
+          <div class="muted" style="margin-top:8px">مركزك: <b style="color:var(--accent)">${l.global? (()=>{const t=DB.myTeam();const or_=RANKS.overallRank(st,TEAM.totalPoints(t));return typeof or_.rank==='number'?or_.rank.toLocaleString('ar'):'—';})() : myIdx>=0? myIdx+1:'—'}</b>
           ${!l.global? `· الرمز: <b>${l.code}</b>`:''}</div>
         </div>`;}).join('')}
     </div>`;
@@ -791,7 +791,7 @@ const VIEWS = {
   },
   globalTable(){
     const st=DB.state, m=DB.me();
-    const rows=st.bots.map(b=>({...RANKS.namedBotRow(st,b,1), isBot:true}));
+    const rows=[];
     st.users.forEach(u=>{
       const team=st.teams[u.id]; if(!team) return;
       const hist=team.history||[];

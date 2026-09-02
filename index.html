@@ -762,6 +762,7 @@ let LSCALE = {};           /* حجم دقيق لكل نادٍ % */
 let LOGOBG = true;         /* لوحة بيضاء خلف الشعار */
 let LASTUPDATE = "الجولة 1 · 27 أغسطس 2026";
 let isAdmin = false;
+let FANTASY_OPEN = false;   /* إشهار لعبة الفانتازي للجمهور — يأتي من السحابة */
 
 /* ================= أدوات ================= */
 const $ = s => document.querySelector(s);
@@ -1199,6 +1200,7 @@ function applyData(d, source){
   SEASON = d.season || SEASON;
   ALL = stampComp({matches:d.matches||[], goals:d.goals||[], pens:d.pens||[], cards:d.cards||[]});
   SQUADS = d.squads || SQUADS || {};   /* ملف بلا كشوفات لا يمسح الكشوفات الحالية */
+  if("fantasyOpen" in (d||{})) FANTASY_OPEN = !!d.fantasyOpen;
   SQNUMS_FOUND = squadsExtractNums();   /* فصل الأرقام المكتوبة داخل الأسماء */
   CLUBS = d.clubs;
   const have = compsPresent();
@@ -1219,6 +1221,7 @@ function dataObject(){
           matches:ALL?ALL.matches:MATCHES, goals:ALL?ALL.goals:GOALS,
           pens:ALL?ALL.pens:PENS, cards:ALL?ALL.cards:CARDS, squads:SQUADS,
           lastUpdate:LASTUPDATE, updated:new Date().toISOString(),
+          fantasyOpen:FANTASY_OPEN,
           updatedBy:(FBUSER&&FBUSER.email)||""};
 }
 function downloadJSON(){
@@ -1885,6 +1888,22 @@ function wireAdminIO(){
     else if(ok==="pending") toast(`ضُغطت إلى ${after} ك.ب · ${SYNCMSG}`,"busy");
     else toast(SYNCMSG||`ضُغطت إلى ${after} ك.ب لكن الحفظ في السحابة فشل`,"err");
     paintHeader(); renderAdmin(); renderAll(); };
+  const ft=$("#fantasyToggle");
+  if(ft) ft.onclick=async()=>{
+    if(!fbDb){ toast("السحابة غير متاحة — افتح الموقع من نطاقه المنشور","err"); return; }
+    if(!isAdmin){ toast("سجّل الدخول أولاً","err"); return; }
+    const turningOn = !FANTASY_OPEN;
+    if(!turningOn && !confirm("إخفاء لعبة الفانتازي عن الجمهور؟")) return;
+    busy(ft,true,turningOn?"جارٍ الإشهار…":"جارٍ الإخفاء…");
+    const r=await setFantasyOpen(turningOn);
+    busy(ft,false);
+    if(r===true){ LASTSYNC=new Date();
+      toast(turningOn?"أُشهرت اللعبة — صارت ظاهرة لكل الزوار":"أُخفيت اللعبة عن الجمهور","ok"); }
+    else if(r==="pending") toast(SYNCMSG||"الاتصال بطيء — سيكتمل الحفظ تلقائياً","busy");
+    else toast(SYNCMSG||"تعذّر الحفظ — لم تتغيّر الحالة","err");
+    renderAdmin(); };
+  const fo=$("#fantasyOpenBtn");
+  if(fo) fo.onclick=()=>window.open(FANTASY_URL+"#admin","_blank","noopener");
   const pc=$("#pushCloud");
   if(pc) pc.onclick=async()=>{
     if(!fbDb){ toast("السحابة غير متاحة — افتح الموقع من نطاقه المنشور","err"); return; }
@@ -2938,6 +2957,18 @@ function renderAdmin(){
     <p class="hint">أضف مباراة كاملة يدوياً: الجولة والملعب والتاريخ والوقت، ثم الأهداف والبطاقات وركلات الجزاء بنفس حقول ملف الإكسل. النتيجة تُحسب من الأهداف.</p>
     <div id="matchAdmin"></div>
 
+    <h2 class="sec">لعبة الفانتازي</h2>
+    <div class="card pad">
+      <div class="stat"><span>الحالة</span><span class="v" style="font-size:.85rem">${FANTASY_OPEN?"مُشهرة للجمهور":"مخفية — تظهر لك وحدك"}</span></div>
+      <div style="height:12px"></div>
+      <button class="btn${FANTASY_OPEN?" ghost":""}" id="fantasyToggle">${FANTASY_OPEN?"🔒 إخفاء اللعبة عن الجمهور":"🚀 إشهار اللعبة للجمهور"}</button>
+      <div style="height:8px"></div>
+      <button class="btn ghost" id="fantasyOpenBtn">↗ فتح لوحة إدارة الفانتازي</button>
+      <p class="hint" style="margin:12px 0 0">${FANTASY_OPEN
+        ? "اللعبة ظاهرة الآن لكل زائر: يشوف تبويب «فانتازي» ويدخلها بلا رمز. الإخفاء يرجّعها لبوابة الرمز فوراً."
+        : "الإشهار يُظهر تبويب «فانتازي» لكل الزوار ويرفع بوابة الرمز عن اللعبة. يُحفظ في السحابة فيسري على كل الأجهزة خلال ثوانٍ."}</p>
+    </div>
+
     <h2 class="sec">بيانات الموسم</h2>
     <div class="card pad">
       <div class="stat"><span>المصدر الحالي</span><span class="v" style="font-size:.8rem">${esc(DATA_SOURCE)}</span></div>
@@ -3780,13 +3811,23 @@ function wirePredict(o, locked){
 
 
 const RENDER={home:renderHome,matches:renderMatches,clubs:renderClubs,players:renderPlayers,predict:renderPredict,analysis:renderAnalysis,admin:renderAdmin};
-/* تبويب الفانتازي: يظهر لك أنت فقط بعد دخول المدير.
-   للفتح للجمهور: بدّل FANTASY_PUBLIC إلى true. */
+/* تبويب الفانتازي: مخفي عن الزوار حتى يُشهره المدير.
+   الحالة محفوظة في السحابة (حقل fantasyOpen في مستند الموسم) لا في الكود،
+   فيكفي ضغط الزر مرة واحدة لتُفتح اللعبة لكل الزوار على كل الأجهزة.
+   والفانتازي نفسه يقرأ الحقل ذاته ويرفع بوابته تلقائياً. */
 const FANTASY_URL = "/fantasy/";
-const FANTASY_PUBLIC = false;
 function paintFantasyTab(){
   const b=$("#fantasyTab"); if(!b) return;
-  b.style.display = (FANTASY_PUBLIC || isAdmin) ? "" : "none";
+  b.style.display = (FANTASY_OPEN || isAdmin) ? "" : "none";
+}
+/* تبديل الإشهار وحفظه في السحابة فوراً */
+async function setFantasyOpen(on){
+  const prev = FANTASY_OPEN;
+  FANTASY_OPEN = !!on;
+  const r = await persistData();
+  if(r === false){ FANTASY_OPEN = prev; return false; }
+  paintFantasyTab();
+  return r;
 }
 function go(v){
   document.querySelectorAll(".view").forEach(s=>s.classList.remove("on"));

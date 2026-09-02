@@ -44,9 +44,9 @@ const DB = {
       (t.history||[]).forEach(h=>{
         const res=TEAM.gwPoints(t,h.gw,st);
         h.pts=res.total; h.benchPts=res.benchPts;
-        h.rank=RANKS.gwRank(st,res.total,h.gw).rank;
       });
     }
+    st.gws.filter(g=>g.status==='finished').forEach(g=>RANKS.recomputeGWRanks(st,g.n));
     this.save();
   },
 
@@ -122,7 +122,7 @@ function buildSeedState(){
     rules: JSON.parse(JSON.stringify(SEED_RULES)),
     users: [], teams: {}, session: null,
     leagues: [ {id:'L1', code:'OVERALL', name:'الترتيب العام — دوري زين الممتاز', type:'classic', owner:null, members:[], global:true} ],
-    bots: SEED_BOT_NAMES.map((b,i)=>({id:'b'+(i+1), name:b[0], teamName:b[1], skill:0.35+0.6*(mulberry32(900+i)()) })),
+    bots: [],   // لا مدراء وهميين — الترتيب والدوريات للمشتركين الحقيقيين فقط
     news: SEED_NEWS.map((n,i)=>({id:'n'+(i+1),...n})),
     notifications: {},
     transferStats: {},
@@ -302,18 +302,22 @@ function scoreFixture(st, fx){
   }
 }
 
-/* متوسط الجولة وأعلى نقاط */
+/* متوسط الجولة وأعلى نقاط — من نقاط المشتركين الفعليين.
+   قبل احتساب الجولة (أو بلا مشتركين) تبقى null وتُعرض «—». */
 function finalizeGWStats(st, gw){
   const g = st.gws.find(x=>x.n===gw);
-  const arr=[];
-  for(const pid in st.playerGW){ const r=st.playerGW[pid][gw]; if(r) arr.push(r.pts); }
-  g.avg = Math.round(botGWAvg(st,gw));
-  g.high = g.avg + 20 + (hashStr('hi'+gw)%14);
+  if(g) refreshGWSummary(st, gw);
 }
-function botGWAvg(st,gw){
-  // متوسط نقاط فرق الفانتازي = دالة على أهداف الجولة (معايَر على جولة من 6 مباريات)
-  const goals = st.fixtures.filter(f=>f.gw===gw && f.status==='F').reduce((s,f)=>s+(f.hs||0)+(f.as||0),0);
-  return 24 + goals*0.7;
+function refreshGWSummary(st, gw){
+  const g = st.gws.find(x=>x.n===gw); if(!g) return;
+  const pts=[];
+  for(const uid in (st.teams||{})){
+    const h=(st.teams[uid].history||[]).find(x=>x.gw===gw);
+    if(h && typeof h.pts==='number') pts.push(h.pts);
+  }
+  if(!pts.length){ g.avg=null; g.high=null; return; }
+  g.avg  = Math.round(pts.reduce((s,p)=>s+p,0)/pts.length);
+  g.high = Math.max(...pts);
 }
 
 /* =========================================================
@@ -409,48 +413,53 @@ const TEAM = {
 };
 
 /* =========================================================
-   ترتيب عام (مجتمع افتراضي 8000 مدير) + بوتات مسماة
+   الترتيب العام — بين المشتركين الحقيقيين فقط.
+   لا مجتمع وهمي ولا مدراء مولّدون: كل رقم هنا مبني على نقاط
+   لاعبين فعليين، فإذا كان المشتركون ثلاثة فالترتيب «من 3».
    ========================================================= */
 const RANKS = {
-  POP: 8000,
-  botGWScore(st, botSeed, skill, gw){
-    const g=st.gws.find(x=>x.n===gw);
-    if(!g || g.status!=='finished') return 0;
-    const avg = botGWAvg(st,gw);
-    const rng = mulberry32(hashStr('bot'+botSeed+'gw'+gw));
-    return Math.max(4, Math.round(avg + (skill-0.5)*24 + gauss(rng)*9));
-  },
-  botTotal(st, botSeed, skill, fromGW, toGW){
-    let t=0;
-    for(let g=fromGW; g<=toGW; g++) t+=this.botGWScore(st,botSeed,skill,g);
-    return t;
-  },
   finishedGWs(st){ return st.gws.filter(g=>g.status==='finished').map(g=>g.n); },
-  overallRank(st, userTotal, joinedGW){
-    const done=this.finishedGWs(st).filter(g=>g>=joinedGW);
-    if(!done.length) return {rank:'-', of:this.POP};
-    let better=0;
-    for(let i=0;i<this.POP;i++){
-      const skill=0.2+0.6*mulberry32(hashStr('skill'+i))();
-      let t=0; for(const g of done) t+=this.botGWScore(st,i,skill,g);
-      if(t>userTotal) better++;
-    }
-    return {rank:better+1, of:this.POP+DB.state.users.length};
+
+  /* عدد المشتركين الذين لهم فريق فعلي */
+  population(st){ return Object.keys(st.teams||{}).length; },
+
+  /* مجموع نقاط كل مشترك */
+  userTotals(st){
+    return Object.keys(st.teams||{}).map(uid=>({
+      id: uid,
+      total: (st.teams[uid].history||[]).reduce((s,h)=>s+(h.pts||0), 0)
+    }));
   },
+
+  /* يعيد ترقيم ترتيب الجولة للجميع دفعة واحدة، مع معالجة التعادل */
+  recomputeGWRanks(st, gw){
+    const rows=[];
+    for(const uid in (st.teams||{})){
+      const h=(st.teams[uid].history||[]).find(x=>x.gw===gw);
+      if(h) rows.push(h);
+    }
+    rows.sort((a,b)=>(b.pts||0)-(a.pts||0));
+    let prev=null, rank=0;
+    rows.forEach((h,i)=>{ if(prev===null || h.pts<prev){ rank=i+1; prev=h.pts; } h.rank=rank; });
+    refreshGWSummary(st, gw);
+    return rows.length;
+  },
+  /* الترتيب العام بمجموع النقاط */
+  overallRank(st, userTotal){
+    const all=this.userTotals(st);
+    if(!all.length) return {rank:'-', of:0};
+    return {rank: all.filter(x=>x.total>userTotal).length+1, of: all.length};
+  },
+
+  /* ترتيب جولة واحدة — من السجل المحفوظ لا من توليد عشوائي */
   gwRank(st, userPts, gw){
-    let better=0;
-    for(let i=0;i<this.POP;i++){
-      const skill=0.2+0.6*mulberry32(hashStr('skill'+i))();
-      if(this.botGWScore(st,i,skill,gw)>userPts) better++;
+    let of=0, better=0;
+    for(const uid in (st.teams||{})){
+      const h=(st.teams[uid].history||[]).find(x=>x.gw===gw);
+      if(!h) continue;
+      of++; if(h.pts>userPts) better++;
     }
-    return {rank:better+1, of:this.POP};
-  },
-  namedBotRow(st, bot, fromGW){
-    const done=this.finishedGWs(st).filter(g=>g>=(fromGW||1));
-    const seed = hashStr(bot.id)%this.POP;
-    let total=0, last=0;
-    done.forEach(g=>{ const s=this.botGWScore(st,seed,bot.skill,g); total+=s; if(g===Math.max(...done)) last=s; });
-    return { id:bot.id, name:bot.name, teamName:bot.teamName, total, last };
+    return of? {rank:better+1, of} : {rank:'-', of:0};
   },
 };
 
@@ -666,15 +675,16 @@ const GWADMIN = {
     finalizeGWStats(st,gw);
     const g=st.gws.find(x=>x.n===gw); g.status='finished';
 
-    // نقاط كل مستخدم
+    // نقاط كل مستخدم — على مرحلتين: تُحسب نقاط الجميع أولاً ثم يُرقّم الترتيب بينهم
+    const scored={};
     for(const uid in st.teams){
       const team=st.teams[uid];
       if(team.joinedGW>gw) continue;
       if(!team.gwPicks[gw]) this.snapshotPicks(team, gw);
       const res=TEAM.gwPoints(team, gw, st);
-      const rank=RANKS.gwRank(st,res.total,gw);
       team.history=team.history||[];
-      team.history.push({gw, pts:res.total, benchPts:res.benchPts, rank:rank.rank, chip:res.chip, hits:res.hits});
+      team.history.push({gw, pts:res.total, benchPts:res.benchPts, rank:0, chip:res.chip, hits:res.hits});
+      scored[uid]=res.total;
       // الضربة الحرة: استرجاع الفريق
       if(team.gwPicks[gw] && team.gwPicks[gw].chip==='freehit' && team.fhBackup){
         team.squad=team.fhBackup.squad; team.xi=team.fhBackup.xi; team.bench=team.fhBackup.bench;
@@ -684,7 +694,13 @@ const GWADMIN = {
       team.activeChip=null;
       // انتقالات مجانية
       team.ft=Math.min(st.rules.maxSavedTransfers, (team.ft||1)+st.rules.freeTransfers);
-      NOTIF.push(uid,'points',`احتُسبت الجولة ${gw}: ${res.total} نقطة (ترتيب الجولة ${rank.rank.toLocaleString('ar')})`);
+    }
+    // الترتيب بعدما اكتملت نقاط الجميع
+    RANKS.recomputeGWRanks(st, gw);
+    for(const uid in scored){
+      const h=(st.teams[uid].history||[]).find(x=>x.gw===gw);
+      const rk = h && h.rank ? ` (ترتيب الجولة ${h.rank.toLocaleString('ar')} من ${RANKS.population(st).toLocaleString('ar')})` : '';
+      NOTIF.push(uid,'points',`احتُسبت الجولة ${gw}: ${scored[uid]} نقطة${rk}`);
     }
     // أسعار
     const changes=MARKET.applyPriceChanges(st);
@@ -814,28 +830,18 @@ const LEAGUES = {
     lg.members.push(m.id); DB.save();
     return {ok:true, lg};
   },
-  addBots(lg, n){
-    const st=DB.state;
-    const avail=st.bots.filter(b=>!lg.members.includes(b.id));
-    for(let i=0;i<n && i<avail.length;i++) lg.members.push(avail[i].id);
-    DB.save();
-  },
+  /* أُلغيت: كانت تحشو الدوري بمدراء وهميين. الدوريات الآن مشتركون حقيقيون فقط. */
+  addBots(){ /* no-op */ },
   table(lg){
     const st=DB.state;
     const rows=[];
     lg.members.forEach(mid=>{
-      if(mid.startsWith('b')){
-        const bot=st.bots.find(b=>b.id===mid);
-        if(bot){ const r=RANKS.namedBotRow(st,bot,lg.global?1:lg.createdGW); rows.push({...r, isBot:true}); }
-      } else {
-        const u=DB.user(mid); const team=st.teams[mid];
-        if(u&&team){
-          const hist=(team.history||[]).filter(h=>lg.global||h.gw>=lg.createdGW);
-          const total=hist.reduce((s,h)=>s+h.pts,0);
-          const last=hist.length? hist[hist.length-1].pts:0;
-          rows.push({id:mid,name:u.username,teamName:u.teamName,total,last,isBot:false});
-        }
-      }
+      const u=DB.user(mid); const team=st.teams[mid];
+      if(!u || !team) return;                    // أعضاء وهميون قدامى يُتجاهلون
+      const hist=(team.history||[]).filter(h=>lg.global||h.gw>=lg.createdGW);
+      const total=hist.reduce((s,h)=>s+h.pts,0);
+      const last=hist.length? hist[hist.length-1].pts:0;
+      rows.push({id:mid,name:u.username,teamName:u.teamName,total,last,isBot:false});
     });
     // H2H: نقاط 3/1/0 بالمواجهات حسب نقاط الجولة
     if(lg.type==='h2h'){
@@ -844,8 +850,7 @@ const LEAGUES = {
       done.forEach(gw=>{
         const scores={};
         rows.forEach(r=>{
-          if(r.isBot){ const bot=st.bots.find(b=>b.id===r.id); scores[r.id]=RANKS.botGWScore(st,hashStr(r.id)%RANKS.POP,bot.skill,gw); }
-          else { const team=st.teams[r.id]; const h=(team.history||[]).find(x=>x.gw===gw); scores[r.id]=h?h.pts:0; }
+          const team=st.teams[r.id]; const h=(team.history||[]).find(x=>x.gw===gw); scores[r.id]=h?h.pts:0;
         });
         // اقتران حسب الترتيب داخل الجولة
         const order=[...rows].sort((a,b)=>hashStr(a.id+gw)-hashStr(b.id+gw));

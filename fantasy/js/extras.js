@@ -11,11 +11,7 @@ GWADMIN.champion=function(gw){
     const u=st.users.find(x=>x.id===uid); if(!u) continue;
     if(!best || h.pts>best.pts) best={id:uid, name:u.username, teamName:u.teamName, pts:h.pts, isBot:false};
   }
-  (st.bots||[]).forEach(b=>{
-    const pts=RANKS.botGWScore(st, hashStr(b.id)%RANKS.POP, b.skill, gw);
-    if(!best || pts>best.pts) best={id:b.id, name:b.name, teamName:b.teamName, pts, isBot:true};
-  });
-  return best;
+  return best;   // المشتركون الحقيقيون فقط — لا مدراء وهميين
 };
 /* كم مرة كان المستخدم بطل الجولة */
 GWADMIN.championCount=function(uid){

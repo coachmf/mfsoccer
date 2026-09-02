@@ -9,6 +9,9 @@
 'use strict';
 
 const GATE = {
+  /* القفل الافتراضي عند تعذّر الوصول للسحابة. الحالة الحقيقية تأتي من
+     حقل fantasyOpen في مستند الموسم على mfsoccer — يبدّله المدير من
+     الموقع الرئيسي (الإعدادات ← إشهار الفانتازي)، فتنفتح اللعبة للجميع. */
   PRIVATE: true,
   CODE_HASH: '02207a8858b933cb119a7465f88a9289d173b000e48b6eea92efae11972b196a', // mf2026 — غيّره
   KEY: 'kwf_gate',
@@ -27,6 +30,21 @@ const GATE = {
   open(){
     try{ const t = JSON.parse(localStorage.getItem(this.KEY)||'null');
       return !!(t && t.until > Date.now()); }catch(e){ return false; }
+  },
+
+  /* هل أشهر المدير اللعبة للجمهور؟ يُقرأ من نفس مستند موسم mfsoccer */
+  PUB_KEY: 'kwf_public',
+  cachedPublic(){ try{ return localStorage.getItem(this.PUB_KEY)==='1'; }catch(e){ return false; } },
+  async fetchPublic(){
+    if(typeof MFSYNC==='undefined' || !MFSYNC.URL) return null;
+    try{
+      const r = await fetch(MFSYNC.URL, {cache:'no-store'});
+      if(!r.ok) return null;
+      const j = await r.json();
+      const f = (j.fields||{}).fantasyOpen;
+      if(!f || !('booleanValue' in f)) return false;
+      return !!f.booleanValue;
+    }catch(e){ return null; }          // بلا شبكة: نُبقي الحالة المخزّنة
   },
 
   grant(){
@@ -88,10 +106,32 @@ const GATE = {
     setTimeout(()=>inp.focus(), 300);
   },
 
+  /* يزيل البوابة إن كانت معروضة (عند وصول «مُشهرة» من السحابة) */
+  unlockPublic(){
+    const el = document.getElementById('gate');
+    if(el){ el.style.opacity='0'; setTimeout(()=>el.remove(), 260); }
+    document.body.style.overflow = '';
+  },
+
   init(){
-    if(!this.PRIVATE || this.open()) return;
+    // مفتوحة أصلاً (رمز معاينة صالح، أو إشهار محفوظ من زيارة سابقة): لا بوابة
+    if(!this.PRIVATE || this.open() || this.cachedPublic()){ this.syncPublic(); return; }
     if(document.body) this.render();
     else document.addEventListener('DOMContentLoaded', ()=>this.render());
+    this.syncPublic();
+  },
+
+  /* تُسأل السحابة في الخلفية: تُفتح البوابة إذا أشهرت، وتُقفل إذا أُلغي الإشهار */
+  async syncPublic(){
+    const pub = await this.fetchPublic();
+    if(pub === null) return;                       // تعذّر الوصول: لا نغيّر شيئاً
+    try{ localStorage.setItem(this.PUB_KEY, pub?'1':'0'); }catch(e){}
+    if(pub){ this.unlockPublic(); return; }
+    // أُلغي الإشهار: نُعيد البوابة إلا لمن معه رمز معاينة صالح
+    if(!this.open() && !document.getElementById('gate')){
+      if(document.body) this.render();
+      else document.addEventListener('DOMContentLoaded', ()=>this.render());
+    }
   }
 };
 

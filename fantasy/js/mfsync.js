@@ -176,8 +176,8 @@ const MFSYNC = {
         if(!hh) continue;
         const res=TEAM.gwPoints(team,gw,st);
         hh.pts=res.total; hh.benchPts=res.benchPts;
-        hh.rank=RANKS.gwRank(st,res.total,gw).rank;
       }
+      RANKS.recomputeGWRanks(st, gw);   // الترتيب بعد اكتمال نقاط الجميع
     }
     DB.save(); APP.render();
 

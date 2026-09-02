@@ -229,9 +229,9 @@ const ADMIN = {
         if(!h) continue;
         const res=TEAM.gwPoints(team,f.gw,st);
         h.pts=res.total; h.benchPts=res.benchPts;
-        h.rank=RANKS.gwRank(st,res.total,f.gw).rank;
         NOTIF.push(uid,'points',`صُحّحت نتيجة مباراة بالجولة ${f.gw} — نقاطك الآن ${res.total}`);
       }
+      RANKS.recomputeGWRanks(st, f.gw);   // الترتيب بعد اكتمال نقاط الجميع
     }
     DB.save(); VIEWS.ui.editFx=null;
     UI.toast('حُفظت النتيجة وأُعيد الاحتساب '); APP.render();
