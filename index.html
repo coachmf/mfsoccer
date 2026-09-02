@@ -616,7 +616,8 @@ const COMPS = ["الدوري","كأس الأمير","كأس سمو ولي الع
 let COMP = "الدوري";
 let CARDS = [];
 let ALL = null;
-let SQUADS = {};   /* كشوفات اللاعبين: { "النادي": ["اسم", {n:"اسم", p:"F"}, ...] } */
+let SQUADS = {};   /* كشوفات اللاعبين: { "النادي": ["اسم", {n:"اسم", p:"CDM", s:10}, ...] } */
+let SQNUMS_FOUND = 0;   /* كم رقم انفصل عن الأسماء في آخر تحميل */
 let CLUBS = ["القادسية","الكويت","العربي","كاظمة","السالمية","النصر","الجهراء","الساحل","الفحيحيل","التضامن","الشباب","الصليبخات"];
 
 let MATCHES = [
@@ -1197,6 +1198,7 @@ function applyData(d, source){
   SEASON = d.season || SEASON;
   ALL = stampComp({matches:d.matches||[], goals:d.goals||[], pens:d.pens||[], cards:d.cards||[]});
   SQUADS = d.squads || SQUADS || {};   /* ملف بلا كشوفات لا يمسح الكشوفات الحالية */
+  SQNUMS_FOUND = squadsExtractNums();   /* فصل الأرقام المكتوبة داخل الأسماء */
   CLUBS = d.clubs;
   const have = compsPresent();
   if(!have.includes(COMP)) COMP = have[0] || "الدوري";
@@ -1600,6 +1602,49 @@ function squadDupNums(club){
   const seen={}, dup=new Set();
   (SQUADS[club]||[]).forEach(x=>{ const s=sqNum(x); if(!s) return; if(seen[s]) dup.add(s); seen[s]=1; });
   return dup;
+}
+/* الأسماء القديمة مكتوب فيها الرقم جنب الاسم: «22 سعود الجناعي» أو «سعود الجناعي 22».
+   نفصل الرقم لخانته ونصحّح الاسم في سجلات الأهداف والبطاقات والجزاءات معه. */
+function splitNumName(raw){
+  const s=String(raw||"")
+    .replace(/[\u200e\u200f\u202a-\u202e\u2066-\u2069]/g,"")        /* علامات اتجاه مخفية */
+    .replace(/[٠-٩]/g, d=>"٠١٢٣٤٥٦٧٨٩".indexOf(d))                  /* أرقام عربية */
+    .replace(/[۰-۹]/g, d=>"۰۱۲۳۴۵۶۷۸۹".indexOf(d))
+    .trim().replace(/\s+/g," ");
+  let m=s.match(/^(\d{1,3})[^\p{L}\d]*(.+)$/u);                     /* الرقم بالبداية بأي فاصل */
+  if(m && m[2].trim().length>=2) return {s:+m[1], n:m[2].trim()};
+  m=s.match(/^(.+?)[^\p{L}\d]*(\d{1,3})$/u);                        /* أو بالنهاية */
+  if(m && m[1].trim().length>=2) return {s:+m[2], n:m[1].trim()};
+  return {s:0, n:s};
+}
+function renameInRecords(pairs, known){
+  if(!pairs.length) return;
+  const map=new Map(pairs.map(p=>[p.from,p.to]));
+  const fix=v=>{
+    if(!v) return v;
+    if(map.has(v)) return map.get(v);
+    const g=splitNumName(v);                       /* اسم بالسجلات وحده فيه رقم */
+    return (g.s && known && known.has(g.n)) ? g.n : v;
+  };
+  (ALL?.goals||[]).forEach(g=>{ g.p=fix(g.p); if(g.a) g.a=fix(g.a); });
+  (ALL?.cards||[]).forEach(x=>{ x.p=fix(x.p); });
+  (ALL?.pens ||[]).forEach(x=>{ x.p=fix(x.p); });
+}
+function squadsExtractNums(){
+  const pairs=[]; let n=0;
+  Object.keys(SQUADS).forEach(c=>{
+    (SQUADS[c]||[]).forEach((x,i)=>{
+      const cur=sqName(x); if(!cur) return;
+      const got=splitNumName(cur);
+      if(!got.s || got.n===cur) return;
+      SQUADS[c][i]=sqItem(got.n, sqPos(x), sqNum(x)||got.s);
+      pairs.push({from:cur, to:got.n}); n++;
+    });
+  });
+  const known=new Set();
+  Object.values(SQUADS).forEach(a=>(a||[]).forEach(x=>{ const nm=sqName(x); if(nm) known.add(nm); }));
+  renameInRecords(pairs, known);
+  return n;
 }
 
 /* أسماء لاعبي نادٍ: الكشف المُدخل + كل اسم ظهر له في السجلات */
@@ -2514,6 +2559,8 @@ function squadBoxHTML(c){
   </div>`;
 }
 function squadsSectionHTML(){
+  const found=squadsExtractNums();      /* شبكة أمان: يشتغل حتى لو فُتحت الإعدادات مباشرة */
+  if(found) SQNUMS_FOUND=found;
   const miss=squadMissingAll();
   return `
     <h2 class="sec">كشوفات اللاعبين</h2>
@@ -2522,6 +2569,8 @@ function squadsSectionHTML(){
       ${CLUBS.map(c=>squadBoxHTML(c)).join("")}
       <div style="height:6px"></div>
       <button class="btn" id="saveSquads">حفظ الكشوفات</button>
+      <button class="btn ghost" id="extractNums" style="margin-inline-start:8px">استخراج الأرقام من الأسماء</button>
+      ${SQNUMS_FOUND?`<p class="hint" style="margin:10px 0 0;color:#E0B23C">انفصل رقم ${SQNUMS_FOUND} لاعب عن اسمه تلقائياً وانحط في خانة الرقم — اضغط «حفظ الكشوفات» لاعتماده.</p>`:""}
       <p class="hint" style="margin:10px 0 0">الكشوفات تُحفظ مع بيانات الموسم وتُرفع للسحابة تلقائياً. إجمالي المسجّل الآن: ${squadTotal()} لاعباً${miss?` · ${miss} منهم بلا مركز`:""}.</p>
     </div>`;
 }
@@ -2589,6 +2638,14 @@ const SQ = {
 };
 function wireSquads(){
   const sqb=$("#saveSquads"); if(!sqb) return;
+
+  const ext=$("#extractNums");
+  if(ext) ext.onclick=()=>{
+    const n=squadsExtractNums();
+    if(!n){ toast("ما فيه أرقام مدموجة بالأسماء","err"); return; }
+    CLUBS.forEach(c=>SQ.paint(c));
+    toast(`انفصل رقم ${n} لاعب — احفظ الكشوفات للاعتماد`,"ok");
+  };
 
   document.querySelectorAll(".squadbox").forEach(box=>{
     const c=box.dataset.club;
