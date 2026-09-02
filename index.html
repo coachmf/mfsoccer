@@ -590,6 +590,7 @@ table.lb td.pt{font-family:var(--display);font-weight:700;color:var(--sky);
     <button role="tab" data-v="players" aria-selected="false"><span class="ic">★</span>اللاعبون</button>
     <button role="tab" data-v="predict" aria-selected="false"><span class="ic">◈</span>التوقعات</button>
     <button role="tab" data-v="analysis" aria-selected="false"><span class="ic">◔</span>التحليل</button>
+    <button role="tab" data-v="fantasy" id="fantasyTab" aria-selected="false" style="display:none"><span class="ic">◆</span>فانتازي</button>
   </div>
 </nav>
 
@@ -1398,6 +1399,7 @@ function fbInit(){
       }
       isAdmin = isOwner || MYROLE==="editor";
       $("#adminBtn").classList.toggle("on", isAdmin);
+      paintFantasyTab();
       await loadFan(u);
       await loadMyPred();
       if($("#v-predict") && $("#v-predict").classList.contains("on")) renderPredict();
@@ -2766,7 +2768,7 @@ function renderEditorAdmin(){
   if(lo) lo.onclick=async()=>{
     if(fbAuth && FBUSER){ try{ await fbAuth.signOut(); }catch(e){} }
     isAdmin=false; isOwner=false; MYROLE="";
-    $("#adminBtn").classList.remove("on"); go("home");
+    $("#adminBtn").classList.remove("on"); paintFantasyTab(); go("home");
   };
 }
 
@@ -3213,7 +3215,7 @@ function renderAdmin(){
   $("#clearLogos").onclick=()=>{ if(confirm("حذف كل الشعارات المرفوعة؟")){ LOGOS={}; LSCALE={}; persist(); renderAdmin(); renderAll(); } };
   $("#logout").onclick=async()=>{
     if(fbAuth && FBUSER){ try{ await fbAuth.signOut(); }catch(e){} }
-    isAdmin=false; $("#adminBtn").classList.remove("on"); go("home"); };
+    isAdmin=false; $("#adminBtn").classList.remove("on"); paintFantasyTab(); go("home"); };
 }
 
 /* ================= التخزين ================= */
@@ -3778,6 +3780,14 @@ function wirePredict(o, locked){
 
 
 const RENDER={home:renderHome,matches:renderMatches,clubs:renderClubs,players:renderPlayers,predict:renderPredict,analysis:renderAnalysis,admin:renderAdmin};
+/* تبويب الفانتازي: يظهر لك أنت فقط بعد دخول المدير.
+   للفتح للجمهور: بدّل FANTASY_PUBLIC إلى true. */
+const FANTASY_URL = "/fantasy/";
+const FANTASY_PUBLIC = false;
+function paintFantasyTab(){
+  const b=$("#fantasyTab"); if(!b) return;
+  b.style.display = (FANTASY_PUBLIC || isAdmin) ? "" : "none";
+}
 function go(v){
   document.querySelectorAll(".view").forEach(s=>s.classList.remove("on"));
   $("#v-"+v).classList.add("on");
@@ -3799,8 +3809,12 @@ function paintFoot(){
         <a class="hchip wa" href="${WA_URL}" target="_blank" rel="noopener">${WA_SVG}اقتراحاتكم</a>
     </div>`;
 }
-document.querySelectorAll('nav.tabs button').forEach(b=>b.onclick=()=>go(b.dataset.v));
+document.querySelectorAll('nav.tabs button').forEach(b=>b.onclick=()=>{
+  if(b.dataset.v==="fantasy"){ window.open(FANTASY_URL,"_blank","noopener"); return; }
+  go(b.dataset.v);
+});
 $("#adminBtn").onclick=()=>go("admin");
+paintFantasyTab();
 
 /* شريط الدقائق في الترويسة */
 function paintRail(){
