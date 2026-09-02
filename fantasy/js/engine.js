@@ -28,6 +28,79 @@ const DB = {
   save(){
     try{ localStorage.setItem(this.KEY, JSON.stringify(this.state)); }
     catch(e){ console.warn('storage write failed', e); }
+    this.pushTeam();
+  },
+
+  /* ---------- المزامنة مع السحابة ---------- */
+
+  /* حالة اللعبة المشتركة (قواعد، جولات، مباريات، إحصاءات) تُقرأ من السحابة.
+     فريق المشترك يُقرأ من مستنده. الجهاز يبقى نسخة احتياطية للعمل بلا شبكة. */
+  async hydrate(){
+    if(typeof CLOUD==='undefined' || !CLOUD.ready) return {ok:false, err:'offline'};
+    const st=this.state;
+    const [game, players, rounds] = await Promise.all(
+      [CLOUD.loadGame(), CLOUD.loadPlayers(), CLOUD.loadRounds()]);
+    if(!game) return {ok:false, err:'no-game'};      // المدير لم ينشر بعد
+
+    if(game.rules)   st.rules   = game.rules;
+    if(game.scoring) st.scoring = game.scoring;
+    if(game.clubs)   st.clubs   = game.clubs;
+    if(game.news)    st.news    = game.news;
+    if(game.gws)     st.gws     = game.gws;
+    if(game.currentGW) st.currentGW = game.currentGW;
+    if(players && players.length) st.players = players;
+
+    if(rounds){
+      st.playerGW = {};
+      const keep = st.fixtures.filter(f => !rounds[f.gw]);
+      const merged = keep.slice();
+      Object.keys(rounds).sort((a,b)=>a-b).forEach(gw=>{
+        (rounds[gw].fixtures||[]).forEach(f=>merged.push(f));
+        const pg = rounds[gw].playerGW||{};
+        for(const pid in pg){ st.playerGW[pid]=st.playerGW[pid]||{}; st.playerGW[pid][gw]=pg[pid]; }
+      });
+      merged.sort((a,b)=>(a.gw-b.gw) || String(a.date||'').localeCompare(String(b.date||'')));
+      st.fixtures = merged;
+    }
+    this.cloudAt = Date.now();
+    try{ localStorage.setItem(this.KEY, JSON.stringify(st)); }catch(e){}
+    return {ok:true};
+  },
+
+  /* استبدال جلسة الجهاز بحساب السحابة */
+  async adoptManager(uid, doc){
+    const st=this.state;
+    let u = st.users.find(x=>x.id===uid);
+    if(!u){ u={id:uid}; st.users.push(u); }
+    u.username = doc.username || 'مشترك';
+    u.email    = doc.email || '';
+    u.teamName = doc.teamName || 'فريقي';
+    u.avatar   = doc.avatar || '';
+    u.verified = true;
+    st.session = uid;
+
+    const blank = { squad:[],xi:[],bench:[],cap:null,vice:null,bank:st.rules.budget,ft:st.rules.freeTransfers,
+      usedChips:{},activeChip:null,joinedGW:doc.joinedGW||st.currentGW,history:[],transfers:[],gwPicks:{},pendingHits:0 };
+    const t = Object.assign(blank, doc.team||{});
+    t.history = doc.history || [];         // السجل مصدره السحابة وحدها
+    t.joinedGW = doc.joinedGW || t.joinedGW;
+    st.teams[uid] = t;
+    try{ localStorage.setItem(this.KEY, JSON.stringify(st)); }catch(e){}
+  },
+
+  /* رفع فريق المشترك — مؤجَّل حتى لا نكتب مع كل ضغطة */
+  pushTeam(){
+    if(typeof CLOUD==='undefined' || !CLOUD.user || this.muted) return;
+    clearTimeout(this._pushT);
+    this._pushT = setTimeout(()=>this.pushTeamNow(), 900);
+  },
+  async pushTeamNow(){
+    if(typeof CLOUD==='undefined' || !CLOUD.user) return false;
+    const uid=CLOUD.user.uid, t=this.state.teams[uid], u=this.user(uid);
+    if(!t) return false;
+    const {history, ...team} = t;                 // السجل لا يُرفع: المدير يكتبه
+    return await CLOUD.saveMyTeam(
+      u? {username:u.username, teamName:u.teamName, avatar:u.avatar} : null, team);
   },
   reset(){ try{ localStorage.removeItem(this.KEY);}catch(e){} this.state = buildSeedState(); this.save(); },
 
@@ -790,52 +863,44 @@ const AUTH = {
     NOTIF.push(id,'welcome',`أهلاً بك! كوّن فريقك قبل موعد إغلاق الجولة ${st.currentGW}.`);
     DB.save();
   },
-  signup(username,email,pass,teamName){
-    const st=DB.state;
-    username=username.trim(); email=email.trim().toLowerCase();
-    if(!username||!email||!pass||!teamName) return {ok:false,err:'كل الحقول مطلوبة'};
-    if(pass.length<6) return {ok:false,err:'كلمة المرور 6 أحرف على الأقل'};
-    if(st.users.find(u=>u.email===email)) return {ok:false,err:'البريد مسجل مسبقاً'};
-    if(st.users.find(u=>u.username===username)) return {ok:false,err:'اسم المستخدم محجوز'};
-    const id='u'+(st.users.length+1)+Date.now().toString(36).slice(-4);
-    const code=String(100000+Math.floor(Math.random()*900000));
-    st.users.push({id,username,email,pass:this.hash(pass),teamName,avatar:'',verified:false,created:new Date().toISOString(),admin:st.users.length===0});
-    st.verifyCodes[email]=code;
-    st.teams[id]={ squad:[],xi:[],bench:[],cap:null,vice:null,bank:st.rules.budget,ft:1,
-      usedChips:{},activeChip:null,joinedGW:st.currentGW,history:[],transfers:[],gwPicks:{},pendingHits:0 };
-    st.session=id;
-    NOTIF.push(id,'welcome',`أهلاً ${username}! كوّن فريقك قبل موعد إغلاق الجولة ${st.currentGW}.`);
-    DB.save();
-    return {ok:true, code};
+  /* الحسابات على Firebase: كلمة المرور لا تمرّ بكودنا ولا تُخزَّن عندنا،
+     والحساب يتبع صاحبه على كل أجهزته. */
+  cloudUp(){ return typeof CLOUD!=='undefined' && CLOUD.ready; },
+
+  async signup(username,email,pass,teamName){
+    if(!this.cloudUp()) return {ok:false, err:'تعذّر الاتصال بالخادم — حاول بعد قليل'};
+    const r = await CLOUD.signup(email, pass, username, teamName);
+    return r;                       // الجلسة تُلتقط من onAuthStateChanged
   },
-  verify(code){
-    const m=DB.me(); if(!m) return {ok:false,err:'لا يوجد جلسة'};
-    if(DB.state.verifyCodes[m.email]===code){ m.verified=true; delete DB.state.verifyCodes[m.email]; DB.save(); return {ok:true}; }
-    return {ok:false, err:'الرمز غير صحيح'};
+
+  async login(email,pass){
+    if(!this.cloudUp()) return {ok:false, err:'تعذّر الاتصال بالخادم — حاول بعد قليل'};
+    return await CLOUD.login(email, pass);
   },
-  login(email,pass){
-    const st=DB.state; email=email.trim().toLowerCase();
-    const u=st.users.find(x=>x.email===email);
-    if(!u || u.pass!==this.hash(pass)) return {ok:false,err:'بيانات الدخول غير صحيحة'};
-    st.session=u.id; DB.save();
-    return {ok:true};
+
+  async logout(){
+    if(this.cloudUp()) await CLOUD.logout();
+    DB.state.session=null; DB.save();
   },
-  logout(){ DB.state.session=null; DB.save(); },
-  forgot(email){
-    const st=DB.state; email=email.trim().toLowerCase();
-    const u=st.users.find(x=>x.email===email);
-    if(!u) return {ok:false,err:'البريد غير مسجل'};
-    const code=String(100000+Math.floor(Math.random()*900000));
-    st.verifyCodes['reset:'+email]=code; DB.save();
-    return {ok:true, code};
+
+  /* استعادة كلمة المرور: رسالة حقيقية من Firebase لا رمز محلي */
+  async forgot(email){
+    if(!this.cloudUp()) return {ok:false, err:'تعذّر الاتصال بالخادم'};
+    return await CLOUD.resetEmail(email);
   },
-  resetPass(email,code,newPass){
-    const st=DB.state; email=email.trim().toLowerCase();
-    if(st.verifyCodes['reset:'+email]!==code) return {ok:false,err:'الرمز غير صحيح'};
-    if(newPass.length<6) return {ok:false,err:'كلمة المرور 6 أحرف على الأقل'};
-    const u=st.users.find(x=>x.email===email);
-    u.pass=this.hash(newPass); delete st.verifyCodes['reset:'+email]; DB.save();
-    return {ok:true};
+
+  /* توثيق البريد يتم برسالة Firebase؛ نكتفي بتحديث الحالة محلياً */
+  async refreshVerified(){
+    if(!this.cloudUp() || !CLOUD.user) return false;
+    try{ await CLOUD.user.reload(); }catch(e){}
+    const m=DB.me();
+    if(m && CLOUD.user){ m.verified = !!CLOUD.user.emailVerified; DB.save(); }
+    return !!(CLOUD.user && CLOUD.user.emailVerified);
+  },
+  async resendVerify(){
+    if(!this.cloudUp() || !CLOUD.user) return {ok:false, err:'لا توجد جلسة'};
+    try{ await CLOUD.user.sendEmailVerification(); return {ok:true}; }
+    catch(e){ return {ok:false, err:CLOUD.errAr(e)}; }
   },
 };
 
@@ -843,6 +908,49 @@ const AUTH = {
    الدوريات الخاصة
    ========================================================= */
 const LEAGUES = {
+  /* مواجهات H2H وترقيم المراكز على صفوف جاهزة من السحابة */
+  decorate(rows, lg){
+    if(lg.type!=='h2h') { rows.sort((a,b)=>b.total-a.total); return rows; }
+    const st=DB.state;
+    rows.forEach(r=>{r.w=0;r.d=0;r.l=0;r.h2hPts=0;});
+    const done=RANKS.finishedGWs(st).filter(g=>g>=(lg.createdGW||1));
+    const byId={}; rows.forEach(r=>byId[r.id]=r);
+    done.forEach(gw=>{
+      const order=[...rows].sort((a,b)=>hashStr(a.id+gw)-hashStr(b.id+gw));
+      const at=(r)=>{ const t=DB.state.teams[r.id]; const h=t&&(t.history||[]).find(x=>x.gw===gw);
+                      return h? h.pts : (r.hist? (r.hist.find(x=>x.gw===gw)||{}).pts||0 : 0); };
+      for(let i=0;i+1<order.length;i+=2){
+        const A=order[i],B=order[i+1], a=at(A), b=at(B);
+        if(a>b){A.w++;B.l++;A.h2hPts+=3;} else if(a<b){B.w++;A.l++;B.h2hPts+=3;}
+        else {A.d++;B.d++;A.h2hPts+=1;B.h2hPts+=1;}
+      }
+    });
+    rows.sort((a,b)=>b.h2hPts-a.h2hPts || b.total-a.total);
+    return rows;
+  },
+
+  /* مخزن الدوريات القادمة من السحابة — تُحدَّث بلا تزامن ثم يُعاد الرسم */
+  cloud: { list:null, rows:{}, board:null, at:0, busy:false },
+  online(){ return typeof CLOUD!=='undefined' && CLOUD.ready && !!CLOUD.user; },
+
+  async refresh(force){
+    if(!this.online()) return;
+    if(this.cloud.busy) return;
+    if(!force && this.cloud.at && Date.now()-this.cloud.at < 45000) return;
+    this.cloud.busy = true;
+    try{
+      const [list, board] = await Promise.all([CLOUD.myLeagues(), CLOUD.leaderboard(200)]);
+      this.cloud.list = list || [];
+      this.cloud.board = board || [];
+      const rows = {};
+      for(const lg of this.cloud.list) rows[lg.id] = await CLOUD.leagueRows(lg);
+      this.cloud.rows = rows;
+      this.cloud.at = Date.now();
+    }catch(e){ console.warn('leagues refresh failed', e); }
+    this.cloud.busy = false;
+    if(typeof APP!=='undefined' && APP.route==='leagues') APP.render();
+  },
+
   genCode(){ const c='ABCDEFGHJKMNPQRSTUVWXYZ23456789'; let s=''; for(let i=0;i<6;i++) s+=c[Math.floor(Math.random()*c.length)]; return s; },
   create(name,type){
     const st=DB.state; const m=DB.me(); if(!m) return null;
@@ -862,6 +970,12 @@ const LEAGUES = {
   addBots(){ /* no-op */ },
   table(lg){
     const st=DB.state;
+    if(this.online()){
+      this.refresh();
+      // الترتيب العام من لوحة الخادم، والدوري الخاص من مستندات أعضائه
+      const cloudRows = lg.global ? this.cloud.board : this.cloud.rows[lg.id];
+      if(cloudRows) return this.decorate(cloudRows.map(r=>({...r})), lg);
+    }
     const rows=[];
     lg.members.forEach(mid=>{
       const u=DB.user(mid); const team=st.teams[mid];
@@ -897,6 +1011,11 @@ const LEAGUES = {
   },
   mine(){
     const m=DB.me(); if(!m) return [];
+    if(this.online()){
+      this.refresh();                                   // تحديث في الخلفية
+      const glob = DB.state.leagues.filter(l=>l.global);
+      return glob.concat(this.cloud.list || []);
+    }
     return DB.state.leagues.filter(l=>l.global || l.members.includes(m.id));
   },
 };

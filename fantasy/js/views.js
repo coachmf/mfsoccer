@@ -14,20 +14,18 @@ const VIEWS = {
     if(t==='login') form=`
       <div class="field"><label>البريد الإلكتروني</label><input id="f_email" type="email" placeholder="you@example.com"></div>
       <div class="field"><label>كلمة المرور</label><input id="f_pass" type="password"></div>
-      <button class="btn" style="width:100%" onclick="VIEWS.doLogin()">دخول</button>`;
+      <button class="btn" style="width:100%" onclick="VIEWS.doLogin(event)">دخول</button>`;
     else if(t==='signup') form=`
       <div class="field"><label>اسم المستخدم</label><input id="f_user" placeholder="مثال: mansour_q8"></div>
       <div class="field"><label>البريد الإلكتروني</label><input id="f_email" type="email"></div>
       <div class="field"><label>كلمة المرور (6+ أحرف)</label><input id="f_pass" type="password"></div>
       <div class="field"><label>اسم فريقك في الفانتازي</label><input id="f_team" placeholder="مثال: نسور الديرة"></div>
-      <button class="btn" style="width:100%" onclick="VIEWS.doSignup()">إنشاء حساب</button>`;
+      <button class="btn" style="width:100%" onclick="VIEWS.doSignup(event)">إنشاء حساب</button>`;
     else form=`
       <div class="field"><label>البريد الإلكتروني</label><input id="f_email" type="email"></div>
-      <button class="btn" style="width:100%" onclick="VIEWS.doForgot()">إرسال رمز الاستعادة</button>
-      <div id="resetBox" style="display:none;margin-top:14px">
-        <div class="field"><label>الرمز</label><input id="f_code"></div>
-        <div class="field"><label>كلمة المرور الجديدة</label><input id="f_np" type="password"></div>
-        <button class="btn sec" style="width:100%" onclick="VIEWS.doReset()">تغيير كلمة المرور</button>
+      <button class="btn" style="width:100%" onclick="VIEWS.doForgot(event)">إرسال رابط الاستعادة</button>
+      <div style="margin-top:14px">
+        <p class="tiny">يصلك رابط على بريدك تغيّر منه كلمة المرور، ثم تعود وتسجّل الدخول.</p>
       </div>`;
     return `<div class="auth-hero">
       <img src="assets/logo-light.png" alt="" style="height:60px">
@@ -37,39 +35,59 @@ const VIEWS = {
         <div class="tabs" style="width:100%">${tab('login','دخول')}${tab('signup','حساب جديد')}${tab('forgot','نسيت كلمة المرور')}</div>
         ${form}
       </div>
-      <div class="tiny" style="text-align:center;margin-top:12px">نسخة تجريبية محلية — الحسابات محفوظة على جهازك فقط</div>
+      <div class="tiny" style="text-align:center;margin-top:12px">حسابك محفوظ على الخادم — يتبعك على كل أجهزتك</div>
     </div>`;
   },
-  doLogin(){
-    const r=AUTH.login(gv('f_email'), gv('f_pass'));
-    if(r.ok){ UI.toast('أهلاً بعودتك!'); APP.render(); } else UI.toast(r.err, true);
+  /* أزرار المصادقة صارت غير متزامنة: نعطّل الزر ريثما يردّ الخادم */
+  _busy(btn, on, label){
+    if(!btn) return;
+    if(on){ btn.dataset.lbl=btn.textContent; btn.textContent=label||'لحظة…'; btn.disabled=true; }
+    else { if(btn.dataset.lbl) btn.textContent=btn.dataset.lbl; btn.disabled=false; }
   },
-  doSignup(){
-    const r=AUTH.signup(gv('f_user'), gv('f_email'), gv('f_pass'), gv('f_team'));
-    if(r.ok){ UI.toast('تم إنشاء الحساب'); APP.go('team'); } else UI.toast(r.err, true);
+  async doLogin(ev){
+    const b=ev&&ev.target; this._busy(b,true,'جارٍ الدخول…');
+    const r=await AUTH.login(gv('f_email'), gv('f_pass'));
+    this._busy(b,false);
+    if(r.ok) UI.toast('أهلاً بعودتك!');           // العرض يتجدد من onAuthStateChanged
+    else UI.toast(r.err, true);
   },
-  doForgot(){
-    const r=AUTH.forgot(gv('f_email'));
-    if(r.ok){ document.getElementById('resetBox').style.display='block'; UI.modal(`<h3>وضع تجريبي</h3><p>لا يوجد خادم بريد — رمز الاستعادة هو:</p><h2 style="text-align:center;letter-spacing:6px;margin:14px 0">${r.code}</h2><button class="btn" style="width:100%" onclick="UI.closeModal()">حسناً</button>`); }
+  async doSignup(ev){
+    const b=ev&&ev.target; this._busy(b,true,'جارٍ الإنشاء…');
+    const r=await AUTH.signup(gv('f_user'), gv('f_email'), gv('f_pass'), gv('f_team'));
+    this._busy(b,false);
+    if(r.ok){ UI.toast('تم إنشاء الحساب — راجع بريدك لتفعيله'); this.ui.authTab='login'; }
+    else UI.toast(r.err, true);
+  },
+  async doForgot(ev){
+    const b=ev&&ev.target; this._busy(b,true,'جارٍ الإرسال…');
+    const r=await AUTH.forgot(gv('f_email'));
+    this._busy(b,false);
+    if(r.ok) UI.modal(`<h3>أُرسل الرابط</h3>
+      <p>أرسلنا رابط تغيير كلمة المرور إلى بريدك. افتحه من البريد وغيّرها، ثم عد وسجّل الدخول.</p>
+      <p class="tiny">لم تجده؟ تحقق من مجلد الرسائل غير المرغوبة.</p>
+      <button class="btn" style="width:100%" onclick="UI.closeModal()">حسناً</button>`);
     else UI.toast(r.err,true);
-  },
-  doReset(){
-    const r=AUTH.resetPass(gv('f_email'), gv('f_code'), gv('f_np'));
-    if(r.ok){ UI.toast('تم التغيير — سجّل الدخول'); this.ui.authTab='login'; APP.render(); } else UI.toast(r.err,true);
   },
   verifyBanner(){
     const m=DB.me();
-    if(!m || m.verified) return '';
-    const code=DB.state.verifyCodes[m.email];
+    if(!m || m.verified || !APP.signedIn()) return '';
     return `<div class="card" style="margin-bottom:16px;border-color:var(--gold)">
       <div class="row spread" style="flex-wrap:wrap;gap:10px">
-        <div><b>فعّل بريدك:</b> <span class="muted">أدخل رمز التحقق ${code?`(وضع تجريبي — الرمز: <b>${code}</b>)`:''}</span></div>
-        <div class="row"><input id="vcode" style="width:130px" placeholder="000000"><button class="btn sm" onclick="VIEWS.doVerify()">تفعيل</button></div>
+        <div><b>فعّل بريدك:</b> <span class="muted">أرسلنا رابط تفعيل إلى ${esc(m.email)} — افتحه ثم اضغط «تحققت»</span></div>
+        <div class="row" style="gap:8px">
+          <button class="btn sm" onclick="VIEWS.doVerify()">تحققت</button>
+          <button class="btn sec sm" onclick="VIEWS.doResend()">أعد الإرسال</button>
+        </div>
       </div></div>`;
   },
-  doVerify(){
-    const r=AUTH.verify(gv('vcode'));
-    if(r.ok){ UI.toast('تم تفعيل البريد '); APP.render(); } else UI.toast(r.err,true);
+  async doVerify(){
+    const ok=await AUTH.refreshVerified();
+    if(ok){ UI.toast('تم تفعيل البريد'); APP.render(); }
+    else UI.toast('لم يُفعّل بعد — افتح الرابط في بريدك أولاً', true);
+  },
+  async doResend(){
+    const r=await AUTH.resendVerify();
+    UI.toast(r.ok? 'أُرسل رابط التفعيل مرة أخرى' : r.err, !r.ok);
   },
 
   /* ======================= الرئيسية (على طراز FPL) ======================= */
@@ -759,8 +777,13 @@ const VIEWS = {
         const myIdx=rows.findIndex(r=>r.id===m.id);
         return `<div class="card" style="cursor:pointer" onclick="VIEWS.ui.leagueOpen='${l.id}';APP.render()">
           <div class="row spread"><h3 style="margin:0">${esc(l.name)}</h3>
-          <span class="pill">${(l.global? RANKS.population(st) : rows.length).toLocaleString('ar')} فريق</span></div>
-          <div class="muted" style="margin-top:8px">مركزك: <b style="color:var(--accent)">${l.global? (()=>{const t=DB.myTeam();const or_=RANKS.overallRank(st,TEAM.totalPoints(t));return typeof or_.rank==='number'?or_.rank.toLocaleString('ar'):'—';})() : myIdx>=0? myIdx+1:'—'}</b>
+          <span class="pill">${(l.global? (LEAGUES.online()&&LEAGUES.cloud.board? LEAGUES.cloud.board.length : RANKS.population(st)) : rows.length).toLocaleString('ar')} فريق</span></div>
+          <div class="muted" style="margin-top:8px">مركزك: <b style="color:var(--accent)">${(()=>{
+            if(myIdx>=0) return (myIdx+1).toLocaleString('ar');            // موجود في الصفوف المعروضة
+            if(!l.global) return '—';
+            const t=DB.myTeam(); const or_=RANKS.overallRank(st,TEAM.totalPoints(t));
+            return typeof or_.rank==='number'? or_.rank.toLocaleString('ar') : '—';
+          })()}</b>
           ${!l.global? `· الرمز: <b>${l.code}</b>`:''}</div>
         </div>`;}).join('')}
     </div>`;
@@ -791,6 +814,10 @@ const VIEWS = {
   },
   globalTable(){
     const st=DB.state, m=DB.me();
+    if(LEAGUES.online()){
+      LEAGUES.refresh();
+      if(LEAGUES.cloud.board) return LEAGUES.cloud.board.map(r=>({...r}));
+    }
     const rows=[];
     st.users.forEach(u=>{
       const team=st.teams[u.id]; if(!team) return;
@@ -808,8 +835,19 @@ const VIEWS = {
         <option value="h2h">مواجهات مباشرة (H2H)</option></select></div>
       <button class="btn" style="width:100%" onclick="VIEWS.leagueCreate()">إنشاء</button>`);
   },
-  leagueCreate(){
+  async leagueCreate(){
     const name=gv('lg_name'); if(!name){UI.toast('اكتب اسماً',true);return;}
+    if(LEAGUES.online()){
+      const r=await CLOUD.createLeague(name, gv('lg_type'));
+      UI.closeModal();
+      if(!r.ok){ UI.toast(r.err,true); return; }
+      await LEAGUES.refresh(true);
+      UI.modal(`<h3>أُنشئ الدوري!</h3><p class="muted">شارك هذا الرمز مع أصحابك للانضمام:</p>
+        <h2 style="text-align:center;letter-spacing:8px;margin:16px 0">${r.lg.code}</h2>
+        <button class="btn" style="width:100%" onclick="UI.closeModal();VIEWS.ui.leagueOpen='${r.lg.id}';APP.go('leagues')">فتح الدوري</button>`);
+      return;
+    }
+    if(!APP.signedIn()){ UI.closeModal(); UI.toast('أنشئ حساباً أولاً حتى يشوف أصحابك دوريك', true); APP.go('auth'); return; }
     const lg=LEAGUES.create(name, gv('lg_type'));
     UI.closeModal();
     UI.modal(`<h3>أُنشئ الدوري!</h3><p class="muted">شارك هذا الرمز مع أصحابك للانضمام:</p>
@@ -821,15 +859,21 @@ const VIEWS = {
       <div class="field"><label>رمز الدعوة</label><input id="lg_code" placeholder="مثال: A3X9KM" style="letter-spacing:3px"></div>
       <button class="btn" style="width:100%" onclick="VIEWS.leagueJoin()">انضمام</button>`);
   },
-  leagueJoin(){
+  async leagueJoin(){
+    if(LEAGUES.online()){
+      const r=await CLOUD.joinLeague(gv('lg_code'));
+      if(!r.ok){ UI.toast(r.err,true); return; }
+      UI.closeModal(); await LEAGUES.refresh(true);
+      UI.toast('انضممت للدوري'); this.ui.leagueOpen=r.lg.id; APP.go('leagues');
+      return;
+    }
+    if(!APP.signedIn()){ UI.toast('أنشئ حساباً أولاً للانضمام لدوريات أصحابك', true); UI.closeModal(); APP.go('auth'); return; }
     const r=LEAGUES.join(gv('lg_code'));
     if(r.ok){ UI.closeModal(); UI.toast('انضممت للدوري '); this.ui.leagueOpen=r.lg.id; APP.go('leagues'); }
     else UI.toast(r.err,true);
   },
   leagueAddBots(id){
-    const lg=DB.state.leagues.find(l=>l.id===id);
-    LEAGUES.addBots(lg,5);
-    UI.toast('أُضيف 5 منافسين تجريبيين'); APP.render();
+    UI.toast('أُلغيت المنافسون التجريبيون — الدوريات للمشتركين الحقيقيين', true);
   },
 
   /* ======================= الإحصائيات ======================= */

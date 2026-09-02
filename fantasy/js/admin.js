@@ -7,7 +7,7 @@ const ADMIN = {
     const sec=VIEWS.ui.adminSec;
     const menu=[['gws','الجولات والاحتساب'],['results','النتائج والإحصاءات'],['scoring','نظام النقاط'],
       ['rules','قواعد اللعبة'],['players','اللاعبون'],['clubs','الأندية'],
-      ['users','المستخدمون'],['admins','المديرون'],['data','البيانات']];
+      ['users','المستخدمون'],['admins','المديرون'],['cloud','السحابة'],['data','البيانات']];
     return `<h2 style="margin-bottom:12px">لوحة الإدارة</h2>
     <div class="admin-grid">
       <div class="admin-menu">${menu.map(([id,l])=>`<button class="${sec===id?'active':''}" onclick="VIEWS.ui.adminSec='${id}';APP.render()">${l}</button>`).join('')}</div>
@@ -16,6 +16,45 @@ const ADMIN = {
   },
 
   sec_admins(){ return ADMINAUTH.section(); },
+
+  /* ---------- السحابة ---------- */
+  sec_cloud(){
+    const up = typeof CLOUD!=='undefined' && CLOUD.ready;
+    const u  = up && CLOUD.user;
+    const st = APP.cloudState;
+    const stateAr = {ready:'متصل — حالة اللعبة منشورة', nogame:'متصل — لم تُنشر اللعبة بعد',
+                     offline:'غير متصل', init:'جارٍ الاتصال…'}[st] || st;
+    return `<div class="card"><h3>السحابة والمشتركون</h3>
+      <div class="tiny" style="margin-bottom:12px">حالة اللعبة تُنشر مرة واحدة من هنا فتصل كل المشتركين تلقائياً.
+      بلا نشر تبقى نتائجك على جهازك ولا تُحتسب نقاط أحد.</div>
+      <table class="tbl">
+        <tr><td>الاتصال</td><td><span class="pill ${st==='ready'?'green':(st==='offline'?'':'gold')}">${stateAr}</span></td></tr>
+        <tr><td>حساب المدير</td><td style="direction:ltr;text-align:right">${u? esc(u.email) : '—'}</td></tr>
+        <tr><td>صلاحية النشر</td><td>${up&&CLOUD.admin? '<span class="pill green">متاحة</span>' : '<span class="pill">غير متاحة</span>'}</td></tr>
+        <tr><td>عدد المشتركين</td><td id="mgrCount">—</td></tr>
+      </table>
+      <div style="height:12px"></div>
+      ${!u? `<div class="tiny" style="margin-bottom:10px">سجّل دخول حساب المدير في السحابة (نفس حساب الموقع الرئيسي) لتتمكن من النشر:</div>
+        <div class="field"><label>البريد</label><input id="cl_email" type="email" style="direction:ltr"></div>
+        <div class="field"><label>كلمة المرور</label><input id="cl_pass" type="password" style="direction:ltr"></div>
+        <button class="btn" onclick="ADMIN.cloudLogin()">دخول السحابة</button>`
+      : `<div class="row" style="gap:8px;flex-wrap:wrap">
+          <button class="btn" onclick="ADMIN.doPublish()">نشر حالة اللعبة للمشتركين</button>
+          <button class="btn sec" onclick="ADMIN.cloudLogout()">خروج من السحابة</button>
+        </div>`}
+    </div>
+    <script>(async()=>{ if(typeof CLOUD!=='undefined' && CLOUD.ready){
+      const n=await CLOUD.managerCount(); const el=document.getElementById('mgrCount');
+      if(el) el.textContent = n==null? 'تعذّرت القراءة' : n+' مشتركاً';
+    }})();<\/script>`;
+  },
+
+  async cloudLogin(){
+    const r=await CLOUD.login(gv('cl_email'), gv('cl_pass'));
+    UI.toast(r.ok? 'تم الدخول للسحابة' : r.err, !r.ok);
+    APP.render();
+  },
+  async cloudLogout(){ await CLOUD.logout(); UI.toast('خرجت من السحابة'); APP.render(); },
 
   /* ---------- الجولات ---------- */
   sec_gws(){
@@ -41,13 +80,42 @@ const ADMIN = {
       <div class="row" style="gap:8px;margin-top:12px"><button class="btn danger" onclick="ADMIN.doFinalize()">احتساب وإغلاق</button>
       <button class="btn sec" onclick="UI.closeModal()">إلغاء</button></div>`);
   },
-  doFinalize(){
-    const gw=DB.state.currentGW;
+  async doFinalize(){
+    const st=DB.state, gw=st.currentGW;
     const res=GWADMIN.finalize(gw);
     UI.closeModal();
     if(!res.ok){ UI.toast(res.err, true); return; }
     UI.toast(`احتُسبت الجولة ${gw} — تغيّر سعر ${res.changes} لاعباً`);
+
+    // الاحتساب للمشتركين على الخادم: بدونه تبقى نقاطهم صفراً
+    if(typeof CLOUD!=='undefined' && CLOUD.admin){
+      UI.toast('جارٍ احتساب نقاط المشتركين ونشر الجولة…');
+      const all = await CLOUD.finalizeForAll(st, gw, (team, g)=>TEAM.gwPoints(this.cloudTeam(team), g, st));
+      const pub = await CLOUD.publishGame(st);
+      if(all.ok && pub.ok) UI.toast(`نُشرت الجولة ${gw} واحتُسبت لـ${all.count} مشتركاً`);
+      else UI.toast((all.ok?'':all.err+' · ') + (pub.ok?'':pub.err), true);
+    } else if(typeof CLOUD!=='undefined' && CLOUD.ready){
+      UI.toast('احتُسبت محلياً — سجّل دخول المدير في السحابة لنشرها للمشتركين', true);
+    }
     APP.go('dashboard');
+  },
+
+  /* فريق قادم من مستند مشترك: نكمّل الحقول الناقصة حتى تعمل عليه دوال الاحتساب */
+  cloudTeam(t){
+    const st=DB.state;
+    return Object.assign({ squad:[],xi:[],bench:[],cap:null,vice:null,bank:st.rules.budget,
+      ft:st.rules.freeTransfers, usedChips:{}, activeChip:null, joinedGW:1,
+      history:[], transfers:[], gwPicks:{}, pendingHits:0 }, t||{});
+  },
+
+  /* نشر يدوي لحالة اللعبة بلا احتساب */
+  async doPublish(){
+    if(typeof CLOUD==='undefined' || !CLOUD.ready){ UI.toast('السحابة غير متاحة', true); return; }
+    if(!CLOUD.admin){ UI.toast('سجّل دخول المدير في السحابة أولاً', true); return; }
+    UI.toast('جارٍ النشر…');
+    const r=await CLOUD.publishGame(DB.state);
+    UI.toast(r.ok? `نُشرت اللعبة (${r.rounds} جولة) — وصلت لكل المشتركين` : r.err, !r.ok);
+    APP.render();
   },
 
   /* ---------- النتائج ---------- */

@@ -1,0 +1,114 @@
+rules_version = '2';
+
+/*  قواعد أمان Firestore — mfsoccer + الفانتازي
+ *
+ *  كيف تنشرها (مرة واحدة):
+ *    Firebase Console ← Firestore Database ← Rules
+ *    الصق هذا الملف كاملاً ← Publish
+ *
+ *  المبدأ: القراءة مفتوحة (الموقع عام)، والكتابة محصورة:
+ *    - بيانات الموسم واللعبة: المدير وحده
+ *    - مستند المشترك: صاحبه يكتب ملفه وفريقه فقط،
+ *      أما سجل النقاط (history/total) فالمدير وحده — وإلا كتب كل واحد نقاطه بنفسه
+ */
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ===== أدوات =====
+    function signedIn() {
+      return request.auth != null;
+    }
+    function isOwner() {
+      return signedIn() && request.auth.uid == 'iiTgVfDryXNLb9IrOyLkkNMHDxq2';
+    }
+    // محرّر معتمد في staff/members
+    function isStaff() {
+      return signedIn()
+        && exists(/databases/$(database)/documents/staff/members)
+        && get(/databases/$(database)/documents/staff/members).data[request.auth.uid] != null
+        && get(/databases/$(database)/documents/staff/members).data[request.auth.uid].role == 'editor'
+        && get(/databases/$(database)/documents/staff/members).data[request.auth.uid].active != false;
+    }
+    function isAdmin() {
+      return isOwner() || isStaff();
+    }
+
+    // ===== الموقع الرئيسي =====
+    match /seasons/{doc} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    match /assets/{doc} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    match /staff/{doc} {
+      allow read: if signedIn();
+      allow write: if isOwner();
+    }
+
+    // ===== الفانتازي =====
+    match /fantasy/{season} {
+
+      // حالة اللعبة: قواعد ونقاط وجولات — الجميع يقرأ، المدير يكتب
+      allow read: if true;
+      allow write: if isAdmin();
+
+      match /meta/{doc} {
+        allow read: if true;
+        allow write: if isAdmin();
+      }
+
+      match /rounds/{gw} {
+        allow read: if true;
+        allow write: if isAdmin();
+      }
+
+      // ---- المشتركون ----
+      match /managers/{uid} {
+        allow read: if true;                  // الترتيب العام يحتاج قراءة الجميع
+
+        // إنشاء الحساب: صاحبه فقط، ويبدأ بسجل فارغ ومجموع صفر
+        allow create: if signedIn()
+                      && request.auth.uid == uid
+                      && request.resource.data.total == 0
+                      && request.resource.data.history.size() == 0;
+
+        // التعديل: إما المدير (يكتب النقاط)، أو صاحبه بشرط ألا يمسّ نقاطه
+        allow update: if isAdmin()
+                      || ( signedIn()
+                           && request.auth.uid == uid
+                           && request.resource.data.history == resource.data.history
+                           && request.resource.data.total   == resource.data.total );
+
+        allow delete: if isAdmin();
+      }
+
+      // ---- الدوريات الخاصة ----
+      match /leagues/{lg} {
+        allow read: if true;
+
+        allow create: if signedIn()
+                      && request.resource.data.owner == request.auth.uid
+                      && request.resource.data.members.hasOnly([request.auth.uid]);
+
+        // المالك يعدّل دوريه؛ وأي مشترك يضيف نفسه فقط (الانضمام بالرمز)
+        allow update: if isAdmin()
+                      || ( signedIn() && resource.data.owner == request.auth.uid )
+                      || ( signedIn()
+                           && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['members'])
+                           && request.resource.data.members.hasAll(resource.data.members)
+                           && request.resource.data.members.hasOnly(
+                                resource.data.members.concat([request.auth.uid])) );
+
+        allow delete: if isAdmin() || (signedIn() && resource.data.owner == request.auth.uid);
+      }
+    }
+
+    // كل ما عدا ذلك: ممنوع
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

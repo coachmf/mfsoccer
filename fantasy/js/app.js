@@ -9,10 +9,13 @@ const APP = {
     ['leagues','trophy','الدوريات'], ['stats','stats','إحصائيات'],
   ],
 
+  cloudState:'init',     // init | ready | offline | nogame
+
   init(){
     DB.load();
     if(!DB.me()) AUTH.guest();
     ADMINAUTH.sync();
+    this.initCloud();
     document.documentElement.setAttribute('data-theme','light');
     window.addEventListener('hashchange',()=>{
       const r=location.hash.slice(1)||'dashboard';
@@ -27,6 +30,54 @@ const APP = {
     // شاشة الافتتاح
     const splash=document.getElementById('splash');
     if(splash) setTimeout(()=>{ splash.classList.add('hide'); setTimeout(()=>splash.remove(),700); }, 1500);
+  },
+
+  /* ---------- السحابة ---------- */
+  /* حالة اللعبة (جولات، مباريات، إحصاءات، نقاط) يقرؤها كل زائر من السحابة،
+     فتصل النتائج تلقائياً بلا أن يضغط أحد شيئاً. والحساب يتبع صاحبه. */
+  initCloud(){
+    if(typeof CLOUD==='undefined' || !CLOUD.init()){
+      this.cloudState='offline';
+      return;
+    }
+    CLOUD.onAuth(async (u)=>{
+      DB.muted = true;                       // لا نرفع أثناء تبديل الحساب
+      try{
+        const h = await DB.hydrate();
+        this.cloudState = h.ok ? 'ready' : (h.err==='no-game' ? 'nogame' : 'offline');
+        if(u){
+          let doc = await CLOUD.getManager(u.uid);
+          if(!doc) doc = await CLOUD.createManager(u.uid, u.email.split('@')[0], 'فريقي', u.email);
+          await DB.adoptManager(u.uid, doc);
+          const me=DB.me(); if(me) me.verified = !!u.emailVerified;
+        }else{
+          DB.state.session=null;
+          AUTH.guest();                      // تصفّح بلا حساب: فريق محلي للتجربة
+        }
+      }catch(e){ console.warn('cloud sync failed', e); this.cloudState='offline'; }
+      DB.muted = false;
+      ADMINAUTH.sync();
+      this.render();
+    });
+  },
+
+  /* هل المشترك داخل بحساب سحابي حقيقي؟ */
+  signedIn(){ return typeof CLOUD!=='undefined' && !!CLOUD.user; },
+
+  /* شريط ينبّه أن الفريق محلي غير محفوظ على الخادم */
+  guestBanner(){
+    if(this.signedIn() || this.cloudState==='init') return '';
+    if(this.cloudState==='offline')
+      return `<div class="card" style="border-color:#e0a800;margin-bottom:12px">
+        <b>وضع بلا اتصال</b>
+        <div class="tiny" style="margin-top:6px">تعذّر الوصول للخادم، فما تشوفه محفوظ على هذا الجهاز فقط.
+        نقاطك وترتيبك يحتاجان اتصالاً.</div></div>`;
+    return `<div class="card" style="border-color:var(--accent);margin-bottom:12px">
+      <b>أنت تتصفح بلا حساب</b>
+      <div class="tiny" style="margin-top:6px">الفريق الذي تكوّنه الآن محفوظ على هذا الجهاز فقط،
+      ولن تُحتسب له نقاط ولا يدخل الترتيب. أنشئ حساباً ليُحفظ ويُنافس.</div>
+      <div style="margin-top:10px"><button class="btn sm" onclick="APP.go('auth')">إنشاء حساب أو دخول</button></div>
+    </div>`;
   },
 
   go(route){ this.route=route; location.hash=route; this.render(); window.scrollTo(0,0); },
