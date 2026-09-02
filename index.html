@@ -203,6 +203,30 @@ label.lb{display:block;font-size:.72rem;color:var(--slate);margin:0 0 6px}
   color:#fff;border-radius:10px;padding:10px 12px;font-family:var(--body);font-size:.86rem;
   line-height:1.8;resize:vertical}
 .squadbox textarea:focus{outline:2px solid var(--sky);outline-offset:1px}
+/* صفوف الكشف: رقم + اسم + مركز + حذف */
+.sqrow{display:grid;grid-template-columns:56px 1fr 92px 32px;gap:6px;align-items:center;margin-bottom:5px}
+.sqrow input,.sqrow select{padding:8px 10px;font-size:.84rem;border-radius:9px}
+.sqrow .sqno{text-align:center;font-variant-numeric:tabular-nums;padding:8px 4px}
+.sqrow .sqno.dup{border-color:rgba(224,100,79,.6)}
+.sqrow select{background:var(--navy-800);padding:8px 6px}
+.sqrow.nopos select{border-color:rgba(224,178,60,.55)}
+.sqrow .sqx{border:1px solid rgba(143,166,196,.28);border-radius:9px;color:var(--slate);
+  font-size:.9rem;line-height:1;height:34px}
+.sqrow .sqx:hover{border-color:rgba(224,100,79,.5);color:var(--loss)}
+.sqadd{display:grid;grid-template-columns:56px 1fr 92px 78px;gap:6px;margin-top:8px}
+.sqadd input,.sqadd select{padding:8px 10px;font-size:.84rem;border-radius:9px}
+.sqadd .sqnewno{text-align:center;padding:8px 4px}
+.sqadd button{border:1px solid rgba(95,178,232,.45);border-radius:9px;color:var(--sky);font-size:.78rem}
+@media(max-width:520px){
+  .sqrow{grid-template-columns:52px 1fr 32px}
+  .sqrow select{grid-column:1/-1}
+  .sqadd{grid-template-columns:52px 1fr;}
+  .sqadd select,.sqadd button{grid-column:1/-1}
+}
+.sqtools{display:flex;gap:8px;align-items:center;margin-bottom:7px}
+.sqtools button{border:1px solid rgba(143,166,196,.28);border-radius:8px;color:var(--slate);
+  font-size:.68rem;padding:4px 9px}
+.cnt.miss{color:#E0B23C;background:rgba(224,178,60,.12)}
 .staffrow{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px dashed rgba(143,166,196,.16)}
 .staffrow:last-of-type{border:0}
 .staffrow .sm{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
@@ -592,7 +616,7 @@ const COMPS = ["الدوري","كأس الأمير","كأس سمو ولي الع
 let COMP = "الدوري";
 let CARDS = [];
 let ALL = null;
-let SQUADS = {};   /* كشوفات اللاعبين: { "النادي": ["اسم", ...] } */
+let SQUADS = {};   /* كشوفات اللاعبين: { "النادي": ["اسم", {n:"اسم", p:"F"}, ...] } */
 let CLUBS = ["القادسية","الكويت","العربي","كاظمة","السالمية","النصر","الجهراء","الساحل","الفحيحيل","التضامن","الشباب","الصليبخات"];
 
 let MATCHES = [
@@ -1542,10 +1566,46 @@ function loadEdit(m){
     pens:ps.map(x=>({by:x.by,p:x.p,m:x.m,res:x.res,place:x.place||""}))};
 }
 
+/* ---------- أرقام ومراكز اللاعبين ----------
+   عنصر الكشف يقبل شكلين: نص "الاسم" (قديم) أو {n:"الاسم", p:"ST", s:9}.
+   p = المركز التفصيلي، s = رقم القميص. القديم يشتغل كما هو. */
+const POS_AR = {G:"حارس", D:"مدافع", M:"وسط", F:"مهاجم"};
+const POS_GROUPS = [
+  ["حراسة", ["GK"]],
+  ["دفاع",  ["RB","CB","LB","RWB","LWB"]],
+  ["وسط",   ["CDM","CM","CAM","RM","LM"]],
+  ["هجوم",  ["RW","ST","LW"]],
+];
+/* المركز التفصيلي ← الخط العام المستخدم في الفانتازي */
+const POS_MAIN = {GK:"G", RB:"D",CB:"D",LB:"D",RWB:"D",LWB:"D",
+  CDM:"M",CM:"M",CAM:"M",RM:"M",LM:"M", RW:"F",ST:"F",LW:"F",
+  G:"G", D:"D", M:"M", F:"F"};
+const POS_ALL = POS_GROUPS.flatMap(g=>g[1]);
+const sqName = x => (typeof x==="string" ? x : (x && x.n) || "");
+const sqPos  = x => (typeof x==="string" ? ""  : (x && x.p) || "");
+const sqNum  = x => (typeof x==="string" ? 0   : (+(x && x.s) || 0));
+const sqItem = (n,p,s) => (p || s) ? {n:n, p:p||"", s:+s||0} : n;
+const posMain = x => POS_MAIN[sqPos(x)] || "";
+function posSelectHTML(cur){
+  const known = POS_ALL.includes(cur);
+  return `<option value="">—</option>`
+    + POS_GROUPS.map(([label,list])=>`<optgroup label="${label}">`
+        + list.map(k=>`<option value="${k}" ${cur===k?"selected":""}>${k}</option>`).join("")
+        + `</optgroup>`).join("")
+    + (cur && !known ? `<option value="${esc(cur)}" selected>${esc(cur)}</option>` : "");
+}
+function squadMissing(club){ return (SQUADS[club]||[]).filter(x=>!sqPos(x)).length; }
+function squadMissingAll(){ return Object.keys(SQUADS).reduce((a,c)=>a+squadMissing(c),0); }
+function squadDupNums(club){
+  const seen={}, dup=new Set();
+  (SQUADS[club]||[]).forEach(x=>{ const s=sqNum(x); if(!s) return; if(seen[s]) dup.add(s); seen[s]=1; });
+  return dup;
+}
+
 /* أسماء لاعبي نادٍ: الكشف المُدخل + كل اسم ظهر له في السجلات */
 function playersOf(club){
   if(!club) return [];
-  const s=new Set((SQUADS[club]||[]).map(x=>String(x).trim()).filter(Boolean));
+  const s=new Set((SQUADS[club]||[]).map(x=>sqName(x).trim()).filter(Boolean));
   (ALL?.goals||[]).forEach(g=>{ if(g.sc===club){ if(g.p) s.add(g.p); if(g.a) s.add(g.a); } });
   (ALL?.cards||[]).forEach(x=>{ if(x.club===club && x.p) s.add(x.p); });
   (ALL?.pens ||[]).forEach(x=>{ if(x.by===club && x.p) s.add(x.p); });
@@ -2417,34 +2477,159 @@ function renderAnalysis(){
 
 /* ================= لوحة المدير ================= */
 /* ================= الكشوفات وفريق العمل — أقسام مشتركة ================= */
+function squadRowsHTML(club){
+  const a=SQUADS[club]||[];
+  if(!a.length) return `<p class="hint" style="margin:2px 0 0">لا كشف لهذا النادي بعد.</p>`;
+  const dup=squadDupNums(club);
+  return a.map((x,i)=>{
+    const p=sqPos(x), s=sqNum(x);
+    return `<div class="sqrow ${p?"":"nopos"}" data-i="${i}">
+      <input type="text" class="sqno ${dup.has(s)?"dup":""}" inputmode="numeric" maxlength="3"
+        value="${s||""}" placeholder="#" title="رقم القميص">
+      <input type="text" class="sqn" value="${esc(sqName(x))}" spellcheck="false" placeholder="اسم اللاعب">
+      <select class="sqp">${posSelectHTML(p)}</select>
+      <button type="button" class="sqx" title="حذف">✕</button>
+    </div>`;
+  }).join("");
+}
+function squadBoxHTML(c){
+  const n=(SQUADS[c]||[]).length, miss=squadMissing(c);
+  return `<div class="squadbox" data-club="${esc(c)}">
+    <label class="lb"><b style="color:#fff">${esc(c)}</b>
+      <span class="cnt">${n}</span>
+      ${miss?`<span class="cnt miss">بلا مركز ${miss}</span>`:""}</label>
+    <div class="sqtools">
+      <button type="button" class="sqsort">ترتيب حسب المركز</button>
+      <button type="button" class="sqbulk">لصق دفعة</button>
+    </div>
+    <textarea class="sqpaste" rows="4" spellcheck="false" style="display:none"
+      placeholder="سطر لكل لاعب:  9 خالد الخرقاوي ST"></textarea>
+    <div class="sqrows">${squadRowsHTML(c)}</div>
+    <div class="sqadd">
+      <input type="text" class="sqnewno" inputmode="numeric" maxlength="3" placeholder="#">
+      <input type="text" class="sqnew" placeholder="إضافة لاعب">
+      <select class="sqnewpos">${posSelectHTML("")}</select>
+      <button type="button" class="sqaddbtn">إضافة</button>
+    </div>
+  </div>`;
+}
 function squadsSectionHTML(){
+  const miss=squadMissingAll();
   return `
     <h2 class="sec">كشوفات اللاعبين</h2>
-    <p class="hint">اكتب أسماء لاعبي كل نادٍ — اسم في كل سطر. تظهر بعدها كقائمة منسدلة عند إدخال الأهداف والبطاقات وركلات الجزاء، ويبقى بإمكانك كتابة اسم جديد يدوياً في أي وقت.</p>
+    <p class="hint">ثلاث خانات لكل لاعب: رقم القميص، الاسم، والمركز. المراكز تنحفظ مع الكشف وتصدّر للفانتازي، والأسماء تظهر كقائمة منسدلة عند إدخال الأهداف والبطاقات وركلات الجزاء.</p>
     <div class="card pad">
-      ${CLUBS.map(c=>`<div class="squadbox">
-        <label class="lb"><b style="color:#fff">${esc(c)}</b> <span class="cnt">${(SQUADS[c]||[]).length}</span></label>
-        <textarea data-squad="${esc(c)}" rows="4" spellcheck="false"
-          placeholder="اسم اللاعب في كل سطر">${esc((SQUADS[c]||[]).join("\n"))}</textarea>
-      </div>`).join("")}
+      ${CLUBS.map(c=>squadBoxHTML(c)).join("")}
       <div style="height:6px"></div>
       <button class="btn" id="saveSquads">حفظ الكشوفات</button>
-      <p class="hint" style="margin:10px 0 0">الكشوفات تُحفظ مع بيانات الموسم وتُرفع للسحابة تلقائياً. إجمالي المسجّل الآن: ${squadTotal()} لاعباً.</p>
+      <p class="hint" style="margin:10px 0 0">الكشوفات تُحفظ مع بيانات الموسم وتُرفع للسحابة تلقائياً. إجمالي المسجّل الآن: ${squadTotal()} لاعباً${miss?` · ${miss} منهم بلا مركز`:""}.</p>
     </div>`;
 }
+/* تحرير حيّ: كل تغيير ينعكس على SQUADS فوراً، وزر الحفظ يرفعه للسحابة */
+const SQ = {
+  arr(c){ return (SQUADS[c] = SQUADS[c] || []); },
+  box(c){ return [...document.querySelectorAll(".squadbox")].find(b=>b.dataset.club===c); },
+  set(c,i,n,p,s){ this.arr(c)[i]=sqItem(n,p,s); },
+  paint(c){
+    const b=this.box(c); if(!b) return;
+    b.querySelector(".sqrows").innerHTML=squadRowsHTML(c);
+    const n=(SQUADS[c]||[]).length, miss=squadMissing(c), lb=b.querySelector("label.lb");
+    lb.innerHTML=`<b style="color:#fff">${esc(c)}</b> <span class="cnt">${n}</span>`
+      + (miss?` <span class="cnt miss">بلا مركز ${miss}</span>`:"");
+  },
+  name(c,i,v){ const x=this.arr(c)[i]; this.set(c,i, v.trim().replace(/\s+/g," "), sqPos(x), sqNum(x)); },
+  pos(c,i,v){ const x=this.arr(c)[i]; this.set(c,i, sqName(x), v, sqNum(x)); this.paint(c); },
+  num(c,i,v){ const x=this.arr(c)[i]; this.set(c,i, sqName(x), sqPos(x), parseInt(String(v).replace(/\D/g,""),10)||0); },
+  del(c,i){ const a=this.arr(c); a.splice(i,1); if(!a.length) delete SQUADS[c]; this.paint(c); },
+  add(c,n,p,s){
+    n=(n||"").trim().replace(/\s+/g," "); if(!n) return false;
+    const a=this.arr(c);
+    if(a.some(x=>sqName(x)===n)){ toast("الاسم موجود في الكشف","err"); return false; }
+    a.push(sqItem(n,p,parseInt(String(s).replace(/\D/g,""),10)||0)); this.paint(c); return true;
+  },
+  bulk(c,txt){
+    const a=this.arr(c); let added=0;
+    txt.split("\n").map(x=>x.trim().replace(/\s+/g," ")).filter(Boolean).forEach(line=>{
+      let s=0, p="";
+      let t=line.replace(/^(\d{1,3})\s*[-.,]?\s*/, (m,d)=>{ s=+d; return ""; });   /* رقم في أول السطر */
+      t=t.replace(/[\s,،-]+([A-Za-z]{1,3})$/, (m,code)=>{                          /* مركز في آخر السطر */
+        const up=code.toUpperCase();
+        if(POS_ALL.includes(up)){ p=up; return ""; }
+        return m;
+      });
+      const n=t.trim().replace(/\s+/g," ");
+      if(!n || a.some(x=>sqName(x)===n)) return;
+      a.push(sqItem(n,p,s)); added++;
+    });
+    if(!a.length) delete SQUADS[c];
+    this.paint(c);
+    toast(added?`أُضيف ${added} لاعب`:"ما فيه أسماء جديدة", added?"ok":"err");
+  },
+  sort(c){
+    const main={G:0,D:1,M:2,F:3,"":4}, det={};
+    POS_ALL.forEach((k,i)=>det[k]=i);
+    this.arr(c).sort((x,y)=>
+      (main[posMain(x)]??4)-(main[posMain(y)]??4)
+      || (det[sqPos(x)]??99)-(det[sqPos(y)]??99)
+      || (sqNum(x)||999)-(sqNum(y)||999)
+      || sqName(x).localeCompare(sqName(y),"ar"));
+    this.paint(c);
+  },
+  clean(){   /* قبل الحفظ: حذف الفاضي والمكرر */
+    Object.keys(SQUADS).forEach(c=>{
+      const seen=new Set(), out=[];
+      (SQUADS[c]||[]).forEach(x=>{
+        const n=sqName(x).trim().replace(/\s+/g," ");
+        if(!n || seen.has(n)) return;
+        seen.add(n); out.push(sqItem(n, sqPos(x), sqNum(x)));
+      });
+      if(out.length) SQUADS[c]=out; else delete SQUADS[c];
+    });
+  }
+};
 function wireSquads(){
   const sqb=$("#saveSquads"); if(!sqb) return;
-  sqb.onclick=async()=>{
-    document.querySelectorAll("[data-squad]").forEach(t=>{
-      const seen=new Set(), names=[];
-      t.value.split("\n").map(x=>x.trim().replace(/\s+/g," ")).filter(Boolean)
-        .forEach(n=>{ if(!seen.has(n)){ seen.add(n); names.push(n); } });
-      if(names.length) SQUADS[t.dataset.squad]=names; else delete SQUADS[t.dataset.squad];
+
+  document.querySelectorAll(".squadbox").forEach(box=>{
+    const c=box.dataset.club;
+    const idx=el=>+el.closest(".sqrow").dataset.i;
+    box.addEventListener("input", e=>{
+      const t=e.target;
+      if(t.classList.contains("sqn"))  SQ.name(c, idx(t), t.value);
+      if(t.classList.contains("sqno")){ t.value=t.value.replace(/\D/g,""); SQ.num(c, idx(t), t.value); }
+      if(t.classList.contains("sqnewno")) t.value=t.value.replace(/\D/g,"");
     });
+    box.addEventListener("change", e=>{ if(e.target.classList.contains("sqp")) SQ.pos(c, idx(e.target), e.target.value); });
+    box.addEventListener("click", e=>{
+      const t=e.target;
+      if(t.classList.contains("sqx")) return SQ.del(c, idx(t));
+      if(t.classList.contains("sqsort")) return SQ.sort(c);
+      if(t.classList.contains("sqbulk")){
+        const ta=box.querySelector(".sqpaste");
+        if(ta.style.display==="none"){ ta.style.display="block"; ta.focus(); t.textContent="أضف الأسماء الملصوقة"; }
+        else { SQ.bulk(c, ta.value); ta.value=""; ta.style.display="none"; t.textContent="لصق دفعة"; }
+        return;
+      }
+      if(t.classList.contains("sqaddbtn")){
+        const no=box.querySelector(".sqnewno"), inp=box.querySelector(".sqnew"), sel=box.querySelector(".sqnewpos");
+        if(SQ.add(c, inp.value, sel.value, no.value)){ inp.value=""; no.value=""; no.focus(); }
+      }
+    });
+    box.addEventListener("keydown", e=>{
+      if(e.key==="Enter" && (e.target.classList.contains("sqnew")||e.target.classList.contains("sqnewno"))){
+        e.preventDefault(); box.querySelector(".sqaddbtn").click();
+      }
+    });
+  });
+
+  sqb.onclick=async()=>{
+    SQ.clean();
     busy(sqb,true,"جارٍ الحفظ…");
     const ok=await persistData();
     busy(sqb,false);
-    if(ok===true){ LASTSYNC=new Date(); toast(`حُفظت الكشوفات · ${squadTotal()} لاعباً ✅`,"ok"); }
+    if(ok===true){ LASTSYNC=new Date();
+      const ms=squadMissingAll();
+      toast(`حُفظت الكشوفات · ${squadTotal()} لاعباً ✅${ms?` · ${ms} بلا مركز`:""}`,"ok"); }
     else if(ok==="pending") toast(SYNCMSG,"busy");
     else toast(SYNCMSG||"حُفظت محلياً، وتعذّر رفعها للسحابة","err");
     renderAdmin();
@@ -3403,7 +3588,7 @@ function scorerOptions(club){
 }
 function allSquadNames(){
   const s = new Set();
-  Object.values(SQUADS).forEach(a=>(a||[]).forEach(n=>s.add(n)));
+  Object.values(SQUADS).forEach(a=>(a||[]).forEach(x=>{ const n=sqName(x).trim(); if(n) s.add(n); }));
   GOALS.forEach(g=>{ if(g.p) s.add(g.p); if(g.a) s.add(g.a); });
   return [...s].sort((a,b)=>String(a).localeCompare(String(b),"ar"));
 }
