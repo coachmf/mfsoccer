@@ -1,0 +1,806 @@
+/* فانتازي الدوري الكويتي — نظام التصميم */
+:root{
+  /* هوية دوري زين — أزرق */
+  --bg:#eef5fc; --bg2:#e0edf9; --surface:#ffffff; --surface2:#f1f7fd; --line:#cfe2f2;
+  --text:#0b2540; --text2:#3d6488; --text3:#7295b3;
+  --green:#00c176; --green-dk:#00875a; --red:#ff5a55; --gold:#fdb913; --blue:#4aa8e8;
+  --accent:#0f7fc6; --zain1:#1a80c8; --zain2:#0d5296;
+  --pitch1:#0c7a43; --pitch2:#0a6b3a;
+  --shadow:0 2px 10px rgba(13,79,146,.08);
+  --r:14px; --r-sm:10px;
+  --fdr1:#12b76a; --fdr2:#7ac74f; --fdr3:#98a2b3; --fdr4:#f97066; --fdr5:#d92d20;
+}
+[data-theme="light"]{
+  --bg:#edf5fc; --bg2:#dfecf8; --surface:#ffffff; --surface2:#f2f8fd; --line:#cfe1f1;
+  --text:#0b2540; --text2:#3d6488; --text3:#7295b3;
+  --accent:#0d7cc4;
+  --shadow:0 2px 10px rgba(13,79,146,.08);
+  --pitch1:#1d9455; --pitch2:#188549;
+}
+*{box-sizing:border-box; margin:0; padding:0;}
+html{font-size:15px;}
+body{
+  font-family:'Almarai','Almarai',system-ui,sans-serif; font-weight:400;
+  background:var(--bg); color:var(--text); direction:rtl; min-height:100vh;
+  background-image:
+    linear-gradient(155deg, rgba(46,176,240,.07) 0%, transparent 35%, transparent 60%, rgba(24,120,190,.10) 100%),
+    radial-gradient(1200px 500px at 80% -10%, rgba(46,176,240,.12), transparent),
+    radial-gradient(900px 400px at 10% 110%, rgba(24,120,190,.14), transparent);
+}
+h1,h2,h3,h4{font-family:'Almarai','Almarai',sans-serif;}
+button{font-family:inherit; cursor:pointer; border:none; background:none; color:inherit;}
+input,select,textarea{
+  font-family:inherit; background:var(--surface2); border:1px solid var(--line); color:var(--text);
+  border-radius:var(--r-sm); padding:10px 12px; font-size:.95rem; width:100%;
+}
+input:focus,select:focus,textarea:focus{outline:2px solid var(--accent); border-color:transparent;}
+a{color:var(--blue); text-decoration:none;}
+::-webkit-scrollbar{height:8px;width:8px;} ::-webkit-scrollbar-thumb{background:var(--line);border-radius:4px;}
+
+/* ---------- شاشة الافتتاح (على طراز FPL) ---------- */
+#splash{
+  position:fixed; inset:0; z-index:500; overflow:hidden;
+  background:#0d63b0 url('../assets/splash-bg.jpg') center/cover no-repeat;
+  display:grid; place-items:center;
+  transition:opacity .55s ease, visibility .55s;
+}
+#splash .splash-card{
+  background:#fff; border-radius:26px; padding:24px 34px; z-index:2;
+  box-shadow:0 18px 50px rgba(0,30,70,.35);
+  animation:splashIn .7s cubic-bezier(.2,.9,.3,1.2);
+}
+#splash.hide{ opacity:0; visibility:hidden; }
+#splash .streak{
+  position:absolute; background:linear-gradient(105deg, rgba(255,255,255,0) 0%, #ffffff 45%, #ffffff 55%, rgba(255,255,255,0) 100%);
+  filter:none; opacity:.9; transform:rotate(-24deg);
+}
+#splash .s1{ width:160%; height:26vh; top:4%;  left:-30%; box-shadow:0 0 0 1px rgba(0,0,0,.015); }
+#splash .s2{ width:160%; height:20vh; top:44%; left:-20%; background:linear-gradient(105deg, rgba(0,0,0,0) 0%, rgba(10,20,40,.028) 50%, rgba(0,0,0,0) 100%); }
+#splash .s3{ width:160%; height:30vh; top:66%; left:-35%; }
+#splash .splash-logo{
+  width:min(300px, 66vw); z-index:2;
+  filter:drop-shadow(0 10px 30px rgba(21,101,192,.18));
+  animation:splashIn .7s cubic-bezier(.2,.9,.3,1.2);
+}
+@keyframes splashIn{ from{ opacity:0; transform:scale(.82); } to{ opacity:1; transform:scale(1); } }
+#splash .splash-glow{
+  position:absolute; left:-6vw; right:-6vw; bottom:-8vh; height:58vh; pointer-events:none;
+  background:
+    radial-gradient(42% 62% at 4% 96%,  rgba(70,205,75,.95),  transparent 72%),
+    radial-gradient(36% 55% at 28% 104%, rgba(80,225,215,.85), transparent 72%),
+    radial-gradient(44% 60% at 52% 100%, rgba(125,145,255,.7), transparent 72%),
+    radial-gradient(38% 56% at 74% 104%, rgba(240,105,190,.85), transparent 72%),
+    radial-gradient(42% 62% at 98% 96%, rgba(255,110,80,.95), transparent 72%);
+  filter:blur(22px); opacity:1;
+}
+.brand-lockup{ height:42px; width:auto; display:block; }
+#brand .lk-dark{ display:none; } #brand .lk-light{ display:block; }
+[data-theme="light"] #brand .lk-dark{ display:none; }
+[data-theme="light"] #brand .lk-light{ display:block; }
+.brand-tag{ align-self:flex-start; margin-top:2px; }
+
+/* ---------- الهيكل ---------- */
+#topbar{
+  position:sticky; top:0; z-index:50; display:flex; align-items:center; gap:14px;
+  padding:10px 18px; background:linear-gradient(180deg,var(--bg2),color-mix(in srgb,var(--bg2) 92%,transparent));
+  backdrop-filter:blur(10px); border-bottom:1px solid var(--line);
+}
+#brand{display:flex;align-items:center;gap:10px;font-family:'Almarai';font-weight:700;font-size:1.12rem;cursor:pointer;}
+#brand .logo{width:36px;height:36px;border-radius:10px;display:grid;place-items:center;
+  background:linear-gradient(135deg,#007a3d,#00c176);color:#fff;font-size:1.15rem;box-shadow:0 3px 10px rgba(0,193,118,.4);}
+#brand small{display:block;font-size:.62rem;color:var(--text2);font-weight:400;}
+#navlinks{display:flex;gap:2px;flex:1;justify-content:center;flex-wrap:wrap;}
+#navlinks button{
+  padding:8px 13px;border-radius:9px;color:var(--text2);font-size:.9rem;font-weight:600;
+  transition:.15s;
+}
+#navlinks button:hover{color:var(--text);background:var(--surface);}
+#navlinks button.active{color:var(--accent);background:color-mix(in srgb,var(--accent) 13%,transparent);}
+#topActions{display:flex;align-items:center;gap:8px;}
+.iconbtn{width:38px;height:38px;border-radius:10px;display:grid;place-items:center;background:var(--surface);
+  border:1px solid var(--line);font-size:1.05rem;position:relative;transition:.15s;}
+.iconbtn:hover{border-color:var(--accent);}
+.iconbtn .dot{position:absolute;top:6px;left:7px;min-width:16px;height:16px;border-radius:8px;background:var(--red);
+  color:#fff;font-size:.62rem;display:grid;place-items:center;padding:0 4px;font-weight:700;}
+#userchip{display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--line);
+  border-radius:20px;padding:5px 12px 5px 6px;cursor:pointer;font-size:.85rem;font-weight:600;}
+#userchip .av{width:27px;height:27px;border-radius:50%;background:var(--surface2);display:grid;place-items:center;}
+
+#main{max-width:1180px;margin:0 auto;padding:22px 18px 90px;}
+.view{animation:fadeup .25s ease;}
+@keyframes fadeup{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:none;}}
+
+/* ---------- الرئيسية على طراز FPL ---------- */
+.home-wrap{ max-width:620px; margin:0 auto; }
+.home-hero{
+  position:relative; overflow:hidden; border-radius:20px; padding:18px 16px;
+  background:linear-gradient(165deg, var(--zain1) 0%, var(--zain2) 70%, #093c72 100%);
+  color:#fff; text-align:center; box-shadow:0 6px 20px rgba(9,60,114,.22);
+}
+.home-hero::before{
+  content:''; position:absolute; inset:0; pointer-events:none;
+  background:
+    radial-gradient(60% 45% at 85% -5%, rgba(120,215,255,.35), transparent 70%),
+    radial-gradient(50% 40% at 0% 105%, rgba(46,176,240,.28), transparent 70%),
+    linear-gradient(120deg, transparent 55%, rgba(255,255,255,.06) 56%, rgba(255,255,255,.06) 70%, transparent 71%);
+}
+.home-hero > *{ position:relative; }
+.hh-top{ display:flex; align-items:center; gap:12px; text-align:right; }
+.hh-badge{
+  width:54px; height:54px; border-radius:16px; display:grid; place-items:center;
+  background:rgba(255,255,255,.15); border:1px solid rgba(255,255,255,.25); backdrop-filter:blur(4px);
+  color:#fff;
+}
+.ic{vertical-align:-4px; flex:none;}
+.big-pill .ic{margin-left:2px;}
+.hh-deadline .ic{vertical-align:-2px; opacity:.85;}
+.hh-edit .ic{transform:none;}
+.lr-lead{display:flex; align-items:center; gap:10px;}
+.lr-lead .ic{color:var(--accent);}
+.lr-arrow .ic{vertical-align:middle;}
+#bottomnav button .ic svg{display:block;}
+.chip-card .ci{color:var(--accent); height:26px; display:grid; place-items:center;}
+.iconbtn .ic{vertical-align:middle;}
+.hh-team{ font-family:'Almarai'; font-weight:800; font-size:1.3rem; }
+.hh-user{ color:rgba(255,255,255,.75); font-size:.85rem; margin-top:2px; }
+.hh-edit{ color:rgba(255,255,255,.7); font-size:1.3rem; padding:6px; }
+.hh-divider{ height:1px; background:rgba(255,255,255,.2); margin:13px 6%; }
+.hh-gwtitle{ font-weight:700; font-size:.95rem; color:rgba(255,255,255,.85); }
+.hh-gwlabel{ font-weight:600; font-size:.74rem; color:rgba(255,255,255,.65); letter-spacing:.2px; }
+.hh-deadline{ font-family:'Almarai'; font-weight:800; margin:4px 0 14px; font-size:1.15rem; }
+.hh-stats{ display:flex; justify-content:center; align-items:flex-start; gap:8%; margin-top:12px; }
+.hh-stats > div{ min-width:70px; }
+.hh-stats b{ display:block; font-family:'Almarai'; font-weight:800; font-size:1.6rem; }
+.hh-stats .big{ cursor:pointer; }
+.hh-stats .big b{ font-size:3.4rem; line-height:1; }
+.hh-stats span{ color:rgba(255,255,255,.7); font-size:.78rem; font-weight:600; }
+.big-pill{
+  display:flex; align-items:center; justify-content:center; gap:9px; width:100%;
+  padding:12px 14px; border-radius:14px; margin-top:10px;
+  background:rgba(255,255,255,.13); border:1px solid rgba(255,255,255,.22);
+  color:#fff; font-weight:700; font-size:.95rem; backdrop-filter:blur(4px); transition:.15s;
+}
+.big-pill:hover{ background:rgba(255,255,255,.24); }
+.big-pill.primary{ background:#fff; color:var(--zain2); font-weight:800; border-color:#fff; }
+.big-pill.primary:hover{ filter:brightness(.95); }
+.pill-row{ display:flex; gap:10px; }
+.pill-row .big-pill{ flex:1; }
+.link-list{
+  margin-top:16px; background:var(--surface); border:1px solid var(--line);
+  border-radius:20px; overflow:hidden; box-shadow:var(--shadow);
+}
+.link-row{
+  display:flex; justify-content:space-between; align-items:center; padding:13px 18px;
+  cursor:pointer; border-bottom:1px solid color-mix(in srgb,var(--line) 55%,transparent);
+  transition:.12s;
+}
+.lr-lead > span{ display:flex; flex-direction:column; gap:1px; }
+.lr-title{ font-weight:700; font-size:.95rem; }
+.lr-sub{ font-size:.72rem; color:var(--text3); font-weight:400; }
+.link-row:last-child{ border-bottom:none; }
+.link-row:hover{ background:var(--surface2); }
+.lr-arrow{ color:var(--text3); font-size:1.2rem; }
+
+/* ---------- مكونات ---------- */
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:18px;box-shadow:var(--shadow);}
+.card h3{margin-bottom:12px;font-size:1.02rem;display:flex;align-items:center;gap:8px;}
+.grid{display:grid;gap:16px;}
+.g2{grid-template-columns:1fr 1fr;} .g3{grid-template-columns:repeat(3,1fr);} .g4{grid-template-columns:repeat(4,1fr);}
+.row{display:flex;align-items:center;gap:10px;}
+.spread{justify-content:space-between;}
+.muted{color:var(--text2);font-size:.85rem;}
+.tiny{color:var(--text3);font-size:.75rem;}
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  background:var(--accent);color:#ffffff;font-weight:700;padding:10px 20px;border-radius:11px;
+  font-size:.93rem;transition:.15s;border:1px solid transparent;
+}
+.btn:hover{filter:brightness(1.1);} .btn:disabled{opacity:.4;cursor:not-allowed;}
+.btn.sec{background:var(--surface2);color:var(--text);border-color:var(--line);}
+.btn.danger{background:var(--red);color:#fff;}
+.btn.ghost{background:transparent;color:var(--accent);border-color:var(--accent);}
+.btn.sm{padding:6px 12px;font-size:.8rem;border-radius:8px;}
+.pill{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:20px;font-size:.72rem;font-weight:700;
+  background:var(--surface2);border:1px solid var(--line);color:var(--text2);}
+.pill.green{background:color-mix(in srgb,var(--green) 18%,transparent);color:var(--green);border-color:transparent;}
+.pill.red{background:color-mix(in srgb,var(--red) 16%,transparent);color:var(--red);border-color:transparent;}
+.pill.gold{background:color-mix(in srgb,var(--gold) 18%,transparent);color:var(--gold);border-color:transparent;}
+.pill.blue{background:color-mix(in srgb,var(--blue) 16%,transparent);color:var(--blue);border-color:transparent;}
+
+.statbox{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px;}
+.statbox .v{font-size:1.5rem;font-weight:800;font-family:'Almarai';}
+.statbox .l{color:var(--text2);font-size:.78rem;margin-top:2px;}
+.statbox.hi{border-color:color-mix(in srgb,var(--accent) 50%,var(--line));}
+.statbox.hi .v{color:var(--accent);}
+
+table.tbl{width:100%;border-collapse:collapse;font-size:.88rem;}
+.tbl th{color:var(--text3);font-size:.72rem;font-weight:600;text-align:right;padding:8px 10px;border-bottom:1px solid var(--line);}
+.tbl td{padding:9px 10px;border-bottom:1px solid color-mix(in srgb,var(--line) 55%,transparent);}
+.tbl tr:hover td{background:color-mix(in srgb,var(--surface2) 70%,transparent);}
+.tbl .num{font-weight:700;font-family:'Almarai';}
+.scroll-x{overflow-x:auto;}
+
+.crest{width:26px;height:26px;object-fit:contain;}
+.crest.lg{width:44px;height:44px;} .crest.xl{width:64px;height:64px;}
+.avatar{border-radius:50%;display:grid;place-items:center;font-weight:800;color:#fff;flex:none;}
+
+.fdr{display:inline-block;min-width:34px;text-align:center;padding:3px 6px;border-radius:6px;
+  font-size:.7rem;font-weight:800;color:#fff;}
+.fdr-line{display:flex;gap:4px;flex-wrap:wrap;margin-top:4px;}
+.fdr-line .fdr{min-width:0;padding:2px 7px;font-size:.62rem;}
+.fdr.l1{background:var(--fdr1);} .fdr.l2{background:var(--fdr2);color:#08300f;} .fdr.l3{background:var(--fdr3);color:#1a2030;}
+.fdr.l4{background:var(--fdr4);} .fdr.l5{background:var(--fdr5);}
+
+/* ---------- شاشة التشكيلة (طراز FPL) ---------- */
+.pickteam{max-width:640px;margin:0 auto;}
+@media (min-width:1000px){
+  .pickteam{max-width:1040px;}
+  .pt-layout{display:grid;grid-template-columns:1fr 330px;gap:18px;align-items:start;}
+  .pickteam .chips-row,.pickteam .pt-head,.pickteam .pt-toggle{max-width:640px;margin-left:auto;margin-right:auto;}
+  .pickteam .pt-toggle{margin-bottom:14px;}
+}
+.pt-side .side-row{display:flex;justify-content:space-between;padding:6px 0;font-size:.88rem;color:var(--text2);}
+.pt-side .side-row b{color:var(--text);}
+.side-fx{display:flex;align-items:center;justify-content:center;gap:8px;padding:7px 0;font-size:.82rem;
+  border-bottom:1px solid color-mix(in srgb,var(--line) 50%,transparent);}
+.side-fx:last-of-type{border-bottom:none;}
+.side-fx .tiny{min-width:86px;text-align:center;}
+.pt-head{text-align:center;margin-bottom:12px;font-size:.95rem;}
+.pt-head .pt-gw{color:var(--text2);font-weight:700;}
+.chips-row{display:flex;gap:8px;margin-bottom:12px;}
+.chip-card{
+  flex:1;background:var(--surface);border:1px solid var(--line);border-radius:14px;
+  padding:8px 6px;display:flex;flex-direction:column;align-items:center;gap:4px;min-width:0;
+}
+.chip-card.on{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,var(--surface));}
+.chip-card .ci{font-size:1.4rem;}
+.chip-card .cl{font-size:.72rem;font-weight:800;white-space:nowrap;}
+.chip-card .cp{
+  width:100%;padding:5px 4px;border-radius:16px;border:1.5px solid var(--accent);color:var(--accent);
+  font-weight:800;font-size:.75rem;
+}
+.chip-card.on .cp{background:var(--accent);color:#03203a;}
+.chip-card .cp:disabled{opacity:.35;border-color:var(--text3);color:var(--text3);}
+.pt-toggle{
+  display:flex;background:var(--surface2);border-radius:22px;padding:4px;width:240px;max-width:100%;
+  margin:0 auto 14px;
+}
+.pt-toggle button{flex:1;padding:8px;border-radius:18px;font-weight:800;font-size:.85rem;color:var(--text2);}
+.pt-toggle button.active{background:#fff;color:#12203a;box-shadow:0 2px 8px rgba(0,0,0,.18);}
+.pt-info{
+  display:flex;justify-content:center;gap:18px;flex-wrap:wrap;margin-top:12px;
+  color:var(--text2);font-size:.8rem;
+}
+.pt-info b{color:var(--text);}
+
+/* الملعب الواقعي */
+.pitch{
+  position:relative;border-radius:20px 20px 14px 14px;overflow:hidden;
+  background:repeating-linear-gradient(180deg,#57b75f 0 46px,#4dad55 46px 92px);
+  min-height:540px;padding:56px 6px 18px;
+  display:flex;flex-direction:column;justify-content:space-between;
+  box-shadow:inset 0 0 60px rgba(0,60,20,.15), 0 10px 30px rgba(2,15,30,.25);
+}
+.pf-goal{position:absolute;top:26px;left:50%;transform:translateX(-50%);width:120px;height:14px;
+  border:2.5px solid rgba(255,255,255,.85);border-top:none;
+  background:repeating-linear-gradient(90deg,rgba(255,255,255,.35) 0 2px,transparent 2px 7px);}
+.pf-box6{position:absolute;top:26px;left:50%;transform:translateX(-50%);width:34%;height:42px;
+  border:2px solid rgba(255,255,255,.65);border-top:none;}
+.pf-box{position:absolute;top:26px;left:50%;transform:translateX(-50%);width:58%;height:86px;
+  border:2px solid rgba(255,255,255,.65);border-top:none;border-radius:0 0 2px 2px;}
+.pf-circle{position:absolute;bottom:-70px;left:50%;transform:translateX(-50%);width:150px;height:150px;
+  border:2px solid rgba(255,255,255,.55);border-radius:50%;}
+.pitch-row{display:flex;justify-content:center;gap:8px;z-index:2;position:relative;}
+
+/* بطاقة اللاعب */
+.pslot{
+  width:100px;display:flex;flex-direction:column;align-items:center;cursor:pointer;position:relative;
+  transition:.15s;
+}
+.pslot:hover{transform:translateY(-3px);}
+.pslot .kit{filter:drop-shadow(0 3px 5px rgba(0,30,10,.3));}
+.empty-shirt{
+  width:46px;height:44px;border-radius:10px;display:grid;place-items:center;
+  background:rgba(255,255,255,.18);border:2px dashed rgba(255,255,255,.6);color:#fff;font-weight:800;
+}
+.pslot .nm{
+  margin-top:2px;background:#ffffff;color:#12203a;font-size:.7rem;font-weight:800;
+  padding:3px 8px;border-radius:7px 7px 0 0;max-width:98px;min-width:74px;text-align:center;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;box-shadow:0 2px 6px rgba(0,20,10,.2);
+}
+.pslot .pt{
+  background:#e6ebf2;color:#3d4a63;font-size:.64rem;font-weight:700;padding:2px 8px;
+  border-radius:0 0 7px 7px;min-width:74px;max-width:98px;text-align:center;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.pslot .badge{position:absolute;top:-4px;right:8px;background:#12203a;color:#fff;width:22px;height:22px;
+  border-radius:50%;display:grid;place-items:center;font-size:.64rem;font-weight:900;
+  box-shadow:0 2px 6px rgba(0,0,0,.4);border:1.5px solid #fff;z-index:3;}
+.pslot .badge.v{background:#5b6b8c;}
+.pslot .flag{position:absolute;top:-6px;left:4px;font-size:.8rem;z-index:3;}
+.pslot.sel .kit{outline:3px solid var(--gold);border-radius:8px;}
+.pslot.dim{opacity:.4;}
+.kit-sm .kit{display:block;}
+
+/* الدكة */
+.bench-strip{
+  margin-top:10px;border-radius:16px;
+  background:linear-gradient(180deg, rgba(87,183,95,.25), var(--surface));
+  border:1px solid var(--line);
+  padding:12px 8px;display:flex;gap:6px;justify-content:center;
+}
+.bench-slot{display:flex;flex-direction:column;align-items:center;gap:4px;flex:1;max-width:110px;}
+.bench-pos{font-size:.68rem;font-weight:800;color:var(--text2);}
+.bench-strip .pslot{width:92px;}
+
+/* ---------- قائمة اللاعبين ---------- */
+.plist-item{display:flex;align-items:center;gap:10px;padding:9px 10px;border-bottom:1px solid color-mix(in srgb,var(--line) 55%,transparent);cursor:pointer;transition:.12s;border-radius:8px;}
+.plist-item:hover{background:var(--surface2);}
+.plist-item .info{flex:1;min-width:0;}
+.plist-item .info .n{font-weight:700;font-size:.88rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.plist-item .info .m{font-size:.72rem;color:var(--text2);}
+.plist-item .pr{font-weight:800;font-family:'Almarai';font-size:.88rem;}
+.plist-item .tp{font-weight:800;color:var(--accent);min-width:34px;text-align:center;}
+
+/* ---------- المباريات ---------- */
+.fx{display:flex;align-items:center;gap:8px;padding:12px;border:1px solid var(--line);border-radius:var(--r-sm);
+  background:var(--surface2);margin-bottom:8px;}
+.fx .team{flex:1;display:flex;align-items:center;gap:8px;font-weight:700;font-size:.9rem;}
+.fx .team.a{justify-content:flex-start;flex-direction:row-reverse;}
+.fx .score{min-width:74px;text-align:center;font-family:'Almarai';font-weight:800;font-size:1.05rem;
+  background:var(--surface);border:1px solid var(--line);border-radius:9px;padding:6px 4px;}
+.fx .score.live{border-color:var(--red);color:var(--red);animation:pulse 1.6s infinite;}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(232,67,63,.35);}50%{box-shadow:0 0 0 6px transparent;}}
+.fx .score .t{display:block;font-size:.6rem;color:var(--text3);font-weight:600;}
+.goal-line{font-size:.76rem;color:var(--text2);padding:2px 8px;}
+
+/* ---------- إشعارات وتوست ---------- */
+#toasts{position:fixed;bottom:20px;left:20px;z-index:200;display:flex;flex-direction:column;gap:8px;}
+.toast{background:var(--surface);border:1px solid var(--line);border-right:4px solid var(--accent);
+  padding:12px 16px;border-radius:10px;box-shadow:var(--shadow);font-size:.87rem;max-width:340px;animation:fadeup .2s;}
+.toast.err{border-right-color:var(--red);}
+#notifPanel{position:fixed;top:62px;left:16px;width:360px;max-width:92vw;max-height:70vh;overflow:auto;z-index:150;
+  background:var(--surface);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);padding:10px;}
+.notif-item{padding:10px;border-bottom:1px solid color-mix(in srgb,var(--line) 50%,transparent);font-size:.83rem;}
+.notif-item.unread{background:color-mix(in srgb,var(--accent) 7%,transparent);}
+.notif-item .ts{font-size:.68rem;color:var(--text3);margin-top:3px;}
+
+/* ---------- مودال ---------- */
+#modalBack{position:fixed;inset:0;background:rgba(4,8,18,.7);z-index:180;display:grid;place-items:center;padding:16px;backdrop-filter:blur(3px);}
+#modalBox{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);max-width:560px;width:100%;
+  max-height:88vh;overflow:auto;padding:20px;animation:fadeup .18s;}
+#modalBox h3{margin-bottom:14px;}
+
+/* ---------- بطاقة اللاعب السفلية (طراز FPL) ---------- */
+#sheetBack{position:fixed;inset:0;background:rgba(2,10,22,.6);z-index:190;display:flex;align-items:flex-end;justify-content:center;backdrop-filter:blur(2px);}
+.psheet{
+  background:var(--surface);width:100%;max-width:600px;border-radius:24px 24px 0 0;
+  padding-bottom:calc(16px + env(safe-area-inset-bottom));max-height:88vh;overflow:auto;
+  animation:sheetUp .3s cubic-bezier(.2,.9,.3,1.1);box-shadow:0 -12px 40px rgba(0,0,0,.4);
+}
+@keyframes sheetUp{from{transform:translateY(55%);opacity:.5}to{transform:none;opacity:1}}
+.ps-grab{width:44px;height:4px;border-radius:2px;background:var(--line);margin:10px auto 8px;}
+.ps-head{
+  display:flex;align-items:center;gap:14px;margin:4px 14px 10px;padding:16px;border-radius:18px;
+  background:linear-gradient(115deg,#54bdec 0%,var(--zain1) 55%,var(--zain2) 100%);color:#fff;
+}
+.ps-head .ps-kit .kit{filter:drop-shadow(0 4px 8px rgba(0,20,40,.35));}
+.ps-photo{width:86px;height:86px;border-radius:50%;object-fit:cover;background:#eef2f7;
+  border:3px solid rgba(255,255,255,.85);box-shadow:0 4px 12px rgba(0,20,40,.3);}
+.ps-pos{font-size:.74rem;font-weight:700;opacity:.85;}
+.ps-name{font-family:'Almarai';font-weight:800;font-size:1.3rem;line-height:1.3;}
+.ps-club{font-size:.84rem;opacity:.92;margin-top:2px;}
+.ps-stats{display:flex;margin:0 14px 12px;background:var(--surface2);border:1px solid var(--line);border-radius:14px;padding:12px 4px;}
+.ps-stats>div{flex:1;text-align:center;border-left:1px solid var(--line);}
+.ps-stats>div:last-child{border-left:none;}
+.ps-stats b{display:block;font-family:'Almarai';font-size:1.05rem;}
+.ps-stats .lbl{font-size:.66rem;color:var(--text2);font-weight:700;margin-top:2px;}
+.ps-stats .rnk{font-size:.6rem;color:var(--text3);margin-top:1px;}
+.ps-two{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:0 14px 12px;}
+.ps-two h4{font-size:.78rem;margin-bottom:6px;color:var(--text2);}
+.ps-cells{display:flex;gap:6px;}
+.fcell{flex:1;background:var(--surface2);border:1px solid var(--line);border-radius:10px;padding:7px 3px;
+  display:flex;flex-direction:column;align-items:center;gap:3px;min-width:0;}
+.fcell .tiny{font-size:.6rem;white-space:nowrap;overflow:hidden;max-width:100%;}
+.ptschip{width:100%;border-radius:6px;font-weight:800;font-size:.78rem;padding:2px 0;text-align:center;color:#fff;}
+.ptschip.good{background:#0c9f60;} .ptschip.ok{background:#7ac74f;color:#0b2e12;}
+.ptschip.mid{background:#98a2b3;color:#1c2433;} .ptschip.bad{background:#d92d20;}
+.ptschip.fdr-l1{background:var(--fdr1);} .ptschip.fdr-l2{background:var(--fdr2);color:#08300f;}
+.ptschip.fdr-l3{background:var(--fdr3);color:#1a2030;} .ptschip.fdr-l4{background:var(--fdr4);} .ptschip.fdr-l5{background:var(--fdr5);}
+.ps-caps{display:flex;gap:26px;margin:2px 20px 12px;font-weight:700;font-size:.92rem;}
+.ps-caps label{display:flex;align-items:center;gap:8px;cursor:pointer;}
+.ps-caps input{width:18px;height:18px;accent-color:var(--accent);}
+.ps-actions{display:flex;gap:10px;margin:0 14px;}
+.ps-actions .btn{flex:1;border-radius:26px;padding:13px;}
+
+/* ---------- تبويبات ---------- */
+.tabs{display:flex;gap:4px;background:var(--surface2);padding:4px;border-radius:11px;margin-bottom:16px;width:fit-content;max-width:100%;overflow-x:auto;}
+.tabs button{padding:8px 16px;border-radius:8px;font-size:.85rem;font-weight:700;color:var(--text2);white-space:nowrap;}
+.tabs button.active{background:var(--surface);color:var(--accent);box-shadow:0 2px 8px rgba(0,0,0,.2);}
+
+/* ---------- الرسم البياني ---------- */
+.chart{width:100%;}
+
+/* ---------- لوحة الإدارة ---------- */
+.admin-grid{display:grid;grid-template-columns:220px 1fr;gap:16px;}
+.admin-menu{display:flex;flex-direction:column;gap:4px;}
+.admin-menu button{text-align:right;padding:10px 14px;border-radius:9px;font-weight:600;font-size:.88rem;color:var(--text2);}
+.admin-menu button.active{background:var(--surface);color:var(--accent);border:1px solid var(--line);}
+.field{margin-bottom:12px;}
+.field label{display:block;font-size:.78rem;color:var(--text2);margin-bottom:5px;font-weight:600;}
+
+/* ---------- دخول ---------- */
+.auth-hero{max-width:430px;margin:30px auto;}
+.auth-hero .logo-big{width:74px;height:74px;border-radius:20px;display:grid;place-items:center;margin:0 auto 14px;
+  background:linear-gradient(135deg,#007a3d,#00c176);font-size:2rem;box-shadow:0 10px 30px rgba(0,193,118,.35);}
+.auth-hero h1{text-align:center;font-size:1.5rem;margin-bottom:4px;}
+.auth-hero .sub{text-align:center;color:var(--text2);font-size:.88rem;margin-bottom:22px;}
+
+/* ---------- أخبار ---------- */
+.news-card{border:1px solid var(--line);border-radius:var(--r);padding:16px;background:var(--surface);margin-bottom:12px;}
+.news-card h4{margin:8px 0 8px;font-size:1rem;}
+.news-card p{color:var(--text2);font-size:.87rem;line-height:1.75;}
+
+/* ---------- شريط جوال سفلي ---------- */
+#bottomnav{display:none;}
+@media (max-width:860px){
+  html{font-size:14px;}
+  #navlinks{display:none;}
+  .g2,.g3,.g4{grid-template-columns:1fr;}
+  .admin-grid{grid-template-columns:1fr;}
+  .admin-menu{flex-direction:row;overflow-x:auto;}
+  .admin-menu button{white-space:nowrap;}
+  #bottomnav{
+    display:flex;position:fixed;bottom:0;right:0;left:0;z-index:90;
+    background:color-mix(in srgb,var(--bg2) 96%,transparent);backdrop-filter:blur(12px);
+    border-top:1px solid var(--line);justify-content:space-around;padding:7px 4px calc(7px + env(safe-area-inset-bottom));
+  }
+  #bottomnav button{display:flex;flex-direction:column;align-items:center;gap:2px;font-size:.62rem;color:var(--text3);font-weight:700;padding:4px 8px;border-radius:8px;}
+  #bottomnav button .ic{font-size:1.15rem;}
+  #bottomnav button.active{color:var(--accent);}
+  .pslot{width:66px;}
+  .pslot .kit{width:44px;height:40px;}
+  .pslot .nm{max-width:66px;min-width:56px;font-size:.6rem;}
+  .pslot .pt{max-width:70px;min-width:60px;font-size:.52rem;}
+  .club-tag{font-size:.5rem;max-width:70px;padding:1px 6px;}
+  .pitch{min-height:470px;}
+  .bench-strip .pslot{width:64px;}
+  .chip-card .cl{font-size:.62rem;}
+  #main{padding:14px 10px 90px;}
+}
+@media (min-width:861px){
+  .team-layout{display:grid;grid-template-columns:1fr 330px;gap:16px;align-items:start;}
+}
+@media (max-width:860px){ .team-layout{display:block;} .team-layout > *{margin-bottom:14px;} }
+
+/* صور اللاعبين على الملعب */
+.pslot .avatar{box-shadow:0 4px 10px rgba(0,25,10,.4); background:#fff;}
+.pslot.sel .avatar{outline:3px solid var(--gold); outline-offset:1px;}
+
+/* شارة نادي اللاعب أعلى البطاقة */
+.club-tag{font-size:.58rem;font-weight:800;background:#12294a;color:#fff;padding:1px 8px;border-radius:6px;margin-bottom:3px;max-width:92px;white-space:nowrap;overflow:hidden;}
+.pt-toggle button.active{background:var(--zain1);color:#fff;}
+
+/* صف الخطط */
+.form-row{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin:0 0 12px;}
+.form-chip{padding:6px 12px;border-radius:9px;background:var(--surface);border:1px solid var(--line);
+  font-family:'Almarai';font-weight:700;font-size:.8rem;color:var(--text2);transition:.12s;}
+.form-chip:hover{border-color:var(--zain1);color:var(--zain1);}
+.form-chip.active{background:var(--zain1);color:#fff;border-color:var(--zain1);}
+.form-chip:disabled{opacity:.4;}
+
+/* لوحة الصفقات */
+.tf-board{min-height:0 !important;padding:18px 6px !important;display:flex;flex-direction:column;gap:16px;}
+.pslot.out .avatar{outline:3px solid var(--red);outline-offset:1px;}
+.pslot.out .nm{text-decoration:line-through;opacity:.8;}
+.pslot.out .pt{background:var(--red);color:#fff;}
+.pslot.tin .avatar{outline:3px solid #12b76a;outline-offset:1px;}
+.pslot.tin .pt{background:#12b76a;color:#fff;}
+.tf-bar{position:fixed;left:0;right:0;bottom:82px;z-index:80;display:flex;justify-content:center;padding:0 10px;pointer-events:none;}
+@media (min-width:861px){ .tf-bar{bottom:16px;} }
+.tf-bar-in{pointer-events:auto;display:flex;align-items:center;gap:16px;background:var(--surface);border:1px solid var(--line);
+  border-radius:16px;padding:10px 16px;box-shadow:0 12px 34px rgba(13,79,146,.28);}
+.tf-bar-in>div{text-align:center;font-size:.66rem;color:var(--text3);min-width:44px;}
+.tf-bar-in b{display:block;font-family:'Almarai';font-size:1.02rem;color:var(--text);}
+
+/* بانر شاشة الفريق بهوية دوري زين */
+.squad-hero{
+  display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;
+  background:linear-gradient(115deg,#54bdec 0%,var(--zain1) 45%,var(--zain2) 100%);
+  color:#fff;border-radius:18px;padding:14px 18px;margin-bottom:12px;
+  box-shadow:0 4px 14px rgba(13,79,146,.18);position:relative;overflow:hidden;
+}
+.squad-hero::before{content:'';position:absolute;inset:0;pointer-events:none;
+  background:linear-gradient(115deg,transparent 55%,rgba(255,255,255,.09) 56%,rgba(255,255,255,.09) 72%,transparent 73%);}
+.sh-name{font-family:'Almarai';font-weight:800;font-size:1.15rem;}
+.sh-sub{font-size:.76rem;opacity:.85;margin-top:2px;}
+.sh-stats{display:flex;gap:18px;}
+.sh-stats>div{text-align:center;}
+.sh-stats b{display:block;font-family:'Almarai';font-size:1.05rem;font-weight:800;}
+.sh-stats span{font-size:.64rem;opacity:.8;}
+/* لوحة إعلانات دوري زين أعلى الملعب */
+.pitch-brand{
+  position:absolute;top:0;left:0;right:0;height:26px;background:#fff;
+  display:flex;justify-content:space-around;align-items:center;z-index:1;
+  border-bottom:2px solid rgba(0,0,0,.08);
+}
+.pitch-brand img{height:17px;width:auto;}
+/* لمسة عمق للملعب */
+.pitch{box-shadow:inset 0 -40px 80px rgba(0,50,20,.18), 0 10px 30px rgba(13,79,146,.18);}
+/* كروت الفانتازي: أيقونة بدائرة زرقاء */
+.chip-card .ci{background:color-mix(in srgb,var(--zain1) 12%,transparent);border-radius:50%;width:36px;height:36px;color:var(--zain1);}
+
+/* ===== جولة التكثيف الاحترافية ===== */
+/* الشريط العلوي أنظف */
+#topbar{padding:8px 14px;}
+#userchip{padding:4px 10px 4px 5px;}
+@media (max-width:860px){ .uc-name{display:none;} #userchip{padding:4px;border-radius:50%;} }
+
+/* بانر الفريق مضغوط */
+.squad-hero{padding:11px 16px;border-radius:14px;margin-bottom:8px;}
+.sh-name{font-size:1rem;}
+.sh-sub{font-size:.7rem;}
+.sh-stats{gap:14px;}
+.sh-stats b{font-size:.95rem;}
+.sh-stats span{font-size:.58rem;}
+
+/* كروت الفانتازي: شريط مضغوط بدل الكروت الضخمة */
+.chips-row{gap:6px;margin-bottom:8px;}
+.chip-card{padding:6px 4px 7px;gap:3px;border-radius:11px;}
+.chip-card .ci{width:26px;height:26px;}
+.chip-card .ci .ic{width:15px;height:15px;}
+.chip-card .cl{font-size:.62rem;}
+.chip-card .cp{padding:3px 4px;font-size:.66rem;border-width:1px;border-radius:10px;}
+
+/* التوجل والخطط: صف واحد قابل للتمرير */
+.pt-toggle{margin:0 auto 8px;padding:3px;width:230px;}
+.pt-toggle button{padding:6px;font-size:.8rem;}
+.form-row{flex-wrap:nowrap;overflow-x:auto;justify-content:flex-start;padding:2px 2px 6px;margin:0 0 8px;
+  scrollbar-width:none;}
+.form-row::-webkit-scrollbar{display:none;}
+.form-chip{padding:5px 11px;font-size:.74rem;flex:none;border-radius:8px;}
+
+/* بطاقة اللاعب: أهدأ وأرتب */
+.club-tag{background:rgba(8,22,44,.72);font-weight:700;letter-spacing:.2px;border-radius:5px;
+  padding:1px 7px;font-size:.55rem;margin-bottom:2px;backdrop-filter:blur(2px);}
+.pslot .nm{border-radius:6px 6px 0 0;box-shadow:0 1px 4px rgba(0,20,10,.18);font-size:.68rem;padding:3px 7px;}
+.pslot .pt{font-size:.6rem;padding:2px 7px;border-radius:0 0 6px 6px;}
+.pslot .avatar{box-shadow:0 2px 6px rgba(0,25,10,.3);}
+.pitch{border-radius:14px;}
+.pitch-brand{height:22px;}
+.pitch-brand img{height:14px;}
+.pf-goal{top:22px;} .pf-box6{top:22px;} .pf-box{top:22px;}
+.pitch{padding-top:46px !important;}
+
+/* الدكة أنظف */
+.bench-strip{padding:8px 6px;border-radius:12px;margin-top:8px;}
+.bench-pos{font-size:.6rem;}
+
+/* الشريط السفلي: مؤشر نشط أوضح */
+#bottomnav button{position:relative;padding:5px 10px;border-radius:12px;}
+#bottomnav button.active{background:color-mix(in srgb,var(--zain1) 10%,transparent);}
+
+/* الرئيسية: هيرو أدق */
+.home-hero{padding:16px 14px;}
+.hh-stats .big b{font-size:2.9rem;}
+.hh-divider{margin:11px 6%;}
+.big-pill{padding:11px 12px;}
+.link-list{border-radius:16px;}
+
+
+/* الشريطان العلوي والسفلي: زجاج أبيض */
+#topbar{background:rgba(255,255,255,.94); backdrop-filter:blur(14px); border-bottom:1px solid rgba(13,79,146,.08);}
+#bottomnav{background:rgba(255,255,255,.96); backdrop-filter:blur(14px); border-top:1px solid rgba(13,79,146,.08);}
+#bottomnav button.active{background:rgba(13,82,150,.09);}
+
+/* إطار زين حول الملعب */
+.zain-frame{
+  background:url('../assets/bg.jpg') center/cover;
+  border-radius:22px; padding:10px;
+  box-shadow:0 8px 26px rgba(13,79,146,.22);
+}
+.zain-frame .pitch{border-radius:12px; box-shadow:inset 0 -40px 80px rgba(0,50,20,.15);}
+.zain-frame .bench-strip{
+  margin-top:10px; background:rgba(255,255,255,.92); backdrop-filter:blur(6px);
+  border:none; border-radius:12px;
+}
+
+/* ============ جولة الترتيب والبساطة ============ */
+/* خط واحد، أوزان محدودة */
+body,h1,h2,h3,h4,button,input,select,textarea{font-family:'Almarai',system-ui,sans-serif; letter-spacing:0;}
+h2{font-size:1.25rem;font-weight:800;}
+h3{font-size:.98rem;font-weight:800;}
+
+/* حدود وظلال موحدة وهادئة */
+:root{--line:#e2ecf5; --shadow:0 1px 3px rgba(13,79,146,.07);}
+.card,.link-list,.statbox,.news-card,.chip-card,#modalBox,.psheet,#notifPanel{
+  border:1px solid var(--line); box-shadow:var(--shadow); border-radius:14px;
+}
+.link-list{border-radius:14px;}
+
+/* البانرات: لون واحد مسطح بلا لمعان ولا زجاج */
+.home-hero,.squad-hero{
+  background:var(--zain2); border:none; box-shadow:none; backdrop-filter:none; border-radius:16px;
+}
+.home-hero::before,.squad-hero::before{display:none;}
+.hh-badge{background:rgba(255,255,255,.12); border:none;}
+.big-pill{border-radius:11px; background:rgba(255,255,255,.1); border:1px solid rgba(255,255,255,.28); font-weight:700;}
+.big-pill.primary{font-weight:800;}
+.hh-stats .big b{font-size:2.6rem;}
+.hh-stats b{font-weight:800;}
+
+/* عناصر التحكم بسيطة */
+.pt-toggle{background:#e7eff7; backdrop-filter:none; border-radius:11px;}
+.pt-toggle button{color:var(--text2); font-weight:700;}
+.pt-toggle button.active{background:#fff; color:var(--zain2); box-shadow:0 1px 3px rgba(13,79,146,.12);}
+.form-chip{background:#fff; border:1px solid var(--line); color:var(--text2); backdrop-filter:none; font-weight:700;}
+.form-chip.active{background:var(--zain2); color:#fff; border-color:var(--zain2);}
+.tabs{background:#e7eff7; backdrop-filter:none;}
+.tabs button{color:var(--text2);}
+.tabs button.active{background:#fff; color:var(--zain2); box-shadow:0 1px 3px rgba(13,79,146,.12);}
+.btn{border-radius:11px; font-weight:700;}
+.iconbtn{border-color:var(--line); box-shadow:none;}
+#userchip{border-color:var(--line);}
+#topbar{background:#fff; backdrop-filter:none; border-bottom:1px solid var(--line);}
+#bottomnav{background:#fff; backdrop-filter:none; border-top:1px solid var(--line);}
+#bottomnav button{font-weight:700;}
+
+/* كروت الفانتازي أهدأ */
+.chip-card .ci{background:#eef5fb; color:var(--zain2);}
+.chip-card .cp{border-color:var(--line); color:var(--zain2); font-weight:700;}
+.chip-card.on{border-color:var(--zain2); background:#fff;}
+.chip-card.on .cp{background:var(--zain2); color:#fff;}
+
+/* الملعب وإطاره أبسط */
+.zain-frame{padding:8px; border-radius:16px; box-shadow:var(--shadow);}
+.zain-frame .pitch{box-shadow:none; border-radius:11px;}
+.pitch{box-shadow:none;}
+.pitch-brand{border-bottom:1px solid rgba(0,0,0,.05);}
+.pslot .nm{box-shadow:none; font-weight:700; background:#fff;}
+.pslot .pt{background:#edf3f9; color:#51637f;}
+.club-tag{background:rgba(255,255,255,.92); color:#1d3a5f; font-weight:700; backdrop-filter:none;}
+.pslot .avatar{box-shadow:0 1px 4px rgba(0,25,10,.25);}
+.pslot .badge{box-shadow:none; border-width:1.5px;}
+.zain-frame .bench-strip{background:rgba(255,255,255,.94); backdrop-filter:none;}
+
+/* الشريط السفلي للصفقات */
+.tf-bar-in{box-shadow:0 6px 20px rgba(13,79,146,.18); border-radius:14px;}
+.tf-bar-in b{font-weight:800;}
+
+/* قوائم أوضح */
+.plist-item{padding:10px;}
+.plist-item .info .n{font-weight:700;}
+.lr-title{font-weight:700;}
+.lr-sub{font-size:.7rem;}
+.statbox .v{font-weight:800;}
+
+/* إشعارات وأوراق */
+.psheet{border-radius:20px 20px 0 0;}
+.ps-head{background:var(--zain2); border-radius:14px;}
+.ps-stats{border-radius:12px;}
+.fcell{border-radius:9px;}
+
+/* أيقونات البيت/الطيارة داخل النصوص */
+.tiny .ic,.fdr .ic,.pt .ic,.pslot .ic,.fcell .ic,.team .ic{vertical-align:-1.5px;}
+.fdr .ic{stroke-width:2;}
+
+/* شبكة اختيار التشكيلة في محرر النتائج */
+.lu-grid{display:flex;flex-wrap:wrap;gap:5px;margin-top:5px;}
+.lu{padding:4px 10px;border-radius:9px;font-size:.72rem;font-weight:700;cursor:pointer;
+  background:#eef2f7;color:#6a7f99;border:1px solid var(--line);user-select:none;}
+.lu.s{background:var(--zain2);color:#fff;border-color:var(--zain2);}
+.lu.b{background:#f5c518;color:#4a3800;border-color:#e3b40e;}
+
+/* ---------- تكوين الفريق: ملعب بخانات فاضية ---------- */
+.picker-wrap{max-width:640px;margin:0 auto;}
+.picker-pitch{min-height:560px;}
+.pslot.empty .empty-shirt{width:48px;height:48px;border-radius:50%;border:2px dashed rgba(255,255,255,.75);
+  background:rgba(255,255,255,.16);box-shadow:0 2px 8px rgba(0,25,10,.25);}
+.pslot.empty .nm{opacity:.9;}
+.pslot.empty .pt{background:rgba(255,255,255,.85);color:var(--zain2);min-width:0;}
+.picker-pitch .pitch-row{gap:6px;}
+.pslot.empty.out .empty-shirt{border-color:#ffb4b0;background:rgba(255,90,85,.18);}
+.picker-errs .tiny{color:var(--text2);padding:2px 0;}
+.tf-wrap{max-width:640px;margin:0 auto;}
+.tf-stats{display:flex;justify-content:center;gap:26px;margin-bottom:8px;}
+.tf-stats>div{text-align:center;font-size:.66rem;color:var(--text3);}
+.tf-stats b{display:block;font-family:'Almarai';font-size:1.05rem;color:var(--text);}
+
+/* ---------- شاشة «إضافة لاعب» (طراز FPL) ---------- */
+body.addp-open{overflow:hidden;}
+#addpBack{position:fixed;inset:0;z-index:185;background:var(--bg);overflow:auto;animation:fadeup .18s;}
+.addp{max-width:640px;margin:0 auto;padding:10px 12px calc(30px + env(safe-area-inset-bottom));}
+.addp-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+.addp-top h3{font-size:1.15rem;}
+.addp-top .iconbtn{width:38px;height:38px;border-radius:50%;background:var(--surface2);display:grid;place-items:center;}
+.addp-bank{background:linear-gradient(90deg,#54bdec,var(--zain1) 60%,var(--zain2));color:#fff;text-align:center;
+  font-weight:800;font-family:'Almarai';padding:10px;border-radius:12px;margin-bottom:10px;font-size:1rem;}
+.addp-search{display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--line);
+  border-radius:14px;padding:4px 12px;margin-bottom:8px;color:var(--text3);}
+.addp-search input{background:none;border:none;padding:9px 4px;font-size:1rem;}
+.addp-search input:focus{outline:none;}
+.addp-filters{display:flex;gap:6px;margin-bottom:12px;}
+.addp-filters select{flex:1;min-width:0;padding:8px 10px;border-radius:12px;background:var(--surface);font-size:.85rem;}
+.addp-lbl{font-weight:800;font-size:.82rem;color:var(--text2);margin:0 4px 6px;}
+.addp-table{background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow:hidden;box-shadow:var(--shadow);margin-bottom:12px;}
+.addp-out{border-color:color-mix(in srgb,var(--zain1) 45%,var(--line));}
+.addp-head{display:flex;align-items:center;gap:8px;padding:10px 10px 8px;border-bottom:1px solid var(--line);
+  font-size:.74rem;font-weight:800;color:var(--text2);}
+.addp-head span{cursor:pointer;display:flex;align-items:center;gap:2px;justify-content:center;}
+.addp-head .addp-name{justify-content:flex-start;padding-right:46px;flex-direction:row;}
+.addp-row{display:flex;align-items:center;gap:6px;padding:8px 10px;border-bottom:1px solid color-mix(in srgb,var(--line) 55%,transparent);cursor:pointer;}
+.addp-row:last-child{border-bottom:none;}
+.addp-row:hover{background:var(--surface2);}
+.addp-row.dim{opacity:.42;}
+.addp-i{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;color:var(--text2);flex:none;}
+.addp-i:hover{background:var(--surface2);}
+.addp-warn{width:20px;height:20px;border-radius:50%;background:var(--red);color:#fff;font-weight:900;font-size:.72rem;display:grid;place-items:center;}
+.addp-name{flex:1;min-width:0;display:flex;flex-direction:column;}
+.addp-name b{font-size:.86rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.addp-name span{font-size:.7rem;color:var(--text2);}
+.addp-name span i{font-style:normal;color:var(--red);font-weight:700;}
+.addp-c{width:50px;text-align:center;font-family:'Almarai';font-weight:700;font-size:.86rem;flex:none;display:flex;flex-direction:column;}
+.addp-c small{font-size:.58rem;color:var(--text3);font-weight:700;}
+@media (max-width:400px){ .addp-c{width:48px;font-size:.8rem;} .addp-filters select{padding:8px 6px;font-size:.78rem;} }
+
+/* ---------- قمصان على الملعب (طراز FPL) ---------- */
+.pslot .pk{display:grid;place-items:center;height:56px;}
+.pslot .pk .kit{filter:drop-shadow(0 3px 6px rgba(0,25,10,.35));}
+.kit-img{object-fit:contain;}
+.pslot.sel .pk .kit{outline:3px solid var(--gold);outline-offset:2px;border-radius:10px;}
+.pslot.out .pk .kit{outline:3px solid var(--red);outline-offset:2px;border-radius:10px;}
+.pslot.tin .pk .kit{outline:3px solid #12b76a;outline-offset:2px;border-radius:10px;}
+@media (max-width:860px){ .pslot .pk{height:50px;} .pslot .pk .kit{width:46px;height:auto;} }
+
+/* ---------- بطل الجولة ---------- */
+.champ{display:flex;align-items:center;gap:12px;margin-top:12px;padding:10px 12px;border-radius:14px;cursor:pointer;
+  background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.22);}
+.champ.mine{background:linear-gradient(90deg,rgba(253,185,19,.35),rgba(253,185,19,.12));border-color:rgba(253,185,19,.7);}
+.champ-ic{width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.18);display:grid;place-items:center;color:#fdb913;flex:none;}
+.champ.mine .champ-ic{background:#fdb913;color:#3a2a00;}
+.champ-l{font-size:.68rem;font-weight:700;color:rgba(255,255,255,.75);}
+.champ-t{font-family:'Almarai';font-weight:800;font-size:1rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.champ-n{font-size:.72rem;color:rgba(255,255,255,.8);}
+.champ-p{text-align:center;flex:none;}
+.champ-p b{display:block;font-family:'Almarai';font-size:1.5rem;line-height:1;}
+.champ-p span{font-size:.62rem;color:rgba(255,255,255,.75);}
+.champ-badge{display:inline-flex;align-items:center;gap:2px;background:#fdb913;color:#3a2a00;border-radius:12px;padding:1px 7px;
+  font-size:.66rem;font-weight:800;vertical-align:middle;margin-right:4px;}
+tr.hl td{background:color-mix(in srgb,var(--gold) 14%,transparent);}
+
+/* ---------- مقارنة اللاعبين ---------- */
+.cmp-slots{display:grid;gap:10px;grid-template-columns:repeat(3,1fr);}
+.cmp-slots.n1{grid-template-columns:1fr;max-width:340px;} .cmp-slots.n2{grid-template-columns:1fr 1fr;}
+.cmp-slot{position:relative;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px 8px 10px;text-align:center;
+  display:flex;flex-direction:column;align-items:center;gap:4px;min-height:130px;box-shadow:var(--shadow);}
+.cmp-slot.empty{border-style:dashed;justify-content:flex-start;}
+.cmp-slot b{font-size:.9rem;}
+.cmp-x{position:absolute;top:6px;left:8px;width:24px;height:24px;border-radius:50%;background:var(--surface2);color:var(--text2);font-weight:800;}
+.cmp-search{display:flex;align-items:center;gap:6px;width:100%;background:var(--surface2);border:1px solid var(--line);border-radius:10px;padding:2px 8px;color:var(--text3);}
+.cmp-search input{background:none;border:none;padding:8px 2px;font-size:.9rem;}
+.cmp-search input:focus{outline:none;}
+.cmp-results{width:100%;text-align:right;}
+.cmp-res{display:flex;align-items:center;gap:8px;padding:6px 4px;border-bottom:1px solid color-mix(in srgb,var(--line) 55%,transparent);cursor:pointer;font-size:.84rem;}
+.cmp-res:hover{background:var(--surface2);}
+.cmp-res span{display:flex;flex-direction:column;min-width:0;}
+.cmp-res small{font-size:.68rem;color:var(--text2);}
+.cmp-tbl th:first-child{text-align:right;color:var(--text2);font-weight:700;white-space:nowrap;}
+.cmp-tbl td{text-align:center;}
+.cmp-tbl td.best{background:color-mix(in srgb,var(--green) 16%,transparent);color:var(--green-dk);font-weight:800;border-radius:6px;}
+@media (max-width:480px){ .cmp-slots{gap:6px;} .cmp-slot{padding:12px 4px 8px;} .cmp-slot b{font-size:.78rem;} }
+
+/* القميص بدل صورة اللاعب في كل مكان */
+.avatar.kit-av{display:inline-grid;place-items:center;border:none !important;background:none !important;border-radius:0;box-shadow:none;flex:none;overflow:visible;}
+.avatar.kit-av .kit{filter:drop-shadow(0 2px 3px rgba(0,20,40,.25));}
+
+/* ---------- بطاقة المطوّر ---------- */
+.dev-card{display:flex;align-items:center;gap:12px;padding:14px 16px;border-radius:16px;margin-top:12px;color:#fff;
+  background:linear-gradient(115deg,#54bdec 0%,var(--zain1) 55%,var(--zain2) 100%);box-shadow:0 8px 24px rgba(13,79,146,.22);}
+.dev-card.compact{cursor:pointer;}
+.dev-ic{width:42px;height:42px;border-radius:50%;background:rgba(255,255,255,.18);display:grid;place-items:center;flex:none;}
+.dev-l{font-size:.66rem;font-weight:700;opacity:.8;}
+.dev-n{font-family:'Almarai';font-weight:800;font-size:1.05rem;}
+.dev-r{font-size:.74rem;opacity:.9;}
+.dev-links{display:flex;gap:8px;flex:none;}
+.dev-links a{width:38px;height:38px;border-radius:50%;background:#fff;color:var(--zain2);display:grid;place-items:center;transition:.15s;}
+.dev-links a:hover{transform:translateY(-2px);}
