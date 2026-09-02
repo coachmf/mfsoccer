@@ -40,21 +40,31 @@ function hashCred(email, pass){
 }
 
 const ADMINAUTH = {
-  OWNER: { email:'mansourx04@gmail.com', hash:'533ffed7b0a7dde39049aad225c3abf085a968632cc5cf26ef92ce6367617e2d' },
+  /* مالكو اللعبة — مثبتون في الكود فيعملون على كل الأجهزة (بعكس المديرين المضافين من اللوحة).
+     لتوليد الهاش: افتح كونسول المتصفح في صفحة اللعبة واكتب
+         hashCred('البريد', 'كلمة المرور')
+     والصق الناتج (64 حرفاً) مكان hash. صاحب hash فارغ لا يستطيع الدخول. */
+  OWNERS: [
+    { email:'mansourx04@gmail.com', name:'منصور',          hash:'533ffed7b0a7dde39049aad225c3abf085a968632cc5cf26ef92ce6367617e2d' },
+    { email:'coachmf.kw@gmail.com', name:'محمد الفيلكاوي', hash:'a056561210868b8b12e6df16046cc7c44581c6a5da3d5173315b31692cf47d12' },
+  ],
+  /* يرجع سجل المالك إذا كان بريده مسجلاً وله كلمة مرور مضبوطة */
+  ownerRec(email){ const e=String(email||'').trim().toLowerCase(); return this.OWNERS.find(o=>o.email===e && o.hash); },
   KEY:'kwf_admin', TTL: 24*3600*1000,
   session(){ try{ const s=JSON.parse(localStorage.getItem(this.KEY)||'null'); return (s && s.until>Date.now())? s : null; }catch(e){ return null; } },
   active(){ return !!this.session(); },
-  isOwner(){ const s=this.session(); return !!s && s.email===this.OWNER.email; },
+  isOwner(){ const s=this.session(); return !!s && !!this.ownerRec(s.email); },
   extra(){ DB.state.admins=DB.state.admins||[]; return DB.state.admins; },
   sync(){ const m=DB.me(); if(m){ const a=this.active(); if(m.admin!==a){ m.admin=a; DB.save(); } } },
   login(email, pass){
     email=String(email||'').trim().toLowerCase();
     if(!email || !pass){ UI.toast('أدخل البريد وكلمة المرور',true); return; }
     const h=hashCred(email,pass);
-    const ok = (email===this.OWNER.email && h===this.OWNER.hash) || this.extra().some(a=>a.email===email && a.hash===h);
+    const o = this.ownerRec(email);
+    const ok = (o && h===o.hash) || this.extra().some(a=>a.email===email && a.hash===h);
     if(!ok){ UI.toast('البريد أو كلمة المرور غير صحيحة',true); return; }
     localStorage.setItem(this.KEY, JSON.stringify({email, until:Date.now()+this.TTL}));
-    this.sync(); UI.toast(email===this.OWNER.email? 'أهلاً منصور — دخلت كمالك اللعبة' : 'تم الدخول كمدير');
+    this.sync(); UI.toast(o? `أهلاً ${o.name} — دخلت كمالك اللعبة` : 'تم الدخول كمدير');
     VIEWS.ui.adminSec='gws'; APP.go('admin');
   },
   logout(){ localStorage.removeItem(this.KEY); this.sync(); UI.toast('تم الخروج من الإدارة'); APP.go('dashboard'); },
@@ -75,7 +85,7 @@ const ADMINAUTH = {
     return `<div class="card"><h3>المديرون</h3>
       <div class="tiny" style="margin-bottom:10px;color:var(--text3)">أنت داخل الآن بحساب <b style="direction:ltr;display:inline-block">${esc(s.email)}</b>${owner?' (المالك)':''}. الجلسة تنتهي بعد 24 ساعة أو عند الخروج.</div>
       <div class="scroll-x"><table class="tbl"><tr><th>البريد</th><th>أُضيف</th><th></th></tr>
-        <tr><td style="direction:ltr;text-align:right"><b>${esc(this.OWNER.email)}</b> <span class="pill gold">المالك</span></td><td class="tiny">ثابت في الكود</td><td></td></tr>
+        ${this.OWNERS.filter(o=>o.hash).map(o=>`<tr><td style="direction:ltr;text-align:right"><b>${esc(o.email)}</b> <span class="pill gold">المالك</span></td><td class="tiny">ثابت في الكود</td><td></td></tr>`).join('')}
         ${rows}</table></div>
       ${owner? `<h4 style="margin:16px 0 8px">إضافة مدير</h4>
         <div class="field"><label>البريد الإلكتروني</label><input id="na_email" type="email" style="direction:ltr"></div>
@@ -91,7 +101,7 @@ const ADMINAUTH = {
     email=String(email||'').trim().toLowerCase();
     if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){ UI.toast('بريد غير صحيح',true); return; }
     if(!pass || pass.length<6){ UI.toast('كلمة المرور 6 أحرف على الأقل',true); return; }
-    if(email===this.OWNER.email || this.extra().some(a=>a.email===email)){ UI.toast('هذا البريد مدير أصلاً',true); return; }
+    if(this.OWNERS.some(o=>o.email===email) || this.extra().some(a=>a.email===email)){ UI.toast('هذا البريد مدير أصلاً',true); return; }
     this.extra().push({email, hash:hashCred(email,pass), added:new Date().toISOString()});
     DB.save(); UI.toast('أُضيف المدير '+email); APP.render();
   },
