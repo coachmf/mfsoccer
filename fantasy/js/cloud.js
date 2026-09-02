@@ -79,6 +79,33 @@ const CLOUD = {
   leaguesCol(){ return this.root().collection('leagues'); },
   round(gw){ return this.root().collection('rounds').doc(String(gw)); },
   playersDoc(){ return this.root().collection('meta').doc('players'); },
+  lockDoc(){ return this.root().collection('meta').doc('lock'); },
+
+  /* ---------- قفل الجولة ----------
+     مستند صغير تقرؤه قواعد الأمان: بعد الموعد يرفض الخادم أي تعديل
+     على التشكيلة، فلا يكفي أن يكون القفل في الواجهة. */
+  async publishLock(st){
+    const g = (st.gws||[]).find(x=>x.n===st.currentGW);
+    if(!g) return {ok:false, err:'لا توجد جولة حالية'};
+    const dl = new Date(g.deadline);
+    const body = {
+      gw: st.currentGW,
+      deadline: firebase.firestore.Timestamp.fromDate(dl),
+      deadlineISO: g.deadline,
+      open: g.status !== 'finished',
+      updated: new Date().toISOString()
+    };
+    const r = await this.race(this.lockDoc().set(body));
+    return r.ok ? {ok:true, gw:body.gw, deadline:g.deadline} : {ok:false, err:'تعذّر نشر موعد الإغلاق'};
+  },
+
+  /* الموعد كما يراه الخادم — الواجهة تستعمله حتى لا تعتمد على ساعة الجهاز */
+  async readLock(){
+    try{
+      const s = await this.lockDoc().get();
+      return s.exists ? s.data() : null;
+    }catch(e){ return null; }
+  },
 
   /* Firestore يطبّق الكتابة محلياً فوراً لكن الوعد ينتظر الخادم،
      فبلا اتصال يبقى معلقاً — نسابقه بمهلة كما يفعل الموقع الرئيسي. */
@@ -168,17 +195,27 @@ const CLOUD = {
     }catch(e){ return null; }
   },
 
-  /* حفظ الملف والفريق — لا يمسّ history ولا total (المدير وحده يكتبهما) */
+  /* حفظ الملف والفريق — لا يمسّ history ولا total (المدير وحده يكتبهما).
+     بعد موعد الإغلاق يرفض الخادم التشكيلة، فنرسل الملف وحده. */
   async saveMyTeam(profile, team){
     if(!this.user) return false;
-    const patch = {team: team||null, updated:new Date().toISOString()};
+    const patch = {updated:new Date().toISOString()};
+    if(team !== undefined) patch.team = team || null;   // undefined = لا تمسّ التشكيلة
     if(profile){
       if(profile.username!=null) patch.username = profile.username;
       if(profile.teamName!=null) patch.teamName = profile.teamName;
       if(profile.avatar  !=null) patch.avatar   = profile.avatar;
     }
     const r = await this.race(this.managers().doc(this.user.uid).set(patch, {merge:true}));
-    return r.ok === true;
+    if(r.ok === true) return true;
+    // الخادم يرفض تعديل التشكيلة بعد الإغلاق — نوضّح السبب بدل فشل صامت
+    const code = r.err && r.err.code;
+    if(code === 'permission-denied' && typeof UI!=='undefined'){
+      UI.toast(patch.team !== undefined
+        ? 'أُغلقت الجولة — لا يمكن تعديل التشكيلة بعد الموعد'
+        : 'تعذّر الحفظ — لا تملك صلاحية هذه العملية', true);
+    }
+    return false;
   },
 
   /* لوحة الترتيب العام — من نقاط المشتركين الحقيقيين */
@@ -246,7 +283,9 @@ const CLOUD = {
       const rr = await this.race(this.round(gw).set({fixtures: byGW[gw], playerGW: pg, updated: meta.updated}));
       if(!rr.ok) return {ok:false, err:`تعذّر نشر الجولة ${gw}`};
     }
-    return {ok:true, rounds:Object.keys(byGW).length};
+    const lk = await this.publishLock(st);
+    if(!lk.ok) return {ok:false, err:lk.err};
+    return {ok:true, rounds:Object.keys(byGW).length, deadline:lk.deadline};
   },
 
   /* نشر نتائج جولة واحدة فقط — أسرع من نشر الموسم كله */
@@ -259,7 +298,9 @@ const CLOUD = {
     let r = await this.race(this.round(gw).set({fixtures, playerGW:pg, updated:now}));
     if(!r.ok) return {ok:false, err:'تعذّر نشر الجولة'};
     r = await this.race(this.root().set({gws:st.gws, currentGW:st.currentGW, updated:now}, {merge:true}));
-    return r.ok ? {ok:true} : {ok:false, err:'نُشرت المباريات لكن تعذّر تحديث حالة الجولات'};
+    if(!r.ok) return {ok:false, err:'نُشرت المباريات لكن تعذّر تحديث حالة الجولات'};
+    await this.publishLock(st);
+    return {ok:true};
   },
 
   /* ---------- احتساب الجولة للجميع ---------- */

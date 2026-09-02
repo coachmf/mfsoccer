@@ -98,6 +98,17 @@ service cloud.firestore {
       return isOwner() || isEditor();
     }
 
+    // Squad deadline, mirrored from the gameweek into a document the rules
+    // can read. Written by staff whenever the game is published.
+    function fanLock(season) {
+      return get(/databases/$(database)/documents/fantasy/$(season)/meta/lock).data;
+    }
+    function fanWindowOpen(season) {
+      return exists(/databases/$(database)/documents/fantasy/$(season)/meta/lock)
+          && fanLock(season).open == true
+          && request.time < fanLock(season).deadline;
+    }
+
     match /fantasy/{season} {
 
       // Game state: rules, scoring table, gameweeks. Public read.
@@ -127,12 +138,17 @@ service cloud.firestore {
                       && request.resource.data.total == 0
                       && request.resource.data.history.size() == 0;
 
-        // Updates: you may change your profile and squad, never your points.
-        // Self-check first so an ordinary manager triggers no extra reads.
+        // Updates. A manager may never touch their own points, and may only
+        // change their squad while the gameweek is still open. Once the
+        // deadline passes the squad is frozen on the server, not just in the
+        // interface — the profile stays editable.
         allow update: if ( request.auth != null
                            && request.auth.uid == uid
-                           && request.resource.data.history == resource.data.history
-                           && request.resource.data.total   == resource.data.total )
+                           && request.resource.data.history  == resource.data.history
+                           && request.resource.data.total    == resource.data.total
+                           && request.resource.data.joinedGW == resource.data.joinedGW
+                           && ( request.resource.data.team == resource.data.team
+                                || fanWindowOpen(season) ) )
                       || isFanAdmin();
 
         allow delete: if isFanAdmin();

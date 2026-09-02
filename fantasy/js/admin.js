@@ -32,7 +32,10 @@ const ADMIN = {
         <tr><td>حساب المدير</td><td style="direction:ltr;text-align:right">${u? esc(u.email) : '—'}</td></tr>
         <tr><td>صلاحية النشر</td><td>${up&&CLOUD.admin? '<span class="pill green">متاحة</span>' : '<span class="pill">غير متاحة</span>'}</td></tr>
         <tr><td>عدد المشتركين</td><td id="mgrCount">—</td></tr>
+        <tr><td>قفل التشكيلات على الخادم</td><td id="lockState">—</td></tr>
       </table>
+      <div class="tiny" style="margin-top:8px">القفل يُنشر مع اللعبة. قبل أول نشر يرفض الخادم كل التشكيلات —
+      وهذا مقصود: لا أحد يلعب قبل أن تعتمد الجولة.</div>
       <div style="height:12px"></div>
       ${!u? `<div class="tiny" style="margin-bottom:10px">سجّل دخول حساب المدير في السحابة (نفس حساب الموقع الرئيسي) لتتمكن من النشر:</div>
         <div class="field"><label>البريد</label><input id="cl_email" type="email" style="direction:ltr"></div>
@@ -46,6 +49,17 @@ const ADMIN = {
     <script>(async()=>{ if(typeof CLOUD!=='undefined' && CLOUD.ready){
       const n=await CLOUD.managerCount(); const el=document.getElementById('mgrCount');
       if(el) el.textContent = n==null? 'تعذّرت القراءة' : n+' مشتركاً';
+      const lk=await CLOUD.readLock(); const le=document.getElementById('lockState');
+      if(le){
+        if(!lk) le.innerHTML='<span class="pill gold">لم يُنشر — التشكيلات مرفوضة</span>';
+        else{
+          const d=new Date(lk.deadlineISO || (lk.deadline&&lk.deadline.seconds*1000));
+          const open = lk.open && Date.now() < d.getTime();
+          le.innerHTML = '<span class="pill '+(open?'green':'')+'">الجولة '+lk.gw+' — '
+            + (open? 'مفتوحة حتى ' : 'مقفلة منذ ')
+            + d.toLocaleString('ar-KW',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})+'</span>';
+        }
+      }
     }})();<\/script>`;
   },
 

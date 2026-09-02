@@ -98,9 +98,11 @@ const DB = {
     if(typeof CLOUD==='undefined' || !CLOUD.user) return false;
     const uid=CLOUD.user.uid, t=this.state.teams[uid], u=this.user(uid);
     if(!t) return false;
+    const profile = u? {username:u.username, teamName:u.teamName, avatar:u.avatar} : null;
+    // بعد الإغلاق: الملف الشخصي يُحفظ، والتشكيلة لا تُرسل أصلاً — والخادم يرفضها كذلك
+    if(GWADMIN.deadlinePassed(this.state.currentGW)) return await CLOUD.saveMyTeam(profile, undefined);
     const {history, ...team} = t;                 // السجل لا يُرفع: المدير يكتبه
-    return await CLOUD.saveMyTeam(
-      u? {username:u.username, teamName:u.teamName, avatar:u.avatar} : null, team);
+    return await CLOUD.saveMyTeam(profile, team);
   },
   reset(){ try{ localStorage.removeItem(this.KEY);}catch(e){} this.state = buildSeedState(); this.save(); },
 
