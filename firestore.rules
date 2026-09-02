@@ -1,114 +1,128 @@
-rules_version = '2';
-
-/*  قواعد أمان Firestore — mfsoccer + الفانتازي
+/*  قواعد أمان الفانتازي — كتلة تُضاف إلى قواعدك الحالية
+ *  ==================================================
  *
- *  كيف تنشرها (مرة واحدة):
- *    Firebase Console ← Firestore Database ← Rules
- *    الصق هذا الملف كاملاً ← Publish
+ *  ⚠️  لا تستبدل قواعدك بهذا الملف.
+ *      موقعك يستخدم ست مجموعات: seasons و rounds و preds و fans
+ *      و boards و stats، وقواعدك المنشورة تقفل التوقعات بعد بدء
+ *      المباريات. استبدالها يعطّل ذلك كله.
  *
- *  المبدأ: القراءة مفتوحة (الموقع عام)، والكتابة محصورة:
- *    - بيانات الموسم واللعبة: المدير وحده
- *    - مستند المشترك: صاحبه يكتب ملفه وفريقه فقط،
- *      أما سجل النقاط (history/total) فالمدير وحده — وإلا كتب كل واحد نقاطه بنفسه
+ *  الطريقة الصحيحة:
+ *    1. Firebase Console ← Firestore Database ← Rules
+ *    2. انسخ قواعدك الحالية كاملة واحتفظ بها عندك (نسخة احتياطية)
+ *    3. الصق الكتلة أدناه *داخل* القوس الموجود:
+ *         service cloud.firestore {
+ *           match /databases/{database}/documents {
+ *             ... قواعدك الحالية تبقى كما هي ...
+ *             ⬇ هنا تضيف الكتلة ⬇
+ *           }
+ *         }
+ *    4. Publish
+ *
+ *  إن كانت قواعدك تنتهي بقاعدة شاملة تمنع كل شيء
+ *  (match /{document=**} { allow read, write: if false; })
+ *  فضع كتلة الفانتازي *قبلها*، وإلا لن تُقرأ.
+ *
+ *  بعد النشر جرّب: التوقعات، تسجيل المشجعين، جدول الترتيب،
+ *  ولوحة إدارة الموقع — للتأكد أن شيئاً لم ينكسر.
  */
 
-service cloud.firestore {
-  match /databases/{database}/documents {
 
-    // ===== أدوات =====
-    function signedIn() {
-      return request.auth != null;
-    }
-    function isOwner() {
-      return signedIn() && request.auth.uid == 'iiTgVfDryXNLb9IrOyLkkNMHDxq2';
-    }
-    // محرّر معتمد في staff/members
-    function isStaff() {
-      return signedIn()
-        && exists(/databases/$(database)/documents/staff/members)
-        && get(/databases/$(database)/documents/staff/members).data[request.auth.uid] != null
-        && get(/databases/$(database)/documents/staff/members).data[request.auth.uid].role == 'editor'
-        && get(/databases/$(database)/documents/staff/members).data[request.auth.uid].active != false;
-    }
-    function isAdmin() {
-      return isOwner() || isStaff();
+// ═══════════ ابدأ النسخ من هنا ═══════════
+
+    // ---------- الفانتازي ----------
+    // ملاحظة: مالك الموقع ثابت هنا كما في index.html.
+    // إن أضفت محررين لهم صلاحية النشر، أضف معرّفاتهم في القائمة.
+    function fanAdmin() {
+      return request.auth != null
+        && request.auth.uid in [
+             'iiTgVfDryXNLb9IrOyLkkNMHDxq2'    // المالك
+           ];
     }
 
-    // ===== الموقع الرئيسي =====
-    match /seasons/{doc} {
-      allow read: if true;
-      allow write: if isAdmin();
-    }
-    match /assets/{doc} {
-      allow read: if true;
-      allow write: if isAdmin();
-    }
-    match /staff/{doc} {
-      allow read: if signedIn();
-      allow write: if isOwner();
-    }
-
-    // ===== الفانتازي =====
     match /fantasy/{season} {
 
-      // حالة اللعبة: قواعد ونقاط وجولات — الجميع يقرأ، المدير يكتب
+      // حالة اللعبة: القواعد والنقاط والجولات — الجميع يقرأ، المدير وحده يكتب
       allow read: if true;
-      allow write: if isAdmin();
+      allow write: if fanAdmin();
 
       match /meta/{doc} {
         allow read: if true;
-        allow write: if isAdmin();
+        allow write: if fanAdmin();
       }
 
       match /rounds/{gw} {
         allow read: if true;
-        allow write: if isAdmin();
+        allow write: if fanAdmin();
       }
 
-      // ---- المشتركون ----
+      // ---------- المشتركون ----------
       match /managers/{uid} {
-        allow read: if true;                  // الترتيب العام يحتاج قراءة الجميع
 
-        // إنشاء الحساب: صاحبه فقط، ويبدأ بسجل فارغ ومجموع صفر
-        allow create: if signedIn()
+        // الترتيب العام يحتاج قراءة الجميع
+        allow read: if true;
+
+        // إنشاء الحساب: صاحبه وحده، ويبدأ بسجل فارغ ومجموع صفر
+        allow create: if request.auth != null
                       && request.auth.uid == uid
                       && request.resource.data.total == 0
                       && request.resource.data.history.size() == 0;
 
-        // التعديل: إما المدير (يكتب النقاط)، أو صاحبه بشرط ألا يمسّ نقاطه
-        allow update: if isAdmin()
-                      || ( signedIn()
+        // التعديل: صاحبه يعدّل ملفه وفريقه بشرط ألا يمسّ نقاطه.
+        // (الشرط الذاتي أولاً حتى لا يحتاج اللاعب العادي أي قراءة إضافية)
+        allow update: if ( request.auth != null
                            && request.auth.uid == uid
                            && request.resource.data.history == resource.data.history
-                           && request.resource.data.total   == resource.data.total );
+                           && request.resource.data.total   == resource.data.total )
+                      || fanAdmin();
 
-        allow delete: if isAdmin();
+        allow delete: if fanAdmin();
       }
 
-      // ---- الدوريات الخاصة ----
+      // ---------- الدوريات الخاصة ----------
       match /leagues/{lg} {
+
         allow read: if true;
 
-        allow create: if signedIn()
+        // الإنشاء: المنشئ هو المالك وهو العضو الوحيد في البداية
+        allow create: if request.auth != null
                       && request.resource.data.owner == request.auth.uid
                       && request.resource.data.members.hasOnly([request.auth.uid]);
 
-        // المالك يعدّل دوريه؛ وأي مشترك يضيف نفسه فقط (الانضمام بالرمز)
-        allow update: if isAdmin()
-                      || ( signedIn() && resource.data.owner == request.auth.uid )
-                      || ( signedIn()
-                           && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['members'])
+        // التعديل: مالك الدوري، أو مشترك يضيف نفسه فقط (الانضمام بالرمز)
+        allow update: if ( request.auth != null
+                           && resource.data.owner == request.auth.uid )
+                      || ( request.auth != null
+                           && request.resource.data.diff(resource.data)
+                                .affectedKeys().hasOnly(['members'])
                            && request.resource.data.members.hasAll(resource.data.members)
                            && request.resource.data.members.hasOnly(
-                                resource.data.members.concat([request.auth.uid])) );
+                                resource.data.members.concat([request.auth.uid])) )
+                      || fanAdmin();
 
-        allow delete: if isAdmin() || (signedIn() && resource.data.owner == request.auth.uid);
+        allow delete: if ( request.auth != null
+                           && resource.data.owner == request.auth.uid )
+                      || fanAdmin();
       }
     }
 
-    // كل ما عدا ذلك: ممنوع
-    match /{document=**} {
-      allow read, write: if false;
-    }
-  }
-}
+// ═══════════ انتهى النسخ هنا ═══════════
+
+
+/*  ماذا تضمن هذه القواعد
+ *  ---------------------
+ *  · حالة اللعبة (الجولات والنتائج والنقاط) يكتبها المدير وحده،
+ *    فلا يستطيع أحد تزوير نتيجة مباراة.
+ *  · المشترك يكتب ملفه وفريقه فقط. أما history و total فأي محاولة
+ *    لتغييرهما من حسابه تُرفض على الخادم — النقاط يكتبها المدير
+ *    عند احتساب الجولة. هذا هو الفرق بين ترتيب حقيقي وترتيب يزوّره
+ *    أي شخص يفتح أدوات المطوّر.
+ *  · الانضمام لدوري يضيف المشترك نفسه فقط، ولا يستطيع حذف غيره
+ *    ولا تغيير اسم الدوري ولا رمزه.
+ *
+ *  ما لا تضمنه
+ *  -----------
+ *  · المشترك يستطيع تعديل فريقه بعد موعد الإغلاق إن تلاعب بالطلب.
+ *    القفل حالياً في الواجهة فقط. إغلاقه على الخادم يحتاج إما شرطاً
+ *    يقارن بموعد الجولة (مثل قاعدة التوقعات عندك)، أو Cloud Function.
+ *    أخبرني إن أردت إضافته.
+ */
