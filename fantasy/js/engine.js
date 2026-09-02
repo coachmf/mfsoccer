@@ -245,19 +245,40 @@ function buildGameweeks(fixtures){
 /* =========================================================
    توليد إحصاءات المباراة من الأحداث الحقيقية
    ========================================================= */
+/* الدقيقة المطلقة من (الشوط، الدقيقة) — مطابقة لنظيرتها في الموقع الرئيسي */
+function absMinute(h, m){
+  const mm = +m || 0;
+  if(+h === 2 && mm <= 45) return 45 + mm;
+  return mm;
+}
+
 function genMatchStats(st, fx){
-  // كل شيء من بيانات حقيقية: التشكيلة والبدلاء من موقع النتائج (fx.lineups)
-  // + الأهداف/الكروت/الجزاءات/البونص المدخلة يدوياً. لا توليد عشوائي.
+  // كل شيء من بيانات حقيقية: التشكيلة والتبديلات من موقع النتائج
+  // + الأهداف/الكروت/الجزاءات/البونص. لا توليد عشوائي.
   const find=(name,clubId)=>st.players.find(p=>p.club===clubId && p.name===name);
   const mkRow=min=>({min,g:0,a:0,cs:0,gc:0,ps:0,pm:0,og:0,yc:0,rc:0,bonus:0,pts:0});
   fx.stats={}; fx.stats[fx.h]={}; fx.stats[fx.a]={};
   for(const clubId of [fx.h, fx.a]){
     const lu=(fx.lineups||{})[clubId]||{};
     for(const pid in lu){
-      if(lu[pid]==='s') fx.stats[clubId][pid]=mkRow(90);      // أساسي: 60+ دقيقة
-      else if(lu[pid]==='b') fx.stats[clubId][pid]=mkRow(30); // بديل: أقل من 60
+      // أساسي يبدأ بـ90 دقيقة ثم تُقصّ عند خروجه؛ البديل صفر حتى يدخل فعلاً
+      if(lu[pid]==='s') fx.stats[clubId][pid]=mkRow(90);
+      else if(lu[pid]==='b') fx.stats[clubId][pid]=mkRow(0);
     }
   }
+  /* التبديلات: تُحدّد دقائق الخارج والداخل بدقة */
+  (fx.subs||[]).forEach(s=>{
+    const clubId=s.club; const rows=fx.stats[clubId]; if(!rows) return;
+    const at=Math.max(0, Math.min(90, absMinute(s.h, s.m)));
+    if(s.out){
+      const po=find(s.out, clubId);
+      if(po){ if(!rows[po.id]) rows[po.id]=mkRow(90); rows[po.id].min=at; }
+    }
+    if(s.in){
+      const pi=find(s.in, clubId);
+      if(pi){ if(!rows[pi.id]) rows[pi.id]=mkRow(0); rows[pi.id].min=90-at; }
+    }
+  });
   const rowFor=(name,clubId)=>{
     const p=find(name,clubId); if(!p) return null;
     const rows=fx.stats[clubId];
@@ -288,6 +309,13 @@ function scoreFixture(st, fx){
     for(const pid in rows){
       const r=rows[pid]; const p=st.players.find(x=>x.id===pid);
       if(!p) continue;
+      // بديل لم يشارك: صفر دقيقة = صفر نقطة، بلا نقطة مشاركة
+      if(!(r.min > 0)){
+        r.pts = 0;
+        st.playerGW[pid] = st.playerGW[pid]||{};
+        st.playerGW[pid][fx.gw] = r;
+        continue;
+      }
       let pts = r.min>=60 ? S('appearance60') : S('appearance');
       pts += r.g*S('goal'+p.pos) + r.a*S('assist');
       if(r.cs){ if(p.pos==='G') pts+=S('csG'); else if(p.pos==='D') pts+=S('csD'); else if(p.pos==='M') pts+=S('csM'); }

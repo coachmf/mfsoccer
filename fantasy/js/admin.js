@@ -173,7 +173,7 @@ const ADMIN = {
     f.venue=DB.club(f.h).stadium;
     const upcoming=document.getElementById('fx_upcoming');
     if(upcoming && upcoming.checked){
-      f.hs=null; f.as=null; f.goals=[]; f.cards=[]; f.pens=[]; f.bonus=[]; f.lineups=null; f.status='U'; f.est=false;
+      f.hs=null; f.as=null; f.goals=[]; f.cards=[]; f.pens=[]; f.bonus=[]; f.lineups=null; f.subs=[]; f.status='U'; f.est=false;
       DB.save(); VIEWS.ui.editFx=null;
       UI.toast('حُفظت المباراة كمباراة قادمة'); APP.render(); return;
     }

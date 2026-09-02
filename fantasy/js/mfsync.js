@@ -92,7 +92,7 @@ const MFSYNC = {
     catch(e){ UI.toast(e.message, true); return; }
 
     const st=DB.state;
-    const report={matches:0, goals:0, cards:0, pens:0, unmatched:[], notes:[], upd:data.lastUpdate||''};
+    const report={matches:0, goals:0, cards:0, pens:0, xi:0, subs:0, unmatched:[], notes:[], upd:data.lastUpdate||''};
     const ms=(data.matches||[]).filter(m=>m.round===gw && (!m.comp || m.comp==='الدوري'));
     if(!ms.length){ UI.toast(`الجولة ${gw} غير موجودة على الموقع بعد`, true); return; }
 
@@ -113,7 +113,8 @@ const MFSYNC = {
       if(m.date) f.date=m.date+'T'+(m.time||'18:00');
       const played = m.hg!=null && m.ag!=null && m.hg!=='' && m.ag!=='';
       if(played){ f.hs=+m.hg; f.as=+m.ag; f.status='F'; f.est=false; }
-      else { f.hs=null; f.as=null; f.status='U'; f.goals=[]; f.cards=[]; f.pens=[]; report.matches++; continue; }
+      else { f.hs=null; f.as=null; f.status='U'; f.goals=[]; f.cards=[]; f.pens=[];
+             f.lineups=null; f.subs=[]; report.matches++; continue; }
 
       const pair=(sc,cd)=>{const s=this.clubId(sc),c=this.clubId(cd);return (s===h&&c===a)||(s===a&&c===h);};
 
@@ -161,6 +162,33 @@ const MFSYNC = {
         report.pens++;
       });
 
+      // التشكيلة الأساسية: من لم يُذكر في كشف الموقع يُعدّ بديلاً (صفر دقيقة حتى يدخل)
+      const lu = {};
+      const anyXI = (data.lineups||[]).some(x=>x.r===gw && (!x.comp||x.comp==='الدوري') &&
+                                               [h,a].includes(this.clubId(x.club)));
+      if(anyXI){
+        lu[h]={}; lu[a]={};
+        [h,a].forEach(cid=>{ st.players.filter(p=>p.club===cid).forEach(p=>{ lu[cid][p.id]='b'; }); });
+        (data.lineups||[]).filter(x=>x.r===gw && (!x.comp||x.comp==='الدوري')).forEach(x=>{
+          const cid=this.clubId(x.club); if(cid!==h && cid!==a) return;
+          const pl=this.resolvePlayer(x.p, cid, report); if(!pl) return;
+          lu[cid][pl.id]='s'; report.xi++;
+        });
+        f.lineups=lu;
+      }
+
+      // التبديلات: خروج ودخول بالشوط والدقيقة
+      f.subs=[];
+      (data.subs||[]).filter(x=>x.r===gw && (!x.comp||x.comp==='الدوري')).forEach(x=>{
+        const cid=this.clubId(x.club); if(cid!==h && cid!==a) return;
+        const po = x.out? this.resolvePlayer(x.out, cid, report) : null;
+        const pi = x.in ? this.resolvePlayer(x.in , cid, report) : null;
+        if(!po && !pi) return;
+        f.subs.push({club:cid, out:po?po.name:'', in:pi?pi.name:'', h:+x.h||1, m:+x.m||0});
+        report.subs++;
+      });
+      f.subs.sort((p,q)=>absMinute(p.h,p.m)-absMinute(q.h,q.m));
+
       genMatchStats(st,f);
       report.matches++;
     }
@@ -185,6 +213,7 @@ const MFSYNC = {
       <div class="tiny" style="margin-bottom:8px">آخر تحديث للموقع: ${esc(report.upd)}</div>
       <div class="muted" style="line-height:2">
         ${report.matches} مباريات · ${report.goals} أهداف · ${report.cards} كروت · ${report.pens} جزاءات مهدرة
+        · ${report.xi} أساسي · ${report.subs} تبديل
       </div>
       ${report.unmatched.length? `<h3 style="font-size:.85rem;margin-top:10px;color:var(--red)">أسماء ما انطابقت مع قوائمنا (انسحبت بدونها):</h3>
         <div class="tiny">${report.unmatched.map(esc).join('<br>')}</div>`:''}
