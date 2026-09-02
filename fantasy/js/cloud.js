@@ -27,12 +27,10 @@ const CLOUD = {
     messagingSenderId: "574478199897",
     appId: "1:574478199897:web:dbd2b7dae6384503ea9548"
   },
-  /* من يملك النشر والاحتساب. هذه القائمة يجب أن تطابق حرفياً قائمة
-     fanAdmin في firestore.rules — وإلا ظهرت الصلاحية هنا ورفضها الخادم.
-     لمعرفة رمز أي حساب (UID): الموقع الرئيسي ← الإعدادات بعد الدخول. */
-  ADMIN_UIDS: [
-    "iiTgVfDryXNLb9IrOyLkkNMHDxq2"    // المالك
-  ],
+  /* من يملك النشر والاحتساب — نفس نموذج الموقع الرئيسي:
+     المالك، أو محرّر مفعّل في seasons/staff. مطابق لـ isFanAdmin
+     في firestore.rules، فلا تظهر صلاحية هنا يرفضها الخادم. */
+  OWNER_UID: "iiTgVfDryXNLb9IrOyLkkNMHDxq2",
   SEASON: "2026-2027",
 
   db: null, auth: null, user: null,
@@ -58,7 +56,19 @@ const CLOUD = {
 
   async _onAuth(u){
     this.user = u || null;
-    this.admin = !!(u && this.ADMIN_UIDS.includes(u.uid));
+    this.admin = false;
+    if(u){
+      if(u.uid === this.OWNER_UID) this.admin = true;
+      else {
+        // فريق العمل مخزّن كخريطة داخل seasons/staff تماماً كالموقع الرئيسي
+        try{
+          const s = await this.db.collection('seasons').doc('staff').get();
+          const m = (s.exists && s.data().members) || {};
+          const me = m[u.uid];
+          this.admin = !!(me && me.role==='editor' && me.active===true);
+        }catch(e){ /* اللاعب العادي لا يقرأ هذا المستند — يبقى غير مدير */ }
+      }
+    }
     this._listeners.forEach(fn=>{ try{ fn(u); }catch(e){ console.warn(e); } });
   },
   onAuth(fn){ this._listeners.push(fn); if(this.state!=='init') fn(this.user); },
