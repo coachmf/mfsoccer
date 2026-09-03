@@ -1636,6 +1636,31 @@ function applyRemote(d){
 function flushRemote(){
   if(PENDING_REMOTE && !EDIT){ const d=PENDING_REMOTE; PENDING_REMOTE=null; applyRemote(d); }
 }
+/* لقطة وصلت أثناء التحرير صارت أقدم من حفظنا — تطبيقها يتراجع عن عملنا */
+function dropStaleRemote(){ PENDING_REMOTE=null; }
+
+/* ===== حماية من تضارب المحرّرين =====
+   بيانات الموسم مستند واحد يُكتب كاملاً، فلو حفظ محرّر ثانٍ بعد آخر
+   مزامنة لنا كتبنا نسختنا القديمة فوق عمله ومحوناه. لذلك نسحب أحدث
+   نسخة ونبني تعديلنا عليها قبل الكتابة مباشرة. */
+async function rebaseOnCloud(){
+  if(!fbDb) return {ok:true, changed:false};
+  try{
+    const s = await Promise.race([
+      fbDb.collection("seasons").doc(seasonId()).get(),
+      new Promise(r=>setTimeout(()=>r(null), 7000))
+    ]);
+    if(!s || !s.exists) return {ok:true, changed:false};   /* بلا اتصال: نكمل بما عندنا */
+    const d = s.data();
+    if(!d || !d.clubs || !d.matches) return {ok:true, changed:false};
+    const stamp = (d.updated||"")+"|"+(d.updatedBy||"");
+    if(stamp === LASTSTAMP) return {ok:true, changed:false};
+    LASTSTAMP = stamp;
+    applyData(d, "السحابة (مزامنة قبل الحفظ)");
+    dropStaleRemote();
+    return {ok:true, changed:true, by:d.updatedBy||""};
+  }catch(e){ return {ok:true, changed:false}; }
+}
 async function fbSaveStaff(){
   if(!fbDb || !isOwner) return false;
   const r = await withTimeout(fbDb.collection("seasons").doc("staff")
@@ -2048,6 +2073,9 @@ function removeMatchByKey(key){
 async function saveMatch(){
   FORMERR = validateEdit();
   if(FORMERR){ renderMatchAdmin(); return; }
+  /* نبني على أحدث نسخة سحابية حتى لا نمحو ما أدخله محرّر آخر بيننا */
+  const reb = await rebaseOnCloud();
+  if(reb.changed) toast(`وصل تحديث من ${reb.by||"محرّر آخر"} — دُمج قبل الحفظ`,"busy");
   const m=EDIT.match, round=+m.round;
   if(EDIT.orig) removeMatchByKey(EDIT.orig);
   const other = t => t===m.home ? m.away : m.home;
@@ -2083,7 +2111,9 @@ async function saveMatch(){
   if(okm===true){ LASTSYNC=new Date(); toast(`حُفظت المباراة: ${m.home} ضد ${m.away} ✅`,"ok"); }
   else if(okm==="pending") toast(SYNCMSG,"busy");
   else toast(SYNCMSG||"حُفظت محلياً، لكن تعذّر الحفظ في السحابة","err");
-  paintRail(); renderAll(); renderMatchAdmin(); flushRemote();
+  /* أي لقطة وصلت أثناء التحرير أقدم من حفظنا — تطبيقها يتراجع عنه */
+  dropStaleRemote();
+  paintRail(); renderAll(); renderMatchAdmin();
 }
 
 /* أزرار المزامنة والشعارات — كانت مدفونة داخل معالج «إضافة هدف» فلا تُربط أبداً */
@@ -2254,6 +2284,7 @@ function renderMatchAdmin(){
     if(m){ EDIT=loadEdit(m); FORMERR=""; renderMatchAdmin(); } });
   box.querySelectorAll("[data-rm]").forEach(b=>b.onclick=async()=>{
     if(!confirm("حذف هذه المباراة وكل أهدافها وبطاقاتها وركلاتها؟")) return;
+    await rebaseOnCloud();
     removeMatchByKey(b.dataset.rm);
     stampComp(ALL); applyComp(); await persistData();
     paintRail(); renderAll(); renderMatchAdmin(); });
@@ -2988,6 +3019,11 @@ function wireSquads(){
   sqb.onclick=async()=>{
     SQ.clean();
     busy(sqb,true,"جارٍ الحفظ…");
+    /* نأخذ أحدث بيانات الموسم ثم نُعيد كشوفاتي فوقها، فلا يُمحى عمل غيري ولا عملي */
+    const mine = SQUADS;
+    const reb = await rebaseOnCloud();
+    SQUADS = mine;
+    if(reb.changed) toast(`وصل تحديث من ${reb.by||"محرّر آخر"} — دُمج قبل الحفظ`,"busy");
     const ok=await persistData();
     busy(sqb,false);
     if(ok===true){ LASTSYNC=new Date();
@@ -4136,6 +4172,7 @@ function paintFantasyTab(){
 }
 /* تبديل الإشهار وحفظه في السحابة فوراً */
 async function setFantasyOpen(on){
+  await rebaseOnCloud();               /* لا نكتب حالة قديمة فوق عمل محرّر آخر */
   const prev = FANTASY_OPEN;
   FANTASY_OPEN = !!on;
   const r = await persistData();
