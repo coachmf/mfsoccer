@@ -47,7 +47,12 @@ const APP = {
         this.cloudState = h.ok ? 'ready' : (h.err==='no-game' ? 'nogame' : 'offline');
         if(u){
           let doc = await CLOUD.getManager(u.uid);
-          if(!doc) doc = await CLOUD.createManager(u.uid, u.email.split('@')[0], 'فريقي', u.email);
+          if(!doc) doc = await CLOUD.createManager(u.uid, (u.email||'مشترك').split('@')[0], 'فريقي', u.email||'');
+          if(!doc){                       // تعذّرت الكتابة: نكمل بملف مؤقت بدل التعليق
+            doc = {username:(u.email||'مشترك').split('@')[0], teamName:'فريقي', email:u.email||'',
+                   team:null, history:[], total:0};
+            UI.toast('تعذّر الوصول لبياناتك على الخادم — تحقق من الشبكة', true);
+          }
           await DB.adoptManager(u.uid, doc);
           const me=DB.me(); if(me) me.verified = !!u.emailVerified;
         }else{

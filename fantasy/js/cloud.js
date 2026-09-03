@@ -127,9 +127,12 @@ const CLOUD = {
     if(taken) return {ok:false, err:'اسم المستخدم محجوز — اختر غيره'};
     try{
       const cred = await this.auth.createUserWithEmailAndPassword(email, pass);
-      await this.createManager(cred.user.uid, username, teamName, email);
+      // لا ننتظر كتابة المستند بلا حدّ: على شبكة تحجب قناة Firestore يبقى
+      // الوعد معلقاً بلا خطأ فيعلق زر التسجيل، والحساب أُنشئ فعلاً.
+      const saved = await this.createManager(cred.user.uid, username, teamName, email);
       try{ await cred.user.sendEmailVerification(); }catch(e){}
-      return {ok:true};
+      return saved ? {ok:true}
+                   : {ok:true, warn:'أُنشئ حسابك، لكن حفظ بياناتك تأخّر — أعد فتح الصفحة'};
     }catch(e){ return {ok:false, err:this.errAr(e)}; }
   },
 
@@ -184,8 +187,8 @@ const CLOUD = {
       created: new Date().toISOString(),
       team: null, history: [], total: 0, lastGW: 0
     };
-    await this.managers().doc(uid).set(doc, {merge:true});
-    return doc;
+    const r = await this.race(this.managers().doc(uid).set(doc, {merge:true}));
+    return r.ok === true ? doc : null;
   },
 
   async getManager(uid){

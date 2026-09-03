@@ -3448,19 +3448,41 @@ function authErr(e){
   if(c==="auth/email-already-in-use") return "هذا البريد مسجّل مسبقاً — سجّل الدخول بدل إنشاء حساب";
   if(c==="auth/invalid-credential" || c==="auth/wrong-password") return "البريد أو كلمة المرور غير صحيحة";
   if(c==="auth/network-request-failed") return "تعذّر الاتصال — تحقق من الشبكة";
-  if(c==="auth/operation-not-allowed") return "طريقة الدخول غير مفعّلة — فعّلها من Authentication ← Sign-in method";
+  if(c==="auth/operation-not-allowed" || c==="auth/admin-restricted-operation")
+    return "طريقة الدخول غير مفعّلة — فعّلها من Authentication ← Sign-in method";
+  if(c==="auth/unauthorized-domain")
+    return "هذا النطاق غير معتمد — أضفه في Authentication ← Settings ← Authorized domains";
+  if(c==="auth/too-many-requests") return "محاولات كثيرة — انتظر دقائق ثم أعد المحاولة";
+  if(c==="auth/user-disabled") return "هذا الحساب موقوف";
+  if(c==="auth/user-not-found") return "لا يوجد حساب بهذا البريد — أنشئ حساباً";
+  if(c==="auth/internal-error" || c==="auth/web-storage-unsupported")
+    return "متصفحك يمنع تخزين الجلسة — جرّب فتح الصفحة في المتصفح نفسه بدل تطبيق آخر";
   return "تعذّر الدخول: " + (c || "خطأ غير معروف");
+}
+/* حفظ ملف المشجّع بعد إنشاء الحساب.
+   مهم: لا ننتظره بلا حدّ. على بعض الشبكات (شركات، مانعات إعلانات،
+   متصفحات داخل التطبيقات) تُحجب قناة Firestore فيبقى الوعد معلقاً
+   بلا خطأ — فيعلق زر التسجيل على «لحظة…» إلى الأبد، والحساب أُنشئ
+   فعلاً. فنمهله ثوانٍ ثم نكمل: الحساب صالح، والاسم يُحفظ لاحقاً. */
+async function saveFanProfile(uid, name, anon){
+  if(!fbDb || !uid) return false;
+  const r = await withTimeout(
+    fbDb.collection("fans").doc(uid).set(
+      {name, joined:new Date().toISOString(), anon:!!anon}, {merge:true}), 8000);
+  return r === "ok";
 }
 async function fanSignInName(name){
   if(!fbAuth) return;
   try{
     const cred = await fbAuth.signInAnonymously();
-    if(cred.user) await cred.user.updateProfile({displayName:name});
-    await fbDb.collection("fans").doc(cred.user.uid).set(
-      {name, joined:new Date().toISOString(), anon:true}, {merge:true});
+    if(cred.user){
+      try{ await withTimeout(cred.user.updateProfile({displayName:name}), 8000); }catch(e){}
+      const ok = await saveFanProfile(cred.user.uid, name, true);
+      if(!ok) toast("دخلت بالاسم، لكن حفظ الاسم تأخّر — قد تحتاج كتابته مرة أخرى","busy");
+    }
   }catch(e){
     const c=(e&&e.code)||"";
-    toast(c==="auth/operation-not-allowed"
+    toast((c==="auth/operation-not-allowed" || c==="auth/admin-restricted-operation")
       ? "الدخول بالاسم غير مفعّل — فعّل Anonymous من إعدادات Authentication"
       : authErr(e), "err");
   }
@@ -3470,9 +3492,11 @@ async function fanEmailAuth(email, pass, name, mode){
   try{
     if(mode==="up"){
       const cred = await fbAuth.createUserWithEmailAndPassword(email, pass);
-      if(cred.user && name) await cred.user.updateProfile({displayName:name});
-      if(cred.user) await fbDb.collection("fans").doc(cred.user.uid)
-        .set({name, joined:new Date().toISOString(), anon:false},{merge:true});
+      if(cred.user){
+        if(name){ try{ await withTimeout(cred.user.updateProfile({displayName:name}), 8000); }catch(e){} }
+        const ok = await saveFanProfile(cred.user.uid, name, false);
+        if(!ok) toast("أُنشئ حسابك، لكن حفظ الاسم تأخّر — عدّله من صفحتك","busy");
+      }
     } else {
       await fbAuth.signInWithEmailAndPassword(email, pass);
     }
