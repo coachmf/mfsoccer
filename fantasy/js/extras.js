@@ -27,7 +27,7 @@ const REMIND = {
       const perm=await Notification.requestPermission();
       if(perm!=='granted'){ UI.toast('لم يُسمح بالتنبيهات — فعّلها من إعدادات المتصفح',true); APP.render(); return; }
       localStorage.setItem('kwf_notify','1'); UI.toast('سيصلك تنبيه قبل الإغلاق بساعتين');
-      try{ new Notification('فانتازي دوري زين', {body:'تم تفعيل التنبيهات — بنذكّرك قبل إغلاق كل جولة بساعتين.', icon:'assets/logo-light.png'}); }catch(e){}
+      try{ new Notification('فانتسي دوري زين', {body:'تم تفعيل التنبيهات — بنذكّرك قبل إغلاق كل جولة بساعتين.', icon:'assets/logo-light.png'}); }catch(e){}
     } else { localStorage.setItem('kwf_notify',''); UI.toast('أُوقفت التنبيهات'); }
     APP.render();
   },
@@ -50,7 +50,7 @@ const REMIND = {
   },
   whatsappLink(){
     const st=DB.state; const g=DB.gw(st.currentGW); if(!g) return '#';
-    const txt=`تذكير فانتازي دوري زين: الجولة ${st.currentGW} تُغلق ${UI.fmtDate(g.deadline)} — باقي ${UI.countdown(g.deadline)}. راجعوا تشكيلاتكم!`;
+    const txt=`تذكير فانتسي دوري زين: الجولة ${st.currentGW} تُغلق ${UI.fmtDate(g.deadline)} — باقي ${UI.countdown(g.deadline)}. راجعوا تشكيلاتكم!`;
     return 'https://wa.me/?text='+encodeURIComponent(txt);
   },
   card(){
@@ -211,7 +211,7 @@ Object.assign(VIEWS, {
       </div>
       <div class="card" style="margin-top:12px">
         <h3>اللعبة</h3>
-        <div class="muted" style="line-height:1.9">فانتازي دوري زين الممتاز — لعبة فانتازي كويتية على طراز FPL: كوّن فريقك من لاعبي الدوري، اختر الكابتن، فعّل الكروت، ونافس أصحابك على نقاط كل جولة بنتائج حقيقية.</div>
+        <div class="muted" style="line-height:1.9">فانتسي دوري زين الممتاز — لعبة فانتسي كويتية على طراز FPL: كوّن فريقك من لاعبي الدوري، اختر الكابتن، فعّل الكروت، ونافس أصحابك على نقاط كل جولة بنتائج حقيقية.</div>
         <div class="tiny" style="margin-top:8px;color:var(--text3)">النسخة ${(document.querySelector('script[src*="app.js"]')?.src.match(/v=(\d+)/)||[])[1]||''}</div>
         <div style="margin-top:12px"><button class="btn ghost sm" onclick="APP.go('admin')">${UI.icon('gear',15)} ${ADMINAUTH.active()? 'لوحة الإدارة' : 'دخول المطوّر'}</button></div>
       </div>`;

@@ -11,7 +11,7 @@
 const GATE = {
   /* القفل الافتراضي عند تعذّر الوصول للسحابة. الحالة الحقيقية تأتي من
      حقل fantasyOpen في مستند الموسم على mfsoccer — يبدّله المدير من
-     الموقع الرئيسي (الإعدادات ← إشهار الفانتازي)، فتنفتح اللعبة للجميع. */
+     الموقع الرئيسي (الإعدادات ← إشهار الفانتسي)، فتنفتح اللعبة للجميع. */
   PRIVATE: true,
   CODE_HASH: '02207a8858b933cb119a7465f88a9289d173b000e48b6eea92efae11972b196a', // mf2026 — غيّره
   KEY: 'kwf_gate',
@@ -97,7 +97,7 @@ const GATE = {
         <input id="gateInput" type="password" inputmode="text" autocomplete="off" placeholder="رمز الدخول">
         <button onclick="GATE.submit()">دخول</button>
         <div class="g-msg" id="gateMsg"></div>
-        <div class="g-foot">فانتازي دوري زين الممتاز · 2026/2027</div>
+        <div class="g-foot">فانتسي دوري زين الممتاز · 2026/2027</div>
       </div>`;
     document.body.appendChild(box);
     document.body.style.overflow = 'hidden';

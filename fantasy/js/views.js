@@ -19,7 +19,7 @@ const VIEWS = {
       <div class="field"><label>اسم المستخدم</label><input id="f_user" placeholder="مثال: mansour_q8"></div>
       <div class="field"><label>البريد الإلكتروني</label><input id="f_email" type="email"></div>
       <div class="field"><label>كلمة المرور (6+ أحرف)</label><input id="f_pass" type="password"></div>
-      <div class="field"><label>اسم فريقك في الفانتازي</label><input id="f_team" placeholder="مثال: نسور الديرة"></div>
+      <div class="field"><label>اسم فريقك في الفانتسي</label><input id="f_team" placeholder="مثال: نسور الديرة"></div>
       <button class="btn" style="width:100%" onclick="VIEWS.doSignup(event)">إنشاء حساب</button>`;
     else form=`
       <div class="field"><label>البريد الإلكتروني</label><input id="f_email" type="email"></div>
@@ -29,7 +29,7 @@ const VIEWS = {
       </div>`;
     return `<div class="auth-hero">
       <img src="assets/logo-light.png" alt="" style="height:60px">
-      <h1>فانتازي الدوري الكويتي</h1>
+      <h1>فانتسي الدوري الكويتي</h1>
       <div class="sub">دوري زين الممتاز ${DB.state.rules.season} — كوّن فريقك ونافس أصحابك</div>
       <div class="card">
         <div class="tabs" style="width:100%">${tab('login','دخول')}${tab('signup','حساب جديد')}${tab('forgot','نسيت كلمة المرور')}</div>
@@ -671,7 +671,7 @@ const VIEWS = {
       ${stat((tc.in.toLocaleString('ar'))+' / '+(tc.out.toLocaleString('ar')),'شراء / بيع هذه الجولة')}
     </div>
     <div class="grid g2">
-      <div class="card"><h3>نقاط الفانتازي عبر الجولات</h3>${UI.lineChart(hist,560,180)}</div>
+      <div class="card"><h3>نقاط الفانتسي عبر الجولات</h3>${UI.lineChart(hist,560,180)}</div>
       <div class="card"><h3>المباريات القادمة</h3>
         ${FDR.next(p.club,6).map(x=>`<div class="fx"><div class="team">ج${x.gw}</div>
           <div class="team">${UI.crest(x.opp)} ${DB.club(x.opp).name} ${UI.icon(x.home?'home':'plane',13)}</div>

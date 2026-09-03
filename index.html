@@ -454,7 +454,7 @@ details.squadbox summary label.lb{margin:0;cursor:pointer}
   align-items:center;gap:10px;padding:16px 14px 14px}
 .nextm-team{display:flex;flex-direction:column;align-items:center;gap:9px;min-width:0}
 .nextm-team b{font-family:var(--display);font-weight:600;font-size:.86rem;color:#fff;
-  text-align:center;line-height:1.35;overflow-wrap:anywhere}
+  text-align:center;line-height:1.35;white-space:nowrap}
 .nextm .crest.lg{width:66px;height:66px;border-radius:18px}
 .nextm .crest.has-logo{box-shadow:inset 0 0 0 1px rgba(143,166,196,.28),0 6px 16px rgba(6,21,41,.5)}
 .nextm-mid{display:flex;flex-direction:column;align-items:center;gap:3px;flex:none;padding:0 4px}
@@ -1018,6 +1018,19 @@ main{padding-bottom:48px}
   .nextm-mid{min-width:110px;padding:0 4px}
   .nextm .side.h{width:64%} .nextm .side.a{width:64%} .nextm .mid{left:36%;width:28%}
 }
+/* شاشات ضيقة: أسماء الأندية سطر واحد دائماً — نُضيّق العمود الأوسط
+   ونُصغّر الخط بدل كسر الاسم من نصفه (القادسية، الصليبخات…) */
+@media(max-width:430px){
+  .nextm-team b{font-size:.95rem}
+  .nextm-mid{min-width:92px;padding:0 2px}
+  .nextm-time{font-size:1.75rem}
+  .nextm .crest.lg,.nextm .crest.lg.has-logo{width:66px;height:66px}
+}
+@media(max-width:360px){
+  .nextm-team b{font-size:.84rem}
+  .nextm-mid{min-width:78px}
+  .nextm-time{font-size:1.5rem}
+}
 /* ---- بطاقات المباريات: حواف بلون الفريقين ---- */
 .match{--hc:var(--zain-deep);--ac:var(--zain-deep);border-right:6px solid var(--hc);border-left:6px solid var(--ac);position:relative}
 .match::before{content:"";position:absolute;left:0;right:0;top:0;height:3px;
@@ -1553,7 +1566,7 @@ main{padding-bottom:48px}
     <button class="iconbtn hero-admin" id="adminBtn" title="دخول المدير" aria-label="دخول المدير">⚙</button>
     <div class="hero-sub" role="group" aria-label="أقسام الموقع">
       <button class="on" data-go="home">الإحصائيات</button>
-      <button data-go="fantasy">فانتازي</button>
+      <button data-go="fantasy">فانتسي</button>
       <button data-go="predict">التوقعات</button>
     </div>
   </div>
@@ -1569,7 +1582,7 @@ main{padding-bottom:48px}
     <button role="tab" data-v="players" aria-selected="false"><span class="ic">★</span>اللاعبون</button>
     <button role="tab" data-v="predict" aria-selected="false"><span class="ic">◈</span>التوقعات</button>
     <button role="tab" data-v="analysis" aria-selected="false"><span class="ic">◔</span>التحليل</button>
-    <button role="tab" data-v="fantasy" id="fantasyTab" aria-selected="false" style="display:none"><span class="ic">◆</span>فانتازي</button>
+    <button role="tab" data-v="fantasy" id="fantasyTab" aria-selected="false" style="display:none"><span class="ic">◆</span>فانتسي</button>
   </div>
 </nav>
 <!-- v3:strips -->
@@ -1762,7 +1775,7 @@ let LSCALE = {};           /* حجم دقيق لكل نادٍ % */
 let LOGOBG = true;         /* لوحة بيضاء خلف الشعار */
 let LASTUPDATE = "الجولة 1 · 27 أغسطس 2026";
 let isAdmin = false;
-let FANTASY_OPEN = false;   /* إشهار لعبة الفانتازي للجمهور — يأتي من السحابة */
+let FANTASY_OPEN = false;   /* إشهار لعبة الفانتسي للجمهور — يأتي من السحابة */
 
 /* ================= أدوات ================= */
 const $ = s => document.querySelector(s);
@@ -1777,7 +1790,7 @@ const minLabel = g => g.x ? `${g.m}+${g.x}'` : `${g.m}'`;
 
 /* ——— التبديلات ———
    سهم أحمر للخارج وأخضر للداخل، مرتبة بالدقيقة. المصدر هو نفسه
-   الذي يقرأه الفانتازي، فما يظهر هنا هو ما تُحتسب عليه النقاط. */
+   الذي يقرأه الفانتسي، فما يظهر هنا هو ما تُحتسب عليه النقاط. */
 function matchSubs(m){
   return (ALL && ALL.subs ? ALL.subs : [])
     .filter(s => s.r===m.round && compOf(s)===compOf(m) && (s.club===m.home || s.club===m.away))
@@ -2776,7 +2789,7 @@ const POS_GROUPS = [
   ["وسط",   ["CDM","CM","CAM","RM","LM"]],
   ["هجوم",  ["RW","ST","LW"]],
 ];
-/* المركز التفصيلي ← الخط العام المستخدم في الفانتازي */
+/* المركز التفصيلي ← الخط العام المستخدم في الفانتسي */
 const POS_MAIN = {GK:"G", RB:"D",CB:"D",LB:"D",RWB:"D",LWB:"D",
   CDM:"M",CM:"M",CAM:"M",RM:"M",LM:"M", RW:"F",ST:"F",LW:"F",
   G:"G", D:"D", M:"M", F:"F"};
@@ -2940,7 +2953,7 @@ function matchFormHTML(){
   <button class="addbtn" data-add="lineup">+ إضافة لاعب أساسي</button>
 
   <h2 class="sec">التبديلات (${E.subs.length})</h2>
-  <p class="hint">الخارج والداخل والشوط والدقيقة. منها تُحسب دقائق كل لاعب، وعليها تُبنى نقاط المشاركة والشباك النظيفة في الفانتازي.</p>
+  <p class="hint">الخارج والداخل والشوط والدقيقة. منها تُحسب دقائق كل لاعب، وعليها تُبنى نقاط المشاركة والشباك النظيفة في الفانتسي.</p>
   ${E.subs.map((x,i)=>`<div class="subrow">
     <button class="del" data-del="subs.${i}" title="حذف">✕</button>
     <div class="idx">تبديل ${i+1}${x.m?` · الدقيقة ${absMinute(x.h,x.m)}`:""}</div>
@@ -3161,7 +3174,7 @@ function wireAdminIO(){
     if(!fbDb){ toast("السحابة غير متاحة — افتح الموقع من نطاقه المنشور","err"); return; }
     if(!isAdmin){ toast("سجّل الدخول أولاً","err"); return; }
     const turningOn = !FANTASY_OPEN;
-    if(!turningOn && !confirm("إخفاء لعبة الفانتازي عن الجمهور؟")) return;
+    if(!turningOn && !confirm("إخفاء لعبة الفانتسي عن الجمهور؟")) return;
     busy(ft,true,turningOn?"جارٍ الإشهار…":"جارٍ الإخفاء…");
     const r=await setFantasyOpen(turningOn);
     busy(ft,false);
@@ -3933,7 +3946,7 @@ function squadsSectionHTML(){
   const miss=squadMissingAll();
   return `
     <h2 class="sec">كشوفات اللاعبين</h2>
-    <p class="hint">ثلاث خانات لكل لاعب: رقم القميص، الاسم، والمركز. المراكز تنحفظ مع الكشف وتصدّر للفانتازي، والأسماء تظهر كقائمة منسدلة عند إدخال الأهداف والبطاقات وركلات الجزاء.</p>
+    <p class="hint">ثلاث خانات لكل لاعب: رقم القميص، الاسم، والمركز. المراكز تنحفظ مع الكشف وتصدّر للفانتسي، والأسماء تظهر كقائمة منسدلة عند إدخال الأهداف والبطاقات وركلات الجزاء.</p>
     <div class="card pad">
       ${CLUBS.map(c=>squadBoxHTML(c)).join("")}
       <div style="height:6px"></div>
@@ -4309,16 +4322,16 @@ function renderAdmin(){
     <p class="hint">أضف مباراة كاملة يدوياً: الجولة والملعب والتاريخ والوقت، ثم الأهداف والبطاقات وركلات الجزاء بنفس حقول ملف الإكسل. النتيجة تُحسب من الأهداف.</p>
     <div id="matchAdmin"></div>
 
-    <h2 class="sec">لعبة الفانتازي</h2>
+    <h2 class="sec">لعبة الفانتسي</h2>
     <div class="card pad">
       <div class="stat"><span>الحالة</span><span class="v" style="font-size:.85rem">${FANTASY_OPEN?"مُشهرة للجمهور":"مخفية — تظهر لك وحدك"}</span></div>
       <div style="height:12px"></div>
       <button class="btn${FANTASY_OPEN?" ghost":""}" id="fantasyToggle">${FANTASY_OPEN?"🔒 إخفاء اللعبة عن الجمهور":"🚀 إشهار اللعبة للجمهور"}</button>
       <div style="height:8px"></div>
-      <button class="btn ghost" id="fantasyOpenBtn">↗ فتح لوحة إدارة الفانتازي</button>
+      <button class="btn ghost" id="fantasyOpenBtn">↗ فتح لوحة إدارة الفانتسي</button>
       <p class="hint" style="margin:12px 0 0">${FANTASY_OPEN
-        ? "اللعبة ظاهرة الآن لكل زائر: يشوف تبويب «فانتازي» ويدخلها بلا رمز. الإخفاء يرجّعها لبوابة الرمز فوراً."
-        : "الإشهار يُظهر تبويب «فانتازي» لكل الزوار ويرفع بوابة الرمز عن اللعبة. يُحفظ في السحابة فيسري على كل الأجهزة خلال ثوانٍ."}</p>
+        ? "اللعبة ظاهرة الآن لكل زائر: يشوف تبويب «فانتسي» ويدخلها بلا رمز. الإخفاء يرجّعها لبوابة الرمز فوراً."
+        : "الإشهار يُظهر تبويب «فانتسي» لكل الزوار ويرفع بوابة الرمز عن اللعبة. يُحفظ في السحابة فيسري على كل الأجهزة خلال ثوانٍ."}</p>
     </div>
 
     ${backupsHTML()}
@@ -5192,10 +5205,10 @@ function wirePredict(o, locked){
 
 
 const RENDER={home:renderHome,matches:renderMatches,clubs:renderClubs,players:renderPlayers,predict:renderPredict,analysis:renderAnalysis,admin:renderAdmin};
-/* تبويب الفانتازي: مخفي عن الزوار حتى يُشهره المدير.
+/* تبويب الفانتسي: مخفي عن الزوار حتى يُشهره المدير.
    الحالة محفوظة في السحابة (حقل fantasyOpen في مستند الموسم) لا في الكود،
    فيكفي ضغط الزر مرة واحدة لتُفتح اللعبة لكل الزوار على كل الأجهزة.
-   والفانتازي نفسه يقرأ الحقل ذاته ويرفع بوابته تلقائياً. */
+   والفانتسي نفسه يقرأ الحقل ذاته ويرفع بوابته تلقائياً. */
 const FANTASY_URL = "/fantasy/";
 function paintFantasyTab(){
   const b=$("#fantasyTab"); if(!b) return;
@@ -5280,7 +5293,7 @@ async function bootData(){
 </script>
 
 <script>
-/* الأزرار العلوية (الإحصائيات / فانتازي / التوقعات) تقود أزرار التنقل الأصلية */
+/* الأزرار العلوية (الإحصائيات / فانتسي / التوقعات) تقود أزرار التنقل الأصلية */
 (function(){
   const subs=document.querySelectorAll('.hero-sub button');
   const mapView=v=>({home:'home',predict:'predict',fantasy:'fantasy'})[v]||'home';
@@ -5305,7 +5318,7 @@ async function bootData(){
 
 <script>
 /* شعارات PNG محلية لكل الأندية + شعار دوري زين — تُطبَّق فوق أي شعارات من السحابة */
-/* رابط الفانتازي الخارجي (اتركه فارغاً إذا كان تبويب الفانتازي داخل الموقع) */
+/* رابط الفانتسي الخارجي (اتركه فارغاً إذا كان تبويب الفانتسي داخل الموقع) */
 window.FANTASY_URL = window.FANTASY_URL || "";
 const LOCAL_CRESTS={
   "القادسية":"assets/crests/sq/qadsia.png","الكويت":"assets/crests/sq/kuwait.png","العربي":"assets/crests/sq/arabi.png",
