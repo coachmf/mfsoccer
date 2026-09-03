@@ -1340,6 +1340,12 @@ function showReport(d, fname){
       <div class="stat"><span>الأهداف</span><span class="v">${d.goals.length}</span></div>
       <div class="stat"><span>ركلات الجزاء</span><span class="v">${(d.pens||[]).length}</span></div>
       <div class="stat"><span>الإنذارات وحالات الطرد</span><span class="v">${(d.cards||[]).length}</span></div>
+      <div class="stat"><span>التشكيلات الأساسية</span><span class="v">${d.lineups===undefined
+        ? `<span style="color:var(--slate);font-size:.78rem">غير مشمولة — تبقى كما هي (${(ALL&&ALL.lineups?ALL.lineups.length:0)})</span>`
+        : d.lineups.length}</span></div>
+      <div class="stat"><span>التبديلات</span><span class="v">${d.subs===undefined
+        ? `<span style="color:var(--slate);font-size:.78rem">غير مشمولة — تبقى كما هي (${(ALL&&ALL.subs?ALL.subs.length:0)})</span>`
+        : d.subs.length}</span></div>
       <div class="stat"><span>المسابقات</span><span class="v" style="font-size:.8rem">${esc([...new Set((d.matches||[]).map(m=>m.comp||"الدوري"))].join("، ")||"—")}</span></div>
       <div class="stat"><span>آخر جولة</span><span class="v">${rounds}</span></div>
       <div class="stat"><span>تنبيهات تحتاج مراجعة</span><span class="v" style="color:${warn.length?"var(--loss)":"var(--win)"}">${warn.length}</span></div>
@@ -1359,7 +1365,10 @@ function showReport(d, fname){
     const ok=await persistData();
     busy(btn,false);
     if(ok===true){ LASTSYNC=new Date();
-      toast(`اعتُمدت البيانات: ${MATCHES.length} مباراة و${GOALS.length} هدفاً · حُفظت في السحابة ✅`,"ok"); }
+      const nl=(ALL.lineups||[]).length, ns=(ALL.subs||[]).length;
+      toast(`اعتُمدت البيانات: ${MATCHES.length} مباراة و${GOALS.length} هدفاً`
+            + (nl||ns ? ` و${nl} تشكيلة و${ns} تبديلاً` : "")
+            + ` · حُفظت في السحابة ✅`,"ok"); }
     else if(ok==="pending") toast(SYNCMSG,"busy");
     else toast(SYNCMSG||"اعتُمدت محلياً، لكن تعذّر الحفظ في السحابة","err");
     renderAdmin();
