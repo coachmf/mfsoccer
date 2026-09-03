@@ -167,6 +167,20 @@ tbody tr.rel{box-shadow:inset 3px 0 0 rgba(224,100,79,.7)}
 .score.soon{font-size:.95rem;color:var(--sand);background:rgba(233,185,73,.12);
   border:1px solid rgba(233,185,73,.35);direction:ltr}
 .match.soon{border-color:rgba(233,185,73,.35);background:rgba(14,43,82,.45)}
+/* الشاشات الضيقة: اسم النادي كاملاً بلا قطع. نُفسح له بتصغير الشعار
+   وحشو النتيجة والفجوات — «الصليبخات» أطولها وهي المقياس. */
+@media(max-width:480px){
+  .match .mhead{gap:6px}
+  .match .mside{gap:5px}
+  .match .mside .crest,.match .mside .crest.has-logo{width:30px;height:30px;border-radius:7px}
+  .match .mside b{font-size:.88rem}
+  .match .score{font-size:1.05rem;padding:3px 7px;letter-spacing:0}
+}
+@media(max-width:360px){
+  .match .mside .crest,.match .mside .crest.has-logo{width:26px;height:26px}
+  .match .mside b{font-size:.8rem}
+  .match .score{font-size:.95rem;padding:3px 5px}
+}
 .mstat{font-size:.62rem;font-weight:700;padding:2px 8px;border-radius:999px;white-space:nowrap}
 .mstat.soon{color:var(--sand);background:rgba(233,185,73,.14);border:1px solid rgba(233,185,73,.4)}
 .mstat.live{color:#EAFBF3;background:#1D6B4E;border:1px solid #35A47C}
