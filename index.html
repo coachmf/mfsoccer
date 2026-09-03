@@ -172,6 +172,17 @@ tbody tr.rel{box-shadow:inset 3px 0 0 rgba(224,100,79,.7)}
 .mmeta{padding:0 14px 10px;font-size:.7rem;color:var(--slate);display:flex;gap:10px;flex-wrap:wrap}
 .goals{border-top:1px solid rgba(143,166,196,.14);padding:10px 14px;display:grid;gap:6px;font-size:.8rem}
 .gline{display:flex;align-items:center;gap:8px}
+/* التبديلات: سهم أخضر لأعلى للداخل، وأحمر لأسفل للخارج */
+.goals.subs{border-top:1px dashed rgba(143,166,196,.2)}
+.subhd{color:var(--slate);font-size:.72rem;letter-spacing:.02em;margin-bottom:2px}
+.subpair{flex:1;display:flex;flex-wrap:wrap;align-items:center;gap:4px 14px}
+.subin,.subout{display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
+.subin{color:var(--win)}
+.subout{color:var(--loss)}
+.arw{width:0;height:0;flex:none;border-left:4.5px solid transparent;border-right:4.5px solid transparent}
+.arw.up{border-bottom:7px solid var(--win)}
+.arw.dn{border-top:7px solid var(--loss)}
+@media(max-width:420px){ .subpair{flex-direction:column;align-items:flex-start;gap:2px} }
 .ltr{direction:ltr;unicode-bidi:isolate;display:inline-block}
 .gmin{direction:ltr;unicode-bidi:isolate;font-variant-numeric:tabular-nums;color:var(--sky);font-weight:600;min-width:38px;font-size:.75rem}
 .gtag{font-size:.62rem;color:var(--slate);border:1px solid rgba(143,166,196,.3);border-radius:5px;padding:0 5px;white-space:nowrap}
@@ -774,6 +785,30 @@ const period = g => { const t=abs(g);
   if(g.m<=60) return "46-60"; if(g.m<=75) return "61-75";
   if(g.m<90 || (g.m===90 && !g.x)) return "76-90"; return "90+"; };
 const minLabel = g => g.x ? `${g.m}+${g.x}'` : `${g.m}'`;
+
+/* ——— التبديلات ———
+   سهم أحمر للخارج وأخضر للداخل، مرتبة بالدقيقة. المصدر هو نفسه
+   الذي يقرأه الفانتازي، فما يظهر هنا هو ما تُحتسب عليه النقاط. */
+function matchSubs(m){
+  return (ALL && ALL.subs ? ALL.subs : [])
+    .filter(s => s.r===m.round && compOf(s)===compOf(m) && (s.club===m.home || s.club===m.away))
+    .slice()
+    .sort((a,b)=> absMinute(a.h,a.m) - absMinute(b.h,b.m));
+}
+function subsHTML(m){
+  const ss = matchSubs(m);
+  if(!ss.length) return "";
+  return `<div class="goals subs">
+    <div class="subhd">التبديلات (${ss.length})</div>
+    ${ss.map(s=>`<div class="gline">
+      <span class="gmin">${absMinute(s.h,s.m)}'</span>
+      ${crest(s.club)}
+      <span class="subpair">
+        ${s.in ? `<span class="subin"><i class="arw up"></i>${esc(s.in)}</span>` : ""}
+        ${s.out? `<span class="subout"><i class="arw dn"></i>${esc(s.out)}</span>` : ""}
+      </span></div>`).join("")}
+  </div>`;
+}
 const pct = (a,b) => b ? Math.round(a/b*1000)/10 : 0;
 const gw = n => (n>=3&&n<=10) ? `${n} أهداف` : `${n} هدفاً`;
 const mw = n => n===2 ? "مباراتين" : (n>=3&&n<=10) ? `${n} مباريات` : `${n} مباراة`;
@@ -2414,6 +2449,7 @@ function renderMatches(){
           ${crest(g.sc)}
           <span style="flex:1">${esc(g.p)}${ogLabel(g)}${g.a?` <span style="color:var(--slate);font-size:.72rem">صناعة ${esc(g.a)}</span>`:""}</span>
           <span class="gtag">${esc(g.det)}</span></div>`).join("")}</div>`:""}
+      ${subsHTML(m)}
     </div>`;
   }).join("");
 

@@ -351,7 +351,8 @@ function genMatchStats(st, fx){
     }
     if(s.in){
       const pi=find(s.in, clubId);
-      if(pi){ if(!rows[pi.id]) rows[pi.id]=mkRow(0); rows[pi.id].min=90-at; }
+      // من دخل في الدقيقة 90 شارك فعلاً — دقيقة واحدة على الأقل ليأخذ نقطة المشاركة
+      if(pi){ if(!rows[pi.id]) rows[pi.id]=mkRow(0); rows[pi.id].min=Math.max(1, 90-at); }
     }
   });
   const rowFor=(name,clubId)=>{
