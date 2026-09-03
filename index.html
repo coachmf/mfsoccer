@@ -850,9 +850,13 @@ body{background:
   border-radius:6px;padding:4px 10px;color:#fff;font-size:.74rem;font-weight:600;transition:background .15s}
 .strip .rx:hover{background:rgba(255,255,255,.14)}
 .strip .rx img{width:20px;height:20px;object-fit:contain;background:#fff;border-radius:4px;padding:1px}
-.strip .rx .sc{font-family:var(--display);font-weight:800;font-size:.86rem;color:var(--ice);direction:ltr;unicode-bidi:isolate;
+/* النتيجة بلا direction:ltr عمداً: الصفحة RTL والمضيف يمين الشارة، فلو
+   فُرض LTR وقعت أهداف المضيف يسار الشارة عند الضيف — فتُقرأ معكوسة.
+   الموعد في المباراة القادمة رقمٌ لا نتيجة، فيبقى LTR. */
+.strip .rx .sc{font-family:var(--display);font-weight:800;font-size:.86rem;color:var(--ice);
   background:rgba(127,224,255,.12);padding:0 7px;border-radius:4px;min-width:40px;text-align:center}
-.strip .rx.soon .sc{color:#FFD97A;background:rgba(255,217,122,.12);font-size:.72rem}
+.strip .rx.soon .sc{color:#FFD97A;background:rgba(255,217,122,.12);font-size:.72rem;
+  direction:ltr;unicode-bidi:isolate}
 /* ---- crest bar ---- */
 .crestbar{background:#fff;border-bottom:1px solid var(--line);box-shadow:0 2px 8px rgba(11,31,58,.05)}
 .crestbar:empty{display:none}
@@ -1517,8 +1521,9 @@ main{padding-bottom:48px}
 .am-t b{font-family:var(--display);font-weight:700;color:var(--head);font-size:.9rem;white-space:nowrap}
 .am-t .crest{width:30px;height:30px}
 .am-t.a{flex-direction:row-reverse}
-.am-score{font-family:var(--display);font-weight:800;font-size:.95rem;color:#fff;background:var(--head);padding:4px 12px;border-radius:6px;direction:ltr;min-width:58px;text-align:center;clip-path:polygon(6px 0,100% 0,calc(100% - 6px) 100%,0 100%)}
-.am-score.soon{background:#FFF1CC;color:#7A4B00}
+/* كالشريط: النتيجة تتبع اتجاه الصفحة ليقع هدف المضيف جهة اسمه، والموعد LTR */
+.am-score{font-family:var(--display);font-weight:800;font-size:.95rem;color:#fff;background:var(--head);padding:4px 12px;border-radius:6px;min-width:58px;text-align:center;clip-path:polygon(6px 0,100% 0,calc(100% - 6px) 100%,0 100%)}
+.am-score.soon{background:#FFF1CC;color:#7A4B00;direction:ltr;unicode-bidi:isolate}
 .am-meta{display:flex;gap:8px;flex-wrap:wrap;font-size:.74rem;color:#5B6F8A;font-weight:600;align-items:center}
 .am-meta span+span::before{content:"";display:inline-block;width:1px;height:10px;background:#D5DEE9;margin-inline-end:8px;vertical-align:middle}
 .am-meta .am-r{color:var(--zain-deep);font-weight:800}
