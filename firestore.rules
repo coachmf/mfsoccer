@@ -89,6 +89,17 @@ service cloud.firestore {
       allow delete: if isOwner();
     }
 
+    // Season backups: a full snapshot written after every successful save,
+    // so a wipe can be rolled back. Staff only — these are working copies,
+    // not public data. Never editable once written; pruning deletes old ones.
+    match /backups/{bid} {
+      allow read:   if isOwner() || isEditor();
+      allow create: if (isOwner() || isEditor())
+                    && request.resource.data.data.matches.size() > 0;
+      allow update: if false;
+      allow delete: if isOwner() || isEditor();
+    }
+
     // ───────────────────────── Fantasy ─────────────────────────
     // Same staff model as the rest of the site: owner or active editor
     // publishes the game and writes the points. Managers own their squad

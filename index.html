@@ -1294,7 +1294,115 @@ function downloadJSON(){
 }
 async function persistData(){
   await localSet("zain_data", JSON.stringify(dataObject()));
-  return await fbSaveSeason();
+  const r = await fbSaveSeason();
+  if(r===true) pushBackup();     /* بلا انتظار حتى لا يبطئ الحفظ */
+  return r;
+}
+
+/* ===== النسخ الاحتياطية =====
+   بعد كل حفظ ناجح تُخزَّن صورة كاملة من بيانات الموسم في مجموعة
+   backups. تبقى آخر عشر نسخ فيُمكن الرجوع لأي منها بضغطة، فلا
+   تضيع التشكيلات والتبديلات مرة أخرى مهما حصل.
+   الحجم صغير (≈50 ك.ب للنسخة) فلا يقترب من أي حد. */
+const BACKUP_KEEP = 10;
+let BACKUPS = null;                       /* مخزَّن للعرض */
+
+function backupCounts(d){
+  return {matches:(d.matches||[]).length, goals:(d.goals||[]).length,
+          cards:(d.cards||[]).length,     pens:(d.pens||[]).length,
+          lineups:(d.lineups||[]).length, subs:(d.subs||[]).length,
+          squads:Object.keys(d.squads||{}).length};
+}
+
+async function pushBackup(){
+  if(!fbDb || !isAdmin) return false;
+  const d = dataObject();
+  if(!(d.matches||[]).length) return false;        /* لا نحفظ حالة فارغة */
+  const id = seasonId()+"__"+new Date().toISOString().replace(/[:.]/g,"-");
+  const body = {at:new Date().toISOString(), by:(FBUSER&&FBUSER.email)||"",
+                season:seasonId(), n:backupCounts(d), data:d};
+  const r = await withTimeout(fbDb.collection("backups").doc(id).set(body), 9000);
+  if(r!=="ok") return false;
+  BACKUPS = null;                                  /* القائمة تغيّرت */
+  pruneBackups();
+  return true;
+}
+
+/* لا نُبقي إلا آخر BACKUP_KEEP نسخة */
+async function pruneBackups(){
+  try{
+    const q = await fbDb.collection("backups").orderBy("at","desc").get();
+    const extra = q.docs.slice(BACKUP_KEEP);
+    for(const dc of extra){ try{ await dc.ref.delete(); }catch(e){} }
+  }catch(e){}
+}
+
+async function listBackups(force){
+  if(BACKUPS && !force) return BACKUPS;
+  if(!fbDb) return [];
+  try{
+    const q = await fbDb.collection("backups").orderBy("at","desc").limit(BACKUP_KEEP).get();
+    BACKUPS = q.docs.map(dc=>{ const v=dc.data(); return {id:dc.id, at:v.at, by:v.by, n:v.n||{}}; });
+    return BACKUPS;
+  }catch(e){ return []; }
+}
+
+async function restoreBackup(id){
+  if(!fbDb) return {ok:false, msg:"السحابة غير متاحة"};
+  try{
+    const s = await fbDb.collection("backups").doc(id).get();
+    if(!s.exists) return {ok:false, msg:"النسخة غير موجودة"};
+    const d = s.data().data;
+    if(!d || !(d.matches||[]).length) return {ok:false, msg:"النسخة فارغة — لم تُطبَّق"};
+    await pushBackup();                              /* نحفظ الحالي قبل الاستبدال */
+    applyData(d, "استرجاع نسخة احتياطية");
+    paintRail(); renderAll();
+    const ok = await persistData();
+    const c = backupCounts(d);
+    return ok===true
+      ? {ok:true, msg:`استُرجعت النسخة: ${c.matches} مباراة و${c.lineups} تشكيلة و${c.subs} تبديلاً`}
+      : {ok:false, msg:SYNCMSG||"طُبّقت محلياً لكن تعذّر الحفظ في السحابة"};
+  }catch(e){ return {ok:false, msg:(e&&e.message)||"تعذّر الاسترجاع"}; }
+}
+
+function backupsHTML(){
+  return `<h2 class="sec">النسخ الاحتياطية</h2>
+    <div class="card pad">
+      <p class="hint" style="margin:0 0 12px">تُحفظ نسخة كاملة تلقائياً بعد كل حفظ ناجح، ويبقى آخر ${BACKUP_KEEP}.
+      لو ضاعت تشكيلات أو تبديلات أو أهداف، ارجع لنسخة قبل الضياع بضغطة واحدة.</p>
+      <div id="backupList"><span style="color:var(--slate);font-size:.85rem">جارٍ التحميل…</span></div>
+      <div style="height:10px"></div>
+      <button class="btn ghost" id="bkRefresh">↻ تحديث القائمة</button>
+    </div>`;
+}
+
+async function paintBackups(){
+  const box=$("#backupList"); if(!box) return;
+  const rows=await listBackups(true);
+  if(!rows.length){ box.innerHTML='<span style="color:var(--slate);font-size:.85rem">لا توجد نسخ بعد — تُنشأ أول نسخة عند أول حفظ.</span>'; return; }
+  box.innerHTML = rows.map(b=>{
+    const d=new Date(b.at);
+    const when=d.toLocaleString("ar-KW",{month:"short",day:"numeric",hour:"2-digit",minute:"2-digit"});
+    const n=b.n||{};
+    return `<div class="staffrow">
+      <div style="flex:1;min-width:0">
+        <b style="font-size:.85rem">${esc(when)}</b>
+        <div style="font-size:.72rem;color:var(--slate)">
+          ${n.matches||0} مباراة · ${n.goals||0} هدفاً · ${n.lineups||0} تشكيلة · ${n.subs||0} تبديلاً
+          ${b.by?` · ${esc(b.by)}`:""}</div>
+      </div>
+      <button data-bk="${esc(b.id)}">استرجاع</button>
+    </div>`;
+  }).join("");
+  box.querySelectorAll("[data-bk]").forEach(btn=>btn.onclick=async()=>{
+    const row=rows.find(x=>x.id===btn.dataset.bk); const n=row?row.n||{}:{};
+    if(!confirm(`استرجاع هذه النسخة؟\n\n${n.matches||0} مباراة · ${n.lineups||0} تشكيلة · ${n.subs||0} تبديلاً\n\nستُحفظ حالتك الراهنة كنسخة قبل الاستبدال.`)) return;
+    busy(btn,true,"جارٍ الاسترجاع…");
+    const r=await restoreBackup(btn.dataset.bk);
+    busy(btn,false);
+    toast(r.msg, r.ok?"ok":"err");
+    if(r.ok){ LASTSYNC=new Date(); renderAdmin(); }
+  });
 }
 
 let PENDING=null;
@@ -3146,6 +3254,8 @@ function renderAdmin(){
         : "الإشهار يُظهر تبويب «فانتازي» لكل الزوار ويرفع بوابة الرمز عن اللعبة. يُحفظ في السحابة فيسري على كل الأجهزة خلال ثوانٍ."}</p>
     </div>
 
+    ${backupsHTML()}
+
     <h2 class="sec">بيانات الموسم</h2>
     <div class="card pad">
       <div class="stat"><span>المصدر الحالي</span><span class="v" style="font-size:.8rem">${esc(DATA_SOURCE)}</span></div>
@@ -3319,6 +3429,8 @@ function renderAdmin(){
   if(cp) cp.onclick=()=>{ if(confirm("حذف كل صور اللاعبين؟")){ PHOTOS={}; PAV={}; persist(); renderAdmin(); renderAll(); } };
   const du=$("#dataUp");
   if(du) du.onchange=e=>{ const f=e.target.files[0]; if(f) readDataFile(f); };
+  paintBackups();
+  const bkr=$("#bkRefresh"); if(bkr) bkr.onclick=()=>paintBackups();
   const dj=$("#dlJSON"); if(dj) dj.onclick=downloadJSON;
   const rd=$("#resetData");
   if(rd) rd.onclick=async()=>{
