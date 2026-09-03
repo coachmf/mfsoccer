@@ -172,6 +172,17 @@ tbody tr.rel{box-shadow:inset 3px 0 0 rgba(224,100,79,.7)}
 .mmeta{padding:0 14px 10px;font-size:.7rem;color:var(--slate);display:flex;gap:10px;flex-wrap:wrap}
 .goals{border-top:1px solid rgba(143,166,196,.14);padding:10px 14px;display:grid;gap:6px;font-size:.8rem}
 .gline{display:flex;align-items:center;gap:8px}
+/* التبديلات: سهم أخضر لأعلى للداخل، وأحمر لأسفل للخارج */
+.goals.subs{border-top:1px dashed rgba(143,166,196,.2)}
+.subhd{color:var(--slate);font-size:.72rem;letter-spacing:.02em;margin-bottom:2px}
+.subpair{flex:1;display:flex;flex-wrap:wrap;align-items:center;gap:4px 14px}
+.subin,.subout{display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
+.subin{color:var(--win)}
+.subout{color:var(--loss)}
+.arw{width:0;height:0;flex:none;border-left:4.5px solid transparent;border-right:4.5px solid transparent}
+.arw.up{border-bottom:7px solid var(--win)}
+.arw.dn{border-top:7px solid var(--loss)}
+@media(max-width:420px){ .subpair{flex-direction:column;align-items:flex-start;gap:2px} }
 .ltr{direction:ltr;unicode-bidi:isolate;display:inline-block}
 .gmin{direction:ltr;unicode-bidi:isolate;font-variant-numeric:tabular-nums;color:var(--sky);font-weight:600;min-width:38px;font-size:.75rem}
 .gtag{font-size:.62rem;color:var(--slate);border:1px solid rgba(143,166,196,.3);border-radius:5px;padding:0 5px;white-space:nowrap}
@@ -778,6 +789,7 @@ let LSCALE = {};           /* حجم دقيق لكل نادٍ % */
 let LOGOBG = true;         /* لوحة بيضاء خلف الشعار */
 let LASTUPDATE = "الجولة 1 · 27 أغسطس 2026";
 let isAdmin = false;
+let FANTASY_OPEN = false;   /* إشهار لعبة الفانتازي للجمهور — يأتي من السحابة */
 
 /* ================= أدوات ================= */
 const $ = s => document.querySelector(s);
@@ -789,6 +801,30 @@ const period = g => { const t=abs(g);
   if(g.m<=60) return "46-60"; if(g.m<=75) return "61-75";
   if(g.m<90 || (g.m===90 && !g.x)) return "76-90"; return "90+"; };
 const minLabel = g => g.x ? `${g.m}+${g.x}'` : `${g.m}'`;
+
+/* ——— التبديلات ———
+   سهم أحمر للخارج وأخضر للداخل، مرتبة بالدقيقة. المصدر هو نفسه
+   الذي يقرأه الفانتازي، فما يظهر هنا هو ما تُحتسب عليه النقاط. */
+function matchSubs(m){
+  return (ALL && ALL.subs ? ALL.subs : [])
+    .filter(s => s.r===m.round && compOf(s)===compOf(m) && (s.club===m.home || s.club===m.away))
+    .slice()
+    .sort((a,b)=> absMinute(a.h,a.m) - absMinute(b.h,b.m));
+}
+function subsHTML(m){
+  const ss = matchSubs(m);
+  if(!ss.length) return "";
+  return `<div class="goals subs">
+    <div class="subhd">التبديلات (${ss.length})</div>
+    ${ss.map(s=>`<div class="gline">
+      <span class="gmin">${absMinute(s.h,s.m)}'</span>
+      ${crest(s.club)}
+      <span class="subpair">
+        ${s.in ? `<span class="subin"><i class="arw up"></i>${esc(s.in)}</span>` : ""}
+        ${s.out? `<span class="subout"><i class="arw dn"></i>${esc(s.out)}</span>` : ""}
+      </span></div>`).join("")}
+  </div>`;
+}
 const pct = (a,b) => b ? Math.round(a/b*1000)/10 : 0;
 const gw = n => (n>=3&&n<=10) ? `${n} أهداف` : `${n} هدفاً`;
 const mw = n => n===2 ? "مباراتين" : (n>=3&&n<=10) ? `${n} مباريات` : `${n} مباراة`;
@@ -813,6 +849,8 @@ function stampComp(d){
     x.comp = m ? compOf(m) : compOf(x);
   });
   (d.cards||[]).forEach(x=>{ if(!x.comp) x.comp="الدوري"; });
+  (d.lineups||[]).forEach(x=>{ if(!x.comp) x.comp="الدوري"; });
+  (d.subs||[]).forEach(x=>{ if(!x.comp) x.comp="الدوري"; });
   return d;
 }
 function applyComp(){
@@ -1213,8 +1251,10 @@ function buildFromWorkbook(wb){
 
 function applyData(d, source){
   SEASON = d.season || SEASON;
-  ALL = stampComp({matches:d.matches||[], goals:d.goals||[], pens:d.pens||[], cards:d.cards||[]});
+  ALL = stampComp({matches:d.matches||[], goals:d.goals||[], pens:d.pens||[], cards:d.cards||[],
+                   lineups:d.lineups||[], subs:d.subs||[]});
   SQUADS = d.squads || SQUADS || {};   /* ملف بلا كشوفات لا يمسح الكشوفات الحالية */
+  if("fantasyOpen" in (d||{})) FANTASY_OPEN = !!d.fantasyOpen;
   SQNUMS_FOUND = squadsExtractNums();   /* فصل الأرقام المكتوبة داخل الأسماء */
   CLUBS = d.clubs;
   const have = compsPresent();
@@ -1234,7 +1274,9 @@ function dataObject(){
   return {season:SEASON, clubs:CLUBS,
           matches:ALL?ALL.matches:MATCHES, goals:ALL?ALL.goals:GOALS,
           pens:ALL?ALL.pens:PENS, cards:ALL?ALL.cards:CARDS, squads:SQUADS,
+          lineups:(ALL&&ALL.lineups)||[], subs:(ALL&&ALL.subs)||[],
           lastUpdate:LASTUPDATE, updated:new Date().toISOString(),
+          fantasyOpen:FANTASY_OPEN,
           updatedBy:(FBUSER&&FBUSER.email)||""};
 }
 function downloadJSON(){
@@ -1568,10 +1610,17 @@ function diagAdvice(res){
 let EDIT=null, FORMERR="";
 const opt=(v,cur,ph)=> `<option value="">${ph||"—"}</option>`+v.map(x=>`<option ${x===cur?"selected":""}>${esc(x)}</option>`).join("");
 const mkey=m=>`${m.round}|${compOf(m)}|${m.home}|${m.away}`;
+/* الدقيقة المطلقة من (الشوط، الدقيقة): الشوط الثاني بدقيقة ≤45 تعني 45+الدقيقة،
+   وبدقيقة أكبر تُقرأ كما هي. فيصح الإدخالان: «الشوط 2 الدقيقة 15» و«الشوط 2 الدقيقة 60». */
+function absMinute(h, m){
+  const mm = +m || 0;
+  if(+h === 2 && mm <= 45) return 45 + mm;
+  return mm;
+}
 
 function newEdit(){
   return {orig:null, match:{round:"", comp:(compsPresent()[0]||"الدوري"), home:"", away:"",
-          venue:"", date:"", time:""}, goals:[], cards:[], pens:[]};
+          venue:"", date:"", time:""}, goals:[], cards:[], pens:[], lineup:[], subs:[]};
 }
 function loadEdit(m){
   const gs=(ALL.goals||[]).filter(g=>g.r===m.round && compOf(g)===compOf(m) &&
@@ -1579,8 +1628,12 @@ function loadEdit(m){
   const cs=(ALL.cards||[]).filter(x=>x.r===m.round && compOf(x)===compOf(m) && (x.club===m.home||x.club===m.away));
   const ps=(ALL.pens||[]).filter(x=>x.r===m.round && compOf(x)===compOf(m) &&
       ((x.by===m.home&&x.vs===m.away)||(x.by===m.away&&x.vs===m.home)));
+  const lus=(ALL.lineups||[]).filter(x=>x.r===m.round && compOf(x)===compOf(m) && (x.club===m.home||x.club===m.away));
+  const sbs=(ALL.subs||[]).filter(x=>x.r===m.round && compOf(x)===compOf(m) && (x.club===m.home||x.club===m.away));
   return {orig:mkey(m),
     match:{round:m.round, comp:compOf(m), home:m.home, away:m.away, venue:m.venue||"", date:m.date||"", time:m.time||""},
+    lineup:lus.map(x=>({club:x.club, p:x.p})),
+    subs:sbs.map(x=>({club:x.club, out:x.out||"", in:x.in||"", h:x.h||1, m:x.m||""})),
     goals:gs.map(g=>({sc:g.sc,p:g.p,a:g.a||"",m:g.m,x:g.x||0,det:g.det||"",bp:g.bp||"",zone:g.zone||""})),
     cards:cs.map(x=>({club:x.club,p:x.p,m:x.m,type:x.type})),
     pens:ps.map(x=>({by:x.by,p:x.p,m:x.m,res:x.res,place:x.place||""}))};
@@ -1745,6 +1798,34 @@ function matchFormHTML(){
     </div>
   </div>
 
+  <h2 class="sec">التشكيلة الأساسية (${E.lineup.length})</h2>
+  <p class="hint">أحد عشر لاعباً لكل فريق. من لا يُذكر هنا يُعدّ بديلاً، ولا تُحتسب له دقائق إلا إن دخل ضمن التبديلات.</p>
+  ${sides.map(cl=>{ const n=E.lineup.filter(x=>x.club===cl).length;
+    return `<button class="addbtn" data-fill="${esc(cl)}">+ أضف 11 خانة لـ${esc(cl)}${n?` (مسجّل ${n})`:""}</button>`;
+  }).join("")}
+  ${E.lineup.map((x,i)=>`<div class="subrow">
+    <button class="del" data-del="lineup.${i}" title="حذف">✕</button>
+    <div class="idx">أساسي ${i+1}</div>
+    <div class="fgrid">
+      ${fld("النادي","lineup."+i+".club","select",sides,x.club)}
+      ${pfld("اللاعب","lineup."+i+".p",x.club,sides,x.p)}
+    </div></div>`).join("")}
+  <button class="addbtn" data-add="lineup">+ إضافة لاعب أساسي</button>
+
+  <h2 class="sec">التبديلات (${E.subs.length})</h2>
+  <p class="hint">الخارج والداخل والشوط والدقيقة. منها تُحسب دقائق كل لاعب، وعليها تُبنى نقاط المشاركة والشباك النظيفة في الفانتازي.</p>
+  ${E.subs.map((x,i)=>`<div class="subrow">
+    <button class="del" data-del="subs.${i}" title="حذف">✕</button>
+    <div class="idx">تبديل ${i+1}${x.m?` · الدقيقة ${absMinute(x.h,x.m)}`:""}</div>
+    <div class="fgrid">
+      ${fld("النادي","subs."+i+".club","select",sides,x.club)}
+      ${pfld("خرج","subs."+i+".out",x.club,sides,x.out)}
+      ${pfld("دخل","subs."+i+".in",x.club,sides,x.in)}
+      ${fld("الشوط","subs."+i+".h","select",["1","2"],String(x.h||1))}
+      ${fld("الدقيقة","subs."+i+".m","number",null,x.m)}
+    </div></div>`).join("")}
+  <button class="addbtn" data-add="subs">+ إضافة تبديل</button>
+
   <h2 class="sec">الأهداف (${E.goals.length})</h2>
   ${E.goals.map((g,i)=>`<div class="subrow">
     <button class="del" data-del="goals.${i}" title="حذف">✕</button>
@@ -1835,6 +1916,9 @@ function removeMatchByKey(key){
   ALL.goals   = ALL.goals.filter(g=>!(g.r===old.round && compOf(g)===compOf(old) && pair(g.sc,g.cd)));
   ALL.cards   = (ALL.cards||[]).filter(x=>!(x.r===old.round && compOf(x)===compOf(old) && (x.club===old.home||x.club===old.away)));
   ALL.pens    = (ALL.pens||[]).filter(x=>!(x.r===old.round && compOf(x)===compOf(old) && pair(x.by,x.vs)));
+  const mine  = x => x.r===old.round && compOf(x)===compOf(old) && (x.club===old.home||x.club===old.away);
+  ALL.lineups = (ALL.lineups||[]).filter(x=>!mine(x));
+  ALL.subs    = (ALL.subs||[]).filter(x=>!mine(x));
 }
 
 async function saveMatch(){
@@ -1852,6 +1936,12 @@ async function saveMatch(){
       {r:round, comp:m.comp, club:x.club, p:x.p, m:+x.m||0, type:x.type}));
   EDIT.pens.forEach(x=>ALL.pens.push({r:round, comp:m.comp, by:x.by, vs:other(x.by), p:x.p,
       m:+x.m||0, res:x.res, place:x.place||""}));
+  ALL.lineups = ALL.lineups || []; ALL.subs = ALL.subs || [];
+  (EDIT.lineup||[]).filter(x=>x.club && x.p).forEach(x=>
+      ALL.lineups.push({r:round, comp:m.comp, club:x.club, p:x.p}));
+  (EDIT.subs||[]).filter(x=>x.club && (x.out||x.in)).forEach(x=>
+      ALL.subs.push({r:round, comp:m.comp, club:x.club, out:x.out||"", in:x.in||"",
+                     h:+x.h||1, m:+x.m||0}));
   /* النتيجة تُشتق من الأهداف */
   ALL.matches.forEach(mm=>{
     mm.hg = ALL.goals.filter(g=>g.r===mm.round && compOf(g)===compOf(mm) && g.sc===mm.home && g.cd===mm.away).length;
@@ -1933,6 +2023,22 @@ function wireAdminIO(){
     else if(ok==="pending") toast(`ضُغطت إلى ${after} ك.ب · ${SYNCMSG}`,"busy");
     else toast(SYNCMSG||`ضُغطت إلى ${after} ك.ب لكن الحفظ في السحابة فشل`,"err");
     paintHeader(); renderAdmin(); renderAll(); };
+  const ft=$("#fantasyToggle");
+  if(ft) ft.onclick=async()=>{
+    if(!fbDb){ toast("السحابة غير متاحة — افتح الموقع من نطاقه المنشور","err"); return; }
+    if(!isAdmin){ toast("سجّل الدخول أولاً","err"); return; }
+    const turningOn = !FANTASY_OPEN;
+    if(!turningOn && !confirm("إخفاء لعبة الفانتازي عن الجمهور؟")) return;
+    busy(ft,true,turningOn?"جارٍ الإشهار…":"جارٍ الإخفاء…");
+    const r=await setFantasyOpen(turningOn);
+    busy(ft,false);
+    if(r===true){ LASTSYNC=new Date();
+      toast(turningOn?"أُشهرت اللعبة — صارت ظاهرة لكل الزوار":"أُخفيت اللعبة عن الجمهور","ok"); }
+    else if(r==="pending") toast(SYNCMSG||"الاتصال بطيء — سيكتمل الحفظ تلقائياً","busy");
+    else toast(SYNCMSG||"تعذّر الحفظ — لم تتغيّر الحالة","err");
+    renderAdmin(); };
+  const fo=$("#fantasyOpenBtn");
+  if(fo) fo.onclick=()=>window.open(FANTASY_URL+"#admin","_blank","noopener");
   const pc=$("#pushCloud");
   if(pc) pc.onclick=async()=>{
     if(!fbDb){ toast("السحابة غير متاحة — افتح الموقع من نطاقه المنشور","err"); return; }
@@ -1980,7 +2086,8 @@ function renderMatchAdmin(){
     el.onchange=()=>{ setPath(el.dataset.k, el.value);
       if(/^match\.(home|away)$/.test(el.dataset.k) || /\.det$/.test(el.dataset.k)
          || /^goals\.\d+\.(sc|bp)$/.test(el.dataset.k) || /^cards\.\d+\.club$/.test(el.dataset.k)
-         || /^pens\.\d+\.by$/.test(el.dataset.k)) renderMatchAdmin(); };
+         || /^pens\.\d+\.by$/.test(el.dataset.k)
+         || /^(lineup|subs)\.\d+\.club$/.test(el.dataset.k)) renderMatchAdmin(); };
   });
   box.querySelectorAll(".pnum").forEach(el=>{
     el.oninput=()=>{
@@ -2001,8 +2108,15 @@ function renderMatchAdmin(){
     if(k==="goals") EDIT.goals.push({sc:"",p:"",a:"",m:"",x:0,det:"",bp:"",zone:"",og:""});
     if(k==="cards") EDIT.cards.push({club:"",p:"",m:"",type:"إنذار"});
     if(k==="pens")  EDIT.pens.push({by:"",p:"",m:"",res:"سجلت",place:""});
+    if(k==="lineup") EDIT.lineup.push({club:"",p:""});
+    if(k==="subs")   EDIT.subs.push({club:"",out:"",in:"",h:"1",m:""});
   renderMatchAdmin();
   });
+  box.querySelectorAll("[data-fill]").forEach(b=>b.onclick=()=>{
+    const cl=b.dataset.fill;
+    const have=EDIT.lineup.filter(x=>x.club===cl).length;
+    for(let i=have;i<11;i++) EDIT.lineup.push({club:cl,p:""});
+    renderMatchAdmin(); });
   box.querySelectorAll("[data-del]").forEach(b=>b.onclick=()=>{
     const [k,i]=b.dataset.del.split("."); EDIT[k].splice(+i,1); renderMatchAdmin(); });
   box.querySelectorAll("[data-act]").forEach(b=>b.onclick=()=>{
@@ -2397,6 +2511,7 @@ function renderMatches(){
           ${crest(g.sc)}
           <span style="flex:1">${esc(g.p)}${ogLabel(g)}${g.a?` <span style="color:var(--slate);font-size:.72rem">صناعة ${esc(g.a)}</span>`:""}</span>
           <span class="gtag">${esc(g.det)}</span></div>`).join("")}</div>`:""}
+      ${subsHTML(m)}
     </div>`;
   }).join("");
 
@@ -3003,6 +3118,18 @@ function renderAdmin(){
     <p class="hint">أضف مباراة كاملة يدوياً: الجولة والملعب والتاريخ والوقت، ثم الأهداف والبطاقات وركلات الجزاء بنفس حقول ملف الإكسل. النتيجة تُحسب من الأهداف.</p>
     <div id="matchAdmin"></div>
 
+    <h2 class="sec">لعبة الفانتازي</h2>
+    <div class="card pad">
+      <div class="stat"><span>الحالة</span><span class="v" style="font-size:.85rem">${FANTASY_OPEN?"مُشهرة للجمهور":"مخفية — تظهر لك وحدك"}</span></div>
+      <div style="height:12px"></div>
+      <button class="btn${FANTASY_OPEN?" ghost":""}" id="fantasyToggle">${FANTASY_OPEN?"🔒 إخفاء اللعبة عن الجمهور":"🚀 إشهار اللعبة للجمهور"}</button>
+      <div style="height:8px"></div>
+      <button class="btn ghost" id="fantasyOpenBtn">↗ فتح لوحة إدارة الفانتازي</button>
+      <p class="hint" style="margin:12px 0 0">${FANTASY_OPEN
+        ? "اللعبة ظاهرة الآن لكل زائر: يشوف تبويب «فانتازي» ويدخلها بلا رمز. الإخفاء يرجّعها لبوابة الرمز فوراً."
+        : "الإشهار يُظهر تبويب «فانتازي» لكل الزوار ويرفع بوابة الرمز عن اللعبة. يُحفظ في السحابة فيسري على كل الأجهزة خلال ثوانٍ."}</p>
+    </div>
+
     <h2 class="sec">بيانات الموسم</h2>
     <div class="card pad">
       <div class="stat"><span>المصدر الحالي</span><span class="v" style="font-size:.8rem">${esc(DATA_SOURCE)}</span></div>
@@ -3422,19 +3549,41 @@ function authErr(e){
   if(c==="auth/email-already-in-use") return "هذا البريد مسجّل مسبقاً — سجّل الدخول بدل إنشاء حساب";
   if(c==="auth/invalid-credential" || c==="auth/wrong-password") return "البريد أو كلمة المرور غير صحيحة";
   if(c==="auth/network-request-failed") return "تعذّر الاتصال — تحقق من الشبكة";
-  if(c==="auth/operation-not-allowed") return "طريقة الدخول غير مفعّلة — فعّلها من Authentication ← Sign-in method";
+  if(c==="auth/operation-not-allowed" || c==="auth/admin-restricted-operation")
+    return "طريقة الدخول غير مفعّلة — فعّلها من Authentication ← Sign-in method";
+  if(c==="auth/unauthorized-domain")
+    return "هذا النطاق غير معتمد — أضفه في Authentication ← Settings ← Authorized domains";
+  if(c==="auth/too-many-requests") return "محاولات كثيرة — انتظر دقائق ثم أعد المحاولة";
+  if(c==="auth/user-disabled") return "هذا الحساب موقوف";
+  if(c==="auth/user-not-found") return "لا يوجد حساب بهذا البريد — أنشئ حساباً";
+  if(c==="auth/internal-error" || c==="auth/web-storage-unsupported")
+    return "متصفحك يمنع تخزين الجلسة — جرّب فتح الصفحة في المتصفح نفسه بدل تطبيق آخر";
   return "تعذّر الدخول: " + (c || "خطأ غير معروف");
+}
+/* حفظ ملف المشجّع بعد إنشاء الحساب.
+   مهم: لا ننتظره بلا حدّ. على بعض الشبكات (شركات، مانعات إعلانات،
+   متصفحات داخل التطبيقات) تُحجب قناة Firestore فيبقى الوعد معلقاً
+   بلا خطأ — فيعلق زر التسجيل على «لحظة…» إلى الأبد، والحساب أُنشئ
+   فعلاً. فنمهله ثوانٍ ثم نكمل: الحساب صالح، والاسم يُحفظ لاحقاً. */
+async function saveFanProfile(uid, name, anon){
+  if(!fbDb || !uid) return false;
+  const r = await withTimeout(
+    fbDb.collection("fans").doc(uid).set(
+      {name, joined:new Date().toISOString(), anon:!!anon}, {merge:true}), 8000);
+  return r === "ok";
 }
 async function fanSignInName(name){
   if(!fbAuth) return;
   try{
     const cred = await fbAuth.signInAnonymously();
-    if(cred.user) await cred.user.updateProfile({displayName:name});
-    await fbDb.collection("fans").doc(cred.user.uid).set(
-      {name, joined:new Date().toISOString(), anon:true}, {merge:true});
+    if(cred.user){
+      try{ await withTimeout(cred.user.updateProfile({displayName:name}), 8000); }catch(e){}
+      const ok = await saveFanProfile(cred.user.uid, name, true);
+      if(!ok) toast("دخلت بالاسم، لكن حفظ الاسم تأخّر — قد تحتاج كتابته مرة أخرى","busy");
+    }
   }catch(e){
     const c=(e&&e.code)||"";
-    toast(c==="auth/operation-not-allowed"
+    toast((c==="auth/operation-not-allowed" || c==="auth/admin-restricted-operation")
       ? "الدخول بالاسم غير مفعّل — فعّل Anonymous من إعدادات Authentication"
       : authErr(e), "err");
   }
@@ -3444,9 +3593,11 @@ async function fanEmailAuth(email, pass, name, mode){
   try{
     if(mode==="up"){
       const cred = await fbAuth.createUserWithEmailAndPassword(email, pass);
-      if(cred.user && name) await cred.user.updateProfile({displayName:name});
-      if(cred.user) await fbDb.collection("fans").doc(cred.user.uid)
-        .set({name, joined:new Date().toISOString(), anon:false},{merge:true});
+      if(cred.user){
+        if(name){ try{ await withTimeout(cred.user.updateProfile({displayName:name}), 8000); }catch(e){} }
+        const ok = await saveFanProfile(cred.user.uid, name, false);
+        if(!ok) toast("أُنشئ حسابك، لكن حفظ الاسم تأخّر — عدّله من صفحتك","busy");
+      }
     } else {
       await fbAuth.signInWithEmailAndPassword(email, pass);
     }
@@ -3845,13 +3996,23 @@ function wirePredict(o, locked){
 
 
 const RENDER={home:renderHome,matches:renderMatches,clubs:renderClubs,players:renderPlayers,predict:renderPredict,analysis:renderAnalysis,admin:renderAdmin};
-/* تبويب الفانتازي: يظهر لك أنت فقط بعد دخول المدير.
-   للفتح للجمهور: بدّل FANTASY_PUBLIC إلى true. */
+/* تبويب الفانتازي: مخفي عن الزوار حتى يُشهره المدير.
+   الحالة محفوظة في السحابة (حقل fantasyOpen في مستند الموسم) لا في الكود،
+   فيكفي ضغط الزر مرة واحدة لتُفتح اللعبة لكل الزوار على كل الأجهزة.
+   والفانتازي نفسه يقرأ الحقل ذاته ويرفع بوابته تلقائياً. */
 const FANTASY_URL = "/fantasy/";
-const FANTASY_PUBLIC = false;
 function paintFantasyTab(){
   const b=$("#fantasyTab"); if(!b) return;
-  b.style.display = (FANTASY_PUBLIC || isAdmin) ? "" : "none";
+  b.style.display = (FANTASY_OPEN || isAdmin) ? "" : "none";
+}
+/* تبديل الإشهار وحفظه في السحابة فوراً */
+async function setFantasyOpen(on){
+  const prev = FANTASY_OPEN;
+  FANTASY_OPEN = !!on;
+  const r = await persistData();
+  if(r === false){ FANTASY_OPEN = prev; return false; }
+  paintFantasyTab();
+  return r;
 }
 function go(v){
   document.querySelectorAll(".view").forEach(s=>s.classList.remove("on"));
