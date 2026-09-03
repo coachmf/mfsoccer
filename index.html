@@ -844,7 +844,25 @@ body{background:
 .strip-in{max-width:1180px;margin:0 auto;display:flex;align-items:center;gap:10px;padding:0 20px;height:46px}
 .strip-lb{flex:none;font-family:var(--display);font-weight:700;font-size:.72rem;color:var(--ice);letter-spacing:.06em;
   padding:4px 10px;border:1px solid rgba(127,224,255,.35);border-radius:4px;clip-path:polygon(5px 0,100% 0,calc(100% - 5px) 100%,0 100%)}
-.strip-sc{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;flex:1;padding:4px 0}
+/* ---- شريط متحرك كشريط الأخبار ----
+   المحتوى مكرر مرتين داخل مسار واحد، والحركة تنقله بمقدار نسخة كاملة
+   ثم تعيد الكرة — فلا يظهر انقطاع. الاتجاه من اليسار إلى اليمين لأن
+   القراءة عربية: الجديد يدخل من اليسار. يتوقف عند اللمس أو المرور. */
+.strip-sc{display:flex;gap:6px;overflow:hidden;flex:1;padding:4px 0;
+  -webkit-mask-image:linear-gradient(90deg,transparent,#000 28px,#000 calc(100% - 28px),transparent);
+          mask-image:linear-gradient(90deg,transparent,#000 28px,#000 calc(100% - 28px),transparent)}
+.strip-track{display:flex;gap:6px;flex:none;will-change:transform;
+  animation:strip-run var(--dur,45s) linear infinite}
+@keyframes strip-run{from{transform:translateX(0)} to{transform:translateX(calc(50% + 3px))}}
+.strip-sc:hover .strip-track,.strip-sc.hold .strip-track{animation-play-state:paused}
+.strip-sc.still .strip-track{animation:none}
+@media (prefers-reduced-motion: reduce){
+  .strip-sc{overflow-x:auto;scrollbar-width:none}
+  .strip-track{animation:none}
+}
+/* المحتوى يتّسع كله أو المستخدم يفضّل تقليل الحركة: لا تحريك، تمرير يدوي */
+.strip-sc.still{overflow-x:auto;scrollbar-width:none}
+.strip-sc.still .strip-track{transform:none!important}
 .strip-sc::-webkit-scrollbar{display:none}
 .strip .rx{flex:none;display:flex;align-items:center;gap:7px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);
   border-radius:6px;padding:4px 10px;color:#fff;font-size:.74rem;font-weight:600;transition:background .15s}
@@ -5371,6 +5389,45 @@ useLocalCrests();
           <a class="hchip" href="${X_URL}" target="_blank" rel="noopener">${X_SVG}@coach_mf</a>
           <a class="hchip wa" href="${WA_URL}" target="_blank" rel="noopener">${WA_SVG}اقتراحاتكم</a>
         </div>`;
+      /* يُشغَّل الشريط: يُكرَّر المحتوى مرة واحدة ليكون الدوران متصلاً،
+         وتُحسب المدة من عرضه فتبقى السرعة ثابتة مهما كثرت المباريات.
+         لا يتحرك إن كان المحتوى أقصر من الإطار. */
+      /* شريط متحرك كشريط الأخبار: يُكرَّر المحتوى مرة واحدة ليكون الدوران
+         متصلاً بلا انقطاع، وتُحسب المدة من عرضه فتبقى السرعة ثابتة مهما
+         كثرت المباريات. ولا يتحرك أصلاً إن كان المحتوى أقصر من الإطار. */
+      function startTicker(box){
+        const sc=box.querySelector(".strip-sc"), tr=box.querySelector(".strip-track");
+        if(!sc || !tr) return;
+        const SPEED=42;                                      /* بكسل في الثانية */
+        const build=()=>{
+          tr.querySelectorAll("[data-dup]").forEach(n=>n.remove());
+          const w=tr.scrollWidth;
+          if(!w || w<=sc.clientWidth+8){ sc.classList.add("still"); return; }
+          sc.classList.remove("still");
+          [...tr.children].forEach(n=>{                      /* نسخة ثانية للدوران المتصل */
+            const c=n.cloneNode(true); c.setAttribute("data-dup","1");
+            c.setAttribute("aria-hidden","true"); c.tabIndex=-1; tr.appendChild(c);
+          });
+          sc.style.setProperty("--dur", Math.max(20, Math.round(w/SPEED))+"s");
+        };
+        build();
+        clearTimeout(startTicker._t);
+        startTicker._t=setTimeout(build,600);                /* بعد تحميل الشعارات */
+
+        if(!startTicker._rs){ startTicker._rs=true;
+          let t; addEventListener("resize",()=>{ clearTimeout(t);
+            t=setTimeout(()=>document.querySelectorAll("#resStrip").forEach(startTicker),250); }); }
+
+        /* الإيقاف بنمط سطري إلى جانب الصنف: النمط السطري أقوى من الورقة
+           فلا يبقى الأمر معلّقاً على ترتيب القواعد. */
+        let rt;
+        const hold=()=>{ clearTimeout(rt); sc.classList.add("hold"); tr.style.animationPlayState="paused"; };
+        const go_ =(d)=>{ clearTimeout(rt); rt=setTimeout(()=>{ sc.classList.remove("hold");
+                          tr.style.animationPlayState="running"; }, d||0); };
+        sc.onmouseenter=hold;  sc.onmouseleave=()=>go_(0);
+        sc.onfocusin=hold;     sc.onfocusout=()=>go_(0);
+        sc.ontouchstart=hold;  sc.ontouchend=()=>go_(1200); sc.ontouchcancel=()=>go_(1200);
+      }
       const st=document.querySelector("#resStrip");
       if(st && Array.isArray(MATCHES)){
         const played=(typeof playedMatches==="function")?playedMatches():MATCHES.filter(m=>m.hg!=null&&m.ag!=null);
@@ -5383,7 +5440,9 @@ useLocalCrests();
             <span class="sc">${isSoon?((m.date?m.date.slice(5).replace("-","/"):"")+(m.time?" "+m.time:"")||"—"):(m.hg+" - "+m.ag)}</span>
             <b>${esc(m.away)}</b><img src="${crestImg(m.away)}" alt=""></button>`;
         const html=ms.map(m=>chip(m,false)).join("")+(next.length?`<span class="strip-lb">القادم</span>`+next.map(m=>chip(m,true)).join(""):"");
-        st.innerHTML = html ? `<div class="strip-in"><span class="strip-lb">${lb||"المباريات"}</span><div class="strip-sc">${html}</div></div>` : "";
+        st.innerHTML = html ? `<div class="strip-in"><span class="strip-lb">${lb||"المباريات"}</span>
+          <div class="strip-sc"><div class="strip-track">${html}</div></div></div>` : "";
+        if(html) startTicker(st);
       }
       const nav=document.querySelector("nav.tabs .in");
       if(nav && !nav.querySelector(".navbrand")){
