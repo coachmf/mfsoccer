@@ -5211,8 +5211,11 @@ const RENDER={home:renderHome,matches:renderMatches,clubs:renderClubs,players:re
    والفانتسي نفسه يقرأ الحقل ذاته ويرفع بوابته تلقائياً. */
 const FANTASY_URL = "/fantasy/";
 function paintFantasyTab(){
-  const b=$("#fantasyTab"); if(!b) return;
-  b.style.display = (FANTASY_OPEN || isAdmin) ? "" : "none";
+  const show = (FANTASY_OPEN || isAdmin);
+  const b=$("#fantasyTab"); if(b) b.style.display = show ? "" : "none";
+  /* زر «فانتسي» في الهيدر يتبع نفس القاعدة — كان يظهر دائماً ولا يفعل شيئاً */
+  const h=document.querySelector('.hero-sub button[data-go="fantasy"]');
+  if(h) h.style.display = show ? "" : "none";
 }
 /* تبديل الإشهار وحفظه في السحابة فوراً */
 async function setFantasyOpen(on){
@@ -5304,7 +5307,7 @@ async function bootData(){
   subs.forEach(b=>b.addEventListener('click',()=>{
     const t=document.querySelector(`nav.tabs button[data-v="${b.dataset.go}"]`);
     if(t && t.style.display!=='none') t.click();
-    else if(b.dataset.go==='fantasy' && window.FANTASY_URL) window.open(window.FANTASY_URL,'_blank');
+    else if(b.dataset.go==='fantasy') window.open(window.FANTASY_URL||'/fantasy/','_blank','noopener');
     setTimeout(sync,0);
   }));
   document.querySelectorAll('nav.tabs button').forEach(b=>b.addEventListener('click',()=>setTimeout(sync,0)));
@@ -5319,7 +5322,8 @@ async function bootData(){
 <script>
 /* شعارات PNG محلية لكل الأندية + شعار دوري زين — تُطبَّق فوق أي شعارات من السحابة */
 /* رابط الفانتسي الخارجي (اتركه فارغاً إذا كان تبويب الفانتسي داخل الموقع) */
-window.FANTASY_URL = window.FANTASY_URL || "";
+/* مسار اللعبة — يستعمله زر الهيدر حين يكون تبويب التنقل مخفياً */
+window.FANTASY_URL = window.FANTASY_URL || "/fantasy/";
 const LOCAL_CRESTS={
   "القادسية":"assets/crests/sq/qadsia.png","الكويت":"assets/crests/sq/kuwait.png","العربي":"assets/crests/sq/arabi.png",
   "كاظمة":"assets/crests/sq/kazma.png","السالمية":"assets/crests/sq/salmiya.png","النصر":"assets/crests/sq/nasr.png",
