@@ -1249,10 +1249,17 @@ function buildFromWorkbook(wb){
   return {season, clubs, matches, goals, pens, cards:cards2, warn, miss, stale};
 }
 
+/* حقل غائب عن المصدر لا يمسح ما هو محفوظ؛ وحقل موجود ولو فارغاً يُطبَّق.
+   ملف الاستوديو (xlsx) لا يحمل تشكيلات ولا تبديلات، فلولا هذا الحفظ
+   لمَسَح كل رفعة ما أُدخل يدوياً منها — تماماً كحماية الكشوفات أدناه. */
+function keepField(incoming, current){
+  return incoming === undefined ? (current || []) : (incoming || []);
+}
 function applyData(d, source){
   SEASON = d.season || SEASON;
   ALL = stampComp({matches:d.matches||[], goals:d.goals||[], pens:d.pens||[], cards:d.cards||[],
-                   lineups:d.lineups||[], subs:d.subs||[]});
+                   lineups: keepField(d.lineups, ALL && ALL.lineups),
+                   subs:    keepField(d.subs,    ALL && ALL.subs)});
   SQUADS = d.squads || SQUADS || {};   /* ملف بلا كشوفات لا يمسح الكشوفات الحالية */
   if("fantasyOpen" in (d||{})) FANTASY_OPEN = !!d.fantasyOpen;
   SQNUMS_FOUND = squadsExtractNums();   /* فصل الأرقام المكتوبة داخل الأسماء */
@@ -3307,7 +3314,8 @@ function renderAdmin(){
   const rd=$("#resetData");
   if(rd) rd.onclick=async()=>{
     if(!confirm("إرجاع البيانات المضمّنة في الملف؟")) return;
-    applyData(JSON.parse(JSON.stringify({season:SEED.SEASON,clubs:SEED.CLUBS,matches:SEED.MATCHES,goals:SEED.GOALS,pens:SEED.PENS,cards:SEED.CARDS||[]})), "مضمّنة في الملف");
+    /* إرجاع كامل: التشكيلات والتبديلات تُمسح هنا عمداً — تُمرَّر فارغة صراحةً */
+    applyData(JSON.parse(JSON.stringify({season:SEED.SEASON,clubs:SEED.CLUBS,matches:SEED.MATCHES,goals:SEED.GOALS,pens:SEED.PENS,cards:SEED.CARDS||[],lineups:[],subs:[]})), "مضمّنة في الملف");
     try{ await window.storage.delete("zain_data"); }catch(e){}
     renderAdmin();
   };
@@ -4072,7 +4080,7 @@ async function bootData(){
 (async()=>{
   fbInit();
   await bootAssets();
-  ALL = stampComp({matches:MATCHES, goals:GOALS, pens:PENS, cards:CARDS});
+  ALL = stampComp({matches:MATCHES, goals:GOALS, pens:PENS, cards:CARDS, lineups:[], subs:[]});
   applyComp();
   await bootData();
   watchSeason();
