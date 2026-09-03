@@ -41,6 +41,9 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Readex+Pro:wght@400;600;700&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+
+<!-- v3:fonts --><link href="https://fonts.googleapis.com/css2?family=Alexandria:wght@500;600;700;800;900&display=swap" rel="stylesheet"><!-- /v3:fonts -->
 <style>
 :root{
   --ink:#061529; --navy-900:#0A2242; --navy-800:#0E2B52; --navy-600:#17417A;
@@ -594,17 +597,967 @@ table.lb td.pt{font-family:var(--display);font-weight:700;color:var(--sky);
   nav.tabs button[aria-selected="true"]{border-bottom-color:var(--sky)}
   main{padding:24px 20px 40px}
 }
+
+/* ===== ترويسة بأسلوب FPL — ألوان دوري زين ===== */
+:root{--zain:#2eb0f0;--zain-mid:#1878be;--zain-deep:#0d4f92;--zain-ice:#7fe0ff;--sky:#2eb0f0;--sky-soft:#a9e0fb}
+.topbar.hero{position:relative;top:auto;padding:0;border:0;backdrop-filter:none;-webkit-backdrop-filter:none;overflow:hidden;
+  background:linear-gradient(to left,#8ee6ff 0%,#2eb0f0 28%,#1878be 62%,#0d4f92 100%)}
+.topbar.hero::before{content:"";position:absolute;inset:0;pointer-events:none;
+  background:
+    radial-gradient(60% 140% at 100% 50%,rgba(255,255,255,.28),transparent 60%),
+    radial-gradient(40% 120% at 0% 100%,rgba(46,176,240,.55),transparent 70%)}
+.topbar.hero::after{content:"";position:absolute;top:-40px;bottom:-40px;left:-60px;width:260px;pointer-events:none;opacity:.55;
+  background:conic-gradient(from 210deg at 50% 50%,#0d4f92,#2eb0f0,#8ee6ff,#1878be,#0d4f92);filter:blur(28px)}
+.hero-in{position:relative;z-index:1;max-width:1180px;margin:0 auto;display:flex;align-items:flex-end;gap:16px;
+  padding:calc(16px + env(safe-area-inset-top)) 20px 0;min-height:158px}
+.hero-brand{display:flex;align-items:center;gap:12px;margin-bottom:50px;flex:none}
+.hero-logo{height:86px;width:auto;filter:drop-shadow(0 4px 12px rgba(0,0,0,.28))}
+.hero-word{display:flex;flex-direction:column;line-height:1}
+.hero-word b{font-family:var(--display);font-weight:700;font-size:2.35rem;color:#fff;text-shadow:0 2px 10px rgba(6,21,41,.35)}
+.hero-word small{font-family:var(--display);font-size:.82rem;color:#eaf8ff;letter-spacing:.1em;margin-top:8px;font-weight:600}
+.hero-players{display:flex;align-items:flex-end;direction:ltr;margin-inline-start:auto;margin-inline-end:120px;height:158px;pointer-events:none;flex:none}
+.hero-players img{height:142px;width:auto;margin-left:-36px;filter:drop-shadow(0 6px 12px rgba(0,0,0,.35));
+  -webkit-mask-image:linear-gradient(#000 78%,transparent 100%);mask-image:linear-gradient(#000 78%,transparent 100%)}
+.hero-players img:first-child{margin-left:0}
+.hero-players img:nth-child(2){height:130px}
+.hero-players img:nth-child(4){height:134px}
+.hero-players img:nth-child(5){height:148px}
+.hero-admin{position:absolute;top:calc(12px + env(safe-area-inset-top));left:20px;z-index:2;
+  background:rgba(255,255,255,.16);border-color:rgba(255,255,255,.4);color:#fff}
+.hero-admin.on{background:var(--sand);border-color:var(--sand);color:#20180a}
+.hero-sub{position:absolute;bottom:0;right:20px;display:flex;gap:4px;z-index:2}
+.hero-sub button{background:rgba(255,255,255,.62);color:var(--zain-deep);font-family:var(--display);font-weight:600;
+  font-size:.84rem;padding:10px 18px;border-radius:9px 9px 0 0;transition:background .15s}
+.hero-sub button:hover{background:rgba(255,255,255,.85)}
+.hero-sub button.on{background:#fff;color:var(--zain-deep);font-weight:700}
+.topbar.hero .rail{margin:0 auto;gap:2px;height:3px}
+.topbar.hero .leaguemark{display:none}
+@media(max-width:1100px){.hero-players img:nth-child(2),.hero-players img:nth-child(4){display:none}.hero-players{margin-inline-end:60px}}
+@media(max-width:899px){
+  .hero-players{display:none}
+  .hero-in{min-height:118px;padding-top:calc(12px + env(safe-area-inset-top))}
+  .hero-brand{margin-bottom:44px}
+  .hero-logo{height:58px}
+  .hero-word b{font-size:1.6rem}
+  .hero-word small{font-size:.7rem;margin-top:5px}
+  .hero-sub{right:14px}
+  .hero-sub button{padding:8px 14px;font-size:.78rem}
+  .hero-admin{left:14px}
+}
+@media(min-width:900px){
+  nav.tabs{background:var(--zain-deep);border-bottom:0;box-shadow:0 3px 10px rgba(6,21,41,.35)}
+  nav.tabs .in{justify-content:flex-start;padding:0 12px}
+  nav.tabs button{flex:0 0 auto;padding:0 14px;color:#dceefb;font-weight:500;font-size:.86rem;min-height:46px}
+  nav.tabs button .ic{display:none}
+  nav.tabs button:hover{color:#fff}
+  nav.tabs button[aria-selected="true"]{color:#fff;font-weight:700;border-bottom-color:var(--zain-ice)}
+}
+
+/* ===== المظهر الرسمي (فاتح) — هوية دوري زين ===== */
+:root{
+  --ink:#F2F5F9; --navy-900:#FFFFFF; --navy-800:#EEF3F9; --navy-600:#1878BE;
+  --sky:#1878BE; --sky-soft:#0D4F92; --mist:#1B2A41; --slate:#64748B;
+  --win:#1E9E6A; --draw:#94A3B8; --loss:#D9534F; --sand:#B7791F;
+  --line:#E2E8F0; --line2:#CBD5E1; --head:#0B1F3A;
+  --amber-bg:#FFF7E6; --amber-ln:#F3D9A4; --amber-tx:#8A5A00;
+  --blue-bg:#E7F3FC; --blue-ln:#9CC9EC;
+  --shadow:0 1px 2px rgba(11,31,58,.04),0 4px 14px rgba(11,31,58,.06);
+}
+html{background:var(--ink)}
+body{background:var(--ink);color:var(--mist)}
+::-webkit-scrollbar-thumb{background:#B9C6D6}
+h2.sec{color:var(--head);font-size:1.1rem}
+h2.sec::before{background:var(--zain-deep);width:4px}
+.hint{color:var(--slate)}
+.card{background:#fff;border:1px solid var(--line);box-shadow:var(--shadow)}
+.kpi{background:#fff;border:1px solid var(--line);box-shadow:var(--shadow)}
+.kpi::after{height:3px;background:linear-gradient(90deg,var(--zain-deep),var(--zain))}
+.kpi .k{color:var(--slate)} .kpi .v{color:var(--head)} .kpi .d{color:var(--zain-mid)}
+.crest{box-shadow:inset 0 0 0 1px rgba(11,31,58,.08)}
+.crest.has-logo{background:#fff;box-shadow:inset 0 0 0 1px var(--line);padding:3px}
+.crest.lg.has-logo{padding:5px}
+thead th{background:#EAF1F8;color:var(--zain-deep)}
+tbody td{border-bottom:1px solid var(--line)}
+tbody tr:nth-child(even){background:#F7FAFD}
+tbody tr.top{box-shadow:inset 3px 0 0 var(--zain-mid)}
+tbody tr.rel{box-shadow:inset 3px 0 0 var(--loss)}
+.teamcell .pos{color:var(--slate)} .teamcell b{color:var(--head)}
+.pl.w{color:#fff}.pl.d{background:var(--draw);color:#fff}.pl.l{color:#fff}
+.match{background:#fff;border:1px solid var(--line);box-shadow:var(--shadow)}
+.mside b{color:var(--head)}
+.score{background:var(--zain-deep);color:#fff}
+.score.soon{color:var(--amber-tx);background:var(--amber-bg);border-color:var(--amber-ln)}
+.match.soon{border-color:var(--amber-ln);background:#FFFDF7}
+.mstat.soon{color:var(--amber-tx);background:#FFF3D6;border-color:var(--amber-ln)}
+.mmeta{color:var(--slate)}
+.goals{border-top:1px solid var(--line)}
+.gmin{color:var(--zain-mid)}
+.gtag{color:var(--slate);border-color:var(--line2)}
+.bar .tr{background:#E6EDF5}
+.bar .fl{background:linear-gradient(90deg,var(--zain-deep),var(--zain))}
+.bar .fl.alt{background:linear-gradient(90deg,#D9534F,#F0A19A)}
+.bar .n{color:var(--slate)}
+.tcol .for{background:var(--zain-mid)} .tcol .ag{background:#E8A39C}
+.tlabels{color:var(--slate)}
+select,input[type=text],input[type=password],.squadbox textarea,.fld input,.fld select,.sqrow select{background:#fff;border:1px solid var(--line2);color:var(--head)}
+select:focus,input:focus,.squadbox textarea:focus,.fld input:focus,.fld select:focus{outline-color:var(--zain-mid)}
+label.lb,.fld label{color:var(--slate)}
+.squadbox,.staffrow,.fine,.mrow,.tune,.stat,.head-story{border-color:var(--line)}
+.stat .v{color:var(--head)}
+.head-story .num{color:var(--zain-deep)} .head-story .tx b{color:var(--head)} .head-story .tx span{color:var(--slate)}
+.note{background:var(--amber-bg);border-color:var(--amber-ln);border-right-color:var(--sand);color:var(--mist)} .note b{color:var(--amber-tx)}
+.btn{background:linear-gradient(135deg,var(--zain-deep),var(--zain-mid));color:#fff;box-shadow:0 2px 6px rgba(13,79,146,.25)}
+.btn.ghost{background:#fff;border:1px solid var(--line2);color:var(--zain-deep);box-shadow:none}
+.gbtn{background:#fff;color:#1f1f1f;border:1px solid var(--line2);box-shadow:none}
+.orline i{background:var(--line)} .orline span{color:var(--slate)}
+.logogrid .logocell,.photocell,.prevrow,.subrow{background:#F7FAFD;border-color:var(--line2)}
+.logocell .up,.photocell .up,.subrow .idx{color:var(--zain-mid)}
+.uidbox{background:#F7FAFD;border-color:var(--blue-ln)} .uidbox code{background:#EEF3F9;color:var(--zain-deep)}
+.rng{background:#DCE4EE} .rng::-webkit-slider-thumb{background:var(--zain-mid);border-color:#fff} .rng::-moz-range-thumb{background:var(--zain-mid);border-color:#fff}
+.fine .fval,.tune .trow span{color:var(--slate)}
+.badge.warn{color:var(--amber-tx);border-color:var(--amber-ln);background:#FFF3D6}
+.cnt{color:var(--zain-deep);background:var(--blue-bg);border-color:var(--blue-ln)}
+.cnt.miss{color:var(--amber-tx);background:#FFF3D6} .cnt.off{color:var(--loss);background:#FDECEC;border-color:#F5B5B0}
+.staffrow .sm b{color:var(--head)} .staffrow .sm span,.staffrow .sm code{color:var(--slate)}
+.staffrow button,.mrow button{color:var(--mist);border-color:var(--line2)}
+.sqrow .sqx,.sqtools button{border-color:var(--line2);color:var(--slate)}
+.sqadd button{border-color:var(--blue-ln);color:var(--zain-deep);background:#F0F7FD}
+.addbtn{border-color:var(--blue-ln);color:var(--zain-deep);background:#F0F7FD}
+.subrow .del,.tune .tdel{background:#FDECEC;border-color:#F5B5B0}
+.formerr{background:#FDECEC;border-color:#F5B5B0;color:#8A1F1A}
+.mrow .mm span{color:var(--slate)}
+.pitch .ln{stroke:#9DB0C8} .pitch .goal{stroke:var(--zain-deep)} .pitch .zn{stroke:#B9C6D6}
+.pitch text{stroke:rgba(11,31,58,.55)} .pitch text.sm{fill:var(--slate)}
+.goalsvg .frame{stroke:var(--zain-deep)} .goalsvg .zn{stroke:#B9C6D6} .goalsvg text{stroke:rgba(11,31,58,.5)} .goalsvg text.sm{fill:var(--slate)}
+.seg{border-color:var(--line2);color:var(--slate);background:#fff}
+.seg[aria-pressed="true"]{background:var(--zain-deep);border-color:var(--zain-deep);color:#fff}
+.hlegend{color:var(--slate)} .hlegend .sc{background:linear-gradient(90deg,#DCE8F3,var(--zain),var(--sand))}
+.compbar{border-bottom-color:var(--line)}
+.rchip{background:#fff;border-color:var(--line2)} .rchip .rn{color:var(--head)} .rchip .rs{color:var(--slate)}
+.rchip[aria-pressed="true"]{background:var(--zain-deep);border-color:var(--zain-deep)}
+.rchip[aria-pressed="true"] .rn,.rchip[aria-pressed="true"] .rs{color:#fff}
+.calbar{background:#fff;border:1px solid var(--line);box-shadow:var(--shadow)}
+.calhead b{color:var(--head)}
+.calnav button{background:#EAF1F8;border-color:#CFE0F0;color:var(--zain-deep)}
+.caldow span{color:var(--slate)}
+.cday{background:#F7FAFD;border:1px solid var(--line)}
+.cday .dn{color:var(--head)} .cday .dd{color:var(--zain-mid)}
+.cday.has{border-color:var(--blue-ln);background:var(--blue-bg)}
+.cday[aria-pressed="true"]{background:var(--zain-deep);border-color:var(--zain-deep)}
+.cday[aria-pressed="true"] .dn,.cday[aria-pressed="true"] .dw,.cday[aria-pressed="true"] .dd{color:#fff}
+.cday.soon{border-color:var(--amber-ln);background:var(--amber-bg)} .cday .dd.g{color:var(--amber-tx)}
+.rsum div{background:#fff;border:1px solid var(--line)} .rsum .n{color:var(--head)} .rsum .l{color:var(--slate)}
+.ctag{color:var(--slate)}
+.pav{background:#EEF3F9;box-shadow:inset 0 0 0 1.5px #CFE0F0}
+.pavph{background:#EEF3F9;color:var(--slate);box-shadow:inset 0 0 0 1.5px var(--line2)}
+.toggle input{accent-color:var(--zain-mid)}
+.nextm{background:linear-gradient(135deg,#0D4F92 0%,#0B3B73 55%,#08284F 100%);border-color:transparent;box-shadow:0 10px 26px rgba(13,79,146,.25)}
+.nextm:hover{border-color:transparent;box-shadow:0 14px 30px rgba(13,79,146,.32)}
+.nextm::before{background:radial-gradient(120% 130% at 50% -30%,rgba(46,176,240,.35),transparent 62%)}
+.nextm-top{color:#C9DDF0;border-bottom-color:rgba(255,255,255,.14)}
+.nextm-tag{color:#FFD97A;background:rgba(255,217,122,.14);border-color:rgba(255,217,122,.4)}
+.nextm-tag i{background:#FFD97A;box-shadow:0 0 0 3px rgba(255,217,122,.2)}
+.nextm-team b{color:#fff} .nextm-vs{color:#8ED3FA} .nextm-time{color:#fff} .nextm-cd{color:#FFD97A}
+.nextm-foot{color:#C9DDF0;background:rgba(0,0,0,.18);border-top-color:rgba(255,255,255,.12)} .nextm-foot .go{color:#8ED3FA}
+.fanbar{background:#fff;border-color:var(--line)} .fanbar .fi b{color:var(--head)} .fanbar .fi span{color:var(--slate)}
+.lnk{color:var(--zain-mid)}
+.anonbar{background:var(--amber-bg);border-color:var(--amber-ln);color:var(--amber-tx)} .anonbar .lnk{color:var(--amber-tx)}
+.spark{background:#EEF3F9} .spark i{background:linear-gradient(180deg,var(--zain-mid),#9CC9EC)}
+.lockbar{background:var(--amber-bg);border-color:var(--amber-ln);color:var(--amber-tx)}
+.pm{background:#fff;border-color:var(--line)} .pm .tm{color:var(--head)} .pm .dsh{color:var(--slate)}
+.stp button{border-color:var(--line2);color:var(--zain-deep)} .stp .val{color:var(--head)}
+.bchips .chip{border-color:var(--line2);color:var(--slate);background:#fff}
+.bchips .chip.on{background:var(--zain-deep);border-color:var(--zain-deep);color:#fff}
+table.lb th{background:#EAF1F8;color:var(--zain-deep)} table.lb th,table.lb td{border-bottom-color:var(--line)}
+table.lb tr.me{background:var(--blue-bg)} table.lb tr.me td{color:var(--head)}
+table.lb td.rk{color:var(--slate)} table.lb td.rk.top{color:var(--sand)} table.lb td.pt{color:var(--zain-deep)}
+.brandcard{background:#fff;border:1px solid var(--line);box-shadow:var(--shadow)}
+.brandcard .bt b{color:var(--head)} .brandcard .bt span{color:var(--slate)}
+.hchip{border-color:var(--line2);background:#F7FAFD;color:var(--zain-deep)}
+.hchip:hover{background:var(--blue-bg);border-color:var(--blue-ln)}
+.hchip.wa{border-color:#BFE6D3;background:#EAF8F1;color:#1E7A5A} .hchip.wa:hover{background:#D9F1E5;border-color:#1E9E6A}
+.sitefoot{border-top-color:var(--line);color:var(--slate)}
+.topbar.hero .rail i{background:rgba(255,255,255,.28)}
+.topbar.hero .rail i.a{background:#fff} .topbar.hero .rail i.b{background:#FFD97A}
+@media(max-width:899px){
+  nav.tabs{background:#fff;border-top:1px solid var(--line);box-shadow:0 -4px 14px rgba(11,31,58,.06)}
+  nav.tabs button{color:var(--slate)}
+  nav.tabs button[aria-selected="true"]{color:var(--zain-deep);border-top-color:var(--zain-deep)}
+}
+@media print{ html,body{background:#fff!important} .printonly{border-bottom-color:var(--zain-deep)} }
+
+
+
+
+
+/* ===== v3 official ===== */
+:root{--display:'Alexandria','Readex Pro',system-ui,sans-serif;--ice:#7FE0FF;--navy:#0B1F3A}
+body{background:
+  radial-gradient(70% 40% at 50% 0%,rgba(46,176,240,.10),transparent 70%),
+  repeating-linear-gradient(135deg,rgba(13,79,146,.035) 0 1px,transparent 1px 16px),
+  var(--ink)}
+/* ---- hero ---- */
+.topbar.hero{background:#0D4F92 url(assets/hero/stadium.jpg) center 38%/cover no-repeat}
+.topbar.hero::before{content:"";position:absolute;inset:0;pointer-events:none;
+  background:
+    linear-gradient(to left,rgba(46,176,240,.62) 0%,rgba(24,120,190,.80) 38%,rgba(13,79,146,.90) 70%,rgba(8,40,79,.94) 100%),
+    linear-gradient(180deg,rgba(6,21,41,.25),transparent 40%,rgba(6,21,41,.45) 100%)}
+.topbar.hero::after{content:"";position:absolute;inset:0;left:auto;width:auto;top:0;bottom:0;pointer-events:none;opacity:1;filter:none;
+  background:
+    linear-gradient(112deg,transparent 30%,rgba(255,255,255,.07) 30.3%,rgba(255,255,255,.07) 38%,transparent 38.3%,transparent 50%,rgba(255,255,255,.05) 50.3%,rgba(255,255,255,.05) 54%,transparent 54.3%),
+    repeating-linear-gradient(112deg,rgba(255,255,255,.04) 0 1px,transparent 1px 22px);
+  right:0;left:0}
+.hero-in{min-height:196px;padding-top:calc(18px + env(safe-area-inset-top))}
+.hero-brand{margin-bottom:58px;gap:18px}
+.hero-logo{height:104px;filter:drop-shadow(0 6px 16px rgba(0,0,0,.35))}
+.hero-word{gap:0}
+.hero-kick{display:inline-block;font-style:normal;font-family:var(--display);font-weight:700;font-size:.72rem;letter-spacing:.12em;
+  color:#fff;background:linear-gradient(90deg,rgba(255,255,255,.22),rgba(255,255,255,.08));border:1px solid rgba(255,255,255,.35);
+  padding:3px 12px;border-radius:4px;margin-bottom:8px;width:max-content;clip-path:polygon(6px 0,100% 0,calc(100% - 6px) 100%,0 100%)}
+.hero-word b{font-size:2.9rem;font-weight:900;letter-spacing:-.01em;line-height:1.05;text-shadow:0 3px 14px rgba(6,21,41,.45)}
+.hero-word small{font-size:.86rem;letter-spacing:.06em;margin-top:8px;color:#EAF8FF;font-weight:600}
+.hero-players{height:196px;margin-inline-end:56px;isolation:isolate}
+.hero-players::before{content:"";position:absolute;bottom:0;width:560px;height:150px;left:0;
+  background:radial-gradient(60% 80% at 50% 100%,rgba(127,224,255,.35),transparent 70%);pointer-events:none}
+.hero-players img{height:172px;margin-left:-46px;filter:drop-shadow(0 10px 18px rgba(0,0,0,.45))}
+.hero-players img:nth-child(1){height:178px} .hero-players img:nth-child(2){height:168px} .hero-players img:nth-child(3){height:166px} .hero-players img:nth-child(4){height:188px} .hero-players img:nth-child(5){height:186px;margin-left:-4px;position:relative;z-index:-1}
+.hero-sub{gap:5px}
+.hero-sub button{border-radius:0;clip-path:polygon(9px 0,100% 0,100% 100%,0 100%);padding:11px 22px 11px 26px;font-weight:700;
+  background:rgba(255,255,255,.55);color:var(--zain-deep)}
+.hero-sub button:first-child{clip-path:polygon(9px 0,100% 0,100% 100%,0 100%)}
+.hero-sub button.on{background:#fff}
+.hero-admin{border-radius:6px}
+.topbar.hero .rail{display:none}
+/* ---- nav ---- */
+@media(min-width:900px){
+  nav.tabs{background:linear-gradient(90deg,#0B3F78,#0D4F92 50%,#0B3F78);box-shadow:0 4px 14px rgba(6,21,41,.35);position:sticky;top:0}
+  nav.tabs::after{content:"";position:absolute;left:0;right:0;bottom:0;height:3px;background:linear-gradient(to left,var(--ice),var(--zain) 40%,transparent)}
+  nav.tabs button{font-family:var(--display);font-weight:600;font-size:.9rem;min-height:52px;padding:0 18px;letter-spacing:.01em;position:relative}
+  nav.tabs button[aria-selected="true"]{background:rgba(255,255,255,.09);border-bottom-color:var(--ice)}
+  nav.tabs .in{position:relative}
+  nav.tabs .navbrand{margin-inline-start:auto;display:flex;align-items:center;gap:8px;color:#C9DDF0;font-size:.7rem;padding:0 6px;white-space:nowrap}
+  nav.tabs .navbrand img{height:26px}
+}
+/* ---- results strip ---- */
+.strip{background:var(--navy);color:#fff;border-bottom:1px solid rgba(255,255,255,.08);overflow:hidden}
+.strip:empty{display:none}
+.strip-in{max-width:1180px;margin:0 auto;display:flex;align-items:center;gap:10px;padding:0 20px;height:46px}
+.strip-lb{flex:none;font-family:var(--display);font-weight:700;font-size:.72rem;color:var(--ice);letter-spacing:.06em;
+  padding:4px 10px;border:1px solid rgba(127,224,255,.35);border-radius:4px;clip-path:polygon(5px 0,100% 0,calc(100% - 5px) 100%,0 100%)}
+.strip-sc{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;flex:1;padding:4px 0}
+.strip-sc::-webkit-scrollbar{display:none}
+.strip .rx{flex:none;display:flex;align-items:center;gap:7px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);
+  border-radius:6px;padding:4px 10px;color:#fff;font-size:.74rem;font-weight:600;transition:background .15s}
+.strip .rx:hover{background:rgba(255,255,255,.14)}
+.strip .rx img{width:20px;height:20px;object-fit:contain;background:#fff;border-radius:4px;padding:1px}
+.strip .rx .sc{font-family:var(--display);font-weight:800;font-size:.86rem;color:var(--ice);direction:ltr;unicode-bidi:isolate;
+  background:rgba(127,224,255,.12);padding:0 7px;border-radius:4px;min-width:40px;text-align:center}
+.strip .rx.soon .sc{color:#FFD97A;background:rgba(255,217,122,.12);font-size:.72rem}
+/* ---- crest bar ---- */
+.crestbar{background:#fff;border-bottom:1px solid var(--line);box-shadow:0 2px 8px rgba(11,31,58,.05)}
+.crestbar:empty{display:none}
+.crestbar-in{max-width:1180px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:4px;padding:6px 20px;overflow-x:auto;scrollbar-width:none}
+.crestbar-in::-webkit-scrollbar{display:none}
+.crestbar button{flex:none;width:52px;height:52px;display:grid;place-items:center;border-radius:8px;transition:transform .15s,background .15s}
+.crestbar button img{width:46px;height:46px;object-fit:contain;filter:drop-shadow(0 1px 1px rgba(0,0,0,.15))}
+.crestbar button:hover{transform:translateY(-3px);background:var(--blue-bg)}
+/* ---- headings ---- */
+h2.sec{font-size:1.35rem;font-weight:800;margin:30px 0 14px;gap:12px}
+h2.sec::before{width:12px;height:22px;border-radius:2px;background:linear-gradient(180deg,var(--zain),var(--zain-deep));transform:skewX(-14deg)}
+h2.sec::after{content:"";flex:1;height:1px;background:linear-gradient(to left,var(--line2),transparent)}
+.hint{font-size:.8rem}
+/* ---- cards ---- */
+.card,.match,.calbar{border-radius:14px}
+.kpi{border-radius:12px;padding:16px 16px 18px;clip-path:polygon(0 0,calc(100% - 22px) 0,100% 22px,100% 100%,0 100%);border:0;
+  background:#fff linear-gradient(135deg,rgba(46,176,240,.08),transparent 45%)}
+.kpi::after{height:4px;background:linear-gradient(90deg,var(--zain-deep),var(--zain),var(--ice))}
+.kpi .k{font-family:var(--display);font-weight:600;font-size:.72rem;color:var(--zain-deep);letter-spacing:.03em}
+.kpi .v{font-size:2.3rem;font-weight:900;line-height:1.1;margin-top:4px}
+.kpi .d{font-weight:600}
+.brandcard{position:relative;overflow:hidden;background:var(--navy) url(assets/hero/stadium_dark.jpg) center 40%/cover;border:0;color:#fff;
+  box-shadow:0 10px 26px rgba(11,31,58,.25);padding:18px 20px}
+.brandcard::before{content:"";position:absolute;inset:0;background:linear-gradient(to left,rgba(13,79,146,.55),rgba(11,31,58,.86) 70%)}
+.brandcard>*{position:relative}
+.brandcard .bt b{color:#fff;font-family:var(--display);font-size:1.05rem}
+.brandcard .bt span{color:#BFD8EE}
+.brandcard .hchip{background:rgba(255,255,255,.10);border-color:rgba(255,255,255,.28);color:#fff}
+.brandcard .hchip:hover{background:rgba(255,255,255,.2)}
+.brandcard .hchip.wa{background:rgba(30,158,106,.25);border-color:rgba(30,158,106,.5);color:#BDF3DB}
+.nextm{background:var(--navy) url(assets/hero/stadium_dark.jpg) center 45%/cover;border-radius:18px}
+.nextm::before{background:linear-gradient(135deg,rgba(13,79,146,.88) 0%,rgba(11,31,58,.90) 60%,rgba(6,21,41,.94) 100%),
+  repeating-linear-gradient(112deg,rgba(255,255,255,.03) 0 1px,transparent 1px 18px)}
+.nextm-time{font-size:1.7rem;font-weight:900}
+.nextm .crest.lg{border-radius:50%;box-shadow:0 0 0 3px rgba(255,255,255,.18),0 10px 24px rgba(0,0,0,.45)}
+.btn{border-radius:8px;font-family:var(--display);font-weight:700;letter-spacing:.01em;clip-path:polygon(10px 0,100% 0,calc(100% - 10px) 100%,0 100%)}
+.btn.ghost{clip-path:none}
+/* ---- tables ---- */
+thead th{background:var(--zain-deep);color:#fff;font-family:var(--display);font-weight:600;font-size:.7rem;padding:11px 6px}
+thead th:first-child{border-radius:0 8px 0 0} thead th:last-child{border-radius:8px 0 0 0}
+tbody td{padding:10px 6px}
+tbody tr:hover{background:var(--blue-bg)}
+.teamcell .pos{width:22px;height:22px;border-radius:50%;background:#EAF1F8;color:var(--zain-deep);font-weight:700;font-size:.7rem;display:grid;place-items:center}
+tbody tr.top .pos{background:var(--zain-deep);color:#fff}
+tbody tr.rel .pos{background:#FDECEC;color:var(--loss)}
+tbody tr.top{box-shadow:inset 4px 0 0 var(--zain)}
+tbody tr.rel{box-shadow:inset 4px 0 0 var(--loss)}
+#v-home tbody td:nth-last-child(2){font-family:var(--display);font-weight:800;font-size:1rem;color:var(--zain-deep)}
+.pl{width:22px;height:22px;border-radius:6px;font-size:.66rem}
+/* ---- matches ---- */
+.match{border-right:5px solid var(--zain-deep);box-shadow:var(--shadow);transition:transform .15s,box-shadow .15s}
+.match:hover{transform:translateY(-2px);box-shadow:0 10px 24px rgba(11,31,58,.12)}
+.match.soon{border-right-color:var(--sand)}
+.mhead{padding:14px 16px}
+.mhead .crest{width:40px;height:40px;border-radius:50%}
+.mside b{font-family:var(--display);font-weight:700;font-size:.95rem}
+.score{font-size:1.4rem;padding:4px 18px;border-radius:6px;background:linear-gradient(135deg,var(--navy),var(--zain-deep));
+  clip-path:polygon(8px 0,100% 0,calc(100% - 8px) 100%,0 100%);font-weight:900}
+.score.soon{clip-path:none;font-weight:700}
+.goals{background:#FAFCFE}
+.rsum div{clip-path:polygon(0 0,calc(100% - 14px) 0,100% 14px,100% 100%,0 100%);border:0;background:#fff;box-shadow:var(--shadow)}
+.rsum .n{font-size:1.5rem;font-weight:900;color:var(--zain-deep)}
+.rchip{font-family:var(--display)} .rchip[aria-pressed="true"]{box-shadow:0 6px 14px rgba(13,79,146,.3)}
+.calhead b{font-family:var(--display);font-size:1rem}
+/* ---- players / clubs ---- */
+.head-story .num{font-size:1.8rem;font-weight:900}
+.seg[aria-pressed="true"],.bchips .chip.on{box-shadow:0 4px 12px rgba(13,79,146,.3)}
+.stat .v{font-family:var(--display);font-weight:800}
+/* ---- footer ---- */
+.sitefoot{display:none!important}
+main{padding-bottom:48px}
+.lfoot{position:relative;margin-top:30px;color:#fff;background:var(--navy) url(assets/hero/stadium_dark.jpg) center 30%/cover;
+  clip-path:polygon(0 0,100% 26px,100% 100%,0 100%);padding:54px 20px 26px}
+.lfoot::before{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(11,31,58,.92),rgba(6,21,41,.97)),
+  repeating-linear-gradient(112deg,rgba(255,255,255,.03) 0 1px,transparent 1px 18px)}
+.lfoot::after{content:"";position:absolute;left:0;right:0;top:0;height:5px;background:linear-gradient(to left,var(--ice),var(--zain),var(--zain-deep));
+  clip-path:polygon(0 0,100% 26px,100% 31px,0 5px)}
+.lfoot-in{position:relative;max-width:1180px;margin:0 auto}
+.lfoot-top{display:flex;align-items:center;gap:18px;flex-wrap:wrap}
+.lfoot-logo{height:84px;width:auto}
+.lfoot-tag b{display:block;font-family:var(--display);font-weight:800;font-size:1.25rem}
+.lfoot-tag span{font-size:.8rem;color:#BFD8EE}
+.lfoot-crests{display:flex;flex-wrap:wrap;gap:8px;margin:26px 0 22px;padding:14px 0;border-top:1px solid rgba(255,255,255,.1);border-bottom:1px solid rgba(255,255,255,.1)}
+.lfoot-crests button{width:46px;height:46px;border-radius:50%;background:#fff;display:grid;place-items:center;transition:transform .15s}
+.lfoot-crests button:hover{transform:translateY(-3px)}
+.lfoot-crests img{width:32px;height:32px;object-fit:contain}
+.lfoot-bottom{display:flex;align-items:center;gap:12px;flex-wrap:wrap;font-size:.74rem;color:#BFD8EE}
+.lfoot-bottom img{height:30px}
+.lfoot-bottom .handles{margin-inline-start:auto}
+.lfoot-bottom .hchip{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.25);color:#fff}
+.lfoot-bottom .hchip.wa{background:rgba(30,158,106,.25);border-color:rgba(30,158,106,.5);color:#BDF3DB}
+/* ---- mobile ---- */
+@media(max-width:899px){
+  .hero-in{min-height:150px}
+  .hero-brand{margin-bottom:48px;gap:12px}
+  .hero-logo{height:66px}
+  .hero-word b{font-size:1.6rem}
+  nav.tabs .navbrand{display:none}
+  .hero-kick{font-size:.6rem;padding:2px 9px;margin-bottom:5px}
+  .hero-word small{font-size:.7rem;margin-top:5px}
+  .hero-sub button{padding:9px 16px 9px 20px;font-size:.78rem}
+  .strip-in{padding:0 12px;height:44px}
+  .crestbar-in{justify-content:flex-start;padding:6px 10px}
+  .crestbar button{width:46px;height:46px} .crestbar button img{width:40px;height:40px}
+  .kpi .v{font-size:1.9rem}
+  h2.sec{font-size:1.15rem}
+  .lfoot{padding:46px 16px calc(24px + var(--nav-h))}
+  .lfoot-logo{height:64px}
+}
+/* ===== /v3 official ===== */
+
+
+
+/* ===== v4 teamcolors ===== */
+/* ---- بطاقة المباراة القادمة: تصميم بثّ رسمي بألوان الفريقين ---- */
+.nextm{--hc:#0D4F92;--hc2:#7FE0FF;--ht:#fff;--ac:#0B1F3A;--ac2:#7FE0FF;--at:#fff;
+  background:#0B1F3A url(assets/hero/stadium_dark.jpg) center 45%/cover;border:0;border-radius:18px;padding:0;
+  box-shadow:0 14px 34px rgba(11,31,58,.28)}
+.nextm::before{content:"";position:absolute;inset:0;pointer-events:none;
+  background:linear-gradient(180deg,rgba(11,31,58,.78),rgba(6,21,41,.9)),
+  repeating-linear-gradient(112deg,rgba(255,255,255,.035) 0 1px,transparent 1px 18px)}
+.nextm .side{position:absolute;top:0;bottom:0;pointer-events:none}
+.nextm .side.h{right:0;width:62%;background:linear-gradient(200deg,var(--hc) 0%,color-mix(in srgb,var(--hc) 78%,#000) 100%);
+  clip-path:polygon(0 0,100% 0,100% 100%,14% 100%)}
+.nextm .side.a{left:0;width:62%;background:linear-gradient(160deg,var(--ac) 0%,color-mix(in srgb,var(--ac) 78%,#000) 100%);
+  clip-path:polygon(0 0,86% 0,100% 100%,0 100%)}
+.nextm .side::after{content:"";position:absolute;inset:0;
+  background:repeating-linear-gradient(112deg,rgba(255,255,255,.05) 0 1px,transparent 1px 14px),
+  linear-gradient(180deg,rgba(255,255,255,.12),transparent 40%,rgba(0,0,0,.18))}
+.nextm .side.h::after{clip-path:polygon(0 0,100% 0,100% 100%,14% 100%)}
+.nextm .side.a::after{clip-path:polygon(0 0,86% 0,100% 100%,0 100%)}
+.nextm .side.h::before,.nextm .side.a::before{content:"";position:absolute;top:0;bottom:0;width:10px;background:var(--hc2);opacity:.9}
+.nextm .side.h::before{right:0} .nextm .side.a::before{left:0;background:var(--ac2)}
+.nextm .mid{position:absolute;top:0;bottom:0;left:38%;width:24%;pointer-events:none;
+  background:linear-gradient(180deg,rgba(6,21,41,.55),rgba(6,21,41,.85));
+  clip-path:polygon(24% 0,100% 0,76% 100%,0 100%)}
+.nextm-top{position:relative;z-index:2;justify-content:center;border:0;padding:12px 14px 6px;color:#fff;background:none}
+.nextm-top>span:not(.nextm-tag){font-family:var(--display);font-weight:700;font-size:.78rem;color:#fff;
+  background:rgba(6,21,41,.45);padding:3px 12px;border-radius:4px;clip-path:polygon(6px 0,100% 0,calc(100% - 6px) 100%,0 100%)}
+.nextm-tag{color:#fff;background:rgba(255,255,255,.14);border-color:rgba(255,255,255,.4)}
+.nextm-tag i{background:#FFD97A}
+.nextm-body{position:relative;z-index:2;grid-template-columns:1fr auto 1fr;padding:14px 26px 22px;gap:14px}
+.nextm-team{gap:12px}
+.nextm .crest.lg,.nextm .crest.lg.has-logo{width:104px;height:104px;border-radius:50%;padding:10px;background:#fff;
+  box-shadow:0 0 0 4px rgba(255,255,255,.35),0 0 0 8px rgba(0,0,0,.18),0 14px 30px rgba(0,0,0,.45)}
+.nextm-team:first-child b,.nextm-team:last-child b{color:#fff;text-shadow:0 2px 6px rgba(0,0,0,.55);
+  background:rgba(6,21,41,.42);padding:5px 16px;border-radius:6px;box-shadow:inset 0 0 0 1px rgba(255,255,255,.14);
+  clip-path:polygon(6px 0,100% 0,calc(100% - 6px) 100%,0 100%)}
+.nextm-team b{font-family:var(--display);font-weight:900;font-size:1.5rem;text-shadow:0 2px 10px rgba(0,0,0,.35)}
+.nextm-mid{gap:4px;padding:0 10px;min-width:150px}
+.nextm-vs{font-family:var(--display);font-weight:900;font-size:.9rem;color:#FFD97A;letter-spacing:.3em;margin-inline-start:.3em}
+.nextm-time{font-size:2.6rem;font-weight:900;color:#fff;line-height:1;text-shadow:0 3px 12px rgba(0,0,0,.5)}
+.nextm-cd{font-family:var(--display);font-size:.72rem;color:#0B1F3A;background:#FFD97A;padding:2px 12px;border-radius:999px;font-weight:700}
+.nextm-foot{position:relative;z-index:2;justify-content:center;gap:12px;background:rgba(6,21,41,.72);border-top:1px solid rgba(255,255,255,.12);
+  color:#DCEEFB;font-family:var(--display);font-weight:600;font-size:.78rem;padding:10px 14px}
+.nextm-foot .go{margin-inline-start:0;color:#FFD97A}
+.nextm:hover{transform:translateY(-2px);box-shadow:0 18px 40px rgba(11,31,58,.35)}
+@media(max-width:640px){
+  .nextm .crest.lg,.nextm .crest.lg.has-logo{width:78px;height:78px;padding:7px}
+  .nextm-team b{font-size:1.05rem}
+  .nextm-time{font-size:2rem}
+  .nextm-body{padding:12px 12px 18px;gap:8px}
+  .nextm-mid{min-width:110px;padding:0 4px}
+  .nextm .side.h{width:64%} .nextm .side.a{width:64%} .nextm .mid{left:36%;width:28%}
+}
+/* ---- بطاقات المباريات: حواف بلون الفريقين ---- */
+.match{--hc:var(--zain-deep);--ac:var(--zain-deep);border-right:6px solid var(--hc);border-left:6px solid var(--ac);position:relative}
+.match::before{content:"";position:absolute;left:0;right:0;top:0;height:3px;
+  background:linear-gradient(to left,var(--hc) 0 48%,transparent 48% 52%,var(--ac) 52%);opacity:.9}
+.match.soon{border-right-color:var(--hc);border-left-color:var(--ac)}
+/* ---- بطاقة المشرف: شريط رسمي هادئ ---- */
+.brandcard{background:#fff;color:var(--head);border:1px solid var(--line);box-shadow:var(--shadow);padding:12px 18px;
+  border-radius:12px;position:relative;overflow:hidden}
+.brandcard::before{content:"";position:absolute;inset:auto 0 0 0;top:0;height:4px;
+  background:linear-gradient(to left,#C9A24A,#E8D08A 50%,#C9A24A)}
+.brandcard::after{content:"";position:absolute;inset:0;pointer-events:none;
+  background:repeating-linear-gradient(135deg,rgba(13,79,146,.035) 0 1px,transparent 1px 14px)}
+.brandcard img{height:40px}
+.brandcard .bt b{color:var(--head);font-family:var(--display);font-weight:800;font-size:1rem}
+.brandcard .bt b::after{content:"إعداد وإشراف الإحصائيات";display:block;font-family:var(--body);font-weight:500;font-size:.7rem;color:var(--slate);margin-top:1px}
+.brandcard .hchip{background:#F7FAFD;border-color:var(--line2);color:var(--zain-deep)}
+.brandcard .hchip:hover{background:var(--blue-bg)}
+.brandcard .hchip.wa{background:#EAF8F1;border-color:#BFE6D3;color:#1E7A5A}
+/* ===== /v4 teamcolors ===== */
+
+
+
+
+
+
+
+/* ===== v5 charts3d ===== */
+/* لوحات الرسوم: أسلوب بثّ تلفزيوني داكن مع عمق ثلاثي الأبعاد */
+.card:has(> .bars),.card:has(> .timing),.card:has(> .pitchwrap),.card:has(> .goalwrap),.card:has(> .spark),.card:has(> .segbar + .pitchwrap),.card:has(> .zlist){
+  --cp-bg:#0B1F3A;background:
+    radial-gradient(90% 60% at 50% 0%,rgba(46,176,240,.22),transparent 60%),
+    repeating-linear-gradient(180deg,rgba(255,255,255,.035) 0 1px,transparent 1px 28px),
+    linear-gradient(180deg,#0E2B55,#0B1F3A 60%,#081A31);
+  color:#EAF4FF;border:1px solid rgba(127,224,255,.18);box-shadow:0 14px 30px rgba(11,31,58,.28),inset 0 1px 0 rgba(255,255,255,.08);
+  position:relative;overflow:hidden}
+.card:has(> .bars)::after,.card:has(> .timing)::after,.card:has(> .pitchwrap)::after,.card:has(> .goalwrap)::after,.card:has(> .zlist)::after{
+  content:"";position:absolute;left:0;right:0;top:0;height:3px;background:linear-gradient(to left,var(--ice),var(--zain),transparent);pointer-events:none}
+/* --- أشرطة أفقية ثلاثية الأبعاد --- */
+.card:has(.bars) .bar{grid-template-columns:74px 1fr 42px;gap:10px;margin:2px 0}
+.card:has(.bars) .bar>span:first-child{color:#DCEEFB!important;font-family:var(--display);font-weight:600;font-size:.74rem!important}
+.card:has(.bars) .bar .tr{height:18px;border-radius:4px;background:rgba(0,0,0,.35);box-shadow:inset 0 2px 5px rgba(0,0,0,.55),inset 0 -1px 0 rgba(255,255,255,.06);overflow:visible;position:relative}
+.card:has(.bars) .bar .fl{position:absolute;right:0;top:-3px;height:18px;border-radius:3px;min-width:8px;
+  background:linear-gradient(180deg,#9FEBFF 0%,#3DBCF5 40%,#1878BE 100%);
+  box-shadow:0 4px 0 #0A3A70,0 8px 14px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.75)}
+.card:has(.bars) .bar .fl::after{content:"";position:absolute;inset:0 0 55% 0;border-radius:3px 3px 0 0;background:linear-gradient(180deg,rgba(255,255,255,.45),rgba(255,255,255,0))}
+.card:has(.bars) .bar .fl::before{content:"";position:absolute;top:2px;bottom:-4px;left:-5px;width:5px;background:#0A3A70;transform:skewY(-35deg);border-radius:0 0 0 2px}
+.card:has(.bars) .bar .fl.alt{background:linear-gradient(180deg,#FFB3A8 0%,#EE6B5A 40%,#B8322A 100%);box-shadow:0 4px 0 #6E1B15,0 8px 14px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.7)}
+.card:has(.bars) .bar .fl.alt::before{background:#6E1B15}
+.card:has(.bars) .bar .n{font-family:var(--display);font-weight:800;font-size:.9rem;color:#fff;background:rgba(127,224,255,.14);border:1px solid rgba(127,224,255,.35);
+  border-radius:5px;padding:1px 0;text-align:center;clip-path:polygon(5px 0,100% 0,calc(100% - 5px) 100%,0 100%)}
+.card:has(.bars) .hint,.card:has(.bars) p{color:#BFD8EE}
+.card:has(> .bars) .bars{padding:6px 2px}
+/* --- أعمدة التوقيت ثلاثية الأبعاد --- */
+.card:has(.timing) .timing{height:160px;padding:0 10px 0 6px;gap:12px;
+  background:repeating-linear-gradient(180deg,rgba(255,255,255,.07) 0 1px,transparent 1px 32px);border-bottom:2px solid rgba(127,224,255,.5)}
+.card:has(.timing) .tcol{gap:0}
+.card:has(.timing) .tcol .bx{position:relative;border-radius:0;min-height:3px;margin-right:6px}
+.card:has(.timing) .tcol .bx::before{content:"";position:absolute;left:0;right:0;top:-6px;height:6px;transform:skewX(-45deg);transform-origin:bottom left}
+.card:has(.timing) .tcol .bx::after{content:"";position:absolute;top:-6px;bottom:0;right:-6px;width:6px;transform:skewY(-45deg);transform-origin:top left}
+.card:has(.timing) .tcol .for{background:linear-gradient(90deg,#1878BE,#3DBCF5 60%,#8EE6FF);box-shadow:0 0 18px rgba(46,176,240,.35)}
+.card:has(.timing) .tcol .for::before{background:#B9F0FF}
+.card:has(.timing) .tcol .for::after{background:#0A3A70}
+.card:has(.timing) .tcol .ag{background:linear-gradient(90deg,#B8322A,#EE6B5A 60%,#FFB3A8);border-radius:0}
+.card:has(.timing) .tcol .ag::before{background:#FFD3CC}
+.card:has(.timing) .tcol .ag::after{background:#6E1B15}
+.card:has(.timing) .tlabels{color:#BFD8EE;font-family:var(--display);font-weight:600;font-size:.62rem;margin-top:10px}
+.card:has(.timing) .timing + .tlabels + div{color:#BFD8EE!important}
+/* --- الملعب بمنظور ثلاثي الأبعاد --- */
+.card:has(.pitchwrap) .pitchwrap{max-width:560px;perspective:1100px;padding:0;margin:-34px auto -22px}
+.card:has(.pitchwrap) .pitch{transform:rotateX(34deg);transform-origin:50% 50%;border-radius:8px;overflow:visible;
+  background:
+    repeating-linear-gradient(180deg,rgba(255,255,255,.05) 0 10%,transparent 10% 20%),
+    linear-gradient(180deg,#2F9E5F,#217A47 70%,#1B6B3D);
+  outline:3px solid rgba(255,255,255,.55);outline-offset:-1px;
+  box-shadow:0 30px 40px -10px rgba(0,0,0,.6),0 0 0 8px rgba(11,31,58,.6),0 0 0 9px rgba(127,224,255,.25);
+  filter:drop-shadow(0 18px 16px rgba(0,0,0,.35))}
+.card:has(.pitchwrap) .pitch .ln{stroke:rgba(255,255,255,.85);stroke-width:.7}
+.card:has(.pitchwrap) .pitch .goal{stroke:#FFD97A;stroke-width:1.8}
+.card:has(.pitchwrap) .pitch .zn{stroke:rgba(255,255,255,.45);stroke-width:.35;filter:drop-shadow(0 1px 1px rgba(0,0,0,.35))}
+.card:has(.pitchwrap) .pitch text{fill:#fff;stroke:rgba(6,21,41,.85);stroke-width:1.2;font-size:5px}
+.card:has(.pitchwrap) .pitch text.sm{fill:#EAF4FF;stroke:none;font-size:3px}
+.card:has(.pitchwrap) .hlegend{color:#DCEEFB;margin-top:38px;position:relative;z-index:1}
+.card:has(.pitchwrap) .hlegend .sc{background:linear-gradient(90deg,rgba(127,224,255,.25),#5FB2E8,#E9B949);box-shadow:0 2px 6px rgba(0,0,0,.4)}
+.card:has(.pitchwrap) .seg{background:rgba(255,255,255,.08);color:#DCEEFB;border-color:rgba(255,255,255,.22)}
+.card:has(.pitchwrap) .seg[aria-pressed="true"]{background:#2EB0F0;border-color:#2EB0F0;color:#0B1F3A}
+.card:has(.pitchwrap) .compbar{border-bottom-color:rgba(255,255,255,.12)}
+.card:has(.pitchwrap) .zlist .bar>span:first-child{color:#DCEEFB!important}
+.card:has(.pitchwrap) .zlist .bar .tr{height:16px;border-radius:4px;background:rgba(0,0,0,.35);box-shadow:inset 0 2px 5px rgba(0,0,0,.55);overflow:visible;position:relative}
+.card:has(.pitchwrap) .zlist .bar .fl{position:absolute;right:0;top:-3px;height:16px;border-radius:3px;min-width:8px;
+  background:linear-gradient(180deg,#9FEBFF 0%,#3DBCF5 40%,#1878BE 100%);box-shadow:0 4px 0 #0A3A70,0 8px 14px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.75)}
+.card:has(.pitchwrap) .zlist .bar .n{font-family:var(--display);font-weight:800;color:#fff;background:rgba(127,224,255,.14);border:1px solid rgba(127,224,255,.35);border-radius:5px;text-align:center}
+.card:has(.pitchwrap) .hint,.card:has(.pitchwrap) p{color:#BFD8EE}
+/* --- المرمى بمنظور --- */
+.card:has(.goalwrap) .goalwrap{max-width:460px;perspective:900px;padding:8px 0 0}
+.card:has(.goalwrap) .goalsvg{transform:rotateX(16deg);transform-origin:50% 100%;border-radius:6px;
+  background:
+    repeating-linear-gradient(90deg,rgba(255,255,255,.10) 0 1px,transparent 1px 7px),
+    repeating-linear-gradient(0deg,rgba(255,255,255,.10) 0 1px,transparent 1px 7px),
+    linear-gradient(180deg,rgba(6,21,41,.2),rgba(6,21,41,.55));
+  box-shadow:0 20px 30px -10px rgba(0,0,0,.6);filter:drop-shadow(0 10px 10px rgba(0,0,0,.3))}
+.card:has(.goalwrap) .goalsvg .frame{stroke:#fff;stroke-width:2.6;filter:drop-shadow(0 0 4px rgba(255,255,255,.6))}
+.card:has(.goalwrap) .goalsvg .zn{stroke:rgba(255,255,255,.35);stroke-width:.5}
+.card:has(.goalwrap) .goalsvg text{fill:#fff;stroke:rgba(6,21,41,.85);stroke-width:1.6;font-size:8px}
+.card:has(.goalwrap) .goalsvg text.sm{fill:#EAF4FF;stroke:none;font-size:4.2px}
+.card:has(.goalwrap) .goalsvg line{stroke:rgba(255,255,255,.7)!important}
+.card:has(.goalwrap) .card{background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.14);box-shadow:none;color:#EAF4FF}
+.card:has(.goalwrap) .card .stat{border-color:rgba(255,255,255,.12);color:#DCEEFB}
+.card:has(.goalwrap) .card .stat .v{color:#fff}
+/* --- أعمدة التوقعات الصغيرة --- */
+.card:has(.spark) .spark{background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.1);height:84px;
+  box-shadow:inset 0 2px 6px rgba(0,0,0,.5)}
+.card:has(.spark) .spark i{background:linear-gradient(180deg,#9FEBFF,#3DBCF5 40%,#1878BE);box-shadow:0 3px 0 #0A3A70,inset 0 1px 0 rgba(255,255,255,.7);border-radius:2px 2px 0 0}
+.card:has(.spark) .hint,.card:has(.spark) p,.card:has(.spark) span{color:#DCEEFB}
+@media(max-width:640px){
+  .card:has(.bars) .bar{grid-template-columns:64px 1fr 36px}
+  .card:has(.pitchwrap) .pitch{transform:rotateX(26deg)}
+  .card:has(.timing) .timing{height:130px}
+}
+/* ===== /v5 charts3d ===== */
+
+
+
+/* ===== v7 timeline+gauges ===== */
+.bars[data-3d]{display:none!important}
+/* ---- خط زمن المباراة (0' → 90'+) ---- */
+.tl{direction:ltr;position:relative;padding:34px 18px 30px;margin:6px 0 0}
+.tl-halves{display:flex;gap:6px;font-family:var(--display);font-weight:700;font-size:.7rem;color:#8ED3FA;letter-spacing:.06em;margin-bottom:30px}
+.tl-halves span{flex:1;text-align:center;position:relative;padding-bottom:6px}
+.tl-halves span::after{content:"";position:absolute;left:8%;right:8%;bottom:0;height:2px;background:linear-gradient(90deg,transparent,rgba(127,224,255,.6),transparent)}
+.tl-track{position:relative;height:14px;border-radius:8px;
+  background:linear-gradient(90deg,#0A3A70,#1878BE 50%,#0A3A70);box-shadow:inset 0 2px 4px rgba(0,0,0,.5),0 0 18px rgba(46,176,240,.25)}
+.tl-track::before{content:"";position:absolute;inset:0;border-radius:8px;
+  background:repeating-linear-gradient(90deg,transparent 0 calc(100%/8 - 1px),rgba(255,255,255,.35) calc(100%/8 - 1px) calc(100%/8))}
+.tl-ht{position:absolute;top:-8px;bottom:-8px;left:50%;width:3px;background:#FFD97A;border-radius:2px;box-shadow:0 0 10px rgba(255,217,122,.8)}
+.tl-ht::after{content:"HT";position:absolute;top:-20px;left:50%;transform:translateX(-50%);font:700 .6rem var(--display);color:#FFD97A}
+.tl-segs{display:grid;grid-template-columns:repeat(8,1fr);position:absolute;left:18px;right:18px;top:64px;height:120px}
+.tl-seg{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.tl-seg .bub{--sz:30px;width:var(--sz);height:var(--sz);border-radius:50%;display:grid;place-items:center;position:relative;
+  font-family:var(--display);font-weight:900;color:#fff;font-size:calc(var(--sz)*.42);
+  background:radial-gradient(circle at 35% 30%,#BDF1FF,#3DBCF5 45%,#0D4F92 100%);
+  box-shadow:0 0 0 3px rgba(127,224,255,.25),0 0 22px rgba(46,176,240,.6),0 10px 18px rgba(0,0,0,.45);
+  transition:transform .2s}
+.tl-seg .bub::before{content:"";position:absolute;top:-16px;left:50%;width:2px;height:14px;background:rgba(127,224,255,.55);transform:translateX(-50%)}
+.tl-seg .bub:hover{transform:scale(1.08)}
+.tl-seg .bub.zero{background:rgba(255,255,255,.06);box-shadow:inset 0 0 0 2px rgba(127,224,255,.35);color:#8ED3FA;font-weight:600}
+.tl-seg .bub.max{background:radial-gradient(circle at 35% 30%,#FFF4CF,#FFD97A 45%,#B8780C 100%);box-shadow:0 0 0 3px rgba(255,217,122,.3),0 0 26px rgba(255,217,122,.65),0 10px 18px rgba(0,0,0,.45)}
+.tl-seg .bub.alt{background:radial-gradient(circle at 35% 30%,#FFD8D2,#EE6B5A 45%,#8E1B3A 100%);box-shadow:0 0 0 3px rgba(238,107,90,.25),0 0 22px rgba(238,107,90,.55),0 10px 18px rgba(0,0,0,.45)}
+.tl-seg .lb{position:absolute;bottom:-4px;font-family:var(--display);font-weight:600;font-size:.66rem;color:#DCEEFB;white-space:nowrap}
+.tl-seg .lb b{color:#8ED3FA;font-weight:600}
+.tl-seg.x .lb{color:#FFD97A}
+.tl-ticks{display:grid;grid-template-columns:repeat(8,1fr);margin-top:6px;font-family:var(--display);font-size:.58rem;color:rgba(220,238,251,.6)}
+.tl-ticks span{text-align:center}
+.tl-wrap{min-height:210px;position:relative}
+/* ---- بلاطات المؤشرات الدائرية ---- */
+.gauges{display:grid;grid-template-columns:repeat(auto-fill,minmax(132px,1fr));gap:12px;padding:8px 2px 4px}
+.gg{--p:0;--c:#3DBCF5;--c2:#8EE6FF;position:relative;display:flex;flex-direction:column;align-items:center;gap:8px;padding:14px 8px 12px;
+  background:linear-gradient(180deg,rgba(255,255,255,.07),rgba(255,255,255,.02));border:1px solid rgba(127,224,255,.16);border-radius:12px;
+  clip-path:polygon(0 0,calc(100% - 14px) 0,100% 14px,100% 100%,0 100%)}
+.gg .ring{position:relative;width:86px;height:86px;border-radius:50%;
+  background:conic-gradient(from -90deg,var(--c2) 0,var(--c) calc(var(--p)*1%),rgba(255,255,255,.08) calc(var(--p)*1%) 100%);
+  -webkit-mask:radial-gradient(circle,transparent 0 30px,#000 31px 43px,transparent 44px);mask:radial-gradient(circle,transparent 0 30px,#000 31px 43px,transparent 44px);
+  filter:drop-shadow(0 0 8px color-mix(in srgb,var(--c) 60%,transparent))}
+.gg .core{position:absolute;top:14px;width:86px;height:86px;display:grid;place-items:center;pointer-events:none}
+.gg .core b{font-family:var(--display);font-weight:900;font-size:1.55rem;color:#fff;line-height:1}
+.gg .core small{font-family:var(--display);font-size:.62rem;color:#8ED3FA;font-weight:600;margin-top:2px}
+.gg .lbl{font-family:var(--display);font-weight:600;font-size:.72rem;color:#DCEEFB;text-align:center;line-height:1.25;min-height:2.5em;display:flex;align-items:center}
+.gg .lbl.ltr{direction:ltr}
+.gg.max{--c:#FFD97A;--c2:#FFF1C2;border-color:rgba(255,217,122,.4);background:linear-gradient(180deg,rgba(255,217,122,.14),rgba(255,255,255,.02))}
+.gg.max .core b{color:#FFE8A8}
+.gg.alt{--c:#EE6B5A;--c2:#FFB3A8}
+.gg .rk{position:absolute;top:8px;right:10px;font-family:var(--display);font-weight:800;font-size:.62rem;color:#0B1F3A;background:#8ED3FA;
+  width:18px;height:18px;border-radius:50%;display:grid;place-items:center}
+.gg.max .rk{background:#FFD97A}
+@media(max-width:640px){
+  .tl{padding:30px 10px 26px}
+  .tl-segs{left:10px;right:10px}
+  .tl-seg .lb{font-size:.56rem}
+  .gauges{grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:8px}
+  .gg .ring,.gg .core{width:72px;height:72px}
+  .gg .ring{-webkit-mask:radial-gradient(circle,transparent 0 25px,#000 26px 36px,transparent 37px);mask:radial-gradient(circle,transparent 0 25px,#000 26px 36px,transparent 37px)}
+  .gg .core b{font-size:1.3rem}
+}
+/* ===== /v7 timeline+gauges ===== */
+
+/* ===== v9: crests — no clipping box, uniform size, centred ===== */
+.crest.has-logo{overflow:visible;background:transparent!important;box-shadow:none;padding:0;border-radius:0}
+.crest.has-logo img{width:100%;height:100%;object-fit:contain;object-position:center;transform:none!important;
+  filter:drop-shadow(0 1px 2px rgba(0,0,0,.18))}
+.crest{width:38px;height:38px}
+.crest.lg{width:66px;height:66px}
+.mhead .crest{width:46px;height:46px}
+.nextm .crest.lg,.nextm .crest.lg.has-logo{width:112px;height:112px;padding:10px;border-radius:50%;background:#fff!important;overflow:visible;
+  box-shadow:0 0 0 4px rgba(255,255,255,.35),0 0 0 8px rgba(0,0,0,.18),0 14px 30px rgba(0,0,0,.45)}
+.nextm .crest.lg img{filter:none}
+@media(max-width:640px){.nextm .crest.lg,.nextm .crest.lg.has-logo{width:80px;height:80px;padding:10px}}
+/* ===== /v9 ===== */
+
+/* ===== v10: match-card details — readable meta line & scorers ===== */
+.mmeta{font-size:.86rem;color:#34517A;font-weight:600;gap:8px;padding:2px 16px 12px;align-items:center;line-height:1.5}
+.mmeta>span:not(.mstat):not(.ctag){color:#34517A}
+.mmeta>span:first-of-type:not(.mstat),.mmeta .mstat+span{color:var(--head);font-weight:700;font-family:var(--display)}
+.mstat{font-size:.72rem;padding:3px 10px}
+.mstat.soon{color:#7A4B00;background:#FFF1CC;border-color:#F0C24B}
+.ctag{font-size:.78rem;color:#34517A;font-weight:700}
+.goals{font-size:.9rem;gap:8px;padding:12px 16px}
+.gline{gap:10px;color:var(--head);font-weight:600}
+.gmin{font-size:.86rem;font-weight:800;color:var(--zain-deep);min-width:42px}
+.gline .crest{width:26px;height:26px}
+@media(max-width:640px){.mmeta{font-size:.8rem}.goals{font-size:.84rem}}
+/* ===== /v10 ===== */
+
+/* ===== v11: assist pill separated from scorer ===== */
+.gassist{display:inline-flex;align-items:center;gap:6px;margin-inline-start:14px;padding:2px 10px 2px 8px;border-radius:999px;
+  background:#EEF4FB;border:1px solid #CFDDEE;color:#34517A;font-size:.78rem;font-weight:600;white-space:nowrap;vertical-align:middle;
+  position:relative}
+.gassist::before{content:"";width:1px;height:16px;background:#C5D3E4;position:absolute;inset-inline-start:-8px;top:50%;transform:translateY(-50%)}
+.gassist i{font-style:normal;font-size:.68rem;font-weight:700;color:#1878BE;background:#fff;border-radius:999px;padding:0 6px;border:1px solid #BFD9F0}
+@media(max-width:640px){.gassist{margin-inline-start:8px;padding:1px 8px 1px 6px;font-size:.72rem}}
+/* ===== /v11 ===== */
+
+/* ===== v12: white-edge clubs (الجهراء، الكويت) keep a hairline so the stripe stays visible ===== */
+.match[data-hw]{box-shadow:var(--shadow),inset -1px 0 0 #C9D6E6}
+.match[data-aw]{box-shadow:var(--shadow),inset 1px 0 0 #C9D6E6}
+.match[data-hw][data-aw]{box-shadow:var(--shadow),inset -1px 0 0 #C9D6E6,inset 1px 0 0 #C9D6E6}
+/* ===== /v12 ===== */
+
+/* ===== v13: match meta as chips ===== */
+.mmeta{gap:8px;padding:4px 16px 14px;align-items:center}
+.mmeta>span{display:inline-flex;align-items:center;gap:6px;line-height:1;white-space:nowrap}
+.mdate{font-family:var(--display);font-weight:700;color:var(--head);font-size:.9rem;margin-inline-end:4px;direction:ltr;unicode-bidi:isolate}
+.mdate em{font-style:normal;color:#fff;background:var(--zain-deep);padding:4px 8px;border-radius:5px;font-size:.8rem;margin-left:8px}
+.mround{background:#0B1F3A;color:#fff;font-weight:700;font-size:.74rem;padding:5px 11px;border-radius:5px;clip-path:polygon(5px 0,100% 0,calc(100% - 5px) 100%,0 100%)}
+.mvenue,.mcomp,.mgoals{background:#EEF4FB;border:1px solid #CFDDEE;color:#34517A;font-weight:600;font-size:.76rem;padding:4px 10px;border-radius:999px}
+.mvenue::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--zain-mid,#1878BE);flex:none}
+.mcards{gap:4px;padding:3px 6px;border:1px solid #E1E8F1;border-radius:6px;background:#fff}
+.mcards b{display:inline-flex;align-items:center;gap:5px;font-weight:800;font-size:.8rem;color:var(--head);padding:0 5px}
+.mcards b+b{border-inline-start:1px solid #E1E8F1}
+.mcards .cardpill{width:9px;height:13px;border-radius:2px;display:inline-block}
+.mcards .cardpill.y{background:#F5C400} .mcards .cardpill.r{background:#E23B3B}
+.mmeta .mstat{margin-inline-end:2px}
+@media(max-width:640px){.mmeta{gap:6px}.mdate{font-size:.82rem}.mround,.mvenue,.mcomp,.mgoals{font-size:.7rem;padding:3px 8px}}
+/* ===== /v13 ===== */
+
+/* ===== v14: calmer meta — round & venue as separated text, pin icon for venue ===== */
+.mround,.mvenue,.mcomp,.mgoals{background:none;border:0;border-radius:0;clip-path:none;padding:0 0 0 12px;margin:0;
+  color:#34517A;font-weight:600;font-size:.82rem;border-inline-start:1px solid #D5DEE9;padding-inline-start:12px;padding-inline-end:0}
+.mround{color:var(--zain-deep);font-weight:800;font-family:var(--display)}
+.mround::before{display:none}
+.mvenue::before{content:"";width:13px;height:13px;border-radius:0;background:#34517A;flex:none;transform:none;
+  -webkit-mask:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path d='M12 2a7 7 0 0 0-7 7c0 5.2 7 13 7 13s7-7.8 7-13a7 7 0 0 0-7-7zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5z'/></svg>") center/contain no-repeat;
+  mask:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path d='M12 2a7 7 0 0 0-7 7c0 5.2 7 13 7 13s7-7.8 7-13a7 7 0 0 0-7-7zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5z'/></svg>") center/contain no-repeat}
+.mmeta{gap:10px}
+.mdate{margin-inline-end:2px}
+@media(max-width:640px){.mround,.mvenue,.mcomp,.mgoals{font-size:.76rem;padding-inline-start:8px}}
+/* ===== /v14 ===== */
+
+/* ===== v15: split goal timeline ===== */
+.tl{position:relative;direction:rtl;border-top:1px solid var(--line);background:#FAFCFE;padding:10px 16px 14px}
+.tl-head{display:flex;justify-content:space-between;font-family:var(--display);font-weight:700;font-size:.74rem;color:#6B7F9A;padding:0 4px 8px;text-transform:none}
+.tl-row{display:grid;grid-template-columns:1fr 64px 1fr;align-items:center;position:relative;min-height:54px}
+.tl-row::before{content:"";position:absolute;left:50%;top:0;bottom:0;width:2px;background:#D9E3EF;transform:translateX(-50%)}
+.tl-row:first-of-type::before{top:50%} .tl-mark+.tl-row::before{top:0}
+.tl-min{position:relative;z-index:1;display:flex;justify-content:center}
+.tl-min span{display:inline-flex;align-items:center;justify-content:center;min-width:44px;height:28px;padding:0 8px;border-radius:999px;background:var(--zain-deep);color:#fff;
+  font-family:var(--display);font-weight:800;font-size:.8rem;direction:ltr;box-shadow:0 0 0 4px #FAFCFE,0 4px 10px rgba(11,31,58,.18)}
+.tl-side{display:flex;padding:6px 0}
+.tl-side.r{justify-content:flex-start;padding-inline-end:12px}   /* right column = home (RTL) */
+.tl-side.l{justify-content:flex-end;padding-inline-start:12px}
+.tl-ev{display:flex;align-items:center;gap:10px;max-width:100%}
+.tl-ev.a{flex-direction:row-reverse}
+.tl-card{display:flex;flex-direction:column;gap:2px;min-width:0}
+.tl-ev.a .tl-card{text-align:left;align-items:flex-start}
+.tl-name{font-family:var(--display);font-weight:800;font-size:.92rem;color:var(--head);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;gap:6px}
+.tl-og{font-style:normal;font-size:.66rem;font-weight:700;color:#B42318;background:#FEE4E2;border-radius:4px;padding:1px 6px}
+.tl-sub{font-size:.76rem;color:#5B6F8A;font-weight:600}
+.tl-det{font-size:.7rem;color:#8A9BB3;font-weight:500}
+.tl-score{flex:none;font-family:var(--display);font-size:.8rem;color:#8A9BB3;direction:ltr;font-variant-numeric:tabular-nums;white-space:nowrap;
+  background:#fff;border:1px solid #E1E8F1;border-radius:6px;padding:3px 8px}
+.tl-score b{color:var(--zain-deep);font-weight:800}
+.tl-mark{position:relative;display:flex;justify-content:center;padding:6px 0;z-index:1}
+.tl-mark::before{content:"";position:absolute;left:50%;top:0;bottom:0;width:2px;background:#D9E3EF;transform:translateX(-50%)}
+.tl-mark span{position:relative;background:#E8EFF7;color:#34517A;font-family:var(--display);font-weight:700;font-size:.72rem;padding:4px 14px;border-radius:999px;box-shadow:0 0 0 4px #FAFCFE}
+.tl-mark span b{color:var(--head);font-weight:800;direction:ltr;unicode-bidi:isolate}
+.tl-mark.end span{background:var(--head);color:#fff} .tl-mark.end span b{color:#FFD97A}
+.tl-mark.end::before{bottom:50%}
+@media(max-width:640px){.tl{padding:8px 10px 12px}.tl-row{grid-template-columns:1fr 52px 1fr;min-height:48px}.tl-name{font-size:.82rem}.tl-score{display:none}.tl-min span{min-width:38px;height:24px;font-size:.72rem}}
+/* ===== /v15 ===== */
+
+/* ===== v16: goal timing — mirrored bars (scored up / conceded down), pro match-centre style ===== */
+.card:has(> .gt){background:#fff;color:var(--head)}
+.card:has(> .gt)::after{display:none}
+.gt{direction:rtl}
+.gt-legend{display:flex;gap:18px;align-items:center;font-family:var(--display);font-weight:600;font-size:.78rem;color:#5B6F8A;margin:0 0 6px;padding-bottom:8px;border-bottom:1px solid #EEF2F7}
+.gt-legend span{display:inline-flex;align-items:center;gap:7px} .gt-legend b{color:var(--head);font-weight:800}
+.gt-legend i{width:12px;height:12px;border-radius:3px;display:inline-block}
+.gt-legend .f i{background:var(--zain-deep)} .gt-legend .a i{background:#D9453B}
+.gt-grid{display:grid;grid-template-columns:repeat(8,1fr);gap:6px;direction:ltr}
+.gt-col{display:grid;grid-template-rows:120px 30px 120px;align-items:end;border-radius:8px;transition:background .15s}
+.gt-col:hover{background:#F3F7FC}
+.gt-up,.gt-dn{display:flex;justify-content:center;align-items:flex-end;height:100%;position:relative}
+.gt-dn{align-items:flex-start}
+.gt-up::after,.gt-dn::before{content:"";position:absolute;left:0;right:0;height:1px;background:#E1E8F1}
+.gt-up::after{bottom:0} .gt-dn::before{top:0}
+.gt-bar{width:min(62%,44px);min-height:4px;border-radius:6px 6px 2px 2px;position:relative;display:flex;justify-content:center;transition:height .3s}
+.gt-bar.f{background:linear-gradient(180deg,#2A8FD6,#0D4F92);box-shadow:0 4px 12px rgba(13,79,146,.22)}
+.gt-bar.a{background:linear-gradient(180deg,#B8322A,#E0644F);border-radius:2px 2px 6px 6px;box-shadow:0 4px 12px rgba(217,69,59,.2)}
+.gt-bar b{position:absolute;font-family:var(--display);font-weight:800;font-size:.82rem;color:var(--head);white-space:nowrap}
+.gt-bar.f b{bottom:calc(100% + 4px)} .gt-bar.a b{top:calc(100% + 4px)}
+.gt-lab{display:flex;align-items:center;justify-content:center;font-family:var(--display);font-weight:700;font-size:.7rem;color:#34517A;background:#EEF3F9;border-radius:6px;margin:2px 0}
+.gt-col.best .gt-lab{background:var(--zain-deep);color:#fff}
+.gt-col.worst .gt-lab{box-shadow:inset 0 0 0 1px #E0644F}
+.gt-col.best.worst .gt-lab{background:var(--zain-deep);color:#fff;box-shadow:inset 0 0 0 1px #E0644F}
+.gt-note{margin-top:12px;font-size:.78rem;color:#5B6F8A;font-weight:600;border-top:1px solid #E1E8F1;padding-top:10px}
+.gt-note b{color:var(--head);font-weight:800}
+@media(max-width:640px){.gt-col{grid-template-rows:84px 26px 84px}.gt-grid{gap:3px}.gt-lab{font-size:.58rem}.gt-bar b{font-size:.72rem}.gt-bar{width:min(70%,30px)}}
+/* ===== /v16 ===== */
+
+/* ===== v17: goal timing — analyst report strip (Wyscout/SoccerStats style) ===== */
+.card:has(> .gs){background:#fff;color:var(--head)} .card:has(> .gs)::after{display:none}
+.gs{direction:rtl;font-family:var(--display)}
+.gs-halves{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px}
+.gs-half{display:flex;align-items:baseline;gap:6px;background:#F3F7FC;border:1px solid #E1E8F1;border-radius:8px;padding:8px 12px;font-size:.74rem;color:#5B6F8A;font-weight:600}
+.gs-half span{margin-inline-end:auto;color:#34517A;font-weight:700}
+.gs-half b{font-size:1.05rem;font-weight:800} .gs-half em{font-style:normal;font-size:.66rem}
+.gs-half b.f{color:var(--zain-deep)} .gs-half b.a{color:#C8342B}
+.gs-half.tot{background:var(--head);border-color:var(--head);color:#C9DDF0} .gs-half.tot span{color:#fff} .gs-half.tot b.f{color:#8ED3FA} .gs-half.tot b.a{color:#FF9B8F}
+.gs-strip{display:flex;gap:4px;align-items:stretch}
+.gs-seg{flex:3;min-width:0;border-radius:8px;border:1px solid #E1E8F1;background:#F8FAFD;padding:8px 4px 6px;display:flex;flex-direction:column;align-items:center;gap:4px;position:relative}
+.gs-seg.narrow{flex:1.6}
+.gs-seg.pos{background:#E8F1FB;border-color:#BFD9F0} .gs-seg.neg{background:#FDECEA;border-color:#F3C1BB} .gs-seg.even{background:#F3F7FC}
+.gs-seg.best{box-shadow:inset 0 0 0 2px var(--zain-deep)} .gs-seg.worst{box-shadow:inset 0 0 0 2px #E0644F}
+.gs-p{font-size:.66rem;font-weight:700;color:#5B6F8A;letter-spacing:.02em}
+.gs-n{display:flex;align-items:center;gap:6px;direction:ltr}
+.gs-n b{font-size:1.15rem;font-weight:800;line-height:1} .gs-n b.f{color:var(--zain-deep)} .gs-n b.a{color:#C8342B}
+.gs-n i{width:1px;height:16px;background:#C9D6E6;transform:skewX(-18deg)}
+.gs-seg.none .gs-n b{color:#B8C4D4}
+.gs-d{font-size:.66rem;font-weight:800;color:#34517A;background:#fff;border:1px solid #E1E8F1;border-radius:999px;padding:1px 7px;min-width:26px;text-align:center}
+.gs-seg.pos .gs-d{color:var(--zain-deep);border-color:#BFD9F0} .gs-seg.neg .gs-d{color:#C8342B;border-color:#F3C1BB} .gs-seg.none .gs-d{color:#B8C4D4}
+.gs-ht{flex:none;width:22px;display:flex;align-items:center;justify-content:center;font-size:.6rem;font-weight:800;color:#fff;background:var(--head);border-radius:6px;writing-mode:vertical-rl;transform:rotate(180deg)}
+.gs-axis{position:relative;display:flex;justify-content:space-between;margin:14px 2px 0;padding-top:10px;border-top:2px solid #D9E3EF;font-size:.62rem;color:#8A9BB3;font-weight:700;direction:rtl}
+.gs-axis span{direction:ltr}
+.gs-axis .mk{position:absolute;top:-2px;width:2px;height:12px;transform:translateX(50%)}
+.gs-axis .mk.f{background:var(--zain-deep)} .gs-axis .mk.a{background:#C8342B}
+.gs-axis .mk b{position:absolute;top:-20px;right:50%;transform:translateX(50%);font-size:.62rem;padding:1px 6px;border-radius:4px;color:#fff;white-space:nowrap;direction:ltr}
+.gs-axis .mk.f b{background:var(--zain-deep)} .gs-axis .mk.a b{background:#C8342B;top:-20px}
+.gs-axis .mk.a{top:-2px}
+.gs-foot{display:flex;flex-wrap:wrap;gap:8px 16px;margin-top:22px;font-size:.74rem;color:#5B6F8A;font-weight:600;border-top:1px solid #EEF2F7;padding-top:10px}
+.gs-foot b{color:var(--head);font-weight:800}
+.gs-foot .k{display:inline-flex;align-items:center;gap:6px;font-weight:700} .gs-foot .k::before{content:"";width:10px;height:10px;border-radius:3px}
+.gs-foot .k.f::before{background:var(--zain-deep)} .gs-foot .k.a::before{background:#C8342B}
+@media(max-width:640px){.gs-halves{grid-template-columns:1fr;gap:6px}.gs-strip{flex-wrap:wrap}.gs-seg{flex:1 1 20%}.gs-seg.narrow{flex:1 1 20%}.gs-ht{display:none}.gs-n b{font-size:1rem}}
+/* ===== /v17 ===== */
+
+/* ===== v18: goal timing — simple heat grid (two rows, one number per cell) ===== */
+.card:has(> .gh){background:#fff;color:var(--head)} .card:has(> .gh)::after{display:none}
+.gh{direction:rtl;font-family:var(--display);display:grid;gap:6px}
+.gh-row{display:grid;grid-template-columns:56px repeat(8,1fr) 64px;gap:6px;align-items:center}
+.gh-lab{font-weight:800;font-size:.9rem} .gh-lab.f{color:var(--zain-deep)} .gh-lab.a{color:#C8342B}
+.gh-c{height:52px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:1.15rem;color:#fff;border:1px solid transparent}
+.gh-c.l0{background:#F3F6FA;color:#B8C4D4;font-weight:600;border-color:#E6ECF3}
+.gh-c.f.l1{background:#BFD9F0;color:#0B1F3A} .gh-c.f.l2{background:#7FB6E3;color:#0B1F3A} .gh-c.f.l3{background:#2A8FD6} .gh-c.f.l4{background:#0D4F92}
+.gh-c.a.l1{background:#F6CFCA;color:#3A1410} .gh-c.a.l2{background:#EC9D94;color:#3A1410} .gh-c.a.l3{background:#DF5F52} .gh-c.a.l4{background:#B8322A}
+.gh-c.top{box-shadow:0 0 0 2px #fff,0 0 0 4px currentColor}
+.gh-tot{height:52px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:1.15rem;background:#0B1F3A;color:#fff}
+.gh-tot.a{background:#0B1F3A;color:#FF9B8F} .gh-tot.f{color:#8ED3FA}
+.gh-tot.lbl{background:none;color:#5B6F8A;font-size:.72rem;font-weight:700;height:auto}
+.gh-p{text-align:center;font-size:.72rem;font-weight:700;color:#5B6F8A}
+@media(max-width:640px){.gh-row{grid-template-columns:40px repeat(8,1fr) 44px;gap:3px}.gh-c,.gh-tot{height:40px;font-size:.95rem;border-radius:6px}.gh-p{font-size:.56rem}.gh-lab{font-size:.78rem}}
+/* ===== /v18 ===== */
+
+/* ===== v19: share board (replaces v7 gauges) ===== */
+.sb{direction:rtl;padding:6px 2px 2px}
+.sb-strip{display:flex;height:14px;border-radius:7px;overflow:hidden;gap:2px;background:rgba(255,255,255,.06);margin:4px 0 14px}
+.sb-strip i{display:block;min-width:3px;transition:flex .3s}
+.sb-rows{display:grid;gap:6px}
+.sb-rows.two{grid-template-columns:1fr 1fr;column-gap:18px}
+.sb-row{display:grid;grid-template-columns:22px 10px 1fr auto auto;align-items:center;gap:10px;padding:8px 10px;border-radius:8px;
+  background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06)}
+.sb-row.top{background:rgba(255,217,122,.12);border-color:rgba(255,217,122,.4)}
+.sb-rk{font-family:var(--display);font-weight:800;font-size:.7rem;color:#8ED3FA;text-align:center}
+.sb-row.top .sb-rk{color:#FFD97A}
+.sb-dot{width:10px;height:10px;border-radius:3px;display:inline-block}
+.sb-lbl{font-family:var(--display);font-weight:600;font-size:.84rem;color:#DCEEFB;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sb-lbl.ltr{direction:ltr;text-align:right}
+.sb-row.top .sb-lbl{color:#fff;font-weight:700}
+.sb-pct{font-family:var(--display);font-weight:600;font-size:.72rem;color:#8ED3FA;min-width:36px;text-align:left;direction:ltr}
+.sb-num{font-family:var(--display);font-weight:900;font-size:1.25rem;color:#fff;min-width:34px;text-align:left;direction:ltr;line-height:1}
+.sb-row.top .sb-num{color:#FFE8A8;font-size:1.45rem}
+@media(max-width:640px){.sb-rows.two{grid-template-columns:1fr}.sb-row{padding:7px 8px;gap:8px}.sb-num{font-size:1.1rem}.sb-lbl{font-size:.78rem}}
+/* ===== /v19 ===== */
+
+/* ===== v20: share board polish ===== */
+.sb-head{display:grid;grid-template-columns:repeat(4,auto);justify-content:space-between;gap:10px 18px;align-items:end;margin:2px 2px 12px;padding-bottom:10px;border-bottom:1px solid rgba(255,255,255,.1)}
+.sb-kpi{display:flex;align-items:baseline;gap:7px;min-width:0}
+.sb-kpi b{font-family:var(--display);font-weight:900;font-size:1.35rem;color:#fff;line-height:1;direction:ltr;font-variant-numeric:tabular-nums}
+.sb-kpi span{font-family:var(--display);font-weight:600;font-size:.72rem;color:#8ED3FA;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:180px}
+.sb-kpi.lead b{color:#FFD97A}
+.sb-strip{height:22px;border-radius:6px;gap:2px;margin:0 0 14px;box-shadow:inset 0 1px 0 rgba(255,255,255,.08)}
+.sb-strip i{display:flex;align-items:center;justify-content:center;min-width:3px}
+.sb-strip i.rest{background:repeating-linear-gradient(135deg,rgba(255,255,255,.18) 0 4px,rgba(255,255,255,.08) 4px 8px)}
+.sb-strip i b{font-family:var(--display);font-weight:800;font-size:.66rem;color:#0B1F3A;direction:ltr;letter-spacing:.02em}
+.sb-strip i.rest b{color:#DCEEFB}
+.sb-rows{gap:0} .sb-rows.two{column-gap:28px}
+.sb-row{background:none;border:0;border-radius:0;border-bottom:1px solid rgba(255,255,255,.08);padding:9px 6px;grid-template-columns:24px 8px 1fr 44px 40px;transition:background .15s}
+.sb-row:hover{background:rgba(255,255,255,.05)}
+.sb-row.top{background:linear-gradient(90deg,transparent,rgba(255,217,122,.12));border-bottom-color:rgba(255,217,122,.35)}
+.sb-row.nil{opacity:.45}
+.sb-rk{width:22px;height:22px;border-radius:5px;background:rgba(255,255,255,.07);display:grid;place-items:center;color:#C9DDF0;font-size:.68rem}
+.sb-row.top .sb-rk{background:#FFD97A;color:#0B1F3A}
+.sb-dot{width:8px;height:8px;border-radius:2px}
+.sb-lbl{font-size:.86rem;letter-spacing:.005em}
+.sb-pct{font-variant-numeric:tabular-nums;color:#9CC6EA;text-align:right}
+.sb-num{font-variant-numeric:tabular-nums;text-align:right;font-size:1.2rem}
+.sb-row.top .sb-num{font-size:1.35rem}
+@media(max-width:640px){.sb-head{grid-template-columns:1fr 1fr;justify-content:start}.sb-kpi b{font-size:1.1rem}.sb-strip{height:18px}.sb-strip i b{font-size:.58rem}}
+/* ===== /v20 ===== */
+
+/* ===== v21: share board — restrained typography, single hue, no badges, no truncation ===== */
+.sb,.sb *{font-family:var(--body)!important}
+.sb-head{gap:8px 22px;margin-bottom:14px}
+.sb-kpi b{font-weight:700;font-size:1.3rem;letter-spacing:-.01em}
+.sb-kpi span{font-weight:500;font-size:.74rem;color:#A9C4DF;max-width:220px}
+.sb-kpi.lead b{color:#A9E4FF}
+.sb-strip{height:20px;border-radius:4px;gap:1px;background:rgba(255,255,255,.05);box-shadow:none}
+.sb-strip i b{font-weight:600;font-size:.64rem;letter-spacing:0}
+.sb-strip i.s0 b,.sb-strip i.s1 b{color:#0B1F3A} .sb-strip i.s2 b,.sb-strip i.s3 b,.sb-strip i.s4 b,.sb-strip i.s5 b{color:#fff}
+.sb-strip i.rest{background:rgba(255,255,255,.14)} .sb-strip i.rest b{color:#DCEEFB}
+.sb-rows{gap:0} .sb-rows.two{grid-template-columns:1fr;column-gap:32px}
+@media(min-width:900px){.sb-rows.two{grid-template-columns:1fr 1fr}}
+.sb-row{grid-template-columns:20px 1fr 48px 44px;gap:12px;padding:10px 4px;border-bottom:1px solid rgba(255,255,255,.09);background:none!important}
+.sb-row.top{border-bottom-color:rgba(169,228,255,.5);box-shadow:inset 3px 0 0 #A9E4FF}
+.sb-dot{display:none}
+.sb-rk{width:auto;height:auto;background:none!important;border-radius:0;color:#7F9BBA;font-weight:500;font-size:.74rem;text-align:center}
+.sb-row.top .sb-rk{color:#A9E4FF;font-weight:700}
+.sb-lbl{white-space:normal;overflow:visible;text-overflow:clip;line-height:1.35;font-weight:500;font-size:.88rem;color:#E6EEF7}
+.sb-row.top .sb-lbl{font-weight:700;color:#fff}
+.sb-pct{font-weight:500;font-size:.78rem;color:#9FB8D3}
+.sb-num{font-weight:700;font-size:1.1rem;color:#fff}
+.sb-row.top .sb-num{font-size:1.2rem;color:#A9E4FF}
+.sb-row.nil{opacity:.4}
+@media(max-width:640px){.sb-row{grid-template-columns:18px 1fr 42px 36px;gap:8px}.sb-lbl{font-size:.8rem}}
+/* ===== /v21 ===== */
+
+/* ===== v22: strip — every category is a labelled segment ===== */
+.sb-strip{height:24px;gap:1px;overflow:visible}
+.sb-strip i{min-width:34px;flex-basis:0;border-radius:2px}
+.sb-strip i b{display:block;font-weight:600;font-size:.62rem;line-height:1;direction:ltr}
+.sb-strip i.lt b{color:#0B1F3A} .sb-strip i.dk b{color:#E6EEF7}
+@media(max-width:640px){.sb-strip{height:20px}.sb-strip i{min-width:28px}.sb-strip i b{font-size:.54rem}}
+/* ===== /v22 ===== */
+
+/* ===== v23: admin — squads & match list with crests and club colours ===== */
+.squadbox{--cc:#0D4F92;--cc2:#7FE0FF;position:relative;padding:14px 16px 16px;border:1px solid var(--line);border-radius:12px;margin-bottom:12px;background:#fff;box-shadow:var(--shadow);overflow:hidden}
+.squadbox:last-of-type{border:1px solid var(--line)}
+.squadbox::after{content:"";position:absolute;top:0;bottom:0;right:0;width:6px;background:linear-gradient(180deg,var(--cc),color-mix(in srgb,var(--cc) 70%,#000))}
+.squadbox .sqhead{display:flex;align-items:center;gap:10px;margin:0 0 10px;padding:0 0 10px;border-bottom:1px solid var(--line)}
+.squadbox .sqhead .crest{width:34px;height:34px}
+.squadbox .sqhead b{font-family:var(--display);font-weight:800;font-size:1.02rem;color:var(--head)}
+.squadbox .sqhead .cnt{background:var(--cc);color:#fff;border:0;font-weight:700;font-size:.68rem;padding:3px 9px;border-radius:999px}
+.squadbox .sqhead .cnt.miss{background:#FFF1CC;color:#7A4B00}
+.sqrow{grid-template-columns:50px 1fr 104px 34px;gap:8px;margin-bottom:6px}
+.sqrow .sqno{width:44px;height:38px;border-radius:50%;background:var(--cc);color:#fff;font-family:var(--display);font-weight:800;font-size:.9rem;border:2px solid var(--cc2);text-align:center;padding:0}
+.sqrow .sqno::placeholder{color:rgba(255,255,255,.6)}
+.sqrow .sqno.dup{background:#C8342B;border-color:#fff}
+.sqrow .sqn{font-weight:600;color:var(--head);background:#F7F9FC;border:1px solid var(--line)}
+.sqrow .sqn:focus{background:#fff}
+.sqrow select.sqp{background:#F7F9FC;border:1px solid var(--line);font-weight:700;font-family:var(--display);color:var(--head);border-inline-start:4px solid #B8C4D4}
+.sqrow.pg-G select.sqp{border-inline-start-color:#E8A317} .sqrow.pg-D select.sqp{border-inline-start-color:#1F6FB2}
+.sqrow.pg-M select.sqp{border-inline-start-color:#1E9E5A} .sqrow.pg-F select.sqp{border-inline-start-color:#C8342B}
+.sqrow.nopos select.sqp{border-color:#F0C24B;background:#FFF9EA}
+.sqrow .sqx{border-radius:8px;background:#fff}
+.sqtools button{background:#fff;border:1px solid var(--line);color:#34517A;font-weight:600;border-radius:8px}
+.sqadd{grid-template-columns:50px 1fr 104px 84px;gap:8px;margin-top:10px;padding-top:10px;border-top:1px dashed var(--line)}
+.sqadd .sqnewno{border-radius:50%;width:44px;height:38px;padding:0;text-align:center;font-weight:700}
+.sqadd button{background:var(--cc);color:#fff;border:0;font-weight:700;border-radius:9px}
+/* match list */
+.adm-matches{padding:8px 10px}
+.mrow.adm{--hc:#0D4F92;--ac:#0B1F3A;display:grid;grid-template-columns:1fr auto auto;gap:12px;align-items:center;padding:10px 14px;margin:6px 0;border:1px solid var(--line);border-radius:10px;background:#fff;position:relative;box-shadow:var(--shadow);overflow:hidden}
+.mrow.adm::before,.mrow.adm::after{content:"";position:absolute;top:0;bottom:0;width:5px}
+.mrow.adm::before{right:0;background:var(--hc)}
+.mrow.adm::after{left:0;background:var(--ac)}
+.am-teams{display:flex;align-items:center;gap:12px;min-width:0}
+.am-t{display:inline-flex;align-items:center;gap:8px;min-width:0}
+.am-t b{font-family:var(--display);font-weight:700;color:var(--head);font-size:.9rem;white-space:nowrap}
+.am-t .crest{width:30px;height:30px}
+.am-t.a{flex-direction:row-reverse}
+.am-score{font-family:var(--display);font-weight:800;font-size:.95rem;color:#fff;background:var(--head);padding:4px 12px;border-radius:6px;direction:ltr;min-width:58px;text-align:center;clip-path:polygon(6px 0,100% 0,calc(100% - 6px) 100%,0 100%)}
+.am-score.soon{background:#FFF1CC;color:#7A4B00}
+.am-meta{display:flex;gap:8px;flex-wrap:wrap;font-size:.74rem;color:#5B6F8A;font-weight:600;align-items:center}
+.am-meta span+span::before{content:"";display:inline-block;width:1px;height:10px;background:#D5DEE9;margin-inline-end:8px;vertical-align:middle}
+.am-meta .am-r{color:var(--zain-deep);font-weight:800}
+.am-btns{display:flex;gap:6px}
+.am-btns button{background:#fff;border:1px solid var(--line);color:#34517A;font-weight:700;border-radius:8px;padding:6px 12px}
+.am-btns button.dl{color:#C8342B;border-color:#F3C1BB}
+@media(max-width:760px){.mrow.adm{grid-template-columns:1fr;gap:8px}.am-btns{justify-content:flex-end}}
+/* ===== /v23 ===== */
+
+/* ===== v24: league goal-timing grid on a light card ===== */
+.card:has(.viz7 .gh1){background:#fff;color:var(--head)} .card:has(.viz7 .gh1)::after{display:none}
+.gh1 .gh-row{grid-template-columns:72px repeat(8,1fr) 72px}
+.gh1 .gh-lab{font-size:.84rem}
+@media(max-width:640px){.gh1 .gh-row{grid-template-columns:48px repeat(8,1fr) 46px}}
+/* ===== /v24 ===== */
+
+/* ===== v25: substitutions on the split timeline ===== */
+.tl-row.sub{min-height:44px}
+.tl-min.sub span{background:#fff;color:var(--head);border:1.5px solid #C9D6E6;box-shadow:0 0 0 4px #FAFCFE;font-weight:700}
+.tl-ev.sub .tl-card{gap:3px}
+.tl-sub-in,.tl-sub-out{display:flex;align-items:center;gap:6px;font-size:.82rem;font-weight:600;color:var(--head)}
+.tl-sub-out{color:#7F8FA6;font-weight:500}
+.tl-sub-in i,.tl-sub-out i{width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;flex:none}
+.tl-sub-in i{border-bottom:8px solid #1E9E5A}
+.tl-sub-out i{border-top:8px solid #D9453B}
+.tl-ev.sub.a .tl-card{align-items:flex-start}
+/* ===== /v25 ===== */
 </style>
 </head>
 <body>
 
-<header class="topbar">
-  <div class="topbar-in">
-    <img class="leaguemark" id="leagueMark" alt="دوري زين الممتاز">
-    <div class="brand"><b>دوري زين الممتاز</b><span id="seasonLbl">2026/2027</span></div>
-    <div class="spacer"></div>
-    <button class="iconbtn" id="adminBtn" title="دخول المدير" aria-label="دخول المدير">⚙</button>
+<header class="topbar hero">
+  <div class="hero-in">
+    <div class="hero-brand">
+      <img class="hero-logo" src="assets/hero/zain-logo-white.png" alt="دوري زين الممتاز">
+      <span class="hero-word"><i class="hero-kick">دوري زين الممتاز</i><small>الموسم <span id="seasonLbl">2026/2027</span></small></span>
+    </div>
+    <div class="hero-players" aria-hidden="true">
+      <img src="assets/hero/qadsia_12.png" alt="">
+      <img src="assets/hero/arabi_77.png" alt="">
+      <img src="assets/hero/kuwait_26.png" alt="">
+      <img src="assets/hero/salmiya_9.png" alt="">
+      <img src="assets/hero/kazma_10.png" alt="">
+    </div>
+    <button class="iconbtn hero-admin" id="adminBtn" title="دخول المدير" aria-label="دخول المدير">⚙</button>
+    <div class="hero-sub" role="group" aria-label="أقسام الموقع">
+      <button class="on" data-go="home">الإحصائيات</button>
+      <button data-go="fantasy">فانتازي</button>
+      <button data-go="predict">التوقعات</button>
+    </div>
   </div>
+  <img class="leaguemark" id="leagueMark" alt="" hidden>
   <div class="rail" id="rail"></div>
 </header>
 
@@ -619,6 +1572,12 @@ table.lb td.pt{font-family:var(--display);font-weight:700;color:var(--sky);
     <button role="tab" data-v="fantasy" id="fantasyTab" aria-selected="false" style="display:none"><span class="ic">◆</span>فانتازي</button>
   </div>
 </nav>
+<!-- v3:strips -->
+<div class="strip" id="resStrip" aria-label="نتائج آخر جولة"></div>
+<div class="crestbar" id="crestBar" aria-label="الأندية"></div>
+<!-- /v3:strips -->
+
+
 
 <div class="printonly" id="printHead"></div>
 <div id="toast" role="status" aria-live="polite"></div>
@@ -635,6 +1594,20 @@ table.lb td.pt{font-family:var(--display);font-weight:700;color:var(--sky);
   <section class="view" id="v-admin"></section>
   <div class="sitefoot" id="siteFoot"></div>
 </main>
+<!-- v3:footer -->
+<footer class="lfoot" id="lfoot">
+  <div class="lfoot-in">
+    <div class="lfoot-top">
+      <img class="lfoot-logo" src="assets/hero/zain-logo-white.png" alt="دوري زين الممتاز">
+      <div class="lfoot-tag"><b>إحصائيات دوري زين الممتاز</b><span>موسم 2026/2027 · أرقام المباريات والأهداف واللاعبين وجدول الترتيب</span></div>
+    </div>
+    <div class="lfoot-crests" id="footCrests"></div>
+    <div class="lfoot-bottom" id="footBottom"></div>
+  </div>
+</footer>
+<!-- /v3:footer -->
+
+
 
 <script>
 /* ================= البيانات — مستخرجة من ملف الاستوديو التحليلي ================= */
@@ -1270,6 +2243,7 @@ function applyData(d, source){
   applyComp();
   DATA_UPDATED = d.updated || new Date().toISOString();
   DATA_BY = d.updatedBy || "";
+  CUR_STAMP = stampOf(d);   /* v27 */
   DATA_SOURCE  = source || "ملف بيانات";
   const mx = ALL.matches.length ? Math.max(...ALL.matches.map(m=>m.round)) : 0;
   if(!/الجولة/.test(LASTUPDATE)) LASTUPDATE = `الجولة ${mx}`;
@@ -1293,8 +2267,10 @@ function downloadJSON(){
   setTimeout(()=>URL.revokeObjectURL(u),4000);
 }
 async function persistData(){
-  await localSet("zain_data", JSON.stringify(dataObject()));
-  const r = await fbSaveSeason();
+  const obj=dataObject();
+  CUR_STAMP = LASTSTAMP = stampOf(obj);   /* v27:rebase — النسخة المكتوبة هي المرجع الآن */
+  await localSet("zain_data", JSON.stringify(obj));
+  const r = await fbSaveSeason(obj);
   if(r===true) pushBackup();     /* بلا انتظار حتى لا يبطئ الحفظ */
   return r;
 }
@@ -1603,14 +2579,37 @@ async function fbLoad(docId){
   try{ const d=await fbDb.collection("seasons").doc(docId).get(); return d.exists?d.data():null; }
   catch(e){ FBSTATE="تعذّرت القراءة من السحابة"; return null; }
 }
-async function fbSaveSeason(){
+async function fbSaveSeason(obj){
   if(!fbDb || !isAdmin) return false;
-  const r = await withTimeout(fbDb.collection("seasons").doc(seasonId()).set(dataObject()), 9000);
+  const r = await withTimeout(fbDb.collection("seasons").doc(seasonId()).set(obj||dataObject()), 9000);
   if(r==="ok"){ SYNCMSG=""; return true; }
   if(r==="timeout"){ SYNCMSG="الاتصال بطيء — حُفظ محلياً وسيُرسل تلقائياً عند عودة الشبكة."; return "pending"; }
   SYNCMSG="تعذّر الحفظ: "+((r.err&&(r.err.code||r.err.message))||"خطأ غير معروف"); return false;
 }
 let SEASON_UNSUB=null, LASTSTAMP="", PENDING_REMOTE=null;
+/* v27:rebase — طابع النسخة الموجودة في الذاكرة الآن (آخر ما طُبّق أو كُتب) */
+let CUR_STAMP="";
+function stampOf(d){ return ((d&&d.updated)||"")+"|"+((d&&d.updatedBy)||""); }
+/* قبل أي حفظ: نجلب أحدث وثيقة من السحابة ونبني التعديل فوقها.
+   كانت كل كتابة تستبدل وثيقة الموسم كاملة بنسخة الجهاز، فإذا حفظ عضوان في وقت متقارب
+   محا الثاني تشكيلة وتبديلات الأول، ثم أُعيد تطبيق النسخة القديمة المعلّقة على الشاشة
+   بعد الحفظ فبدا وكأن التعديل لم يُحفظ. keep(): يحفظ ما لا يجوز أن يمسحه التحديث
+   (مثل كشوفات يُحرَّرها المستخدم الآن) ويعيد دالة لاسترجاعه. */
+async function rebaseOnCloud(keep){
+  let d = PENDING_REMOTE; PENDING_REMOTE=null;
+  if(fbDb){
+    const fresh = await Promise.race([ fbLoad(seasonId()), new Promise(r=>setTimeout(()=>r(null), 6000)) ]);
+    if(fresh) d = fresh;
+  }
+  if(!d || !d.clubs || !d.matches) return {ok:true, changed:false};
+  const st = stampOf(d);
+  if(st===CUR_STAMP) return {ok:true, changed:false};
+  const restore = keep ? keep() : null;
+  applyData(d, "السحابة (قبل الحفظ)");
+  if(restore) restore();
+  LASTSTAMP = st;
+  return {ok:true, changed:true, by:d.updatedBy||""};
+}
 /* استماع حيّ لوثيقة الموسم: أي حفظ من أي عضو يظهر عند الجميع فوراً بلا تحديث للصفحة */
 function watchSeason(){
   if(!fbDb) return;
@@ -1631,6 +2630,7 @@ function watchSeason(){
 function applyRemote(d){
   const mine=(FBUSER&&FBUSER.email)||"";
   applyData(d,"السحابة (تحديث حيّ)");
+  if(!EDIT) renderMatchAdmin();   /* v27: قائمة المباريات في لوحة التحكم تتحدّث أيضاً */
   if(d.updatedBy && d.updatedBy!==mine) toast(`وصل تحديث من ${d.updatedBy}`,"ok");
 }
 function flushRemote(){
@@ -1639,28 +2639,6 @@ function flushRemote(){
 /* لقطة وصلت أثناء التحرير صارت أقدم من حفظنا — تطبيقها يتراجع عن عملنا */
 function dropStaleRemote(){ PENDING_REMOTE=null; }
 
-/* ===== حماية من تضارب المحرّرين =====
-   بيانات الموسم مستند واحد يُكتب كاملاً، فلو حفظ محرّر ثانٍ بعد آخر
-   مزامنة لنا كتبنا نسختنا القديمة فوق عمله ومحوناه. لذلك نسحب أحدث
-   نسخة ونبني تعديلنا عليها قبل الكتابة مباشرة. */
-async function rebaseOnCloud(){
-  if(!fbDb) return {ok:true, changed:false};
-  try{
-    const s = await Promise.race([
-      fbDb.collection("seasons").doc(seasonId()).get(),
-      new Promise(r=>setTimeout(()=>r(null), 7000))
-    ]);
-    if(!s || !s.exists) return {ok:true, changed:false};   /* بلا اتصال: نكمل بما عندنا */
-    const d = s.data();
-    if(!d || !d.clubs || !d.matches) return {ok:true, changed:false};
-    const stamp = (d.updated||"")+"|"+(d.updatedBy||"");
-    if(stamp === LASTSTAMP) return {ok:true, changed:false};
-    LASTSTAMP = stamp;
-    applyData(d, "السحابة (مزامنة قبل الحفظ)");
-    dropStaleRemote();
-    return {ok:true, changed:true, by:d.updatedBy||""};
-  }catch(e){ return {ok:true, changed:false}; }
-}
 async function fbSaveStaff(){
   if(!fbDb || !isOwner) return false;
   const r = await withTimeout(fbDb.collection("seasons").doc("staff")
@@ -2071,6 +3049,7 @@ function removeMatchByKey(key){
 }
 
 async function saveMatch(){
+  toast("جارٍ حفظ المباراة…","busy",true);
   FORMERR = validateEdit();
   if(FORMERR){ renderMatchAdmin(); return; }
   /* نبني على أحدث نسخة سحابية حتى لا نمحو ما أدخله محرّر آخر بيننا */
@@ -2228,11 +3207,14 @@ function renderMatchAdmin(){
     box.innerHTML = `
       <button class="btn" data-act="new">+ إضافة مباراة جديدة</button>
       <h2 class="sec">المباريات المسجّلة (${list.length})</h2>
-      <div class="card pad">${list.length?list.map(m=>`<div class="mrow">
-        <div class="mm"><b>${esc(m.home)} ${isUpcoming(m)?"مقابل":`${m.hg} - ${m.ag}`} ${esc(m.away)}${isUpcoming(m)?' <span class="mstat soon">لم تبدأ</span>':""}</b>
-          <span>الجولة ${m.round} · ${esc(compOf(m))} · ${esc(m.date||"بلا تاريخ")}${m.venue?" · "+esc(m.venue):""}</span></div>
-        <button data-edit="${esc(mkey(m))}">تعديل</button>
-        <button class="dl" data-rm="${esc(mkey(m))}">حذف</button>
+      <div class="card pad adm-matches">${list.length?list.map(m=>`<div class="mrow adm" style="${clubVars(m.home).replace(/--cc/g,"--hc")};${clubVars(m.away).replace(/--cc/g,"--ac")}">
+        <div class="am-teams">
+          <span class="am-t h">${crest(m.home)}<b>${esc(m.home)}</b></span>
+          <span class="am-score${isUpcoming(m)?" soon":""}">${isUpcoming(m)?(m.time?esc(m.time):"—"):`${m.hg} - ${m.ag}`}</span>
+          <span class="am-t a">${crest(m.away)}<b>${esc(m.away)}</b></span>
+        </div>
+        <div class="am-meta">${isUpcoming(m)?'<span class="mstat soon">لم تبدأ</span>':""}<span class="am-r">الجولة ${m.round}</span><span>${esc(compOf(m))}</span><span dir="ltr">${esc(m.date||"بلا تاريخ")}</span>${m.venue?`<span>${esc(m.venue)}</span>`:""}</div>
+        <div class="am-btns"><button data-edit="${esc(mkey(m))}">تعديل</button><button class="dl" data-rm="${esc(mkey(m))}">حذف</button></div>
       </div>`).join(""):'<span style="color:var(--slate)">لا مباريات بعد.</span>'}</div>`;
   }
   box.querySelectorAll("[data-k]").forEach(el=>{
@@ -2284,7 +3266,7 @@ function renderMatchAdmin(){
     if(m){ EDIT=loadEdit(m); FORMERR=""; renderMatchAdmin(); } });
   box.querySelectorAll("[data-rm]").forEach(b=>b.onclick=async()=>{
     if(!confirm("حذف هذه المباراة وكل أهدافها وبطاقاتها وركلاتها؟")) return;
-    await rebaseOnCloud();
+    await rebaseOnCloud();   /* v27 */
     removeMatchByKey(b.dataset.rm);
     stampComp(ALL); applyComp(); await persistData();
     paintRail(); renderAll(); renderMatchAdmin(); });
@@ -2388,7 +3370,7 @@ function exportPDF(title){
   $("#printHead").innerHTML =
     `<img src="${BRAND}" alt="${esc(OWNER)}">
      <div style="flex:1">
-       <div style="font-family:var(--display);font-weight:700;font-size:1.1rem;color:#fff">${esc(title)}</div>
+       <div style="font-family:var(--display);font-weight:700;font-size:1.1rem;color:var(--head)">${esc(title)}</div>
        <div style="font-size:.72rem;color:#A9D8F5">دوري زين الممتاز · ${SEASON} · ${esc(LASTUPDATE)}</div>
      </div>
      <div style="text-align:left;font-size:.7rem;color:#E9B949;direction:ltr">${esc(HANDLES)}<br>
@@ -2616,7 +3598,7 @@ function renderHome(){
       <td><div class="teamcell"><span class="pos">${i+1}</span>${crest(r.c)}<b>${esc(r.c)}</b></div></td>
       <td>${r.P}</td><td>${r.W}</td><td>${r.D}</td><td>${r.L}</td>
       <td>${r.GF}</td><td>${r.GA}</td><td>${r.GD>0?"+":""}${r.GD}</td>
-      <td style="color:#fff;font-weight:700">${r.Pts}</td><td>${formPills(r.form)}</td></tr>`).join("")}
+      <td style="color:var(--head);font-weight:700">${r.Pts}</td><td>${formPills(r.form)}</td></tr>`).join("")}
     </tbody></table></div></div>
   <p class="hint">${mw(played)} أُقيمت${soon?` · ${soon} لم تبدأ بعد ولا تُحتسب في الجدول`:""} · الترتيب بالنقاط ثم فارق الأهداف ثم الأهداف المسجلة.</p>
 
@@ -2641,6 +3623,55 @@ function renderMatches(){
     return (b.round-a.round) || String(b.date).localeCompare(String(a.date));
   });
 
+  /* v15: FotMob-style split timeline — home goals on the right, away on the left, minute badge on the centre line */
+  function goalsTimeline(m,gs){
+    const subs=(typeof matchSubs==="function")?matchSubs(m):[];
+    if(!gs.length && !subs.length) return "";
+    const ev=[...gs.map(g=>({t:"g",m:+g.m||0,x:+g.x||0,g})),
+              ...subs.map(sb=>({t:"s",m:absMinute(sb.h,sb.m),x:0,sb,half:+sb.h||1}))]
+      .sort((a,b)=>(a.m-b.m)||(a.x-b.x)||(a.t==="g"?-1:1));
+    let h=0,a=0; const rows=[]; let htDone=false;
+    ev.forEach(e=>{
+      const club = e.t==="g" ? e.g.sc : e.sb.club;
+      const isH = club===m.home;
+      const afterHT = e.t==="g" ? (e.m>45 && !(e.m===45 && e.x)) : (e.half>=2);
+      if(!htDone && afterHT){ htDone=true; rows.push(`<div class="tl-mark"><span>الشوط الأول <b dir="ltr">${h} - ${a}</b></span></div>`); }
+      if(e.t==="s"){
+        const sb=e.sb;
+        const sbody=`<div class="tl-ev sub${isH?" h":" a"}">
+          <div class="tl-card">
+            ${sb.in?`<div class="tl-sub-in"><i></i>${esc(sb.in)}</div>`:""}
+            ${sb.out?`<div class="tl-sub-out"><i></i>${esc(sb.out)}</div>`:""}
+          </div>
+        </div>`;
+        rows.push(`<div class="tl-row sub${isH?" home":" away"}">
+          <div class="tl-side r">${isH?sbody:""}</div>
+          <div class="tl-min sub"><span>${e.m}'</span></div>
+          <div class="tl-side l">${isH?"":sbody}</div>
+        </div>`);
+        return;
+      }
+      const g=e.g;
+      if(isH) h++; else a++;
+      const og = g.bp==="هدف عكسي";
+      const body=`<div class="tl-ev${isH?" h":" a"}">
+          <div class="tl-card">
+            <div class="tl-name">${esc(g.p)}${og?`<i class="tl-og">هدف عكسي</i>`:""}</div>
+            ${g.a?`<div class="tl-sub">صناعة: ${esc(g.a)}</div>`:""}
+            ${g.det?`<div class="tl-det">${esc(g.det)}</div>`:""}
+          </div>
+          <div class="tl-score" dir="ltr">${isH?`<b>${h}</b> - ${a}`:`${h} - <b>${a}</b>`}</div>
+        </div>`;
+      rows.push(`<div class="tl-row${isH?" home":" away"}">
+        <div class="tl-side r">${isH?body:""}</div>
+        <div class="tl-min"><span>${minLabel(g)}</span></div>
+        <div class="tl-side l">${isH?"":body}</div>
+      </div>`);
+    });
+    if(!htDone) rows.push(`<div class="tl-mark"><span>الشوط الأول <b dir="ltr">${h} - ${a}</b></span></div>`);
+    rows.push(`<div class="tl-mark end"><span>النهاية <b dir="ltr">${m.hg??h} - ${m.ag??a}</b></span></div>`);
+    return `<div class="tl"><div class="tl-head"><span>${esc(m.home)}</span><span>${esc(m.away)}</span></div>${rows.join("")}</div>`;
+  }
   const matchCards = list.map(m=>{
     const gs=matchGoals(m);
     const mc=CARDS.filter(x=>x.r===m.round && (x.club===m.home||x.club===m.away));
@@ -2654,19 +3685,14 @@ function renderMatches(){
       </div>
       <div class="mmeta">
         ${soon?'<span class="mstat soon">لم تبدأ</span>':live?'<span class="mstat live">جارية الآن</span>':""}
-        <span>${esc(m.date)}${m.time?` — ${esc(m.time)}`:""}</span><span>·</span><span>الجولة ${m.round}</span>
-        ${m.venue?`<span>·</span><span>${esc(m.venue)}</span>`:""}
-        ${COMP==="الكل"?`<span>·</span><span>${esc(compOf(m))}</span>`:""}
-        ${soon?"":`<span>·</span><span>${gw(gs.length)}</span>`}
-        ${y?`<span class="ctag">${y}<i class="cardpill y"></i></span>`:""}
-        ${r?`<span class="ctag">${r}<i class="cardpill r"></i></span>`:""}
+        <span class="mdate">${esc(m.date)}${m.time?`<em>${esc(m.time)}</em>`:""}</span>
+        <span class="mround">الجولة ${m.round}</span>
+        ${m.venue?`<span class="mvenue">${esc(m.venue)}</span>`:""}
+        ${COMP==="الكل"?`<span class="mcomp">${esc(compOf(m))}</span>`:""}
+        ${soon?"":`<span class="mgoals">${gw(gs.length)}</span>`}
+        ${(y||r)?`<span class="mcards">${y?`<b><i class="cardpill y"></i>${y}</b>`:""}${r?`<b><i class="cardpill r"></i>${r}</b>`:""}</span>`:""}
       </div>
-      ${gs.length?`<div class="goals">${gs.map(g=>`<div class="gline">
-          <span class="gmin">${minLabel(g)}</span>
-          ${crest(g.sc)}
-          <span style="flex:1">${esc(g.p)}${ogLabel(g)}${g.a?` <span style="color:var(--slate);font-size:.72rem">صناعة ${esc(g.a)}</span>`:""}</span>
-          <span class="gtag">${esc(g.det)}</span></div>`).join("")}</div>`:""}
-      ${subsHTML(m)}
+      ${goalsTimeline(m,gs)}
     </div>`;
   }).join("");
 
@@ -2709,7 +3735,7 @@ function renderClubBody(c){
   <div class="card pad" style="display:flex;align-items:center;gap:14px">
     ${crest(c,true)}
     <div style="flex:1;min-width:0">
-      <div style="font-family:var(--display);font-weight:700;font-size:1.2rem;color:#fff">${esc(c)}</div>
+      <div style="font-family:var(--display);font-weight:700;font-size:1.2rem;color:var(--head)">${esc(c)}</div>
       <div style="font-size:.75rem;color:var(--slate)">${played?`${r.Pts} نقطة · المركز ${standings().findIndex(x=>x.c===c)+1}`:"لم يلعب بعد"}</div>
     </div>
   </div>
@@ -2747,14 +3773,14 @@ function renderClubBody(c){
 
   <h2 class="sec">توقيت الأهداف</h2>
   <div class="card pad">
-    <div class="timing">${s.timing.map(t=>`<div class="tcol">
-      <div class="bx for" style="height:${t.f/mx*54}%" title="له ${t.f}"></div>
-      <div class="bx ag" style="height:${t.a/mx*54}%" title="عليه ${t.a}"></div></div>`).join("")}</div>
-    <div class="tlabels">${PERIODS.map(p=>`<span class="ltr">${plab(p)}</span>`).join("")}</div>
-    <div style="display:flex;gap:16px;margin-top:12px;font-size:.72rem;color:var(--slate)">
-      <span><i style="display:inline-block;width:10px;height:10px;background:var(--sky);border-radius:3px"></i> له</span>
-      <span><i style="display:inline-block;width:10px;height:10px;background:rgba(224,100,79,.75);border-radius:3px"></i> عليه</span>
-    </div>
+    ${(()=>{
+      const T=s.timing, tf=T.reduce((n,t)=>n+t.f,0), ta=T.reduce((n,t)=>n+t.a,0);
+      const cell=(v,k)=>{ const lv=v?Math.max(1,Math.round(v/mx*4)):0; return `<div class="gh-c ${k} l${lv}${v&&v===mx?" top":""}">${v}</div>`; };
+      return `<div class="gh">
+        <div class="gh-row"><span class="gh-lab f">له</span>${T.map(t=>cell(t.f,"f")).join("")}<span class="gh-tot f">${tf}</span></div>
+        <div class="gh-row"><span class="gh-lab a">عليه</span>${T.map(t=>cell(t.a,"a")).join("")}<span class="gh-tot a">${ta}</span></div>
+        <div class="gh-row per"><span></span>${T.map(t=>`<div class="gh-p" dir="ltr">${t.p}</div>`).join("")}<span class="gh-tot lbl">المجموع</span></div>
+      </div>`; })()}
   </div>
 
   <h2 class="sec">خريطة أماكن التسجيل</h2>
@@ -2772,7 +3798,7 @@ function renderPlayers(){
   const S=scorers();
   const A=[...S].filter(p=>p.a>0).sort((a,b)=>b.a-a.a);
   const row = (p,val,i) => `<tr><td><div class="teamcell"><span class="pos">${i+1}</span>${pav(p.n)}${crest(p.c)}<b>${esc(p.n)}</b></div></td>
-    <td style="color:var(--slate)">${esc(p.c)}</td><td style="color:#fff;font-weight:700">${val}</td></tr>`;
+    <td style="color:var(--slate)">${esc(p.c)}</td><td style="color:var(--head);font-weight:700">${val}</td></tr>`;
   const disc={}; CARDS.forEach(x=>{ const k=x.p+"|"+x.club; (disc[k]??={n:x.p,c:x.club,y:0,r:0});
     if(isYellow(x.type)) disc[k].y++; if(isRed(x.type)) disc[k].r++; });
   const DL=Object.values(disc).sort((a,b)=>b.r-a.r||b.y-a.y);
@@ -2862,7 +3888,7 @@ function squadRowsHTML(club){
   const dup=squadDupNums(club);
   return a.map((x,i)=>{
     const p=sqPos(x), s=sqNum(x);
-    return `<div class="sqrow ${p?"":"nopos"}" data-i="${i}">
+    return `<div class="sqrow ${p?"":"nopos"} pg-${posMain(x)||"x"}" data-i="${i}">
       <input type="text" class="sqno ${dup.has(s)?"dup":""}" inputmode="numeric" maxlength="3"
         value="${s||""}" placeholder="#" title="رقم القميص">
       <input type="text" class="sqn" value="${esc(sqName(x))}" spellcheck="false" placeholder="اسم اللاعب">
@@ -2871,11 +3897,18 @@ function squadRowsHTML(club){
     </div>`;
   }).join("");
 }
+/* v23: club colour CSS vars for admin widgets (white-primary clubs use their secondary) */
+function clubVars(c){
+  const cc=(window.CLUB_COLORS||{})[c]; if(!cc) return "--cc:#0D4F92;--cc2:#7FE0FF;--cct:#fff;--ccb:transparent;--ccd:#083B70";
+  const lum=h=>{const x=h.replace("#","");return (.2126*parseInt(x.slice(0,2),16)+.7152*parseInt(x.slice(2,4),16)+.0722*parseInt(x.slice(4,6),16))/255;};
+  if(lum(cc[0])>.9) return `--cc:#FFFFFF;--cc2:${cc[1]};--cct:#0B1F3A;--ccb:${cc[1]};--ccd:#E6EBF2`;
+  return `--cc:${cc[0]};--cc2:${cc[1]};--cct:#fff;--ccb:transparent;--ccd:color-mix(in srgb,${cc[0]} 70%,#000)`;
+}
 function squadBoxHTML(c){
   const n=(SQUADS[c]||[]).length, miss=squadMissing(c);
-  return `<details class="squadbox" data-club="${esc(c)}" ${SQOPEN.has(c)?"open":""}>
-    <summary><label class="lb"><b style="color:#fff">${esc(c)}</b>
-      <span class="cnt">${n}</span>
+  return `<details class="squadbox" data-club="${esc(c)}" style="${clubVars(c)}" ${SQOPEN.has(c)?"open":""}>
+    <summary><label class="lb sqhead">${crest(c)}<b>${esc(c)}</b>
+      <span class="cnt">${n} لاعباً</span>
       ${miss?`<span class="cnt miss">بلا مركز ${miss}</span>`:""}</label></summary>
     <div class="sqbody">
     <div class="sqtools">
@@ -2919,7 +3952,7 @@ const SQ = {
     const b=this.box(c); if(!b) return;
     b.querySelector(".sqrows").innerHTML=squadRowsHTML(c);
     const n=(SQUADS[c]||[]).length, miss=squadMissing(c), lb=b.querySelector("summary label.lb");
-    lb.innerHTML=`<b style="color:#fff">${esc(c)}</b> <span class="cnt">${n}</span>`
+    lb.innerHTML=`${crest(c)}<b>${esc(c)}</b> <span class="cnt">${n} لاعباً</span>`
       + (miss?` <span class="cnt miss">بلا مركز ${miss}</span>`:"");
   },
   name(c,i,v){ const x=this.arr(c)[i]; this.set(c,i, v.trim().replace(/\s+/g," "), sqPos(x), sqNum(x)); },
@@ -3020,9 +4053,7 @@ function wireSquads(){
     SQ.clean();
     busy(sqb,true,"جارٍ الحفظ…");
     /* نأخذ أحدث بيانات الموسم ثم نُعيد كشوفاتي فوقها، فلا يُمحى عمل غيري ولا عملي */
-    const mine = SQUADS;
-    const reb = await rebaseOnCloud();
-    SQUADS = mine;
+    const reb = await rebaseOnCloud(()=>{ const mine=SQUADS; return ()=>{ SQUADS=mine; SQNUMS_FOUND=squadsExtractNums(); }; });   /* v27 */
     if(reb.changed) toast(`وصل تحديث من ${reb.by||"محرّر آخر"} — دُمج قبل الحفظ`,"busy");
     const ok=await persistData();
     busy(sqb,false);
@@ -4172,7 +5203,7 @@ function paintFantasyTab(){
 }
 /* تبديل الإشهار وحفظه في السحابة فوراً */
 async function setFantasyOpen(on){
-  await rebaseOnCloud();               /* لا نكتب حالة قديمة فوق عمل محرّر آخر */
+  await rebaseOnCloud();   /* v27 — لا نكتب حالة قديمة فوق عمل محرّر آخر */
   const prev = FANTASY_OPEN;
   FANTASY_OPEN = !!on;
   const r = await persistData();
@@ -4194,7 +5225,6 @@ function paintFoot(){
   const fab=$("#waFab");
   if(fab){ fab.href=WA_URL; fab.querySelector(".waic").innerHTML=WA_SVG; }
   $("#siteFoot").innerHTML = `<img src="${BRAND}" alt="${esc(OWNER)}">
-    <span>© ${esc(OWNER)} · جميع الحقوق محفوظة</span>
     <div class="handles">
       <a class="hchip" href="${IG_URL}" target="_blank" rel="noopener">${IG_SVG}@coachmf</a>
       <a class="hchip" href="${X_URL}" target="_blank" rel="noopener">${X_SVG}@coach_mf</a>
@@ -4248,5 +5278,241 @@ async function bootData(){
   paintRail(); paintHeader(); paintFoot(); go("home");
 })();
 </script>
+
+<script>
+/* الأزرار العلوية (الإحصائيات / فانتازي / التوقعات) تقود أزرار التنقل الأصلية */
+(function(){
+  const subs=document.querySelectorAll('.hero-sub button');
+  const mapView=v=>({home:'home',predict:'predict',fantasy:'fantasy'})[v]||'home';
+  function sync(){
+    const cur=document.querySelector('nav.tabs button[aria-selected="true"]')?.dataset.v||'home';
+    subs.forEach(b=>b.classList.toggle('on',b.dataset.go===mapView(cur)));
+  }
+  subs.forEach(b=>b.addEventListener('click',()=>{
+    const t=document.querySelector(`nav.tabs button[data-v="${b.dataset.go}"]`);
+    if(t && t.style.display!=='none') t.click();
+    else if(b.dataset.go==='fantasy' && window.FANTASY_URL) window.open(window.FANTASY_URL,'_blank');
+    setTimeout(sync,0);
+  }));
+  document.querySelectorAll('nav.tabs button').forEach(b=>b.addEventListener('click',()=>setTimeout(sync,0)));
+  window.addEventListener('hashchange',()=>setTimeout(sync,0));
+  /* فتح قسم مباشرة عبر ?v=matches (للاختبار) */
+  const qv=new URLSearchParams(location.search).get('v');
+  if(qv && qv!=="home"){ let done=false; const _gq=go; go=function(v){ if(!done && v==="home"){ done=true; return _gq(qv); } return _gq(v); }; }
+  setTimeout(sync,300);
+})();
+</script>
+
+<script>
+/* شعارات PNG محلية لكل الأندية + شعار دوري زين — تُطبَّق فوق أي شعارات من السحابة */
+/* رابط الفانتازي الخارجي (اتركه فارغاً إذا كان تبويب الفانتازي داخل الموقع) */
+window.FANTASY_URL = window.FANTASY_URL || "";
+const LOCAL_CRESTS={
+  "القادسية":"assets/crests/sq/qadsia.png","الكويت":"assets/crests/sq/kuwait.png","العربي":"assets/crests/sq/arabi.png",
+  "كاظمة":"assets/crests/sq/kazma.png","السالمية":"assets/crests/sq/salmiya.png","النصر":"assets/crests/sq/nasr.png",
+  "الجهراء":"assets/crests/sq/jahra.png","الساحل":"assets/crests/sq/sahel.png","الفحيحيل":"assets/crests/sq/fahaheel.png",
+  "التضامن":"assets/crests/sq/tadamon.png","الشباب":"assets/crests/sq/shabab.png","الصليبخات":"assets/crests/sq/sulaibikhat.png"
+};
+function useLocalCrests(){
+  LOGOS=Object.assign({},LOGOS,LOCAL_CRESTS);
+  LSCALE={}; GSCALE=100; LOGOBG=true;
+  LEAGUE="assets/hero/zain-logo-dark.png";
+}
+const _applyAssetsOrig=applyAssets;
+applyAssets=function(a){ _applyAssetsOrig(a); useLocalCrests(); };
+useLocalCrests();
+</script>
+
+
+<script>/* v3 */
+(function(){
+  const crestImg=c=>LOCAL_CRESTS[c]||LOGOS[c]||"";
+  function openClub(c){
+    go("clubs");
+    const sel=document.querySelector("#clubSel");
+    if(sel){ sel.value=c; if(typeof renderClubBody==="function") renderClubBody(c); }
+    window.scrollTo({top:0,behavior:"instant"});
+  }
+  window.openClub=openClub;
+  function crestButtons(){
+    return (CLUBS||[]).map(c=>`<button type="button" title="${esc(c)}" aria-label="${esc(c)}" onclick="openClub('${esc(c)}')"><img src="${crestImg(c)}" alt="${esc(c)}"></button>`).join("");
+  }
+  function paintStrips(){
+    try{
+      const cb=document.querySelector("#crestBar");
+      if(cb && Array.isArray(CLUBS) && CLUBS.length) cb.innerHTML=`<div class="crestbar-in">${crestButtons()}</div>`;
+      const fc=document.querySelector("#footCrests"); if(fc && Array.isArray(CLUBS)) fc.innerHTML=crestButtons();
+      const fb=document.querySelector("#footBottom");
+      if(fb) fb.innerHTML=`<img src="${BRAND}" alt="${esc(OWNER)}">
+        <div class="handles">
+          <a class="hchip" href="${IG_URL}" target="_blank" rel="noopener">${IG_SVG}@coachmf</a>
+          <a class="hchip" href="${X_URL}" target="_blank" rel="noopener">${X_SVG}@coach_mf</a>
+          <a class="hchip wa" href="${WA_URL}" target="_blank" rel="noopener">${WA_SVG}اقتراحاتكم</a>
+        </div>`;
+      const st=document.querySelector("#resStrip");
+      if(st && Array.isArray(MATCHES)){
+        const played=(typeof playedMatches==="function")?playedMatches():MATCHES.filter(m=>m.hg!=null&&m.ag!=null);
+        const soon=MATCHES.filter(m=>!played.includes(m));
+        let ms=[], lb="";
+        if(played.length){ const r=Math.max(...played.map(m=>+m.round||0)); ms=played.filter(m=>(+m.round||0)===r); lb=`نتائج الجولة ${r}`; }
+        const next=soon.length? soon.filter(m=>(+m.round||0)===Math.min(...soon.map(m=>+m.round||0))).slice(0,6):[];
+        const chip=(m,isSoon)=>`<button type="button" class="rx${isSoon?' soon':''}" onclick="go('matches')">
+            <img src="${crestImg(m.home)}" alt=""><b>${esc(m.home)}</b>
+            <span class="sc">${isSoon?((m.date?m.date.slice(5).replace("-","/"):"")+(m.time?" "+m.time:"")||"—"):(m.hg+" - "+m.ag)}</span>
+            <b>${esc(m.away)}</b><img src="${crestImg(m.away)}" alt=""></button>`;
+        const html=ms.map(m=>chip(m,false)).join("")+(next.length?`<span class="strip-lb">القادم</span>`+next.map(m=>chip(m,true)).join(""):"");
+        st.innerHTML = html ? `<div class="strip-in"><span class="strip-lb">${lb||"المباريات"}</span><div class="strip-sc">${html}</div></div>` : "";
+      }
+      const nav=document.querySelector("nav.tabs .in");
+      if(nav && !nav.querySelector(".navbrand")){
+        const d=document.createElement("div"); d.className="navbrand";
+        d.innerHTML=`<span>بإشراف</span><img src="${BRAND}" alt="${esc(OWNER)}">`; nav.appendChild(d);
+      }
+    }catch(e){ console.warn("v3 strips",e); }
+  }
+  const _go=go; go=function(v){ _go(v); paintStrips(); };
+  const _renderAll=renderAll; renderAll=function(){ _renderAll(); paintStrips(); };
+  setTimeout(paintStrips,1500);
+})();
+</script><!-- /v3:js -->
+
+<script>/* v4 */
+(function(){
+  const CLUB_COLORS={
+    "القادسية":["#FDB913","#111111"],"الكويت":["#FFFFFF","#E31B23"],"العربي":["#007A3D","#ffffff"],
+    "كاظمة":["#F68B1F","#ffffff"],"السالمية":["#3FB3E0","#ffffff"],"النصر":["#8E1B3A","#E6E6EE"],
+    "الشباب":["#1F4FD1","#ffffff"],"الجهراء":["#FFFFFF","#E4131C"],"الفحيحيل":["#D81F26","#E9E9F0"],
+    "الساحل":["#F2D20A","#1E3F9E"],"التضامن":["#1B4FD8","#ffffff"],"الصليبخات":["#E3262B","#ffffff"]
+  };
+  window.CLUB_COLORS=CLUB_COLORS;
+  const lum=h=>{const c=h.replace("#","");const r=parseInt(c.slice(0,2),16)/255,g=parseInt(c.slice(2,4),16)/255,b=parseInt(c.slice(4,6),16)/255;return .2126*r+.7152*g+.0722*b;};
+  const textOn=h=>"#ffffff";
+  function colorsOf(name){ const c=CLUB_COLORS[(name||"").trim()]; if(!c) return null; const light=lum(c[0])>.9; return {c:light?"#FFFFFF":c[0],c2:light?"#C9D6E6":c[1],t:light?"#0B1F3A":textOn(c[0]),edge:light?"#FFFFFF":c[0],light}; }   /* v28: neutral trim for white clubs */
+  function paintTeamColors(){
+    try{
+      const nm=document.querySelector(".nextm");
+      if(nm && !nm.querySelector(".side")){
+        const names=[...nm.querySelectorAll(".nextm-team b")].map(b=>b.textContent);
+        const h=colorsOf(names[0]), a=colorsOf(names[1]);
+        if(h){ nm.style.setProperty("--hc",h.c); nm.style.setProperty("--hc2",h.c2); nm.style.setProperty("--ht",h.t); if(h.light) nm.dataset.hw="1"; else delete nm.dataset.hw; }
+        if(a){ nm.style.setProperty("--ac",a.c); nm.style.setProperty("--ac2",a.c2); nm.style.setProperty("--at",a.t); if(a.light) nm.dataset.aw="1"; else delete nm.dataset.aw; }
+        nm.insertAdjacentHTML("afterbegin",'<span class="side h"></span><span class="side a"></span><span class="mid"></span>');
+      }
+      document.querySelectorAll(".match").forEach(m=>{
+        if(m.dataset.tc) return;
+        const bs=m.querySelectorAll(".mside b"); if(bs.length<2) return;
+        const hn=bs[0].textContent.trim(), an=bs[1].textContent.trim();
+        const h=colorsOf(hn), a=colorsOf(an);
+        if(h){ m.style.setProperty("--hc",h.edge); m.style.setProperty("--hc2",h.c2); if(h.light) m.dataset.hw="1"; }
+        if(a){ m.style.setProperty("--ac",a.edge); m.style.setProperty("--ac2",a.c2); if(a.light) m.dataset.aw="1"; }
+        m.dataset.tc="1";
+      });
+    }catch(e){ console.warn("v4 colors",e); }
+  }
+  window.paintTeamColors=paintTeamColors;
+  const _go=go; go=function(v){ _go(v); paintTeamColors(); };
+  const _renderAll=renderAll; renderAll=function(){ _renderAll(); paintTeamColors(); };
+  const mo=new MutationObserver(()=>paintTeamColors());
+  ["#v-home","#v-matches","#v-clubs"].forEach(id=>{ const el=document.querySelector(id); if(el) mo.observe(el,{childList:true,subtree:false}); });
+  setTimeout(paintTeamColors,1600);
+})();
+</script><!-- /v4:js -->
+
+<script>/* v7 */
+(function(){
+  const PER=["0-15","16-30","31-45","45+","46-60","61-75","76-90","90+"];
+  const norm=t=>t.replace(/\s/g,"").replace(/[\u200e\u200f]/g,"");
+  const isPeriod=t=>{ const x=norm(t); return PER.includes(x) || PER.includes(x.split("-").reverse().join("-")) || x==="+45" || x==="+90"; };
+  function readRows(b){
+    return [...b.querySelectorAll(":scope > .bar")].map(r=>{
+      const lblEl=r.querySelector(":scope > span:first-child"); const fl=r.querySelector(".fl"); const n=r.querySelector(".n");
+      const val=(n?n.textContent:"").trim(); const num=parseFloat(val.replace(/[^\d.]/g,""))||0;
+      return {lbl:lblEl?lblEl.textContent.trim():"", ltr:!!(lblEl&&lblEl.classList.contains("ltr")), val, num, alt:!!(fl&&fl.classList.contains("alt"))};
+    });
+  }
+  /* v24: period lists → the same simple heat grid used on the club page (one row, one number per cell) */
+  function timeline(rows){
+    const byKey={}; rows.forEach(r=>{ const k=norm(r.lbl); byKey[k]=r; byKey[k.split("-").reverse().join("-")]=r; if(k==="+45") byKey["45+"]=r; if(k==="+90") byKey["90+"]=r; });
+    const vals=PER.map(k=>(byKey[k]||{num:0}).num);
+    const mx=Math.max(1,...vals), total=vals.reduce((a,b)=>a+b,0);
+    const cell=v=>{ const lv=v?Math.max(1,Math.round(v/mx*4)):0; return `<div class="gh-c f l${lv}${v&&v===mx?" top":""}">${v}</div>`; };
+    return `<div class="gh gh1">
+      <div class="gh-row"><span class="gh-lab f">الأهداف</span>${vals.map(cell).join("")}<span class="gh-tot f">${total}</span></div>
+      <div class="gh-row per"><span></span>${PER.map(k=>`<div class="gh-p" dir="ltr">${k}</div>`).join("")}<span class="gh-tot lbl">المجموع</span></div>
+    </div>`;
+  }
+  /* v19: share board — one 100% strip + ranked rows with big numbers (replaces the radial gauges) */
+  const PAL=["#A9E4FF","#5FBDF0","#2F94D6","#1F6FB2","#174F86","#123C66"];
+  function gauges(rows){
+    const total=rows.reduce((a,r)=>a+r.num,0)||1;
+    const sorted=[...rows].map((r,i)=>({...r,i})).sort((a,b)=>b.num-a.num);
+    const n=Math.max(1,sorted.filter(r=>r.num>0).length-1);
+    const mix=(a,b,t)=>{const h=x=>[1,3,5].map(k=>parseInt(x.slice(k,k+2),16));const A=h(a),B=h(b);return "rgb("+A.map((v,k)=>Math.round(v+(B[k]-v)*t)).join(",")+")";};
+    const color=k=>mix("#A9E4FF","#123C66",Math.min(1,k/n));
+    const strip=sorted.filter(r=>r.num>0).map((r,k)=>{const pct=r.num/total*100;
+      return `<i class="${k/n<.45?"lt":"dk"}" style="flex:${pct};background:${color(k)}" title="${r.lbl}: ${r.val}"><b>${Math.round(pct)}%</b></i>`;}).join("");
+    const lead=sorted[0], leadPct=Math.round((lead?lead.num:0)/total*100);
+    const top3=sorted.slice(0,3).reduce((a,r)=>a+r.num,0), top3Pct=Math.round(top3/total*100);
+    const rowsHtml=sorted.map((r,k)=>{
+      const pct=Math.round(r.num/total*100);
+      return `<div class="sb-row${k===0&&r.num>0?" top":""}${r.num===0?" nil":""}">
+        <span class="sb-rk">${k+1}</span>
+        <span class="sb-dot" style="background:${color(k)}"></span>
+        <span class="sb-lbl${r.ltr?" ltr":""}">${r.lbl}</span>
+        <span class="sb-pct">${pct}%</span>
+        <b class="sb-num">${r.val}</b>
+      </div>`;}).join("");
+    return `<div class="sb">
+      <div class="sb-head">
+        <div class="sb-kpi"><b>${total}</b><span>هدفاً</span></div>
+        <div class="sb-kpi"><b>${sorted.filter(r=>r.num>0).length}</b><span>فئة</span></div>
+        <div class="sb-kpi lead"><b>${leadPct}%</b><span>${lead?lead.lbl:""}</span></div>
+        <div class="sb-kpi"><b>${top3Pct}%</b><span>أعلى 3 فئات</span></div>
+      </div>
+      <div class="sb-strip">${strip}</div>
+      <div class="sb-rows${sorted.length>8?" two":""}">${rowsHtml}</div>
+    </div>`;
+  }
+  function upgrade(){
+    document.querySelectorAll(".card .bars:not([data-3d])").forEach(b=>{
+      const rows=readRows(b); if(!rows.length) return;
+      const periodic = rows.length>=6 && rows.every(r=>isPeriod(r.lbl));
+      const html = periodic ? timeline(rows) : gauges(rows);
+      const wrap=document.createElement("div"); wrap.className="viz7"; wrap.innerHTML=html;
+      b.dataset["3d"]="1"; b.insertAdjacentElement("afterend",wrap);
+    });
+  }
+  window.upgradeBars3d=upgrade;
+  const _go=go; go=function(v){ _go(v); upgrade(); };
+  const _renderAll=renderAll; renderAll=function(){ _renderAll(); upgrade(); };
+  let t=null; const mo=new MutationObserver(()=>{ clearTimeout(t); t=setTimeout(upgrade,30); });
+  const main=document.querySelector("main"); if(main) mo.observe(main,{childList:true,subtree:true});
+  setTimeout(upgrade,1700);
+})();
+</script><!-- /v7:js -->
+<!-- v26:whiteclubs --><style>
+/* v26 — الأندية البيضاء (الكويت، الجهراء): أبيض فعلي مع خيط بلون التطريز */
+.nextm[data-hw] .side.h{background:linear-gradient(200deg,#FFFFFF 0%,#E6EBF2 100%)}
+.nextm[data-aw] .side.a{background:linear-gradient(160deg,#FFFFFF 0%,#E6EBF2 100%)}
+.nextm[data-hw] .side.h::after,.nextm[data-aw] .side.a::after{background:repeating-linear-gradient(112deg,rgba(11,31,58,.035) 0 1px,transparent 1px 14px),linear-gradient(180deg,rgba(255,255,255,.3),transparent 40%,rgba(11,31,58,.06))}
+.nextm[data-hw] .side.h::before,.nextm[data-aw] .side.a::before{opacity:1}
+.match[data-hw]{box-shadow:var(--shadow),inset -2px 0 0 var(--hc2,#C9D6E6)}
+.match[data-aw]{box-shadow:var(--shadow),inset 2px 0 0 var(--ac2,#C9D6E6)}
+.match[data-hw][data-aw]{box-shadow:var(--shadow),inset -2px 0 0 var(--hc2,#C9D6E6),inset 2px 0 0 var(--ac2,#C9D6E6)}
+.squadbox::after{background:linear-gradient(180deg,var(--cc),var(--ccd,color-mix(in srgb,var(--cc) 70%,#000)));border-left:2px solid var(--ccb,transparent)}
+.squadbox .sqhead .cnt{color:var(--cct,#fff);border:1px solid var(--ccb,transparent)}
+.squadbox .sqhead .cnt.miss{background:#FFF1CC;color:#7A4B00;border-color:transparent}
+.sqrow .sqno{color:var(--cct,#fff)}
+.sqadd button{color:var(--cct,#fff);border:1px solid var(--ccb,transparent)}
+.mrow.adm::before{border-left:2px solid var(--hcb,transparent)}
+.mrow.adm::after{border-right:2px solid var(--acb,transparent)}
+</style><!-- /v26:whiteclubs -->
+<!-- v28:whitetrim --><style>
+/* v28 — الأندية البيضاء بلا أحمر: خيط رمادي فاتح بدل لون التطريز */
+.nextm[data-hw] .side.h::before,.nextm[data-aw] .side.a::before{width:3px;background:#C9D6E6;opacity:1}
+.match[data-hw]{box-shadow:var(--shadow),inset -2px 0 0 #C9D6E6}
+.match[data-aw]{box-shadow:var(--shadow),inset 2px 0 0 #C9D6E6}
+.match[data-hw][data-aw]{box-shadow:var(--shadow),inset -2px 0 0 #C9D6E6,inset 2px 0 0 #C9D6E6}
+</style><!-- /v28:whitetrim -->
 </body>
 </html>
