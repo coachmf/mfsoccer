@@ -16,6 +16,18 @@
   [headers.values]
     Cache-Control = "public, max-age=0, must-revalidate"
 
+# ——— خادم الخدمة: لا يُخزَّن أبداً، وإلا علقت نسخة قديمة عند المستخدم ———
+[[headers]]
+  for = "/sw.js"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+    Service-Worker-Allowed = "/"
+
+[[headers]]
+  for = "/site.webmanifest"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+
 # ——— الأيقونات وصورة المشاركة: تخزين طويل ———
 [[headers]]
   for = "/og.png"

@@ -5684,5 +5684,100 @@ useLocalCrests();
 .match[data-aw]{box-shadow:var(--shadow),inset 2px 0 0 #C9D6E6}
 .match[data-hw][data-aw]{box-shadow:var(--shadow),inset -2px 0 0 #C9D6E6,inset 2px 0 0 #C9D6E6}
 </style><!-- /v28:whitetrim -->
+
+<style>/* التطبيق: شريط التثبيت وتنبيه التحديث */
+#pwaBar{position:fixed;inset-inline:12px;bottom:calc(env(safe-area-inset-bottom,0) + 74px);z-index:60;
+  display:none;align-items:center;gap:10px;padding:11px 14px;border-radius:14px;
+  background:var(--navy,#0B1F3A);color:#fff;box-shadow:0 10px 30px rgba(11,31,58,.35);
+  font-size:.85rem;line-height:1.5;animation:pwaIn .25s ease}
+#pwaBar.on{display:flex}
+#pwaBar img{width:34px;height:34px;border-radius:9px;flex:none;background:#fff;padding:2px}
+#pwaBar .txt{flex:1;min-width:0}
+#pwaBar b{display:block;font-family:var(--display,inherit);font-size:.9rem}
+#pwaBar .go{flex:none;background:#FFD97A;color:#0B1F3A;border:0;border-radius:9px;
+  padding:7px 13px;font-weight:800;font-size:.82rem;font-family:inherit;cursor:pointer}
+#pwaBar .x{flex:none;background:none;border:0;color:#9DB6D2;font-size:1.2rem;cursor:pointer;padding:0 2px}
+@keyframes pwaIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@media(min-width:700px){#pwaBar{inset-inline:auto 20px;max-width:380px;bottom:20px}}
+</style>
+<div id="pwaBar" role="dialog" aria-live="polite">
+  <img src="/icon-192.png" alt="">
+  <div class="txt"><b>ثبّت التطبيق</b><span id="pwaMsg">افتحه من شاشتك مباشرة، ويعمل بلا إنترنت.</span></div>
+  <button class="go" id="pwaGo">تثبيت</button>
+  <button class="x" id="pwaX" aria-label="إغلاق">✕</button>
+</div>
+
+<script>
+/* ===== التطبيق: خادم الخدمة + التثبيت + التحديث =====
+   خادم الخدمة يجعل الموقع قابلاً للتثبيت كتطبيق على الآيفون
+   والأندرويد ويفتح بلا إنترنت. لا يُسجَّل إلا على https أو localhost. */
+(function(){
+  var bar=document.getElementById('pwaBar'), msg=document.getElementById('pwaMsg'),
+      go=document.getElementById('pwaGo'), x=document.getElementById('pwaX');
+  var KEY='mf_pwa_hide';
+  var hidden=function(){ try{ return (+localStorage.getItem(KEY)||0) > Date.now(); }catch(e){ return false; } };
+  var hide=function(days){ try{ localStorage.setItem(KEY, Date.now()+(days||14)*864e5); }catch(e){}
+                           bar.classList.remove('on'); };
+  var installed=function(){
+    return matchMedia('(display-mode: standalone)').matches || navigator.standalone===true;
+  };
+  x.onclick=function(){ hide(14); };
+
+  /* أندرويد: المتصفح يعرض التثبيت الأصلي */
+  var prompt=null;
+  addEventListener('beforeinstallprompt', function(e){
+    e.preventDefault(); prompt=e;
+    if(installed()||hidden()) return;
+    msg.textContent='افتحه من شاشتك مباشرة، ويعمل بلا إنترنت.';
+    go.textContent='تثبيت'; go.style.display='';
+    bar.classList.add('on');
+  });
+  go.onclick=async function(){
+    if(!prompt){ hide(1); return; }
+    bar.classList.remove('on');
+    prompt.prompt();
+    try{ await prompt.userChoice; }catch(e){}
+    prompt=null; hide(90);
+  };
+  addEventListener('appinstalled', function(){ hide(3650); });
+
+  /* آيفون: لا توجد نافذة تثبيت — نشرح الخطوة مرة واحدة */
+  var iOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+  var safari = iOS && /Safari/.test(navigator.userAgent) && !/CriOS|FxiOS|EdgiOS/.test(navigator.userAgent);
+  if(safari && !installed() && !hidden()){
+    setTimeout(function(){
+      msg.innerHTML='اضغط زر المشاركة <b style="display:inline">⬆</b> ثم «إضافة إلى الشاشة الرئيسية».';
+      go.style.display='none';
+      bar.classList.add('on');
+    }, 4000);
+  }
+
+  /* التسجيل + تنبيه النسخة الجديدة */
+  if('serviceWorker' in navigator && (location.protocol==='https:' || location.hostname==='localhost')){
+    addEventListener('load', function(){
+      navigator.serviceWorker.register('/sw.js').then(function(reg){
+        reg.addEventListener('updatefound', function(){
+          var sw=reg.installing; if(!sw) return;
+          sw.addEventListener('statechange', function(){
+            /* نسخة جاهزة وهناك نسخة تعمل الآن: نعرض التحديث بدل فرضه */
+            if(sw.state==='installed' && navigator.serviceWorker.controller){
+              if(typeof toast==='function')
+                toast('صدرت نسخة جديدة — أعد التحميل لتظهر','busy',true);
+              msg.textContent='نسخة جديدة جاهزة.';
+              go.textContent='تحديث'; go.style.display='';
+              go.onclick=function(){ sw.postMessage('SKIP_WAITING'); };
+              bar.classList.add('on');
+            }
+          });
+        });
+      }).catch(function(){});
+      var reloaded=false;
+      navigator.serviceWorker.addEventListener('controllerchange', function(){
+        if(reloaded) return; reloaded=true; location.reload();
+      });
+    });
+  }
+})();
+</script>
 </body>
 </html>
