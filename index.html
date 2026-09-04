@@ -865,9 +865,12 @@ body{background:
 .strip-sc{display:flex;gap:6px;overflow:hidden;flex:1;padding:4px 0;
   -webkit-mask-image:linear-gradient(90deg,transparent,#000 28px,#000 calc(100% - 28px),transparent);
           mask-image:linear-gradient(90deg,transparent,#000 28px,#000 calc(100% - 28px),transparent)}
-.strip-track{display:flex;gap:6px;flex:none;will-change:transform;
+/* translate3d لا translateX: أضمن للتسريع على iOS. وبلا will-change لأن
+   المسار عريض جداً (آلاف البكسلات) وقد يرفض سفاري تركيب طبقة بهذا الحجم
+   فتتجمّد الحركة — والحارس أدناه يكتشف ذلك ويتولّى القيادة بنفسه. */
+.strip-track{display:flex;gap:6px;flex:none;
   animation:strip-run var(--dur,45s) linear infinite}
-@keyframes strip-run{from{transform:translateX(0)} to{transform:translateX(calc(50% + 3px))}}
+@keyframes strip-run{from{transform:translate3d(0,0,0)} to{transform:translate3d(calc(50% + 3px),0,0)}}
 .strip-sc:hover .strip-track,.strip-sc.hold .strip-track{animation-play-state:paused}
 .strip-sc.still .strip-track{animation:none}
 @media (prefers-reduced-motion: reduce){
@@ -5413,17 +5416,61 @@ useLocalCrests();
         const sc=box.querySelector(".strip-sc"), tr=box.querySelector(".strip-track");
         if(!sc || !tr) return;
         const SPEED=42;                                      /* بكسل في الثانية */
+        const reduce=()=>matchMedia("(prefers-reduced-motion: reduce)").matches;
+        let cycle=0;
         const build=()=>{
           tr.querySelectorAll("[data-dup]").forEach(n=>n.remove());
           const w=tr.scrollWidth;
-          if(!w || w<=sc.clientWidth+8){ sc.classList.add("still"); return; }
+          if(!w || w<=sc.clientWidth+8){ sc.classList.add("still"); cycle=0; return; }
           sc.classList.remove("still");
+          cycle = w + 6;                                     /* نسخة كاملة + الفجوة */
           [...tr.children].forEach(n=>{                      /* نسخة ثانية للدوران المتصل */
             const c=n.cloneNode(true); c.setAttribute("data-dup","1");
             c.setAttribute("aria-hidden","true"); c.tabIndex=-1; tr.appendChild(c);
           });
           sc.style.setProperty("--dur", Math.max(20, Math.round(w/SPEED))+"s");
+          guard();
         };
+
+        /* حارس: بعض المتصفحات — خاصةً سفاري على iOS مع مسار بهذا العرض،
+           أو وضع توفير الطاقة — لا تُشغّل رسم CSS فيبقى الشريط جامداً.
+           نقيس بعد ثانية، وإن لم يتحرك نقوده بأنفسنا بإطارات JS. */
+        const readX=()=>{ const t=getComputedStyle(tr).transform;
+          if(!t || t==="none") return 0;
+          const m=t.match(/matrix.*\((.+)\)/); if(!m) return 0;
+          const p=m[1].split(","); return parseFloat(p.length>6? p[12] : p[4])||0; };
+        const guard=()=>{
+          clearTimeout(startTicker._g);
+          if(!cycle || reduce() || startTicker._js) return;
+          if(document.hidden){                               /* صفحة مخفية: الحكم غير عادل */
+            startTicker._g=setTimeout(guard, 1500); return;
+          }
+          const a=readX();
+          startTicker._g=setTimeout(()=>{
+            if(!cycle || startTicker._js) return;
+            if(document.hidden){ guard(); return; }           /* أُخفيت أثناء القياس: نعيد */
+            if(Math.abs(readX()-a) > 0.5) return;            /* الحركة تعمل */
+            startTicker._js=true; driveByJS();
+          }, 1200);
+        };
+
+        /* القيادة اليدوية: نفس السرعة والاتجاه، وتتوقف من نفسها حين تُخفى الصفحة */
+        function driveByJS(){
+          tr.style.animation="none";
+          let off=0, last=0;
+          const step=(ts)=>{
+            startTicker._raf=requestAnimationFrame(step);
+            if(!last){ last=ts; return; }
+            const dt=Math.min(64, ts-last); last=ts;
+            if(sc.classList.contains("hold") || !cycle || document.hidden) return;
+            off += SPEED*dt/1000;
+            if(off>=cycle) off-=cycle;
+            tr.style.transform="translate3d("+off.toFixed(1)+"px,0,0)";
+          };
+          cancelAnimationFrame(startTicker._raf);
+          startTicker._raf=requestAnimationFrame(step);
+        }
+
         build();
         clearTimeout(startTicker._t);
         startTicker._t=setTimeout(build,600);                /* بعد تحميل الشعارات */
