@@ -862,9 +862,21 @@ body{background:
    المحتوى مكرر مرتين داخل مسار واحد، والحركة تنقله بمقدار نسخة كاملة
    ثم تعيد الكرة — فلا يظهر انقطاع. الاتجاه من اليسار إلى اليمين لأن
    القراءة عربية: الجديد يدخل من اليسار. يتوقف عند اللمس أو المرور. */
-.strip-sc{display:flex;gap:6px;overflow:hidden;flex:1;padding:4px 0;
-  -webkit-mask-image:linear-gradient(90deg,transparent,#000 28px,#000 calc(100% - 28px),transparent);
-          mask-image:linear-gradient(90deg,transparent,#000 28px,#000 calc(100% - 28px),transparent)}
+.strip-sc{display:flex;gap:6px;overflow:hidden;flex:1;padding:4px 0}
+/* القناع للشاشات الواسعة فقط: سفاري على iOS يتعثّر بقناع فوق عنصر
+   متحرك فيُخفي المحتوى أو يجمّده. */
+@media(min-width:601px){
+  .strip-sc{-webkit-mask-image:linear-gradient(90deg,transparent,#000 28px,#000 calc(100% - 28px),transparent);
+                    mask-image:linear-gradient(90deg,transparent,#000 28px,#000 calc(100% - 28px),transparent)}
+}
+/* على الجوال نضغط البطاقات: سفاري لا يُركّب طبقة أعرض من 4096 بكسل،
+   والمسار نسختان — فلو بقيت البطاقات بحجمها تجاوز الحد وتجمّد الشريط. */
+@media(max-width:600px){
+  .strip .rx{gap:5px;padding:3px 7px;font-size:.68rem}
+  .strip .rx img{width:16px;height:16px;border-radius:3px}
+  .strip .rx .sc{font-size:.76rem;padding:0 5px;min-width:32px}
+  .strip-lb{font-size:.66rem;padding:3px 7px}
+}
 /* translate3d لا translateX: أضمن للتسريع على iOS. وبلا will-change لأن
    المسار عريض جداً (آلاف البكسلات) وقد يرفض سفاري تركيب طبقة بهذا الحجم
    فتتجمّد الحركة — والحارس أدناه يكتشف ذلك ويتولّى القيادة بنفسه. */
@@ -5418,8 +5430,24 @@ useLocalCrests();
         const SPEED=42;                                      /* بكسل في الثانية */
         const reduce=()=>matchMedia("(prefers-reduced-motion: reduce)").matches;
         let cycle=0;
+        /* سفاري على iOS لا يُركّب طبقة أعرض من 4096 بكسل، والمسار نسختان.
+           فعلى الشاشات المحمولة نقتطع من آخر البطاقات حتى تتّسع النسخة في
+           النصف — تبقى نتائج الجولة كاملة ويُختصر «القادم» وهو الأقل أهمية.
+           أما على سطح المكتب فلا حاجة: حدود الطبقات هناك أوسع بكثير. */
+        const MAXLAYER=4000;
+        const trim=()=>{
+          if(innerWidth > 900) return;                       /* سطح المكتب: بلا اقتطاع */
+          while(tr.scrollWidth > MAXLAYER/2 && tr.children.length>3){
+            const last=tr.lastElementChild;
+            if(!last) break;
+            tr.removeChild(last); trimmed.push(last);
+          }
+        };
+        let trimmed=[];
         const build=()=>{
           tr.querySelectorAll("[data-dup]").forEach(n=>n.remove());
+          trimmed.forEach(n=>tr.appendChild(n)); trimmed=[];   /* نُعيد ما اقتُطع ثم نُقرّر */
+          trim();
           const w=tr.scrollWidth;
           if(!w || w<=sc.clientWidth+8){ sc.classList.add("still"); cycle=0; return; }
           sc.classList.remove("still");
