@@ -167,6 +167,53 @@ tbody tr.rel{box-shadow:inset 3px 0 0 rgba(224,100,79,.7)}
 .score.soon{font-size:.95rem;color:var(--sand);background:rgba(233,185,73,.12);
   border:1px solid rgba(233,185,73,.35);direction:ltr}
 .match.soon{border-color:rgba(233,185,73,.35);background:rgba(14,43,82,.45)}
+/* ---- المباريات الجارية على الرئيسية ---- */
+.livewrap{background:#fff;border:1px solid var(--line,rgba(143,166,196,.18));border-radius:14px;
+  overflow:hidden;margin-bottom:12px;box-shadow:var(--shadow,0 6px 18px rgba(11,31,58,.06))}
+.live-hd{display:flex;align-items:center;gap:8px;padding:9px 14px;font-family:var(--display,inherit);
+  font-weight:800;font-size:.82rem;color:#fff;background:linear-gradient(90deg,#C62828,#8E1B3A)}
+.live-dot{width:8px;height:8px;border-radius:50%;background:#fff;flex:none;
+  box-shadow:0 0 0 0 rgba(255,255,255,.7);animation:livePulse 1.6s infinite}
+@keyframes livePulse{70%{box-shadow:0 0 0 7px rgba(255,255,255,0)}100%{box-shadow:0 0 0 0 rgba(255,255,255,0)}}
+.liverow{display:flex;align-items:center;gap:9px;width:100%;border:0;background:transparent;
+  padding:11px 14px;cursor:pointer;text-align:inherit;font-family:inherit;
+  border-top:1px solid var(--line,rgba(143,166,196,.14))}
+.liverow:first-of-type{border-top:0}
+.liverow:hover{background:rgba(198,40,40,.05)}
+.lv-side{display:flex;align-items:center;gap:7px;flex:1;min-width:0}
+.lv-side.a{flex-direction:row-reverse}
+.lv-side b{font-size:.86rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  color:var(--head,#0B1F3A)}
+.lv-sc{flex:none;font-family:var(--display,inherit);font-weight:800;font-size:1rem;
+  background:var(--navy,#0B1F3A);color:#fff;border-radius:7px;padding:3px 11px;min-width:56px;text-align:center}
+.lv-min{flex:none;font-size:.72rem;font-weight:700;color:#C62828;min-width:46px;text-align:center;
+  direction:ltr;unicode-bidi:isolate}
+@media(max-width:480px){
+  .liverow{gap:6px;padding:10px}
+  .lv-side .crest,.lv-side .crest.has-logo{width:26px;height:26px}
+  .lv-side b{font-size:.78rem}
+  .lv-sc{font-size:.9rem;padding:2px 8px;min-width:46px}
+  .lv-min{min-width:38px;font-size:.68rem}
+}
+/* ---- زر التفاصيل وطيّها ---- */
+.mtog{display:flex;align-items:center;justify-content:center;gap:7px;width:100%;
+  border:0;border-top:1px solid var(--line,rgba(143,166,196,.18));background:transparent;
+  padding:9px 12px;color:var(--sky,#5FB2E8);font-family:var(--display,inherit);
+  font-weight:700;font-size:.78rem;cursor:pointer;transition:background .15s}
+.mtog:hover{background:rgba(95,178,232,.07)}
+.mtog em{font-style:normal;background:rgba(95,178,232,.16);border-radius:999px;
+  padding:1px 7px;font-size:.72rem}
+.mtog .chev{width:0;height:0;border-inline:4.5px solid transparent;
+  border-top:5.5px solid currentColor;transition:transform .18s}
+.mtog.on .chev{transform:rotate(180deg)}
+.mdet[hidden]{display:none}
+/* ---- قائمة الإنذارات ---- */
+.cd-wrap{border-top:1px dashed rgba(143,166,196,.22);padding:10px 14px;display:grid;gap:6px}
+.cd-hd{font-size:.72rem;color:var(--slate,#8FA6C4);margin-bottom:2px}
+.cd-row{display:flex;align-items:center;gap:8px;font-size:.8rem}
+.cd-min{direction:ltr;unicode-bidi:isolate;font-variant-numeric:tabular-nums;
+  color:var(--sky,#5FB2E8);font-weight:600;min-width:34px;font-size:.74rem}
+.cd-name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 /* الشاشات الضيقة: اسم النادي كاملاً بلا قطع. نُفسح له بتصغير الشعار
    وحشو النتيجة والفجوات — «الصليبخات» أطولها وهي المقياس. */
 @media(max-width:480px){
@@ -3602,6 +3649,33 @@ function countdown(ts){
   if(hrs>=1)  return hrs===1?"بعد ساعة":hrs===2?"بعد ساعتين":`بعد ${hrs} ساعات`;
   return mins<=1?"بعد دقيقة":`بعد ${mins} دقيقة`;
 }
+/* ===== المباريات الجارية الآن =====
+   تُحدَّد بالتوقيت وحده: انطلقت ولم تمضِ ساعتان. الدقيقة تقديرية
+   محسوبة من ضربة البداية — لا تعرف التوقّف بدقة — فنكتفي بحد 90. */
+function liveMatches(){
+  return MATCHES.filter(isLive).sort((a,b)=>(kickoffTS(a)||0)-(kickoffTS(b)||0));
+}
+function liveMinute(m){
+  const k=kickoffTS(m); if(k===null) return "";
+  const mins=Math.floor((Date.now()-k)/60000);
+  if(mins<0) return "";
+  if(mins<=45) return mins+"'";
+  if(mins<60)  return "الاستراحة";
+  return Math.min(90, mins-15)+"'";        /* ربع ساعة استراحة تقريباً */
+}
+function liveCard(){
+  const ms=liveMatches();
+  if(!ms.length) return "";
+  return `<div class="livewrap">
+    <div class="live-hd"><span class="live-dot"></span>جارية الآن</div>
+    ${ms.map(m=>`<button type="button" class="liverow" data-golive="1">
+      <span class="lv-side">${crest(m.home)}<b>${esc(m.home)}</b></span>
+      <span class="lv-sc">${(m.hg??0)} - ${(m.ag??0)}</span>
+      <span class="lv-side a"><b>${esc(m.away)}</b>${crest(m.away)}</span>
+      <span class="lv-min">${liveMinute(m)}</span>
+    </button>`).join("")}
+  </div>`;
+}
 function nextMatchCard(){
   const m=nextMatch();
   if(!m) return "";
@@ -3646,6 +3720,7 @@ function renderHome(){
     </div>
   </div>
   ${compChips()}
+  ${liveCard()}
   ${nextMatchCard()}
   ${exportBar("league",null,"ملخص "+(COMP==="الكل"?"المسابقات":COMP))}
   <div class="kpis">
@@ -3673,6 +3748,8 @@ function renderHome(){
       <div class="tx"><b>${esc(h.t)}</b><span>${esc(h.d)}</span></div></div>`).join("")}</div>
   <p class="hint">كل رقم هنا يُحتسب لحظياً من سجل الأهداف — لا يُكتب يدوياً.</p>`;
   wireComp($("#v-home"));
+  /* الضغط على مباراة جارية يفتح قسم المباريات */
+  document.querySelectorAll("[data-golive]").forEach(b=>b.onclick=()=>go("matches"));
   const nb=$("#nextmCard");
   if(nb) nb.onclick=()=>{ SELR=null; SELDAY=null; go("matches"); };
 }
@@ -3737,6 +3814,30 @@ function renderMatches(){
     rows.push(`<div class="tl-mark end"><span>النهاية <b dir="ltr">${m.hg??h} - ${m.ag??a}</b></span></div>`);
     return `<div class="tl"><div class="tl-head"><span>${esc(m.home)}</span><span>${esc(m.away)}</span></div>${rows.join("")}</div>`;
   }
+  /* الإنذارات وحالات الطرد مرتبة بالدقيقة */
+  function cardsList(mc){
+    if(!mc.length) return "";
+    const rows=[...mc].sort((a,b)=>(+a.m||0)-(+b.m||0)).map(c=>`<div class="cd-row">
+      <span class="cd-min">${(+c.m||0)}'</span>
+      ${crest(c.club)}
+      <span class="cd-name">${esc(c.p)}</span>
+      <i class="cardpill ${isRed(c.type)?"r":"y"}"></i>
+    </div>`).join("");
+    return `<div class="cd-wrap"><div class="cd-hd">الإنذارات وحالات الطرد</div>${rows}</div>`;
+  }
+
+  /* التفاصيل مطويّة: البطاقة تبقى نظيفة، وتُفتح بالضغط */
+  function detailsBlock(m, gs, mc, soon){
+    if(soon) return "";
+    const tl = goalsTimeline(m, gs);
+    const cl = cardsList(mc);
+    if(!tl && !cl) return "";
+    const n = gs.length + (typeof matchSubs==="function" ? matchSubs(m).length : 0) + mc.length;
+    return `<button type="button" class="mtog" aria-expanded="false">
+        <span>التفاصيل${n?` <em>${n}</em>`:""}</span><i class="chev"></i></button>
+      <div class="mdet" hidden>${tl}${cl}</div>`;
+  }
+
   const matchCards = list.map(m=>{
     const gs=matchGoals(m);
     const mc=CARDS.filter(x=>x.r===m.round && (x.club===m.home||x.club===m.away));
@@ -3757,7 +3858,7 @@ function renderMatches(){
         ${soon?"":`<span class="mgoals">${gw(gs.length)}</span>`}
         ${(y||r)?`<span class="mcards">${y?`<b><i class="cardpill y"></i>${y}</b>`:""}${r?`<b><i class="cardpill r"></i>${r}</b>`:""}</span>`:""}
       </div>
-      ${goalsTimeline(m,gs)}
+      ${detailsBlock(m, gs, mc, soon)}
     </div>`;
   }).join("");
 
@@ -3769,6 +3870,13 @@ function renderMatches(){
     ${list.length?matchCards:'<div class="card pad" style="text-align:center;color:var(--slate)">لا توجد مباريات ضمن هذا التحديد.</div>'}`;
 
   const V=$("#v-matches");
+  /* فتح التفاصيل وطيّها — مباراة واحدة مفتوحة تكفي، فلا تطول الصفحة */
+  V.querySelectorAll(".mtog").forEach(b=>b.onclick=()=>{
+    const box=b.nextElementSibling, open=!box.hidden;
+    box.hidden=open;
+    b.setAttribute("aria-expanded", String(!open));
+    b.classList.toggle("on", !open);
+  });
   wireComp(V);
   V.querySelectorAll("[data-round]").forEach(b=>b.onclick=()=>{
     SELR = b.dataset.round==="all" ? null : +b.dataset.round; SELDAY=null; renderMatches(); });
