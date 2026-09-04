@@ -5364,9 +5364,31 @@ async function bootData(){
   }));
   document.querySelectorAll('nav.tabs button').forEach(b=>b.addEventListener('click',()=>setTimeout(sync,0)));
   window.addEventListener('hashchange',()=>setTimeout(sync,0));
-  /* فتح قسم مباشرة عبر ?v=matches (للاختبار) */
+  /* فتح قسم مباشرة عبر ?v=matches — تستعمله اختصارات التطبيق المثبَّت.
+     نضغط زر التبويب بعد اكتمال الإقلاع بدل اعتراض go: الاعتراض كان
+     يُبطله أي التفاف لاحق على الدالة، والنقر يمرّ بنفس مسار المستخدم. */
   const qv=new URLSearchParams(location.search).get('v');
-  if(qv && qv!=="home"){ let done=false; const _gq=go; go=function(v){ if(!done && v==="home"){ done=true; return _gq(qv); } return _gq(v); }; }
+  if(qv && qv!=="home"){
+    let tries=0, stop=false;
+    /* لمسة من المستخدم تُنهي التوجيه فوراً حتى لا نسحبه من قسم اختاره */
+    /* isTrusted يميّز نقرة الإصبع عن نقرتنا البرمجية — بدونه يوقف
+       التوجيهُ نفسَه عند أول محاولة. */
+    document.addEventListener('click', e=>{
+      if(e.isTrusted && e.target.closest('nav.tabs, .hero-sub')) stop=true;
+    }, true);
+    const open=()=>{
+      if(stop) return;
+      const cur=document.querySelector('nav.tabs button[aria-selected="true"]');
+      if(!cur || cur.dataset.v!==qv){
+        const b=document.querySelector('nav.tabs button[data-v="'+qv+'"]');
+        if(b && b.style.display!=='none'){ b.click(); setTimeout(sync,0); }
+      }
+      /* نظل نراقب طوال الإقلاع: ينتهي متأخراً ويعيد الرئيسية، فلو توقفنا
+         عند أول نجاح لعاد القسم للرئيسية بعدنا. */
+      if(++tries<30) setTimeout(open,300);
+    };
+    setTimeout(open,300);
+  }
   setTimeout(sync,300);
 })();
 </script>
