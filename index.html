@@ -508,24 +508,25 @@ details.squadbox summary label.lb{margin:0;cursor:pointer}
 .shead select{flex:0 0 auto;width:auto;background:#fff;color:var(--head);
   border:1px solid var(--line2);border-radius:8px;padding:5px 8px;font:inherit;
   font-size:.78rem;font-variant-numeric:tabular-nums}
-/* الملعب — واحد يخدم المحرّر وصفحة المباراة وملف النادي */
-.pitch{position:relative;container-type:inline-size;border-radius:10px;overflow:hidden;
+/* ملعب التشكيلة — واحد يخدم المحرّر وصفحة المباراة وملف النادي.
+   الاسم xipitch لا pitch: الأخير محجوز لخريطة أماكن التسجيل. */
+.xipitch{position:relative;container-type:inline-size;border-radius:10px;overflow:hidden;
   user-select:none;max-width:400px;margin-inline:auto;
   background:linear-gradient(#1f7a45,#166035)}
-.pitch.half{aspect-ratio:3/4}          /* فريق واحد */
-.pitch.full{aspect-ratio:2/3}          /* الفريقان وجهاً لوجه */
-.pitch::before,.pitch::after{content:"";position:absolute;left:50%;transform:translateX(-50%);
+.xipitch.half{aspect-ratio:3/4}          /* فريق واحد */
+.xipitch.full{aspect-ratio:2/3}          /* الفريقان وجهاً لوجه */
+.xipitch::before,.xipitch::after{content:"";position:absolute;left:50%;transform:translateX(-50%);
   width:44%;height:11%;border:1px solid rgba(255,255,255,.28);pointer-events:none}
-.pitch::before{top:0;border-top:0}
-.pitch::after{bottom:0;border-bottom:0}
-.pitch-lines{position:absolute;inset:0;pointer-events:none;
+.xipitch::before{top:0;border-top:0}
+.xipitch::after{bottom:0;border-bottom:0}
+.xip-lines{position:absolute;inset:0;pointer-events:none;
   --l:rgba(255,255,255,.28);
   background:
     repeating-linear-gradient(180deg,rgba(255,255,255,.045) 0 8%,transparent 8% 16%),
     linear-gradient(var(--l),var(--l)) 50% 50%/100% 1px no-repeat,
     linear-gradient(var(--l),var(--l)) 0 50%/1px 100% no-repeat,
     linear-gradient(var(--l),var(--l)) 100% 50%/1px 100% no-repeat}
-.pitch-lines::before{content:"";position:absolute;left:50%;top:50%;
+.xip-lines::before{content:"";position:absolute;left:50%;top:50%;
   width:26%;aspect-ratio:1;transform:translate(-50%,-50%);border-radius:50%;
   border:1px solid rgba(255,255,255,.28)}
 .pp-spot{position:absolute;transform:translate(50%,-50%);display:flex;flex-direction:column;
@@ -3328,7 +3329,7 @@ function drawShape(club){
   const st=EDIT.shapes[club]=EDIT.shapes[club]||{f:"",pos:{}};
   const form=st.f||autoFormation(club);
   const kit=kitOf(club);
-  box.innerHTML=`<div class="pitch-lines"></div>`;
+  box.innerHTML=`<div class="xip-lines"></div>`;
   shapeSlots(shapeMen(club),form).forEach(({p,x,y,n})=>{
     const ov=st.pos[p.n];
     const el=document.createElement("div");
@@ -3410,7 +3411,7 @@ function clubPitchHTML(round, comp, club){
   const S=pitchSpots(round, comp, club);
   if(!S) return "";
   const kit=kitOf(club);
-  return `<div class="pitch half"><div class="pitch-lines"></div>
+  return `<div class="xipitch half"><div class="xip-lines"></div>
     ${S.spots.map(({p,x,y,n})=>spotHTML(p,x,y,n,kit)).join("")}</div>`;
 }
 /* ملعب للفريقين: المضيف في نصفه السفلي، والضيف في العلوي مقلوباً */
@@ -3429,7 +3430,7 @@ function matchPitchHTML(m){
   const tag=c=>`<div class="xi-t">${crest(c)}<b>${esc(c)}</b>`;
   return `<div class="xi">
     ${tag(m.away)}<i>${esc(A.form)}</i></div>
-    <div class="pitch full"><div class="pitch-lines"></div>
+    <div class="xipitch full"><div class="xip-lines"></div>
       ${half(A, m.away, true)}${half(H, m.home, false)}</div>
     ${tag(m.home)}<i>${esc(H.form)}</i></div>
   </div>`;
@@ -3543,7 +3544,7 @@ function matchFormHTML(){
         })()}</select>
         <button type="button" class="btn ghost sm" data-resetshape="${esc(cl)}">إرجاع التلقائي</button>
       </div>
-      <div class="pitch half epitch" data-pitchfor="${esc(cl)}"></div>
+      <div class="xipitch half epitch" data-pitchfor="${esc(cl)}"></div>
     </div>`).join("")}</div>
 
   <h2 class="sec">التبديلات (${E.subs.length})</h2>
