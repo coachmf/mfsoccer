@@ -4,7 +4,7 @@
 const VIEWS = {
   ui: { sel:null, subMode:false, tOut:[], tIn:[], filters:{pos:'',club:'',sort:'total',search:'',fdr:false},
         pickerSquad:[], authTab:'login', fxGw:null, statsTab:'transfers', playerOpen:null, leagueOpen:null,
-        adminSec:'gws', adminGw:null, editFx:null, pointsGw:null, cmp:[] },
+        adminSec:'gws', adminGw:null, editFx:null, pointsGw:null, cmp:[], legacyAdmin:false },
 
   /* ======================= المصادقة ======================= */
   auth(){

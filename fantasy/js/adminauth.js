@@ -52,8 +52,18 @@ const ADMINAUTH = {
   ownerRec(email){ const e=String(email||'').trim().toLowerCase(); return this.OWNERS.find(o=>o.email===e && o.hash); },
   KEY:'kwf_admin', TTL: 24*3600*1000,
   session(){ try{ const s=JSON.parse(localStorage.getItem(this.KEY)||'null'); return (s && s.until>Date.now())? s : null; }catch(e){ return null; } },
-  active(){ return !!this.session(); },
-  isOwner(){ const s=this.session(); return !!s && !!this.ownerRec(s.email); },
+
+  /* الطريق المعتمد: حساب الموقع نفسه.
+     CLOUD.admin يُحسب من Firebase — المالك أو محرّر مفعّل في seasons/staff —
+     وهو عين الشرط الذي تفرضه firestore.rules، فما يظهر هنا لا يرفضه الخادم.
+     ولا يحتاج سرّاً في الكود: ملف الفانتسي مقروء للعالم. */
+  cloudAdmin(){ return typeof CLOUD!=='undefined' && !!CLOUD.admin; },
+  cloudEmail(){ return (typeof CLOUD!=='undefined' && CLOUD.user && CLOUD.user.email) || ''; },
+
+  active(){ return this.cloudAdmin() || !!this.session(); },
+  isOwner(){ if(this.cloudAdmin()) return true; const s=this.session(); return !!s && !!this.ownerRec(s.email); },
+  /* البريد المعروض في لوحة المديرين، أياً كان طريق الدخول */
+  whoami(){ const s=this.session(); return this.cloudAdmin()? this.cloudEmail() : (s? s.email : ''); },
   extra(){ DB.state.admins=DB.state.admins||[]; return DB.state.admins; },
   sync(){ const m=DB.me(); if(m){ const a=this.active(); if(m.admin!==a){ m.admin=a; DB.save(); } } },
   login(email, pass){
@@ -67,23 +77,67 @@ const ADMINAUTH = {
     this.sync(); UI.toast(o? `أهلاً ${o.name} — دخلت كمالك اللعبة` : 'تم الدخول كمدير');
     VIEWS.ui.adminSec='gws'; APP.go('admin');
   },
-  logout(){ localStorage.removeItem(this.KEY); this.sync(); UI.toast('تم الخروج من الإدارة'); APP.go('dashboard'); },
+  async logout(){
+    localStorage.removeItem(this.KEY);
+    /* الداخل بحساب الموقع يخرج من الحساب نفسه، وإلا بقيت الصلاحية قائمة */
+    if(this.cloudAdmin()){ try{ await CLOUD.logout(); }catch(e){} }
+    this.sync(); UI.toast('تم الخروج من الإدارة'); APP.go('dashboard');
+  },
+  /* دخول بحساب الموقع — لا سرّ في الكود، والصلاحية من فريق العمل */
+  async siteLogin(email, pass){
+    if(typeof CLOUD==='undefined' || !CLOUD.ready){
+      UI.toast('السحابة غير متاحة — تأكد من الاتصال', true); return;
+    }
+    email=String(email||'').trim().toLowerCase();
+    if(!email || !pass){ UI.toast('أدخل البريد وكلمة المرور',true); return; }
+    const r = await CLOUD.login(email, pass);
+    if(!r.ok){ UI.toast(r.err || 'تعذّر الدخول', true); return; }
+    /* onAuthStateChanged يضبط CLOUD.admin ثم يعيد الرسم */
+    await new Promise(res=>setTimeout(res,600));
+    if(!this.cloudAdmin()){
+      UI.toast('دخلت بحسابك، لكنه غير مُدرج في فريق العمل — راجع مالك الموقع', true);
+      APP.render(); return;
+    }
+    UI.toast('أهلاً — دخلت بصلاحية فريق العمل');
+    VIEWS.ui.adminSec='gws'; APP.go('admin');
+  },
+
   loginView(){
+    const cloudUp = typeof CLOUD!=='undefined' && CLOUD.ready;
+    const signedNotAdmin = cloudUp && CLOUD.user && !CLOUD.admin;
     return `<div class="card" style="max-width:420px;margin:0 auto">
-      <h3>دخول المطوّر</h3>
-      <div class="tiny" style="margin-bottom:12px;color:var(--text3)">لوحة الإدارة مخصصة لمطوّر اللعبة والمديرين المعتمدين فقط.</div>
+      <h3>دخول الإدارة</h3>
+      <div class="tiny" style="margin-bottom:12px;color:var(--text3)">
+        ادخل بحساب الموقع نفسه — الحساب الذي ترصد به المباريات في mfsoccer.com.
+        الصلاحية تُمنح وتُسحب من قائمة فريق العمل، ولا تحتاج كلمة مرور خاصة باللعبة.</div>
+      ${signedNotAdmin? `<div class="tiny" style="margin-bottom:12px;color:var(--bad,#b00)">
+        أنت داخل بحساب <b style="direction:ltr;display:inline-block">${esc(CLOUD.user.email||'')}</b>
+        وهو غير مُدرج في فريق العمل. اطلب من مالك الموقع إضافتك محرّراً، أو ادخل بحساب آخر.</div>`:''}
+      ${!cloudUp? `<div class="tiny" style="margin-bottom:12px;color:var(--bad,#b00)">
+        تعذّر الاتصال بالسحابة — تحقّق من الإنترنت.</div>`:''}
       <div class="field"><label>البريد الإلكتروني</label><input id="ad_email" type="email" autocomplete="username" style="direction:ltr" placeholder="name@email.com"></div>
-      <div class="field"><label>كلمة المرور</label><input id="ad_pass" type="password" autocomplete="current-password" style="direction:ltr" onkeydown="if(event.key==='Enter') ADMINAUTH.login(gv('ad_email'),gv('ad_pass'))"></div>
-      <button class="btn" style="width:100%" onclick="ADMINAUTH.login(gv('ad_email'),gv('ad_pass'))">دخول</button>
+      <div class="field"><label>كلمة المرور</label><input id="ad_pass" type="password" autocomplete="current-password" style="direction:ltr" onkeydown="if(event.key==='Enter') ADMINAUTH.siteLogin(gv('ad_email'),gv('ad_pass'))"></div>
+      <button class="btn" style="width:100%" onclick="ADMINAUTH.siteLogin(gv('ad_email'),gv('ad_pass'))">دخول بحساب الموقع</button>
+      <div style="margin-top:14px;border-top:1px solid var(--line);padding-top:12px">
+        <button class="btn sec sm" style="width:100%" onclick="VIEWS.ui.legacyAdmin=!VIEWS.ui.legacyAdmin;APP.render()">
+          ${VIEWS.ui.legacyAdmin? 'إخفاء' : 'الدخول بكلمة مرور اللعبة القديمة'}</button>
+        ${VIEWS.ui.legacyAdmin? `
+          <div class="tiny" style="margin:10px 0;color:var(--text3)">طريق احتياطي فقط. كلمة المرور هذه مضمّنة في ملف تقرأه أي جهة، فلا تضع فيها سرّاً يهمّك.</div>
+          <div class="field"><label>البريد الإلكتروني</label><input id="lg_email" type="email" style="direction:ltr"></div>
+          <div class="field"><label>كلمة المرور</label><input id="lg_pass" type="password" style="direction:ltr" onkeydown="if(event.key==='Enter') ADMINAUTH.login(gv('lg_email'),gv('lg_pass'))"></div>
+          <button class="btn sec" style="width:100%" onclick="ADMINAUTH.login(gv('lg_email'),gv('lg_pass'))">دخول</button>`:''}
+      </div>
     </div>`;
   },
   /* قسم «المديرون» في لوحة الإدارة */
   section(){
-    const owner=this.isOwner(); const s=this.session();
+    const owner=this.isOwner(); const s={email:this.whoami()};
+    const viaSite=this.cloudAdmin();
     const rows=this.extra().map(a=>`<tr><td style="direction:ltr;text-align:right">${esc(a.email)}</td><td class="tiny">${UI.fmtDateShort(a.added)}</td>
       <td>${owner? `<button class="btn danger sm" onclick="ADMINAUTH.removeAdmin('${esc(a.email)}')">إزالة</button>`:''}</td></tr>`).join('');
     return `<div class="card"><h3>المديرون</h3>
-      <div class="tiny" style="margin-bottom:10px;color:var(--text3)">أنت داخل الآن بحساب <b style="direction:ltr;display:inline-block">${esc(s.email)}</b>${owner?' (المالك)':''}. الجلسة تنتهي بعد 24 ساعة أو عند الخروج.</div>
+      <div class="tiny" style="margin-bottom:10px;color:var(--text3)">أنت داخل الآن بحساب <b style="direction:ltr;display:inline-block">${esc(s.email)}</b>${owner?' (المالك)':''}. ${viaSite? 'الدخول بحساب الموقع — الصلاحية من قائمة فريق العمل، وتنتهي بالخروج من الحساب.' : 'الجلسة تنتهي بعد 24 ساعة أو عند الخروج.'}</div>
+      ${viaSite? '':`<div class="tiny" style="margin-bottom:10px;color:var(--text3)">دخلت بكلمة مرور اللعبة القديمة. الأفضل الدخول بحساب الموقع — لا يحتاج سرّاً مخزّناً في ملف عام.</div>`}
       <div class="scroll-x"><table class="tbl"><tr><th>البريد</th><th>أُضيف</th><th></th></tr>
         ${this.OWNERS.filter(o=>o.hash).map(o=>`<tr><td style="direction:ltr;text-align:right"><b>${esc(o.email)}</b> <span class="pill gold">المالك</span></td><td class="tiny">ثابت في الكود</td><td></td></tr>`).join('')}
         ${rows}</table></div>
