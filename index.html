@@ -567,6 +567,15 @@ details.squadbox summary label.lb{margin:0;cursor:pointer}
 .xi-io .ar.in{border-bottom:6px solid var(--win)}
 .xi-io .ar.out{border-top:6px solid var(--loss)}
 
+.xitally{display:grid;gap:8px;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));margin:10px 0}
+.xitl{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:.78rem;
+  border:1px solid var(--line2);border-radius:9px;padding:7px 10px;background:#F7FAFD}
+.xitl b{flex:1;min-width:0;color:var(--head);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.xitl span{font-weight:700;font-variant-numeric:tabular-nums;color:var(--slate)}
+.xitl.bad{border-color:#F5B5B0;background:#FDECEC}
+.xitl.bad span{color:#8A1F1A}
+.xitl em{font-style:normal;font-size:.72rem;color:#8A1F1A;flex-basis:100%}
+
 /* المحرّر وحده يسحب */
 .epitch{touch-action:none}
 .epitch .pp-spot{cursor:grab}
@@ -3193,7 +3202,10 @@ function shapeMenFrom(names, club){
   });
 }
 function shapeMen(club){
-  return shapeMenFrom((EDIT.lineup||[]).filter(x=>x.club===club && x.p).map(x=>x.p), club);
+  const seen={}, ns=[];
+  (EDIT.lineup||[]).filter(x=>x.club===club && x.p)
+    .forEach(x=>{ if(!seen[x.p]){ seen[x.p]=1; ns.push(x.p); } });
+  return shapeMenFrom(ns, club);    /* الملعب كما يراه الجمهور: بلا تكرار */
 }
 function autoForm(men){
   const c={D:0,M:0,F:0};
@@ -3247,9 +3259,11 @@ function shapeRowOf(round, comp, club){
   return (ALL&&ALL.shapes||[]).find(x=>x.r===round && compOf(x)===comp && x.club===club) || null;
 }
 function xiNames(round, comp, club){
-  return (ALL&&ALL.lineups||[])
+  const seen={}, out=[];
+  (ALL&&ALL.lineups||[])
     .filter(x=>x.r===round && compOf(x)===comp && x.club===club && x.p)
-    .map(x=>x.p);
+    .forEach(x=>{ if(!seen[x.p]){ seen[x.p]=1; out.push(x.p); } });
+  return out;                       /* لاعب مكرر بالخطأ يُرسم مرة واحدة */
 }
 function pitchSpots(round, comp, club){
   const names=xiNames(round, comp, club);
@@ -3341,6 +3355,25 @@ function wireShapes(box){
   box.querySelectorAll("[data-pitchfor]").forEach(p=>drawShape(p.dataset.pitchfor));
 }
 
+/* عدّاد التشكيلة: يمسك النقص والتكرار قبل الحفظ، فلا يصل خطأ للجمهور */
+function xiTally(sides, E){
+  const rows=sides.map(cl=>{
+    const ns=(E.lineup||[]).filter(x=>x.club===cl && x.p).map(x=>x.p);
+    const seen={}, dup=[];
+    ns.forEach(n=>{ if(seen[n] && dup.indexOf(n)<0) dup.push(n); seen[n]=1; });
+    const uniq=Object.keys(seen).length;
+    const bad = uniq!==11 || dup.length;
+    return `<div class="xitl${bad?" bad":""}">
+      <b>${esc(cl)}</b>
+      <span>${uniq} من 11</span>
+      ${dup.length?`<em>مكرر: ${dup.map(esc).join("، ")}</em>`:""}
+      ${!dup.length && uniq<11 ? `<em>ناقص ${11-uniq}</em>` : ""}
+      ${!dup.length && uniq>11 ? `<em>زائد ${uniq-11}</em>` : ""}
+    </div>`;
+  }).join("");
+  return rows ? `<div class="xitally">${rows}</div>` : "";
+}
+
 function matchFormHTML(){
   const E=EDIT, m=E.match;
   const sides=[m.home,m.away].filter(Boolean);
@@ -3372,6 +3405,7 @@ function matchFormHTML(){
       ${pfld("اللاعب","lineup."+i+".p",x.club,sides,x.p)}
     </div></div>`).join("")}
   <button class="addbtn" data-add="lineup">+ إضافة لاعب أساسي</button>
+  ${xiTally(sides, E)}
 
   <h2 class="sec">شكل التشكيلة على الملعب</h2>
   <p class="hint">اختر طريقة اللعب، واسحب أي لاعب لموضعه الفعلي. المراكز في الكشف تصف اللاعب عموماً،
@@ -3380,9 +3414,13 @@ function matchFormHTML(){
     <div class="shapebox" data-shapeclub="${esc(cl)}">
       <div class="shead">
         <b>${esc(cl)}</b>
-        <select data-formfor="${esc(cl)}">${FORMATIONS.map(f=>{
+        <select data-formfor="${esc(cl)}">${(()=>{
           const cur=(E.shapes[cl]||{}).f || autoFormation(cl);
-          return `<option ${f===cur?"selected":""}>${f}</option>`;}).join("")}</select>
+          /* الطريقة المستنتجة قد لا تكون من القياسية (4-2-4 مثلاً)؛
+             نضمّها للقائمة حتى لا تختلف القائمة عمّا يُرسم على الملعب */
+          const list=FORMATIONS.includes(cur)?FORMATIONS:[cur,...FORMATIONS];
+          return list.map(f=>`<option ${f===cur?"selected":""}>${f}</option>`).join("");
+        })()}</select>
         <button type="button" class="btn ghost sm" data-resetshape="${esc(cl)}">إرجاع التلقائي</button>
       </div>
       <div class="pitch half epitch" data-pitchfor="${esc(cl)}"></div>
