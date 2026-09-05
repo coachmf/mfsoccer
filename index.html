@@ -176,8 +176,10 @@ tbody tr.rel{box-shadow:inset 3px 0 0 rgba(224,100,79,.7)}
 .evrow{display:flex;align-items:flex-start;gap:9px;padding:9px 11px;border-radius:10px;
   background:rgba(95,178,232,.07);border:1px solid rgba(95,178,232,.22)}
 .evrow.brk{background:rgba(233,185,73,.1);border-color:rgba(233,185,73,.4)}
-.ev-d{flex:none;font-size:.7rem;font-weight:700;color:var(--sky,#5FB2E8);min-width:74px;
-  direction:ltr;unicode-bidi:isolate;text-align:center;padding-top:1px}
+/* بلا direction:ltr عمداً: التاريخ عربي مختلط بأرقام، ولو فُرض LTR وقعت
+   البداية يساراً فتُقرأ آخراً — «من 6 أكتوبر إلى 21 سبتمبر». */
+.ev-d{flex:none;font-size:.7rem;font-weight:700;color:var(--sky,#5FB2E8);min-width:82px;
+  text-align:center;padding-top:1px;line-height:1.5}
 .evrow.brk .ev-d{color:#B8860B}
 .ev-t{flex:1;min-width:0;font-size:.82rem;line-height:1.6;color:var(--head,#0B1F3A)}
 .ev-k{display:inline-block;font-size:.66rem;font-weight:700;padding:1px 7px;border-radius:999px;
