@@ -167,6 +167,23 @@ tbody tr.rel{box-shadow:inset 3px 0 0 rgba(224,100,79,.7)}
 .score.soon{font-size:.95rem;color:var(--sand);background:rgba(233,185,73,.12);
   border:1px solid rgba(233,185,73,.35);direction:ltr}
 .match.soon{border-color:rgba(233,185,73,.35);background:rgba(14,43,82,.45)}
+/* ---- ملاحظة المباراة ---- */
+.mnote{margin:0 14px 10px;padding:7px 11px;border-radius:9px;font-size:.78rem;line-height:1.6;
+  color:#7A4B00;background:#FFF6E0;border:1px solid rgba(233,185,73,.5)}
+.mnote::before{content:"ملاحظة: ";font-weight:700}
+/* ---- المناسبات وفترات التوقف ---- */
+.evlist{display:grid;gap:7px;margin-top:10px}
+.evrow{display:flex;align-items:flex-start;gap:9px;padding:9px 11px;border-radius:10px;
+  background:rgba(95,178,232,.07);border:1px solid rgba(95,178,232,.22)}
+.evrow.brk{background:rgba(233,185,73,.1);border-color:rgba(233,185,73,.4)}
+.ev-d{flex:none;font-size:.7rem;font-weight:700;color:var(--sky,#5FB2E8);min-width:74px;
+  direction:ltr;unicode-bidi:isolate;text-align:center;padding-top:1px}
+.evrow.brk .ev-d{color:#B8860B}
+.ev-t{flex:1;min-width:0;font-size:.82rem;line-height:1.6;color:var(--head,#0B1F3A)}
+.ev-k{display:inline-block;font-size:.66rem;font-weight:700;padding:1px 7px;border-radius:999px;
+  background:rgba(11,31,58,.08);color:var(--slate,#8FA6C4);margin-inline-start:6px}
+.ev-n{display:block;font-size:.72rem;color:var(--slate,#8FA6C4);margin-top:2px}
+.cday.evd{box-shadow:inset 0 -3px 0 #E9B949}
 /* ---- المباريات الجارية على الرئيسية ---- */
 .livewrap{background:#fff;border:1px solid var(--line,rgba(143,166,196,.18));border-radius:14px;
   overflow:hidden;margin-bottom:12px;box-shadow:var(--shadow,0 6px 18px rgba(11,31,58,.06))}
@@ -2343,6 +2360,7 @@ function keepField(incoming, current){
 function applyData(d, source){
   SEASON = d.season || SEASON;
   ALL = stampComp({matches:d.matches||[], goals:d.goals||[], pens:d.pens||[], cards:d.cards||[],
+                   events:  keepField(d.events,  ALL && ALL.events),
                    lineups: keepField(d.lineups, ALL && ALL.lineups),
                    subs:    keepField(d.subs,    ALL && ALL.subs)});
   SQUADS = d.squads || SQUADS || {};   /* ملف بلا كشوفات لا يمسح الكشوفات الحالية */
@@ -2368,6 +2386,7 @@ function dataObject(){
           matches:ALL?ALL.matches:MATCHES, goals:ALL?ALL.goals:GOALS,
           pens:ALL?ALL.pens:PENS, cards:ALL?ALL.cards:CARDS, squads:SQUADS,
           lineups:(ALL&&ALL.lineups)||[], subs:(ALL&&ALL.subs)||[],
+          events:(ALL&&ALL.events)||[],
           lastUpdate:LASTUPDATE, updated:new Date().toISOString(),
           fantasyOpen:FANTASY_OPEN,
           updatedBy:(FBUSER&&FBUSER.email)||""};
@@ -2385,6 +2404,58 @@ async function persistData(){
   const r = await fbSaveSeason(obj);
   if(r===true) pushBackup();     /* بلا انتظار حتى لا يبطئ الحفظ */
   return r;
+}
+
+/* ===== المناسبات وفترات التوقف — إدارة =====
+   مباريات المنتخب والبطولات الخارجية وأي مناسبة توقف الدوري.
+   تظهر للجمهور في الرزنامة فيعرف سبب الانقطاع. */
+function eventsAdminHTML(){
+  const evs=[...allEvents()].sort((a,b)=>String(a.d).localeCompare(String(b.d)));
+  const rows=evs.map((e,i)=>`<div class="staffrow">
+    <div style="flex:1;min-width:0">
+      <b style="font-size:.85rem">${esc(e.t||"(بلا عنوان)")}</b>
+      <div style="font-size:.72rem;color:var(--slate)">${esc(evRange(e))}${e.k?" · "+esc(e.k):""}${e.n?" · "+esc(e.n):""}</div>
+    </div>
+    <button class="dl" data-evdel="${i}">حذف</button>
+  </div>`).join("");
+  return `<h2 class="sec">المناسبات وفترات التوقف</h2>
+    <div class="card pad">
+      <p class="hint" style="margin:0 0 12px">مباريات المنتخب، والأندية في البطولات الخارجية، وأي توقف للدوري.
+      تظهر للجمهور في رزنامة المباريات فيعرف سبب الانقطاع.</p>
+      <div id="evList">${rows || '<span style="color:var(--slate);font-size:.85rem">لا مناسبات مسجّلة.</span>'}</div>
+      <div style="height:14px"></div>
+      <div class="fgrid">
+        <div class="fld"><label>العنوان</label><input type="text" id="evT" placeholder="مثال: الأزرق أمام قطر — تصفيات كأس العالم"></div>
+        <div class="fld"><label>النوع</label><select id="evK">${EV_KINDS.map(k=>`<option>${k}</option>`).join("")}</select></div>
+        <div class="fld"><label>من تاريخ</label><input type="date" id="evD"></div>
+        <div class="fld"><label>إلى تاريخ (اتركه فارغاً ليوم واحد)</label><input type="date" id="evTo"></div>
+      </div>
+      <div class="fld"><label>تفصيل إضافي (اختياري)</label><input type="text" id="evN" placeholder="مثال: يتوقف الدوري خلال هذه الفترة"></div>
+      <div style="height:8px"></div>
+      <button class="btn" id="evAdd">إضافة المناسبة</button>
+    </div>`;
+}
+
+async function addEvent(){
+  const t=$("#evT").value.trim(), d=$("#evD").value, to=$("#evTo").value,
+        k=$("#evK").value, n=$("#evN").value.trim();
+  if(!t){ toast("اكتب عنوان المناسبة","err"); return false; }
+  if(!d){ toast("اختر تاريخ البداية","err"); return false; }
+  if(to && to<d){ toast("تاريخ النهاية قبل البداية","err"); return false; }
+  const reb=await rebaseOnCloud();
+  if(reb.changed) toast(`وصل تحديث من ${reb.by||"محرّر آخر"} — دُمج قبل الحفظ`,"busy");
+  ALL.events = ALL.events || [];
+  ALL.events.push({d, to: to||"", t, k, n});
+  ALL.events.sort((a,b)=>String(a.d).localeCompare(String(b.d)));
+  return await persistData();
+}
+async function delEvent(i){
+  const reb=await rebaseOnCloud();
+  if(reb.changed) toast(`وصل تحديث من ${reb.by||"محرّر آخر"} — دُمج قبل الحذف`,"busy");
+  const evs=[...allEvents()].sort((a,b)=>String(a.d).localeCompare(String(b.d)));
+  const target=evs[i]; if(!target) return false;
+  ALL.events=(ALL.events||[]).filter(e=>e!==target);
+  return await persistData();
 }
 
 /* ===== النسخ الاحتياطية =====
@@ -2859,7 +2930,7 @@ function absMinute(h, m){
 
 function newEdit(){
   return {orig:null, match:{round:"", comp:(compsPresent()[0]||"الدوري"), home:"", away:"",
-          venue:"", date:"", time:""}, goals:[], cards:[], pens:[], lineup:[], subs:[]};
+          venue:"", date:"", time:"", note:""}, goals:[], cards:[], pens:[], lineup:[], subs:[]};
 }
 function loadEdit(m){
   const gs=(ALL.goals||[]).filter(g=>g.r===m.round && compOf(g)===compOf(m) &&
@@ -2870,7 +2941,7 @@ function loadEdit(m){
   const lus=(ALL.lineups||[]).filter(x=>x.r===m.round && compOf(x)===compOf(m) && (x.club===m.home||x.club===m.away));
   const sbs=(ALL.subs||[]).filter(x=>x.r===m.round && compOf(x)===compOf(m) && (x.club===m.home||x.club===m.away));
   return {orig:mkey(m),
-    match:{round:m.round, comp:compOf(m), home:m.home, away:m.away, venue:m.venue||"", date:m.date||"", time:m.time||""},
+    match:{round:m.round, comp:compOf(m), home:m.home, away:m.away, venue:m.venue||"", date:m.date||"", time:m.time||"", note:m.note||""},
     lineup:lus.map(x=>({club:x.club, p:x.p})),
     subs:sbs.map(x=>({club:x.club, out:x.out||"", in:x.in||"", h:x.h||1, m:x.m||""})),
     goals:gs.map(g=>({sc:g.sc,p:g.p,a:g.a||"",m:g.m,x:g.x||0,det:g.det||"",bp:g.bp||"",zone:g.zone||""})),
@@ -3034,6 +3105,7 @@ function matchFormHTML(){
       ${fld("الفريق الضيف","match.away","select",CLUBS,m.away)}
       ${fld("التاريخ","match.date","date",null,m.date)}
       ${fld("الوقت","match.time","time",null,m.time)}
+      ${fld("ملاحظة تظهر للجمهور (اختيارية)","match.note","text",null,m.note)}
     </div>
   </div>
 
@@ -3171,7 +3243,7 @@ async function saveMatch(){
   if(EDIT.orig) removeMatchByKey(EDIT.orig);
   const other = t => t===m.home ? m.away : m.home;
   ALL.matches.push({n:ALL.matches.length+1, round, comp:m.comp, date:m.date, time:m.time,
-                    venue:m.venue, home:m.home, away:m.away, hg:0, ag:0});
+                    venue:m.venue, home:m.home, away:m.away, note:(m.note||"").trim(), hg:0, ag:0});
   EDIT.goals.forEach(g=>ALL.goals.push({r:round, comp:m.comp, sc:g.sc, cd:other(g.sc), p:g.p, a:g.a||"",
       m:+g.m, x:+g.x||0, cat:catOf(g.det), det:g.det, bp:g.bp||"", zone:g.zone||"",
       og: g.bp==="هدف عكسي" ? (g.og||"") : ""}));
@@ -3562,6 +3634,39 @@ function calMonth(){
   const dates=MATCHES.map(m=>m.date).filter(Boolean).sort();
   return CALM || (dates.length ? dates[dates.length-1].slice(0,7) : new Date().toISOString().slice(0,7));
 }
+/* ===== المناسبات وفترات التوقف =====
+   مناسبة واحدة: {d:"من", to:"إلى"(اختياري), t:"العنوان", k:"النوع", n:"تفصيل"}
+   تُعرض في الرزنامة وتحتها، فيرى الجمهور سبب توقف الدوري. */
+const EV_KINDS = ["منتخب", "بطولة خارجية", "توقف الدوري", "مناسبة"];
+function allEvents(){ return (ALL && ALL.events) || []; }
+function evDays(e){                                  /* أيام المناسبة من d إلى to */
+  const out=[]; if(!e || !e.d) return out;
+  const a=new Date(e.d+"T12:00:00"), b=new Date((e.to||e.d)+"T12:00:00");
+  if(isNaN(a)||isNaN(b)||b<a) return [e.d];
+  for(let t=new Date(a); t<=b; t.setDate(t.getDate()+1)){
+    out.push(t.getFullYear()+"-"+String(t.getMonth()+1).padStart(2,"0")+"-"+String(t.getDate()).padStart(2,"0"));
+    if(out.length>120) break;                        /* حارس ضد مدى مفتوح */
+  }
+  return out;
+}
+function eventsOfMonth(base){
+  return allEvents().filter(e=>evDays(e).some(d=>d.startsWith(base)))
+    .sort((a,b)=>String(a.d).localeCompare(String(b.d)));
+}
+function evRange(e){
+  const f=s=>{ const d=new Date(s+"T12:00:00"); return isNaN(d)?s:(d.getDate()+" "+AR_MON[d.getMonth()]); };
+  return (e.to && e.to!==e.d) ? f(e.d)+" — "+f(e.to) : f(e.d);
+}
+function eventsBlock(base){
+  const evs=eventsOfMonth(base);
+  if(!evs.length) return "";
+  return `<div class="evlist">${evs.map(e=>`
+    <div class="evrow${e.k==="توقف الدوري"?" brk":""}">
+      <span class="ev-d">${esc(evRange(e))}</span>
+      <span class="ev-t">${esc(e.t||"")}${e.k?`<i class="ev-k">${esc(e.k)}</i>`:""}
+        ${e.n?`<em class="ev-n">${esc(e.n)}</em>`:""}</span>
+    </div>`).join("")}</div>`;
+}
 function calendarBar(){
   const base=calMonth();
   const [Y,Mo]=base.split("-").map(Number);
@@ -3570,6 +3675,8 @@ function calendarBar(){
   MATCHES.forEach(m=>{ if(m.date && m.date.startsWith(base)){
     counts[m.date]=(counts[m.date]||0)+1;
     if(isUpcoming(m)) soonDays[m.date]=(soonDays[m.date]||0)+1; } });
+  const evDayset=new Set();                        /* أيام فيها مناسبة */
+  allEvents().forEach(e=>evDays(e).forEach(d=>{ if(d.startsWith(base)) evDayset.add(d); }));
   const lead=new Date(Y,Mo-1,1).getDay();          /* 0 = الأحد */
   const cells=[];
   for(let i=0;i<lead;i++) cells.push('<div class="cday blank"></div>');
@@ -3577,7 +3684,8 @@ function calendarBar(){
     const iso=`${Y}-${String(Mo).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
     const n=counts[iso]||0;
     const sn=soonDays[iso]||0;
-    cells.push(`<button class="cday ${n?(sn===n?"has soon":"has"):"off"}" data-day="${iso}" ${n?"":"disabled"} aria-pressed="${SELDAY===iso}">
+    const ev=evDayset.has(iso);
+    cells.push(`<button class="cday ${n?(sn===n?"has soon":"has"):"off"}${ev?" evd":""}" data-day="${iso}" ${n?"":"disabled"} aria-pressed="${SELDAY===iso}">
       <div class="dn">${d}</div><div class="dd${sn?" g":""}">${n?"●".repeat(Math.min(n,3)):""}</div></button>`);
   }
   const total=Object.values(counts).reduce((a,b)=>a+b,0);
@@ -3590,7 +3698,8 @@ function calendarBar(){
       </div></div>
     <div class="caldow">${AR_DOW.map(d=>`<span>${d}</span>`).join("")}</div>
     <div class="caldays">${cells.join("")}</div>
-    <p class="hint" style="margin:8px 0 0">${total?`${mw(total)} في هذا الشهر — اضغط أي يوم مضيء لعرض مبارياته.${Object.keys(soonDays).length?" الأيام الذهبية مبارياتها لم تبدأ بعد.":""}`:"لا مباريات في هذا الشهر."}</p>
+    <p class="hint" style="margin:8px 0 0">${total?`${mw(total)} في هذا الشهر — اضغط أي يوم مضيء لعرض مبارياته.${Object.keys(soonDays).length?" الأيام الذهبية مبارياتها لم تبدأ بعد.":""}`:"لا مباريات في هذا الشهر."}${evDayset.size?" الأيام ذات الخط الذهبي فيها مناسبة.":""}</p>
+    ${eventsBlock(base)}
   </div>`;
 }
 
@@ -3858,6 +3967,7 @@ function renderMatches(){
         ${soon?"":`<span class="mgoals">${gw(gs.length)}</span>`}
         ${(y||r)?`<span class="mcards">${y?`<b><i class="cardpill y"></i>${y}</b>`:""}${r?`<b><i class="cardpill r"></i>${r}</b>`:""}</span>`:""}
       </div>
+      ${m.note?`<div class="mnote">${esc(m.note)}</div>`:""}
       ${detailsBlock(m, gs, mc, soon)}
     </div>`;
   }).join("");
@@ -4494,6 +4604,8 @@ function renderAdmin(){
         : "الإشهار يُظهر تبويب «فانتسي» لكل الزوار ويرفع بوابة الرمز عن اللعبة. يُحفظ في السحابة فيسري على كل الأجهزة خلال ثوانٍ."}</p>
     </div>
 
+    ${eventsAdminHTML()}
+
     ${backupsHTML()}
 
     <h2 class="sec">بيانات الموسم</h2>
@@ -4669,6 +4781,23 @@ function renderAdmin(){
   if(cp) cp.onclick=()=>{ if(confirm("حذف كل صور اللاعبين؟")){ PHOTOS={}; PAV={}; persist(); renderAdmin(); renderAll(); } };
   const du=$("#dataUp");
   if(du) du.onchange=e=>{ const f=e.target.files[0]; if(f) readDataFile(f); };
+  const eva=$("#evAdd");
+  if(eva) eva.onclick=async()=>{
+    busy(eva,true,"جارٍ الحفظ…");
+    const ok=await addEvent();
+    busy(eva,false);
+    if(ok===true){ LASTSYNC=new Date(); toast("أُضيفت المناسبة ✅","ok"); renderAll(); renderAdmin(); }
+    else if(ok===false) { /* رسالة الخطأ عُرضت */ }
+    else toast(SYNCMSG||"حُفظت محلياً، لكن تعذّر الحفظ في السحابة","err");
+  };
+  document.querySelectorAll("[data-evdel]").forEach(b=>b.onclick=async()=>{
+    if(!confirm("حذف هذه المناسبة؟")) return;
+    busy(b,true,"…");
+    const ok=await delEvent(+b.dataset.evdel);
+    busy(b,false);
+    if(ok===true){ LASTSYNC=new Date(); toast("حُذفت المناسبة","ok"); renderAll(); renderAdmin(); }
+    else toast(SYNCMSG||"تعذّر الحذف","err");
+  });
   paintBackups();
   const bkr=$("#bkRefresh"); if(bkr) bkr.onclick=()=>paintBackups();
   const dj=$("#dlJSON"); if(dj) dj.onclick=downloadJSON;
