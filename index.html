@@ -2577,6 +2577,37 @@ function kitDraft(){
   });
   return out;
 }
+/* المعاينة تتبع الإدخال، وزر «تلقائي» يرجع للافتراضي.
+   يُستدعى من لوحتَي المالك والمحرّر معاً. */
+function wireKits(){
+  if(!document.querySelector(".kits")) return;
+  const paintKit=c=>{
+    const row=document.querySelector(`[data-kitclub="${cssq(c)}"]`); if(!row) return;
+    const bg=row.querySelector("[data-kitbg]").value, fg=row.querySelector("[data-kitfg]").value;
+    row.querySelector(".pp-dot").setAttribute("style", dotVars({bg,fg}));
+    const d=defaultKit(c), rb=row.querySelector("[data-kitreset]");
+    if(rb) rb.disabled = bg.toLowerCase()===d.bg.toLowerCase() && fg.toLowerCase()===d.fg.toLowerCase();
+  };
+  document.querySelectorAll("[data-kitbg],[data-kitfg]").forEach(inp=>{
+    inp.oninput = () => paintKit(inp.dataset.kitbg || inp.dataset.kitfg);
+  });
+  document.querySelectorAll("[data-kitreset]").forEach(b=>b.onclick=()=>{
+    const c=b.dataset.kitreset, d=defaultKit(c);
+    const row=document.querySelector(`[data-kitclub="${cssq(c)}"]`);
+    row.querySelector("[data-kitbg]").value=d.bg.toLowerCase();
+    row.querySelector("[data-kitfg]").value=d.fg.toLowerCase();
+    paintKit(c);
+  });
+  const ks=$("#kitsSave");
+  if(ks) ks.onclick=async()=>{
+    busy(ks,true,"جارٍ الحفظ…");
+    const ok=await saveKits();
+    busy(ks,false);
+    if(ok===true){ LASTSYNC=new Date(); toast("حُفظت الألوان ✅","ok"); renderAll(); renderAdmin(); }
+    else toast(SYNCMSG||"حُفظت محلياً، لكن تعذّر الحفظ في السحابة","err");
+  };
+}
+
 async function saveKits(){
   const reb=await rebaseOnCloud();
   if(reb.changed) toast(`وصل تحديث من ${reb.by||"محرّر آخر"} — دُمج قبل الحفظ`,"busy");
@@ -4866,6 +4897,8 @@ function renderEditorAdmin(){
 
     ${squadsSectionHTML()}
 
+    ${kitsAdminHTML()}
+
     <h2 class="sec">حالة الحفظ</h2>
     <div class="card pad">
       <div class="stat"><span>الحساب</span><span class="v" style="font-size:.78rem;direction:ltr">${esc(FBUSER.email||"—")}</span></div>
@@ -4878,6 +4911,7 @@ function renderEditorAdmin(){
     </div>`;
   renderMatchAdmin();
   wireSquads();
+  wireKits();
   const lo=$("#logout");
   if(lo) lo.onclick=async()=>{
     if(fbAuth && FBUSER){ try{ await fbAuth.signOut(); }catch(e){} }
@@ -5243,32 +5277,7 @@ function renderAdmin(){
   if(cp) cp.onclick=()=>{ if(confirm("حذف كل صور اللاعبين؟")){ PHOTOS={}; PAV={}; persist(); renderAdmin(); renderAll(); } };
   const du=$("#dataUp");
   if(du) du.onchange=e=>{ const f=e.target.files[0]; if(f) readDataFile(f); };
-  /* الألوان: المعاينة تتبع الإدخال، وزر «تلقائي» يرجع للافتراضي */
-  const paintKit=c=>{
-    const row=document.querySelector(`[data-kitclub="${cssq(c)}"]`); if(!row) return;
-    const bg=row.querySelector("[data-kitbg]").value, fg=row.querySelector("[data-kitfg]").value;
-    row.querySelector(".pp-dot").setAttribute("style", dotVars({bg,fg}));
-    const d=defaultKit(c), rb=row.querySelector("[data-kitreset]");
-    if(rb) rb.disabled = bg.toLowerCase()===d.bg.toLowerCase() && fg.toLowerCase()===d.fg.toLowerCase();
-  };
-  document.querySelectorAll("[data-kitbg],[data-kitfg]").forEach(inp=>{
-    inp.oninput = () => paintKit(inp.dataset.kitbg || inp.dataset.kitfg);
-  });
-  document.querySelectorAll("[data-kitreset]").forEach(b=>b.onclick=()=>{
-    const c=b.dataset.kitreset, d=defaultKit(c);
-    const row=document.querySelector(`[data-kitclub="${cssq(c)}"]`);
-    row.querySelector("[data-kitbg]").value=d.bg.toLowerCase();
-    row.querySelector("[data-kitfg]").value=d.fg.toLowerCase();
-    paintKit(c);
-  });
-  const ks=$("#kitsSave");
-  if(ks) ks.onclick=async()=>{
-    busy(ks,true,"جارٍ الحفظ…");
-    const ok=await saveKits();
-    busy(ks,false);
-    if(ok===true){ LASTSYNC=new Date(); toast("حُفظت الألوان ✅","ok"); renderAll(); renderAdmin(); }
-    else toast(SYNCMSG||"حُفظت محلياً، لكن تعذّر الحفظ في السحابة","err");
-  };
+  wireKits();
   const eva=$("#evAdd");
   if(eva) eva.onclick=async()=>{
     busy(eva,true,"جارٍ الحفظ…");
