@@ -497,6 +497,42 @@ details.squadbox summary label.lb{margin:0;cursor:pointer}
 .subrow .idx{font-size:.65rem;color:var(--sky);font-weight:700;margin-bottom:8px}
 .addbtn{width:100%;border:1px dashed rgba(95,178,232,.5);border-radius:10px;padding:10px;
   color:var(--sky);font-size:.82rem;background:rgba(95,178,232,.06)}
+/* محرّر شكل التشكيلة: ملعب أخضر، اللاعب نقطة تُسحب بالإصبع أو الفأرة */
+.shapes{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(280px,1fr))}
+.shapebox{border:1px solid rgba(143,166,196,.22);border-radius:12px;padding:10px;
+  background:rgba(14,43,82,.35)}
+.shead{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.shead>*{margin:0}
+.shead b{flex:1;min-width:0;font-size:.85rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.shead .btn.sm{flex:0 0 auto;width:auto;padding:5px 10px;font-size:.72rem;white-space:nowrap}
+.shead select{flex:0 0 auto;width:auto;background:#fff;color:var(--head);
+  border:1px solid var(--line2);border-radius:8px;padding:5px 8px;font:inherit;
+  font-size:.78rem;font-variant-numeric:tabular-nums}
+.epitch{position:relative;container-type:inline-size;aspect-ratio:3/4;border-radius:10px;
+  overflow:hidden;touch-action:none;user-select:none;max-width:400px;margin-inline:auto;
+  background:linear-gradient(#1f7a45,#166035)}
+.ep-lines{position:absolute;inset:0;pointer-events:none;
+  --l:rgba(255,255,255,.28);
+  background:
+    repeating-linear-gradient(180deg,rgba(255,255,255,.045) 0 8%,transparent 8% 16%),
+    linear-gradient(var(--l),var(--l)) 50% 50%/100% 1px no-repeat,
+    linear-gradient(var(--l),var(--l)) 50% 0/100% 1px no-repeat,
+    linear-gradient(var(--l),var(--l)) 50% 100%/100% 1px no-repeat,
+    linear-gradient(var(--l),var(--l)) 0 50%/1px 100% no-repeat,
+    linear-gradient(var(--l),var(--l)) 100% 50%/1px 100% no-repeat}
+.ep-lines::before,.ep-lines::after{content:"";position:absolute;left:50%;transform:translateX(-50%);
+  width:44%;height:14%;border:1px solid rgba(255,255,255,.28)}
+.ep-lines::before{top:0;border-top:0}
+.ep-lines::after{bottom:0;border-bottom:0}
+.ep-spot{position:absolute;transform:translate(50%,-50%);display:flex;flex-direction:column;
+  align-items:center;gap:2px;cursor:grab;text-align:center}
+.ep-spot.drag{cursor:grabbing;z-index:5}
+.ep-dot{width:clamp(22px,9cqw,34px);height:clamp(22px,9cqw,34px);border-radius:50%;
+  display:grid;place-items:center;background:var(--pc);color:#0B1F3A;font-weight:800;
+  font-size:clamp(10px,3.4cqw,14px);line-height:1;box-shadow:0 2px 6px rgba(0,0,0,.35);
+  border:1.5px solid rgba(255,255,255,.85);font-variant-numeric:tabular-nums}
+.ep-nm{font-size:clamp(8.5px,2.9cqw,12px);color:#fff;font-weight:600;max-width:100%;
+  text-shadow:0 1px 3px rgba(0,0,0,.7);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .mrow{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px dashed rgba(143,166,196,.16)}
 .mrow:last-child{border:0}
 .mrow .mm{flex:1;min-width:0;font-size:.82rem}
@@ -803,6 +839,7 @@ label.lb,.fld label{color:var(--slate)}
 .sqrow .sqx,.sqtools button{border-color:var(--line2);color:var(--slate)}
 .sqadd button{border-color:var(--blue-ln);color:var(--zain-deep);background:#F0F7FD}
 .addbtn{border-color:var(--blue-ln);color:var(--zain-deep);background:#F0F7FD}
+.shapebox{background:#F7FAFD;border-color:var(--line2)}
 .subrow .del,.tune .tdel{background:#FDECEC;border-color:#F5B5B0}
 .formerr{background:#FDECEC;border-color:#F5B5B0;color:#8A1F1A}
 .mrow .mm span{color:var(--slate)}
@@ -1954,6 +1991,7 @@ function stampComp(d){
   });
   (d.cards||[]).forEach(x=>{ if(!x.comp) x.comp="الدوري"; });
   (d.lineups||[]).forEach(x=>{ if(!x.comp) x.comp="الدوري"; });
+  (d.shapes||[]).forEach(x=>{ if(!x.comp) x.comp="الدوري"; });
   (d.subs||[]).forEach(x=>{ if(!x.comp) x.comp="الدوري"; });
   return d;
 }
@@ -2364,7 +2402,8 @@ function applyData(d, source){
   ALL = stampComp({matches:d.matches||[], goals:d.goals||[], pens:d.pens||[], cards:d.cards||[],
                    events:  keepField(d.events,  ALL && ALL.events),
                    lineups: keepField(d.lineups, ALL && ALL.lineups),
-                   subs:    keepField(d.subs,    ALL && ALL.subs)});
+                   subs:    keepField(d.subs,    ALL && ALL.subs),
+                   shapes:  keepField(d.shapes,  ALL && ALL.shapes)});
   SQUADS = d.squads || SQUADS || {};   /* ملف بلا كشوفات لا يمسح الكشوفات الحالية */
   if("fantasyOpen" in (d||{})) FANTASY_OPEN = !!d.fantasyOpen;
   SQNUMS_FOUND = squadsExtractNums();   /* فصل الأرقام المكتوبة داخل الأسماء */
@@ -2388,6 +2427,7 @@ function dataObject(){
           matches:ALL?ALL.matches:MATCHES, goals:ALL?ALL.goals:GOALS,
           pens:ALL?ALL.pens:PENS, cards:ALL?ALL.cards:CARDS, squads:SQUADS,
           lineups:(ALL&&ALL.lineups)||[], subs:(ALL&&ALL.subs)||[],
+          shapes:(ALL&&ALL.shapes)||[],
           events:(ALL&&ALL.events)||[],
           lastUpdate:LASTUPDATE, updated:new Date().toISOString(),
           fantasyOpen:FANTASY_OPEN,
@@ -2932,7 +2972,7 @@ function absMinute(h, m){
 
 function newEdit(){
   return {orig:null, match:{round:"", comp:(compsPresent()[0]||"الدوري"), home:"", away:"",
-          venue:"", date:"", time:"", note:""}, goals:[], cards:[], pens:[], lineup:[], subs:[]};
+          venue:"", date:"", time:"", note:""}, goals:[], cards:[], pens:[], lineup:[], subs:[], shapes:{}};
 }
 function loadEdit(m){
   const gs=(ALL.goals||[]).filter(g=>g.r===m.round && compOf(g)===compOf(m) &&
@@ -2942,7 +2982,11 @@ function loadEdit(m){
       ((x.by===m.home&&x.vs===m.away)||(x.by===m.away&&x.vs===m.home)));
   const lus=(ALL.lineups||[]).filter(x=>x.r===m.round && compOf(x)===compOf(m) && (x.club===m.home||x.club===m.away));
   const sbs=(ALL.subs||[]).filter(x=>x.r===m.round && compOf(x)===compOf(m) && (x.club===m.home||x.club===m.away));
-  return {orig:mkey(m),
+  /* شكل التشكيلة: صف واحد لكل نادٍ يحمل الخطة والمواضع المسحوبة */
+  const shp={};
+  (ALL.shapes||[]).filter(x=>x.r===m.round && compOf(x)===compOf(m) && (x.club===m.home||x.club===m.away))
+    .forEach(x=>{ shp[x.club]={f:x.f||"", pos:JSON.parse(JSON.stringify(x.pos||{}))}; });
+  return {orig:mkey(m), shapes:shp,
     match:{round:m.round, comp:compOf(m), home:m.home, away:m.away, venue:m.venue||"", date:m.date||"", time:m.time||"", note:m.note||""},
     lineup:lus.map(x=>({club:x.club, p:x.p})),
     subs:sbs.map(x=>({club:x.club, out:x.out||"", in:x.in||"", h:x.h||1, m:x.m||""})),
@@ -3093,6 +3137,106 @@ function syncPNum(box, el){
   const hit=squadEntriesOf(num.dataset.pclub, editSides()).find(e=>e.n===String(el.value).trim());
   num.value = hit && hit.s ? hit.s : "";
 }
+/* ===== شكل التشكيلة على الملعب =====
+   الخطة تُقترح من مراكز اللاعبين في الكشف، وتُغيَّر من القائمة، والمواضع
+   تُسحب باليد فتُحفظ مع بيانات المباراة ويراها الجمهور كما ضُبطت. */
+const FORMATIONS=["4-4-2","4-3-3","4-2-3-1","4-5-1","4-1-4-1","3-5-2","3-4-3","5-3-2","5-4-1","4-4-1-1","4-2-2-2"];
+const SH_LINE={GK:"G",RB:"D",CB:"D",LB:"D",RWB:"D",LWB:"D",CDM:"M",CM:"M",CAM:"M",RM:"M",LM:"M",RW:"F",ST:"F",LW:"F"};
+const shSide=p=>String(p||"").startsWith("R")?2:String(p||"").startsWith("L")?0:1;
+const SH_ORDER={G:0,D:1,M:2,F:3};
+
+/* لاعبو النادي في النموذج الحالي مع مركز كل واحد ورقمه */
+function shapeMen(club){
+  return (EDIT.lineup||[]).filter(x=>x.club===club && x.p).map(x=>{
+    const e=squadEntriesOf(club,[club]).find(z=>z.n===x.p) || {};
+    const role=e.p||"CM";
+    return {n:x.p, s:e.s||0, role, line:SH_LINE[role]||"M"};
+  });
+}
+function autoFormation(club){
+  const c={D:0,M:0,F:0};
+  shapeMen(club).forEach(p=>{ if(c[p.line]!==undefined) c[p.line]++; });
+  const parts=[c.D,c.M,c.F].filter(n=>n);
+  return FORMATIONS.includes(parts.join("-")) ? parts.join("-") : (parts.join("-")||"4-4-2");
+}
+/* توزيع اللاعبين على صفوف الخطة */
+function shapeSlots(men, form){
+  const rows=String(form).split("-").map(Number).filter(n=>n>0);
+  const gk=men.filter(p=>p.line==="G").slice(0,1);
+  const rest=men.filter(p=>p.line!=="G").slice()
+    .sort((a,b)=>(SH_ORDER[a.line]-SH_ORDER[b.line])||(shSide(b.role)-shSide(a.role)));
+  const lines=[gk,...rows.map(()=>[])];
+  let i=0;
+  rows.forEach((n,ri)=>{ for(let k=0;k<n&&i<rest.length;k++) lines[ri+1].push(rest[i++]); });
+  while(i<rest.length) lines[lines.length-1].push(rest[i++]);
+  const out=[];
+  lines.forEach((row,li)=>{
+    const y=90-li*(78/Math.max(1,lines.length-1));
+    const ord=li===0?row:row.slice().sort((a,b)=>shSide(b.role)-shSide(a.role));
+    ord.forEach((p,k)=>out.push({p,x:100*(ord.length-k)/(ord.length+1),y,n:ord.length}));
+  });
+  return out;
+}
+function drawShape(club){
+  const box=document.querySelector(`[data-pitchfor="${cssq(club)}"]`);
+  if(!box) return;
+  const st=EDIT.shapes[club]=EDIT.shapes[club]||{f:"",pos:{}};
+  const form=st.f||autoFormation(club);
+  const col=(window.CLUB_COLORS&&CLUB_COLORS[club]||["#ffffff"])[0];
+  box.innerHTML=`<div class="ep-lines"></div>`;
+  shapeSlots(shapeMen(club),form).forEach(({p,x,y,n})=>{
+    const ov=st.pos[p.n];
+    const el=document.createElement("div");
+    el.className="ep-spot"; el.dataset.pn=p.n; el.dataset.pc=club;
+    el.style.right=(ov?ov.x:x)+"%"; el.style.top=(ov?ov.y:y)+"%";
+    el.style.maxWidth=(96/(n+1))+"%";      /* لا يتجاوز المسافة بين لاعبين متجاورين */
+    el.innerHTML=`<span class="ep-dot" style="--pc:${col}">${p.s||"–"}</span>
+      <span class="ep-nm">${esc(p.n)}</span>`;
+    box.appendChild(el);
+  });
+}
+const cssq=s=>String(s).replace(/"/g,'\\"');
+
+function wireShapes(box){
+  box.querySelectorAll("[data-formfor]").forEach(sel=>sel.onchange=()=>{
+    const cl=sel.dataset.formfor;
+    EDIT.shapes[cl]={f:sel.value,pos:{}};     /* تغيير الخطة يُعيد التوزيع */
+    drawShape(cl);
+  });
+  box.querySelectorAll("[data-resetshape]").forEach(b=>b.onclick=()=>{
+    const cl=b.dataset.resetshape;
+    delete EDIT.shapes[cl];
+    const sel=box.querySelector(`[data-formfor="${cssq(cl)}"]`);
+    if(sel) sel.value=autoFormation(cl);
+    drawShape(cl);
+  });
+  box.querySelectorAll("[data-pitchfor]").forEach(p=>{
+    let cur=null,rect=null;
+    p.addEventListener("pointerdown",e=>{
+      const s=e.target.closest(".ep-spot"); if(!s) return;
+      cur=s; rect=p.getBoundingClientRect(); s.classList.add("drag");
+      s.setPointerCapture(e.pointerId); e.preventDefault();
+    });
+    p.addEventListener("pointermove",e=>{
+      if(!cur) return;
+      /* حدود تُبقي الاسم داخل الملعب فلا يُقتطع عند الحافة */
+      const x=Math.max(11,Math.min(89,(rect.right-e.clientX)/rect.width*100));
+      const y=Math.max(6,Math.min(94,(e.clientY-rect.top)/rect.height*100));
+      cur.style.right=x+"%"; cur.style.top=y+"%";
+    });
+    const drop=()=>{
+      if(!cur) return;
+      const cl=cur.dataset.pc, st=EDIT.shapes[cl]=EDIT.shapes[cl]||{f:"",pos:{}};
+      if(!st.f) st.f=autoFormation(cl);
+      st.pos[cur.dataset.pn]={x:parseFloat(cur.style.right),y:parseFloat(cur.style.top)};
+      cur.classList.remove("drag"); cur=null;
+    };
+    p.addEventListener("pointerup",drop);
+    p.addEventListener("pointercancel",drop);
+  });
+  box.querySelectorAll("[data-pitchfor]").forEach(p=>drawShape(p.dataset.pitchfor));
+}
+
 function matchFormHTML(){
   const E=EDIT, m=E.match;
   const sides=[m.home,m.away].filter(Boolean);
@@ -3124,6 +3268,21 @@ function matchFormHTML(){
       ${pfld("اللاعب","lineup."+i+".p",x.club,sides,x.p)}
     </div></div>`).join("")}
   <button class="addbtn" data-add="lineup">+ إضافة لاعب أساسي</button>
+
+  <h2 class="sec">شكل التشكيلة على الملعب</h2>
+  <p class="hint">اختر طريقة اللعب، واسحب أي لاعب لموضعه الفعلي. المراكز في الكشف تصف اللاعب عموماً،
+    وهذا يوثّق كيف لعب في هذه المباراة تحديداً — ويظهر للجمهور كما تضبطه.</p>
+  <div class="shapes">${sides.filter(cl=>E.lineup.some(x=>x.club===cl&&x.p)).map(cl=>`
+    <div class="shapebox" data-shapeclub="${esc(cl)}">
+      <div class="shead">
+        <b>${esc(cl)}</b>
+        <select data-formfor="${esc(cl)}">${FORMATIONS.map(f=>{
+          const cur=(E.shapes[cl]||{}).f || autoFormation(cl);
+          return `<option ${f===cur?"selected":""}>${f}</option>`;}).join("")}</select>
+        <button type="button" class="btn ghost sm" data-resetshape="${esc(cl)}">إرجاع التلقائي</button>
+      </div>
+      <div class="epitch" data-pitchfor="${esc(cl)}"></div>
+    </div>`).join("")}</div>
 
   <h2 class="sec">التبديلات (${E.subs.length})</h2>
   <p class="hint">الخارج والداخل والشوط والدقيقة. منها تُحسب دقائق كل لاعب، وعليها تُبنى نقاط المشاركة والشباك النظيفة في الفانتسي.</p>
@@ -3231,6 +3390,7 @@ function removeMatchByKey(key){
   ALL.pens    = (ALL.pens||[]).filter(x=>!(x.r===old.round && compOf(x)===compOf(old) && pair(x.by,x.vs)));
   const mine  = x => x.r===old.round && compOf(x)===compOf(old) && (x.club===old.home||x.club===old.away);
   ALL.lineups = (ALL.lineups||[]).filter(x=>!mine(x));
+  ALL.shapes  = (ALL.shapes ||[]).filter(x=>!mine(x));
   ALL.subs    = (ALL.subs||[]).filter(x=>!mine(x));
 }
 
@@ -3259,6 +3419,12 @@ async function saveMatch(){
   (EDIT.subs||[]).filter(x=>x.club && (x.out||x.in)).forEach(x=>
       ALL.subs.push({r:round, comp:m.comp, club:x.club, out:x.out||"", in:x.in||"",
                      h:+x.h||1, m:+x.m||0}));
+  ALL.shapes = ALL.shapes || [];
+  for(const cl in (EDIT.shapes||{})){
+    const s=EDIT.shapes[cl];
+    if(!s || (!s.f && !Object.keys(s.pos||{}).length)) continue;   /* بلا تعديل: لا نحفظ صفاً */
+    ALL.shapes.push({r:round, comp:m.comp, club:cl, f:s.f||"", pos:s.pos||{}});
+  }
   /* النتيجة تُشتق من الأهداف */
   ALL.matches.forEach(mm=>{
     mm.hg = ALL.goals.filter(g=>g.r===mm.round && compOf(g)===compOf(mm) && g.sc===mm.home && g.cd===mm.away).length;
@@ -3387,7 +3553,9 @@ function wireAdminIO(){
 function renderMatchAdmin(){
   const box=$("#matchAdmin"); if(!box) return;
   if(EDIT){
+    EDIT.shapes = EDIT.shapes || {};
     box.innerHTML = `<h2 class="sec">${EDIT.orig?"تعديل مباراة":"مباراة جديدة"}</h2>` + matchFormHTML();
+    wireShapes(box);
   } else {
     const list=(ALL?.matches||[]).slice().sort((a,b)=>(b.round-a.round)||String(b.date).localeCompare(String(a.date)));
     box.innerHTML = `
