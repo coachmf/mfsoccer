@@ -508,31 +508,69 @@ details.squadbox summary label.lb{margin:0;cursor:pointer}
 .shead select{flex:0 0 auto;width:auto;background:#fff;color:var(--head);
   border:1px solid var(--line2);border-radius:8px;padding:5px 8px;font:inherit;
   font-size:.78rem;font-variant-numeric:tabular-nums}
-.epitch{position:relative;container-type:inline-size;aspect-ratio:3/4;border-radius:10px;
-  overflow:hidden;touch-action:none;user-select:none;max-width:400px;margin-inline:auto;
+/* الملعب — واحد يخدم المحرّر وصفحة المباراة وملف النادي */
+.pitch{position:relative;container-type:inline-size;border-radius:10px;overflow:hidden;
+  user-select:none;max-width:400px;margin-inline:auto;
   background:linear-gradient(#1f7a45,#166035)}
-.ep-lines{position:absolute;inset:0;pointer-events:none;
+.pitch.half{aspect-ratio:3/4}          /* فريق واحد */
+.pitch.full{aspect-ratio:2/3}          /* الفريقان وجهاً لوجه */
+.pitch::before,.pitch::after{content:"";position:absolute;left:50%;transform:translateX(-50%);
+  width:44%;height:11%;border:1px solid rgba(255,255,255,.28);pointer-events:none}
+.pitch::before{top:0;border-top:0}
+.pitch::after{bottom:0;border-bottom:0}
+.pitch-lines{position:absolute;inset:0;pointer-events:none;
   --l:rgba(255,255,255,.28);
   background:
     repeating-linear-gradient(180deg,rgba(255,255,255,.045) 0 8%,transparent 8% 16%),
     linear-gradient(var(--l),var(--l)) 50% 50%/100% 1px no-repeat,
-    linear-gradient(var(--l),var(--l)) 50% 0/100% 1px no-repeat,
-    linear-gradient(var(--l),var(--l)) 50% 100%/100% 1px no-repeat,
     linear-gradient(var(--l),var(--l)) 0 50%/1px 100% no-repeat,
     linear-gradient(var(--l),var(--l)) 100% 50%/1px 100% no-repeat}
-.ep-lines::before,.ep-lines::after{content:"";position:absolute;left:50%;transform:translateX(-50%);
-  width:44%;height:14%;border:1px solid rgba(255,255,255,.28)}
-.ep-lines::before{top:0;border-top:0}
-.ep-lines::after{bottom:0;border-bottom:0}
-.ep-spot{position:absolute;transform:translate(50%,-50%);display:flex;flex-direction:column;
-  align-items:center;gap:2px;cursor:grab;text-align:center}
-.ep-spot.drag{cursor:grabbing;z-index:5}
-.ep-dot{width:clamp(22px,9cqw,34px);height:clamp(22px,9cqw,34px);border-radius:50%;
+.pitch-lines::before{content:"";position:absolute;left:50%;top:50%;
+  width:26%;aspect-ratio:1;transform:translate(-50%,-50%);border-radius:50%;
+  border:1px solid rgba(255,255,255,.28)}
+.pp-spot{position:absolute;transform:translate(50%,-50%);display:flex;flex-direction:column;
+  align-items:center;gap:2px;text-align:center}
+.pp-dot{width:clamp(22px,9cqw,34px);height:clamp(22px,9cqw,34px);border-radius:50%;
   display:grid;place-items:center;background:var(--pc);color:#0B1F3A;font-weight:800;
   font-size:clamp(10px,3.4cqw,14px);line-height:1;box-shadow:0 2px 6px rgba(0,0,0,.35);
   border:1.5px solid rgba(255,255,255,.85);font-variant-numeric:tabular-nums}
-.ep-nm{font-size:clamp(8.5px,2.9cqw,12px);color:#fff;font-weight:600;max-width:100%;
+.pp-nm{font-size:clamp(8.5px,2.9cqw,12px);color:#fff;font-weight:600;max-width:100%;
   text-shadow:0 1px 3px rgba(0,0,0,.7);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* التشكيلة في صفحة المباراة وفي ملف النادي */
+.xi{margin:10px 0 4px}
+.xi-t{display:flex;align-items:center;gap:6px;min-width:0;font-size:.78rem;
+  max-width:400px;margin-inline:auto;padding:5px 2px}
+.xi-t img,.xi-t svg{width:18px;height:18px;flex:0 0 auto}
+.xi-t b{color:var(--head);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.xi-t i{font-style:normal;font-size:.7rem;color:var(--slate);font-variant-numeric:tabular-nums;
+  border:1px solid var(--line2);border-radius:6px;padding:1px 5px;flex:0 0 auto}
+.xi-card .lb{margin:0}
+.xi-pick{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.xi-pick select{flex:1;min-width:0}
+.xi-meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:.78rem;
+  color:var(--slate);margin-bottom:10px}
+.xi-meta b{color:var(--head)}
+.xi-meta img,.xi-meta svg{width:18px;height:18px;vertical-align:middle;margin-inline-end:4px}
+/* بلا dir=ltr: في سياق عربي يقع رقم النادي يميناً فيُقرأ أولاً */
+.xi-res{font-weight:800;color:var(--head);font-variant-numeric:tabular-nums;
+  background:var(--navy-800);border-radius:7px;padding:2px 8px}
+.xi-x{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+  margin-top:12px;padding-top:12px;border-top:1px solid var(--line)}
+.xi-ct{font-size:.72rem;color:var(--slate);font-weight:700;margin-bottom:6px}
+.xi-r{display:flex;align-items:center;gap:8px;font-size:.78rem;padding:4px 0;
+  border-bottom:1px dashed rgba(143,166,196,.16)}
+.xi-r:last-child{border:0}
+.xi-m{color:var(--zain-mid);font-weight:700;font-variant-numeric:tabular-nums;flex:0 0 auto}
+.xi-io{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.xi-io .ar{display:inline-block;width:0;height:0;margin-inline-end:5px;
+  border-inline:4px solid transparent}
+.xi-io .ar.in{border-bottom:6px solid var(--win)}
+.xi-io .ar.out{border-top:6px solid var(--loss)}
+
+/* المحرّر وحده يسحب */
+.epitch{touch-action:none}
+.epitch .pp-spot{cursor:grab}
+.epitch .pp-spot.drag{cursor:grabbing;z-index:5}
 .mrow{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px dashed rgba(143,166,196,.16)}
 .mrow:last-child{border:0}
 .mrow .mm{flex:1;min-width:0;font-size:.82rem}
@@ -3145,20 +3183,25 @@ const SH_LINE={GK:"G",RB:"D",CB:"D",LB:"D",RWB:"D",LWB:"D",CDM:"M",CM:"M",CAM:"M
 const shSide=p=>String(p||"").startsWith("R")?2:String(p||"").startsWith("L")?0:1;
 const SH_ORDER={G:0,D:1,M:2,F:3};
 
-/* لاعبو النادي في النموذج الحالي مع مركز كل واحد ورقمه */
-function shapeMen(club){
-  return (EDIT.lineup||[]).filter(x=>x.club===club && x.p).map(x=>{
-    const e=squadEntriesOf(club,[club]).find(z=>z.n===x.p) || {};
+/* أسماء لاعبين ← مركز كل واحد ورقمه من كشف النادي */
+function shapeMenFrom(names, club){
+  const ent=squadEntriesOf(club,[club]);
+  return names.map(n=>{
+    const e=ent.find(z=>z.n===n) || {};
     const role=e.p||"CM";
-    return {n:x.p, s:e.s||0, role, line:SH_LINE[role]||"M"};
+    return {n, s:e.s||0, role, line:SH_LINE[role]||"M"};
   });
 }
-function autoFormation(club){
+function shapeMen(club){
+  return shapeMenFrom((EDIT.lineup||[]).filter(x=>x.club===club && x.p).map(x=>x.p), club);
+}
+function autoForm(men){
   const c={D:0,M:0,F:0};
-  shapeMen(club).forEach(p=>{ if(c[p.line]!==undefined) c[p.line]++; });
+  men.forEach(p=>{ if(c[p.line]!==undefined) c[p.line]++; });
   const parts=[c.D,c.M,c.F].filter(n=>n);
   return FORMATIONS.includes(parts.join("-")) ? parts.join("-") : (parts.join("-")||"4-4-2");
 }
+function autoFormation(club){ return autoForm(shapeMen(club)); }
 /* توزيع اللاعبين على صفوف الخطة */
 function shapeSlots(men, form){
   const rows=String(form).split("-").map(Number).filter(n=>n>0);
@@ -3183,19 +3226,80 @@ function drawShape(club){
   const st=EDIT.shapes[club]=EDIT.shapes[club]||{f:"",pos:{}};
   const form=st.f||autoFormation(club);
   const col=(window.CLUB_COLORS&&CLUB_COLORS[club]||["#ffffff"])[0];
-  box.innerHTML=`<div class="ep-lines"></div>`;
+  box.innerHTML=`<div class="pitch-lines"></div>`;
   shapeSlots(shapeMen(club),form).forEach(({p,x,y,n})=>{
     const ov=st.pos[p.n];
     const el=document.createElement("div");
-    el.className="ep-spot"; el.dataset.pn=p.n; el.dataset.pc=club;
+    el.className="pp-spot"; el.dataset.pn=p.n; el.dataset.pc=club;
     el.style.right=(ov?ov.x:x)+"%"; el.style.top=(ov?ov.y:y)+"%";
     el.style.maxWidth=(96/(n+1))+"%";      /* لا يتجاوز المسافة بين لاعبين متجاورين */
-    el.innerHTML=`<span class="ep-dot" style="--pc:${col}">${p.s||"–"}</span>
-      <span class="ep-nm">${esc(p.n)}</span>`;
+    el.innerHTML=`<span class="pp-dot" style="--pc:${col}">${p.s||"–"}</span>
+      <span class="pp-nm">${esc(p.n)}</span>`;
     box.appendChild(el);
   });
 }
 const cssq=s=>String(s).replace(/"/g,'\\"');
+
+/* ===== عرض التشكيلة للجمهور =====
+   نفس الحساب الذي يراه المحرّر: الخطة المحفوظة إن ضُبطت، وإلا تُقترح من
+   مراكز اللاعبين؛ والمواضع المسحوبة تُقرأ كما هي. */
+function shapeRowOf(round, comp, club){
+  return (ALL&&ALL.shapes||[]).find(x=>x.r===round && compOf(x)===comp && x.club===club) || null;
+}
+function xiNames(round, comp, club){
+  return (ALL&&ALL.lineups||[])
+    .filter(x=>x.r===round && compOf(x)===comp && x.club===club && x.p)
+    .map(x=>x.p);
+}
+function pitchSpots(round, comp, club){
+  const names=xiNames(round, comp, club);
+  if(names.length<7) return null;               /* تشكيلة ناقصة: لا نرسم نصفها */
+  const men=shapeMenFrom(names, club);
+  const row=shapeRowOf(round, comp, club);
+  const form=(row&&row.f) || autoForm(men);
+  const pos =(row&&row.pos) || {};
+  const spots=shapeSlots(men, form).map(({p,x,y,n})=>{
+    const ov=pos[p.n];
+    return {p, x: ov?ov.x:x, y: ov?ov.y:y, n};
+  });
+  return {form, spots};
+}
+function spotHTML(p, x, y, n, col){
+  return `<div class="pp-spot" style="right:${x}%;top:${y}%;max-width:${(96/(n+1)).toFixed(1)}%">
+    <span class="pp-dot" style="--pc:${col}">${p.s||"–"}</span>
+    <span class="pp-nm">${esc(p.n)}</span></div>`;
+}
+const clubColor=c=>((window.CLUB_COLORS||{})[c]||["#ffffff"])[0];
+
+/* ملعب لفريق واحد */
+function clubPitchHTML(round, comp, club){
+  const S=pitchSpots(round, comp, club);
+  if(!S) return "";
+  const col=clubColor(club);
+  return `<div class="pitch half"><div class="pitch-lines"></div>
+    ${S.spots.map(({p,x,y,n})=>spotHTML(p,x,y,n,col)).join("")}</div>`;
+}
+/* ملعب للفريقين: المضيف في نصفه السفلي، والضيف في العلوي مقلوباً */
+function matchPitchHTML(m){
+  const comp=compOf(m);
+  const H=pitchSpots(m.round, comp, m.home), A=pitchSpots(m.round, comp, m.away);
+  if(!H || !A) return "";
+  const half=(S, club, top)=>{
+    const col=clubColor(club);
+    return S.spots.map(({p,x,y,n})=>{
+      const yy = top ? 48-(y/100)*48 : 52+(y/100)*48;
+      return spotHTML(p, top?100-x:x, +yy.toFixed(1), n, col);
+    }).join("");
+  };
+  /* الاسم فوق نصف صاحبه وتحته، فيقرأ الملعب بلا لبس */
+  const tag=c=>`<div class="xi-t">${crest(c)}<b>${esc(c)}</b>`;
+  return `<div class="xi">
+    ${tag(m.away)}<i>${esc(A.form)}</i></div>
+    <div class="pitch full"><div class="pitch-lines"></div>
+      ${half(A, m.away, true)}${half(H, m.home, false)}</div>
+    ${tag(m.home)}<i>${esc(H.form)}</i></div>
+  </div>`;
+}
 
 function wireShapes(box){
   box.querySelectorAll("[data-formfor]").forEach(sel=>sel.onchange=()=>{
@@ -3213,7 +3317,7 @@ function wireShapes(box){
   box.querySelectorAll("[data-pitchfor]").forEach(p=>{
     let cur=null,rect=null;
     p.addEventListener("pointerdown",e=>{
-      const s=e.target.closest(".ep-spot"); if(!s) return;
+      const s=e.target.closest(".pp-spot"); if(!s) return;
       cur=s; rect=p.getBoundingClientRect(); s.classList.add("drag");
       s.setPointerCapture(e.pointerId); e.preventDefault();
     });
@@ -3281,7 +3385,7 @@ function matchFormHTML(){
           return `<option ${f===cur?"selected":""}>${f}</option>`;}).join("")}</select>
         <button type="button" class="btn ghost sm" data-resetshape="${esc(cl)}">إرجاع التلقائي</button>
       </div>
-      <div class="epitch" data-pitchfor="${esc(cl)}"></div>
+      <div class="pitch half epitch" data-pitchfor="${esc(cl)}"></div>
     </div>`).join("")}</div>
 
   <h2 class="sec">التبديلات (${E.subs.length})</h2>
@@ -4108,13 +4212,14 @@ function renderMatches(){
   /* التفاصيل مطويّة: البطاقة تبقى نظيفة، وتُفتح بالضغط */
   function detailsBlock(m, gs, mc, soon){
     if(soon) return "";
+    const xi = matchPitchHTML(m);
     const tl = goalsTimeline(m, gs);
     const cl = cardsList(mc);
-    if(!tl && !cl) return "";
+    if(!xi && !tl && !cl) return "";
     const n = gs.length + (typeof matchSubs==="function" ? matchSubs(m).length : 0) + mc.length;
     return `<button type="button" class="mtog" aria-expanded="false">
         <span>التفاصيل${n?` <em>${n}</em>`:""}</span><i class="chev"></i></button>
-      <div class="mdet" hidden>${tl}${cl}</div>`;
+      <div class="mdet" hidden>${xi}${tl}${cl}</div>`;
   }
 
   const matchCards = list.map(m=>{
@@ -4193,6 +4298,8 @@ function renderClubBody(c){
     </div>
   </div>
 
+  <div id="clubXI"></div>
+
   <div class="grid2" style="margin-top:12px">
     <div class="card pad">
       <div class="stat"><span>مباريات</span><span class="v">${r.P}</span></div>
@@ -4244,7 +4351,63 @@ function renderClubBody(c){
       <span class="gmin">${minLabel(g)}</span>
       <span style="flex:1">${esc(g.p)}${ogLabel(g)} <span style="color:var(--slate);font-size:.72rem">ضد ${esc(g.cd)}</span></span>
       <span class="gtag">${esc(g.zone)}</span></div>`).join(""):'<span style="color:var(--slate)">لا توجد أهداف مسجّلة بعد.</span>'}</div>`;
+  renderClubXI(c);
   renderClubHeat(c);
+}
+
+/* تشكيلة النادي في جولة يختارها القارئ — تُصدَّر مع بطاقة النادي في التقرير */
+function clubXIRounds(c){
+  const out=[];
+  MATCHES.filter(m=>m.home===c||m.away===c).forEach(m=>{
+    if(xiNames(m.round, compOf(m), c).length>=7)
+      out.push({m, key:m.round+"|"+compOf(m)});
+  });
+  return out.sort((a,b)=>(b.m.round-a.m.round));
+}
+function renderClubXI(c){
+  const box=$("#clubXI"); if(!box) return;
+  const rs=clubXIRounds(c);
+  if(!rs.length){
+    box.innerHTML=`<h2 class="sec">تشكيلة الجولة</h2>
+      <p class="hint">لم تُرصد تشكيلة أساسية لهذا النادي بعد.</p>`;
+    return;
+  }
+  const cur = rs.find(x=>x.key===box.dataset.pick) || rs[0];
+  box.dataset.pick = cur.key;
+  const m=cur.m, opp = m.home===c ? m.away : m.home, homeSide = m.home===c;
+  const res = isUpcoming(m) ? "" :
+    `<span class="xi-res">${homeSide?`${m.hg} - ${m.ag}`:`${m.ag} - ${m.hg}`}</span>`;
+  box.innerHTML=`
+    <h2 class="sec">تشكيلة الجولة</h2>
+    <div class="card pad xi-card">
+      <div class="xi-pick">
+        <label class="lb" for="clubRound">الجولة</label>
+        <select id="clubRound">${rs.map(x=>`<option value="${esc(x.key)}" ${x.key===cur.key?"selected":""}>الجولة ${x.m.round}${compOf(x.m)!=="الدوري"?" · "+esc(compOf(x.m)):""} — ${esc(x.m.home===c?x.m.away:x.m.home)}</option>`).join("")}</select>
+      </div>
+      <div class="xi-meta">
+        <span>${homeSide?"على أرضه":"خارج أرضه"} أمام ${crest(opp)}<b>${esc(opp)}</b></span>${res}
+      </div>
+      ${clubPitchHTML(m.round, compOf(m), c)}
+      ${clubXIExtras(m, c)}
+    </div>`;
+  $("#clubRound").onchange = e => { box.dataset.pick = e.target.value; renderClubXI(c); };
+}
+/* التبديلات والإنذارات في تلك الجولة — تكمل التقرير */
+function clubXIExtras(m, c){
+  const ss=matchSubs(m).filter(s=>s.club===c);
+  const cd=CARDS.filter(x=>x.r===m.round && compOf(x)===compOf(m) && x.club===c)
+                .sort((a,b)=>(+a.m||0)-(+b.m||0));
+  if(!ss.length && !cd.length) return "";
+  return `<div class="xi-x">
+    ${ss.length?`<div class="xi-col"><div class="xi-ct">التبديلات</div>
+      ${ss.map(s=>`<div class="xi-r"><span class="xi-m">${absMinute(s.h,s.m)}'</span>
+        <span class="xi-io">${s.in?`<i class="ar in"></i>${esc(s.in)}`:""}${s.out?`<i class="ar out"></i>${esc(s.out)}`:""}</span>
+      </div>`).join("")}</div>`:""}
+    ${cd.length?`<div class="xi-col"><div class="xi-ct">الإنذارات</div>
+      ${cd.map(x=>`<div class="xi-r"><span class="xi-m">${(+x.m||0)}'</span>
+        <span class="xi-io">${esc(x.p)}</span><i class="cardpill ${isRed(x.type)?"r":"y"}"></i>
+      </div>`).join("")}</div>`:""}
+  </div>`;
 }
 
 function renderPlayers(){
