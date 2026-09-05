@@ -531,9 +531,9 @@ details.squadbox summary label.lb{margin:0;cursor:pointer}
 .pp-spot{position:absolute;transform:translate(50%,-50%);display:flex;flex-direction:column;
   align-items:center;gap:2px;text-align:center}
 .pp-dot{width:clamp(22px,9cqw,34px);height:clamp(22px,9cqw,34px);border-radius:50%;
-  display:grid;place-items:center;background:var(--pc);color:#0B1F3A;font-weight:800;
+  display:grid;place-items:center;background:var(--pc);color:var(--pt,#0B1F3A);font-weight:800;
   font-size:clamp(10px,3.4cqw,14px);line-height:1;box-shadow:0 2px 6px rgba(0,0,0,.35);
-  border:1.5px solid rgba(255,255,255,.85);font-variant-numeric:tabular-nums}
+  border:1.5px solid var(--pe,rgba(255,255,255,.85));font-variant-numeric:tabular-nums}
 .pp-nm{font-size:clamp(8.5px,2.9cqw,12px);color:#fff;font-weight:600;max-width:100%;
   text-shadow:0 1px 3px rgba(0,0,0,.7);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 /* التشكيلة في صفحة المباراة وفي ملف النادي */
@@ -567,6 +567,17 @@ details.squadbox summary label.lb{margin:0;cursor:pointer}
 .xi-io .ar.in{border-bottom:6px solid var(--win)}
 .xi-io .ar.out{border-top:6px solid var(--loss)}
 
+.kits{display:grid;gap:8px}
+.kitrow{display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+  border:1px solid var(--line);border-radius:9px;padding:8px 10px;background:#F7FAFD}
+.kitrow b{flex:1;min-width:70px;font-size:.85rem;color:var(--head)}
+.kit-prev{display:grid;place-items:center;width:34px;height:34px;border-radius:8px;flex:0 0 auto;
+  background:linear-gradient(#1f7a45,#166035)}
+.kit-prev .pp-dot{width:24px;height:24px;font-size:11px;font-style:normal}
+.kit-f{display:flex;align-items:center;gap:6px;font-size:.72rem;color:var(--slate);flex:0 0 auto}
+.kit-f input[type=color]{width:38px;height:28px;padding:0;border:1px solid var(--line2);
+  border-radius:7px;background:none;cursor:pointer}
+.kitrow .dl[disabled]{opacity:.4;cursor:default}
 .xitally{display:grid;gap:8px;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));margin:10px 0}
 .xitl{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:.78rem;
   border:1px solid var(--line2);border-radius:9px;padding:7px 10px;background:#F7FAFD}
@@ -2450,7 +2461,8 @@ function applyData(d, source){
                    events:  keepField(d.events,  ALL && ALL.events),
                    lineups: keepField(d.lineups, ALL && ALL.lineups),
                    subs:    keepField(d.subs,    ALL && ALL.subs),
-                   shapes:  keepField(d.shapes,  ALL && ALL.shapes)});
+                   shapes:  keepField(d.shapes,  ALL && ALL.shapes),
+                   kits:    keepField(d.kits,    ALL && ALL.kits)});
   SQUADS = d.squads || SQUADS || {};   /* ملف بلا كشوفات لا يمسح الكشوفات الحالية */
   if("fantasyOpen" in (d||{})) FANTASY_OPEN = !!d.fantasyOpen;
   SQNUMS_FOUND = squadsExtractNums();   /* فصل الأرقام المكتوبة داخل الأسماء */
@@ -2475,6 +2487,7 @@ function dataObject(){
           pens:ALL?ALL.pens:PENS, cards:ALL?ALL.cards:CARDS, squads:SQUADS,
           lineups:(ALL&&ALL.lineups)||[], subs:(ALL&&ALL.subs)||[],
           shapes:(ALL&&ALL.shapes)||[],
+          kits:(ALL&&ALL.kits)||[],
           events:(ALL&&ALL.events)||[],
           lastUpdate:LASTUPDATE, updated:new Date().toISOString(),
           fantasyOpen:FANTASY_OPEN,
@@ -2523,6 +2536,52 @@ function eventsAdminHTML(){
       <div style="height:8px"></div>
       <button class="btn" id="evAdd">إضافة المناسبة</button>
     </div>`;
+}
+
+/* ===== ألوان القمصان — إدارة =====
+   لون القميص ولون الرقم لكل نادٍ، كما يظهران على الملعب. */
+function kitsAdminHTML(){
+  const rows=CLUBS.filter(c=>c).map(c=>{
+    const k=kitOf(c), d=defaultKit(c);
+    const custom=(ALL&&ALL.kits||[]).some(x=>x.club===c);
+    return `<div class="kitrow" data-kitclub="${esc(c)}">
+      <span class="kit-prev"><i class="pp-dot" style="${dotVars(k)}">9</i></span>
+      <b>${esc(c)}</b>
+      <label class="kit-f"><span>القميص</span>
+        <input type="color" data-kitbg="${esc(c)}" value="${k.bg}"></label>
+      <label class="kit-f"><span>الرقم</span>
+        <input type="color" data-kitfg="${esc(c)}" value="${k.fg}"></label>
+      <button class="dl" data-kitreset="${esc(c)}" ${custom?"":"disabled"}
+        title="الرجوع للون الافتراضي ${d.bg}">تلقائي</button>
+    </div>`;
+  }).join("");
+  return `<h2 class="sec">ألوان القمصان على الملعب</h2>
+    <div class="card pad">
+      <p class="hint" style="margin:0 0 12px">لون قميص كل نادٍ ولون رقمه كما يظهران في تشكيلة الملعب.
+      الافتراضي مأخوذ من ألوان النادي — الكويت أبيض ورقمه أحمر — وتقدر تغيّرهما هنا.
+      المعاينة على اليمين تتحدث فوراً، والحفظ يسري على كل الأجهزة.</p>
+      <div class="kits">${rows}</div>
+      <div style="height:12px"></div>
+      <button class="btn" id="kitsSave">حفظ الألوان</button>
+    </div>`;
+}
+/* المعاينة تتحرك مع كل تغيير، والحفظ لاحقاً بضغطة واحدة */
+function kitDraft(){
+  const out=[];
+  document.querySelectorAll("[data-kitclub]").forEach(row=>{
+    const c=row.dataset.kitclub;
+    const bg=row.querySelector("[data-kitbg]").value.toLowerCase();
+    const fg=row.querySelector("[data-kitfg]").value.toLowerCase();
+    const d=defaultKit(c);
+    if(bg!==d.bg.toLowerCase() || fg!==d.fg.toLowerCase()) out.push({club:c, bg, fg});
+  });
+  return out;
+}
+async function saveKits(){
+  const reb=await rebaseOnCloud();
+  if(reb.changed) toast(`وصل تحديث من ${reb.by||"محرّر آخر"} — دُمج قبل الحفظ`,"busy");
+  ALL.kits = kitDraft();
+  return await persistData();
 }
 
 async function addEvent(){
@@ -3237,7 +3296,7 @@ function drawShape(club){
   if(!box) return;
   const st=EDIT.shapes[club]=EDIT.shapes[club]||{f:"",pos:{}};
   const form=st.f||autoFormation(club);
-  const col=(window.CLUB_COLORS&&CLUB_COLORS[club]||["#ffffff"])[0];
+  const kit=kitOf(club);
   box.innerHTML=`<div class="pitch-lines"></div>`;
   shapeSlots(shapeMen(club),form).forEach(({p,x,y,n})=>{
     const ov=st.pos[p.n];
@@ -3245,7 +3304,7 @@ function drawShape(club){
     el.className="pp-spot"; el.dataset.pn=p.n; el.dataset.pc=club;
     el.style.right=(ov?ov.x:x)+"%"; el.style.top=(ov?ov.y:y)+"%";
     el.style.maxWidth=(96/(n+1))+"%";      /* لا يتجاوز المسافة بين لاعبين متجاورين */
-    el.innerHTML=`<span class="pp-dot" style="--pc:${col}">${p.s||"–"}</span>
+    el.innerHTML=`<span class="pp-dot" style="${dotVars(kit)}">${p.s||"–"}</span>
       <span class="pp-nm">${esc(p.n)}</span>`;
     box.appendChild(el);
   });
@@ -3278,20 +3337,50 @@ function pitchSpots(round, comp, club){
   });
   return {form, spots};
 }
-function spotHTML(p, x, y, n, col){
+function spotHTML(p, x, y, n, kit){
   return `<div class="pp-spot" style="right:${x}%;top:${y}%;max-width:${(96/(n+1)).toFixed(1)}%">
-    <span class="pp-dot" style="--pc:${col}">${p.s||"–"}</span>
+    <span class="pp-dot" style="${dotVars(kit)}">${p.s||"–"}</span>
     <span class="pp-nm">${esc(p.n)}</span></div>`;
 }
-const clubColor=c=>((window.CLUB_COLORS||{})[c]||["#ffffff"])[0];
+/* القميص الفاتح يحتاج حافة غامقة ليُرى على العشب، والغامق حافة فاتحة */
+function dotVars(kit){
+  const edge = lumOf(kit.bg)>.72 ? "rgba(11,31,58,.45)" : "rgba(255,255,255,.85)";
+  return `--pc:${kit.bg};--pt:${kit.fg};--pe:${edge}`;
+}
+/* ===== ألوان القميص على الملعب =====
+   لكل نادٍ لون قميص ولون رقم. الافتراضي مشتقّ من ألوان النادي: اللون
+   الأول قميصاً، والرقم أبيض عليه إن كان غامقاً، ولون النادي الثاني إن
+   كان القميص فاتحاً (الكويت أبيض ورقمه أحمر). ويُضبط يدوياً من الإعدادات
+   ويُحفظ في السحابة فيراه الجمهور كما ضُبط. */
+const HEX=/^#[0-9a-fA-F]{6}$/;
+function lumOf(h){
+  const c=String(h||"").replace("#","");
+  if(c.length!==6) return 1;
+  return (.2126*parseInt(c.slice(0,2),16) + .7152*parseInt(c.slice(2,4),16)
+        + .0722*parseInt(c.slice(4,6),16))/255;
+}
+function defaultKit(club){
+  const cc=(window.CLUB_COLORS||{})[club] || ["#FFFFFF","#0B1F3A"];
+  const bg=cc[0];
+  if(lumOf(bg)<=.62) return {bg, fg:"#FFFFFF"};       /* قميص غامق: رقم أبيض */
+  const alt=cc[1]||"";                                 /* قميص فاتح: اللون الثاني إن كان يُقرأ */
+  return {bg, fg: (HEX.test(alt) && lumOf(alt)<=.62) ? alt : "#0B1F3A"};
+}
+function kitOf(club){
+  const row=(ALL&&ALL.kits||[]).find(k=>k.club===club);
+  const d=defaultKit(club);
+  return {bg: (row&&HEX.test(row.bg))?row.bg:d.bg,
+          fg: (row&&HEX.test(row.fg))?row.fg:d.fg};
+}
+const clubColor=c=>kitOf(c).bg;
 
 /* ملعب لفريق واحد */
 function clubPitchHTML(round, comp, club){
   const S=pitchSpots(round, comp, club);
   if(!S) return "";
-  const col=clubColor(club);
+  const kit=kitOf(club);
   return `<div class="pitch half"><div class="pitch-lines"></div>
-    ${S.spots.map(({p,x,y,n})=>spotHTML(p,x,y,n,col)).join("")}</div>`;
+    ${S.spots.map(({p,x,y,n})=>spotHTML(p,x,y,n,kit)).join("")}</div>`;
 }
 /* ملعب للفريقين: المضيف في نصفه السفلي، والضيف في العلوي مقلوباً */
 function matchPitchHTML(m){
@@ -3299,10 +3388,10 @@ function matchPitchHTML(m){
   const H=pitchSpots(m.round, comp, m.home), A=pitchSpots(m.round, comp, m.away);
   if(!H || !A) return "";
   const half=(S, club, top)=>{
-    const col=clubColor(club);
+    const kit=kitOf(club);
     return S.spots.map(({p,x,y,n})=>{
       const yy = top ? 48-(y/100)*48 : 52+(y/100)*48;
-      return spotHTML(p, top?100-x:x, +yy.toFixed(1), n, col);
+      return spotHTML(p, top?100-x:x, +yy.toFixed(1), n, kit);
     }).join("");
   };
   /* الاسم فوق نصف صاحبه وتحته، فيقرأ الملعب بلا لبس */
@@ -4975,6 +5064,8 @@ function renderAdmin(){
         : "الإشهار يُظهر تبويب «فانتسي» لكل الزوار ويرفع بوابة الرمز عن اللعبة. يُحفظ في السحابة فيسري على كل الأجهزة خلال ثوانٍ."}</p>
     </div>
 
+    ${kitsAdminHTML()}
+
     ${eventsAdminHTML()}
 
     ${backupsHTML()}
@@ -5152,6 +5243,32 @@ function renderAdmin(){
   if(cp) cp.onclick=()=>{ if(confirm("حذف كل صور اللاعبين؟")){ PHOTOS={}; PAV={}; persist(); renderAdmin(); renderAll(); } };
   const du=$("#dataUp");
   if(du) du.onchange=e=>{ const f=e.target.files[0]; if(f) readDataFile(f); };
+  /* الألوان: المعاينة تتبع الإدخال، وزر «تلقائي» يرجع للافتراضي */
+  const paintKit=c=>{
+    const row=document.querySelector(`[data-kitclub="${cssq(c)}"]`); if(!row) return;
+    const bg=row.querySelector("[data-kitbg]").value, fg=row.querySelector("[data-kitfg]").value;
+    row.querySelector(".pp-dot").setAttribute("style", dotVars({bg,fg}));
+    const d=defaultKit(c), rb=row.querySelector("[data-kitreset]");
+    if(rb) rb.disabled = bg.toLowerCase()===d.bg.toLowerCase() && fg.toLowerCase()===d.fg.toLowerCase();
+  };
+  document.querySelectorAll("[data-kitbg],[data-kitfg]").forEach(inp=>{
+    inp.oninput = () => paintKit(inp.dataset.kitbg || inp.dataset.kitfg);
+  });
+  document.querySelectorAll("[data-kitreset]").forEach(b=>b.onclick=()=>{
+    const c=b.dataset.kitreset, d=defaultKit(c);
+    const row=document.querySelector(`[data-kitclub="${cssq(c)}"]`);
+    row.querySelector("[data-kitbg]").value=d.bg.toLowerCase();
+    row.querySelector("[data-kitfg]").value=d.fg.toLowerCase();
+    paintKit(c);
+  });
+  const ks=$("#kitsSave");
+  if(ks) ks.onclick=async()=>{
+    busy(ks,true,"جارٍ الحفظ…");
+    const ok=await saveKits();
+    busy(ks,false);
+    if(ok===true){ LASTSYNC=new Date(); toast("حُفظت الألوان ✅","ok"); renderAll(); renderAdmin(); }
+    else toast(SYNCMSG||"حُفظت محلياً، لكن تعذّر الحفظ في السحابة","err");
+  };
   const eva=$("#evAdd");
   if(eva) eva.onclick=async()=>{
     busy(eva,true,"جارٍ الحفظ…");
