@@ -13,7 +13,7 @@ const SEED_CLUBS = [
   { id:'SAL', name:'السالمية',   short:'السالمية',  crest:'assets/crests/salmiya.png',     color:'#5BC2E7', dark:'#0b3947', strength:3.5, stadium:'استاد ثامر' },
   { id:'NSR', name:'النصر',      short:'النصر',     crest:'assets/crests/nasr.png',        color:'#8e1b3a', dark:'#2b0611', strength:4.0, stadium:'استاد علي صباح السالم' },
   { id:'SHB', name:'الشباب',     short:'الشباب',    crest:'assets/crests/shabab.png',      color:'#1f4fd1', dark:'#0b1f5c', strength:3.5, stadium:'ملعب الشباب' },
-  { id:'JAH', name:'الجهراء',    short:'الجهراء',   crest:'assets/crests/jahra.png',       color:'#FD0419', dark:'#480108', strength:3.5, stadium:'استاد مبارك العيار' },
+  { id:'JAH', name:'الجهراء',    short:'الجهراء',   crest:'assets/crests/jahra.png',       color:'#0E3C8C', dark:'#071e4a', strength:3.5, stadium:'استاد مبارك العيار' },
   { id:'FAH', name:'الفحيحيل',   short:'الفحيحيل',  crest:'assets/crests/fahaheel.png',    color:'#d81f26', dark:'#480108', strength:3.0, stadium:'ملعب الفحيحيل' },
   { id:'SAH', name:'الساحل',     short:'الساحل',    crest:'assets/crests/sahel.png',       color:'#f5d90a', dark:'#1e3f9e', strength:3.0, stadium:'ملعب الساحل' },
   { id:'TDM', name:'التضامن',    short:'التضامن',   crest:'assets/crests/tadamon.png',     color:'#1b4fd8', dark:'#10213c', strength:2.5, stadium:'ملعب التضامن' },
@@ -239,7 +239,7 @@ const KITS = {
   SAL:{body:'#5BC2E7',trim:'#ffffff',gk:'#d64fa8'},
   NSR:{body:'#8e1b3a',trim:'#e6e6ee',gk:'#ffd23f'},  // عنابي بأطراف رمادية (منصور: النصر عنابي)
   SHB:{body:'#1f4fd1',trim:'#ffffff',gk:'#7ac74f'},  // أزرق ملكي بخطوط بيضاء (عينة منصور)
-  JAH:{body:'#ffffff',trim:'#FD0419',gk:'#ff7a00'},  // أبيض/أزرق-أحمر، حارس برتقالي (مؤكد)
+  JAH:{body:'#ffffff',trim:'#0E3C8C',gk:'#ff7a00'},  // أبيض وأزرق، حارس برتقالي
   FAH:{body:'#d81f26',trim:'#e9e9f0',gk:'#9b6ef3'},  // أحمر بأكمام بيضاء (عينة منصور)
   SAH:{body:'#f5d90a',trim:'#1e3f9e',gk:'#2e9e5b'},  // أصفر بياقة زرقاء (عينة منصور)
   TDM:{body:'#1b4fd8',trim:'#ffffff',gk:'#ff7a00'},  // أزرق بياقة بيضاء (عينة منصور)
