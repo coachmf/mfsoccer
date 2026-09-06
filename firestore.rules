@@ -70,6 +70,33 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    // Team of the round: one ballot per fan per round, at
+    // "<round>|<competition>_<uid>". Public read so the tally and the
+    // voter list can be shown. A fan writes only their own ballot, and
+    // only while staff have opened voting for that round. The approved
+    // result lives inside the season document, written by staff — a fan
+    // can never touch it. No deletes.
+    // Voting window, mirrored out of the season document into one doc per
+    // round so the rules can read it directly. Written by staff alongside
+    // the toggle in the admin panel.
+    function totOpen(rk) {
+      return exists(/databases/$(database)/documents/totlock/$(rk))
+          && get(/databases/$(database)/documents/totlock/$(rk)).data.open == true;
+    }
+    match /totlock/{rk} {
+      allow read:  if true;
+      allow write: if isOwner() || isEditor();
+    }
+    match /tots/{vid} {
+      allow read: if true;
+      allow create, update: if request.auth != null
+        && request.resource.data.uid == request.auth.uid
+        && vid == request.resource.data.rk + "_" + request.auth.uid
+        && request.resource.data.xi.size() == 11
+        && totOpen(request.resource.data.rk);
+      allow delete: if isOwner() || isEditor();
+    }
+
     // Leaderboard: public read, owner-only write.
     match /boards/{sid} {
       allow read:  if true;
