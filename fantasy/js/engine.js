@@ -49,6 +49,14 @@ const DB = {
     if(!game) return {ok:false, err:'no-game'};      // المدير لم ينشر بعد
 
     if(game.rules)   st.rules   = game.rules;
+    /* أسماء الكروت ووصفها من الكود دائماً (قابلة للتحديث فوراً على كل الأجهزة)،
+       مع إبقاء «مرّات الاستخدام» و«التفعيل» من ضبط المدير في السحابة. */
+    if(st.rules && st.rules.chips && typeof SEED_RULES!=='undefined' && SEED_RULES.chips){
+      for(const k in SEED_RULES.chips){
+        if(st.rules.chips[k]){ st.rules.chips[k].label=SEED_RULES.chips[k].label; st.rules.chips[k].desc=SEED_RULES.chips[k].desc; }
+        else st.rules.chips[k]={...SEED_RULES.chips[k]};
+      }
+    }
     if(game.scoring) st.scoring = game.scoring;
     if(game.clubs)   st.clubs   = game.clubs;
     if(game.news)    st.news    = game.news;
