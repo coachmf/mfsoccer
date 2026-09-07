@@ -88,6 +88,7 @@ const APP = {
   /* هل نُشرت جولة جديدة أو احتُسبت؟ */
   async pollCloud(){
     if(this.cloudState!=='ready' || (typeof DB!=='undefined' && DB.muted)) return;
+    if(typeof CLOUD!=='undefined' && !CLOUD.user) return;   /* بلا دخول: لا نعيد رسم شاشة الدخول فنمسح ما يكتبه المستخدم */
     try{
       const changed = await DB.refreshFromCloud();
       if(changed){ ADMINAUTH.sync(); this.render(); if(typeof MFSYNC!=='undefined') MFSYNC.autoFixtures(true); }
@@ -143,7 +144,15 @@ const APP = {
     }
   },
 
-  tickCountdown(){ if(['dashboard','team','transfers'].includes(this.route)) this.render(); },
+  /* لا نعيد الرسم كل 30ث (يومض ويمسح الإدخال). موعد الإغلاق تاريخ ثابت،
+     فنعيد الرسم فقط عند مرور الموعد فعلاً (تغيّر حالة القفل). */
+  tickCountdown(){
+    if(!['dashboard','team','transfers'].includes(this.route)) return;
+    let locked=false;
+    try{ locked=GWADMIN.deadlinePassed(DB.state.currentGW); }catch(e){ return; }
+    if(this._lastLocked===undefined){ this._lastLocked=locked; return; }
+    if(locked!==this._lastLocked){ this._lastLocked=locked; this.render(); }
+  },
   onLiveTick(){ if(this.route==='live') this.render(); },
 
   render(){
@@ -182,7 +191,10 @@ const APP = {
       html=`<div class="card" style="border-color:var(--red)"><h3>حدث خطأ</h3><div class="tiny">${esc(e.message)}</div>
         <button class="btn sm sec" style="margin-top:10px" onclick="APP.go('dashboard')">العودة للرئيسية</button></div>`;
     }
-    main.innerHTML=`<div class="view">${html}</div>`;
+    /* الحركة عند تغيّر الصفحة فقط، لا عند كل إعادة رسم (تحديث/مزامنة) */
+    const anim = this._shownRoute !== this.route;
+    this._shownRoute = this.route;
+    main.innerHTML=`<div class="view${anim?' anim':''}">${html}</div>`;
     this.renderBottomNav();
   },
 

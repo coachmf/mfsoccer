@@ -51,9 +51,16 @@ const VIEWS = {
   async doLogin(ev){
     const b=ev&&ev.target; this._busy(b,true,'جارٍ الدخول…');
     const r=await AUTH.login(gv('f_email'), gv('f_pass'));
-    this._busy(b,false);
-    if(r.ok) UI.toast('أهلاً بعودتك!');           // العرض يتجدد من onAuthStateChanged
-    else UI.toast(r.err, true);
+    if(r.ok){ UI.toast('أهلاً بعودتك!'); this._holdBusy(b,'جارٍ الدخول…'); }  /* يبقى منشغلاً حتى ينتقل العرض */
+    else { this._busy(b,false); UI.toast(r.err, true); }
+  },
+  /* يُبقي الزر منشغلاً بعد نجاح الدخول حتى يتحوّل العرض للوحة (onAuthStateChanged)،
+     مع أمان يُرجعه لو تأخّر الخادم أكثر من اللازم */
+  _holdBusy(btn, label){
+    if(!btn) return;
+    btn.textContent=label||'لحظة…'; btn.disabled=true;
+    clearTimeout(this._holdT);
+    this._holdT=setTimeout(()=>{ this._busy(btn,false); }, 12000);
   },
   async doSignup(ev){
     const b=ev&&ev.target; this._busy(b,true,'جارٍ الإنشاء…');
@@ -65,8 +72,8 @@ const VIEWS = {
   async doGoogle(ev){
     const b=ev&&ev.target.closest('button'); this._busy(b,true,'جارٍ فتح Google…');
     const r=await CLOUD.googleLogin();
-    this._busy(b,false);
-    if(!r.ok) UI.toast(r.err, true);          // النجاح يُلتقط من onAuthStateChanged
+    if(r.ok){ this._holdBusy(b,'جارٍ الدخول…'); }   // النجاح يُلتقط من onAuthStateChanged
+    else { this._busy(b,false); UI.toast(r.err, true); }
   },
   /* حساب جديد عبر Google: إكمال اسم المستخدم واسم الفريق */
   completeProfile(){

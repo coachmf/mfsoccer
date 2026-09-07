@@ -48,7 +48,11 @@ const CLOUD = {
       this.auth = firebase.auth();
       this.db   = firebase.firestore();
       try{ this.db.settings({ experimentalAutoDetectLongPolling:true, merge:true }); }catch(e){}
+      /* الجلسة تبقى محفوظة على الجهاز (سفاري أحياناً يفقدها بلا هذا) */
+      try{ this.auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL); }catch(e){}
       this.ready = true; this.state='ready';
+      /* لو رجعنا من دخول Google عبر إعادة توجيه، التقط النتيجة (وأي خطأ مفهوم) */
+      this.auth.getRedirectResult().catch(()=>{});
       this.auth.onAuthStateChanged(u => this._onAuth(u));
       return true;
     }catch(e){ console.warn('cloud init failed', e); this.state='offline'; return false; }
@@ -153,9 +157,15 @@ const CLOUD = {
 
   async logout(){ try{ await this.auth.signOut(); }catch(e){} },
 
+  /* هل نحن داخل متصفح تطبيق (إنستغرام/تيك توك/سناب/فيسبوك)؟ Google يرفض OAuth فيها */
+  inAppBrowser(){
+    const ua=(navigator.userAgent||'').toLowerCase();
+    return /instagram|fbav|fban|fb_iab|tiktok|musical_ly|snapchat|line\/|micromessenger/.test(ua);
+  },
   /* الدخول بحساب Google — يحتاج تفعيل Google في Firebase Authentication وإضافة النطاق في Authorized domains */
   async googleLogin(){
     if(!this.ready) return {ok:false, err:'السحابة غير متاحة — تأكد من الاتصال'};
+    if(this.inAppBrowser()) return {ok:false, err:'الدخول عبر Google لا يعمل داخل متصفح التطبيق (إنستغرام/تيك توك/سناب). افتح mfsoccer.com في Safari أو Chrome، أو ادخل بالبريد وكلمة المرور.'};
     let prov;
     try{ prov=new firebase.auth.GoogleAuthProvider(); prov.setCustomParameters({prompt:'select_account'}); }
     catch(e){ return {ok:false, err:'الدخول عبر Google غير متاح في هذه النسخة'}; }

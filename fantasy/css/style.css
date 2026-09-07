@@ -107,7 +107,7 @@ a{color:var(--blue); text-decoration:none;}
 #userchip .av{width:27px;height:27px;border-radius:50%;background:var(--surface2);display:grid;place-items:center;}
 
 #main{max-width:1180px;margin:0 auto;padding:22px 18px 90px;}
-.view{animation:fadeup .25s ease;}
+.view.anim{animation:fadeup .25s ease;}   /* الحركة عند تغيّر الصفحة فقط — لا كل إعادة رسم */
 @keyframes fadeup{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:none;}}
 
 /* ---------- الرئيسية على طراز FPL ---------- */
@@ -452,7 +452,7 @@ table.tbl{width:100%;border-collapse:collapse;font-size:.88rem;}
   .admin-menu button{white-space:nowrap;}
   #bottomnav{
     display:flex;position:fixed;bottom:0;right:0;left:0;z-index:90;
-    background:color-mix(in srgb,var(--bg2) 96%,transparent);backdrop-filter:blur(12px);
+    background:var(--bg2);   /* خلفية صلبة بدل blur — يمنع الرجرجة على آيفون */
     border-top:1px solid var(--line);justify-content:space-around;padding:7px 4px calc(7px + env(safe-area-inset-bottom));
   }
   #bottomnav button{display:flex;flex-direction:column;align-items:center;gap:2px;font-size:.62rem;color:var(--text3);font-weight:700;padding:4px 8px;border-radius:8px;}
