@@ -600,7 +600,7 @@ const VIEWS = {
     const st=DB.state, team=DB.myTeam();
     const tOut=this.ui.tOut, tIn=this.ui.tIn.filter(Boolean);
     const n=tOut.length;
-    const freeMode=team.activeChip==='wildcard'||team.activeChip==='freehit';
+    const freeMode=team.activeChip==='wildcard'||team.activeChip==='freehit'||!!st.rules.freeChanges;
     const hits=freeMode?0:Math.max(0,n-team.ft)*st.rules.transferCost;
     const outCost=tOut.reduce((s,pid)=>s+DB.player(pid).price,0);
     const inCost=tIn.reduce((s,pid)=>s+DB.player(pid).price,0);
@@ -614,7 +614,7 @@ const VIEWS = {
   tApply(){
     const st=DB.state, team=DB.myTeam();
     const tOut=this.ui.tOut, tIn=this.ui.tIn.filter(Boolean);
-    const freeMode=team.activeChip==='wildcard'||team.activeChip==='freehit';
+    const freeMode=team.activeChip==='wildcard'||team.activeChip==='freehit'||!!st.rules.freeChanges;
     const n=tOut.length;
     const hits=freeMode?0:Math.max(0,n-team.ft)*st.rules.transferCost;
     tOut.forEach((outPid,i)=>{

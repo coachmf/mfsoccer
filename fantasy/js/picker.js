@@ -82,7 +82,7 @@ Object.assign(VIEWS, {
     if(!team.squad.length) return this.squadPicker();
     const locked=GWADMIN.deadlinePassed(st.currentGW);
     const chip=team.activeChip;
-    const freeMode= chip==='wildcard'||chip==='freehit';
+    const freeMode= chip==='wildcard'||chip==='freehit'||!!st.rules.freeChanges;
     const tOut=this.ui.tOut, tIn=this.ui.tIn;
     const nPairs=tOut.filter((o,i)=>tIn[i]).length;
     const allPaired=tOut.length>0 && tOut.every((o,i)=>tIn[i]);
@@ -124,7 +124,7 @@ Object.assign(VIEWS, {
         const used=team.usedChips[k]||0; const active=chip===k;
         return `<button class="btn sm ${active?'':'sec'}" ${locked||(used>=c.uses&&!active)||(chip&&!active)?'disabled':''}
           onclick="VIEWS.toggleChip('${k}')">${c.label}</button>`;}).join('')}
-      <span class="pill ${freeMode?'green':'blue'}">${freeMode? 'انتقالات حرة — كرت مفعّل' : `مجاني: ${team.ft} · الإضافي −${st.rules.transferCost}`}</span>
+      <span class="pill ${freeMode?'green':'blue'}">${st.rules.freeChanges? 'تغييرات حرة حتى موعد الإغلاق' : (freeMode? 'انتقالات حرة — كرت مفعّل' : `مجاني: ${team.ft} · الإضافي −${st.rules.transferCost}`)}</span>
     </div>
     ${locked? '<div class="card" style="border-color:var(--red);margin-bottom:12px">أُغلقت الجولة — الانتقالات تفتح بعد احتساب النتائج.</div>':''}
     <div class="tf-wrap">

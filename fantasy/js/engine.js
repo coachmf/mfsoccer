@@ -57,6 +57,8 @@ const DB = {
         else st.rules.chips[k]={...SEED_RULES.chips[k]};
       }
     }
+    /* سياسة التغييرات الحرة من الكود دائماً (تسري فوراً بلا إعادة نشر) */
+    if(st.rules && typeof SEED_RULES!=='undefined') st.rules.freeChanges = SEED_RULES.freeChanges;
     if(game.scoring) st.scoring = game.scoring;
     if(game.clubs)   st.clubs   = game.clubs;
     if(game.news)    st.news    = game.news;
@@ -320,14 +322,14 @@ function kwDate(v){
   if(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2})?$/.test(str)) return new Date(str+(str.length===16?':00':'')+'+03:00');
   return new Date(str);
 }
-/* موعد الإغلاق = أول مباراة بالجولة ناقص 90 دقيقة؛ جولة بلا مباريات = بلا موعد (مفتوحة) */
+/* موعد الإغلاق = بداية أول مباراة بالجولة (التغييرات مفتوحة حتى انطلاقها)؛
+   جولة بلا مباريات = بلا موعد (مفتوحة) */
 function computeDeadlines(gws, fixtures){
   gws.forEach(g=>{
     if(g.status==='finished' || g.deadlineManual) return;
     const dates=fixtures.filter(f=>f.gw===g.n && f.date).map(f=>kwDate(f.date)).filter(d=>!isNaN(d)).sort((a,b)=>a-b);
     if(!dates.length){ g.deadline=null; return; }
-    const dl=new Date(dates[0]); dl.setMinutes(dl.getMinutes()-90);
-    g.deadline=dl.toISOString();
+    g.deadline=new Date(dates[0]).toISOString();   /* مع بداية أول مباراة، بلا خصم 90 دقيقة */
   });
 }
 function buildGameweeks(fixtures){
