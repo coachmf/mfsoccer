@@ -1,12 +1,8 @@
-[
-  {
-    "relation": ["delegate_permission/common.handle_all_urls"],
-    "target": {
-      "namespace": "android_app",
-      "package_name": "com.mfsoccer.twa",
-      "sha256_cert_fingerprints": [
-        "ضع هنا بصمة SHA-256 التي يعطيها PWABuilder عند توليد الحزمة"
-      ]
-    }
-  }
-]
+[{
+      "relation": ["delegate_permission/common.handle_all_urls"],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "com.mfsoccer.twa",
+        "sha256_cert_fingerprints": ["BB:C4:D6:B8:F6:90:37:AE:D0:E3:B5:1D:55:8F:95:F7:B6:4A:A9:D5:AB:66:9C:E8:3E:2B:75:AE:48:07:ED:F0"]
+      }
+    }]
