@@ -2519,6 +2519,7 @@ function applyData(d, source){
                    tots:    keepField(d.tots,    ALL && ALL.tots)});
   SQUADS = d.squads || SQUADS || {};   /* ملف بلا كشوفات لا يمسح الكشوفات الحالية */
   if("fantasyOpen" in (d||{})) FANTASY_OPEN = !!d.fantasyOpen;
+  if(typeof paintFantasyTab==="function") paintFantasyTab();  /* التبويب يظهر فور وصول حالة الإشهار */
   SQNUMS_FOUND = squadsExtractNums();   /* فصل الأرقام المكتوبة داخل الأسماء */
   CLUBS = d.clubs;
   const have = compsPresent();
