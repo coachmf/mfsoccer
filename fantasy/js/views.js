@@ -34,8 +34,12 @@ const VIEWS = {
       <div class="card">
         <div class="tabs" style="width:100%">${tab('login','دخول')}${tab('signup','حساب جديد')}${tab('forgot','نسيت كلمة المرور')}</div>
         ${form}
+        <div class="row" style="align-items:center;gap:10px;margin:14px 0 10px"><div style="flex:1;height:1px;background:var(--line)"></div><span class="tiny">أو</span><div style="flex:1;height:1px;background:var(--line)"></div></div>
+        <button class="btn sec" style="width:100%;display:flex;align-items:center;justify-content:center;gap:10px" onclick="VIEWS.doGoogle(event)">
+          <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9 3.5l6.7-6.7C35.6 2.6 30.2 0 24 0 14.6 0 6.5 5.4 2.6 13.3l7.8 6.1C12.3 13.6 17.7 9.5 24 9.5z"/><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.7c-.6 3-2.3 5.5-4.8 7.2l7.5 5.8c4.4-4.1 7.1-10.1 7.1-17.5z"/><path fill="#FBBC05" d="M10.4 28.6A14.5 14.5 0 0 1 9.5 24c0-1.6.3-3.1.8-4.6l-7.8-6.1A24 24 0 0 0 0 24c0 3.9.9 7.5 2.6 10.7l7.8-6.1z"/><path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.5-5.8c-2.1 1.4-4.9 2.3-8.4 2.3-6.3 0-11.7-4.1-13.6-9.9l-7.8 6.1C6.5 42.6 14.6 48 24 48z"/></svg>
+          الدخول عبر Google</button>
       </div>
-      <div class="tiny" style="text-align:center;margin-top:12px">حسابك محفوظ على الخادم — يتبعك على كل أجهزتك</div>
+      <div class="tiny" style="text-align:center;margin-top:12px">حسابك محفوظ على الخادم — يتبعك على كل أجهزتك · <a href="#guide" onclick="APP.go('guide');return false;">عن اللعبة والقوانين</a></div>
     </div>`;
   },
   /* أزرار المصادقة صارت غير متزامنة: نعطّل الزر ريثما يردّ الخادم */
@@ -57,6 +61,25 @@ const VIEWS = {
     this._busy(b,false);
     if(r.ok){ UI.toast('تم إنشاء الحساب — راجع بريدك لتفعيله'); this.ui.authTab='login'; }
     else UI.toast(r.err, true);
+  },
+  async doGoogle(ev){
+    const b=ev&&ev.target.closest('button'); this._busy(b,true,'جارٍ فتح Google…');
+    const r=await CLOUD.googleLogin();
+    this._busy(b,false);
+    if(!r.ok) UI.toast(r.err, true);          // النجاح يُلتقط من onAuthStateChanged
+  },
+  /* حساب جديد عبر Google: إكمال اسم المستخدم واسم الفريق */
+  completeProfile(){
+    const m=DB.me(); if(!m) return;
+    UI.modal(`<h3>أهلاً بك — أكمل بياناتك</h3>
+      <div class="field"><label>اسم المستخدم (يظهر في الترتيب)</label><input id="cp_user" value="${esc(m.username)}"></div>
+      <div class="field"><label>اسم فريقك في الفانتسي</label><input id="cp_team" value="${esc(m.teamName)}" placeholder="مثال: نسور الديرة"></div>
+      <button class="btn" style="width:100%" onclick="VIEWS.saveCompleteProfile()">حفظ والبدء</button>`);
+  },
+  saveCompleteProfile(){
+    const m=DB.me(); const u=gv('cp_user').trim(), t=gv('cp_team').trim();
+    if(!u || !t){ UI.toast('اكتب الاسمين', true); return; }
+    m.username=u; m.teamName=t; DB.save(); UI.closeModal(); UI.toast('تم — كوّن فريقك الآن'); APP.go('team');
   },
   async doForgot(ev){
     const b=ev&&ev.target; this._busy(b,true,'جارٍ الإرسال…');
@@ -117,6 +140,8 @@ const VIEWS = {
       ['stats','stats','الإحصائيات','الأكثر انتقالاً وتملكاً وأفضل قيمة'],
       ['compare','users','مقارنة اللاعبين','قارن حتى 3 لاعبين جنباً إلى جنب'],
       ['leagues','trophy','الدوريات','الترتيب العام ودورياتك الخاصة'],
+      ['guide','news','عن اللعبة','نبذة، فريق العمل، طريقة اللعب، نظام النقاط والكروت'],
+      ['about','dev','المطوّر والاقتراحات','أرسل اقتراحك أو بلّغ عن خطأ'],
     ];
 
     return `<div class="home-wrap">
@@ -129,10 +154,13 @@ const VIEWS = {
           </div>
           <button class="hh-edit" onclick="APP.go('profile')">${UI.icon('chev',20)}</button>
         </div>
+        ${(typeof LIVEGW!=='undefined' && LIVEGW.active())? `<div class="hh-divider"></div>${LIVEGW.heroBlock()}` : ''}
         ${gwBlock? `<div class="hh-divider"></div>${gwBlock}`:''}
         <div class="hh-divider"></div>
-        <div class="hh-gwlabel">الجولة ${st.currentGW} · موعد الإغلاق ${liveNow?'<span class="pill red">مباشر الآن</span>':''}</div>
-        <div class="hh-deadline">${next? UI.fmtDate(next.deadline):''}</div>
+        ${(typeof LIVEGW!=='undefined' && LIVEGW.active())
+          ? `<div class="hh-gwlabel">الجولة ${st.currentGW} جارية — التشكيلة مقفلة حتى اعتماد الجولة</div>`
+          : `<div class="hh-gwlabel">الجولة ${st.currentGW} · موعد الإغلاق</div>
+        <div class="hh-deadline">${next? (next.deadline? UI.fmtDate(next.deadline) : 'لم يصدر جدول الجولة بعد — التشكيلة مفتوحة') : ''}</div>`}
         ${mainBtn}
         <div class="pill-row">
           <button class="big-pill" onclick="APP.go('transfers')">${UI.icon('swap',18)} الانتقالات</button>
@@ -152,11 +180,17 @@ const VIEWS = {
   points(){
     const st=DB.state, team=DB.myTeam();
     const hist=team.history||[];
-    if(!hist.length) return '<div class="card"><div class="muted">لا توجد جولات محتسبة بعد.</div></div>';
-    const gw=this.ui.pointsGw || hist[hist.length-1].gw;
-    const h=hist.find(x=>x.gw===gw)||hist[hist.length-1];
-    const res=TEAM.gwPoints(team, h.gw, st);
-    const picks=team.gwPicks[h.gw];
+    const liveOn = typeof LIVEGW!=='undefined' && LIVEGW.active() && (team.squad||[]).length && !hist.some(x=>x.gw===st.currentGW);
+    const tabsGw=[...hist.map(x=>x.gw), ...(liveOn? [st.currentGW] : [])];
+    if(!tabsGw.length) return '<div class="card"><div class="muted">لا توجد جولات محتسبة بعد — نقاطك تظهر هنا مباشرة أثناء الجولة بعد موعد الإغلاق.</div></div>';
+    const gw=tabsGw.includes(this.ui.pointsGw)? this.ui.pointsGw : tabsGw[tabsGw.length-1];
+    const isLive = liveOn && gw===st.currentGW;
+    if(isLive) LIVEGW.refresh();
+    const res= isLive ? LIVEGW.mine() : TEAM.gwPoints(team, gw, st);
+    const ls = isLive ? (LIVEGW.summary()||{}) : {};
+    const h= isLive ? {gw, pts:res.total, hits:res.hits, benchPts:res.benchPts, chip:res.chip, rank:ls.rank||'—', live:true}
+                    : hist.find(x=>x.gw===gw);
+    const picks= isLive ? LIVEGW.picksOf(team, gw) : team.gwPicks[h.gw];
     const row=r=>{
       const p=DB.player(r.pid); const s=DB.pgw(r.pid,h.gw);
       return `<tr onclick="VIEWS.openPlayer('${p.id}')" style="cursor:pointer">
@@ -164,13 +198,15 @@ const VIEWS = {
         <td class="tiny">${s? s.min+"'" : '—'}</td><td class="tiny">${s? s.g:0}/${s? s.a:0}</td><td class="tiny">${s&&s.bonus? '+'+s.bonus:'—'}</td>
         <td class="num" style="color:var(--accent)">${r.cap? r.eff+' ('+r.pts+'×'+(res.chip==='triplecap'?3:2)+')' : r.pts}</td></tr>`;
     };
+    const lm = isLive ? LIVEGW.matches() : null;
     return `<div class="row spread" style="margin-bottom:14px;flex-wrap:wrap;gap:8px">
-      <h2>نقاط الجولة ${h.gw}</h2>
-      <div class="tabs">${hist.map(x=>`<button class="${x.gw===h.gw?'active':''}" onclick="VIEWS.ui.pointsGw=${x.gw};APP.render()">ج${x.gw}</button>`).join('')}</div></div>
+      <h2>نقاط الجولة ${h.gw} ${isLive? '<span class="pill red">مباشر</span>':''}</h2>
+      <div class="tabs">${tabsGw.map(g=>`<button class="${g===h.gw?'active':''}" onclick="VIEWS.ui.pointsGw=${g};APP.render()">ج${g}${(liveOn&&g===st.currentGW)?' ●':''}</button>`).join('')}</div></div>
+    ${isLive? `<div class="tiny" style="margin-bottom:10px">${lm.played} من ${lm.total} مباريات لُعبت — النقاط تتحدث مع كل مباراة تُسجَّل على mfsoccer، وتُعتمد رسمياً عند إغلاق الجولة. لاعب لم تُلعب مباراته بعد يبقى في تشكيلتك بصفر مؤقت.</div>`:''}
     <div class="grid g4" style="margin-bottom:14px">
-      <div class="statbox hi"><div class="v">${h.pts}</div><div class="l">نقاطك ${h.hits?`(خصم -${h.hits})`:''}</div></div>
-      <div class="statbox"><div class="v">${DB.gw(h.gw).avg ?? '—'}</div><div class="l">متوسط الجولة</div></div>
-      <div class="statbox"><div class="v">${Number(h.rank).toLocaleString('ar')}</div><div class="l">ترتيب الجولة</div></div>
+      <div class="statbox hi"><div class="v">${h.pts}</div><div class="l">${isLive?'نقاطك الآن':'نقاطك'} ${h.hits?`(خصم -${h.hits})`:''}</div></div>
+      <div class="statbox"><div class="v">${isLive? (ls.avg ?? '—') : (DB.gw(h.gw).avg ?? '—')}</div><div class="l">${isLive?'المتوسط الآن':'متوسط الجولة'}</div></div>
+      <div class="statbox"><div class="v">${typeof h.rank==='number'? h.rank.toLocaleString('ar') : h.rank}${isLive&&ls.of?`<small style="font-size:.5em"> / ${ls.of.toLocaleString('ar')}</small>`:''}</div><div class="l">${isLive?'ترتيبك الآن':'ترتيب الجولة'}</div></div>
       <div class="statbox"><div class="v">${h.benchPts}</div><div class="l">نقاط الدكة ${h.chip?`· كرت: ${DB.state.rules.chips[h.chip]?.label||h.chip}`:''}</div></div>
     </div>
     <div class="card"><h3>التشكيلة الأساسية — الكابتن: ${esc(res.capName)}</h3>
@@ -206,7 +242,7 @@ const VIEWS = {
       <div class="squad-hero">
         <div class="sh-info">
           <div class="sh-name">${esc(DB.me().teamName)} ${this.championBadge(DB.me().id)}</div>
-          <div class="sh-sub">الجولة ${gw} · ${locked? 'مقفلة' : 'الإغلاق: '+UI.fmtDate(DB.gw(gw).deadline)}</div>
+          <div class="sh-sub">الجولة ${gw} · ${locked? (GWADMIN.inProgress(gw)? 'جارية — النقاط تظهر مباشرة في «ملخص الجولة»' : 'مقفلة') : (DB.gw(gw).deadline? 'الإغلاق: '+UI.fmtDate(DB.gw(gw).deadline) : 'مفتوحة — بانتظار صدور جدول الجولة')}</div>
         </div>
         <div class="sh-stats">
           <div><b>${fmtM(TEAM.teamValue(team))}</b><span>القيمة</span></div>
@@ -497,6 +533,8 @@ const VIEWS = {
     return `<div class="row" style="flex-wrap:wrap;gap:6px;margin-bottom:10px">
       <select style="width:auto" onchange="VIEWS.ui.filters.pos=this.value;APP.render()">
         <option value="">كل المراكز</option>${['G','D','M','F'].map(p=>`<option value="${p}" ${f.pos===p?'selected':''}>${POS_AR[p]}</option>`).join('')}</select>
+      <select style="width:auto" onchange="VIEWS.ui.filters.price=this.value;APP.render()">
+        <option value="">كل الأسعار</option>${[...new Set(st.players.filter(p=>p.status!=='u').map(p=>p.price))].sort((x,y)=>x-y).map(v=>`<option value="${v}" ${+f.price===v?'selected':''}>${fmtM(v)}</option>`).join('')}</select>
       <select style="width:auto" onchange="VIEWS.ui.filters.club=this.value;APP.render()">
         <option value="">كل الأندية</option>${st.clubs.map(c=>`<option value="${c.id}" ${f.club===c.id?'selected':''}>${c.name}</option>`).join('')}</select>
       <input style="width:130px" placeholder="بحث بالاسم" value="${esc(f.search)}" oninput="VIEWS.ui.filters.search=this.value" onchange="APP.render()">
@@ -603,6 +641,7 @@ const VIEWS = {
   players(){
     const st=DB.state, f=this.ui.filters;
     let list=st.players.filter(p=>p.status!=='u');
+    if(f.price) list=list.filter(p=>Math.abs(p.price-(+f.price))<0.01);
     if(f.pos) list=list.filter(p=>p.pos===f.pos);
     if(f.club) list=list.filter(p=>p.club===f.club);
     if(f.search) list=list.filter(p=>p.name.includes(f.search));
@@ -697,7 +736,8 @@ const VIEWS = {
     return `<h2 style="margin-bottom:12px">المباريات والنتائج</h2>
     <div class="tabs">${st.gws.map(g=>`<button class="${g.n===gw?'active':''}" onclick="VIEWS.ui.fxGw=${g.n};APP.render()">ج${g.n}</button>`).join('')}</div>
     <div class="grid g2">
-      <div class="card"><h3>الجولة ${gw} ${DB.gw(gw).status==='finished'?'<span class="pill green">منتهية</span>':DB.gw(gw).status==='live'?'<span class="pill red">مباشر</span>':`<span class="pill">الإغلاق: ${UI.fmtDateShort(DB.gw(gw).deadline)}</span>`}</h3>
+      <div class="card"><h3>الجولة ${gw} ${DB.gw(gw).status==='finished'?'<span class="pill green">منتهية</span>':DB.gw(gw).status==='live'?'<span class="pill red">مباشر</span>':DB.gw(gw).deadline?`<span class="pill">الإغلاق: ${UI.fmtDateShort(DB.gw(gw).deadline)}</span>`:'<span class="pill gold">لم يصدر الجدول</span>'}</h3>
+        ${!fx.length? '<div class="muted" style="margin:10px 0">لم يُنشر جدول هذه الجولة على mfsoccer بعد — تظهر المباريات هنا تلقائياً أول ما تُنشر.</div>':''}
         ${fx.map(f=>`
           <div class="fx" style="flex-direction:column;align-items:stretch">
             <div class="row" style="width:100%">
@@ -728,9 +768,9 @@ const VIEWS = {
     const anyLive=fx.some(f=>f.status==='L');
     const team=DB.myTeam();
     let myLive='';
-    if(team && team.squad.length && (liveG||team.gwPicks[gw])){
-      if(!team.gwPicks[gw]) GWADMIN.snapshotPicks(team,gw);
-      const res=TEAM.gwPoints(team,gw,st);
+    const picks = team && (team.gwPicks[gw] || ((DB.gw(gw)||{}).status!=='finished' ? TEAM.picksFrom(team) : null));
+    if(team && team.squad.length && picks){
+      const res=TEAM.gwPoints({...team, gwPicks:{[gw]:picks}},gw,st);
       myLive=`<div class="card" style="margin-bottom:14px;border-color:var(--accent)">
         <div class="row spread"><h3 style="margin:0">نقاطي المباشرة — الجولة ${gw}</h3>
         <div class="v" style="font-size:1.8rem;font-weight:800;color:var(--accent)">${res.total}</div></div>
@@ -761,8 +801,13 @@ const VIEWS = {
   leagues(){
     const st=DB.state, m=DB.me();
     if(this.ui.leagueOpen){
-      const lg=st.leagues.find(l=>l.id===this.ui.leagueOpen);
+      const lg=LEAGUES.byId(this.ui.leagueOpen);
       if(lg) return this.leagueDetail(lg);
+      if(LEAGUES.online() && !LEAGUES.cloud.list){       // القائمة لم تصل بعد من الخادم
+        LEAGUES.refresh(true).then(()=>APP.render());
+        return '<div class="card"><div class="muted">جارٍ تحميل الدوري…</div></div>';
+      }
+      this.ui.leagueOpen=null;
     }
     const mine=LEAGUES.mine();
     return `<div class="row spread" style="margin-bottom:12px;flex-wrap:wrap;gap:8px">
@@ -792,6 +837,8 @@ const VIEWS = {
     const st=DB.state, m=DB.me();
     const rows= lg.global? this.globalTable() : LEAGUES.table(lg);
     const isH2H=lg.type==='h2h';
+    const liveCol = typeof LIVEGW!=='undefined' && LIVEGW.active();
+    if(liveCol) LIVEGW.refresh();
     return `<button class="btn sm sec" onclick="VIEWS.ui.leagueOpen=null;APP.render()" style="margin-bottom:12px">→ كل الدوريات</button>
     <div class="card">
       <div class="row spread" style="flex-wrap:wrap;gap:8px">
@@ -799,24 +846,34 @@ const VIEWS = {
         ${!lg.global? `<div class="row" style="gap:8px">
           <span class="pill blue">رمز الدعوة: <b style="letter-spacing:2px">${lg.code}</b></span>
           <button class="btn sm sec" onclick="navigator.clipboard&&navigator.clipboard.writeText('${lg.code}');UI.toast('نُسخ الرمز — أرسله لأصحابك')">نسخ</button>
-          ${lg.owner===m.id? `<button class="btn sm sec" onclick="VIEWS.leagueAddBots('${lg.id}')">+ منافسون تجريبيون</button>`:''}
+
         </div>`:''}
       </div>
       <div class="scroll-x" style="margin-top:12px"><table class="tbl">
-        <tr><th>#</th><th>المدير</th><th>الفريق</th>${isH2H?'<th>ف/ت/خ</th><th>ن. المواجهات</th>':''}<th>آخر جولة</th><th>المجموع</th></tr>
+        <tr><th>#</th><th></th><th>المدير</th><th>الفريق</th>${isH2H?'<th>ف/ت/خ</th><th>ن. المواجهات</th>':''}${liveCol?'<th><span class="pill red">مباشر</span></th>':''}<th>آخر جولة</th><th>المجموع</th></tr>
         ${rows.map((r,i)=>`<tr style="${r.id===m.id?'background:color-mix(in srgb,var(--accent) 10%,transparent)':''}">
-          <td class="num">${i+1}</td><td>${esc(r.name)} ${r.id===m.id?'<span class="pill green">أنت</span>':''}</td>
+          <td class="num" style="font-weight:800">${(r.rank||i+1).toLocaleString('ar')}</td>
+          <td style="width:34px;white-space:nowrap">${this.moveIcon(r.move)}</td>
+          <td>${esc(r.name)} ${r.id===m.id?'<span class="pill green">أنت</span>':''}</td>
           <td class="muted">${esc(r.teamName)}</td>
           ${isH2H?`<td class="tiny">${r.w||0}/${r.d||0}/${r.l||0}</td><td class="num">${r.h2hPts||0}</td>`:''}
+          ${liveCol?`<td class="num" style="color:var(--red)">${LIVEGW.liveOf(r.id)??'—'}</td>`:''}
           <td>${r.last}</td><td class="num" style="color:var(--accent)">${r.total}</td></tr>`).join('')}
       </table></div>
     </div>`;
+  },
+  /* سهم حركة الترتيب: أخضر صعود، أحمر هبوط، رمادي ثبات */
+  moveIcon(mv){
+    mv=+mv||0;
+    if(mv>0) return `<span title="صعد ${mv}" style="color:var(--green-dk,#1e9e4a);font-weight:800;display:inline-flex;align-items:center;gap:2px"><svg width="12" height="12" viewBox="0 0 12 12"><path d="M6 1.5 L11 9 H1 Z" fill="currentColor"/></svg>${mv}</span>`;
+    if(mv<0) return `<span title="نزل ${-mv}" style="color:var(--red);font-weight:800;display:inline-flex;align-items:center;gap:2px"><svg width="12" height="12" viewBox="0 0 12 12"><path d="M6 10.5 L11 3 H1 Z" fill="currentColor"/></svg>${-mv}</span>`;
+    return `<span style="color:var(--text3);display:inline-flex;align-items:center"><svg width="12" height="12" viewBox="0 0 12 12"><circle cx="6" cy="6" r="3" fill="currentColor"/></svg></span>`;
   },
   globalTable(){
     const st=DB.state, m=DB.me();
     if(LEAGUES.online()){
       LEAGUES.refresh();
-      if(LEAGUES.cloud.board) return LEAGUES.cloud.board.map(r=>({...r}));
+      if(LEAGUES.cloud.board){ const rows=LEAGUES.cloud.board.map(r=>({...r})); rows.sort((a,b)=>b.total-a.total); LEAGUES.movement(rows, {global:true}); return rows; }
     }
     const rows=[];
     st.users.forEach(u=>{
@@ -841,7 +898,8 @@ const VIEWS = {
       const r=await CLOUD.createLeague(name, gv('lg_type'));
       UI.closeModal();
       if(!r.ok){ UI.toast(r.err,true); return; }
-      await LEAGUES.refresh(true);
+      LEAGUES.addLocal(r.lg);
+      LEAGUES.refresh(true).then(()=>{ if(APP.route==='leagues') APP.render(); });
       UI.modal(`<h3>أُنشئ الدوري!</h3><p class="muted">شارك هذا الرمز مع أصحابك للانضمام:</p>
         <h2 style="text-align:center;letter-spacing:8px;margin:16px 0">${r.lg.code}</h2>
         <button class="btn" style="width:100%" onclick="UI.closeModal();VIEWS.ui.leagueOpen='${r.lg.id}';APP.go('leagues')">فتح الدوري</button>`);
@@ -863,7 +921,8 @@ const VIEWS = {
     if(LEAGUES.online()){
       const r=await CLOUD.joinLeague(gv('lg_code'));
       if(!r.ok){ UI.toast(r.err,true); return; }
-      UI.closeModal(); await LEAGUES.refresh(true);
+      UI.closeModal(); LEAGUES.addLocal(r.lg);
+      LEAGUES.refresh(true).then(()=>{ if(APP.route==='leagues') APP.render(); });
       UI.toast('انضممت للدوري'); this.ui.leagueOpen=r.lg.id; APP.go('leagues');
       return;
     }
@@ -893,7 +952,7 @@ const VIEWS = {
       body=tbl(['اللاعب','التملّك','النقاط'], list.map(p=>prow(p,`<td style="min-width:160px">${UI.bar(MARKET.ownership(p.id))} <span class="tiny">${MARKET.ownership(p.id)}%</span></td><td class="num" style="color:var(--accent)">${DB.playerTotal(p.id)}</td>`)).join(''));
     } else if(t==='in'||t==='out'){
       const list=[...players].sort((a,b)=>MARKET.transferCounts(b.id)[t]-MARKET.transferCounts(a.id)[t]).slice(0,20);
-      body=tbl(['اللاعب', t==='in'?'شراء هذه الجولة':'بيع هذه الجولة','النقاط'], list.map(p=>prow(p,`<td class="num">${MARKET.transferCounts(p.id)[t].toLocaleString('ar')}</td><td class="num" style="color:var(--accent)">${DB.playerTotal(p.id)}</td>`)).join(''));
+      body=tbl(['اللاعب', t==='in'?'شراء (آخر جولة محتسبة)':'بيع (آخر جولة محتسبة)','النقاط'], list.map(p=>prow(p,`<td class="num">${MARKET.transferCounts(p.id)[t].toLocaleString('ar')}</td><td class="num" style="color:var(--accent)">${DB.playerTotal(p.id)}</td>`)).join(''));
     } else if(t==='top'){
       const sc=[...players].sort((a,b)=>DB.playerStatSum(b.id,'g')-DB.playerStatSum(a.id,'g')).slice(0,10);
       const as=[...players].sort((a,b)=>DB.playerStatSum(b.id,'a')-DB.playerStatSum(a.id,'a')).slice(0,10);
@@ -929,7 +988,8 @@ const VIEWS = {
       </div>
       ${REMIND.card()}
       <div class="card"><h3>الحساب</h3>
-        <div class="muted">وضع محلي بدون تسجيل دخول — كل شيء محفوظ على هذا الجهاز</div>
+        <div class="muted">${APP.signedIn()? 'حسابك محفوظ على الخادم — يتبعك على كل أجهزتك' : 'وضع محلي بدون تسجيل دخول — كل شيء محفوظ على هذا الجهاز'}</div>
+        ${APP.signedIn()? '<div style="margin-top:8px"><button class="btn sm sec" onclick="AUTH.logout().then(()=>APP.go(\'dashboard\'))">تسجيل الخروج</button></div>' : '<div style="margin-top:8px"><button class="btn sm" onclick="APP.go(\'auth\')">إنشاء حساب أو دخول</button></div>'}
         <div class="muted" style="margin:6px 0">انضممت في الجولة ${team.joinedGW}</div>
         <div class="row" style="gap:8px;margin-top:14px;flex-wrap:wrap">
         </div>
@@ -953,7 +1013,7 @@ const VIEWS = {
   },
   doWipe(){
     const st=DB.state; const m=DB.me();
-    st.teams[m.id]={ squad:[],xi:[],bench:[],cap:null,vice:null,bank:st.rules.budget,ft:1,
+    st.teams[m.id]={ squad:[],xi:[],bench:[],cap:null,vice:null,bank:st.rules.budget,ft:st.rules.freeTransfers,
       usedChips:{},activeChip:null,joinedGW:st.currentGW,history:[],transfers:[],gwPicks:{},pendingHits:0 };
     DB.save(); UI.closeModal(); APP.go('team');
   },

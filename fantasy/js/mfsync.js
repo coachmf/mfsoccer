@@ -62,7 +62,16 @@ const MFSYNC = {
   },
 
   resolvePlayer(mfName, clubId, report){
-    const clean=(mfName||'').replace(/^[\s\d]+\s*-?\s*/,'').trim();
+    const raw0=String(mfName||'').trim();
+    // الموقع يكتب أحياناً رقم القميص وحده («17») — نطابقه بالرقم
+    if(/^\d{1,2}$/.test(raw0)){
+      const byNo=DB.state.players.find(p=>p.club===clubId && +p.shirt===+raw0 && p.status!=='u')
+               || DB.state.players.find(p=>p.club===clubId && +p.shirt===+raw0);
+      if(byNo) return byNo;
+      if(report) report.unmatched.push(`رقم ${raw0} (${DB.club(clubId).name})`);
+      return null;
+    }
+    const clean=raw0.replace(/^[\s\d]+\s*-?\s*/,'').trim();
     const al=this.ALIAS[clubId+'|'+clean];
     if(al){ const p=DB.state.players.find(x=>x.club===clubId && x.name===al); if(p) return p; }
     const nm=this.norm(mfName);
@@ -84,17 +93,114 @@ const MFSYNC = {
     return hit||null;
   },
 
-  /* استيراد جولة كاملة من الموقع */
-  async importRound(gw){
-    UI.toast('جاري السحب من موقع mfsoccer…');
+  /* ---------- الجدول: من الموقع فقط ----------
+     كل مباراة على الموقع (الدوري) تُنشأ أو تُحدَّث عندنا (الفريقان والموعد)؛
+     المباراة غير المنتهية التي ليست على الموقع تُحذف. جولة بلا مباريات على
+     الموقع تبقى فارغة بلا موعد. لا توليد ولا تخمين. */
+  syncFixtures(data, st, opts){
+    st=st||DB.state; opts=opts||{};
+    const rep={created:0, updated:0, removed:0, notes:[]};
+    const total=(st.rules&&st.rules.totalGWs)||22;
+    const ms=(data.matches||[]).filter(m=>(!m.comp||m.comp==='الدوري') && +m.round>=1 && +m.round<=total);
+    const seen=new Set();
+    ms.forEach(m=>{
+      const h=this.clubId(m.home), a=this.clubId(m.away);
+      if(!h||!a){ rep.notes.push(`نادٍ غير معروف: ${m.home} × ${m.away}`); return; }
+      const gw=+m.round;
+      const date = m.date ? (m.date+'T'+(m.time||'18:00')) : null;
+      let f=st.fixtures.find(x=>x.gw===gw && !seen.has(x.id) && ((x.h===h&&x.a===a)||(x.h===a&&x.a===h)));
+      if(!f){
+        f={ id:fixtureId(gw,h,a), gw, h, a, hs:null, as:null, goals:[], cards:[], pens:[], subs:[], lineups:null,
+            venue:DB.club(h).stadium, date, status:'U', est:false, live:null };
+        st.fixtures.push(f); rep.created++;
+      } else {
+        let ch=false;
+        if(f.status==='U' && (f.h!==h||f.a!==a)){ f.h=h; f.a=a; f.venue=DB.club(h).stadium; ch=true; }
+        if(date && f.date!==date){ f.date=date; ch=true; }
+        if(ch) rep.updated++;
+      }
+      seen.add(f.id);
+    });
+    if(opts.removeMissing!==false){
+      const before=st.fixtures.length;
+      st.fixtures=st.fixtures.filter(f=>seen.has(f.id) || f.status==='F' || (DB.gw(f.gw)||{}).status==='finished');
+      rep.removed=before-st.fixtures.length;
+    }
+    st.fixtures.sort((a,b)=>(a.gw-b.gw)||String(a.date||'').localeCompare(String(b.date||'')));
+    GWADMIN.refreshDeadlines(st);
+    return rep;
+  },
+
+  /* سحب الجدول تلقائياً عند فتح اللعبة (كل 3 ساعات) — على كل جهاز، قراءة فقط.
+     النتائج والإحصاءات تبقى من نشر المدير؛ هنا الفريقان والموعد فقط. */
+  KEYF:'kwf_fx_sync',
+  CACHE:'kwf_fx_cache',
+  /* آخر جدول مسحوب من الموقع يُطبَّق فوراً (بلا شبكة) بعد كل تحميل/مزامنة من السحابة —
+     حتى لا يعود جدول قديم مولَّد من نشر سابق ولو للحظات */
+  applyCached(){
+    try{
+      const c=JSON.parse(localStorage.getItem(this.CACHE)||'null');
+      if(!c || !Array.isArray(c.matches)) return null;
+      const rep=this.syncFixtures({matches:c.matches}, DB.state, {removeMissing:true});
+      if(rep.created||rep.updated||rep.removed){ try{ localStorage.setItem(DB.KEY, JSON.stringify(DB.state)); }catch(e){} }
+      return rep;
+    }catch(e){ return null; }
+  },
+  async autoFixtures(force){
+    const cached=this.applyCached();
+    let last=0; try{ last=+localStorage.getItem(this.KEYF)||0; }catch(e){}
+    if(!force && cached && Date.now()-last < 3*3600e3){      // بلا نسخة مخزّنة نسحب فوراً مهما كان التوقيت
+      if(cached && (cached.created||cached.updated||cached.removed) && typeof APP!=='undefined') APP.render();
+      return cached;
+    }
     let data;
-    try{ data = await this.fetchSeason(); }
-    catch(e){ UI.toast(e.message, true); return; }
+    try{ data=await this.fetchSeason(); }catch(e){ return cached; }
+    const rep=this.syncFixtures(data, DB.state, {removeMissing:true});
+    // النتائج والتشكيلات والتبديلات والأهداف: من الموقع مباشرة على كل جهاز — لا تنتظر المدير
+    const played=new Set((data.matches||[]).filter(m=>(!m.comp||m.comp==='الدوري') && m.hg!=null && m.hg!=='' && m.ag!=null && m.ag!=='').map(m=>+m.round));
+    let ev=0;
+    for(const gw of [...played].sort((a,b)=>a-b)){ const r=await this.importRound(gw,{quiet:true,data}); if(r) ev+=r.goals+r.subs+r.xi; }
+    rep.events=ev; rep.rounds=played.size;
+    try{ localStorage.setItem(this.KEYF, String(Date.now())); }catch(e){}
+    try{ localStorage.setItem(this.CACHE, JSON.stringify({at:Date.now(), matches:(data.matches||[]).map(m=>({round:m.round,home:m.home,away:m.away,date:m.date,time:m.time,comp:m.comp}))})); }catch(e){}
+    try{ localStorage.setItem(DB.KEY, JSON.stringify(DB.state)); }catch(e){}
+    if(typeof APP!=='undefined') APP.render();
+    return rep;
+  },
+
+  /* زر الإدارة: سحب الجدول الآن مع تقرير */
+  async adminSyncFixtures(){
+    UI.toast('جاري سحب الجدول من موقع mfsoccer…');
+    const rep=await this.autoFixtures(true);
+    if(!rep){ UI.toast('تعذّر الوصول لموقع mfsoccer', true); return; }
+    DB.save(); APP.render();
+    const st=DB.state;
+    const rounds=st.gws.map(g=>{ const n=st.fixtures.filter(f=>f.gw===g.n).length; return n? `ج${g.n}: ${n} مباريات` : null; }).filter(Boolean);
+    UI.modal(`<h3>سحب الجدول من mfsoccer</h3>
+      <div class="muted" style="line-height:2">${rep.created} مباراة جديدة · ${rep.updated} محدَّثة · ${rep.removed} حُذفت (ليست على الموقع)</div>
+      <div class="tiny" style="margin-top:8px">${rounds.join(' · ')||'لا مباريات على الموقع'}</div>
+      ${rep.notes.length? `<div class="tiny" style="margin-top:8px;color:var(--gold)">${rep.notes.map(esc).join('<br>')}</div>`:''}
+      <div class="tiny" style="margin-top:10px">الجولات التي لم ينشر الموقع جدولها تبقى فارغة وبلا موعد إغلاق. لا تنسَ «نشر حالة اللعبة» بعد السحب.</div>
+      <button class="btn" style="margin-top:12px" onclick="UI.closeModal()">تمام</button>`);
+  },
+
+  /* استيراد جولة كاملة من الموقع. opts.quiet = بلا واجهة (المزامنة التلقائية على كل جهاز)، opts.data = مستند مسحوب مسبقاً */
+  async importRound(gw, opts){
+    opts=opts||{}; const quiet=!!opts.quiet;
+    if(!quiet) UI.toast('جاري السحب من موقع mfsoccer…');
+    let data=opts.data;
+    if(!data){
+      try{ data = await this.fetchSeason(); }
+      catch(e){ if(!quiet) UI.toast(e.message, true); return null; }
+    }
 
     const st=DB.state;
-    const report={matches:0, goals:0, cards:0, pens:0, xi:0, subs:0, unmatched:[], notes:[], upd:data.lastUpdate||''};
-    const ms=(data.matches||[]).filter(m=>m.round===gw && (!m.comp || m.comp==='الدوري'));
-    if(!ms.length){ UI.toast(`الجولة ${gw} غير موجودة على الموقع بعد`, true); return; }
+    const report={matches:0, goals:0, cards:0, pens:0, xi:0, subs:0, unmatched:[], notes:[], noXI:[], xiFixed:[], benchCards:[], upd:data.lastUpdate||''};
+    // الجدول كله من الموقع أولاً: يُنشئ مباريات الجولة إن لم تكن عندنا ويحذف ما ليس على الموقع
+    const fxRep=this.syncFixtures(data, st, {removeMissing:true});
+    fxRep.notes.forEach(n=>report.notes.push(n));
+    const ms=(data.matches||[]).filter(m=>+m.round===gw && (!m.comp || m.comp==='الدوري'));
+    if(!ms.length){ if(quiet) return report; DB.save(); APP.render(); UI.toast(`الجولة ${gw} غير موجودة على الموقع بعد — تبقى فارغة`, true); return report; }
 
     const used=new Set();
     for(const m of ms){
@@ -120,7 +226,7 @@ const MFSYNC = {
 
       // الأهداف والصناعة (مع الأهداف العكسية وركلات الجزاء المسجلة)
       f.goals=[];
-      (data.goals||[]).filter(g=>g.r===gw && (!g.comp||g.comp==='الدوري') && pair(g.sc,g.cd)).forEach(g=>{
+      (data.goals||[]).filter(g=>+g.r===gw && (!g.comp||g.comp==='الدوري') && pair(g.sc,g.cd)).forEach(g=>{
         const benefiting=this.clubId(g.sc);
         if(g.og){
           const ogClub = benefiting===h? a : h;
@@ -140,7 +246,7 @@ const MFSYNC = {
       // الكروت: إنذار = أصفر، إنذار ثانٍ/طرد مباشر = أحمر
       // (الطرد بإنذارين = -3 فقط، فنحذف الأصفر الأول مثل FPL)
       f.cards=[];
-      (data.cards||[]).filter(c=>c.r===gw && (!c.comp||c.comp==='الدوري')).forEach(c=>{
+      (data.cards||[]).filter(c=>+c.r===gw && (!c.comp||c.comp==='الدوري')).forEach(c=>{
         const cid=this.clubId(c.club);
         if(cid!==h && cid!==a) return;
         const pl=this.resolvePlayer(c.p, cid, report); if(!pl) return;
@@ -154,7 +260,7 @@ const MFSYNC = {
 
       // ركلات الجزاء غير المسجلة = إهدار (المسجلة محسوبة ضمن الأهداف)
       f.pens=[];
-      (data.pens||[]).filter(p=>p.r===gw && (!p.comp||p.comp==='الدوري') && p.res!=='سجلت').forEach(p=>{
+      (data.pens||[]).filter(p=>+p.r===gw && (!p.comp||p.comp==='الدوري') && p.res!=='سجلت').forEach(p=>{
         const cid=this.clubId(p.by);
         if(cid!==h && cid!==a) return;
         const pl=this.resolvePlayer(p.p, cid, report); if(!pl) return;
@@ -162,14 +268,14 @@ const MFSYNC = {
         report.pens++;
       });
 
-      // التشكيلة الأساسية: من لم يُذكر في كشف الموقع يُعدّ بديلاً (صفر دقيقة حتى يدخل)
+      // التشكيلة: الأساسيون من كشف الموقع (s)، ومن دخل بديلاً من تبديلات الموقع (b).
+      // من لم يُذكر في الاثنين لا يُدرج أصلاً = لم يلعب (صفر دقيقة).
       const lu = {};
-      const anyXI = (data.lineups||[]).some(x=>x.r===gw && (!x.comp||x.comp==='الدوري') &&
+      const anyXI = (data.lineups||[]).some(x=>+x.r===gw && (!x.comp||x.comp==='الدوري') &&
                                                [h,a].includes(this.clubId(x.club)));
       if(anyXI){
         lu[h]={}; lu[a]={};
-        [h,a].forEach(cid=>{ st.players.filter(p=>p.club===cid).forEach(p=>{ lu[cid][p.id]='b'; }); });
-        (data.lineups||[]).filter(x=>x.r===gw && (!x.comp||x.comp==='الدوري')).forEach(x=>{
+        (data.lineups||[]).filter(x=>+x.r===gw && (!x.comp||x.comp==='الدوري')).forEach(x=>{
           const cid=this.clubId(x.club); if(cid!==h && cid!==a) return;
           const pl=this.resolvePlayer(x.p, cid, report); if(!pl) return;
           lu[cid][pl.id]='s'; report.xi++;
@@ -179,22 +285,41 @@ const MFSYNC = {
 
       // التبديلات: خروج ودخول بالشوط والدقيقة
       f.subs=[];
-      (data.subs||[]).filter(x=>x.r===gw && (!x.comp||x.comp==='الدوري')).forEach(x=>{
+      (data.subs||[]).filter(x=>+x.r===gw && (!x.comp||x.comp==='الدوري')).forEach(x=>{
         const cid=this.clubId(x.club); if(cid!==h && cid!==a) return;
         const po = x.out? this.resolvePlayer(x.out, cid, report) : null;
         const pi = x.in ? this.resolvePlayer(x.in , cid, report) : null;
         if(!po && !pi) return;
         f.subs.push({club:cid, out:po?po.name:'', in:pi?pi.name:'', h:+x.h||1, m:+x.m||0});
+        // الداخل بديلاً = b (حتى لو كتبه الموقع خطأً ضمن الأساسيين)، والخارج لا بد أنه لعب:
+        // إن لم يكن في تشكيلة الموقع فهو أساسي ناقص من كشفها (ما لم يكن دخل بديلاً قبل ذلك)
+        if(f.lineups && f.lineups[cid]){
+          if(pi){ if(f.lineups[cid][pi.id]==='s') report.xiFixed.push(`${pi.name} (${DB.club(cid).name}) مكتوب أساسياً في الموقع وهو دخل بديلاً`); f.lineups[cid][pi.id]='b'; }
+          if(po && !f.lineups[cid][po.id]){ f.lineups[cid][po.id]='s'; report.xiFixed.push(`${po.name} (${DB.club(cid).name}) خرج في الدقيقة ${absMinute(x.h,x.m)} وهو غير مذكور في تشكيلة الموقع — احتُسب أساسياً`); }
+        }
         report.subs++;
       });
       f.subs.sort((p,q)=>absMinute(p.h,p.m)-absMinute(q.h,q.m));
 
       genMatchStats(st,f);
+      if(f.lineups){ for(const cid of [h,a]){ const nS=Object.values(f.lineups[cid]||{}).filter(v=>v==='s').length; if(nS!==11) report.notes.push(`${DB.club(cid).name} (${DB.club(f.h).short} × ${DB.club(f.a).short}): عدد الأساسيين بعد التصحيح ${nS} وليس 11 — راجع تشكيلة الموقع`); } }
+      // مساهم (هدف/صناعة/كرت/جزاء) غير مذكور في تشكيلة الموقع ولا تبديلاته: احتُسب أساسياً — يُنبَّه عليه
+      if(f.lineups){
+        for(const cid of [h,a]){
+          for(const pid in (f.stats[cid]||{})){
+            if(!f.lineups[cid] || f.lineups[cid][pid]) continue;
+            const p=DB.player(pid); if(p) report.noXI.push(`${p.name} (${DB.club(cid).name}) — ${DB.club(f.h).short} × ${DB.club(f.a).short}`);
+          }
+        }
+        (f.cards||[]).forEach(c=>{ const p=st.players.find(x=>x.club===c.club && x.name===c.name); if(p && f.lineups[c.club] && !f.lineups[c.club][p.id] && !(f.stats[c.club]||{})[p.id]) report.benchCards.push(`${c.name} (${DB.club(c.club).name}) — ${c.type==='r'?'حمراء':'صفراء'} — ${DB.club(f.h).short} × ${DB.club(f.a).short}`); });
+      }
       report.matches++;
     }
 
     if(st.fixtures.some(x=>x.gw===gw && x.status==='F')) finalizeGWStats(st,gw);
+    GWADMIN.refreshDeadlines(st);
 
+    if(quiet) return report;               // المزامنة التلقائية: سجل المشتركين يبقى من الخادم (إعادة الاحتساب للمدير)
     // لو الجولة محتسبة: تصحيح نقاط الفرق بأثر رجعي
     const g=DB.gw(gw);
     if(g && g.status==='finished'){
@@ -217,6 +342,12 @@ const MFSYNC = {
       </div>
       ${report.unmatched.length? `<h3 style="font-size:.85rem;margin-top:10px;color:var(--red)">أسماء ما انطابقت مع قوائمنا (انسحبت بدونها):</h3>
         <div class="tiny">${report.unmatched.map(esc).join('<br>')}</div>`:''}
+      ${report.noXI.length? `<h3 style="font-size:.85rem;margin-top:10px;color:var(--gold)">سجّلوا/صنعوا وهم غير مذكورين في تشكيلة الموقع ولا تبديلاته — احتُسبوا أساسيين (90 دقيقة). راجع بيانات الموقع:</h3>
+        <div class="tiny">${report.noXI.map(esc).join('<br>')}</div>`:''}
+      ${report.xiFixed.length? `<h3 style="font-size:.85rem;margin-top:10px;color:var(--gold)">تصحيحات تلقائية لتشكيلة الموقع (من التبديلات):</h3>
+        <div class="tiny">${report.xiFixed.map(esc).join('<br>')}</div>`:''}
+      ${report.benchCards.length? `<h3 style="font-size:.85rem;margin-top:10px;color:var(--gold)">كروت لغير المشاركين (لم يُذكروا في التشكيلة ولا التبديلات) — لم تُحتسب مشاركة ولا خصم. تأكد إن كانوا لعبوا فعلاً:</h3>
+        <div class="tiny">${report.benchCards.map(esc).join('<br>')}</div>`:''}
       ${report.notes.length? `<div class="tiny" style="margin-top:8px;color:var(--gold)">${report.notes.map(esc).join('<br>')}</div>`:''}
       <div class="tiny" style="margin-top:10px">البونص (3/2/1) والتشكيلات تدخلها يدوياً من «تحرير» — الموقع ما ينزلها بعد.</div>
       <button class="btn" style="margin-top:12px" onclick="UI.closeModal()">تمام</button>`);

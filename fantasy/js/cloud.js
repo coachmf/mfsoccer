@@ -87,11 +87,14 @@ const CLOUD = {
   async publishLock(st){
     const g = (st.gws||[]).find(x=>x.n===st.currentGW);
     if(!g) return {ok:false, err:'لا توجد جولة حالية'};
-    const dl = new Date(g.deadline);
+    // جولة بلا جدول بعد (mfsoccer لم ينشره): لا موعد — تبقى مفتوحة على الخادم إلى أن يصدر
+    const has = !!g.deadline;
+    const dl = has ? new Date(g.deadline) : new Date('2099-01-01T00:00:00Z');
     const body = {
       gw: st.currentGW,
       deadline: firebase.firestore.Timestamp.fromDate(dl),
-      deadlineISO: g.deadline,
+      deadlineISO: g.deadline || null,
+      provisional: !has,
       open: g.status !== 'finished',
       updated: new Date().toISOString()
     };
@@ -125,6 +128,9 @@ const CLOUD = {
     if(pass.length < 6) return {ok:false, err:'كلمة المرور 6 أحرف على الأقل'};
     const taken = await this.usernameTaken(username);
     if(taken) return {ok:false, err:'اسم المستخدم محجوز — اختر غيره'};
+    // أثناء التسجيل يتوقف مستمع الدخول (APP.initCloud) عن إنشاء مستند افتراضي
+    // حتى لا يطمس اسم المستخدم واسم الفريق اللذين كتبهما المشترك.
+    this.signingUp = true;
     try{
       const cred = await this.auth.createUserWithEmailAndPassword(email, pass);
       // لا ننتظر كتابة المستند بلا حدّ: على شبكة تحجب قناة Firestore يبقى
@@ -134,6 +140,7 @@ const CLOUD = {
       return saved ? {ok:true}
                    : {ok:true, warn:'أُنشئ حسابك، لكن حفظ بياناتك تأخّر — أعد فتح الصفحة'};
     }catch(e){ return {ok:false, err:this.errAr(e)}; }
+    finally{ this.signingUp = false; }
   },
 
   async login(email, pass){
@@ -145,6 +152,21 @@ const CLOUD = {
   },
 
   async logout(){ try{ await this.auth.signOut(); }catch(e){} },
+
+  /* الدخول بحساب Google — يحتاج تفعيل Google في Firebase Authentication وإضافة النطاق في Authorized domains */
+  async googleLogin(){
+    if(!this.ready) return {ok:false, err:'السحابة غير متاحة — تأكد من الاتصال'};
+    let prov;
+    try{ prov=new firebase.auth.GoogleAuthProvider(); prov.setCustomParameters({prompt:'select_account'}); }
+    catch(e){ return {ok:false, err:'الدخول عبر Google غير متاح في هذه النسخة'}; }
+    try{ await this.auth.signInWithPopup(prov); return {ok:true}; }
+    catch(e){
+      if(e && (e.code==='auth/popup-blocked' || e.code==='auth/cancelled-popup-request')){
+        try{ await this.auth.signInWithRedirect(prov); return {ok:true, redirect:true}; }catch(e2){ return {ok:false, err:this.errAr(e2)}; }
+      }
+      return {ok:false, err:this.errAr(e)};
+    }
+  },
 
   /* استعادة كلمة المرور برسالة حقيقية من Firebase — لا رمز محلي */
   async resetEmail(email){
@@ -166,7 +188,10 @@ const CLOUD = {
       'auth/invalid-credential':'البريد أو كلمة المرور غير صحيحة',
       'auth/too-many-requests':'محاولات كثيرة — انتظر قليلاً ثم أعد المحاولة',
       'auth/network-request-failed':'تعذّر الاتصال بالشبكة',
-      'auth/operation-not-allowed':'تسجيل الحسابات غير مفعّل في إعدادات Firebase',
+      'auth/operation-not-allowed':'طريقة الدخول هذه غير مفعّلة في إعدادات Firebase',
+      'auth/popup-closed-by-user':'أُغلقت نافذة Google قبل إكمال الدخول',
+      'auth/unauthorized-domain':'هذا النطاق غير مصرّح له في Firebase (Authorized domains)',
+      'auth/account-exists-with-different-credential':'هذا البريد مسجّل بكلمة مرور — ادخل بالبريد وكلمة المرور',
       'permission-denied':'لا تملك صلاحية هذه العملية'
     };
     return map[c] || ((e && e.message) || 'حدث خطأ غير متوقع');
@@ -180,9 +205,11 @@ const CLOUD = {
     }catch(e){ return false; }   // تعذّر التحقق: لا نمنع التسجيل
   },
 
+  /* البريد لا يُحفظ في المستند: مجموعة المشتركين مقروءة للجميع (لوحة الترتيب)،
+     وFirebase Auth يحتفظ به أصلاً. */
   async createManager(uid, username, teamName, email){
     const doc = {
-      username, teamName, email: email||'', avatar:'',
+      username, teamName, avatar:'',
       joinedGW: (typeof DB!=='undefined' && DB.state ? DB.state.currentGW : 1),
       created: new Date().toISOString(),
       team: null, history: [], total: 0, lastGW: 0
@@ -226,8 +253,11 @@ const CLOUD = {
     try{
       const q = await this.managers().orderBy('total','desc').limit(limit||100).get();
       const rows=[];
-      q.forEach(d=>{ const v=d.data(); rows.push({
+      q.forEach(d=>{ const v=d.data();
+        if(!v.team || !(v.team.squad||[]).length) return;      // مشترك بلا فريق لا يظهر في الترتيب
+        rows.push({
         id:d.id, name:v.username||'مشترك', teamName:v.teamName||'', total:+v.total||0,
+        hist:v.history||[],
         last:(v.history&&v.history.length)? (+v.history[v.history.length-1].pts||0) : 0 }); });
       return rows;
     }catch(e){ return null; }
@@ -249,7 +279,9 @@ const CLOUD = {
   async loadPlayers(){
     try{
       const s = await this.playersDoc().get();
-      return s.exists ? (s.data().list || null) : null;
+      if(!s.exists) return null;
+      const v=s.data();
+      return { list: v.list || [], priceVer: +v.priceVer || 0 };
     }catch(e){ return null; }
   },
 
@@ -268,22 +300,25 @@ const CLOUD = {
       rules: st.rules, scoring: st.scoring, currentGW: st.currentGW,
       gws: st.gws, news: st.news, liveSpeed: st.liveSpeed,
       clubs: st.clubs,
+      own: st.own||{}, managerCount: st.managerCount||0, transferStats: st.transferStats||{},
       updated: new Date().toISOString(),
       updatedBy: (this.user && this.user.email) || ''
     };
     let r = await this.race(this.root().set(meta, {merge:true}));
     if(!r.ok) return {ok:false, err: r.timeout ? 'الاتصال بطيء — لم يكتمل النشر' : this.errAr(r.err)};
 
-    r = await this.race(this.playersDoc().set({list: st.players, updated: meta.updated}));
+    r = await this.race(this.playersDoc().set({list: st.players, priceVer: (typeof SEED_PRICE_VER!=='undefined'? SEED_PRICE_VER : 1), updated: meta.updated}));
     if(!r.ok) return {ok:false, err:'نُشرت الإعدادات لكن تعذّر نشر اللاعبين'};
 
     // الجولات: كل جولة في مستند مستقل حتى لا يتجاوز الحد الأعلى للمستند
     const byGW = {};
     st.fixtures.forEach(f=>{ (byGW[f.gw] = byGW[f.gw] || []).push(f); });
-    for(const gw in byGW){
+    const total = (st.rules && st.rules.totalGWs) || 22;
+    for(let gw=1; gw<=total; gw++){
       const pg = {};
       for(const pid in st.playerGW){ const row=st.playerGW[pid][gw]; if(row) pg[pid]=row; }
-      const rr = await this.race(this.round(gw).set({fixtures: byGW[gw], playerGW: pg, updated: meta.updated}));
+      // جولة بلا مباريات تُنشر فارغة صراحةً حتى لا يبقى على الخادم جدول قديم مولَّد
+      const rr = await this.race(this.round(gw).set({fixtures: byGW[gw]||[], playerGW: pg, updated: meta.updated}));
       if(!rr.ok) return {ok:false, err:`تعذّر نشر الجولة ${gw}`};
     }
     const lk = await this.publishLock(st);
@@ -307,49 +342,86 @@ const CLOUD = {
   },
 
   /* ---------- احتساب الجولة للجميع ---------- */
-  /* يجلب كل المشتركين، يحسب نقاط كل فريق من إحصاءات المباريات،
-     ثم يكتب السجل والمجموع في مستند كل مشترك. المدير وحده. */
-  async finalizeForAll(st, gw, computeFn){
-    if(!this.admin) return {ok:false, err:'الاحتساب للمدير فقط'};
+  /* يجلب كل المشتركين ويحسب نقاط كل فريق من إحصاءات المباريات.
+     الاختيارات = التشكيلة المحفوظة على الخادم (بعد الموعد يرفض الخادم تعديلها)،
+     أو لقطة الجولة إن وصلت. ثم يكتب في مستند كل مشترك: السجل والمجموع
+     والاختيارات المحتسبة وترحيل الفريق (انتقالات مجانية، تصفير الكرت والخصومات،
+     إرجاع فريق الضربة الحرة). ويعيد خلاصة: المتوسط والأعلى والتملّك والصفقات.
+     المدير وحده. يمكن تكراره بأمان (لا يُحتسب أحد مرتين). */
+  async finalizeForAll(st, gw, computeFn, opts){
+    opts=opts||{};                       // {recompute:true} = إعادة احتساب جولة محتسبة بعد تصحيح نتيجة
+    if(!this.admin) return {ok:false, err:'الاحتساب والنشر للمدير فقط'};
     let snap;
     try{ snap = await this.managers().get(); }
     catch(e){ return {ok:false, err:'تعذّر قراءة قائمة المشتركين'}; }
 
-    const rows=[];
+    const fill = t => Object.assign({ squad:[],xi:[],bench:[],cap:null,vice:null,bank:st.rules.budget,
+      ft:st.rules.freeTransfers, usedChips:{}, activeChip:null, joinedGW:1,
+      transfers:[], gwPicks:{}, pendingHits:0 }, t||{});
+
+    const rows=[], writes=[]; const own={}, transfers={}; let count=0;
     snap.forEach(d=>{
       const v=d.data();
-      if(!v.team || !(v.team.squad||[]).length) return;     // لم يكوّن فريقاً بعد
-      if((v.joinedGW||1) > gw) return;                       // اشترك بعد هذه الجولة
-      if((v.history||[]).some(h=>h.gw===gw)) return;          // محتسبة له مسبقاً
-      const res = computeFn(v.team, gw);
-      rows.push({uid:d.id, data:v, res});
+      const team=fill(v.team);
+      delete team.history;                                       // السجل يُكتب من هنا لا من الفريق
+      const squad=team.squad||[];
+      if(!squad.length){                                         // لم يكوّن فريقاً بعد
+        if(v.email!==undefined) writes.push([d.id, {email: firebase.firestore.FieldValue.delete()}]);
+        return;
+      }
+      count++;
+      squad.forEach(pid=>{ own[pid]=(own[pid]||0)+1; });
+      (team.transfers||[]).filter(t=>t.gw===gw).forEach(t=>{
+        transfers[t.in]=transfers[t.in]||{in:0,out:0};   transfers[t.in].in++;
+        transfers[t.out]=transfers[t.out]||{in:0,out:0}; transfers[t.out].out++;
+      });
+      const joined = v.joinedGW || team.joinedGW || 1;
+      if(joined > gw) return;                                    // اشترك بعد هذه الجولة
+      const prev=(v.history||[]).find(h=>h.gw===gw);
+      if(prev && (team.rolledGW||0)>=gw && !opts.recompute) return;   // محتسبة ومرحَّلة مسبقاً
+      team.gwPicks = team.gwPicks||{};
+      if(!team.gwPicks[gw]) team.gwPicks[gw] = TEAM.picksFrom(team);
+      // إعادة الاحتساب: نفس الاختيارات المحفوظة، نقاط جديدة من الإحصاءات المصحَّحة
+      const res = (prev && !opts.recompute)
+        ? {total:+prev.pts||0, benchPts:+prev.benchPts||0, chip:prev.chip||null, hits:+prev.hits||0}
+        : computeFn(team, gw);
+      rows.push({uid:d.id, data:v, team, res});
     });
 
     rows.sort((a,b)=>b.res.total-a.res.total);
-    let prev=null, rank=0;
-    rows.forEach((r,i)=>{ if(prev===null || r.res.total<prev){ rank=i+1; prev=r.res.total; } r.rank=rank; });
+    let prevPts=null, rank=0;
+    rows.forEach((r,i)=>{ if(prevPts===null || r.res.total<prevPts){ rank=i+1; prevPts=r.res.total; } r.rank=rank; });
+
+    rows.forEach(r=>{
+      const hist=(r.data.history||[]).filter(h=>h.gw!==gw).concat([{
+        gw, pts:r.res.total, benchPts:r.res.benchPts, rank:r.rank,
+        chip:r.res.chip||null, hits:r.res.hits||0
+      }]).sort((a,b)=>a.gw-b.gw);
+      GWADMIN.rollover(r.team, gw, st);
+      const team = JSON.parse(JSON.stringify(r.team));           // لا undefined في Firestore
+      writes.push([r.uid, {
+        history: hist,
+        total: hist.reduce((s,h)=>s+(h.pts||0), 0),
+        lastGW: gw,
+        team,
+        email: firebase.firestore.FieldValue.delete()
+      }]);
+    });
 
     // الكتابة على دفعات (حد Firestore 500 عملية للدفعة)
     let done=0;
-    for(let i=0;i<rows.length;i+=400){
-      const chunk=rows.slice(i,i+400);
+    for(let i=0;i<writes.length;i+=400){
+      const chunk=writes.slice(i,i+400);
       const batch=this.db.batch();
-      chunk.forEach(r=>{
-        const hist=(r.data.history||[]).concat([{
-          gw, pts:r.res.total, benchPts:r.res.benchPts, rank:r.rank,
-          chip:r.res.chip||null, hits:r.res.hits||0
-        }]);
-        batch.set(this.managers().doc(r.uid), {
-          history: hist,
-          total: hist.reduce((s,h)=>s+(h.pts||0), 0),
-          lastGW: gw
-        }, {merge:true});
-      });
-      const w = await this.race(batch.commit(), 15000);
-      if(!w.ok) return {ok:false, err:`تعذّر حفظ نتائج ${done} من ${rows.length} مشتركاً`, done};
+      chunk.forEach(([uid,data])=>batch.set(this.managers().doc(uid), data, {merge:true}));
+      const w = await this.race(batch.commit(), 20000);
+      if(!w.ok) return {ok:false, err:`تعذّر حفظ نتائج المشتركين (${done} من ${writes.length})`, done};
       done += chunk.length;
     }
-    return {ok:true, count:done, ranked:rows.length};
+    const pts=rows.map(r=>r.res.total);
+    return { ok:true, count, ranked:rows.length, own, transfers,
+      avg: pts.length? Math.round(pts.reduce((a,b)=>a+b,0)/pts.length) : null,
+      high: pts.length? Math.max(...pts) : null };
   },
 
   /* ---------- الدوريات ---------- */
@@ -397,7 +469,7 @@ const CLOUD = {
         const q=await this.managers().where(firebase.firestore.FieldPath.documentId(),'in',part).get();
         q.forEach(d=>{ const v=d.data();
           const hist=(v.history||[]).filter(h=>lg.global || h.gw>=(lg.createdGW||1));
-          out.push({ id:d.id, name:v.username||'مشترك', teamName:v.teamName||'',
+          out.push({ id:d.id, name:v.username||'مشترك', teamName:v.teamName||'', hist,
                      total:hist.reduce((s,h)=>s+(h.pts||0),0),
                      last:hist.length? (+hist[hist.length-1].pts||0):0 });
         });

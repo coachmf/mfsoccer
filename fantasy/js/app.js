@@ -6,7 +6,7 @@ const APP = {
   NAV: [
     ['dashboard','home','الرئيسية'], ['team','shirt','فريقي'],
     ['players','users','اللاعبون'], ['fixtures','cal','المباريات'],
-    ['leagues','trophy','الدوريات'], ['stats','stats','إحصائيات'],
+    ['leagues','trophy','الدوريات'], ['stats','stats','إحصائيات'], ['guide','news','عن اللعبة'],
   ],
 
   cloudState:'init',     // init | ready | offline | nogame
@@ -27,6 +27,9 @@ const APP = {
     setInterval(()=>this.tickCountdown(),30000);
     setInterval(()=>REMIND.check(),60000);
     REMIND.check();
+    // نشر جولة أو احتسابها على الخادم يصل للأجهزة المفتوحة بلا إعادة تحميل
+    setInterval(()=>this.pollCloud(), 5*60000);
+    document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) this.pollCloud(); });
     // شاشة الافتتاح
     const splash=document.getElementById('splash');
     if(splash) setTimeout(()=>{ splash.classList.add('hide'); setTimeout(()=>splash.remove(),700); }, 1500);
@@ -38,16 +41,26 @@ const APP = {
   initCloud(){
     if(typeof CLOUD==='undefined' || !CLOUD.init()){
       this.cloudState='offline';
+      if(typeof MFSYNC!=='undefined') MFSYNC.autoFixtures(true);   // الجدول والنتائج من mfsoccer حتى بلا سحابة
       return;
     }
     CLOUD.onAuth(async (u)=>{
+      // أثناء التسجيل ينتظر المستمع حتى يكتب signup اسم المستخدم واسم الفريق أولاً
+      while(CLOUD.signingUp) await new Promise(r=>setTimeout(r,150));
       DB.muted = true;                       // لا نرفع أثناء تبديل الحساب
       try{
         const h = await DB.hydrate();
         this.cloudState = h.ok ? 'ready' : (h.err==='no-game' ? 'nogame' : 'offline');
         if(u){
           let doc = await CLOUD.getManager(u.uid);
-          if(!doc) doc = await CLOUD.createManager(u.uid, (u.email||'مشترك').split('@')[0], 'فريقي', u.email||'');
+          let fresh=false;
+          if(!doc){
+            // حساب جديد (غالباً Google): اسم مبدئي من الحساب، ويُطلب من المشترك إكمال اسمه واسم فريقه
+            const base=(u.displayName||'').trim() || (u.email||'مشترك').split('@')[0];
+            doc = await CLOUD.createManager(u.uid, base, 'فريق '+base.split(' ')[0], u.email||'');
+            fresh=!!doc;
+          }
+          this.freshAccount = fresh;
           if(!doc){                       // تعذّرت الكتابة: نكمل بملف مؤقت بدل التعليق
             doc = {username:(u.email||'مشترك').split('@')[0], teamName:'فريقي', email:u.email||'',
                    team:null, history:[], total:0};
@@ -61,9 +74,24 @@ const APP = {
         }
       }catch(e){ console.warn('cloud sync failed', e); this.cloudState='offline'; }
       DB.muted = false;
+      if(DB.pendingPush){ DB.pendingPush=false; DB.pushTeam(); }   // فريق الضيف المرحَّل يُرفع للحساب
       ADMINAUTH.sync();
+      if(u && this.route==='auth') this.route='dashboard';
       this.render();
+      if(this.freshAccount){ this.freshAccount=false; setTimeout(()=>VIEWS.completeProfile(), 400); }
+      // الجدول والنتائج من mfsoccer على كل جهاز عند كل تحميل؛ الكشوفات للمدير فقط (تُنشر مع اللعبة)
+      if(typeof MFSYNC!=='undefined') MFSYNC.autoFixtures(true);
+      if(CLOUD.admin && typeof ROSTER!=='undefined') ROSTER.auto();
     });
+  },
+
+  /* هل نُشرت جولة جديدة أو احتُسبت؟ */
+  async pollCloud(){
+    if(this.cloudState!=='ready' || (typeof DB!=='undefined' && DB.muted)) return;
+    try{
+      const changed = await DB.refreshFromCloud();
+      if(changed){ ADMINAUTH.sync(); this.render(); if(typeof MFSYNC!=='undefined') MFSYNC.autoFixtures(true); }
+    }catch(e){ console.warn('poll failed', e); }
   },
 
   /* هل المشترك داخل بحساب سحابي حقيقي؟ */
@@ -99,7 +127,7 @@ const APP = {
     const st=DB.state; const m=DB.me();
     if(!m) return;
     const g=DB.gw(st.currentGW);
-    if(!g) return;
+    if(!g || !g.deadline) return;          // جولة بلا جدول بعد: لا موعد ولا قفل
     const ms=new Date(g.deadline)-new Date();
     // تذكير قبل الإغلاق بيوم
     if(ms>0 && ms<86400000){
@@ -128,8 +156,12 @@ const APP = {
     this.renderTopbar();
     let html='';
     const r=this.route;
+    // الحساب إلزامي: بلا دخول لا تُعرض إلا صفحة الدخول (وعن اللعبة/المطوّر للاطلاع)
+    const cloudOn = typeof CLOUD!=='undefined' && CLOUD.ready && this.cloudState!=='offline';
+    const needAuth = cloudOn && !CLOUD.user && !['guide','about'].includes(r);
     try{
-      if(r==='team') html=VIEWS.team();
+      if(needAuth){ html = this.cloudState==='init' ? '<div class="card" style="text-align:center;padding:30px"><div class="muted">جارٍ الاتصال…</div></div>' : VIEWS.auth(); }
+      else if(r==='team') html=VIEWS.team();
       else if(r==='transfers'){ VIEWS.ui.teamView='market'; this.route='team'; html=VIEWS.team(); }
       else if(r==='players') html=VIEWS.players();
       else if(r==='player') html=VIEWS.player();
@@ -142,6 +174,7 @@ const APP = {
       else if(r==='compare') html=VIEWS.compare();
       else if(r==='champions') html=VIEWS.champions();
       else if(r==='about') html=VIEWS.about();
+      else if(r==='guide') html=VIEWS.guide();
       else if(r==='admin') html=ADMIN.view();
       else html=VIEWS.dashboard();
     }catch(e){
@@ -166,7 +199,7 @@ const APP = {
   },
   renderBottomNav(){
     const m=DB.me(); if(!m) return;
-    const items=[['dashboard','home','الرئيسية'],['team','shirt','فريقي'],['players','users','اللاعبون'],['leagues','trophy','دوريات']];
+    const items=[['dashboard','home','الرئيسية'],['team','shirt','فريقي'],['players','users','اللاعبون'],['leagues','trophy','دوريات'],['guide','news','عن اللعبة']];
     if(ADMINAUTH.active()) items.push(['admin','gear','إدارة']);
     document.getElementById('bottomnav').innerHTML=items.map(([id,ic,l])=>
       `<button class="${this.route===id?'active':''}" onclick="APP.go('${id}')"><span class="ic">${UI.icon(ic,21)}</span>${l}</button>`).join('');

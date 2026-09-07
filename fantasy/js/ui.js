@@ -19,6 +19,7 @@ const ICONS = {
   chev:'m14.5 6-6 6 6 6',
   wallet:'M4 7.5A1.5 1.5 0 0 1 5.5 6h11A1.5 1.5 0 0 1 18 7.5V9h2v8.5a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 17.5v-10ZM18 9H5.5M15.5 13.8h2.6',
   spark:'M12 3.5 13.8 9l5.7.2-4.5 3.5 1.6 5.6L12 15l-4.6 3.3 1.6-5.6L4.5 9.2 10.2 9 12 3.5Z',
+  dev:'M5 5h14a1 1 0 0 1 1 1v9H4V6a1 1 0 0 1 1-1Zm-3 12.5h20M4 17.5l-1.2 2.5h18.4L20 17.5m-10-9.5-2 2.5 2 2.5m4-5 2 2.5-2 2.5',
   ball:'M12 3.5a8.5 8.5 0 1 0 0 17 8.5 8.5 0 0 0 0-17Zm0 5 3.3 2.4-1.2 3.9H9.9l-1.2-3.9L12 8.5Zm0-5v3m8 2.8-2.8 1m-13.2-1 2.9 1m10 8.4-1.8-2.4m-8.4 2.4 1.8-2.4',
   news:'M5 5h11v14H6.5A1.5 1.5 0 0 1 5 17.5V5Zm11 3h3v9.5a1.5 1.5 0 0 1-1.5 1.5M8 8.5h5M8 12h5m-5 3.5h5',
 };
@@ -104,15 +105,18 @@ const UI = {
     return `<span class="fdr l${f.lvl}" title="${f.label}">${DB.club(f.opp).short} ${UI.icon(f.home?'home':'plane',10)}</span>`;
   },
   fmtDate(iso){
-    const d=new Date(iso);
+    if(!iso) return 'لم يُحدَّد بعد';
+    const d=kwDate(iso);
     return d.toLocaleDateString('ar-KW',{weekday:'long',day:'numeric',month:'long'})+' — '+d.toLocaleTimeString('ar-KW',{hour:'2-digit',minute:'2-digit'});
   },
   fmtDateShort(iso){
-    const d=new Date(iso);
+    if(!iso) return '—';
+    const d=kwDate(iso);
     return d.toLocaleDateString('ar-KW',{day:'numeric',month:'short'})+' '+d.toLocaleTimeString('ar-KW',{hour:'2-digit',minute:'2-digit'});
   },
   countdown(iso){
-    const ms=new Date(iso)-new Date();
+    if(!iso) return 'بانتظار الجدول';
+    const ms=kwDate(iso)-new Date();
     if(ms<=0) return 'انتهى الموعد';
     const d=Math.floor(ms/86400000), h=Math.floor(ms%86400000/3600000), m=Math.floor(ms%3600000/60000);
     if(d>0) return `${d} يوم و ${h} ساعة`;

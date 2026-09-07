@@ -7,7 +7,7 @@ const ADMIN = {
     const sec=VIEWS.ui.adminSec;
     const menu=[['gws','الجولات والاحتساب'],['results','النتائج والإحصاءات'],['scoring','نظام النقاط'],
       ['rules','قواعد اللعبة'],['players','اللاعبون'],['clubs','الأندية'],
-      ['users','المستخدمون'],['admins','المديرون'],['cloud','السحابة'],['data','البيانات']];
+      ['users','المستخدمون'],['admins','المديرون'],['feedback','الاقتراحات'],['cloud','السحابة'],['data','البيانات']];
     return `<h2 style="margin-bottom:12px">لوحة الإدارة</h2>
     <div class="admin-grid">
       <div class="admin-menu">${menu.map(([id,l])=>`<button class="${sec===id?'active':''}" onclick="VIEWS.ui.adminSec='${id}';APP.render()">${l}</button>`).join('')}</div>
@@ -73,21 +73,53 @@ const ADMIN = {
   /* ---------- الجولات ---------- */
   sec_gws(){
     const st=DB.state;
-    const pending=st.fixtures.filter(f=>f.gw===st.currentGW && f.status!=='F').length;
-    return `<div class="card"><h3>إدارة الجولات</h3>
-      <div class="tiny" style="margin-bottom:10px">اللعبة تعتمد على النتائج الحقيقية فقط: أدخل نتائج كل مباريات الجولة من «النتائج والإحصاءات»، وبعدها اضغط «احتساب وإغلاق» لتُحتسب نقاط الجميع وتفتح الجولة التالية.</div>
+    const cur=st.fixtures.filter(f=>f.gw===st.currentGW);
+    const pending=cur.filter(f=>f.status!=='F').length;
+    const noFx=!cur.length;
+    const toLocal=iso=>{ if(!iso) return ''; const d=new Date(iso); const p=n=>String(n).padStart(2,'0');
+      return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`; };
+    return `<div class="card"><h3 class="row spread" style="flex-wrap:wrap;gap:8px">إدارة الجولات
+        <button class="btn sm" onclick="MFSYNC.adminSyncFixtures()">${UI.icon('swap',14)} سحب الجدول من موقع mfsoccer</button></h3>
+      <div class="tiny" style="margin-bottom:10px">الجدول يُسحب من mfsoccer فقط: الجولة التي لم ينشر الموقع مبارياتها تبقى فارغة وبلا موعد إغلاق. موعد الإغلاق = أول مباراة − 90 دقيقة. بعد الموعد تصير الجولة «مباشرة»: النقاط تظهر للمشتركين مع كل مباراة تُسجَّل على الموقع (ترتيب ومتوسط مباشران). الزر أدناه يُفعَّل فقط بعد اكتمال كل نتائج الجولة: يعتمد النقاط رسمياً على الخادم ويفتح الجولة التالية.</div>
       <div class="row" style="gap:10px;flex-wrap:wrap;margin-bottom:14px;align-items:center">
-        <button class="btn danger" ${pending?'disabled':''} onclick="ADMIN.finalizeConfirm()">احتساب وإغلاق الجولة ${st.currentGW}</button>
-        <span class="pill ${pending?'gold':'green'}">${pending? `ناقص ${pending} نتيجة` : 'كل النتائج مدخلة — جاهزة للإغلاق'}</span>
+        <button class="btn danger" ${(pending||noFx)?'disabled':''} onclick="ADMIN.finalizeConfirm()">اعتماد وإغلاق الجولة ${st.currentGW}</button>
+        <span class="pill ${(pending||noFx)?'gold':'green'}">${noFx? 'لم يصدر جدول الجولة بعد' : pending? `ناقص ${pending} نتيجة` : 'كل النتائج مدخلة — جاهزة للإغلاق'}</span>
       </div>
-      <div class="scroll-x"><table class="tbl"><tr><th>جولة</th><th>الحالة</th><th>الموعد النهائي</th><th>متوسط</th><th></th></tr>
-      ${st.gws.map(g=>`<tr><td class="num">ج${g.n}</td>
+      <div class="scroll-x"><table class="tbl"><tr><th>جولة</th><th>الحالة</th><th>مباريات</th><th>الموعد النهائي (بتوقيت جهازك)</th><th>متوسط</th><th></th></tr>
+      ${st.gws.map(g=>{ const n=st.fixtures.filter(f=>f.gw===g.n).length; return `<tr><td class="num">ج${g.n}</td>
         <td>${g.status==='finished'?'<span class="pill green">منتهية</span>':g.status==='live'?'<span class="pill red">مباشر</span>':g.status==='next'?'<span class="pill gold">الحالية</span>':'<span class="pill">قادمة</span>'}</td>
-        <td><input type="datetime-local" value="${g.deadline.slice(0,16)}" style="width:200px" onchange="ADMIN.setDeadline(${g.n},this.value)"></td>
-        <td>${g.avg||'—'}</td><td></td></tr>`).join('')}</table></div>
+        <td class="num">${n||'<span class="pill">بلا جدول</span>'}</td>
+        <td><input type="datetime-local" value="${toLocal(g.deadline)}" style="width:200px" onchange="ADMIN.setDeadline(${g.n},this.value)" ${g.status==='finished'?'disabled':''}>
+            ${g.deadlineManual? `<span class="pill gold" title="موعد يدوي">يدوي</span> <button class="btn sm sec" onclick="ADMIN.autoDeadline(${g.n})">تلقائي</button>` : ''}</td>
+        <td>${g.avg??'—'}</td><td>${g.status==='finished'? `<button class="btn sm sec" onclick="ADMIN.refinalizeConfirm(${g.n})">إعادة احتساب</button>`:''}</td></tr>`; }).join('')}</table></div>
     </div>`;
   },
-  setDeadline(n,v){ DB.gw(n).deadline=new Date(v).toISOString(); DB.save(); UI.toast('عُدّل موعد الجولة '+n); },
+  /* إعادة احتساب جولة محتسبة (بعد تصحيح نتيجة أو إعادة سحبها): نفس اختيارات كل مشترك، نقاط جديدة */
+  async refinalize(gw){
+    const st=DB.state;
+    if(typeof CLOUD==='undefined' || !CLOUD.admin){ UI.toast('سجّل دخول المدير في السحابة أولاً', true); return; }
+    UI.closeModal();
+    UI.toast(`جارٍ إعادة احتساب الجولة ${gw} للمشتركين…`);
+    const all=await CLOUD.finalizeForAll(st, gw, (team,g)=>TEAM.gwPoints(team,g,st), {recompute:true});
+    if(!all.ok){ UI.toast(all.err, true); return; }
+    const g=DB.gw(gw); if(g){ g.avg=all.avg; g.high=all.high; }
+    st.own=all.own; st.managerCount=all.count;
+    DB.save();
+    const pub=await CLOUD.publishGame(st);
+    UI.toast(pub.ok? `أُعيد احتساب الجولة ${gw} لـ${all.ranked} مشتركاً (متوسط ${all.avg??'—'} · الأعلى ${all.high??'—'}) ونُشرت` : 'أُعيد الاحتساب لكن تعذّر النشر: '+pub.err, !pub.ok);
+    APP.render();
+  },
+  refinalizeConfirm(gw){
+    UI.modal(`<h3>إعادة احتساب الجولة ${gw}</h3><p class="muted">تُعاد نقاط كل مشترك من الإحصاءات الحالية بنفس تشكيلته المحتسبة (لا تتغيّر الانتقالات ولا الكروت)، ويُحدَّث الترتيب والمتوسط. استعملها بعد تصحيح نتيجة أو إعادة سحب الجولة.</p>
+      <div class="row" style="gap:8px;margin-top:12px"><button class="btn danger" onclick="ADMIN.refinalize(${gw})">إعادة الاحتساب</button>
+      <button class="btn sec" onclick="UI.closeModal()">إلغاء</button></div>`);
+  },
+  setDeadline(n,v){
+    const g=DB.gw(n);
+    if(!v){ g.deadline=null; g.deadlineManual=false; GWADMIN.refreshDeadlines(); DB.save(); APP.render(); return; }
+    g.deadline=new Date(v).toISOString(); g.deadlineManual=true; DB.save(); UI.toast('عُدّل موعد الجولة '+n+' يدوياً — انشر اللعبة ليصل للمشتركين'); APP.render();
+  },
+  autoDeadline(n){ const g=DB.gw(n); g.deadlineManual=false; GWADMIN.refreshDeadlines(); DB.save(); UI.toast('رجع موعد الجولة '+n+' تلقائياً من الجدول'); APP.render(); },
   finalizeConfirm(){
     const gw=DB.state.currentGW;
     UI.modal(`<h3>احتساب الجولة ${gw}</h3><p class="muted">سيتم احتساب نقاط كل الفرق من النتائج الحقيقية المدخلة، وتحديث الترتيب والأسعار، وفتح الجولة ${gw+1}. لا يمكن التراجع.</p>
@@ -96,21 +128,33 @@ const ADMIN = {
   },
   async doFinalize(){
     const st=DB.state, gw=st.currentGW;
-    const res=GWADMIN.finalize(gw);
     UI.closeModal();
-    if(!res.ok){ UI.toast(res.err, true); return; }
-    UI.toast(`احتُسبت الجولة ${gw} — تغيّر سعر ${res.changes} لاعباً`);
+    const fxs=st.fixtures.filter(f=>f.gw===gw);
+    if(!fxs.length){ UI.toast(`الجولة ${gw} بلا جدول بعد — اسحب الجدول من mfsoccer أولاً`, true); return; }
+    if(fxs.some(f=>f.status!=='F')){ UI.toast('بقيت مباريات بلا نتيجة — اسحب الجولة من mfsoccer أولاً', true); return; }
 
-    // الاحتساب للمشتركين على الخادم: بدونه تبقى نقاطهم صفراً
-    if(typeof CLOUD!=='undefined' && CLOUD.admin){
-      UI.toast('جارٍ احتساب نقاط المشتركين ونشر الجولة…');
-      const all = await CLOUD.finalizeForAll(st, gw, (team, g)=>TEAM.gwPoints(this.cloudTeam(team), g, st));
-      const pub = await CLOUD.publishGame(st);
-      if(all.ok && pub.ok) UI.toast(`نُشرت الجولة ${gw} واحتُسبت لـ${all.count} مشتركاً`);
-      else UI.toast((all.ok?'':all.err+' · ') + (pub.ok?'':pub.err), true);
+    // 1) الخادم أولاً: نقاط كل مشترك من تشكيلته المقفلة + ترحيل فريقه + خلاصة التملّك والصفقات
+    let agg=null;
+    const cloudOn = typeof CLOUD!=='undefined' && CLOUD.admin;
+    if(cloudOn){
+      UI.toast('جارٍ احتساب نقاط المشتركين على الخادم…');
+      const all = await CLOUD.finalizeForAll(st, gw, (team, g)=>TEAM.gwPoints(team, g, st));
+      if(!all.ok){ UI.toast(all.err, true); return; }
+      agg={avg:all.avg, high:all.high, own:all.own, count:all.count, transfers:all.transfers, ranked:all.ranked};
     } else if(typeof CLOUD!=='undefined' && CLOUD.ready){
-      UI.toast('احتُسبت محلياً — سجّل دخول المدير في السحابة لنشرها للمشتركين', true);
-    }
+      UI.toast('سجّل دخول المدير في السحابة أولاً — الاحتساب المحلي لا يصل للمشتركين', true); return;
+    } else agg=GWADMIN.localAgg(st, gw);        // بلا سحابة: تجربة محلية
+
+    // 2) هذا الجهاز: تثبيت الجولة والأسعار وفتح التالية
+    const res=GWADMIN.finalize(gw, agg);
+    if(!res.ok){ UI.toast(res.err, true); return; }
+
+    // 3) النشر للجميع
+    if(cloudOn){
+      const pub = await CLOUD.publishGame(st);
+      if(pub.ok) UI.toast(`نُشرت الجولة ${gw} واحتُسبت لـ${agg.ranked} مشتركاً (متوسط ${agg.avg??'—'} · الأعلى ${agg.high??'—'}) — تغيّر سعر ${res.changes} لاعباً`);
+      else UI.toast('احتُسبت على الخادم لكن تعذّر النشر: '+pub.err+' — اضغط «نشر حالة اللعبة» من قسم السحابة', true);
+    } else UI.toast(`احتُسبت الجولة ${gw} محلياً — تغيّر سعر ${res.changes} لاعباً`);
     APP.go('dashboard');
   },
 
@@ -139,7 +183,10 @@ const ADMIN = {
     const fx=st.fixtures.filter(f=>f.gw===gw);
     if(VIEWS.ui.editFx) return this.fxEditor(VIEWS.ui.editFx);
     return `<div class="card"><h3 class="row spread" style="flex-wrap:wrap;gap:8px">نتائج وإحصاءات المباريات
-        <button class="btn sm" onclick="MFSYNC.importRound(${gw})">${UI.icon('swap',14)} سحب الجولة ${gw} من موقع mfsoccer</button></h3>
+        <span class="row" style="gap:6px;flex-wrap:wrap">
+        <button class="btn sm sec" onclick="MFSYNC.adminSyncFixtures()">${UI.icon('cal',14)} سحب الجدول كله</button>
+        <button class="btn sm" onclick="MFSYNC.importRound(${gw})">${UI.icon('swap',14)} سحب نتائج الجولة ${gw} من mfsoccer</button></span></h3>
+      ${!fx.length? `<div class="muted" style="margin:8px 0">لم ينشر الموقع جدول الجولة ${gw} بعد — تبقى فارغة حتى يصدر.</div>`:''}
       <div class="tiny" style="margin-bottom:8px">عدّل نتيجة أي مباراة وأهدافها ثم «حفظ وإعادة الاحتساب» — تُعاد إحصاءات اللاعبين ونقاطهم تلقائياً، ولو كانت الجولة محتسبة تُصحّح نقاط كل الفرق بأثر رجعي. ولمطابقة الجدول الرسمي: افتح أي مباراة وعدّل الفريقين والموعد وعلّم «لم تُلعب بعد».</div>
       <div class="tabs">${st.gws.slice(0,Math.max(3,st.currentGW)).map(g=>`<button class="${g.n===gw?'active':''}" onclick="VIEWS.ui.adminGw=${g.n};APP.render()">ج${g.n}</button>`).join('')}</div>
       ${fx.map(f=>`<div class="fx">
@@ -170,12 +217,16 @@ const ADMIN = {
         <label class="pill" style="cursor:pointer;align-self:center"><input type="checkbox" id="fx_upcoming" ${f.status==='U'?'checked':''} style="width:auto"> لم تُلعب بعد</label>
       </div>
       <h3 style="font-size:.9rem">التشكيلة والمشاركة (من موقع النتائج)</h3>
-      <div class="tiny" style="margin-bottom:6px">اضغط اسم اللاعب للتبديل: رمادي = لم يلعب · أزرق = أساسي (60+ دقيقة) · أصفر = بديل شارك (أقل من 60). أي هداف أو مساهم غير محدد يُحتسب أساسياً تلقائياً.</div>
-      ${[f.h,f.a].map(cid=>`<div style="margin-bottom:8px"><b class="tiny">${DB.club(cid).name}</b>
-        <div class="lu-grid">${st.players.filter(p=>p.club===cid&&p.status!=='u').map(p=>{
+      <div class="tiny" style="margin-bottom:6px">من موقع mfsoccer: أزرق = أساسي · أصفر = دخل بديلاً (الدقائق من تبديلات الموقع) · رمادي = لم يلعب. اضغط الاسم للتبديل يدوياً (بديل بلا تبديل مسجَّل يُحتسب 30 دقيقة). من سجّل أو أخذ كرتاً وهو غير مذكور بالتشكيلة يُحتسب أساسياً ويظهر في تقرير السحب.</div>
+      ${[f.h,f.a].map(cid=>{ const rows=(f.stats||{})[cid]||{}; const list=st.players.filter(p=>p.club===cid&&p.status!=='u');
+        const order={s:0,b:1,n:2};
+        return `<div style="margin-bottom:8px"><b class="tiny">${DB.club(cid).name}</b>
+        <span class="tiny" style="margin-inline-start:8px">أساسي ${list.filter(p=>((f.lineups||{})[cid]||{})[p.id]==='s').length} · دخل بديلاً ${list.filter(p=>((f.lineups||{})[cid]||{})[p.id]==='b').length}</span>
+        <div class="lu-grid">${[...list].sort((a,b)=>(order[(((f.lineups||{})[cid]||{})[a.id])||'n']-order[(((f.lineups||{})[cid]||{})[b.id])||'n']) || (a.shirt-b.shirt)).map(p=>{
           const s=((f.lineups||{})[cid]||{})[p.id]||'n';
-          return `<span class="lu ${s}" data-pid="${p.id}" data-club="${cid}" onclick="ADMIN.cycleLu(this)">${esc(p.name)}</span>`;
-        }).join('')}</div></div>`).join('')}
+          const r=rows[p.id]; const mins=(r && r.min>0)? ` <small dir="ltr">${r.min}'</small>` : '';
+          return `<span class="lu ${s}" data-pid="${p.id}" data-club="${cid}" onclick="ADMIN.cycleLu(this)">${esc(p.name)}${mins}</span>`;
+        }).join('')}</div></div>`; }).join('')}
       <h3 style="font-size:.9rem;margin-top:12px">الأهداف</h3>
       <div id="goalRows">${(f.goals||[]).map((g,i)=>this.goalRow(f,g,i,opts)).join('')}</div>
       <button class="btn sm sec" style="margin:8px 0" onclick="ADMIN.addGoalRow('${fid}')">+ إضافة هدف</button>
@@ -256,6 +307,7 @@ const ADMIN = {
     const upcoming=document.getElementById('fx_upcoming');
     if(upcoming && upcoming.checked){
       f.hs=null; f.as=null; f.goals=[]; f.cards=[]; f.pens=[]; f.bonus=[]; f.lineups=null; f.subs=[]; f.status='U'; f.est=false;
+      GWADMIN.refreshDeadlines(st);
       DB.save(); VIEWS.ui.editFx=null;
       UI.toast('حُفظت المباراة كمباراة قادمة'); APP.render(); return;
     }
@@ -315,6 +367,7 @@ const ADMIN = {
       }
       RANKS.recomputeGWRanks(st, f.gw);   // الترتيب بعد اكتمال نقاط الجميع
     }
+    GWADMIN.refreshDeadlines(st);
     DB.save(); VIEWS.ui.editFx=null;
     UI.toast('حُفظت النتيجة وأُعيد الاحتساب '); APP.render();
   },

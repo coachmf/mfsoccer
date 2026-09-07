@@ -34,7 +34,7 @@ const REMIND = {
   /* يُستدعى كل دقيقة من APP */
   check(){
     const st=DB.state; const m=DB.me(); if(!m) return;
-    const g=DB.gw(st.currentGW); if(!g) return;
+    const g=DB.gw(st.currentGW); if(!g || !g.deadline) return;
     const ms=new Date(g.deadline)-new Date();
     if(ms<=0 || ms>2*3600000) return;
     const key='dl2h'+st.currentGW;
@@ -49,7 +49,7 @@ const REMIND = {
     }
   },
   whatsappLink(){
-    const st=DB.state; const g=DB.gw(st.currentGW); if(!g) return '#';
+    const st=DB.state; const g=DB.gw(st.currentGW); if(!g || !g.deadline) return '#';
     const txt=`تذكير فانتسي دوري زين: الجولة ${st.currentGW} تُغلق ${UI.fmtDate(g.deadline)} — باقي ${UI.countdown(g.deadline)}. راجعوا تشكيلاتكم!`;
     return 'https://wa.me/?text='+encodeURIComponent(txt);
   },
@@ -103,9 +103,10 @@ Object.assign(VIEWS, {
     const st=DB.state;
     const players=st.players.filter(p=>p.status!=='u');
     const tc=p=>MARKET.transferCounts(p.id);
+    const thr=MARKET.threshold(st);
     const trend=p=>{ const t=tc(p); const net=t.in-t.out;
-      if(net>140) return '<span class="pill green">مرشح للارتفاع</span>';
-      if(net<-90) return '<span class="pill red">مرشح للانخفاض</span>';
+      if(net>=thr) return '<span class="pill green">ارتفع سعره</span>';
+      if(net<=-thr) return '<span class="pill red">انخفض سعره</span>';
       return '<span class="pill">مستقر</span>'; };
     const row=(p,k)=>{ const t=tc(p); return `<tr onclick="VIEWS.openPlayer('${p.id}')" style="cursor:pointer">
       <td><div class="row">${UI.playerAvatar(p,28)}<div><b>${esc(p.name)}</b><div class="tiny">${DB.club(p.club).short} · ${POS_AR[p.pos]} · ${fmtM(p.price)}</div></div></div></td>
@@ -113,7 +114,8 @@ Object.assign(VIEWS, {
       <td>${trend(p)}</td></tr>`; };
     const ins=[...players].sort((a,b)=>tc(b).in-tc(a).in).slice(0,12);
     const outs=[...players].sort((a,b)=>tc(b).out-tc(a).out).slice(0,12);
-    return `<div class="tiny" style="margin-bottom:10px;color:var(--text3)">حركة الانتقالات في الجولة ${st.currentGW} — الأرقام تشمل كل مدربي اللعبة. الأسعار تتغير عند احتساب الجولة حسب صافي الدخول والخروج.</div>
+    const lastFin=[...st.gws].filter(g=>g.status==='finished').pop();
+    return `<div class="tiny" style="margin-bottom:10px;color:var(--text3)">صفقات المشتركين الفعلية في آخر جولة محتسبة${lastFin?` (الجولة ${lastFin.n})`:''} — تُجمع عند الاحتساب من فرق كل المشتركين (${(st.managerCount||0).toLocaleString('ar')} مشترك). السعر يرتفع/ينخفض 0.1 عند صافي ${thr} صفقات فأكثر.</div>
     <div class="grid g2">
       <div><h3 style="color:var(--green-dk)">الأكثر دخولاً</h3><div class="scroll-x"><table class="tbl"><tr><th>اللاعب</th><th>دخول</th><th>السعر</th></tr>${ins.map(p=>row(p,'in')).join('')}</table></div></div>
       <div><h3 style="color:var(--red)">الأكثر خروجاً</h3><div class="scroll-x"><table class="tbl"><tr><th>اللاعب</th><th>خروج</th><th>السعر</th></tr>${outs.map(p=>row(p,'out')).join('')}</table></div></div>
@@ -191,7 +193,7 @@ const DEV = {
 Object.assign(VIEWS, {
   devCard(compact){
     return `<div class="dev-card ${compact?'compact':''}" onclick="${compact?"APP.go('about')":''}">
-      <div class="dev-ic">${UI.icon('spark',22)}</div>
+      <div class="dev-ic">${UI.icon('dev',24)}</div>
       <div style="flex:1;min-width:0">
         <div class="dev-l">المطوّر</div>
         <div class="dev-n">${DEV.name}</div>
@@ -200,7 +202,8 @@ Object.assign(VIEWS, {
       <div class="dev-links">${DEV.links.map(l=>`<a href="${l.url}" target="_blank" rel="noopener" title="${l.label} ${l.handle}" onclick="event.stopPropagation()">${UI.icon(l.ic,18)}</a>`).join('')}</div>
     </div>`;
   },
-  about(){
+  /* الصفحة الفعلية في js/guide.js (تُستبدل هناك) */
+  about_legacy(){
     return `<h2 style="margin-bottom:12px">عن اللعبة</h2>
       ${this.devCard(false)}
       <div class="card" style="margin-top:12px">

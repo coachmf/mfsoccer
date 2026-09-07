@@ -140,4 +140,4 @@ if(typeof ADMIN !== 'undefined' && ADMIN.sec_players){
   ADMIN.sec_players = function(){ return ROSTER.cardHTML() + _secPlayers(); };
 }
 
-document.addEventListener('DOMContentLoaded', () => ROSTER.auto());
+/* السحب التلقائي يستدعيه APP.initCloud للمدير فقط — على أجهزة المشتركين تصل الكشوفات من نشر اللعبة */

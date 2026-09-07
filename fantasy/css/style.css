@@ -313,7 +313,7 @@ table.tbl{width:100%;border-collapse:collapse;font-size:.88rem;}
   border-radius:0 0 7px 7px;min-width:74px;max-width:98px;text-align:center;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
 }
-.pslot .badge{position:absolute;top:-4px;right:8px;background:#12203a;color:#fff;width:22px;height:22px;
+.pslot .badge{position:absolute;top:20px;right:6px;background:#12203a;color:#fff;width:22px;height:22px;
   border-radius:50%;display:grid;place-items:center;font-size:.64rem;font-weight:900;
   box-shadow:0 2px 6px rgba(0,0,0,.4);border:1.5px solid #fff;z-index:3;}
 .pslot .badge.v{background:#5b6b8c;}
@@ -460,6 +460,7 @@ table.tbl{width:100%;border-collapse:collapse;font-size:.88rem;}
   #bottomnav button.active{color:var(--accent);}
   .pslot{width:66px;}
   .pslot .kit{width:44px;height:40px;}
+  .pslot .badge{top:16px;right:0;width:18px;height:18px;font-size:.56rem;}
   .pslot .nm{max-width:66px;min-width:56px;font-size:.6rem;}
   .pslot .pt{max-width:70px;min-width:60px;font-size:.52rem;}
   .club-tag{font-size:.5rem;max-width:70px;padding:1px 6px;}

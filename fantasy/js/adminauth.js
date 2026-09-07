@@ -45,7 +45,7 @@ const ADMINAUTH = {
          hashCred('البريد', 'كلمة المرور')
      والصق الناتج (64 حرفاً) مكان hash. صاحب hash فارغ لا يستطيع الدخول. */
   OWNERS: [
-    { email:'mansourx04@gmail.com', name:'منصور',          hash:'533ffed7b0a7dde39049aad225c3abf085a968632cc5cf26ef92ce6367617e2d' },
+    { email:'mansourx04@gmail.com', name:'منصور',          hash:'5adfedc98c0ebda0dd92f88e52825fbff5e7aea3f95815601d53b219f8014430' },
     { email:'coachmf.kw@gmail.com', name:'محمد الفيلكاوي', hash:'a056561210868b8b12e6df16046cc7c44581c6a5da3d5173315b31692cf47d12' },
   ],
   /* يرجع سجل المالك إذا كان بريده مسجلاً وله كلمة مرور مضبوطة */

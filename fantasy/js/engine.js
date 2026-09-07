@@ -17,13 +17,16 @@ const DB = {
   /* رقم النسخة يُرفع عند أي تغيير جوهري في البذرة (كشف اللاعبين أو
      أسعارهم). الحالة المحفوظة تُبنى من جديد بدل أن تبقى على بيانات
      قديمة — syncPlayers تضيف الجدد فقط ولا تصحّح أسعار الموجودين. */
-  KEY: 'kwfantasy_v17',
+  KEY: 'kwfantasy_v18',
   state: null,
 
   load(){
     try{
       const raw = localStorage.getItem(this.KEY);
-      if(raw){ this.state = JSON.parse(raw); if(this.state && this.state.ver===1){ this.syncClubs(); this.syncPlayers(); this.syncScoring(); return; } }
+      if(raw){ this.state = JSON.parse(raw); if(this.state && this.state.ver===1){ this.syncClubs(); this.syncPlayers(); this.syncScoring();
+        if((this.state.priceVer||0) < SEED_PRICE_VER){ this.applySeedPrices(); this.save(); }
+        if(normalizeFixtures(this.state)) this.save();
+        return; } }
     }catch(e){ console.warn('storage read failed', e); }
     this.state = buildSeedState();
     this.save();
@@ -51,7 +54,15 @@ const DB = {
     if(game.news)    st.news    = game.news;
     if(game.gws)     st.gws     = game.gws;
     if(game.currentGW) st.currentGW = game.currentGW;
-    if(players && players.length) st.players = players;
+    if(game.own)            st.own = game.own;                     // تملّك اللاعبين — يحسبه المدير عند الاحتساب
+    if(game.managerCount!=null) st.managerCount = +game.managerCount;
+    if(game.transferStats)  st.transferStats = game.transferStats;
+    this.cloudUpdated = game.updated || null;
+    if(players && players.list && players.list.length){
+      st.players = players.list; st.fromCloud = true;
+      // إعادة تسعير شاملة في البذرة لم تُنشر بعد: تُطبَّق محلياً (المدير ينشرها فتصل للجميع)
+      if((+players.priceVer||0) < SEED_PRICE_VER) this.applySeedPrices();
+    }
 
     if(rounds){
       st.playerGW = {};
@@ -64,6 +75,8 @@ const DB = {
       });
       merged.sort((a,b)=>(a.gw-b.gw) || String(a.date||'').localeCompare(String(b.date||'')));
       st.fixtures = merged;
+      normalizeFixtures(st);
+      if(typeof MFSYNC!=='undefined' && MFSYNC.applyCached) MFSYNC.applyCached();   // الجدول من mfsoccer يغلب أي جدول منشور قديم
     }
     this.cloudAt = Date.now();
     try{ localStorage.setItem(this.KEY, JSON.stringify(st)); }catch(e){}
@@ -84,11 +97,37 @@ const DB = {
 
     const blank = { squad:[],xi:[],bench:[],cap:null,vice:null,bank:st.rules.budget,ft:st.rules.freeTransfers,
       usedChips:{},activeChip:null,joinedGW:doc.joinedGW||st.currentGW,history:[],transfers:[],gwPicks:{},pendingHits:0 };
-    const t = Object.assign(blank, doc.team||{});
+    // فريق كوّنه صاحبه على هذا الجهاز (كضيف أو قبل أن تصل كتابته للخادم) ومستند الخادم بلا فريق:
+    // يُرحَّل للحساب ويُرفع بدل أن يُطمس بفريق فارغ.
+    const prevLocal = st.teams[uid] || st.teams['u1local'];
+    const cloudEmpty = !doc.team || !(doc.team.squad||[]).length;
+    let t;
+    if(cloudEmpty && prevLocal && (prevLocal.squad||[]).length===st.rules.squadSize && !(prevLocal.history||[]).length){
+      t = Object.assign(blank, JSON.parse(JSON.stringify(prevLocal)));
+      t.joinedGW = doc.joinedGW || st.currentGW;
+      this.pendingPush = true;
+    } else t = Object.assign(blank, doc.team||{});
     t.history = doc.history || [];         // السجل مصدره السحابة وحدها
     t.joinedGW = doc.joinedGW || t.joinedGW;
     st.teams[uid] = t;
+    if(st.teams['u1local'] && uid!=='u1local') delete st.teams['u1local'];
     try{ localStorage.setItem(this.KEY, JSON.stringify(st)); }catch(e){}
+  },
+
+  /* إعادة قراءة حالة اللعبة من السحابة إن تغيّرت (نشر جولة أو احتساب) —
+     تُستدعى دورياً وعند العودة للصفحة، فلا يبقى جهاز على جولة قديمة. */
+  async refreshFromCloud(){
+    if(typeof CLOUD==='undefined' || !CLOUD.ready) return false;
+    const game = await CLOUD.loadGame(); if(!game) return false;
+    if(game.updated && game.updated===this.cloudUpdated && game.currentGW===this.state.currentGW) return false;
+    this.muted = true;
+    try{
+      await this.hydrate();
+      if(CLOUD.user){ const doc=await CLOUD.getManager(CLOUD.user.uid); if(doc) await this.adoptManager(CLOUD.user.uid, doc); }
+    }catch(e){ console.warn('refresh failed', e); }
+    this.muted = false;
+    if(this.pendingPush){ this.pendingPush=false; this.pushTeam(); }
+    return true;
   },
 
   /* رفع فريق المشترك — مؤجَّل حتى لا نكتب مع كل ضغطة */
@@ -101,6 +140,14 @@ const DB = {
     if(typeof CLOUD==='undefined' || !CLOUD.user) return false;
     const uid=CLOUD.user.uid, t=this.state.teams[uid], u=this.user(uid);
     if(!t) return false;
+    // احتسب المدير جولة بعد آخر تحميل؟ مستند الخادم (انتقالات، كروت، سجل) أحدث من نسخة الجهاز — نعتمده بدل طمسه
+    const remote = await CLOUD.getManager(uid);
+    if(remote && remote.lastGW>0 && remote.lastGW!==(t.rolledGW||0) && remote.team && (remote.team.squad||[]).length){
+      await this.adoptManager(uid, remote);
+      if(typeof UI!=='undefined') UI.toast(`حُدّث فريقك بعد احتساب الجولة ${remote.lastGW}`);
+      if(typeof APP!=='undefined') APP.render();
+      return false;
+    }
     const profile = u? {username:u.username, teamName:u.teamName, avatar:u.avatar} : null;
     // بعد الإغلاق: الملف الشخصي يُحفظ، والتشكيلة لا تُرسل أصلاً — والخادم يرفضها كذلك
     if(GWADMIN.deadlinePassed(this.state.currentGW)) return await CLOUD.saveMyTeam(profile, undefined);
@@ -128,9 +175,22 @@ const DB = {
     this.save();
   },
 
+  /* تطبيق أسعار البذرة (price + startPrice) على اللاعبين بالاسم — عند رفع SEED_PRICE_VER */
+  applySeedPrices(){
+    const st=this.state;
+    const nn=s=>(s||'').replace(/[أإآ]/g,'ا').replace(/ى/g,'ي').replace(/ة/g,'ه').replace(/\s+/g,'');
+    let n=0;
+    SEED_PLAYERS.forEach(t=>{
+      const p=st.players.find(x=>x.club===t[0] && nn(x.name)===nn(t[2]));
+      if(p && (p.price!==t[3] || p.startPrice!==t[3])){ p.price=t[3]; p.startPrice=t[3]; n++; }
+    });
+    st.priceVer=SEED_PRICE_VER;
+    return n;
+  },
   // أي لاعب جديد يُضاف للبذرة يدخل الحالة المحفوظة تلقائياً (بدون مسح الفرق)
   syncPlayers(){
     const st=this.state;
+    if(st.fromCloud) return;      // قائمة اللاعبين من نشر المدير — لا تُضاف معرّفات محلية فوقها
     const nn=s=>(s||'').replace(/[أإآ]/g,'ا').replace(/ى/g,'ي').replace(/ة/g,'ه').replace(/\s+/g,'');
     let maxId=st.players.reduce((m,p)=>Math.max(m,+String(p.id).replace(/\D/g,'')||0),0);
     let dirty=false;
@@ -196,6 +256,7 @@ function buildSeedState(){
     ver:1, clubs, players, fixtures, gws,
     currentGW: 3,
     playerGW: {},
+    priceVer: SEED_PRICE_VER,
     scoring: JSON.parse(JSON.stringify(SEED_SCORING)),
     rules: JSON.parse(JSON.stringify(SEED_RULES)),
     users: [], teams: {}, session: null,
@@ -222,101 +283,49 @@ function buildSeedState(){
   return st;
 }
 
-/* جدولة الدوري: الجولات الحقيقية من SEED_RESULTS + SEED_FIXTURES أولاً،
-   والجولات غير المنشورة بعد تُولَّد مؤقتاً (تُصحَّح من الإدارة عند صدور الجدول الرسمي) */
+/* المباريات: من موقع mfsoccer فقط (MFSYNC.syncFixtures). البذرة تحمل الجولات
+   المعروفة كنسخة احتياطية بلا اتصال؛ الجولة التي لم يُنشر جدولها تبقى فارغة ولا تُولَّد. */
 function buildFixtures(){
-  const ids = SEED_CLUBS.map(c=>c.id);
-  const usedPairs = new Set();
-  const rounds = {};   // gw -> [[h,a,dateOrNull],...]
-
-  SEED_RESULTS.forEach(r=>{
-    (rounds[r.gw]=rounds[r.gw]||[]).push([r.h, r.a, r.date||null]);
-    usedPairs.add(pairKey(r.h, r.a));
-  });
+  const rounds = {};
+  SEED_RESULTS.forEach(r=>{ (rounds[r.gw]=rounds[r.gw]||[]).push([r.h, r.a, r.date||null]); });
   (typeof SEED_FIXTURES!=='undefined'? SEED_FIXTURES:[]).forEach(([gw,h,a,date])=>{
     (rounds[gw]=rounds[gw]||[]).push([h, a, date||null]);
-    usedPairs.add(pairKey(h, a));
   });
-  const maxKnown = Math.max(...Object.keys(rounds).map(Number));
-
-  // بقية أزواج القسم الأول
-  let remaining=[];
-  for(let i=0;i<ids.length;i++) for(let j=i+1;j<ids.length;j++){
-    const k=pairKey(ids[i],ids[j]);
-    if(!usedPairs.has(k)) remaining.push([ids[i],ids[j]]);
-  }
-  if(maxKnown<11){
-    const rest = scheduleRounds(ids, remaining, 11-maxKnown);
-    if(!rest) throw new Error('schedule generation failed');
-    rest.forEach((m,i)=>{ rounds[maxKnown+1+i]=m.map(([h,a])=>[h,a,null]); });
-  }
-  // القسم الثاني: مرآة معكوسة الأرض بلا مواعيد (لحين صدورها رسمياً)
-  for(let r=1;r<=11;r++) rounds[r+11]=rounds[r].map(([h,a])=>[a,h,null]);
-
-  // مواعيد افتراضية للجولات غير المنشورة: أسبوعياً بعد آخر جولة حقيقية
-  const genDate=(gw,mi)=>{
-    const base=new Date('2026-09-04T00:00:00');
-    base.setDate(base.getDate() + (gw-3)*7 + Math.floor(mi/2));
-    return base.toISOString().slice(0,10)+'T'+((mi%2===0)?'18:40':'20:55');
-  };
-  const fixtures=[]; let fid=1;
-  const stadium = id => SEED_CLUBS.find(c=>c.id===id).stadium;
-  for(let gw=1; gw<=22; gw++){
-    (rounds[gw]||[]).forEach(([h,a,date],mi)=>{
-      fixtures.push({ id:'f'+(fid++), gw, h, a, hs:null, as:null, goals:[],
-        venue: stadium(h), date: date||genDate(gw,mi), status:'U', est:false, live:null });
+  const stadium = id => (SEED_CLUBS.find(c=>c.id===id)||{}).stadium||'';
+  const fixtures=[];
+  Object.keys(rounds).map(Number).sort((a,b)=>a-b).forEach(gw=>{
+    rounds[gw].forEach(([h,a,date])=>{
+      fixtures.push({ id:fixtureId(gw,h,a), gw, h, a, hs:null, as:null, goals:[],
+        venue: stadium(h), date: date||null, status:'U', est:false, live:null });
     });
-  }
+  });
   return fixtures;
 }
+function fixtureId(gw,h,a){ return `f${gw}_${h}_${a}`; }
 function pairKey(a,b){ return [a,b].sort().join('-'); }
-/* توزيع الأزواج المتبقية على n جولات بحيث تكون كل جولة مطابقة كاملة —
-   بحث تراجعي عبر كل الجولات مع اختيار الفريق الأقل خيارات أولاً */
-function scheduleRounds(ids, pairs, nRounds){
-  const avail = new Set(pairs.map(p=>pairKey(p[0],p[1])));
-  const roundsOut=[];
-  function solveRound(){
-    if(roundsOut.length===nRounds) return true;
-    const roundPairs=[];
-    function match(free){
-      if(free.length===0){
-        roundsOut.push([...roundPairs]);
-        roundPairs.forEach(k=>avail.delete(k));
-        if(solveRound()) return true;
-        roundPairs.forEach(k=>avail.add(k));
-        roundsOut.pop();
-        return false;
-      }
-      // الفريق ذو أقل عدد من الخصوم المتاحين (fail-first)
-      let best=null, bestOpts=null;
-      for(const t of free){
-        const opts=free.filter(o=>o!==t && avail.has(pairKey(t,o)));
-        if(bestOpts===null || opts.length<bestOpts.length){ best=t; bestOpts=opts; }
-        if(opts.length===0) return false;
-      }
-      for(const o of bestOpts){
-        const k=pairKey(best,o);
-        roundPairs.push(k); avail.delete(k);
-        if(match(free.filter(x=>x!==best&&x!==o))) return true;
-        roundPairs.pop(); avail.add(k);
-      }
-      return false;
-    }
-    return match([...ids]);
-  }
-  if(!solveRound()) return null;
-  return roundsOut.map(round=>round.map(k=>{
-    const [a,b]=k.split('-');
-    return (hashStr(a+b)%2===0) ? [a,b] : [b,a];
-  }));
+
+/* مواعيد المباريات تُكتب بتوقيت الكويت بلا منطقة زمنية («2026-09-10T18:40»)؛
+   نثبّتها على +03:00 حتى تتطابق المواعيد على كل الأجهزة أياً كانت منطقتها. */
+function kwDate(v){
+  if(v instanceof Date) return v;
+  const str=String(v||'');
+  if(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2})?$/.test(str)) return new Date(str+(str.length===16?':00':'')+'+03:00');
+  return new Date(str);
+}
+/* موعد الإغلاق = أول مباراة بالجولة ناقص 90 دقيقة؛ جولة بلا مباريات = بلا موعد (مفتوحة) */
+function computeDeadlines(gws, fixtures){
+  gws.forEach(g=>{
+    if(g.status==='finished' || g.deadlineManual) return;
+    const dates=fixtures.filter(f=>f.gw===g.n && f.date).map(f=>kwDate(f.date)).filter(d=>!isNaN(d)).sort((a,b)=>a-b);
+    if(!dates.length){ g.deadline=null; return; }
+    const dl=new Date(dates[0]); dl.setMinutes(dl.getMinutes()-90);
+    g.deadline=dl.toISOString();
+  });
 }
 function buildGameweeks(fixtures){
   const gws=[];
-  for(let n=1;n<=22;n++){
-    const fx=fixtures.filter(f=>f.gw===n).map(f=>new Date(f.date)).sort((a,b)=>a-b);
-    const dl=new Date(fx[0]); dl.setMinutes(dl.getMinutes()-90);
-    gws.push({ n, deadline: dl.toISOString(), status:'future', avg:0, high:0 });
-  }
+  for(let n=1;n<=22;n++) gws.push({ n, deadline:null, status:'future', avg:null, high:null });
+  computeDeadlines(gws, fixtures);
   return gws;
 }
 
@@ -330,18 +339,58 @@ function absMinute(h, m){
   return mm;
 }
 
+/* تصحيح التشكيلة من التبديلات (يعمل على أي مباراة، قديمة أو مستوردة الآن):
+   - بديل (b) لا يوجد له «دخول» في التبديلات = لم يلعب → يُحذف من التشكيلة
+   - من «دخل» في التبديلات = b حتى لو كُتب أساسياً خطأً
+   - من «خرج» وهو غير مذكور = أساسي ناقص من الكشف → s
+   يعيد true إذا تغيّر شيء. */
+function fixLineupsFromSubs(st, f){
+  if(!f.lineups) return false;
+  const find=(name,clubId)=>st.players.find(p=>p.club===clubId && p.name===name);
+  let changed=false;
+  for(const cid of [f.h,f.a]){
+    const lu=f.lineups[cid]; if(!lu) continue;
+    const ins=new Set(), outs=new Set();
+    (f.subs||[]).filter(s=>s.club===cid).forEach(s=>{
+      const pi=s.in? find(s.in,cid):null;  if(pi) ins.add(pi.id);
+      const po=s.out? find(s.out,cid):null; if(po) outs.add(po.id);
+    });
+    for(const pid in lu){
+      if(lu[pid]==='b' && !ins.has(pid)){ delete lu[pid]; changed=true; }
+      else if(lu[pid]==='s' && ins.has(pid)){ lu[pid]='b'; changed=true; }
+    }
+    ins.forEach(pid=>{ if(lu[pid]!=='b'){ lu[pid]='b'; changed=true; } });
+    outs.forEach(pid=>{ if(!lu[pid]){ lu[pid]='s'; changed=true; } });
+  }
+  return changed;
+}
+/* تُطبَّق على كل المباريات المنتهية (بعد التحميل من الجهاز أو السحابة) — بيانات النسخ القديمة
+   كانت تُعلِّم كل لاعبي النادي بدلاء؛ هنا تُصحَّح وتُعاد إحصاءاتها بلا تدخل. */
+function normalizeFixtures(st){
+  let n=0;
+  (st.fixtures||[]).forEach(f=>{
+    if(f.status!=='F' || !f.lineups) return;
+    if(!fixLineupsFromSubs(st,f)) return;
+    if(f.stats){ for(const cid in f.stats){ for(const pid in f.stats[cid]){ if(st.playerGW[pid]) delete st.playerGW[pid][f.gw]; } } }
+    genMatchStats(st,f); n++;
+  });
+  return n;
+}
+
 function genMatchStats(st, fx){
   // كل شيء من بيانات حقيقية: التشكيلة والتبديلات من موقع النتائج
   // + الأهداف/الكروت/الجزاءات/البونص. لا توليد عشوائي.
   const find=(name,clubId)=>st.players.find(p=>p.club===clubId && p.name===name);
-  const mkRow=min=>({min,g:0,a:0,cs:0,gc:0,ps:0,pm:0,og:0,yc:0,rc:0,bonus:0,pts:0});
+  // on/off = دقيقة الدخول والخروج (لحساب الأهداف المستقبلة أثناء وجوده في الملعب)
+  const mkRow=(min,on,off)=>({min,on,off,g:0,a:0,cs:0,gc:0,ps:0,pm:0,og:0,yc:0,rc:0,bonus:0,pts:0});
   fx.stats={}; fx.stats[fx.h]={}; fx.stats[fx.a]={};
   for(const clubId of [fx.h, fx.a]){
     const lu=(fx.lineups||{})[clubId]||{};
     for(const pid in lu){
-      // أساسي يبدأ بـ90 دقيقة ثم تُقصّ عند خروجه؛ البديل صفر حتى يدخل فعلاً
-      if(lu[pid]==='s') fx.stats[clubId][pid]=mkRow(90);
-      else if(lu[pid]==='b') fx.stats[clubId][pid]=mkRow(0);
+      // أساسي يبدأ بـ90 دقيقة ثم تُقصّ عند خروجه؛ من دخل بديلاً تُضبط دقائقه من التبديلات
+      // (بديل مُعلَّم يدوياً بلا تبديل مسجَّل: 30 دقيقة افتراضاً). من ليس في التشكيلة لم يلعب.
+      if(lu[pid]==='s') fx.stats[clubId][pid]=mkRow(90,0,90);
+      else if(lu[pid]==='b') fx.stats[clubId][pid]=mkRow(30,60,90);
     }
   }
   /* التبديلات: تُحدّد دقائق الخارج والداخل بدقة */
@@ -350,18 +399,23 @@ function genMatchStats(st, fx){
     const at=Math.max(0, Math.min(90, absMinute(s.h, s.m)));
     if(s.out){
       const po=find(s.out, clubId);
-      if(po){ if(!rows[po.id]) rows[po.id]=mkRow(90); rows[po.id].min=at; }
+      if(po){
+        if(!rows[po.id]) rows[po.id]=mkRow(90,0,90);
+        const r=rows[po.id];
+        // خرج بعدما دخل بديلاً: دقائقه = الخروج − الدخول
+        r.off=at; r.min=Math.max(1, at-(r.on||0));
+      }
     }
     if(s.in){
       const pi=find(s.in, clubId);
       // من دخل في الدقيقة 90 شارك فعلاً — دقيقة واحدة على الأقل ليأخذ نقطة المشاركة
-      if(pi){ if(!rows[pi.id]) rows[pi.id]=mkRow(0); rows[pi.id].min=Math.max(1, 90-at); }
+      if(pi){ if(!rows[pi.id]) rows[pi.id]=mkRow(0,null,null); rows[pi.id].min=Math.max(1, 90-at); rows[pi.id].on=at; rows[pi.id].off=90; }
     }
   });
   const rowFor=(name,clubId)=>{
     const p=find(name,clubId); if(!p) return null;
     const rows=fx.stats[clubId];
-    if(!rows[p.id]) rows[p.id]=mkRow(90); // مساهم غير محدد بالتشكيلة يُحتسب أساسياً
+    if(!rows[p.id]) rows[p.id]=mkRow(90,0,90); // مساهم غير محدد بالتشكيلة يُحتسب أساسياً
     return rows[p.id];
   };
   (fx.goals||[]).forEach(g=>{
@@ -369,14 +423,30 @@ function genMatchStats(st, fx){
     const r=rowFor(g.scorer,g.club); if(r) r.g++;
     if(g.assist){ const a=rowFor(g.assist,g.club); if(a) a.a++; }
   });
-  (fx.cards||[]).forEach(c=>{ const r=rowFor(c.name,c.club); if(!r) return; if(c.type==='r') r.rc++; else r.yc++; });
+  // كرت لمن ليس في التشكيلة ولا التبديلات (والتشكيلة معروفة): كرت من الدكة — لا مشاركة ولا خصم
+  const listed=(name,clubId)=>{ const lu=(fx.lineups||{})[clubId]; if(!lu) return true; const p=find(name,clubId); return !!(p && (lu[p.id] || fx.stats[clubId][p.id])); };
+  (fx.cards||[]).forEach(c=>{ if(!listed(c.name,c.club)) return; const r=rowFor(c.name,c.club); if(!r) return; if(c.type==='r') r.rc++; else r.yc++; });
   (fx.pens||[]).forEach(pn=>{ const r=rowFor(pn.name,pn.club); if(!r) return; if(pn.type==='save') r.ps++; else r.pm++; });
   (fx.bonus||[]).forEach(b=>{ const r=rowFor(b.name,b.club); if(r) r.bonus=(+b.pts||0); });
-  // الشباك النظيفة والأهداف المستقبلة
+  // بديل له هدف/كرت/جزاء لكن بلا تبديل مسجَّل: شارك فعلاً — دقيقة واحدة على الأقل (لا يُصفَّر)
+  for(const clubId of [fx.h, fx.a]){
+    for(const pid in fx.stats[clubId]){
+      const r=fx.stats[clubId][pid];
+      if(r.min===0 && (r.g||r.a||r.yc||r.rc||r.ps||r.pm||r.og)){ r.min=1; r.on=89; r.off=90; }
+    }
+  }
+  // الأهداف المستقبلة أثناء وجوده في الملعب، والشباك النظيفة (60+ دقيقة بلا هدف عليه) — كقاعدة FPL
   for(const side of ['h','a']){
     const clubId=fx[side]; const conceded=(side==='h'?fx.as:fx.hs)||0;
+    const against=(fx.goals||[]).filter(g=>g.club!==clubId).map(g=>Math.min(90, +g.min||0));
+    const timed = against.length===conceded && against.every(m=>m>0);
     const rows=fx.stats[clubId];
-    for(const pid in rows){ const r=rows[pid]; r.gc=conceded; r.cs=(conceded===0 && r.min>=60)?1:0; }
+    for(const pid in rows){
+      const r=rows[pid];
+      if(timed && r.on!=null) r.gc=against.filter(m=> m>r.on && m<=r.off).length;
+      else r.gc=conceded;                       // بلا دقائق للأهداف: تُحسب على الجميع
+      r.cs=(r.gc===0 && r.min>=60)?1:0;
+    }
   }
   scoreFixture(st, fx);
 }
@@ -422,6 +492,7 @@ function refreshGWSummary(st, gw){
     const h=(st.teams[uid].history||[]).find(x=>x.gw===gw);
     if(h && typeof h.pts==='number') pts.push(h.pts);
   }
+  if(st.managerCount) return;                 // المتوسط والأعلى من احتساب الخادم — لا يُستبدل بأرقام هذا الجهاز
   if(!pts.length){ g.avg=null; g.high=null; return; }
   g.avg  = Math.round(pts.reduce((s,p)=>s+p,0)/pts.length);
   g.high = Math.max(...pts);
@@ -461,25 +532,28 @@ const TEAM = {
   },
 
   /* نقاط فريق في جولة منتهية — تبديل تلقائي + كابتن + كروت */
-  gwPoints(team, gw, st){
-    st=st||DB.state;
+  gwPoints(team, gw, st, opts){
+    st=st||DB.state; opts=opts||{};
     const picks = team.gwPicks[gw];
     if(!picks) return { total:0, rows:[], benchPts:0, chip:null, capName:'', hits:picks?0:0 };
     const S=k=>st.scoring[k].val;
     const pts = pid => { const r=DB.pgw(pid,gw); return r? r.pts : 0; };
     const played = pid => { const r=DB.pgw(pid,gw); return r && r.min>0; };
+    // مباشر: لاعب لم تُلعب مباراة ناديه بعد يبقى في التشكيلة (لا تبديل تلقائي ولا نقل شارة الكابتن)
+    const fxOf = clubId => st.fixtures.find(f=>f.gw===gw && (f.h===clubId||f.a===clubId));
+    const pending = pid => { if(!opts.live) return false; const p=DB.player(pid); const f=p? fxOf(p.club) : null; return !!f && f.status!=='F'; };
 
-    let xi=[...picks.xi], bench=[...picks.bench];
+    let xi=[...picks.xi].filter(pid=>DB.player(pid)), bench=[...picks.bench].filter(pid=>DB.player(pid));
     const chip = picks.chip;
 
     // تبديل تلقائي بناءً على المشاركة الحقيقية (من تشكيلة موقع النتائج)
     if(chip!=='benchboost'){
       for(let i=0;i<xi.length;i++){
-        if(played(xi[i])) continue;
+        if(played(xi[i]) || pending(xi[i])) continue;
         const p = DB.player(xi[i]);
         for(let b=0;b<bench.length;b++){
           const bp = DB.player(bench[b]);
-          if(!played(bench[b])) continue;
+          if(!played(bench[b]) || pending(bench[b])) continue;
           if(p.pos==='G' && bp.pos!=='G') continue;
           if(p.pos!=='G' && bp.pos==='G') continue;
           const trial=[...xi]; trial[i]=bench[b];
@@ -488,7 +562,7 @@ const TEAM = {
       }
     }
     // الكابتن، وإن لم يشارك فالنائب
-    const capUsed = played(picks.cap) ? picks.cap : (played(picks.vice)? picks.vice : null);
+    const capUsed = (played(picks.cap) || pending(picks.cap)) ? picks.cap : ((played(picks.vice) || pending(picks.vice))? picks.vice : null);
     const mult = chip==='triplecap' ? 3 : 2;
 
     let total=0; const rows=[];
@@ -507,15 +581,21 @@ const TEAM = {
     });
     const hits = picks.hits||0;
     total -= hits;
-    return { total, rows, benchPts, chip, hits, capName: capUsed? DB.player(capUsed).name : '—' };
+    return { total, rows, benchPts, chip, hits, capName: (capUsed && DB.player(capUsed))? DB.player(capUsed).name : '—' };
   },
 
   totalPoints(team, st){
     st=st||DB.state;
     return (team.history||[]).reduce((s,h)=>s+h.pts,0);
   },
+  /* اختيارات الجولة كما هي الآن في الفريق — تُستعمل عند الاحتساب إذا لم تُلتقط لقطة على الجهاز
+     (بعد الموعد يرفض الخادم أي تعديل، فالتشكيلة المحفوظة عنده هي عين الاختيارات المقفلة) */
+  picksFrom(team){
+    return { xi:[...(team.xi||[])], bench:[...(team.bench||[])], cap:team.cap||null, vice:team.vice||null,
+      chip:team.activeChip||null, hits:+team.pendingHits||0 };
+  },
   teamValue(team){
-    return team.squad.reduce((s,pid)=>s+DB.player(pid).price,0);
+    return team.squad.reduce((s,pid)=>s+((DB.player(pid)||{}).price||0),0);
   },
 };
 
@@ -528,7 +608,7 @@ const RANKS = {
   finishedGWs(st){ return st.gws.filter(g=>g.status==='finished').map(g=>g.n); },
 
   /* عدد المشتركين الذين لهم فريق فعلي */
-  population(st){ return Object.keys(st.teams||{}).length; },
+  population(st){ return st.managerCount || Object.keys(st.teams||{}).length; },
 
   /* مجموع نقاط كل مشترك */
   userTotals(st){
@@ -574,30 +654,33 @@ const RANKS = {
    ملكية اللاعبين والانتقالات المحاكاة
    ========================================================= */
 const MARKET = {
+  /* نسبة التملّك: من قوائم المشتركين الفعليين (يجمعها المدير عند كل احتساب وتُنشر مع اللعبة).
+     قبل أول احتساب أو بلا اتصال: من فرق هذا الجهاز فقط. لا أرقام مولَّدة. */
   ownership(pid){
-    const st=DB.state; const p=DB.player(pid);
-    const form=DB.playerForm(pid);
-    let base = Math.min(60, Math.max(0.3, (p.price-4)*6 + form*3.2 + (hashStr('own'+pid)%40)/10 ));
-    let real=0, users=Object.keys(st.teams).length;
-    for(const uid in st.teams) if(st.teams[uid].squad.includes(pid)) real++;
-    if(users>0) base = base*0.9 + (real/users)*100*0.1;
-    return Math.round(base*10)/10;
+    const st=DB.state;
+    if(st.managerCount>0 && st.own) return Math.round(((st.own[pid]||0)/st.managerCount)*1000)/10;
+    const users=Object.keys(st.teams||{}); if(!users.length) return 0;
+    const real=users.filter(uid=>(st.teams[uid].squad||[]).includes(pid)).length;
+    return Math.round(real/users.length*1000)/10;
   },
+  /* دخول/خروج اللاعب في آخر جولة محتسبة — من صفقات المشتركين الحقيقية */
   transferCounts(pid){
-    const st=DB.state; const t=st.transferStats[pid]||{in:0,out:0};
-    const form=DB.playerForm(pid);
-    const simIn = Math.max(0, Math.round(form*form*90 + (hashStr('tin'+pid+st.currentGW)%50)));
-    const simOut = Math.max(0, Math.round((3-Math.min(3,form))*40 + (hashStr('tout'+pid+st.currentGW)%60)));
-    return { in: simIn + t.in*50, out: simOut + t.out*50 };
+    const t=((DB.state.transferStats||{})[pid])||{in:0,out:0};
+    return { in:+t.in||0, out:+t.out||0 };
+  },
+  /* عتبة تغيّر السعر: صافي 5% من المشتركين (3 على الأقل) */
+  threshold(st){
+    st=st||DB.state;
+    const n=Math.max(1, st.managerCount||Object.keys(st.teams||{}).length||1);
+    return Math.max(3, Math.ceil(n*0.05));
   },
   applyPriceChanges(st){
-    const changes=[];
+    const changes=[]; const thr=this.threshold(st);
     st.players.forEach(p=>{
       const tc=this.transferCounts(p.id);
       const net=tc.in-tc.out;
-      const rng=mulberry32(hashStr('price'+p.id+st.currentGW))();
-      if(net>140 && rng>0.3){ p.price=Math.round((p.price+st.rules.priceRise)*10)/10; changes.push({p,d:+st.rules.priceRise}); }
-      else if(net<-90 && rng>0.45 && p.price>3.5){ p.price=Math.round((p.price-st.rules.priceDrop)*10)/10; changes.push({p,d:-st.rules.priceDrop}); }
+      if(net>=thr){ p.price=Math.round((p.price+st.rules.priceRise)*10)/10; changes.push({p,d:+st.rules.priceRise}); }
+      else if(net<=-thr && p.price>3.5){ p.price=Math.round((p.price-st.rules.priceDrop)*10)/10; changes.push({p,d:-st.rules.priceDrop}); }
     });
     return changes;
   },
@@ -771,45 +854,49 @@ function weightedPick(items, weights){
    إدارة الجولات: قفل، احتساب، ترحيل
    ========================================================= */
 const GWADMIN = {
-  /* إنهاء الجولة الحالية: احتساب نقاط الجميع + الترتيب + الأسعار + الترحيل */
-  finalize(gw){
+  /* إنهاء الجولة الحالية على هذا الجهاز: تثبيت الحالة + أسعار + الترحيل.
+     نقاط المشتركين وترحيل فرقهم يقوم بهما CLOUD.finalizeForAll على الخادم؛
+     agg = خلاصته (المتوسط، الأعلى، التملّك، الصفقات، عدد المشتركين). */
+  finalize(gw, agg){
     const st=DB.state;
+    const fxs=st.fixtures.filter(f=>f.gw===gw);
+    if(!fxs.length) return { ok:false, err:`لا يمكن إغلاق الجولة ${gw} — لم يصدر جدولها بعد (المباريات تُسحب من mfsoccer).` };
     // اللعبة واقعية: لا احتساب قبل إدخال كل النتائج الحقيقية
-    const pending=st.fixtures.filter(f=>f.gw===gw && f.status!=='F');
+    const pending=fxs.filter(f=>f.status!=='F');
     if(pending.length){
-      return { ok:false, err:`لا يمكن إغلاق الجولة — ${pending.length} مباريات بلا نتيجة. أدخلها من «النتائج والإحصاءات» أولاً.` };
+      return { ok:false, err:`لا يمكن إغلاق الجولة — ${pending.length} مباريات بلا نتيجة. اسحبها من mfsoccer أو أدخلها من «النتائج والإحصاءات» أولاً.` };
     }
-    finalizeGWStats(st,gw);
     const g=st.gws.find(x=>x.n===gw); g.status='finished';
 
-    // نقاط كل مستخدم — على مرحلتين: تُحسب نقاط الجميع أولاً ثم يُرقّم الترتيب بينهم
+    // فرق هذا الجهاز (ضيف أو بلا اتصال): تُحتسب محلياً ما لم يكن الخادم رحّلها
     const scored={};
     for(const uid in st.teams){
       const team=st.teams[uid];
       if(team.joinedGW>gw) continue;
+      if((team.rolledGW||0)>=gw) continue;
       if(!team.gwPicks[gw]) this.snapshotPicks(team, gw);
-      const res=TEAM.gwPoints(team, gw, st);
-      team.history=team.history||[];
-      team.history.push({gw, pts:res.total, benchPts:res.benchPts, rank:0, chip:res.chip, hits:res.hits});
-      scored[uid]=res.total;
-      // الضربة الحرة: استرجاع الفريق
-      if(team.gwPicks[gw] && team.gwPicks[gw].chip==='freehit' && team.fhBackup){
-        team.squad=team.fhBackup.squad; team.xi=team.fhBackup.xi; team.bench=team.fhBackup.bench;
-        team.cap=team.fhBackup.cap; team.vice=team.fhBackup.vice; team.bank=team.fhBackup.bank;
-        team.fhBackup=null;
+      if(!(team.history||[]).some(h=>h.gw===gw)){
+        const res=TEAM.gwPoints(team, gw, st);
+        team.history=team.history||[];
+        team.history.push({gw, pts:res.total, benchPts:res.benchPts, rank:0, chip:res.chip, hits:res.hits});
+        scored[uid]=res.total;
       }
-      team.activeChip=null;
-      // انتقالات مجانية
-      team.ft=Math.min(st.rules.maxSavedTransfers, (team.ft||1)+st.rules.freeTransfers);
+      this.rollover(team, gw, st);
     }
-    // الترتيب بعدما اكتملت نقاط الجميع
     RANKS.recomputeGWRanks(st, gw);
+    if(agg){
+      if(agg.avg!=null)  g.avg=agg.avg;
+      if(agg.high!=null) g.high=agg.high;
+      if(agg.own)        st.own=agg.own;
+      if(agg.count!=null) st.managerCount=agg.count;
+      if(agg.transfers)  st.transferStats=agg.transfers;
+    }
     for(const uid in scored){
       const h=(st.teams[uid].history||[]).find(x=>x.gw===gw);
       const rk = h && h.rank ? ` (ترتيب الجولة ${h.rank.toLocaleString('ar')} من ${RANKS.population(st).toLocaleString('ar')})` : '';
       NOTIF.push(uid,'points',`احتُسبت الجولة ${gw}: ${scored[uid]} نقطة${rk}`);
     }
-    // أسعار
+    // أسعار — من صافي صفقات المشتركين الحقيقية
     const changes=MARKET.applyPriceChanges(st);
     for(const uid in st.teams){
       changes.slice(0,6).forEach(ch=>{
@@ -817,23 +904,62 @@ const GWADMIN = {
           NOTIF.push(uid,'price',`${ch.d>0?'ارتفع':'انخفض'} سعر ${ch.p.name} إلى ${fmtM(ch.p.price)}`);
       });
     }
-    st.transferStats={};
-    // الجولة التالية
-    st.currentGW=gw+1;
+    // الجولة التالية (وفي آخر جولة بالموسم تبقى الحالية منتهية)
     const ng=st.gws.find(x=>x.n===gw+1);
-    if(ng) ng.status='next';
+    if(ng){ st.currentGW=gw+1; ng.status='next'; }
+    this.refreshDeadlines(st);
     DB.save();
     return { ok:true, changes:changes.length };
   },
+  /* ترحيل فريق بعد احتساب جولة: كروت وخصومات وانتقالات مجانية والضربة الحرة.
+     يُطبَّق على الخادم لكل مشترك، ومحلياً لفرق الجهاز. لا يتكرر (rolledGW). */
+  rollover(team, gw, st){
+    st=st||DB.state;
+    if((team.rolledGW||0)>=gw) return team;
+    const picks=(team.gwPicks||{})[gw];
+    if(picks && picks.chip==='freehit' && team.fhBackup){
+      team.squad=team.fhBackup.squad; team.xi=team.fhBackup.xi; team.bench=team.fhBackup.bench;
+      team.cap=team.fhBackup.cap; team.vice=team.fhBackup.vice; team.bank=team.fhBackup.bank;
+    }
+    team.fhBackup=null;
+    team.activeChip=null;
+    team.pendingHits=0;
+    team.ft=Math.min(st.rules.maxSavedTransfers, (+team.ft||0)+st.rules.freeTransfers);
+    team.rolledGW=gw;
+    return team;
+  },
+  /* خلاصة الاحتساب من فرق هذا الجهاز فقط — عند غياب السحابة (تجربة محلية) */
+  localAgg(st, gw){
+    const own={}, transfers={}; const pts=[]; let count=0;
+    for(const uid in st.teams){
+      const t=st.teams[uid]; if(!(t.squad||[]).length) continue;
+      count++;
+      t.squad.forEach(pid=>{ own[pid]=(own[pid]||0)+1; });
+      (t.transfers||[]).filter(x=>x.gw===gw).forEach(x=>{
+        transfers[x.in]=transfers[x.in]||{in:0,out:0}; transfers[x.in].in++;
+        transfers[x.out]=transfers[x.out]||{in:0,out:0}; transfers[x.out].out++;
+      });
+      if(t.joinedGW<=gw){ const picks=t.gwPicks[gw]||TEAM.picksFrom(t); pts.push(TEAM.gwPoints({...t, gwPicks:{[gw]:picks}}, gw, st).total); }
+    }
+    return { count, own, transfers,
+      avg: pts.length? Math.round(pts.reduce((a,b)=>a+b,0)/pts.length) : null,
+      high: pts.length? Math.max(...pts) : null };
+  },
   snapshotPicks(team, gw){
-    team.gwPicks[gw]={ xi:[...team.xi], bench:[...team.bench], cap:team.cap, vice:team.vice,
-      chip:team.activeChip, hits:team.pendingHits||0 };
+    team.gwPicks[gw]=TEAM.picksFrom(team);
     team.pendingHits=0;
   },
   deadlinePassed(gw){
-    const g=DB.gw(gw); if(!g) return false;
+    const g=DB.gw(gw); if(!g || !g.deadline) return false;   // جولة بلا جدول = مفتوحة
     return new Date() > new Date(g.deadline);
   },
+  /* الجولة جارية: مرّ موعدها (أو لُعبت مباراة منها) ولم تُعتمد بعد */
+  inProgress(gw){
+    const g=DB.gw(gw); if(!g || g.status==='finished') return false;
+    const fx=DB.state.fixtures.filter(f=>f.gw===gw); if(!fx.length) return false;
+    return this.deadlinePassed(gw) || fx.some(f=>f.status==='F');
+  },
+  refreshDeadlines(st){ st=st||DB.state; computeDeadlines(st.gws, st.fixtures); },
 };
 
 /* =========================================================
@@ -859,11 +985,13 @@ const AUTH = {
   /* وضع بدون تسجيل دخول: حساب محلي تلقائي */
   guest(){
     const st=DB.state;
-    if(st.users.length){ st.session=st.users[0].id; DB.save(); return; }
     const id='u1local';
-    st.users.push({id, username:'المدرب', email:'local@kwfantasy', pass:'', teamName:'فريقي',
-      avatar:'', verified:true, created:new Date().toISOString(), admin:false});
-    st.teams[id]={ squad:[],xi:[],bench:[],cap:null,vice:null,bank:st.rules.budget,ft:1,
+    // الضيف دائماً حساب الجهاز «المدرب» — لا يرث فريق مشترك سجّل خروجه
+    if(!st.users.find(u=>u.id===id))
+      st.users.push({id, username:'المدرب', email:'local@kwfantasy', pass:'', teamName:'فريقي',
+        avatar:'', verified:true, created:new Date().toISOString(), admin:false});
+    if(st.teams[id]){ st.session=id; DB.save(); return; }
+    st.teams[id]={ squad:[],xi:[],bench:[],cap:null,vice:null,bank:st.rules.budget,ft:st.rules.freeTransfers,
       usedChips:{},activeChip:null,joinedGW:st.currentGW,history:[],transfers:[],gwPicks:{},pendingHits:0 };
     st.session=id;
     NOTIF.push(id,'welcome',`أهلاً بك! كوّن فريقك قبل موعد إغلاق الجولة ${st.currentGW}.`);
@@ -916,7 +1044,7 @@ const AUTH = {
 const LEAGUES = {
   /* مواجهات H2H وترقيم المراكز على صفوف جاهزة من السحابة */
   decorate(rows, lg){
-    if(lg.type!=='h2h') { rows.sort((a,b)=>b.total-a.total); return rows; }
+    if(lg.type!=='h2h') { rows.sort((a,b)=>b.total-a.total); this.movement(rows, lg); return rows; }
     const st=DB.state;
     rows.forEach(r=>{r.w=0;r.d=0;r.l=0;r.h2hPts=0;});
     const done=RANKS.finishedGWs(st).filter(g=>g>=(lg.createdGW||1));
@@ -932,6 +1060,7 @@ const LEAGUES = {
       }
     });
     rows.sort((a,b)=>b.h2hPts-a.h2hPts || b.total-a.total);
+    rows.forEach((r,i)=>{ r.rank=i+1; r.move=0; });
     return rows;
   },
 
@@ -941,7 +1070,7 @@ const LEAGUES = {
 
   async refresh(force){
     if(!this.online()) return;
-    if(this.cloud.busy) return;
+    if(this.cloud.busy){ if(!force) return; while(this.cloud.busy) await new Promise(r=>setTimeout(r,120)); }
     if(!force && this.cloud.at && Date.now()-this.cloud.at < 45000) return;
     this.cloud.busy = true;
     try{
@@ -957,6 +1086,31 @@ const LEAGUES = {
     if(typeof APP!=='undefined' && APP.route==='leagues') APP.render();
   },
 
+  byId(id){
+    return DB.state.leagues.find(l=>l.id===id) || (this.cloud.list||[]).find(l=>l.id===id) || null;
+  },
+  /* دوري جديد/انضمام: يُضاف للقائمة فوراً بلا انتظار قراءة كل الدوريات من الخادم */
+  addLocal(lg){
+    this.cloud.list = this.cloud.list || [];
+    if(!this.cloud.list.some(l=>l.id===lg.id)) this.cloud.list.push(lg);
+    this.cloud.at = 0;                       // القراءة التالية تُحدّث الصفوف
+  },
+  /* حركة الترتيب: المركز الآن مقابل المركز قبل آخر جولة محتسبة (من سجل كل مشترك) */
+  movement(rows, lg){
+    const st=DB.state;
+    const done=RANKS.finishedGWs(st).filter(g=>lg.global || g>=(lg.createdGW||1));
+    const last=done.length? Math.max(...done) : 0;
+    const rankOf=(arr,key)=>{ const sorted=[...arr].sort((a,b)=>b[key]-a[key]); let prev=null, rank=0; const out={};
+      sorted.forEach((r,i)=>{ if(prev===null || r[key]<prev){ rank=i+1; prev=r[key]; } out[r.id]=rank; }); return out; };
+    rows.forEach(r=>{
+      const hist=r.hist || ((st.teams[r.id]||{}).history||[]).filter(h=>lg.global||h.gw>=(lg.createdGW||1));
+      r.prevTotal = hist.filter(h=>h.gw<last).reduce((s,h)=>s+(h.pts||0),0);
+      r.playedLast = hist.some(h=>h.gw===last);
+    });
+    const now=rankOf(rows,'total'), before=rankOf(rows,'prevTotal');
+    rows.forEach(r=>{ r.rank=now[r.id]; r.prevRank=before[r.id]; r.move = (last && done.length>1)? (r.prevRank-r.rank) : 0; });
+    return rows;
+  },
   genCode(){ const c='ABCDEFGHJKMNPQRSTUVWXYZ23456789'; let s=''; for(let i=0;i<6;i++) s+=c[Math.floor(Math.random()*c.length)]; return s; },
   create(name,type){
     const st=DB.state; const m=DB.me(); if(!m) return null;
@@ -1010,8 +1164,10 @@ const LEAGUES = {
         }
       });
       rows.sort((a,b)=>b.h2hPts-a.h2hPts || b.total-a.total);
+      rows.forEach((r,i)=>{ r.rank=i+1; r.move=0; });
     } else {
       rows.sort((a,b)=>b.total-a.total);
+      this.movement(rows, lg);
     }
     return rows;
   },

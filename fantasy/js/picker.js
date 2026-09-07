@@ -227,6 +227,7 @@ Object.assign(VIEWS, {
     let list=st.players.filter(p=>p.status!=='u');
     if(a.pos) list=list.filter(p=>p.pos===a.pos);
     if(a.club) list=list.filter(p=>p.club===a.club);
+    if(a.price) list=list.filter(p=>Math.abs(p.price-(+a.price))<0.01);
     if(a.search) list=list.filter(p=>p.name.includes(a.search));
     const val={ name:p=>p.name, form:p=>DB.playerForm(p.id), price:p=>p.price, owned:p=>MARKET.ownership(p.id), total:p=>DB.playerTotal(p.id) }[a.sort];
     list.sort((x,y)=>{ const vx=val(x), vy=val(y); if(typeof vx==='string') return vx.localeCompare(vy,'ar')*a.dir; return (vx-vy)*a.dir || y.price-x.price; });
@@ -261,6 +262,8 @@ Object.assign(VIEWS, {
           <option value="">كل المراكز</option>${['G','D','M','F'].map(p=>`<option value="${p}" ${a.pos===p?'selected':''}>${POS_AR[p]}</option>`).join('')}</select>
         <select onchange="VIEWS.addpSet('club',this.value)">
           <option value="">كل الأندية</option>${st.clubs.map(c=>`<option value="${c.id}" ${a.club===c.id?'selected':''}>${c.name}</option>`).join('')}</select>
+        <select onchange="VIEWS.addpSet('price',this.value)">
+          <option value="">كل الأسعار</option>${[...new Set(st.players.filter(p=>p.status!=='u').map(p=>p.price))].sort((x,y)=>x-y).map(v=>`<option value="${v}" ${+a.price===v?'selected':''}>${fmtM(v)}</option>`).join('')}</select>
         <select onchange="VIEWS.ui.addp.sort=this.value;VIEWS.ui.addp.dir=-1;VIEWS.renderAddPlayer()">
           ${[['total','الأعلى نقاطاً'],['price','الأغلى'],['form','الأفضل فورمة'],['owned','الأكثر تملكاً']].map(([k,l])=>`<option value="${k}" ${a.sort===k?'selected':''}>${l}</option>`).join('')}</select>
       </div>
