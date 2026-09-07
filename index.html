@@ -501,7 +501,7 @@ details.squadbox summary label.lb{margin:0;cursor:pointer}
 .shapes{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(280px,1fr))}
 .shapebox{border:1px solid rgba(143,166,196,.22);border-radius:12px;padding:10px;
   background:rgba(14,43,82,.35)}
-.shead{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.shead{display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap}
 .shead>*{margin:0}
 .shead b{flex:1;min-width:0;font-size:.85rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .shead .btn.sm{flex:0 0 auto;width:auto;padding:5px 10px;font-size:.72rem;white-space:nowrap}
@@ -3522,7 +3522,7 @@ function shapeSlots(men, form){
   const rows=String(form).split("-").map(Number).filter(n=>n>0);
   const gk=men.filter(p=>p.line==="G").slice(0,1);
   const rest=men.filter(p=>p.line!=="G").slice()
-    .sort((a,b)=>(SH_ORDER[a.line]-SH_ORDER[b.line])||(shSide(b.role)-shSide(a.role)));
+    .sort((a,b)=>(SH_ORDER[a.line]-SH_ORDER[b.line])||(shSide(a.role)-shSide(b.role)));
   const lines=[gk,...rows.map(()=>[])];
   let i=0;
   rows.forEach((n,ri)=>{ for(let k=0;k<n&&i<rest.length;k++) lines[ri+1].push(rest[i++]); });
@@ -3530,7 +3530,9 @@ function shapeSlots(men, form){
   const out=[];
   lines.forEach((row,li)=>{
     const y=90-li*(78/Math.max(1,lines.length-1));
-    const ord=li===0?row:row.slice().sort((a,b)=>shSide(b.role)-shSide(a.role));
+    /* الجهة: اليسار (L) أولاً فيأخذ x كبيراً، واليمين (R) أخيراً فيأخذ x صغيراً.
+       التنسيق يقيس right من الحافة اليمنى، فيقع الأيمن يميناً واليسار يساراً. */
+    const ord=li===0?row:row.slice().sort((a,b)=>shSide(a.role)-shSide(b.role));
     ord.forEach((p,k)=>out.push({p,x:100*(ord.length-k)/(ord.length+1),y,n:ord.length}));
   });
   return out;
@@ -3755,6 +3757,20 @@ function wireShapes(box){
     if(sel) sel.value=autoFormation(cl);
     drawShape(cl);
   });
+  /* اعكس الجهات: يقلب كل لاعب أفقياً (x ← 100−x) فيصير اليمين يساراً
+     والعكس. يثبّت المواضع الحالية أولاً حتى يشمل القلبُ التلقائيَّ منها. */
+  box.querySelectorAll("[data-flipshape]").forEach(b=>b.onclick=()=>{
+    const cl=b.dataset.flipshape;
+    const form=(EDIT.shapes[cl]||{}).f || autoFormation(cl);
+    const pos={};
+    shapeSlots(shapeMen(cl), form).forEach(({p,x,y})=>{
+      const cur=(EDIT.shapes[cl]||{}).pos||{};
+      const ox=cur[p.n]?cur[p.n].x:x, oy=cur[p.n]?cur[p.n].y:y;
+      pos[p.n]={x:+(100-ox).toFixed(1), y:oy};
+    });
+    EDIT.shapes[cl]={f:form, pos};
+    drawShape(cl);
+  });
   box.querySelectorAll("[data-pitchfor]").forEach(p=>{
     let cur=null,rect=null;
     p.addEventListener("pointerdown",e=>{
@@ -3848,6 +3864,7 @@ function matchFormHTML(){
           const list=FORMATIONS.includes(cur)?FORMATIONS:[cur,...FORMATIONS];
           return list.map(f=>`<option ${f===cur?"selected":""}>${f}</option>`).join("");
         })()}</select>
+        <button type="button" class="btn ghost sm" data-flipshape="${esc(cl)}" title="اقلب التشكيلة يمين↔يسار">⇄ اعكس الجهات</button>
         <button type="button" class="btn ghost sm" data-resetshape="${esc(cl)}">إرجاع التلقائي</button>
       </div>
       <div class="xipitch half epitch" data-pitchfor="${esc(cl)}"></div>
