@@ -526,12 +526,13 @@ const VIEWS = {
           cap:team.fhBackup.cap, vice:team.fhBackup.vice, bank:team.fhBackup.bank});
         team.fhBackup=null;
       }
+      // إلغاء الكرت يعيد الاستخدام كما كان — متماثل مع التفعيل حتى لا يعلق
+      team.usedChips[key]=Math.max(0,(team.usedChips[key]||0)-1);
       team.activeChip=null; DB.save(); UI.toast('أُلغي الكرت'); APP.render(); return;
     }
     team.activeChip=key;
-    team.usedChips[key]=(team.usedChips[key]||0)+0; // يُحسم عند الاحتساب
     if(key==='freehit'){ team.fhBackup={squad:[...team.squad], xi:[...team.xi], bench:[...team.bench], cap:team.cap, vice:team.vice, bank:team.bank}; }
-    // حسم الاستخدام فوراً حتى لا يتكرر
+    // يُحجز الاستخدام مؤقتاً؛ يُلغى بالضغط على «إلغاء»، ويُحسم نهائياً عند إغلاق الجولة
     team.usedChips[key]=(team.usedChips[key]||0)+1;
     DB.save(); UI.toast(`فُعّل كرت ${st.rules.chips[key].label} لهذه الجولة`); APP.render();
   },
