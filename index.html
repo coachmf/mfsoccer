@@ -6849,7 +6849,7 @@ function paintFoot(){
     </div>`;
 }
 document.querySelectorAll('nav.tabs button').forEach(b=>b.onclick=()=>{
-  if(b.dataset.v==="fantasy"){ window.open(FANTASY_URL,"_blank","noopener"); return; }
+  if(b.dataset.v==="fantasy"){ location.href = FANTASY_URL; return; }
   go(b.dataset.v);
 });
 $("#adminBtn").onclick=()=>go("admin");
@@ -6908,7 +6908,7 @@ async function bootData(){
   subs.forEach(b=>b.addEventListener('click',()=>{
     const t=document.querySelector(`nav.tabs button[data-v="${b.dataset.go}"]`);
     if(t && t.style.display!=='none') t.click();
-    else if(b.dataset.go==='fantasy') window.open(window.FANTASY_URL||'/fantasy/','_blank','noopener');
+    else if(b.dataset.go==='fantasy') location.href = window.FANTASY_URL||'/fantasy/';
     setTimeout(sync,0);
   }));
   document.querySelectorAll('nav.tabs button').forEach(b=>b.addEventListener('click',()=>setTimeout(sync,0)));

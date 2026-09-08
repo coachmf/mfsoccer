@@ -90,6 +90,13 @@ a{color:var(--blue); text-decoration:none;}
   background:linear-gradient(135deg,#007a3d,#00c176);color:#fff;font-size:1.15rem;box-shadow:0 3px 10px rgba(0,193,118,.4);}
 #brand small{display:block;font-size:.62rem;color:var(--text2);font-weight:400;}
 #navlinks{display:flex;gap:2px;flex:1;justify-content:center;flex-wrap:wrap;}
+/* رابط الرجوع لموقع الإحصائيات — يظهر على الجوال والحاسوب */
+#toSite{display:inline-flex;align-items:center;gap:5px;flex:none;text-decoration:none;
+  padding:7px 12px;border-radius:9px;font-family:'Almarai';font-weight:700;font-size:.82rem;
+  color:var(--accent);background:color-mix(in srgb,var(--accent) 10%,transparent);
+  border:1px solid color-mix(in srgb,var(--accent) 28%,transparent);transition:.15s;white-space:nowrap;}
+#toSite:hover{background:color-mix(in srgb,var(--accent) 18%,transparent);}
+#toSite svg{transform:scaleX(-1)}   /* السهم يشير لجهة الرجوع في RTL */
 #navlinks button{
   padding:8px 13px;border-radius:9px;color:var(--text2);font-size:.9rem;font-weight:600;
   transition:.15s;
