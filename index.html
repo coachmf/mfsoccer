@@ -307,6 +307,23 @@ details.squadbox summary::after{content:"⌄";margin-inline-start:auto;color:var
 details.squadbox[open] summary::after{transform:rotate(180deg)}
 details.squadbox summary:hover{background:rgba(95,178,232,.06)}
 details.squadbox > .sqbody{padding:0 13px 13px}
+/* أكورديون المباريات حسب الجولة في الإدارة */
+details.rndbox{border:1px solid var(--line);border-radius:12px;background:#fff;box-shadow:var(--shadow);
+  overflow:hidden;margin-bottom:10px}
+details.rndbox:last-of-type{margin-bottom:0}
+details.rndbox summary{list-style:none;cursor:pointer;padding:13px 15px;display:flex;align-items:center;
+  gap:9px;user-select:none;font-size:.95rem}
+details.rndbox summary::-webkit-details-marker{display:none}
+details.rndbox summary b{font-weight:700}
+details.rndbox summary::after{content:"⌄";margin-inline-start:auto;color:var(--slate);
+  font-size:1.1rem;transition:transform .18s;line-height:1}
+details.rndbox[open] summary::after{transform:rotate(180deg)}
+details.rndbox[open] summary{border-bottom:1px solid var(--line)}
+details.rndbox summary:hover{background:rgba(95,178,232,.06)}
+details.rndbox summary .rc{font-size:.68rem;color:var(--slate);background:rgba(143,166,196,.16);
+  padding:3px 9px;border-radius:20px;font-weight:600}
+details.rndbox summary .rc.soon{color:#B57A15;background:rgba(233,185,73,.18)}
+details.rndbox > .rndbody{padding:2px 14px 10px}
 details.squadbox summary label.lb{margin:0;cursor:pointer}
 /* خانة رقم اللاعب في نماذج المباريات */
 .pfld .prow{display:grid;grid-template-columns:60px 1fr;gap:6px}
@@ -4264,19 +4281,29 @@ function renderMatchAdmin(){
     box.innerHTML = `<h2 class="sec">${EDIT.orig?"تعديل مباراة":"مباراة جديدة"}</h2>` + matchFormHTML();
     wireShapes(box);
   } else {
-    const list=(ALL?.matches||[]).slice().sort((a,b)=>(b.round-a.round)||String(b.date).localeCompare(String(a.date)));
-    box.innerHTML = `
-      <button class="btn" data-act="new">+ إضافة مباراة جديدة</button>
-      <h2 class="sec">المباريات المسجّلة (${list.length})</h2>
-      <div class="card pad adm-matches">${list.length?list.map(m=>`<div class="mrow adm" style="${clubVars(m.home).replace(/--cc/g,"--hc")};${clubVars(m.away).replace(/--cc/g,"--ac")}">
+    const ms=(ALL?.matches||[]).slice();
+    const rounds=[...new Set(ms.map(m=>+m.round))].sort((a,b)=>b-a);
+    const mRow=m=>`<div class="mrow adm" style="${clubVars(m.home).replace(/--cc/g,"--hc")};${clubVars(m.away).replace(/--cc/g,"--ac")}">
         <div class="am-teams">
           <span class="am-t h">${crest(m.home)}<b>${esc(m.home)}</b></span>
           <span class="am-score${isUpcoming(m)?" soon":""}">${isUpcoming(m)?(m.time?esc(m.time):"—"):`${m.hg} - ${m.ag}`}</span>
           <span class="am-t a">${crest(m.away)}<b>${esc(m.away)}</b></span>
         </div>
-        <div class="am-meta">${isUpcoming(m)?'<span class="mstat soon">لم تبدأ</span>':""}<span class="am-r">الجولة ${m.round}</span><span>${esc(compOf(m))}</span><span dir="ltr">${esc(m.date||"بلا تاريخ")}</span>${m.venue?`<span>${esc(m.venue)}</span>`:""}</div>
+        <div class="am-meta">${isUpcoming(m)?'<span class="mstat soon">لم تبدأ</span>':""}<span>${esc(compOf(m))}</span><span dir="ltr">${esc(m.date||"بلا تاريخ")}</span>${m.venue?`<span>${esc(m.venue)}</span>`:""}</div>
         <div class="am-btns"><button data-edit="${esc(mkey(m))}">تعديل</button><button class="dl" data-rm="${esc(mkey(m))}">حذف</button></div>
-      </div>`).join(""):'<span style="color:var(--slate)">لا مباريات بعد.</span>'}</div>`;
+      </div>`;
+    box.innerHTML = `
+      <button class="btn" data-act="new">+ إضافة مباراة جديدة</button>
+      <h2 class="sec">المباريات المسجّلة (${ms.length})</h2>
+      ${ms.length? `<div class="card pad">`+rounds.map((r,ri)=>{
+        const rms=ms.filter(m=>+m.round===r).sort((a,b)=>String(a.date).localeCompare(String(b.date)));
+        const up=rms.filter(isUpcoming).length;
+        return `<details class="rndbox" ${ri===0?"open":""}>
+          <summary><b>الجولة ${r}</b><span class="rc">${rms.length} مباراة</span>${up?`<span class="rc soon">${up} لم تبدأ</span>`:""}</summary>
+          <div class="rndbody adm-matches">${rms.map(mRow).join("")}</div>
+        </details>`;
+      }).join("")+`</div>`
+      : '<div class="card pad"><span style="color:var(--slate)">لا مباريات بعد.</span></div>'}`;
   }
   box.querySelectorAll("[data-k]").forEach(el=>{
     el.oninput=()=>{ setPath(el.dataset.k, el.value); syncPNum(box, el); };
