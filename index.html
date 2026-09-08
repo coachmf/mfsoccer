@@ -1804,10 +1804,17 @@ main{padding-bottom:48px}
 .tl-min.sub span{background:#fff;color:var(--head);border:1.5px solid #C9D6E6;box-shadow:0 0 0 4px #FAFCFE;font-weight:700}
 .tl-ev.sub .tl-card{gap:3px}
 .tl-sub-in,.tl-sub-out{display:flex;align-items:center;gap:6px;font-size:.82rem;font-weight:600;color:var(--head)}
-.tl-sub-out{color:#7F8FA6;font-weight:500}
+.tl-sub-out{color:#8A1F1A;font-weight:600}
 .tl-sub-in i,.tl-sub-out i{width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;flex:none}
-.tl-sub-in i{border-bottom:8px solid #1E9E5A}
-.tl-sub-out i{border-top:8px solid #D9453B}
+.tl-sub-in i{border-bottom:9px solid #1E9E5A}   /* سهم أخضر للأعلى: دخول */
+.tl-sub-out i{border-top:9px solid #D9453B}      /* سهم أحمر للأسفل: خروج */
+/* أيقونات الهدف والصناعة */
+.ico-ball,.ico-boot{flex:none;vertical-align:middle}
+.tl-assist{display:flex;align-items:center;gap:6px;font-size:.8rem;color:var(--slate);margin-top:3px}
+.tl-assist .ico-boot{opacity:.85}
+/* صفّ الإنذار في الشريط الزمني */
+.tl-row.card .tl-name{font-weight:700}
+.tl-min.card span{background:#fff;color:var(--head);border:1.5px solid var(--line2)}
 .tl-ev.sub.a .tl-card{align-items:flex-start}
 /* ===== /v25 ===== */
 </style>
@@ -3376,6 +3383,9 @@ function absMinute(h, m){
   if(+h === 2 && mm <= 45) return 45 + mm;
   return mm;
 }
+/* أيقونات تفاصيل المباراة: كرة للهدف، حذاء للصناعة — كحلية بهوية الموقع */
+const ICO_BALL = `<svg class="ico-ball" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><circle cx="12" cy="12" r="9.2" fill="#fff" stroke="#0B1F3A" stroke-width="1.5"/><path d="M12 6.7l3.6 2.6-1.4 4.3H9.8L8.4 9.3z" fill="#0B1F3A"/><path d="M12 6.7V4.3M15.6 9.3l2.5-1.5M14.2 13.6l1.9 2.3M9.8 13.6l-1.9 2.3M8.4 9.3L5.9 7.8" stroke="#0B1F3A" stroke-width="1.25" fill="none"/></svg>`;
+const ICO_BOOT = `<svg class="ico-boot" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M3.3 7.6c-.2 2 0 4.1.6 5.6.5 1.2 1.5 1.9 3 1.9h9.8c1.6 0 2.6-.6 2.6-1.8 0-1-.7-1.6-2.1-1.9l-4-.9c-.9-.2-1.4-.7-1.8-1.6L10.2 6c-.4-.9-1.1-1.4-2.2-1.4H5.3c-1 0-1.9.9-2 3z" fill="#0B1F3A"/><rect x="3.5" y="16.2" width="16.3" height="1.7" rx=".85" fill="#0B1F3A"/></svg>`;
 
 function newEdit(){
   return {orig:null, match:{round:"", comp:(compsPresent()[0]||"الدوري"), home:"", away:"",
@@ -4688,24 +4698,29 @@ function renderMatches(){
   });
 
   /* v15: FotMob-style split timeline — home goals on the right, away on the left, minute badge on the centre line */
-  function goalsTimeline(m,gs){
+  function goalsTimeline(m,gs,mc){
+    mc = mc || [];
     const subs=(typeof matchSubs==="function")?matchSubs(m):[];
-    if(!gs.length && !subs.length) return "";
+    if(!gs.length && !subs.length && !mc.length) return "";
+    const ORD={g:0,c:1,s:2};
     const ev=[...gs.map(g=>({t:"g",m:+g.m||0,x:+g.x||0,g})),
-              ...subs.map(sb=>({t:"s",m:absMinute(sb.h,sb.m),x:0,sb,half:+sb.h||1}))]
-      .sort((a,b)=>(a.m-b.m)||(a.x-b.x)||(a.t==="g"?-1:1));
+              ...subs.map(sb=>({t:"s",m:absMinute(sb.h,sb.m),x:0,sb,half:+sb.h||1})),
+              ...mc.map(c=>({t:"c",m:+c.m||0,x:0,c}))]
+      .sort((a,b)=>(a.m-b.m)||(a.x-b.x)||(ORD[a.t]-ORD[b.t]));
     let h=0,a=0; const rows=[]; let htDone=false;
     ev.forEach(e=>{
-      const club = e.t==="g" ? e.g.sc : e.sb.club;
+      const club = e.t==="g" ? e.g.sc : e.t==="c" ? e.c.club : e.sb.club;
       const isH = club===m.home;
-      const afterHT = e.t==="g" ? (e.m>45 && !(e.m===45 && e.x)) : (e.half>=2);
+      const afterHT = e.t==="g" ? (e.m>45 && !(e.m===45 && e.x))
+                    : e.t==="c" ? (e.m>45)
+                    : (e.half>=2);
       if(!htDone && afterHT){ htDone=true; rows.push(`<div class="tl-mark"><span>الشوط الأول <b dir="ltr">${h} - ${a}</b></span></div>`); }
       if(e.t==="s"){
         const sb=e.sb;
         const sbody=`<div class="tl-ev sub${isH?" h":" a"}">
           <div class="tl-card">
-            ${sb.in?`<div class="tl-sub-in"><i></i>${esc(sb.in)}</div>`:""}
             ${sb.out?`<div class="tl-sub-out"><i></i>${esc(sb.out)}</div>`:""}
+            ${sb.in?`<div class="tl-sub-in"><i></i>${esc(sb.in)}</div>`:""}
           </div>
         </div>`;
         rows.push(`<div class="tl-row sub${isH?" home":" away"}">
@@ -4715,13 +4730,27 @@ function renderMatches(){
         </div>`);
         return;
       }
+      if(e.t==="c"){
+        const c=e.c, red=isRed(c.type);
+        const cbody=`<div class="tl-ev card${isH?" h":" a"}">
+          <div class="tl-card">
+            <div class="tl-name"><i class="cardpill ${red?"r":"y"}"></i>${esc(c.p)}</div>
+            <div class="tl-sub">${red?"طرد":"إنذار"}</div>
+          </div></div>`;
+        rows.push(`<div class="tl-row card${isH?" home":" away"}">
+          <div class="tl-side r">${isH?cbody:""}</div>
+          <div class="tl-min card"><span>${e.m}'</span></div>
+          <div class="tl-side l">${isH?"":cbody}</div>
+        </div>`);
+        return;
+      }
       const g=e.g;
       if(isH) h++; else a++;
       const og = g.bp==="هدف عكسي";
       const body=`<div class="tl-ev${isH?" h":" a"}">
           <div class="tl-card">
-            <div class="tl-name">${esc(g.p)}${og?`<i class="tl-og">هدف عكسي</i>`:""}</div>
-            ${g.a?`<div class="tl-sub">صناعة: ${esc(g.a)}</div>`:""}
+            <div class="tl-name">${ICO_BALL}${esc(g.p)}${og?`<i class="tl-og">هدف عكسي</i>`:""}</div>
+            ${g.a?`<div class="tl-assist">${ICO_BOOT}${esc(g.a)}</div>`:""}
             ${g.det?`<div class="tl-det">${esc(g.det)}</div>`:""}
           </div>
           <div class="tl-score" dir="ltr">${isH?`<b>${h}</b> - ${a}`:`${h} - <b>${a}</b>`}</div>
@@ -4752,13 +4781,12 @@ function renderMatches(){
   function detailsBlock(m, gs, mc, soon){
     if(soon) return "";
     const xi = matchPitchHTML(m);
-    const tl = goalsTimeline(m, gs);
-    const cl = cardsList(mc);
-    if(!xi && !tl && !cl) return "";
+    const tl = goalsTimeline(m, gs, mc);   /* الإنذارات مدمجة في الشريط الزمني */
+    if(!xi && !tl) return "";
     const n = gs.length + (typeof matchSubs==="function" ? matchSubs(m).length : 0) + mc.length;
     return `<button type="button" class="mtog" aria-expanded="false">
         <span>التفاصيل${n?` <em>${n}</em>`:""}</span><i class="chev"></i></button>
-      <div class="mdet" hidden>${xi}${tl}${cl}</div>`;
+      <div class="mdet" hidden>${xi}${tl}</div>`;
   }
 
   const matchCards = list.map(m=>{
