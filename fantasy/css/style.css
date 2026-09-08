@@ -350,7 +350,8 @@ table.tbl{width:100%;border-collapse:collapse;font-size:.88rem;}
   padding:12px 8px;display:flex;gap:6px;justify-content:center;
 }
 .bench-slot{display:flex;flex-direction:column;align-items:center;gap:4px;flex:1;max-width:110px;}
-.bench-pos{font-size:.68rem;font-weight:800;color:var(--text2);}
+.bench-pos{font-size:.68rem;font-weight:800;color:var(--text2);white-space:nowrap;}
+.bench-hint{margin:6px 8px 0;color:rgba(255,255,255,.85);text-align:center;line-height:1.7;}
 .bench-strip .pslot{width:92px;}
 
 /* ---------- قائمة اللاعبين ---------- */

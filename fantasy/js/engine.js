@@ -577,6 +577,8 @@ const TEAM = {
       // تشكيلة ناقصة أو غير صالحة بعد إزالة التكرار: نعيد بناءها تلقائياً من القائمة
       const a=this.autoXI(squad, st); xi=a.xi; bench=a.bench;
     }
+    // الحارس البديل أول الدكة دائماً؛ ترتيب البدلاء الآخرين كما اختاره المشترك
+    bench=[...bench.filter(p=>(DB.player(p)||{}).pos==='G'), ...bench.filter(p=>(DB.player(p)||{}).pos!=='G')];
     team.xi=xi; team.bench=bench;
     if(!xi.includes(team.cap)) team.cap=[...xi].sort((a,b)=>DB.player(b).price-DB.player(a).price)[0]||null;
     if(!xi.includes(team.vice) || team.vice===team.cap) team.vice=[...xi].filter(p=>p!==team.cap).sort((a,b)=>DB.player(b).price-DB.player(a).price)[0]||null;

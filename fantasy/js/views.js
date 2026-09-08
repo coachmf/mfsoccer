@@ -271,11 +271,12 @@ const VIEWS = {
             <div class="zain-frame">
             ${this.pitchHTML(team, {mode:'team', locked})}
             <div class="bench-strip">
-              ${team.bench.map(pid=>{
-                const p=DB.player(pid);
-                return `<div class="bench-slot"><div class="bench-pos">${p.pos==='G'?'حارس':POS_AR[p.pos]}</div>${this.slotHTML(pid, team, {bench:true, locked})}</div>`;
-              }).join('')}
+              ${(()=>{ let k=0; return team.bench.map(pid=>{
+                const p=DB.player(pid); const lbl = p.pos==='G' ? 'حارس' : `بديل ${++k} · ${POS_AR[p.pos]}`;
+                return `<div class="bench-slot"><div class="bench-pos">${lbl}</div>${this.slotHTML(pid, team, {bench:true, locked})}</div>`;
+              }).join(''); })()}
             </div>
+            ${locked? '' : '<div class="tiny bench-hint">التبديل التلقائي يدخل البدلاء بترتيبهم 1 ثم 2 ثم 3 عند غياب أساسي. لتغيير الترتيب: اضغط بديلاً ثم «تبديل» ثم بديلاً آخر.</div>'}
             </div>`
           : this.teamListHTML(team)}
 
@@ -393,7 +394,8 @@ const VIEWS = {
     const a=DB.player(selPid), b=DB.player(otherPid);
     if(selPid===otherPid) return false;
     const selInXI=team.xi.includes(selPid), otherInXI=team.xi.includes(otherPid);
-    if(selInXI===otherInXI) return false; // التبديل فقط بين التشكيلة والدكة (اثنان من الدكة كانا يكرّران اللاعب)
+    if(selInXI && otherInXI) return false;                       // داخل التشكيلة لا معنى للتبديل
+    if(!selInXI && !otherInXI) return a.pos!=='G' && b.pos!=='G'; // بديلان: تغيير أولوية الدخول (الحارس البديل ثابت)
     if((a.pos==='G')!==(b.pos==='G')) return false;
     const xi=[...team.xi];
     const i=xi.indexOf(selInXI?selPid:otherPid);
@@ -407,6 +409,13 @@ const VIEWS = {
       if(this.canSwapWith(this.ui.sel, pid, team)){
         const selPid=this.ui.sel;
         const selInXI=team.xi.includes(selPid);
+        if(!selInXI && !team.xi.includes(pid)){                  // إعادة ترتيب الدكة: تبادل الأولوية
+          const i=team.bench.indexOf(selPid), j=team.bench.indexOf(pid);
+          if(i>=0 && j>=0){ team.bench[i]=pid; team.bench[j]=selPid; }
+          this.ui.sel=null; this.ui.subMode=false;
+          DB.save(); UI.toast('تغيّر ترتيب الدكة'); APP.render();
+          return;
+        }
         const xiPid = selInXI? selPid: pid, bnPid = selInXI? pid: selPid;
         const xi=team.xi.indexOf(xiPid), bn=team.bench.indexOf(bnPid);
         if(xi<0 || bn<0){ this.ui.sel=null; this.ui.subMode=false; TEAM.normalize(team); DB.save(); APP.render(); return; }
