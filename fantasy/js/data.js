@@ -211,6 +211,7 @@ const SEED_RULES = {
   maxSavedTransfers: 4,
   transferCost: 4,
   freeChanges: true,   /* تغييرات حرة بلا خصم حتى موعد الإغلاق (دوري ودّي) */
+  scoringFromGW: 4,    /* أول جولة تُحتسب فيها النقاط (اللعبة فُتحت للجمهور في الجولة 4) — لا احتساب لما قبلها */
   chips: {
     wildcard:  { label:'Wildcard',       desc:'تغييرات غير محدودة بدون خصم نقاط', uses:2, enabled:true },
     benchboost:{ label:'Bench Boost',     desc:'نقاط البدلاء الأربعة تُحتسب لك',   uses:1, enabled:true },

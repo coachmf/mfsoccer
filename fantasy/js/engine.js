@@ -63,7 +63,7 @@ const DB = {
       }
     }
     /* سياسة التغييرات الحرة من الكود دائماً (تسري فوراً بلا إعادة نشر) */
-    if(st.rules && typeof SEED_RULES!=='undefined') st.rules.freeChanges = SEED_RULES.freeChanges;
+    if(st.rules && typeof SEED_RULES!=='undefined'){ st.rules.freeChanges = SEED_RULES.freeChanges; st.rules.scoringFromGW = SEED_RULES.scoringFromGW; }
     if(game.scoring) st.scoring = game.scoring;
     if(game.clubs)   st.clubs   = game.clubs;
     if(game.news)    st.news    = game.news;

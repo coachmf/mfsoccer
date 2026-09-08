@@ -351,6 +351,11 @@ table.tbl{width:100%;border-collapse:collapse;font-size:.88rem;}
 }
 .bench-slot{display:flex;flex-direction:column;align-items:center;gap:4px;flex:1;max-width:110px;}
 .bench-pos{font-size:.68rem;font-weight:800;color:var(--text2);white-space:nowrap;}
+/* زر عرض التشكيلة في جداول الدوريات */
+.btn-view{display:inline-flex;align-items:center;gap:4px;padding:5px 12px;border-radius:999px;border:1px solid color-mix(in srgb,var(--accent) 45%,transparent);
+  background:color-mix(in srgb,var(--accent) 8%,transparent);color:var(--accent);font-size:.7rem;font-weight:800;white-space:nowrap;transition:.15s;}
+.btn-view::after{content:'›';font-size:.9rem;line-height:1;}
+tr:hover .btn-view{background:var(--accent);color:#fff;}
 .bench-hint{margin:6px 8px 0;color:rgba(255,255,255,.85);text-align:center;line-height:1.7;}
 .bench-strip .pslot{width:92px;}
 

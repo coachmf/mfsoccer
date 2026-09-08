@@ -130,7 +130,10 @@ const VIEWS = {
     const liveNow=LIVE.running();
     const hasSquad=team.squad.length>0;
 
-    const gwBlock = lastFin? `
+    const fromGW = st.rules.scoringFromGW||1;
+    const gwBlock = (lastFin && lastFin.n < fromGW) ? `
+      <div class="hh-gwtitle">الاحتساب يبدأ من الجولة ${fromGW}</div>
+      <div class="tiny" style="color:rgba(255,255,255,.8);text-align:center">الجولات السابقة لا تُحتسب لأحد — أول نقاط بعد الجولة ${fromGW}.</div>` : lastFin? `
       <div class="hh-gwtitle">الجولة ${lastFin.n}</div>
       <div class="hh-stats">
         <div><b>${lastFin.avg||'—'}</b><span>المتوسط</span></div>
@@ -902,15 +905,16 @@ const VIEWS = {
         </div>`:''}
       </div>
       <div class="scroll-x" style="margin-top:12px"><table class="tbl">
-        <tr><th>#</th><th></th><th>المدير</th><th>الفريق</th>${isH2H?'<th>ف/ت/خ</th><th>ن. المواجهات</th>':''}${liveCol?'<th><span class="pill red">مباشر</span></th>':''}<th>آخر جولة</th><th>المجموع</th></tr>
+        <tr><th>#</th><th></th><th>المدير</th><th>الفريق</th>${isH2H?'<th>ف/ت/خ</th><th>ن. المواجهات</th>':''}${liveCol?'<th><span class="pill red">مباشر</span></th>':''}<th>آخر جولة</th><th>المجموع</th><th></th></tr>
         ${rows.map((r,i)=>`<tr style="cursor:pointer;${r.id===m.id?'background:color-mix(in srgb,var(--accent) 10%,transparent)':''}" onclick="VIEWS.openManager('${r.id}')" title="عرض التشكيلة">
           <td class="num" style="font-weight:800">${(r.rank||i+1).toLocaleString('ar')}</td>
           <td style="width:34px;white-space:nowrap">${this.moveIcon(r.move)}</td>
-          <td>${esc(r.name)} ${r.id===m.id?'<span class="pill green">أنت</span>':'<span class="tiny" style="color:var(--text3)">عرض</span>'}</td>
+          <td>${esc(r.name)} ${r.id===m.id?'<span class="pill green">أنت</span>':''}</td>
           <td class="muted">${esc(r.teamName)}</td>
           ${isH2H?`<td class="tiny">${r.w||0}/${r.d||0}/${r.l||0}</td><td class="num">${r.h2hPts||0}</td>`:''}
           ${liveCol?`<td class="num" style="color:var(--red)">${LIVEGW.liveOf(r.id)??'—'}</td>`:''}
-          <td>${r.last}</td><td class="num" style="color:var(--accent)">${r.total}</td></tr>`).join('')}
+          <td>${r.last}</td><td class="num" style="color:var(--accent)">${r.total}</td>
+          <td style="text-align:left"><span class="btn-view">${r.id===m.id?'فريقي':'التشكيلة'}</span></td></tr>`).join('')}
       </table></div>
     </div>`;
   },

@@ -124,12 +124,13 @@ const ADMIN = {
         <td class="num">${n||'<span class="pill">بلا جدول</span>'}</td>
         <td><input type="datetime-local" value="${toLocal(g.deadline)}" style="width:200px" onchange="ADMIN.setDeadline(${g.n},this.value)" ${g.status==='finished'?'disabled':''}>
             ${g.deadlineManual? `<span class="pill gold" title="موعد يدوي">يدوي</span> <button class="btn sm sec" onclick="ADMIN.autoDeadline(${g.n})">تلقائي</button>` : ''}</td>
-        <td>${g.avg??'—'}</td><td>${g.status==='finished'? `<button class="btn sm sec" onclick="ADMIN.refinalizeConfirm(${g.n})">إعادة احتساب</button>`:''}</td></tr>`; }).join('')}</table></div>
+        <td>${g.avg??'—'}</td><td>${g.n < (st.rules.scoringFromGW||1) ? '<span class="tiny">قبل بداية الاحتساب</span>' : (g.status==='finished'? `<button class="btn sm sec" onclick="ADMIN.refinalizeConfirm(${g.n})">إعادة احتساب</button>`:'')}</td></tr>`; }).join('')}</table></div>
     </div>`;
   },
   /* إعادة احتساب جولة محتسبة (بعد تصحيح نتيجة أو إعادة سحبها): نفس اختيارات كل مشترك، نقاط جديدة */
   async refinalize(gw){
     const st=DB.state;
+    if(gw < (st.rules.scoringFromGW||1)){ UI.closeModal(); UI.toast(`الاحتساب يبدأ من الجولة ${st.rules.scoringFromGW} — الجولة ${gw} لا تُحتسب`, true); return; }
     if(typeof CLOUD==='undefined' || !CLOUD.admin){ UI.toast('سجّل دخول المدير في السحابة أولاً', true); return; }
     UI.closeModal();
     UI.toast(`جارٍ إعادة احتساب الجولة ${gw} للمشتركين…`);
@@ -162,6 +163,7 @@ const ADMIN = {
   async doFinalize(){
     const st=DB.state, gw=st.currentGW;
     UI.closeModal();
+    if(gw < (st.rules.scoringFromGW||1)){ UI.toast(`الاحتساب يبدأ من الجولة ${st.rules.scoringFromGW} — الجولة ${gw} لا تُحتسب`, true); return; }
     const fxs=st.fixtures.filter(f=>f.gw===gw);
     if(!fxs.length){ UI.toast(`الجولة ${gw} بلا جدول بعد — اسحب الجدول من mfsoccer أولاً`, true); return; }
     if(fxs.some(f=>f.status!=='F')){ UI.toast('بقيت مباريات بلا نتيجة — اسحب الجولة من mfsoccer أولاً', true); return; }
