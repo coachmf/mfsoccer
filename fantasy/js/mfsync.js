@@ -21,6 +21,17 @@ const MFSYNC = {
     return v;
   },
 
+  /* هل لُعبت المباراة فعلاً؟ الموقع يخزّن 0-0 كقيمة افتراضية للمباريات القادمة،
+     فلا تُعدّ نتيجةً إلا إذا مضى موعد الانطلاق (أو سُجّلت أهداف). بلا موعد: لا. */
+  isPlayed(m){
+    const has = m.hg!=null && m.ag!=null && m.hg!=='' && m.ag!=='';
+    if(!has) return false;
+    if((+m.hg||0)+(+m.ag||0) > 0) return true;
+    if(!m.date) return false;
+    const ko = new Date(m.date+'T'+(m.time||'23:59'));
+    return !isNaN(ko) && ko.getTime() <= Date.now();
+  },
+
   async fetchSeason(){
     // الأفضل: نفس اتصال Firestore الذي تستعمله اللعبة (قراءة واحدة، بلا مفتاح REST الذي يُحدّ بـ429)
     if(typeof CLOUD!=='undefined' && CLOUD.ready && CLOUD.db){
@@ -164,7 +175,7 @@ const MFSYNC = {
     try{ data=await this.fetchSeason(); }catch(e){ return cached; }
     const rep=this.syncFixtures(data, DB.state, {removeMissing:true});
     // النتائج والتشكيلات والتبديلات والأهداف: من الموقع مباشرة على كل جهاز — لا تنتظر المدير
-    const played=new Set((data.matches||[]).filter(m=>(!m.comp||m.comp==='الدوري') && m.hg!=null && m.hg!=='' && m.ag!=null && m.ag!=='').map(m=>+m.round));
+    const played=new Set((data.matches||[]).filter(m=>(!m.comp||m.comp==='الدوري') && this.isPlayed(m)).map(m=>+m.round));
     let ev=0;
     for(const gw of [...played].sort((a,b)=>a-b)){ const r=await this.importRound(gw,{quiet:true,data}); if(r) ev+=r.goals+r.subs+r.xi; }
     rep.events=ev; rep.rounds=played.size;
@@ -224,7 +235,7 @@ const MFSYNC = {
 
       f.h=h; f.a=a; f.venue=DB.club(h).stadium;
       if(m.date) f.date=m.date+'T'+(m.time||'18:00');
-      const played = m.hg!=null && m.ag!=null && m.hg!=='' && m.ag!=='';
+      const played = this.isPlayed(m);
       if(played){ f.hs=+m.hg; f.as=+m.ag; f.status='F'; f.est=false; }
       else { f.hs=null; f.as=null; f.status='U'; f.goals=[]; f.cards=[]; f.pens=[];
              f.lineups=null; f.subs=[]; report.matches++; continue; }
