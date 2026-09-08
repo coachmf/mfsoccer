@@ -17,7 +17,7 @@ const FEEDBACK = {
     const doc={ type, text, username:(m&&m.username)||'', teamName:(m&&m.teamName)||'',
       uid:(typeof CLOUD!=='undefined' && CLOUD.user)? CLOUD.user.uid : '',
       gw:DB.state.currentGW, ver:appVersion(), ua:navigator.userAgent.slice(0,120),
-      created:new Date().toISOString(), status:'new' };
+      created:new Date().toISOString(), status:'new', replies:[], updated:new Date().toISOString(), userUnread:0 };
     if(typeof CLOUD!=='undefined' && CLOUD.ready){
       const r=await CLOUD.race(CLOUD.root().collection('feedback').add(doc), 8000);
       if(r.ok) return {ok:true};
@@ -46,6 +46,244 @@ const FEEDBACK = {
   async setStatus(id, status){
     try{ await CLOUD.root().collection('feedback').doc(id).set({status}, {merge:true}); return true; }catch(e){ return false; }
   },
+
+  /* ---------- الدعم الفني: محادثة على كل رسالة ----------
+     الردود تُخزَّن داخل مستند الرسالة نفسه: replies:[{by:'admin'|'user', name, text, at}].
+     المشترك يقرأ رسائله وحده (uid) ويضيف ردّاً واحداً في كل كتابة؛ المدير يرد ويغيّر الحالة. */
+  col(){ return CLOUD.root().collection('feedback'); },
+
+  /* رسائل المشترك الحالي (بلا orderBy حتى لا نحتاج فهرساً مركّباً) */
+  async mine(){
+    if(typeof CLOUD==='undefined' || !CLOUD.ready || !CLOUD.user) return null;
+    try{
+      const q=await this.col().where('uid','==',CLOUD.user.uid).limit(50).get();
+      const out=[]; q.forEach(d=>out.push({id:d.id, ...d.data()}));
+      out.sort((a,b)=>String(b.updated||b.created).localeCompare(String(a.updated||a.created)));
+      return out;
+    }catch(e){ return null; }
+  },
+
+  /* رد المدير: يُضاف للمحادثة ويُعلَّم للمشترك كغير مقروء */
+  async adminReply(id, text){
+    text=String(text||'').trim(); if(text.length<1) return {ok:false, err:'اكتب الرد أولاً'};
+    if(text.length>1500) return {ok:false, err:'الرد طويل — 1500 حرف كحد أقصى'};
+    if(typeof CLOUD==='undefined' || !CLOUD.admin) return {ok:false, err:'الرد للمدير فقط'};
+    try{
+      const ref=this.col().doc(id); const s=await ref.get(); if(!s.exists) return {ok:false, err:'الرسالة غير موجودة'};
+      const v=s.data(); const replies=(v.replies||[]).slice();
+      const m=DB.me();
+      replies.push({by:'admin', name:'الدعم الفني'+(m&&m.username?' · '+m.username:''), text, at:new Date().toISOString()});
+      const patch={replies, updated:new Date().toISOString(), userUnread:(+v.userUnread||0)+1};
+      if((v.status||'new')==='new') patch.status='seen';
+      const r=await CLOUD.race(ref.set(patch,{merge:true}), 8000);
+      return r.ok? {ok:true} : {ok:false, err:'تعذّر حفظ الرد'};
+    }catch(e){ return {ok:false, err:CLOUD.errAr(e)}; }
+  },
+
+  /* رد المشترك على محادثته: يرجع الحالة «جديد» فيتنبّه فريق العمل */
+  async userReply(id, text){
+    text=String(text||'').trim(); if(text.length<1) return {ok:false, err:'اكتب ردك أولاً'};
+    if(text.length>1500) return {ok:false, err:'الرد طويل — 1500 حرف كحد أقصى'};
+    if(typeof CLOUD==='undefined' || !CLOUD.user) return {ok:false, err:'سجّل الدخول أولاً'};
+    try{
+      const ref=this.col().doc(id); const s=await ref.get(); if(!s.exists) return {ok:false, err:'الرسالة غير موجودة'};
+      const v=s.data(); const replies=(v.replies||[]).slice();
+      const m=DB.me();
+      replies.push({by:'user', name:(m&&m.username)||'مشترك', text, at:new Date().toISOString()});
+      const r=await CLOUD.race(ref.update({replies, updated:new Date().toISOString(), status:'new'}), 8000);
+      if(!r.ok) return {ok:false, err: r.timeout? 'الاتصال بطيء' : 'تعذّر الإرسال — قد تكون قواعد الخادم لم تُحدَّث بعد'};
+      return {ok:true};
+    }catch(e){ return {ok:false, err:CLOUD.errAr(e)}; }
+  },
+
+  /* المشترك فتح المحادثة: صفّر غير المقروء */
+  async markRead(id){
+    try{ await this.col().doc(id).update({userUnread:0}); }catch(e){}
+  },
+
+  /* تنبيه المشترك بردود الدعم (يُستدعى عند التحميل وكل 5 دقائق) */
+  unreadMine: 0,
+  async pollMine(){
+    if(typeof CLOUD==='undefined' || !CLOUD.ready || !CLOUD.user) return;
+    const list=await this.mine(); if(!list) return;
+    const n=list.reduce((s,f)=>s+(+f.userUnread||0),0);
+    const changed=n!==this.unreadMine; this.unreadMine=n;
+    const m=DB.me();
+    if(n>0 && m){
+      const latest=list.find(f=>(+f.userUnread||0)>0);
+      const key='fbr_'+latest.id+'_'+(latest.updated||'');
+      DB.state.notifications[m.id]=DB.state.notifications[m.id]||[];
+      if(!DB.state.notifications[m.id].some(x=>x.type===key)){
+        NOTIF.push(m.id, key, 'رد عليك الدعم الفني — افتح «الدعم والاقتراحات»');
+        try{ localStorage.setItem(DB.KEY, JSON.stringify(DB.state)); }catch(e){}
+        if(typeof APP!=='undefined') APP.renderTopbar();
+      }
+    }
+    if(changed && typeof APP!=='undefined' && APP.route==='about') APP.render();
+  },
+
+  /* عرض محادثة واحدة (مشترك أو مدير) */
+  thread(f, who){
+    const T=Object.fromEntries(this.TYPES);
+    const bubble=(by,name,text,at)=>`<div class="fb-msg ${by==='admin'?'a':'u'}"><div class="fb-who">${esc(name||(by==='admin'?'الدعم الفني':'أنت'))} · ${UI.fmtDateShort(at)}</div><div class="fb-txt">${esc(text)}</div></div>`;
+    const msgs=[bubble('user', who==='admin'? (f.username||'ضيف') : 'أنت', f.text, f.created)]
+      .concat((f.replies||[]).map(r=>bubble(r.by, who==='admin'&&r.by==='user'? (r.name||f.username) : (r.by==='user'?'أنت':r.name), r.text, r.at)));
+    const st={new:'جديد',seen:'مقروء',done:'منفّذ',rejected:'مرفوض'}[f.status||'new']||f.status;
+    const box=who==='admin'
+      ? `<div class="fb-reply"><textarea id="fbr_${f.id}" rows="2" maxlength="1500" placeholder="اكتب ردّك للمشترك…"></textarea><button class="btn sm" onclick="FEEDBACK.doAdminReply('${f.id}',this)">رد</button></div>`
+      : (f.status==='done'||f.status==='rejected'
+          ? '<div class="tiny" style="margin-top:6px">أُغلقت هذه المحادثة. أرسل رسالة جديدة إن احتجت.</div>'
+          : `<div class="fb-reply"><textarea id="fbr_${f.id}" rows="2" maxlength="1500" placeholder="اكتب ردّك…"></textarea><button class="btn sm" onclick="FEEDBACK.doUserReply('${f.id}',this)">إرسال</button></div>`);
+    return `<div class="fb-thread" id="fbt_${f.id}">
+      <div class="row spread" style="margin-bottom:6px"><span class="pill ${f.type==='bug'||f.type==='data'?'red':'blue'}">${T[f.type]||f.type}</span><span class="tiny">${st}${(+f.userUnread||0)>0&&who!=='admin'?` · <b style="color:var(--red)">رد جديد</b>`:''}</span></div>
+      <div class="fb-msgs">${msgs.join('')}</div>${box}</div>`;
+  },
+  async doAdminReply(id, btn){
+    const ta=document.getElementById('fbr_'+id); const text=ta? ta.value : '';
+    if(btn){ btn.disabled=true; btn.textContent='جارٍ الإرسال…'; }
+    const r=await this.adminReply(id, text);
+    if(btn){ btn.disabled=false; btn.textContent='رد'; }
+    if(r.ok){ UI.toast('أُرسل ردّك — يصل المشترك كتنبيه عند فتحه اللعبة'); APP.render(); }
+    else UI.toast(r.err, true);
+  },
+  async doUserReply(id, btn){
+    const ta=document.getElementById('fbr_'+id); const text=ta? ta.value : '';
+    if(btn){ btn.disabled=true; btn.textContent='جارٍ الإرسال…'; }
+    const r=await this.userReply(id, text);
+    if(btn){ btn.disabled=false; btn.textContent='إرسال'; }
+    if(r.ok){ UI.toast('أُرسل ردّك'); APP.render(); }
+    else UI.toast(r.err, true);
+  },
+  /* قائمة محادثات المشترك في صفحة الدعم */
+  async renderMine(elId){
+    const el=document.getElementById(elId); if(!el) return;
+    if(typeof CLOUD==='undefined' || !CLOUD.user){ el.innerHTML='<div class="muted">سجّل الدخول لترى محادثاتك مع الدعم.</div>'; return; }
+    const list=await this.mine();
+    if(list===null){ el.innerHTML='<div class="muted">تعذّر جلب محادثاتك الآن.</div>'; return; }
+    if(!list.length){ el.innerHTML='<div class="muted">لا رسائل بعد — أرسل أول رسالة من الصندوق أعلاه ويصلك الرد هنا.</div>'; return; }
+    el.innerHTML=list.map(f=>this.thread(f,'user')).join('');
+    list.filter(f=>(+f.userUnread||0)>0).forEach(f=>this.markRead(f.id));
+    if(this.unreadMine){ this.unreadMine=0; }
+  },
+
+  /* ---------- الدعم الفني: محادثة على كل رسالة ----------
+     الردود تُخزَّن داخل مستند الرسالة نفسه: replies:[{by:'admin'|'user', name, text, at}].
+     المشترك يقرأ رسائله وحده (uid) ويضيف ردّاً واحداً في كل كتابة؛ المدير يرد ويغيّر الحالة. */
+  col(){ return CLOUD.root().collection('feedback'); },
+
+  /* رسائل المشترك الحالي (بلا orderBy حتى لا نحتاج فهرساً مركّباً) */
+  async mine(){
+    if(typeof CLOUD==='undefined' || !CLOUD.ready || !CLOUD.user) return null;
+    try{
+      const q=await this.col().where('uid','==',CLOUD.user.uid).limit(50).get();
+      const out=[]; q.forEach(d=>out.push({id:d.id, ...d.data()}));
+      out.sort((a,b)=>String(b.updated||b.created).localeCompare(String(a.updated||a.created)));
+      return out;
+    }catch(e){ return null; }
+  },
+
+  /* رد المدير: يُضاف للمحادثة ويُعلَّم للمشترك كغير مقروء */
+  async adminReply(id, text){
+    text=String(text||'').trim(); if(text.length<1) return {ok:false, err:'اكتب الرد أولاً'};
+    if(text.length>1500) return {ok:false, err:'الرد طويل — 1500 حرف كحد أقصى'};
+    if(typeof CLOUD==='undefined' || !CLOUD.admin) return {ok:false, err:'الرد للمدير فقط'};
+    try{
+      const ref=this.col().doc(id); const s=await ref.get(); if(!s.exists) return {ok:false, err:'الرسالة غير موجودة'};
+      const v=s.data(); const replies=(v.replies||[]).slice();
+      const m=DB.me();
+      replies.push({by:'admin', name:'الدعم الفني'+(m&&m.username?' · '+m.username:''), text, at:new Date().toISOString()});
+      const patch={replies, updated:new Date().toISOString(), userUnread:(+v.userUnread||0)+1};
+      if((v.status||'new')==='new') patch.status='seen';
+      const r=await CLOUD.race(ref.set(patch,{merge:true}), 8000);
+      return r.ok? {ok:true} : {ok:false, err:'تعذّر حفظ الرد'};
+    }catch(e){ return {ok:false, err:CLOUD.errAr(e)}; }
+  },
+
+  /* رد المشترك على محادثته: يرجع الحالة «جديد» فيتنبّه فريق العمل */
+  async userReply(id, text){
+    text=String(text||'').trim(); if(text.length<1) return {ok:false, err:'اكتب ردك أولاً'};
+    if(text.length>1500) return {ok:false, err:'الرد طويل — 1500 حرف كحد أقصى'};
+    if(typeof CLOUD==='undefined' || !CLOUD.user) return {ok:false, err:'سجّل الدخول أولاً'};
+    try{
+      const ref=this.col().doc(id); const s=await ref.get(); if(!s.exists) return {ok:false, err:'الرسالة غير موجودة'};
+      const v=s.data(); const replies=(v.replies||[]).slice();
+      const m=DB.me();
+      replies.push({by:'user', name:(m&&m.username)||'مشترك', text, at:new Date().toISOString()});
+      const r=await CLOUD.race(ref.update({replies, updated:new Date().toISOString(), status:'new'}), 8000);
+      if(!r.ok) return {ok:false, err: r.timeout? 'الاتصال بطيء' : 'تعذّر الإرسال — قد تكون قواعد الخادم لم تُحدَّث بعد'};
+      return {ok:true};
+    }catch(e){ return {ok:false, err:CLOUD.errAr(e)}; }
+  },
+
+  /* المشترك فتح المحادثة: صفّر غير المقروء */
+  async markRead(id){
+    try{ await this.col().doc(id).update({userUnread:0}); }catch(e){}
+  },
+
+  /* تنبيه المشترك بردود الدعم (يُستدعى عند التحميل وكل 5 دقائق) */
+  unreadMine: 0,
+  async pollMine(){
+    if(typeof CLOUD==='undefined' || !CLOUD.ready || !CLOUD.user) return;
+    const list=await this.mine(); if(!list) return;
+    const n=list.reduce((s,f)=>s+(+f.userUnread||0),0);
+    const changed=n!==this.unreadMine; this.unreadMine=n;
+    const m=DB.me();
+    if(n>0 && m){
+      const latest=list.find(f=>(+f.userUnread||0)>0);
+      const key='fbr_'+latest.id+'_'+(latest.updated||'');
+      DB.state.notifications[m.id]=DB.state.notifications[m.id]||[];
+      if(!DB.state.notifications[m.id].some(x=>x.type===key)){
+        NOTIF.push(m.id, key, 'رد عليك الدعم الفني — افتح «الدعم والاقتراحات»');
+        try{ localStorage.setItem(DB.KEY, JSON.stringify(DB.state)); }catch(e){}
+        if(typeof APP!=='undefined') APP.renderTopbar();
+      }
+    }
+    if(changed && typeof APP!=='undefined' && APP.route==='about') APP.render();
+  },
+
+  /* عرض محادثة واحدة (مشترك أو مدير) */
+  thread(f, who){
+    const T=Object.fromEntries(this.TYPES);
+    const bubble=(by,name,text,at)=>`<div class="fb-msg ${by==='admin'?'a':'u'}"><div class="fb-who">${esc(name||(by==='admin'?'الدعم الفني':'أنت'))} · ${UI.fmtDateShort(at)}</div><div class="fb-txt">${esc(text)}</div></div>`;
+    const msgs=[bubble('user', who==='admin'? (f.username||'ضيف') : 'أنت', f.text, f.created)]
+      .concat((f.replies||[]).map(r=>bubble(r.by, who==='admin'&&r.by==='user'? (r.name||f.username) : (r.by==='user'?'أنت':r.name), r.text, r.at)));
+    const st={new:'جديد',seen:'مقروء',done:'منفّذ',rejected:'مرفوض'}[f.status||'new']||f.status;
+    const box=who==='admin'
+      ? `<div class="fb-reply"><textarea id="fbr_${f.id}" rows="2" maxlength="1500" placeholder="اكتب ردّك للمشترك…"></textarea><button class="btn sm" onclick="FEEDBACK.doAdminReply('${f.id}',this)">رد</button></div>`
+      : (f.status==='done'||f.status==='rejected'
+          ? '<div class="tiny" style="margin-top:6px">أُغلقت هذه المحادثة. أرسل رسالة جديدة إن احتجت.</div>'
+          : `<div class="fb-reply"><textarea id="fbr_${f.id}" rows="2" maxlength="1500" placeholder="اكتب ردّك…"></textarea><button class="btn sm" onclick="FEEDBACK.doUserReply('${f.id}',this)">إرسال</button></div>`);
+    return `<div class="fb-thread" id="fbt_${f.id}">
+      <div class="row spread" style="margin-bottom:6px"><span class="pill ${f.type==='bug'||f.type==='data'?'red':'blue'}">${T[f.type]||f.type}</span><span class="tiny">${st}${(+f.userUnread||0)>0&&who!=='admin'?` · <b style="color:var(--red)">رد جديد</b>`:''}</span></div>
+      <div class="fb-msgs">${msgs.join('')}</div>${box}</div>`;
+  },
+  async doAdminReply(id, btn){
+    const ta=document.getElementById('fbr_'+id); const text=ta? ta.value : '';
+    if(btn){ btn.disabled=true; btn.textContent='جارٍ الإرسال…'; }
+    const r=await this.adminReply(id, text);
+    if(btn){ btn.disabled=false; btn.textContent='رد'; }
+    if(r.ok){ UI.toast('أُرسل ردّك — يصل المشترك كتنبيه عند فتحه اللعبة'); APP.render(); }
+    else UI.toast(r.err, true);
+  },
+  async doUserReply(id, btn){
+    const ta=document.getElementById('fbr_'+id); const text=ta? ta.value : '';
+    if(btn){ btn.disabled=true; btn.textContent='جارٍ الإرسال…'; }
+    const r=await this.userReply(id, text);
+    if(btn){ btn.disabled=false; btn.textContent='إرسال'; }
+    if(r.ok){ UI.toast('أُرسل ردّك'); APP.render(); }
+    else UI.toast(r.err, true);
+  },
+  /* قائمة محادثات المشترك في صفحة الدعم */
+  async renderMine(elId){
+    const el=document.getElementById(elId); if(!el) return;
+    if(typeof CLOUD==='undefined' || !CLOUD.user){ el.innerHTML='<div class="muted">سجّل الدخول لترى محادثاتك مع الدعم.</div>'; return; }
+    const list=await this.mine();
+    if(list===null){ el.innerHTML='<div class="muted">تعذّر جلب محادثاتك الآن.</div>'; return; }
+    if(!list.length){ el.innerHTML='<div class="muted">لا رسائل بعد — أرسل أول رسالة من الصندوق أعلاه ويصلك الرد هنا.</div>'; return; }
+    el.innerHTML=list.map(f=>this.thread(f,'user')).join('');
+    list.filter(f=>(+f.userUnread||0)>0).forEach(f=>this.markRead(f.id));
+    if(this.unreadMine){ this.unreadMine=0; }
+  },
   async submit(ev){
     const btn=ev&&ev.target; const type=gv('fb_type'), text=gv('fb_text');
     if(btn){ btn.disabled=true; btn.textContent='جارٍ الإرسال…'; }
@@ -53,8 +291,8 @@ const FEEDBACK = {
     if(btn){ btn.disabled=false; btn.textContent='إرسال'; }
     if(r.ok){
       const ta=document.getElementById('fb_text'); if(ta) ta.value='';
-      UI.modal(`<h3>وصل اقتراحك</h3><p class="muted">شكراً — يقرأ المطوّر كل الاقتراحات ويُطبَّق المناسب منها في التحديثات.</p>
-        <button class="btn" style="width:100%" onclick="UI.closeModal()">تمام</button>`);
+      UI.modal(`<h3>وصلت رسالتك</h3><p class="muted">شكراً — يقرأها فريق العمل ويردّ عليك هنا في «محادثاتك مع الدعم»، ويصلك تنبيه في الجرس عند الرد.</p>
+        <button class="btn" style="width:100%" onclick="UI.closeModal();APP.render()">تمام</button>`);
     } else UI.toast(r.err, true);
   },
 };
@@ -151,15 +389,21 @@ Object.assign(VIEWS, {
   about(){
     const m=DB.me();
     FEEDBACK.flush();
-    return `<h2 style="margin-bottom:12px">المطوّر والاقتراحات</h2>
+    const mineId='fbMine'+Date.now();
+    setTimeout(()=>FEEDBACK.renderMine(mineId), 30);
+    return `<h2 style="margin-bottom:12px">الدعم والاقتراحات</h2>
       ${this.devCard(false)}
       <div class="grid g2" style="margin-top:12px">
-        <div class="card"><h3>اقتراحاتك على الفانتسي</h3>
-          <div class="tiny" style="margin-bottom:10px">فكرة، مشكلة، خطأ في اسم لاعب أو نتيجة — اكتبها هنا وتصل <b>لفريق العمل</b> مباشرة، ويُبلَّغ كل أعضاء الفريق بها.
-</div>
-          <div class="field"><label>النوع</label><select id="fb_type">${FEEDBACK.TYPES.map(([v,l])=>`<option value="${v}">${l}</option>`).join('')}</select></div>
-          <div class="field"><label>الرسالة</label><textarea id="fb_text" rows="5" maxlength="1500" placeholder="اكتب اقتراحك أو المشكلة بالتفصيل…" style="width:100%;resize:vertical"></textarea></div>
-          <button class="btn" style="width:100%" onclick="FEEDBACK.submit(event)">إرسال</button>
+        <div>
+          <div class="card" style="margin-bottom:12px"><h3>رسالة جديدة للدعم الفني</h3>
+            <div class="tiny" style="margin-bottom:10px">فكرة، مشكلة، خطأ في اسم لاعب أو نتيجة — اكتبها هنا وتصل <b>لفريق العمل</b> مباشرة، ويصلك الرد في «محادثاتك» أسفل هذه الصفحة مع تنبيه في الجرس.</div>
+            <div class="field"><label>النوع</label><select id="fb_type">${FEEDBACK.TYPES.map(([v,l])=>`<option value="${v}">${l}</option>`).join('')}</select></div>
+            <div class="field"><label>الرسالة</label><textarea id="fb_text" rows="5" maxlength="1500" placeholder="اكتب اقتراحك أو المشكلة بالتفصيل…" style="width:100%;resize:vertical"></textarea></div>
+            <button class="btn" style="width:100%" onclick="FEEDBACK.submit(event)">إرسال</button>
+          </div>
+          <div class="card"><h3>محادثاتك مع الدعم</h3>
+            <div id="${mineId}"><div class="muted">جارٍ التحميل…</div></div>
+          </div>
         </div>
         <div>
           <div class="card" style="margin-bottom:12px"><h3>التواصل مع المطوّر</h3>
@@ -197,6 +441,8 @@ FEEDBACK.poll = async function(){
 };
 setTimeout(()=>FEEDBACK.poll(), 4000);
 setInterval(()=>FEEDBACK.poll(), 5*60000);
+setTimeout(()=>FEEDBACK.pollMine(), 6000);
+setInterval(()=>FEEDBACK.pollMine(), 5*60000);
 
 /* ---------- لوحة الإدارة: قائمة الاقتراحات ---------- */
 if(typeof ADMIN!=='undefined'){
@@ -222,18 +468,20 @@ if(typeof ADMIN!=='undefined'){
         return; }
       if(!list.length){ el.innerHTML='<div class="muted">لا اقتراحات بعد</div>'; return; }
       const T=Object.fromEntries(FEEDBACK.TYPES);
-      el.innerHTML=`<div class="scroll-x"><table class="tbl"><tr><th>التاريخ</th><th>النوع</th><th>من</th><th>الرسالة</th><th>الحالة</th></tr>
-        ${list.map(f=>`<tr style="${f.status==='done'?'opacity:.55':''}">
-          <td class="tiny" style="white-space:nowrap">${UI.fmtDateShort(f.created)}</td>
-          <td><span class="pill ${f.type==='bug'||f.type==='data'?'red':'blue'}">${T[f.type]||f.type}</span></td>
-          <td class="tiny">${esc(f.username||'ضيف')}${f.teamName?`<br>${esc(f.teamName)}`:''}</td>
-          <td style="max-width:420px;white-space:pre-wrap;line-height:1.7">${esc(f.text)}</td>
-          <td><select onchange="FEEDBACK.setStatus('${f.id}',this.value).then(ok=>{UI.toast(ok?'حُدّثت':'تعذّر التحديث',!ok); FEEDBACK.poll();})">
-            ${[['new','جديد'],['seen','مقروء'],['done','منفّذ'],['rejected','مرفوض']].map(([v,l])=>`<option value="${v}" ${f.status===v?'selected':''}>${l}</option>`).join('')}
-          </select></td></tr>`).join('')}</table></div>`;
+      list.sort((a,b)=>String(b.updated||b.created).localeCompare(String(a.updated||a.created)));
+      el.innerHTML=`<div class="fb-admin">${list.map(f=>`<div class="fb-card ${f.status==='done'||f.status==='rejected'?'dim':''} ${(f.status||'new')==='new'?'new':''}">
+          <div class="row spread" style="gap:8px;flex-wrap:wrap">
+            <div><b>${esc(f.username||'ضيف')}</b>${f.teamName?` <span class="tiny">· ${esc(f.teamName)}</span>`:''}${!f.uid?' <span class="tiny">(بلا حساب — لا يمكن الرد عليه)</span>':''}
+              <div class="tiny">${UI.fmtDateShort(f.created)} · ج${f.gw||'—'} · ${esc(f.ver||'')}</div></div>
+            <select onchange="FEEDBACK.setStatus('${f.id}',this.value).then(ok=>{UI.toast(ok?'حُدّثت':'تعذّر التحديث',!ok); FEEDBACK.poll();})">
+              ${[['new','جديد'],['seen','مقروء'],['done','منفّذ'],['rejected','مرفوض']].map(([v,l])=>`<option value="${v}" ${(f.status||'new')===v?'selected':''}>${l}</option>`).join('')}
+            </select>
+          </div>
+          ${f.uid? FEEDBACK.thread(f,'admin') : `<div class="fb-thread"><div class="fb-msgs">${'<div class="fb-msg u"><div class="fb-txt">'+esc(f.text)+'</div></div>'}</div></div>`}
+        </div>`).join('')}</div>`;
     },50);
     return `<div class="card"><h3>اقتراحات المشتركين</h3>
-      <div class="tiny" style="margin-bottom:10px">ما يرسله المشتركون من صفحة «المطوّر والاقتراحات» — مخزّن في fantasy/الموسم/feedback.</div>
+      <div class="tiny" style="margin-bottom:10px">ما يرسله المشتركون من صفحة «الدعم والاقتراحات». اكتب ردّك تحت أي رسالة فيصل المشترك كمحادثة مع تنبيه. «منفّذ» أو «مرفوض» يغلق المحادثة.</div>
       <div id="${id}"><div class="muted">جارٍ التحميل…</div></div></div>`;
   };
 }

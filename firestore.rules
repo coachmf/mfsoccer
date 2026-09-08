@@ -225,15 +225,40 @@ service cloud.firestore {
                       || isFanAdmin();
       }
 
-      // In-game suggestions. Anyone may send one — only the allowed fields,
-      // and the text capped so it can't be abused as storage. Staff read,
-      // triage and clear them; nobody else can read another player's note.
+      // In-game suggestions and support chat. Anyone may send one — only
+      // the allowed fields, and the text capped so it can't be abused as
+      // storage. Staff read, reply and triage. A signed-in sender reads
+      // their own threads, may append exactly one reply of their own at a
+      // time (which reopens the thread as "new"), and may clear their own
+      // unread counter. Nobody else can read another player's note.
+      function fbOwner() {
+        return request.auth != null && resource.data.uid == request.auth.uid;
+      }
+      function fbOldReplies() {
+        return ('replies' in resource.data) ? resource.data.replies : [];
+      }
       match /feedback/{id} {
         allow create: if request.resource.data.keys().hasOnly(
-                           ['type','text','username','teamName','uid','gw','ver','ua','created','status'])
+                           ['type','text','username','teamName','uid','gw','ver','ua','created','status',
+                            'replies','updated','userUnread'])
                       && request.resource.data.text is string
-                      && request.resource.data.text.size() <= 1500;
-        allow read, update, delete: if isFanAdmin();
+                      && request.resource.data.text.size() <= 1500
+                      && (request.resource.data.uid == ''
+                          || (request.auth != null && request.resource.data.uid == request.auth.uid));
+        allow read: if isFanAdmin() || fbOwner();
+        allow update: if isFanAdmin()
+                      || ( fbOwner()
+                           && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['userUnread'])
+                           && request.resource.data.userUnread == 0 )
+                      || ( fbOwner()
+                           && request.resource.data.diff(resource.data).affectedKeys()
+                                .hasOnly(['replies','updated','status'])
+                           && request.resource.data.status == 'new'
+                           && request.resource.data.replies.size() == fbOldReplies().size() + 1
+                           && request.resource.data.replies[fbOldReplies().size()].by == 'user'
+                           && request.resource.data.replies[fbOldReplies().size()].text is string
+                           && request.resource.data.replies[fbOldReplies().size()].text.size() <= 1500 );
+        allow delete: if isFanAdmin();
       }
     }
 
