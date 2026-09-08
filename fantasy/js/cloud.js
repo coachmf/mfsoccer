@@ -277,6 +277,38 @@ const CLOUD = {
     try{ const q=await this.managers().get(); return q.size; }catch(e){ return null; }
   },
 
+  /* ---------- نسبة التملّك ----------
+     تُحسب من فرق المشتركين الفعليين على الخادم (من كوّن فريقاً فقط).
+     قراءة واحدة لكل مشترك، فلا تُستدعى من كل زائر — المدير يحسبها وينشرها
+     مع اللعبة فتصل الجميع بقراءة واحدة. */
+  async computeOwnership(){
+    let q;
+    try{ q = await this.managers().get(); }
+    catch(e){ return {ok:false, err:'تعذّرت قراءة قائمة المشتركين'}; }
+    const own={}; let count=0;
+    q.forEach(d=>{
+      const v=d.data(); const squad=(v.team && v.team.squad)||[];
+      if(!squad.length) return;
+      count++;
+      squad.forEach(pid=>{ own[pid]=(own[pid]||0)+1; });
+    });
+    return {ok:true, own, count, total:q.size};
+  },
+
+  /* المدير: يحسب التملّك وينشره وحده (بلا إعادة نشر اللعبة كاملة) */
+  async publishOwnership(st){
+    if(!this.admin) return {ok:false, err:'تحديث التملّك للمدير فقط'};
+    const c = await this.computeOwnership();
+    if(!c.ok) return c;
+    st.own = c.own; st.managerCount = c.count; st.ownUpdated = new Date().toISOString();
+    const r = await this.race(this.root().set({
+      own: c.own, managerCount: c.count, ownUpdated: st.ownUpdated,
+      updated: st.ownUpdated, updatedBy: (this.user && this.user.email) || ''
+    }, {merge:true}));
+    if(!r.ok) return {ok:false, err: r.timeout ? 'الاتصال بطيء — لم يكتمل النشر' : this.errAr(r.err)};
+    return {ok:true, count:c.count, total:c.total};
+  },
+
   /* ---------- حالة اللعبة (المدير يكتبها، الجميع يقرؤها) ---------- */
   async loadGame(){
     if(!this.ready) return null;
@@ -311,6 +343,7 @@ const CLOUD = {
       gws: st.gws, news: st.news, liveSpeed: st.liveSpeed,
       clubs: st.clubs,
       own: st.own||{}, managerCount: st.managerCount||0, transferStats: st.transferStats||{},
+      ownUpdated: st.ownUpdated||null,
       updated: new Date().toISOString(),
       updatedBy: (this.user && this.user.email) || ''
     };

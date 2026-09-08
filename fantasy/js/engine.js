@@ -66,6 +66,7 @@ const DB = {
     if(game.currentGW) st.currentGW = game.currentGW;
     if(game.own)            st.own = game.own;                     // تملّك اللاعبين — يحسبه المدير عند الاحتساب
     if(game.managerCount!=null) st.managerCount = +game.managerCount;
+    if(game.ownUpdated)     st.ownUpdated = game.ownUpdated;
     if(game.transferStats)  st.transferStats = game.transferStats;
     this.cloudUpdated = game.updated || null;
     if(players && players.list && players.list.length){
@@ -664,11 +665,13 @@ const RANKS = {
    ملكية اللاعبين والانتقالات المحاكاة
    ========================================================= */
 const MARKET = {
-  /* نسبة التملّك: من قوائم المشتركين الفعليين (يجمعها المدير عند كل احتساب وتُنشر مع اللعبة).
-     قبل أول احتساب أو بلا اتصال: من فرق هذا الجهاز فقط. لا أرقام مولَّدة. */
+  /* نسبة التملّك: من فرق المشتركين الفعليين على الخادم (يحسبها المدير وينشرها:
+     تلقائياً عند فتحه اللعبة، وعند كل احتساب، ومن زر «تحديث التملّك»).
+     بلا سحابة إطلاقاً (تجربة محلية): من فرق هذا الجهاز. لا أرقام مولَّدة. */
   ownership(pid){
     const st=DB.state;
     if(st.managerCount>0 && st.own) return Math.round(((st.own[pid]||0)/st.managerCount)*1000)/10;
+    if(typeof CLOUD!=='undefined' && CLOUD.ready) return 0;   // متصل لكن لم تُنشر بعد: لا نُظهر أرقام جهاز واحد
     const users=Object.keys(st.teams||{}); if(!users.length) return 0;
     const real=users.filter(uid=>(st.teams[uid].squad||[]).includes(pid)).length;
     return Math.round(real/users.length*1000)/10;

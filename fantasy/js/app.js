@@ -82,7 +82,20 @@ const APP = {
       // الجدول والنتائج من mfsoccer على كل جهاز عند كل تحميل؛ الكشوفات للمدير فقط (تُنشر مع اللعبة)
       if(typeof MFSYNC!=='undefined') MFSYNC.autoFixtures(true);
       if(CLOUD.admin && typeof ROSTER!=='undefined') ROSTER.auto();
+      if(CLOUD.admin) this.autoOwnership();
     });
+  },
+
+  /* نسبة التملّك تتغيّر كلما انضم مشترك أو بدّل لاعباً، بينما لا تُنشر إلا مع الاحتساب.
+     فكلما فتح المدير اللعبة تُحدَّث وتُنشر تلقائياً إن مضى على آخر تحديث أكثر من 3 ساعات. */
+  async autoOwnership(){
+    if(typeof CLOUD==='undefined' || !CLOUD.admin || this.cloudState!=='ready') return;
+    const last = Date.parse(DB.state.ownUpdated||'') || 0;
+    if(Date.now() - last < 3*3600*1000) return;
+    try{
+      const r = await CLOUD.publishOwnership(DB.state);
+      if(r.ok){ DB.save(); if(this.route==='players' || this.route==='stats' || this.route==='player') this.render(); }
+    }catch(e){ console.warn('ownership refresh failed', e); }
   },
 
   /* هل نُشرت جولة جديدة أو احتُسبت؟ */

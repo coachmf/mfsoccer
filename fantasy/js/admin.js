@@ -32,6 +32,9 @@ const ADMIN = {
         <tr><td>حساب المدير</td><td style="direction:ltr;text-align:right">${u? esc(u.email) : '—'}</td></tr>
         <tr><td>صلاحية النشر</td><td>${up&&CLOUD.admin? '<span class="pill green">متاحة</span>' : '<span class="pill">غير متاحة</span>'}</td></tr>
         <tr><td>عدد المشتركين</td><td id="mgrCount">—</td></tr>
+        <tr><td>نسبة التملّك</td><td>${DB.state.ownUpdated
+          ? 'من '+(DB.state.managerCount||0)+' فريقاً — حُدّثت '+new Date(DB.state.ownUpdated).toLocaleString('ar-KW',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})
+          : (DB.state.managerCount? 'من '+DB.state.managerCount+' فريقاً (آخر احتساب)' : 'لم تُنشر بعد')}</td></tr>
         <tr><td>قفل التشكيلات على الخادم</td><td id="lockState">—</td></tr>
       </table>
       <div class="tiny" style="margin-top:8px">القفل يُنشر مع اللعبة. قبل أول نشر يرفض الخادم كل التشكيلات —
@@ -43,6 +46,7 @@ const ADMIN = {
         <button class="btn" onclick="ADMIN.cloudLogin()">دخول السحابة</button>`
       : `<div class="row" style="gap:8px;flex-wrap:wrap">
           <button class="btn" onclick="ADMIN.doPublish()">نشر حالة اللعبة للمشتركين</button>
+          <button class="btn sec" onclick="ADMIN.refreshOwnership()">تحديث نسبة التملّك الآن</button>
           <button class="btn sec" onclick="ADMIN.cloudLogout()">خروج من السحابة</button>
         </div>`}
     </div>
@@ -61,6 +65,16 @@ const ADMIN = {
         }
       }
     }})();<\/script>`;
+  },
+
+  /* التملّك من فرق المشتركين الفعليين الآن — يُنشر وحده فيصل الجميع */
+  async refreshOwnership(){
+    if(typeof CLOUD==='undefined' || !CLOUD.ready){ UI.toast('السحابة غير متاحة', true); return; }
+    if(!CLOUD.admin){ UI.toast('سجّل دخول المدير في السحابة أولاً', true); return; }
+    UI.toast('جارٍ حساب التملّك من فرق المشتركين…');
+    const r=await CLOUD.publishOwnership(DB.state);
+    if(r.ok){ DB.save(); UI.toast(`حُدّثت نسبة التملّك من ${r.count} فريقاً (من أصل ${r.total} مشتركاً) ونُشرت للجميع`); APP.render(); }
+    else UI.toast(r.err, true);
   },
 
   async cloudLogin(){
