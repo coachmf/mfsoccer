@@ -701,11 +701,19 @@ h3{font-size:.98rem;font-weight:800;}
 }
 .link-list{border-radius:14px;}
 
-/* البانرات: لون واحد مسطح بلا لمعان ولا زجاج */
-.home-hero,.squad-hero{
-  background:var(--zain2); border:none; box-shadow:none; backdrop-filter:none; border-radius:16px;
+/* بانر الفريق مسطح؛ بانر الرئيسية بألوان زين: ملعب مع تدرّج سماوي→كحلي كترويسة الموقع الرئيسي (بلا شعار) */
+.squad-hero{ background:var(--zain2); border:none; box-shadow:none; backdrop-filter:none; border-radius:16px; }
+.squad-hero::before{display:none;}
+.home-hero{
+  border:none; box-shadow:0 6px 20px rgba(9,60,114,.22); backdrop-filter:none; border-radius:16px;
+  background:#0D4F92 url('../assets/hero/stadium.jpg') center 38%/cover no-repeat;
 }
-.home-hero::before,.squad-hero::before{display:none;}
+.home-hero::before{
+  display:block; content:''; position:absolute; inset:0; pointer-events:none;
+  background:
+    linear-gradient(to left, rgba(46,176,240,.60) 0%, rgba(24,120,190,.80) 38%, rgba(13,79,146,.90) 70%, rgba(8,40,79,.94) 100%),
+    linear-gradient(180deg, rgba(6,21,41,.25), transparent 40%, rgba(6,21,41,.45) 100%);
+}
 .hh-badge{background:rgba(255,255,255,.12); border:none;}
 .big-pill{border-radius:11px; background:rgba(255,255,255,.1); border:1px solid rgba(255,255,255,.28); font-weight:700;}
 .big-pill.primary{font-weight:800;}
@@ -887,3 +895,32 @@ tr.hl td{background:color-mix(in srgb,var(--gold) 14%,transparent);}
 .dev-links{display:flex;gap:8px;flex:none;}
 .dev-links a{width:38px;height:38px;border-radius:50%;background:#fff;color:var(--zain2);display:grid;place-items:center;transition:.15s;}
 .dev-links a:hover{transform:translateY(-2px);}
+
+/* ================= الوضع الداكن — تعريف نهائي (آخر الملف حتى يغلب ما قبله) ================= */
+[data-theme="dark"]{
+  --bg:#071a33; --bg2:#0A2242; --surface:#10305c; --surface2:#16386a; --line:rgba(160,185,215,.28);
+  --text:#F4F8FC; --text2:#D2E1F1; --text3:#A7BFD8;
+  --accent:#6FC0F5; --blue:#6FC0F5; --zain1:#4DA8E8; --zain2:#2A7FD0;
+  --shadow:0 2px 12px rgba(0,0,0,.4);
+}
+[data-theme="dark"] .tbl th{ color:var(--text3); }
+[data-theme="dark"] .tbl td{ color:var(--text); }
+[data-theme="dark"] .muted{ color:var(--text2); }
+[data-theme="dark"] .tiny{ color:var(--text3); }
+[data-theme="dark"] .tabs{ background:var(--surface2); }
+[data-theme="dark"] .tabs button{ color:var(--text2); }
+[data-theme="dark"] .tabs button.active{ background:var(--accent); color:#071a33; box-shadow:none; }
+[data-theme="dark"] .pt-toggle button.active{ background:var(--accent); color:#071a33; }
+[data-theme="dark"] .form-chip{ background:var(--surface2); color:var(--text2); border-color:var(--line); }
+[data-theme="dark"] .form-chip.active{ background:var(--accent); color:#071a33; border-color:var(--accent); }
+[data-theme="dark"] .chip-card{ background:var(--surface); }
+[data-theme="dark"] .chip-card .ci{ background:var(--surface2); color:var(--accent); }
+[data-theme="dark"] .chip-card .cp{ color:var(--text); border-color:var(--line); }
+[data-theme="dark"] .chip-card.on{ background:var(--surface2); border-color:var(--accent); }
+[data-theme="dark"] .card,[data-theme="dark"] .link-list,[data-theme="dark"] .statbox,[data-theme="dark"] .news-card,[data-theme="dark"] #modalBox,[data-theme="dark"] .psheet,[data-theme="dark"] #notifPanel{ background:var(--surface); color:var(--text); border-color:var(--line); }
+[data-theme="dark"] .fdr.l3,[data-theme="dark"] .ptschip.fdr-l3{ color:#0f172a; }
+[data-theme="dark"] .dev-links a{ background:var(--surface2); color:var(--accent); }
+[data-theme="dark"] .bench-strip{ background:rgba(0,0,0,.25); }
+[data-theme="dark"] .addp,[data-theme="dark"] #addpBack{ background:var(--bg); color:var(--text); }
+[data-theme="dark"] .addp-row:hover{ background:var(--surface2); }
+[data-theme="dark"] .big-pill.primary{ background:#fff; color:#0d4f92; }
