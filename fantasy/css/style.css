@@ -671,21 +671,7 @@ tr:hover .btn-view{background:var(--accent);color:#fff;}
 /* الشريطان العلوي والسفلي: أبيض صلب بلا backdrop-filter.
    الضبابية على عنصر position:fixed تجعل سفاري (آيفون) يؤخّر رسمه أثناء التمرير فيبدو الشريط
    كأنه يتحرك مع الصفحة ثم يلحق بها. translateZ(0) يضعه في طبقة مستقلة فيبقى ثابتاً. */
-#topbar{
-  background:linear-gradient(to left,#8ee6ff 0%,#2eb0f0 28%,#1878be 62%,#0d4f92 100%);
-  backdrop-filter:none; -webkit-backdrop-filter:none; border-bottom:none;
-}
-#topbar::before{content:'';position:absolute;inset:0;pointer-events:none;
-  background:radial-gradient(60% 140% at 100% 50%,rgba(255,255,255,.22),transparent 60%),radial-gradient(40% 120% at 0% 100%,rgba(46,176,240,.45),transparent 70%);}
-#topbar > *{position:relative;}
-#topbar #brand .lk-dark{display:block;} #topbar #brand .lk-light{display:none;}
-#topbar #navlinks button{color:rgba(255,255,255,.85);} #topbar #navlinks button.active{background:rgba(255,255,255,.18);color:#fff;}
-#topbar #toSite{background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.4);color:#fff;}
-#topbar #toSite:hover{background:rgba(255,255,255,.28);}
-#topbar .iconbtn{background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.4);color:#fff;box-shadow:none;}
-#topbar .iconbtn:hover{background:rgba(255,255,255,.28);}
-#topbar #userchip{background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.4);color:#fff;}
-#topbar #userchip .av{background:rgba(255,255,255,.2);color:#fff;}
+#topbar{background:var(--surface); backdrop-filter:none; -webkit-backdrop-filter:none; border-bottom:1px solid var(--line);}
 #bottomnav{background:var(--surface); backdrop-filter:none; -webkit-backdrop-filter:none; border-top:1px solid var(--line);
   transform:translateZ(0); -webkit-transform:translateZ(0); will-change:transform; -webkit-backface-visibility:hidden;}
 #bottomnav button.active{background:rgba(13,82,150,.09);}
