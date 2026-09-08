@@ -93,7 +93,8 @@ const ADMIN = {
   /* ---------- الجولات ---------- */
   cloudAsync(){ (async()=>{ if(typeof CLOUD!=='undefined' && CLOUD.ready){
       const n=await CLOUD.managerCount(); const el=document.getElementById('mgrCount');
-      if(el) el.textContent = n==null? 'تعذّرت القراءة' : n+' مشتركاً';
+      if(el){ const wt=+DB.state.managerCount||0;
+        el.textContent = n==null? 'تعذّرت القراءة' : (wt? `${n} مسجّلاً · ${wt} كوّنوا فريقاً · ${Math.max(0,n-wt)} بلا فريق` : n+' مسجّلاً'); }
       const lk=await CLOUD.readLock(); const le=document.getElementById('lockState');
       if(le){
         if(!lk) le.innerHTML='<span class="pill gold">لم يُنشر — التشكيلات مرفوضة</span>';
@@ -116,7 +117,7 @@ const ADMIN = {
       return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`; };
     return `<div class="card"><h3 class="row spread" style="flex-wrap:wrap;gap:8px">إدارة الجولات
         <button class="btn sm" onclick="MFSYNC.adminSyncFixtures()">${UI.icon('swap',14)} سحب الجدول من موقع mfsoccer</button></h3>
-      <div class="tiny" style="margin-bottom:10px">الجدول يُسحب من mfsoccer فقط: الجولة التي لم ينشر الموقع مبارياتها تبقى فارغة وبلا موعد إغلاق. موعد الإغلاق = أول مباراة − 90 دقيقة. بعد الموعد تصير الجولة «مباشرة»: النقاط تظهر للمشتركين مع كل مباراة تُسجَّل على الموقع (ترتيب ومتوسط مباشران). الزر أدناه يُفعَّل فقط بعد اكتمال كل نتائج الجولة: يعتمد النقاط رسمياً على الخادم ويفتح الجولة التالية.</div>
+      <div class="tiny" style="margin-bottom:10px">الجدول يُسحب من mfsoccer فقط: الجولة التي لم ينشر الموقع مبارياتها تبقى فارغة وبلا موعد إغلاق. موعد الإغلاق = انطلاق أول مباراة في الجولة. بعد الموعد تصير الجولة «مباشرة»: النقاط تظهر للمشتركين مع كل مباراة تُسجَّل على الموقع (ترتيب ومتوسط مباشران). الزر أدناه يُفعَّل فقط بعد اكتمال كل نتائج الجولة: يعتمد النقاط رسمياً على الخادم ويفتح الجولة التالية.</div>
       <div class="row" style="gap:10px;flex-wrap:wrap;margin-bottom:14px;align-items:center">
         <button class="btn danger" ${(pending||noFx)?'disabled':''} onclick="ADMIN.finalizeConfirm()">اعتماد وإغلاق الجولة ${st.currentGW}</button>
         <span class="pill ${(pending||noFx)?'gold':'green'}">${noFx? 'لم يصدر جدول الجولة بعد' : pending? `ناقص ${pending} نتيجة` : 'كل النتائج مدخلة — جاهزة للإغلاق'}</span>
@@ -179,6 +180,7 @@ const ADMIN = {
       const all = await CLOUD.finalizeForAll(st, gw, (team, g)=>TEAM.gwPoints(team, g, st));
       if(!all.ok){ UI.toast(all.err, true); return; }
       agg={avg:all.avg, high:all.high, own:all.own, count:all.count, transfers:all.transfers, ranked:all.ranked, board:all.board};
+      if(all.skipped) UI.toast(`تنبيه: ${all.skipped} فريقاً فيه لاعب غير معروف على هذا الجهاز فلم يُحتسب — أعد تحميل الصفحة ثم «إعادة احتساب»`, true);
     } else if(typeof CLOUD!=='undefined' && CLOUD.ready){
       UI.toast('سجّل دخول المدير في السحابة أولاً — الاحتساب المحلي لا يصل للمشتركين', true); return;
     } else agg=GWADMIN.localAgg(st, gw);        // بلا سحابة: تجربة محلية
@@ -208,6 +210,7 @@ const ADMIN = {
   async doPublish(){
     if(typeof CLOUD==='undefined' || !CLOUD.ready){ UI.toast('السحابة غير متاحة', true); return; }
     if(!CLOUD.admin){ UI.toast('سجّل دخول المدير في السحابة أولاً', true); return; }
+    if(!DB.state.fromCloud){ UI.toast('قائمة اللاعبين على هذا الجهاز ليست النسخة المنشورة (لم تُحمَّل من الخادم) — أعد تحميل الصفحة قبل النشر حتى لا تُطمس فرق المشتركين', true); return; }
     UI.toast('جارٍ النشر…');
     const r=await CLOUD.publishGame(DB.state);
     UI.toast(r.ok? `نُشرت اللعبة (${r.rounds} جولة) — وصلت لكل المشتركين` : r.err, !r.ok);
@@ -239,6 +242,7 @@ const ADMIN = {
   fxEditor(fid){
     const st=DB.state;
     const f=st.fixtures.find(x=>x.id===fid);
+    if(!f){ VIEWS.ui.editFx=null; return this.sec_results(); }   // المباراة أُزيلت بمزامنة الجدول
     const squads=st.players.filter(p=>(p.club===f.h||p.club===f.a)&&p.status!=='u');
     const opts=sel=>squads.map(p=>`<option value="${p.id}" ${sel===p.name?'selected':''}>${esc(p.name)} (${DB.club(p.club).short})</option>`).join('');
     const clubOpts=sel=>st.clubs.map(c=>`<option value="${c.id}" ${sel===c.id?'selected':''}>${c.name}</option>`).join('');
@@ -293,6 +297,7 @@ const ADMIN = {
       <select class="g_scorer" style="width:180px"><option value="">— الهداف —</option>${opts(g?g.scorer:null)}</select>
       <select class="g_assist" style="width:180px"><option value="">بدون صناعة</option>${opts(g?g.assist:null)}</select>
       <label class="pill" style="cursor:pointer"><input type="checkbox" class="g_pen" ${g&&g.pen?'checked':''} style="width:auto"> جزاء</label>
+      <label class="pill" style="cursor:pointer"><input type="checkbox" class="g_og" ${g&&g.og?'checked':''} style="width:auto"> عكسي</label>
       <button class="btn sm danger" onclick="this.closest('[data-goal]').remove()">✕</button>
     </div>`;
   },
@@ -352,15 +357,17 @@ const ADMIN = {
     f.hs=+gv('fx_hs'); f.as=+gv('fx_as'); f.status='F'; f.est=false;
     f.goals=[];
     document.querySelectorAll('#goalRows [data-goal]').forEach(row=>{
-      const min=+row.querySelector('.g_min').value;
+      const min=+row.querySelector('.g_min').value||0;          // هدف بلا دقيقة (كما يستورده الموقع أحياناً) يبقى ولا يُحذف
       const scorerId=row.querySelector('.g_scorer').value;
       const assistId=row.querySelector('.g_assist').value;
-      if(!scorerId||!min) return;
+      if(!scorerId) return;
       const sp=DB.player(scorerId);
-      f.goals.push({min, scorer:sp.name, club:sp.club, assist: assistId? DB.player(assistId).name:null,
-        pen:row.querySelector('.g_pen').checked});
+      const og=row.querySelector('.g_og').checked;
+      f.goals.push({min, scorer:sp.name, club: og? (sp.club===f.h? f.a : f.h) : sp.club, assist: assistId? DB.player(assistId).name:null,
+        pen:row.querySelector('.g_pen').checked, og});          // العكسي يُحسب للفريق الآخر
     });
     f.goals.sort((a,b)=>a.min-b.min);
+    f.manual=true;                                             // تعديل يدوي: المزامنة التلقائية من الموقع لا تطمسه
     f.lineups={};
     document.querySelectorAll('.lu[data-pid]').forEach(el=>{
       const stt=el.classList.contains('s')?'s':el.classList.contains('b')?'b':null;
@@ -465,7 +472,7 @@ const ADMIN = {
       <div class="scroll-x"><table class="tbl"><tr><th>اللاعب</th><th>مركز</th><th>سعر</th><th>حالة</th><th>نقاط</th><th></th></tr>
       ${list.slice(0,80).map(p=>`<tr>
         <td><div class="row">${UI.playerAvatar(p,26)} <div><b>${esc(p.name)}</b><div class="tiny">${DB.club(p.club).short}</div></div></div></td>
-        <td><select style="width:auto;padding:4px" onchange="DB.player('${p.id}').pos=this.value;DB.save()">${['G','D','M','F'].map(x=>`<option value="${x}" ${p.pos===x?'selected':''}>${POS_AR[x]}</option>`).join('')}</select></td>
+        <td><select style="width:auto;padding:4px" onchange="ADMIN.setPos('${p.id}',this)">${['G','D','M','F'].map(x=>`<option value="${x}" ${p.pos===x?'selected':''}>${POS_AR[x]}</option>`).join('')}</select></td>
         <td><input type="number" step="0.1" value="${p.price}" style="width:70px;padding:4px" onchange="DB.player('${p.id}').price=+this.value;DB.save()"></td>
         <td><select style="width:auto;padding:4px" onchange="DB.player('${p.id}').status=this.value;DB.save();if(this.value!=='a')ADMIN.injuryNotify('${p.id}')">
           <option value="a" ${p.status==='a'?'selected':''}>متاح</option><option value="i" ${p.status==='i'?'selected':''}>مصاب</option>
@@ -529,6 +536,7 @@ const ADMIN = {
   applyPointsFix(pid,gw,val){
     const st=DB.state;
     st.playerGW[pid][gw].pts=val;
+    { const pc=(DB.player(pid)||{}).club; const fx=st.fixtures.find(x=>x.gw===gw && (x.h===pc||x.a===pc)); if(fx) fx.manual=true; }   // لا تطمسه المزامنة
     const g=DB.gw(gw);
     if(g.status==='finished'){
       for(const uid in st.teams){
@@ -559,6 +567,16 @@ const ADMIN = {
   },
 
   /* ---------- المستخدمون (المشتركون الحقيقيون من السحابة) ---------- */
+  /* تغيير مركز لاعب: يُعاد بناء تشكيلة كل من يملكه عند الاحتساب — تأكيد صريح مع عدد المالكين */
+  setPos(pid, sel){
+    const p=DB.player(pid); if(!p) return;
+    const owners=+(DB.state.own||{})[pid]||0;
+    const msg = owners
+      ? `يملك «${p.name}» ${owners} مشتركاً. تغيير مركزه من ${POS_AR[p.pos]} إلى ${POS_AR[sel.value]} سيغيّر عدد اللاعبين في مراكز فرقهم وقد يُعاد بناء تشكيلاتهم تلقائياً عند الاحتساب. متأكد؟`
+      : `تغيير مركز «${p.name}» من ${POS_AR[p.pos]} إلى ${POS_AR[sel.value]}؟`;
+    if(!confirm(msg)){ sel.value=p.pos; return; }
+    p.pos=sel.value; DB.save(); UI.toast('تغيّر المركز محلياً — يصل للمشتركين عند النشر');
+  },
   loadManagers(force){
     if(this._mgrsLoading) return;
     if(this._mgrs && !force) return;

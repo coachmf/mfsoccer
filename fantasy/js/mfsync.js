@@ -28,7 +28,7 @@ const MFSYNC = {
     if(!has) return false;
     if((+m.hg||0)+(+m.ag||0) > 0) return true;
     if(!m.date) return false;
-    const ko = new Date(m.date+'T'+(m.time||'23:59'));
+    const ko = kwDate(m.date+'T'+(m.time||'23:59'));      // توقيت الكويت دائماً، لا توقيت جهاز الزائر
     return !isNaN(ko) && ko.getTime() <= Date.now();
   },
 
@@ -228,6 +228,7 @@ const MFSYNC = {
       if(!f) f=st.fixtures.find(x=>x.gw===gw && !used.has(x.id) && [x.h,x.a].some(c=>c===h||c===a));
       if(!f){ report.notes.push(`ما لقيت بالجدول: ${m.home} × ${m.away}`); continue; }
       used.add(f.id);
+      if(f.manual){ report.notes.push(`مباراة معدَّلة يدوياً من الإدارة — لم تُستورد: ${m.home} × ${m.away}`); continue; }
 
       // مسح إحصاءات النسخة القديمة من playerGW
       if(f.stats){ for(const cid in f.stats){ for(const pid in f.stats[cid]){ if(st.playerGW[pid]) delete st.playerGW[pid][gw]; } } }

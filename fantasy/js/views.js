@@ -171,8 +171,8 @@ const VIEWS = {
       <div class="home-hero">
         <div class="hh-top">
           <div style="flex:1">
-            <div class="hh-team">${esc(m.teamName)} ${this.championBadge(m.id)}</div>
-            <div class="hh-user">${esc(m.username)}</div>
+            <div class="hh-team" data-i18n="off">${esc(m.teamName)} ${this.championBadge(m.id)}</div>
+            <div class="hh-user" data-i18n="off">${esc(m.username)}</div>
           </div>
           <button class="hh-edit" onclick="APP.go('profile')">${UI.icon('chev',20)}</button>
         </div>
@@ -263,7 +263,7 @@ const VIEWS = {
     return `<div class="pickteam">
       <div class="squad-hero">
         <div class="sh-info">
-          <div class="sh-name">${esc(DB.me().teamName)} ${this.championBadge(DB.me().id)}</div>
+          <div class="sh-name" data-i18n="off">${esc(DB.me().teamName)} ${this.championBadge(DB.me().id)}</div>
           <div class="sh-sub">الجولة ${gw} · ${locked? (GWADMIN.inProgress(gw)? 'جارية — النقاط تظهر مباشرة في «ملخص الجولة»' : 'مقفلة') : (DB.gw(gw).deadline? 'الإغلاق: '+UI.fmtDate(DB.gw(gw).deadline) : 'مفتوحة — بانتظار صدور جدول الجولة')}</div>
         </div>
         <div class="sh-stats">
@@ -399,6 +399,7 @@ const VIEWS = {
   slotClick(pid){
     const team=DB.myTeam(); const st=DB.state;
     const locked=GWADMIN.deadlinePassed(st.currentGW);
+    if(this.ui.subMode && this.ui.sel && locked){ this.ui.sel=null; this.ui.subMode=false; UI.toast('أُغلقت الجولة — لا تعديل على التشكيلة بعد الموعد',true); APP.render(); return; }
     if(this.ui.subMode && this.ui.sel){
       if(this.canSwapWith(this.ui.sel, pid, team)){
         const selPid=this.ui.sel;
@@ -508,6 +509,7 @@ const VIEWS = {
       <div class="ps-actions" style="margin-top:8px"><button class="btn ghost" onclick="VIEWS.cmpOpen('${pid}')">قارن مع لاعب آخر</button></div>`;
   },
   sheetCap(pid,isVice){
+    if(GWADMIN.deadlinePassed(DB.state.currentGW)){ UI.closeModal(); UI.closeSheet(); this.ui.sel=null; this.ui.subMode=false; UI.toast('أُغلقت الجولة — لا تعديل على التشكيلة بعد الموعد',true); APP.render(); return; }
     const team=DB.myTeam();
     if(isVice){ if(team.cap===pid) team.cap=team.vice; team.vice=pid; }
     else { if(team.vice===pid) team.vice=team.cap; team.cap=pid; }
@@ -515,6 +517,7 @@ const VIEWS = {
   },
   startSub(pid){ UI.closeModal(); UI.closeSheet(); this.ui.sel=pid; this.ui.subMode=true; UI.toast('اختر اللاعب الذي تريد التبديل معه'); APP.render(); },
   makeCap(pid,isVice){
+    if(GWADMIN.deadlinePassed(DB.state.currentGW)){ UI.closeModal(); UI.closeSheet(); this.ui.sel=null; this.ui.subMode=false; UI.toast('أُغلقت الجولة — لا تعديل على التشكيلة بعد الموعد',true); APP.render(); return; }
     const team=DB.myTeam();
     if(isVice){ if(team.cap===pid) team.cap=team.vice; team.vice=pid; }
     else { if(team.vice===pid) team.vice=team.cap; team.cap=pid; }
@@ -524,11 +527,19 @@ const VIEWS = {
     const team=DB.myTeam(); const st=DB.state;
     if(GWADMIN.deadlinePassed(st.currentGW)){ UI.toast('أُغلقت الجولة — لا يمكن تفعيل الكروت بعد انطلاق المباراة',true); return; }
     if(team.activeChip===key){
+      const since=team.chipAt||'';
+      const madeUnder=(team.transfers||[]).filter(t=>t.gw===st.currentGW && (t.date||'')>=since).length;
+      if(key==='wildcard' && madeUnder && !st.rules.freeChanges){
+        UI.toast('نفّذت صفقات تحت الوايلد كارد — لا يمكن إلغاؤه الآن',true); return;
+      }
       if(key==='freehit' && team.fhBackup){
         Object.assign(team, {squad:team.fhBackup.squad, xi:team.fhBackup.xi, bench:team.fhBackup.bench,
           cap:team.fhBackup.cap, vice:team.fhBackup.vice, bank:team.fhBackup.bank});
         team.fhBackup=null;
+        team.transfers=(team.transfers||[]).filter(t=>!(t.gw===st.currentGW && (t.date||'')>=since));   // صفقات الضربة الحرة أُلغيت معها
+        this.tReset();
       }
+      team.chipAt=null;
       // الإلغاء قبل الإغلاق لا يكلّف شيئاً: الاستخدام لا يُحسب إلا عند احتساب الجولة (rollover)
       team.activeChip=null; DB.save(); UI.toast('أُلغي الكرت — ما زال متاحاً لك'); APP.render(); return;
     }
@@ -546,7 +557,7 @@ const VIEWS = {
     const team=DB.myTeam(); const st=DB.state;
     if(GWADMIN.deadlinePassed(st.currentGW)){ UI.toast('أُغلقت الجولة — لا يمكن تفعيل الكروت بعد انطلاق المباراة',true); return; }
     if(team.activeChip) return;
-    team.activeChip=key;
+    team.activeChip=key; team.chipAt=new Date().toISOString();
     if(key==='freehit'){ team.fhBackup={squad:[...team.squad], xi:[...team.xi], bench:[...team.bench], cap:team.cap, vice:team.vice, bank:team.bank}; }
     DB.save(); UI.toast(`فُعّل كرت ${st.rules.chips[key].label} لهذه الجولة`); APP.render();
   },
@@ -629,7 +640,12 @@ const VIEWS = {
   },
   tApply(){
     const st=DB.state, team=DB.myTeam();
+    if(GWADMIN.deadlinePassed(st.currentGW)){ UI.closeModal(); this.tReset(); UI.toast('أُغلقت الجولة — لا انتقالات بعد الموعد',true); APP.render(); return; }
     const tOut=this.ui.tOut, tIn=this.ui.tIn.filter(Boolean);
+    // تغيّر الفريق تحت المسودة (إلغاء ضربة حرة، تحديث من الخادم…): لا ننفّذ صفقات على لاعبين لم يعودوا في الفريق
+    if(tOut.length!==tIn.length || tOut.some(o=>!team.squad.includes(o)) || tIn.some(i=>team.squad.includes(i))){
+      UI.closeModal(); this.tReset(); UI.toast('تغيّر فريقك أثناء التعديل — أعد اختيار الصفقات',true); APP.render(); return;
+    }
     const freeMode=team.activeChip==='wildcard'||team.activeChip==='freehit'||!!st.rules.freeChanges;
     const n=tOut.length;
     const hits=freeMode?0:Math.max(0,n-team.ft)*st.rules.transferCost;
@@ -725,7 +741,7 @@ const VIEWS = {
     const sum=k=>DB.playerStatSum(pid,k);
     const team=DB.myTeam();
     const stat=(v,l)=>`<div class="statbox"><div class="v" style="font-size:1.15rem">${v}</div><div class="l">${l}</div></div>`;
-    return `<button class="btn sm sec" onclick="history.back()" style="margin-bottom:12px">→ رجوع</button>
+    return `<button class="btn sm sec" onclick="APP.back()" style="margin-bottom:12px">→ رجوع</button>
     <div class="card" style="margin-bottom:14px">
       <div class="row" style="gap:16px;flex-wrap:wrap">
         ${UI.playerAvatar(p,74)}
@@ -867,15 +883,15 @@ const VIEWS = {
         const rows=LEAGUES.table(l);
         const myIdx=rows.findIndex(r=>r.id===m.id);
         return `<div class="card" style="cursor:pointer" onclick="VIEWS.ui.leagueOpen='${l.id}';APP.render()">
-          <div class="row spread"><h3 style="margin:0">${esc(l.name)}</h3>
+          <div class="row spread"><h3 style="margin:0" data-i18n="off">${esc(l.name)}</h3>
           <span class="pill">${(l.global? (LEAGUES.online()&&LEAGUES.cloud.board? LEAGUES.cloud.board.length : RANKS.population(st)) : rows.length).toLocaleString('ar')} فريق</span></div>
           <div class="muted" style="margin-top:8px">مركزك: <b style="color:var(--accent)">${(()=>{
             if(myIdx>=0) return (myIdx+1).toLocaleString('ar');            // موجود في الصفوف المعروضة
-            if(!l.global) return '—';
+            if(!l.global || LEAGUES.online()) return '—';   // على السحابة: المركز من اللقطة فقط، لا من فرق هذا الجهاز
             const t=DB.myTeam(); const or_=RANKS.overallRank(st,TEAM.totalPoints(t));
             return typeof or_.rank==='number'? or_.rank.toLocaleString('ar') : '—';
           })()}</b>
-          ${!l.global? `· الرمز: <b>${l.code}</b>`:''}</div>
+          ${!l.global? `· الرمز: <b>${esc(l.code)}</b>`:''}</div>
         </div>`;}).join('')}
     </div>`;
   },
@@ -888,10 +904,10 @@ const VIEWS = {
     return `<button class="btn sm sec" onclick="VIEWS.ui.leagueOpen=null;APP.render()" style="margin-bottom:12px">→ كل الدوريات</button>
     <div class="card">
       <div class="row spread" style="flex-wrap:wrap;gap:8px">
-        <h2 style="margin:0">${esc(lg.name)}</h2>
+        <h2 style="margin:0" data-i18n="off">${esc(lg.name)}</h2>
         ${!lg.global? `<div class="row" style="gap:8px">
-          <span class="pill blue">رمز الدعوة: <b style="letter-spacing:2px">${lg.code}</b></span>
-          <button class="btn sm sec" onclick="navigator.clipboard&&navigator.clipboard.writeText('${lg.code}');UI.toast('نُسخ الرمز — أرسله لأصحابك')">نسخ</button>
+          <span class="pill blue">رمز الدعوة: <b style="letter-spacing:2px">${esc(lg.code)}</b></span>
+          <button class="btn sm sec" data-code="${esc(lg.code)}" onclick="navigator.clipboard&&navigator.clipboard.writeText(this.dataset.code);UI.toast('نُسخ الرمز — أرسله لأصحابك')">نسخ</button>
 
         </div>`:''}
       </div>
@@ -900,8 +916,8 @@ const VIEWS = {
         ${rows.map((r,i)=>`<tr style="cursor:pointer;${r.id===m.id?'background:color-mix(in srgb,var(--accent) 10%,transparent)':''}" onclick="VIEWS.openManager('${r.id}')" title="عرض التشكيلة">
           <td class="num" style="font-weight:800">${(r.rank||i+1).toLocaleString('ar')}</td>
           <td style="width:34px;white-space:nowrap">${this.moveIcon(r.move)}</td>
-          <td>${esc(r.name)} ${r.id===m.id?'<span class="pill green">أنت</span>':''}</td>
-          <td class="muted">${esc(r.teamName)}</td>
+          <td><span data-i18n="off">${esc(r.name)}</span> ${r.id===m.id?'<span class="pill green">أنت</span>':''}</td>
+          <td class="muted" data-i18n="off">${esc(r.teamName)}</td>
           ${isH2H?`<td class="tiny">${r.w||0}/${r.d||0}/${r.l||0}</td><td class="num">${r.h2hPts||0}</td>`:''}
           ${liveCol?`<td class="num" style="color:var(--red)">${LIVEGW.liveOf(r.id)??'—'}</td>`:''}
           <td>${r.last}</td><td class="num" style="color:var(--accent)">${r.total}</td>
@@ -1130,8 +1146,11 @@ const VIEWS = {
   },
   doWipe(){
     const st=DB.state; const m=DB.me();
+    const old=st.teams[m.id]||{};
     st.teams[m.id]={ squad:[],xi:[],bench:[],cap:null,vice:null,bank:st.rules.budget,ft:st.rules.freeTransfers,
-      usedChips:{},activeChip:null,joinedGW:st.currentGW,history:[],transfers:[],gwPicks:{},pendingHits:0 };
+      usedChips:old.usedChips||{},activeChip:null,joinedGW:old.joinedGW||st.currentGW,history:[],transfers:[],gwPicks:{},pendingHits:0,
+      rolledGW:old.rolledGW||0, repairedAt:old.repairedAt||null };   // الكروت المستخدمة وسجل الترحيل لا يُمسحان — وإلا رجع الفريق القديم من الخادم
+    this.tReset();
     DB.save(); UI.closeModal(); APP.go('team');
   },
 };

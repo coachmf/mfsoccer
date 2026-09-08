@@ -131,6 +131,7 @@ const GATE = {
     if(pub === null) return;                       // تعذّر الوصول: لا نغيّر شيئاً
     try{ localStorage.setItem(this.PUB_KEY, pub?'1':'0'); }catch(e){}
     if(pub){ this.unlockPublic(); return; }
+    if(!this.PRIVATE) return;                      // اللعبة عامة من الكود: مفتاح الإشهار على الموقع لا يقفلها
     // أُلغي الإشهار: نُعيد البوابة إلا لمن معه رمز معاينة صالح
     if(!this.open() && !document.getElementById('gate')){
       if(document.body) this.render();

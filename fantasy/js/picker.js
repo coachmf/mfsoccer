@@ -207,7 +207,7 @@ Object.assign(VIEWS, {
     if(a.ctx==='picker') squad=this.ui.pickerSquad.filter(x=>x!==a.outPid);
     else { const idx=this.ui.tOut.indexOf(a.outPid);
       squad=team.squad.filter(x=>!this.ui.tOut.includes(x) && x!==a.outPid).concat(this.ui.tIn.filter((x,i)=>x&&i!==idx)); }
-    if(squad.includes(p.id) || (a.ctx==='transfer' && p.id===a.outPid)) return 'في فريقك';
+    if(squad.includes(p.id) || (a.ctx==='transfer' && (p.id===a.outPid || this.ui.tOut.includes(p.id)))) return 'في فريقك';
     if(a.ctx==='transfer' && p.pos!==DB.player(a.outPid).pos) return 'مركز مختلف';
     if(a.ctx==='picker' && squad.filter(x=>DB.player(x).pos===p.pos).length>=R.posCount[p.pos]) return `اكتمل ${POS_AR[p.pos]}`;
     if(squad.filter(x=>DB.player(x).club===p.club).length>=R.maxPerClub) return `${R.maxPerClub} من ${DB.club(p.club).short}`;

@@ -19,7 +19,7 @@ const APP = {
     this.applyTheme(this.savedTheme());
     window.addEventListener('hashchange',()=>{
       const r=location.hash.slice(1)||'dashboard';
-      if(r!==this.route){ this.route=r; this.render(); }
+      if(r!==this.route){ this.leavePage(r); this.route=r; this.render(); }
     });
     this.route=location.hash.slice(1)||'dashboard';
     this.checkDeadline();
@@ -48,14 +48,16 @@ const APP = {
     CLOUD.onAuth(async (u)=>{
       // أثناء التسجيل ينتظر المستمع حتى يكتب signup اسم المستخدم واسم الفريق أولاً
       while(CLOUD.signingUp) await new Promise(r=>setTimeout(r,150));
-      DB.muted = true;                       // لا نرفع أثناء تبديل الحساب
+      DB.muted = true; clearTimeout(DB._pushT);   // لا نرفع أثناء تبديل الحساب
       try{
         // حالة اللعبة ومستند المشترك مستقلان: نقرؤهما معاً بدل التتابع.
         // مهلة: إن علّق الخادم (قناة Firestore مخنوقة/شبكة رديئة) لا نترك المشترك على «جارٍ تحميل فريقك…» بلا نهاية —
         // نعرض آخر نسخة محفوظة على الجهاز ونكمل المزامنة في الخلفية أول ما ترد.
         const loadP = Promise.all([DB.hydrate(), u? CLOUD.getManager(u.uid) : Promise.resolve(null)]);
+        let slowFired = 0;
         const slowT = setTimeout(()=>{
           if(DB.muted){
+            slowFired = Date.now();
             const cached = DB.state.session && DB.state.session!=='u1local' && DB.state.teams[DB.state.session];
             DB.muted = false;
             this.cloudState = cached ? 'ready' : 'offline';
@@ -63,11 +65,27 @@ const APP = {
             UI.toast(cached ? 'الاتصال بطيء — نعرض آخر نسخة محفوظة ونحاول في الخلفية' : 'تعذّر الوصول للخادم — اسحب الصفحة للأسفل أو أعد فتحها', !cached);
           }
         }, 12000);
-        const [h, doc0] = await loadP;
+        let [h, doc0] = await loadP;
         clearTimeout(slowT);
-        DB.muted = true;
+        if(slowFired && u){
+          // عدّل المشترك فريقه أثناء الانتظار: نسخته أحدث من اللقطة القديمة — لا نطمسها، ونعيد القراءة من الخادم
+          const d2 = await CLOUD.getManager(u.uid); if(d2) doc0 = d2;
+          const localT = DB.state.session===u.uid && DB.state.teams[u.uid];
+          if(doc0 && localT && (localT.squad||[]).length && DB.dirtyAt > slowFired){ doc0 = {...doc0, team: localT}; DB.pendingPush = true; }
+        }
+        DB.muted = true; clearTimeout(DB._pushT);
         this.cloudState = h.ok ? 'ready' : (h.err==='no-game' ? 'nogame' : 'offline');
-        if(u){
+        if(u && doc0===undefined){
+          // فشلت قراءة ملف المشترك (شبكة): ليس حساباً جديداً — نبقي آخر نسخة محفوظة ولا نرفع شيئاً حتى تنجح قراءة
+          DB.noPush = true; this.cloudState = 'offline';
+          if(DB.state.session!==u.uid){
+            if(!DB.state.users.find(x=>x.id===u.uid)) DB.state.users.push({id:u.uid, username:(u.email||'مشترك').split('@')[0], teamName:'فريقي', verified:true});
+            if(!DB.state.teams[u.uid]) DB.state.teams[u.uid]={ squad:[],xi:[],bench:[],cap:null,vice:null,bank:DB.state.rules.budget,ft:DB.state.rules.freeTransfers,
+              usedChips:{},activeChip:null,joinedGW:DB.state.currentGW,history:[],transfers:[],gwPicks:{},pendingHits:0 };
+            DB.state.session=u.uid;
+          }
+          UI.toast('تعذّر الوصول لبياناتك على الخادم — نعرض آخر نسخة محفوظة، ولن يُرفع شيء حتى يعود الاتصال', true);
+        } else if(u){
           let doc = doc0;
           let fresh=false;
           if(!doc){
@@ -149,6 +167,15 @@ const APP = {
   applyTheme(t){ document.documentElement.setAttribute('data-theme', t==='dark'?'dark':'light'); try{ localStorage.setItem('kwf_theme', t); }catch(e){} },
   toggleTheme(){ const t=this.savedTheme()==='dark'?'light':'dark'; this.applyTheme(t); this.renderTopbar(); UI.toast(t==='dark'?'الوضع الداكن':'الوضع الفاتح'); },
 
+  /* عند مغادرة صفحة: إغلاق أي بطاقة/نافذة معلّقة والخروج من وضع التبديل — لا تبقى فوق الصفحة التالية */
+  leavePage(next){
+    try{ UI.closeSheet(); UI.closeModal(); }catch(e){}
+    if(typeof VIEWS!=='undefined' && VIEWS.ui){
+      if(VIEWS.ui.addp && typeof VIEWS.closeAddPlayer==='function') VIEWS.closeAddPlayer();
+      VIEWS.ui.sel=null; VIEWS.ui.subMode=false;
+      if(next==='team' && VIEWS.ui.teamView==='market') VIEWS.ui.teamView='pitch';   // «فريقي» يفتح الملعب لا سوق الانتقالات
+    }
+  },
   /* ---------- الرجوع للصفحة السابقة ---------- */
   hist:[],
   back(){
@@ -157,6 +184,7 @@ const APP = {
   },
   go(route){
     if(!this._noHist && route!==this.route && this.route){ this.hist.push(this.route); if(this.hist.length>30) this.hist.shift(); }
+    this.leavePage(route);
     this.route=route; location.hash=route; this.render(); window.scrollTo(0,0);
     if((route==='dashboard' || route==='about') && typeof FEEDBACK!=='undefined') FEEDBACK.pollMine();   // ردود الدعم (مخفَّف: مرة بالدقيقة)
   },

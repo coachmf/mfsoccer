@@ -73,9 +73,11 @@ const CLOUD = {
         }catch(e){ /* اللاعب العادي لا يقرأ هذا المستند — يبقى غير مدير */ }
       }
     }
+    this.authResolved = true;
     this._listeners.forEach(fn=>{ try{ fn(u); }catch(e){ console.warn(e); } });
   },
-  onAuth(fn){ this._listeners.push(fn); if(this.state!=='init') fn(this.user); },
+  /* لا يُستدعى المستمع بـnull قبل أن يحسم Firebase الجلسة — وإلا يُهيَّأ فريق ضيف ويُرفع فوق فريق الحساب */
+  onAuth(fn){ this._listeners.push(fn); if(this.authResolved) fn(this.user); },
 
   /* ---------- مسارات ---------- */
   root(){ return this.db.collection('fantasy').doc(this.SEASON); },
@@ -232,11 +234,12 @@ const CLOUD = {
     return r.ok === true ? doc : null;
   },
 
+  /* null = لا مستند (حساب جديد) · undefined = فشلت القراءة (شبكة) — لا يُعامَل الفشل كحساب جديد أبداً */
   async getManager(uid){
     try{
       const s = await this.managers().doc(uid).get();
       return s.exists ? s.data() : null;
-    }catch(e){ return null; }
+    }catch(e){ return undefined; }
   },
 
   /* حفظ الملف والفريق — لا يمسّ history ولا total (المدير وحده يكتبهما).
@@ -431,9 +434,11 @@ const CLOUD = {
   async finalizeForAll(st, gw, computeFn, opts){
     opts=opts||{};                       // {recompute:true} = إعادة احتساب جولة محتسبة بعد تصحيح نتيجة
     if(!this.admin) return {ok:false, err:'الاحتساب والنشر للمدير فقط'};
+    if(!st.fromCloud) return {ok:false, err:'قائمة اللاعبين على هذا الجهاز ليست النسخة المنشورة — أعد تحميل الصفحة ثم حاول'};
     let snap;
     try{ snap = await this.managers().get(); }
     catch(e){ return {ok:false, err:'تعذّر قراءة قائمة المشتركين'}; }
+    let skipped=0;
 
     const fill = t => Object.assign({ squad:[],xi:[],bench:[],cap:null,vice:null,bank:st.rules.budget,
       ft:st.rules.freeTransfers, usedChips:{}, activeChip:null, joinedGW:1,
@@ -442,6 +447,8 @@ const CLOUD = {
     const rows=[], writes=[]; const own={}, transfers={}; let count=0; const board=[];
     snap.forEach(d=>{
       const v=d.data();
+      // لاعب غير معروف في القائمة = خلل بيانات على هذا الجهاز، لا في فريق المشترك: لا نحذفه من فريقه — نتخطاه ونبلّغ
+      if(((v.team&&v.team.squad)||[]).some(pid=>!DB.player(pid))){ skipped++; board.push(this.boardRow(d.id, v)); return; }
       const team=fill(v.team);
       delete team.history;                                       // السجل يُكتب من هنا لا من الفريق
       TEAM.normalize(team, st);                                  // لا لاعب مكرر عند الاحتساب
@@ -488,7 +495,7 @@ const CLOUD = {
       writes.push([r.uid, {
         history: hist,
         total: hist.reduce((s,h)=>s+(h.pts||0), 0),
-        lastGW: gw,
+        lastGW: opts.recompute ? Math.max(gw, +r.data.lastGW||0) : gw,   // إعادة احتساب جولة قديمة لا تُرجع lastGW للوراء (وإلا رفض الجهاز كل حفظ)
         team,
         email: firebase.firestore.FieldValue.delete()
       }]);
@@ -506,7 +513,7 @@ const CLOUD = {
     }
     const pts=rows.map(r=>r.res.total);
     board.sort((a,b)=>b.total-a.total || a.name.localeCompare(b.name,'ar'));
-    return { ok:true, count, ranked:rows.length, own, transfers, board,
+    return { ok:true, count, ranked:rows.length, own, transfers, board, skipped,
       avg: pts.length? Math.round(pts.reduce((a,b)=>a+b,0)/pts.length) : null,
       high: pts.length? Math.max(...pts) : null };
   },
@@ -517,6 +524,7 @@ const CLOUD = {
   async repairAll(st, opts){
     opts=opts||{};
     if(!this.admin) return {ok:false, err:'للمدير فقط'};
+    if(!st.fromCloud) return {ok:false, err:'قائمة اللاعبين على هذا الجهاز ليست النسخة المنشورة — أعد تحميل الصفحة ثم حاول'};
     let snap;
     try{ snap = await this.managers().get(); }
     catch(e){ return {ok:false, err:'تعذّرت قراءة قائمة المشتركين'}; }
@@ -524,6 +532,7 @@ const CLOUD = {
     const writes=[]; let fixed=0, chips=0;
     snap.forEach(d=>{
       const v=d.data(); if(!v.team || !(v.team.squad||[]).length) return;
+      if((v.team.squad||[]).some(pid=>!DB.player(pid))) return;   // لاعب غير معروف على هذا الجهاز: لا نلمس هذا الفريق
       const team=JSON.parse(JSON.stringify(v.team));
       const changed=TEAM.normalize(team, st);
       const hadChips=Object.values(team.usedChips||{}).some(n=>n>0);

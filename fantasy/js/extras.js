@@ -6,6 +6,11 @@ GWADMIN.champion=function(gw){
   const st=DB.state; const g=DB.gw(gw);
   if(!g || g.status!=='finished') return null;
   let best=null;
+  if(Array.isArray(st.board) && st.board.length){          // على السحابة: من لقطة كل المشتركين، لا من فرق هذا الجهاز وحده
+    st.board.forEach(r=>{ const h=(r.hist||[]).find(x=>x.gw===gw); if(!h) return;
+      if(!best || h.pts>best.pts) best={id:r.id, name:r.name, teamName:r.teamName, pts:h.pts, isBot:false}; });
+    return best;
+  }
   for(const uid in st.teams){
     const h=(st.teams[uid].history||[]).find(x=>x.gw===gw); if(!h) continue;
     const u=st.users.find(x=>x.id===uid); if(!u) continue;

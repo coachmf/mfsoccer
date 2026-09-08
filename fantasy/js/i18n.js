@@ -134,6 +134,7 @@ const I18N = {
     const AR=/[؀-ۿ]/;
     const walker=document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
       acceptNode: n => { const p=n.parentNode; if(!p || p.nodeName==='SCRIPT' || p.nodeName==='STYLE') return NodeFilter.FILTER_REJECT;
+        if(p.closest && p.closest('[data-i18n="off"]')) return NodeFilter.FILTER_REJECT;   // أسماء المشتركين والفرق والدوريات لا تُترجم
         return AR.test(n.nodeValue) ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_SKIP; }
     });
     const nodes=[]; let n; while((n=walker.nextNode())) nodes.push(n);

@@ -36,6 +36,7 @@ const DB = {
     this.save();
   },
   save(){
+    this.dirtyAt=Date.now();
     try{ const me=this.state.session; if(me && this.state.teams[me] && typeof TEAM!=='undefined') TEAM.normalize(this.state.teams[me], this.state); }catch(e){}
     try{ localStorage.setItem(this.KEY, JSON.stringify(this.state)); }
     catch(e){ console.warn('storage write failed', e); }
@@ -123,7 +124,11 @@ const DB = {
       t = Object.assign(blank, JSON.parse(JSON.stringify(prevLocal)));
       t.joinedGW = doc.joinedGW || st.currentGW;
       this.pendingPush = true;
+    } else if(cloudEmpty && prevLocal && (prevLocal.squad||[]).length){
+      // مستند الخادم بلا فريق (قراءة ناقصة/ملف مؤقت) بينما على الجهاز فريق: لا نطمس فريق المشترك بفريق فارغ أبداً
+      t = Object.assign(blank, JSON.parse(JSON.stringify(prevLocal)));
     } else t = Object.assign(blank, doc.team||{});
+    if(typeof VIEWS!=='undefined' && VIEWS.ui){ VIEWS.ui.tOut=[]; VIEWS.ui.tIn=[]; }   // مسودة انتقالات قديمة لا تصلح لفريق جديد
     t.history = doc.history || [];         // السجل مصدره السحابة وحدها
     t.joinedGW = doc.joinedGW || t.joinedGW;
     if(TEAM.normalize(t, st)) this.pendingPush = true;   // فريق فيه تكرار: يُصلَح ويُرفع
@@ -138,7 +143,7 @@ const DB = {
     if(typeof CLOUD==='undefined' || !CLOUD.ready) return false;
     const game = await CLOUD.loadGame(); if(!game) return false;
     if(game.updated && game.updated===this.cloudUpdated && game.currentGW===this.state.currentGW) return false;
-    this.muted = true;
+    this.muted = true; clearTimeout(this._pushT);
     try{
       await this.hydrate();
       if(CLOUD.user){ const doc=await CLOUD.getManager(CLOUD.user.uid); if(doc) await this.adoptManager(CLOUD.user.uid, doc); }
@@ -157,10 +162,18 @@ const DB = {
   },
   async pushTeamNow(){
     if(typeof CLOUD==='undefined' || !CLOUD.user) return false;
+    if(this.muted){ this.pendingPush=true; return false; }           // أثناء تبديل/تحديث الحساب لا نكتب شيئاً
     const uid=CLOUD.user.uid, t=this.state.teams[uid], u=this.user(uid);
     if(!t) return false;
+    if(!this.state.fromCloud){ this.pendingPush=true; return false; }   // قائمة اللاعبين ليست المنشورة: قد تكون معرّفات ناقصة — لا نرفع
     // احتسب المدير جولة بعد آخر تحميل؟ مستند الخادم (انتقالات، كروت، سجل) أحدث من نسخة الجهاز — نعتمده بدل طمسه
     const remote = await CLOUD.getManager(uid);
+    if(remote===undefined){ this.pendingPush=true; return false; }    // تعذّرت قراءة الخادم: لا نرفع على العمياني
+    if(this.noPush){                                                    // كان الإقلاع بلا قراءة ناجحة: أول قراءة ناجحة تُعتمد أولاً
+      this.noPush=false;
+      if(remote){ this.muted=true; try{ await this.adoptManager(uid, remote); } finally{ this.muted=false; }
+        if(typeof APP!=='undefined') APP.render(); return false; }
+    }
     if(remote && remote.lastGW>0 && remote.lastGW!==(t.rolledGW||0) && remote.team && (remote.team.squad||[]).length){
       await this.adoptManager(uid, remote);
       if(typeof UI!=='undefined') UI.toast(`حُدّث فريقك بعد احتساب الجولة ${remote.lastGW}`);
@@ -567,6 +580,8 @@ const TEAM = {
      يُطبَّق عند التحميل والحفظ وعلى الخادم لكل مشترك. يعيد true إذا غُيّر شيء. */
   normalize(team, st){
     st=st||DB.state; if(!team) return false;
+    // قائمة اللاعبين ليست المنشورة (فشل التحميل) ولاعب غير معروف في الفريق: لا نحذفه — قد يكون لاعباً أُضيف لاحقاً
+    if(!st.fromCloud && (team.squad||[]).some(pid=>pid && !DB.player(pid))) return false;
     const before=JSON.stringify([team.squad,team.xi,team.bench,team.cap,team.vice]);
     const squad=[]; (team.squad||[]).forEach(pid=>{ if(pid && DB.player(pid) && !squad.includes(pid)) squad.push(pid); });
     team.squad=squad;
@@ -1119,7 +1134,7 @@ const LEAGUES = {
     if(lg.type!=='h2h') { rows.sort((a,b)=>b.total-a.total); this.movement(rows, lg); return rows; }
     const st=DB.state;
     rows.forEach(r=>{r.w=0;r.d=0;r.l=0;r.h2hPts=0;});
-    const done=RANKS.finishedGWs(st).filter(g=>g>=(lg.createdGW||1));
+    const done=RANKS.finishedGWs(st).filter(g=>g>=(lg.createdGW||1) && g>=(st.rules.scoringFromGW||1));
     const byId={}; rows.forEach(r=>byId[r.id]=r);
     done.forEach(gw=>{
       const order=[...rows].sort((a,b)=>hashStr(a.id+gw)-hashStr(b.id+gw));
