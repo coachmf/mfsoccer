@@ -894,7 +894,9 @@ table.lb td.pt{font-family:var(--display);font-weight:700;color:var(--sky);
 .hero-players img:nth-child(4){height:134px}
 .hero-players img:nth-child(5){height:148px}
 .hero-admin{position:absolute;top:calc(12px + env(safe-area-inset-top));left:20px;z-index:2;
+  display:none;   /* مخفي عن الزوار — يظهر للمدير فقط أو عبر المدخل السرّي */
   background:rgba(255,255,255,.16);border-color:rgba(255,255,255,.4);color:#fff}
+.hero-admin.show{display:grid}
 .hero-admin.on{background:var(--sand);border-color:var(--sand);color:#20180a}
 .hero-sub{position:absolute;bottom:0;right:20px;display:flex;gap:4px;z-index:2}
 .hero-sub button{background:rgba(255,255,255,.62);color:var(--zain-deep);font-family:var(--display);font-weight:600;
@@ -3242,6 +3244,7 @@ function fbInit(){
       }
       isAdmin = isOwner || MYROLE==="editor";
       $("#adminBtn").classList.toggle("on", isAdmin);
+      paintAdminBtn();
       paintFantasyTab();
       await loadFan(u);
       await loadMyPred();
@@ -5694,7 +5697,7 @@ function renderEditorAdmin(){
   if(lo) lo.onclick=async()=>{
     if(fbAuth && FBUSER){ try{ await fbAuth.signOut(); }catch(e){} }
     isAdmin=false; isOwner=false; MYROLE="";
-    $("#adminBtn").classList.remove("on"); paintFantasyTab(); go("home");
+    $("#adminBtn").classList.remove("on"); ADMIN_REVEAL=false; paintAdminBtn(); paintFantasyTab(); go("home");
   };
 }
 
@@ -6183,7 +6186,7 @@ function renderAdmin(){
   $("#clearLogos").onclick=()=>{ if(confirm("حذف كل الشعارات المرفوعة؟")){ LOGOS={}; LSCALE={}; persist(); renderAdmin(); renderAll(); } };
   $("#logout").onclick=async()=>{
     if(fbAuth && FBUSER){ try{ await fbAuth.signOut(); }catch(e){} }
-    isAdmin=false; $("#adminBtn").classList.remove("on"); paintFantasyTab(); go("home"); };
+    isAdmin=false; $("#adminBtn").classList.remove("on"); ADMIN_REVEAL=false; paintAdminBtn(); paintFantasyTab(); go("home"); };
 }
 
 /* ================= التخزين ================= */
@@ -6811,6 +6814,13 @@ const RENDER={home:renderHome,matches:renderMatches,clubs:renderClubs,players:re
    فيكفي ضغط الزر مرة واحدة لتُفتح اللعبة لكل الزوار على كل الأجهزة.
    والفانتسي نفسه يقرأ الحقل ذاته ويرفع بوابته تلقائياً. */
 const FANTASY_URL = "/fantasy/";
+/* زر الإدارة (⚙) مخفي عن الزوار. يظهر تلقائياً للمدير المسجّل، أو عبر
+   مدخل سرّي: رابط ينتهي بـ #admin، أو 5 نقرات سريعة على شعار الفوتر. */
+let ADMIN_REVEAL = (location.hash === "#admin");
+function paintAdminBtn(){
+  const b = document.getElementById("adminBtn"); if(!b) return;
+  b.classList.toggle("show", !!(isAdmin || ADMIN_REVEAL));
+}
 function paintFantasyTab(){
   const show = (FANTASY_OPEN || isAdmin);
   const b=$("#fantasyTab"); if(b) b.style.display = show ? "" : "none";
@@ -6854,6 +6864,26 @@ document.querySelectorAll('nav.tabs button').forEach(b=>b.onclick=()=>{
 });
 $("#adminBtn").onclick=()=>go("admin");
 paintFantasyTab();
+paintAdminBtn();
+/* المدخل السرّي (أ): رابط ينتهي بـ #admin يكشف الزر ويفتح شاشة الدخول */
+window.addEventListener("hashchange", ()=>{
+  if(location.hash==="#admin"){ ADMIN_REVEAL=true; paintAdminBtn(); go("admin"); }
+});
+if(location.hash==="#admin"){ ADMIN_REVEAL=true; paintAdminBtn(); }
+/* المدخل السرّي (ب): 5 نقرات سريعة على شعار الفوتر تكشف الزر */
+(function(){
+  const foot=document.getElementById("siteFoot"); if(!foot) return;
+  let n=0, t=0;
+  foot.addEventListener("click", (e)=>{
+    if(!e.target.closest("img")) return;   /* الشعار فقط */
+    const now=Date.now();
+    n = (now - t < 700) ? n+1 : 1;
+    t = now;
+    if(n>=5){ n=0; ADMIN_REVEAL=true; paintAdminBtn();
+      const b=document.getElementById("adminBtn"); if(b) b.focus();
+      go("admin"); }
+  });
+})();
 
 /* شريط الدقائق في الترويسة */
 function paintRail(){
