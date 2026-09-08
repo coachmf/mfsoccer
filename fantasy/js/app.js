@@ -50,8 +50,22 @@ const APP = {
       while(CLOUD.signingUp) await new Promise(r=>setTimeout(r,150));
       DB.muted = true;                       // لا نرفع أثناء تبديل الحساب
       try{
-        // حالة اللعبة ومستند المشترك مستقلان: نقرؤهما معاً بدل التتابع
-        const [h, doc0] = await Promise.all([DB.hydrate(), u? CLOUD.getManager(u.uid) : Promise.resolve(null)]);
+        // حالة اللعبة ومستند المشترك مستقلان: نقرؤهما معاً بدل التتابع.
+        // مهلة: إن علّق الخادم (قناة Firestore مخنوقة/شبكة رديئة) لا نترك المشترك على «جارٍ تحميل فريقك…» بلا نهاية —
+        // نعرض آخر نسخة محفوظة على الجهاز ونكمل المزامنة في الخلفية أول ما ترد.
+        const loadP = Promise.all([DB.hydrate(), u? CLOUD.getManager(u.uid) : Promise.resolve(null)]);
+        const slowT = setTimeout(()=>{
+          if(DB.muted){
+            const cached = DB.state.session && DB.state.session!=='u1local' && DB.state.teams[DB.state.session];
+            DB.muted = false;
+            this.cloudState = cached ? 'ready' : 'offline';
+            this.render();
+            UI.toast(cached ? 'الاتصال بطيء — نعرض آخر نسخة محفوظة ونحاول في الخلفية' : 'تعذّر الوصول للخادم — اسحب الصفحة للأسفل أو أعد فتحها', !cached);
+          }
+        }, 12000);
+        const [h, doc0] = await loadP;
+        clearTimeout(slowT);
+        DB.muted = true;
         this.cloudState = h.ok ? 'ready' : (h.err==='no-game' ? 'nogame' : 'offline');
         if(u){
           let doc = doc0;
@@ -197,7 +211,8 @@ const APP = {
     // دخل الحساب لكن فريقه لم يصل بعد من الخادم: لا نعرض فريق الضيف الفارغ للحظات
     const fetchingTeam = cloudOn && CLOUD.user && DB.muted && DB.state.session!==CLOUD.user.uid && !['guide','about','auth'].includes(r);
     try{
-      if(fetchingTeam){ html='<div class="card" style="text-align:center;padding:30px"><div class="muted">جارٍ تحميل فريقك…</div></div>'; }
+      if(fetchingTeam){ html=`<div class="card" style="text-align:center;padding:30px"><div class="muted">جارٍ تحميل فريقك…</div>
+        <div class="tiny" style="margin-top:10px">لو طال الانتظار: <button class="btn sm sec" onclick="location.reload()">إعادة المحاولة</button></div></div>`; }
       else if(needAuth){ html = this.cloudState==='init' ? '<div class="card" style="text-align:center;padding:30px"><div class="muted">جارٍ الاتصال…</div></div>' : VIEWS.auth(); }
       else if(r==='team') html=VIEWS.team();
       else if(r==='transfers'){ VIEWS.ui.teamView='market'; this.route='team'; html=VIEWS.team(); }
