@@ -154,7 +154,6 @@ const VIEWS = {
     return `<div class="home-wrap">
       <div class="home-hero">
         <div class="hh-top">
-          <div class="hh-badge">${UI.icon('ball',30)}</div>
           <div style="flex:1">
             <div class="hh-team">${esc(m.teamName)} ${this.championBadge(m.id)}</div>
             <div class="hh-user">${esc(m.username)}</div>
