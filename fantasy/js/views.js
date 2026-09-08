@@ -904,7 +904,7 @@ const VIEWS = {
 
         </div>`:''}
       </div>
-      <div class="scroll-x" style="margin-top:12px"><table class="tbl">
+      <div class="scroll-x" style="margin-top:12px"><table class="tbl lg-tbl">
         <tr><th>#</th><th></th><th>المدير</th><th>الفريق</th>${isH2H?'<th>ف/ت/خ</th><th>ن. المواجهات</th>':''}${liveCol?'<th><span class="pill red">مباشر</span></th>':''}<th>آخر جولة</th><th>المجموع</th><th></th></tr>
         ${rows.map((r,i)=>`<tr style="cursor:pointer;${r.id===m.id?'background:color-mix(in srgb,var(--accent) 10%,transparent)':''}" onclick="VIEWS.openManager('${r.id}')" title="عرض التشكيلة">
           <td class="num" style="font-weight:800">${(r.rank||i+1).toLocaleString('ar')}</td>

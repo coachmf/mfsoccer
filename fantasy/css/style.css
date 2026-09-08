@@ -356,6 +356,16 @@ table.tbl{width:100%;border-collapse:collapse;font-size:.88rem;}
   background:color-mix(in srgb,var(--accent) 8%,transparent);color:var(--accent);font-size:.7rem;font-weight:800;white-space:nowrap;transition:.15s;}
 .btn-view::after{content:'›';font-size:.9rem;line-height:1;}
 tr:hover .btn-view{background:var(--accent);color:#fff;}
+/* جدول الدوري: يتّسع داخل البطاقة على الجوال بلا قصّ */
+.lg-tbl{width:100%;}
+.lg-tbl td:last-child,.lg-tbl th:last-child{white-space:nowrap;padding-left:4px;}
+@media (max-width:600px){
+  .lg-tbl td,.lg-tbl th{padding:8px 5px;font-size:.78rem;}
+  .lg-tbl td:nth-child(2){width:18px;padding:8px 2px;}
+  .lg-tbl td:nth-child(4){font-size:.72rem;}
+  .lg-tbl .btn-view{padding:4px 8px;font-size:.62rem;}
+  .lg-tbl .btn-view::after{content:none;}
+}
 .bench-hint{margin:6px 8px 0;color:rgba(255,255,255,.85);text-align:center;line-height:1.7;}
 .bench-strip .pslot{width:92px;}
 
