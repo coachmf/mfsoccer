@@ -169,7 +169,6 @@ const VIEWS = {
 
     return `<div class="home-wrap">
       <div class="home-hero">
-        <img class="hh-zain" src="assets/hero/zain-logo-white.png" alt="">
         <div class="hh-top">
           <div style="flex:1">
             <div class="hh-team">${esc(m.teamName)} ${this.championBadge(m.id)}</div>

@@ -137,17 +137,16 @@ a{color:var(--blue); text-decoration:none;}
 .home-wrap{ max-width:620px; margin:0 auto; }
 .home-hero{
   position:relative; overflow:hidden; border-radius:20px; padding:18px 16px;
-  background:#0D4F92 url('../assets/hero/stadium.jpg') center 38%/cover no-repeat;
+  background:linear-gradient(165deg, var(--zain1) 0%, var(--zain2) 70%, #093c72 100%);
   color:#fff; text-align:center; box-shadow:0 6px 20px rgba(9,60,114,.22);
 }
-/* نفس تدرّج زين في ترويسة الموقع الرئيسي: سماوي → أزرق → كحلي */
 .home-hero::before{
   content:''; position:absolute; inset:0; pointer-events:none;
   background:
-    linear-gradient(to left, rgba(46,176,240,.62) 0%, rgba(24,120,190,.80) 38%, rgba(13,79,146,.90) 70%, rgba(8,40,79,.94) 100%),
-    linear-gradient(180deg, rgba(6,21,41,.25), transparent 40%, rgba(6,21,41,.45) 100%);
+    radial-gradient(60% 45% at 85% -5%, rgba(120,215,255,.35), transparent 70%),
+    radial-gradient(50% 40% at 0% 105%, rgba(46,176,240,.28), transparent 70%),
+    linear-gradient(120deg, transparent 55%, rgba(255,255,255,.06) 56%, rgba(255,255,255,.06) 70%, transparent 71%);
 }
-.hh-zain{ position:absolute; top:12px; left:14px; height:26px; width:auto; opacity:.95; filter:drop-shadow(0 2px 6px rgba(0,0,0,.35)); z-index:1; }
 .home-hero > *{ position:relative; }
 .hh-top{ display:flex; align-items:center; gap:12px; text-align:right; }
 .hh-badge{
@@ -672,7 +671,21 @@ tr:hover .btn-view{background:var(--accent);color:#fff;}
 /* الشريطان العلوي والسفلي: أبيض صلب بلا backdrop-filter.
    الضبابية على عنصر position:fixed تجعل سفاري (آيفون) يؤخّر رسمه أثناء التمرير فيبدو الشريط
    كأنه يتحرك مع الصفحة ثم يلحق بها. translateZ(0) يضعه في طبقة مستقلة فيبقى ثابتاً. */
-#topbar{background:var(--surface); backdrop-filter:none; -webkit-backdrop-filter:none; border-bottom:1px solid var(--line);}
+#topbar{
+  background:linear-gradient(to left,#8ee6ff 0%,#2eb0f0 28%,#1878be 62%,#0d4f92 100%);
+  backdrop-filter:none; -webkit-backdrop-filter:none; border-bottom:none;
+}
+#topbar::before{content:'';position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(60% 140% at 100% 50%,rgba(255,255,255,.22),transparent 60%),radial-gradient(40% 120% at 0% 100%,rgba(46,176,240,.45),transparent 70%);}
+#topbar > *{position:relative;}
+#topbar #brand .lk-dark{display:block;} #topbar #brand .lk-light{display:none;}
+#topbar #navlinks button{color:rgba(255,255,255,.85);} #topbar #navlinks button.active{background:rgba(255,255,255,.18);color:#fff;}
+#topbar #toSite{background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.4);color:#fff;}
+#topbar #toSite:hover{background:rgba(255,255,255,.28);}
+#topbar .iconbtn{background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.4);color:#fff;box-shadow:none;}
+#topbar .iconbtn:hover{background:rgba(255,255,255,.28);}
+#topbar #userchip{background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.4);color:#fff;}
+#topbar #userchip .av{background:rgba(255,255,255,.2);color:#fff;}
 #bottomnav{background:var(--surface); backdrop-filter:none; -webkit-backdrop-filter:none; border-top:1px solid var(--line);
   transform:translateZ(0); -webkit-transform:translateZ(0); will-change:transform; -webkit-backface-visibility:hidden;}
 #bottomnav button.active{background:rgba(13,82,150,.09);}
@@ -702,12 +715,11 @@ h3{font-size:.98rem;font-weight:800;}
 }
 .link-list{border-radius:14px;}
 
-/* بانر الفريق (فريقي): لون واحد مسطح. بانر الرئيسية بألوان زين كالواجهة الرئيسية (أعلاه) */
-.squad-hero{
+/* البانرات: لون واحد مسطح بلا لمعان ولا زجاج */
+.home-hero,.squad-hero{
   background:var(--zain2); border:none; box-shadow:none; backdrop-filter:none; border-radius:16px;
 }
-.home-hero{ border:none; box-shadow:none; backdrop-filter:none; border-radius:16px; }
-.squad-hero::before{display:none;}
+.home-hero::before,.squad-hero::before{display:none;}
 .hh-badge{background:rgba(255,255,255,.12); border:none;}
 .big-pill{border-radius:11px; background:rgba(255,255,255,.1); border:1px solid rgba(255,255,255,.28); font-weight:700;}
 .big-pill.primary{font-weight:800;}
@@ -726,7 +738,7 @@ h3{font-size:.98rem;font-weight:800;}
 .btn{border-radius:11px; font-weight:700;}
 .iconbtn{border-color:var(--line); box-shadow:none;}
 #userchip{border-color:var(--line);}
-#topbar{background:var(--surface); backdrop-filter:none; border-bottom:1px solid var(--line);}
+/* الشريط العلوي: تدرّج زين (مُعرَّف أعلاه) */
 #bottomnav{background:var(--surface); backdrop-filter:none; border-top:1px solid var(--line);}
 #bottomnav button{font-weight:700;}
 
