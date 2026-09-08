@@ -1016,6 +1016,7 @@ const GWADMIN = {
   },
   snapshotPicks(team, gw){
     team.gwPicks[gw]=TEAM.picksFrom(team);
+    if(gw < (DB.state.currentGW||gw)){ team.gwPicks[gw].chip=null; team.gwPicks[gw].hits=0; }   // جولة سابقة: الكرت الحالي ليس لها
     team.pendingHits=0;
   },
   deadlinePassed(gw){

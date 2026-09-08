@@ -363,7 +363,7 @@ const VIEWS = {
     </div>`;
   },
   pitchHTML(team, opt){
-    const xi=team.xi.map(pid=>DB.player(pid));
+    const xi=team.xi.map(pid=>DB.player(pid)).filter(Boolean);
     const rows=['G','D','M','F'].map(pos=>
       `<div class="pitch-row">${xi.filter(p=>p.pos===pos).map(p=>this.slotHTML(p.id, team, opt)).join('')}</div>`);
     return `<div class="pitch">
@@ -379,7 +379,16 @@ const VIEWS = {
     const liveGw = st.gws.find(g=>g.status==='live');
     const r = liveGw? DB.pgw(pid, liveGw.n) : null;
     const next=FDR.next(p.club,1)[0];
-    const sub = r? `${r.pts} نقطة` : next? `${DB.club(next.opp).short} ${UI.ha(next.home)}` : '—';
+    const sub = opt.pts ? `${opt.pts[pid]??'—'} نقطة` : r? `${r.pts} نقطة` : next? `${DB.club(next.opp).short} ${UI.ha(next.home)}` : '—';
+    if(opt.view){                       // تشكيلة مشترك آخر: عرض فقط، والضغط يفتح ملف اللاعب
+      return `<div class="pslot" onclick="VIEWS.playerSheet('${pid}','addp-out')">
+        ${team.cap===pid? '<div class="badge">C</div>' : team.vice===pid? '<div class="badge v">V</div>':''}
+        <div class="club-tag">${DB.club(p.club).short}</div>
+        ${UI.pitchKit(p, 54)}
+        <div class="nm">${esc(p.name.split(' ').slice(-1)[0])}</div>
+        <div class="pt">${sub}</div>
+      </div>`;
+    }
     const dim = this.ui.subMode && this.ui.sel && !this.canSwapWith(this.ui.sel, pid, team);
     return `<div class="pslot ${sel?'sel':''} ${dim?'dim':''}" onclick="VIEWS.slotClick('${pid}')">
       ${team.cap===pid? '<div class="badge">C</div>' : team.vice===pid? '<div class="badge v">V</div>':''}
@@ -894,10 +903,10 @@ const VIEWS = {
       </div>
       <div class="scroll-x" style="margin-top:12px"><table class="tbl">
         <tr><th>#</th><th></th><th>المدير</th><th>الفريق</th>${isH2H?'<th>ف/ت/خ</th><th>ن. المواجهات</th>':''}${liveCol?'<th><span class="pill red">مباشر</span></th>':''}<th>آخر جولة</th><th>المجموع</th></tr>
-        ${rows.map((r,i)=>`<tr style="${r.id===m.id?'background:color-mix(in srgb,var(--accent) 10%,transparent)':''}">
+        ${rows.map((r,i)=>`<tr style="cursor:pointer;${r.id===m.id?'background:color-mix(in srgb,var(--accent) 10%,transparent)':''}" onclick="VIEWS.openManager('${r.id}')" title="عرض التشكيلة">
           <td class="num" style="font-weight:800">${(r.rank||i+1).toLocaleString('ar')}</td>
           <td style="width:34px;white-space:nowrap">${this.moveIcon(r.move)}</td>
-          <td>${esc(r.name)} ${r.id===m.id?'<span class="pill green">أنت</span>':''}</td>
+          <td>${esc(r.name)} ${r.id===m.id?'<span class="pill green">أنت</span>':'<span class="tiny" style="color:var(--text3)">عرض</span>'}</td>
           <td class="muted">${esc(r.teamName)}</td>
           ${isH2H?`<td class="tiny">${r.w||0}/${r.d||0}/${r.l||0}</td><td class="num">${r.h2hPts||0}</td>`:''}
           ${liveCol?`<td class="num" style="color:var(--red)">${LIVEGW.liveOf(r.id)??'—'}</td>`:''}
@@ -905,6 +914,76 @@ const VIEWS = {
       </table></div>
     </div>`;
   },
+  /* ======================= تشكيلة مشترك آخر (من جدول الدوري) ======================= */
+  openManager(uid){
+    const m=DB.me();
+    if(m && uid===m.id){ APP.go('team'); return; }
+    this.ui.managerOpen=uid; this.ui.managerDoc=undefined;
+    APP.go('manager');
+    const local=DB.state.users.find(u=>u.id===uid);
+    const localTeam=DB.state.teams[uid];
+    if(typeof CLOUD!=='undefined' && CLOUD.ready){
+      CLOUD.getManager(uid).then(doc=>{
+        if(this.ui.managerOpen!==uid) return;
+        this.ui.managerDoc = doc || (localTeam? {username:local&&local.username, teamName:local&&local.teamName, team:localTeam, history:localTeam.history||[], total:TEAM.totalPoints(localTeam)} : null);
+        if(APP.route==='manager') APP.render();
+      });
+    } else {
+      this.ui.managerDoc = localTeam? {username:local&&local.username, teamName:local&&local.teamName, team:localTeam, history:localTeam.history||[], total:TEAM.totalPoints(localTeam)} : null;
+      APP.render();
+    }
+  },
+  manager(){
+    const st=DB.state; const doc=this.ui.managerDoc;
+    const back=`<button class="btn sm sec" onclick="APP.go('leagues')" style="margin-bottom:12px">→ الدوريات</button>`;
+    if(doc===undefined) return back+'<div class="card"><div class="muted">جارٍ جلب التشكيلة…</div></div>';
+    if(!doc || !doc.team) return back+'<div class="card"><div class="muted">لم يكوّن هذا المشترك فريقاً بعد.</div></div>';
+    const team=doc.team; const gw=st.currentGW;
+    const locked=GWADMIN.deadlinePassed(gw);
+    const finished=st.gws.filter(g=>g.status==='finished').map(g=>g.n);
+    const lastFin=finished.length? finished[finished.length-1] : 0;
+    // كما في فانتسي الدوري الإنجليزي: قبل الإغلاق تظهر آخر تشكيلة مقفلة، وبعده تشكيلة الجولة الجارية
+    let showGw=null, picks=null;
+    if(locked){ showGw=gw; picks=(team.gwPicks||{})[gw] || {xi:team.xi||[], bench:team.bench||[], cap:team.cap, vice:team.vice, chip:team.activeChip||null}; }
+    else if(lastFin && (team.gwPicks||{})[lastFin]){ showGw=lastFin; picks=(team.gwPicks||{})[lastFin]; }
+    const hist=doc.history||[]; const last=hist.length? hist[hist.length-1] : null;
+    const total = doc.total!=null ? doc.total : hist.reduce((s,h)=>s+(h.pts||0),0);
+    const head=`<div class="card" style="margin-bottom:12px">
+      <div class="row spread" style="flex-wrap:wrap;gap:8px">
+        <div><h2 style="margin:0">${esc(doc.teamName||'فريق')}</h2><div class="muted">${esc(doc.username||'مشترك')}</div></div>
+        <div class="row" style="gap:14px">
+          <div style="text-align:center"><b style="font-family:'Almarai';font-size:1.2rem">${total}</b><div class="tiny">مجموع النقاط</div></div>
+          <div style="text-align:center"><b style="font-family:'Almarai';font-size:1.2rem">${last? last.pts : '—'}</b><div class="tiny">${last? 'الجولة '+last.gw : 'آخر جولة'}</div></div>
+        </div>
+      </div></div>`;
+    if(!picks){
+      return back+head+`<div class="card"><div class="muted">لم تُقفل له تشكيلة بعد — تظهر تشكيلات المشتركين بعد إغلاق الجولة ${gw}${st.gws.find(g=>g.n===gw&&g.deadline)? ' ('+UI.fmtDateShort(st.gws.find(g=>g.n===gw).deadline)+')' : ''}.</div></div>`;
+    }
+    const vt={ xi:(picks.xi||[]).filter(pid=>DB.player(pid)), bench:(picks.bench||[]).filter(pid=>DB.player(pid)), cap:picks.cap||null, vice:picks.vice||null };
+    // نقاط الجولة المعروضة إن كانت محتسبة (أو جارية)
+    let pts=null, res=null;
+    const g=st.gws.find(x=>x.n===showGw);
+    if(g && (g.status==='finished' || g.status==='live')){
+      try{ res=TEAM.gwPoints({...vt, gwPicks:{[showGw]:picks}}, showGw, st, {live:g.status==='live'}); pts={}; res.rows.forEach(r=>{ pts[r.pid]=r.eff; }); }catch(e){}
+    }
+    const chip=picks.chip? (st.rules.chips[picks.chip]||{}).label||picks.chip : null;
+    let k=0;
+    return back+head+`<div class="card">
+      <div class="row spread" style="flex-wrap:wrap;gap:8px;margin-bottom:10px">
+        <h3 style="margin:0">${locked? 'تشكيلة الجولة '+showGw : 'التشكيلة المقفلة للجولة '+showGw}</h3>
+        <div class="row" style="gap:6px">${chip? `<span class="pill gold">كرت: ${esc(chip)}</span>`:''}${res? `<span class="pill blue">${res.total} نقطة</span>`:''}</div>
+      </div>
+      <div class="zain-frame">
+        ${this.pitchHTML(vt, {view:true, pts})}
+        <div class="bench-strip">
+          ${vt.bench.map(pid=>{ const p=DB.player(pid); const lbl=p.pos==='G'?'حارس':`بديل ${++k} · ${POS_AR[p.pos]}`;
+            return `<div class="bench-slot"><div class="bench-pos">${lbl}</div>${this.slotHTML(pid, vt, {view:true, pts})}</div>`; }).join('')}
+        </div>
+      </div>
+      ${!locked? `<div class="tiny" style="margin-top:8px">تشكيلته الحالية تظهر بعد إغلاق الجولة ${gw}، كما في فانتسي الدوري الإنجليزي.</div>`:''}
+    </div>`;
+  },
+
   /* سهم حركة الترتيب: أخضر صعود، أحمر هبوط، رمادي ثبات */
   moveIcon(mv){
     mv=+mv||0;

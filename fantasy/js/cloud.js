@@ -428,7 +428,11 @@ const CLOUD = {
       const prev=(v.history||[]).find(h=>h.gw===gw);
       if(prev && (team.rolledGW||0)>=gw && !opts.recompute) return;   // محتسبة ومرحَّلة مسبقاً
       team.gwPicks = team.gwPicks||{};
-      if(!team.gwPicks[gw]) team.gwPicks[gw] = TEAM.picksFrom(team);
+      if(!team.gwPicks[gw]){
+        team.gwPicks[gw] = TEAM.picksFrom(team);
+        // احتساب جولة سابقة بلا لقطة: الكرت المفعّل الآن يخص الجولة الجارية لا هذه — لا يُحسب ولا يُستهلك
+        if(gw < st.currentGW){ team.gwPicks[gw].chip=null; team.gwPicks[gw].hits=0; }
+      }
       // إعادة الاحتساب: نفس الاختيارات المحفوظة، نقاط جديدة من الإحصاءات المصحَّحة
       const res = (prev && !opts.recompute)
         ? {total:+prev.pts||0, benchPts:+prev.benchPts||0, chip:prev.chip||null, hits:+prev.hits||0}

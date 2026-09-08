@@ -199,6 +199,7 @@ const APP = {
       else if(r==='fixtures') html=VIEWS.fixtures();
       else if(r==='live') html=VIEWS.live();
       else if(r==='leagues') html=VIEWS.leagues();
+      else if(r==='manager') html=VIEWS.manager();
       else if(r==='stats') html=VIEWS.stats();
       else if(r==='points') html=VIEWS.points();
       else if(r==='profile') html=VIEWS.profile();
