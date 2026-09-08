@@ -280,7 +280,7 @@ const VIEWS = {
         <button class="${view==='market'?'active':''}" onclick="VIEWS.ui.teamView='market';APP.render()">الانتقالات</button>
       </div>
       ${view==='market'? this.transfers() : `
-      ${view==='pitch'? this.formationRow(team, xiV, locked) : ''}
+      ${view==='pitch' && xiV.ok? `<div class="form-now" dir="ltr">${xiV.formation}</div>` : ''}
       <div class="pt-layout">
         <div>
           ${view==='pitch'? `
@@ -292,7 +292,7 @@ const VIEWS = {
                 return `<div class="bench-slot"><div class="bench-pos">${lbl}</div>${this.slotHTML(pid, team, {bench:true, locked})}</div>`;
               }).join(''); })()}
             </div>
-            ${locked? '' : '<div class="tiny bench-hint">التبديل التلقائي يدخل البدلاء بترتيبهم 1 ثم 2 ثم 3 عند غياب أساسي. لتغيير الترتيب: اضغط بديلاً ثم «تبديل» ثم بديلاً آخر.</div>'}
+            ${locked? '' : '<div class="tiny bench-hint">الخطة تتغيّر تلقائياً حسب من تُدخله من الدكة (مثلاً مدافع مكان مهاجم = خطة جديدة). التبديل التلقائي يدخل البدلاء بترتيبهم 1 ثم 2 ثم 3 عند غياب أساسي. لتغيير الترتيب: اضغط بديلاً ثم «تبديل» ثم بديلاً آخر.</div>'}
             </div>`
           : this.teamListHTML(team)}
 
@@ -328,37 +328,6 @@ const VIEWS = {
           <td class="num">${i+1}</td><td>${esc(r.name)}</td><td class="num">${r.total}</td></tr>`).join('')}</table>
         <button class="btn sm sec" style="width:100%;margin-top:8px" onclick="APP.go('leagues')">الدوريات</button>
       </div>`;
-  },
-  /* صف الخطط الجاهزة */
-  formationRow(team, xiV, locked){
-    const R=DB.state.rules;
-    const FORMS=[[3,4,3],[3,5,2],[4,3,3],[4,4,2],[4,5,1],[5,2,3],[5,3,2],[5,4,1]];
-    const counts={G:0,D:0,M:0,F:0};
-    team.squad.forEach(pid=>counts[DB.player(pid).pos]++);
-    const valid=FORMS.filter(([d,m,f])=>
-      d>=R.formationMin.D && d<=R.formationMax.D && m>=R.formationMin.M && m<=R.formationMax.M &&
-      f>=R.formationMin.F && f<=R.formationMax.F && d<=counts.D && m<=counts.M && f<=counts.F);
-    const cur=xiV.formation;
-    return `<div class="form-row">${valid.map(([d,m,f])=>{
-      const key=d+'-'+m+'-'+f;
-      return `<button class="form-chip ${cur===key?'active':''}" ${locked?'disabled':''} dir="ltr" onclick="VIEWS.setFormation(${d},${m},${f})">${key}</button>`;
-    }).join('')}</div>`;
-  },
-  setFormation(d,m,f){
-    const team=DB.myTeam(); const st=DB.state;
-    if(GWADMIN.deadlinePassed(st.currentGW)){ UI.toast('الجولة مقفلة',true); return; }
-    const all=team.squad.map(id=>DB.player(id));
-    const byPos=pos=>all.filter(p=>p.pos===pos)
-      .sort((a,b)=>(DB.playerTotal(b.id)-DB.playerTotal(a.id)) || (b.price-a.price));
-    const gk=byPos('G')[0];
-    const xi=[gk.id, ...byPos('D').slice(0,d).map(p=>p.id), ...byPos('M').slice(0,m).map(p=>p.id), ...byPos('F').slice(0,f).map(p=>p.id)];
-    if(xi.length!==11){ UI.toast('قائمتك لا تسمح بهذه الخطة',true); return; }
-    team.xi=xi;
-    team.bench=team.squad.filter(id=>!xi.includes(id))
-      .sort((a,b)=>(DB.player(a).pos==='G'?-1:0)-(DB.player(b).pos==='G'?-1:0) || DB.playerTotal(b)-DB.playerTotal(a));
-    if(!xi.includes(team.cap)) team.cap=xi.slice(1).sort((a,b)=>DB.playerTotal(b)-DB.playerTotal(a))[0]||xi[1];
-    if(!xi.includes(team.vice)||team.vice===team.cap) team.vice=xi.find(id=>id!==team.cap && DB.player(id).pos!=='G')||xi[2];
-    DB.save(); UI.toast('تبدّلت الخطة إلى '+d+'-'+m+'-'+f); APP.render();
   },
   teamListHTML(team){
     const row=pid=>{

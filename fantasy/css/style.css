@@ -562,12 +562,7 @@ tr:hover .btn-view{background:var(--accent);color:#fff;}
 .pt-toggle button.active{background:var(--zain1);color:#fff;}
 
 /* صف الخطط */
-.form-row{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin:0 0 12px;}
-.form-chip{padding:6px 12px;border-radius:9px;background:var(--surface);border:1px solid var(--line);
-  font-family:'Almarai';font-weight:700;font-size:.8rem;color:var(--text2);transition:.12s;}
-.form-chip:hover{border-color:var(--zain1);color:var(--zain1);}
-.form-chip.active{background:var(--zain1);color:#fff;border-color:var(--zain1);}
-.form-chip:disabled{opacity:.4;}
+.form-now{text-align:center;font-weight:800;font-size:.9rem;color:var(--text2);letter-spacing:.06em;margin:0 0 10px;}
 
 /* لوحة الصفقات */
 .tf-board{min-height:0 !important;padding:18px 6px !important;display:flex;flex-direction:column;gap:16px;}
@@ -635,10 +630,6 @@ tr:hover .btn-view{background:var(--accent);color:#fff;}
 /* التوجل والخطط: صف واحد قابل للتمرير */
 .pt-toggle{margin:0 auto 8px;padding:3px;width:230px;}
 .pt-toggle button{padding:6px;font-size:.8rem;}
-.form-row{flex-wrap:nowrap;overflow-x:auto;justify-content:flex-start;padding:2px 2px 6px;margin:0 0 8px;
-  scrollbar-width:none;}
-.form-row::-webkit-scrollbar{display:none;}
-.form-chip{padding:5px 11px;font-size:.74rem;flex:none;border-radius:8px;}
 
 /* بطاقة اللاعب: أهدأ وأرتب */
 .club-tag{background:rgba(8,22,44,.72);font-weight:700;letter-spacing:.2px;border-radius:5px;
@@ -724,8 +715,6 @@ h3{font-size:.98rem;font-weight:800;}
 .pt-toggle{background:#e7eff7; backdrop-filter:none; border-radius:11px;}
 .pt-toggle button{color:var(--text2); font-weight:700;}
 .pt-toggle button.active{background:#fff; color:var(--zain2); box-shadow:0 1px 3px rgba(13,79,146,.12);}
-.form-chip{background:#fff; border:1px solid var(--line); color:var(--text2); backdrop-filter:none; font-weight:700;}
-.form-chip.active{background:var(--zain2); color:#fff; border-color:var(--zain2);}
 .tabs{background:#e7eff7; backdrop-filter:none;}
 .tabs button{color:var(--text2);}
 .tabs button.active{background:#fff; color:var(--zain2); box-shadow:0 1px 3px rgba(13,79,146,.12);}
@@ -911,8 +900,6 @@ tr.hl td{background:color-mix(in srgb,var(--gold) 14%,transparent);}
 [data-theme="dark"] .tabs button{ color:var(--text2); }
 [data-theme="dark"] .tabs button.active{ background:var(--accent); color:#071a33; box-shadow:none; }
 [data-theme="dark"] .pt-toggle button.active{ background:var(--accent); color:#071a33; }
-[data-theme="dark"] .form-chip{ background:var(--surface2); color:var(--text2); border-color:var(--line); }
-[data-theme="dark"] .form-chip.active{ background:var(--accent); color:#071a33; border-color:var(--accent); }
 [data-theme="dark"] .chip-card{ background:var(--surface); }
 [data-theme="dark"] .chip-card .ci{ background:var(--surface2); color:var(--accent); }
 [data-theme="dark"] .chip-card .cp{ color:var(--text); border-color:var(--line); }
