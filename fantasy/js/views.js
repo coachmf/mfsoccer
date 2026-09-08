@@ -737,6 +737,15 @@ const VIEWS = {
     </div>`;
   },
 
+  /* أهداف المباراة على جهتي الفريقين: أهداف المضيف تحت اسمه (يمين) وأهداف الضيف تحت اسمه (يسار) */
+  goalSides(f, brief){
+    if(!f.goals || !f.goals.length) return '';
+    const line=g=>`<div class="goal-line">${g.min}' ${esc(g.scorer)}${g.pen?(brief?' (ج)':' (ركلة جزاء)'):''}${g.og?(brief?' (عكسي)':' (هدف عكسي)'):''}${g.assist?`<span class="tiny"> — صناعة ${esc(g.assist)}</span>`:''}</div>`;
+    const home=f.goals.filter(g=>g.club===f.h).map(line).join('');
+    const away=f.goals.filter(g=>g.club!==f.h).map(line).join('');
+    return `<div class="goals2"><div class="gh">${home}</div><div class="ga">${away}</div></div>`;
+  },
+
   /* ======================= المباريات والنتائج ======================= */
   fixtures(){
     const st=DB.state;
@@ -760,7 +769,7 @@ const VIEWS = {
                 ${f.status==='L'?`<span class="t">${f.live.min}'</span>`:''}</div>
               <div class="team a">${UI.crest(f.a)} ${DB.club(f.a).name}</div>
             </div>
-            ${f.goals&&f.goals.length? `<div style="margin-top:6px">${f.goals.map(g=>`<div class="goal-line">${g.min}' ${esc(g.scorer)}${g.og?' (هدف عكسي)':''} (${DB.club(g.club).short})${g.assist?` — صناعة ${esc(g.assist)}`:''}${g.pen?' (ركلة جزاء)':''}</div>`).join('')}</div>`:''}
+            ${this.goalSides(f)}
             <div class="tiny" style="margin-top:4px">${esc(f.venue)} ${f.est?'<span class="pill gold">نتيجة تقديرية</span>':''}</div>
           </div>`).join('')}
       </div>
@@ -803,7 +812,7 @@ const VIEWS = {
             <span class="t">${f.status==='L'? f.live.min+"'" : f.status==='F'?'انتهت':UI.fmtDateShort(f.date)}</span></div>
           <div class="team a" style="flex:1;font-weight:700">${UI.crest(f.a,'lg')} ${DB.club(f.a).name}</div>
         </div>
-        ${f.goals&&f.goals.length?`<div style="margin-top:8px">${f.goals.map(g=>`<div class="goal-line">${g.min}' ${esc(g.scorer)}${g.pen?' (ج)':''}${g.og?' (عكسي)':''} <span class="tiny">(${DB.club(g.club).short})${g.assist?' — صناعة '+esc(g.assist):''}</span></div>`).join('')}</div>`:''}
+        ${this.goalSides(f, true)}
         ${f.status==='L'&&f.live.events.length? `<div style="margin-top:8px;max-height:150px;overflow:auto;border-top:1px solid var(--line);padding-top:6px">
           ${[...f.live.events].reverse().slice(0,10).map(e=>`<div class="goal-line">${e.min}' ${esc(e.text)}</div>`).join('')}</div>`:''}
         ${f.status!=='U'? `<div class="tiny" style="margin-top:6px">${(f.hs===0)?UI.crest(f.a)+' شباك نظيفة حتى الآن · ':''}${(f.as===0)?UI.crest(f.h)+' شباك نظيفة حتى الآن':''}</div>`:''}

@@ -174,6 +174,10 @@ const CLOUD = {
       if(e && (e.code==='auth/popup-blocked' || e.code==='auth/cancelled-popup-request')){
         try{ await this.auth.signInWithRedirect(prov); return {ok:true, redirect:true}; }catch(e2){ return {ok:false, err:this.errAr(e2)}; }
       }
+      // شبكات العمل والمدارس تحجب أحياناً نافذة Google (firebaseapp.com) فتظهر «can't reach this page» وتُغلق
+      const c=(e&&e.code)||'';
+      if(c==='auth/popup-closed-by-user' || c==='auth/network-request-failed' || c==='auth/internal-error')
+        return {ok:false, err:this.errAr(e)+' — إذا كانت شبكتك (عمل/مدرسة) تحجب Google، أنشئ حساباً بالبريد وكلمة المرور من «حساب جديد» أو جرّب من بيانات الجوال'};
       return {ok:false, err:this.errAr(e)};
     }
   },

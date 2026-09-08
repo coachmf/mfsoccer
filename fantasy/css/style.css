@@ -359,6 +359,12 @@ table.tbl{width:100%;border-collapse:collapse;font-size:.88rem;}
 @keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(232,67,63,.35);}50%{box-shadow:0 0 0 6px transparent;}}
 .fx .score .t{display:block;font-size:.6rem;color:var(--text3);font-weight:600;}
 .goal-line{font-size:.76rem;color:var(--text2);padding:2px 8px;}
+/* أهداف المباراة على جهتين: المضيف يمين والضيف يسار، كلٌّ تحت فريقه */
+.goals2{display:grid;grid-template-columns:1fr 1fr;gap:2px 12px;margin-top:8px;padding-top:6px;border-top:1px dashed var(--line);}
+.goals2 .goal-line{padding:2px 0;}
+.goals2 .gh{text-align:right;}
+.goals2 .ga{text-align:left;direction:rtl;}
+.goals2 .tiny{display:block;font-size:.66rem;}
 
 /* ---------- إشعارات وتوست ---------- */
 #toasts{position:fixed;bottom:20px;left:20px;z-index:200;display:flex;flex-direction:column;gap:8px;}
