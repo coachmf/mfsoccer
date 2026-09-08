@@ -394,7 +394,7 @@ const VIEWS = {
     const a=DB.player(selPid), b=DB.player(otherPid);
     if(selPid===otherPid) return false;
     const selInXI=team.xi.includes(selPid), otherInXI=team.xi.includes(otherPid);
-    if(selInXI===otherInXI && selInXI) return false; // داخل التشكيلة لا معنى للتبديل
+    if(selInXI===otherInXI) return false; // التبديل فقط بين التشكيلة والدكة (اثنان من الدكة كانا يكرّران اللاعب)
     if((a.pos==='G')!==(b.pos==='G')) return false;
     const xi=[...team.xi];
     const i=xi.indexOf(selInXI?selPid:otherPid);
@@ -410,6 +410,7 @@ const VIEWS = {
         const selInXI=team.xi.includes(selPid);
         const xiPid = selInXI? selPid: pid, bnPid = selInXI? pid: selPid;
         const xi=team.xi.indexOf(xiPid), bn=team.bench.indexOf(bnPid);
+        if(xi<0 || bn<0){ this.ui.sel=null; this.ui.subMode=false; TEAM.normalize(team); DB.save(); APP.render(); return; }
         team.xi[xi]=bnPid; team.bench[bn]=xiPid;
         if(team.cap===xiPid) team.cap=bnPid;
         if(team.vice===xiPid) team.vice=bnPid;
@@ -526,14 +527,25 @@ const VIEWS = {
           cap:team.fhBackup.cap, vice:team.fhBackup.vice, bank:team.fhBackup.bank});
         team.fhBackup=null;
       }
-      // إلغاء الكرت يعيد الاستخدام كما كان — متماثل مع التفعيل حتى لا يعلق
-      team.usedChips[key]=Math.max(0,(team.usedChips[key]||0)-1);
-      team.activeChip=null; DB.save(); UI.toast('أُلغي الكرت'); APP.render(); return;
+      // الإلغاء قبل الإغلاق لا يكلّف شيئاً: الاستخدام لا يُحسب إلا عند احتساب الجولة (rollover)
+      team.activeChip=null; DB.save(); UI.toast('أُلغي الكرت — ما زال متاحاً لك'); APP.render(); return;
     }
+    const c=st.rules.chips[key];
+    if((team.usedChips[key]||0)>=c.uses){ UI.toast('استُخدم هذا الكرت من قبل',true); return; }
+    if(team.activeChip){ UI.toast('كرت آخر مفعّل لهذه الجولة — ألغه أولاً',true); return; }
+    // تأكيد قبل التفعيل حتى لا يُفعَّل بضغطة خطأ
+    UI.modal(`<h3>تفعيل ${esc(c.label)}؟</h3>
+      <p class="muted" style="line-height:1.8">${esc(c.desc||'')}</p>
+      <p class="tiny">يسري على هذه الجولة فقط. تقدر تلغيه في أي وقت قبل إغلاق الجولة بلا خسارة، ويُحسب مستخدماً فقط بعد الإغلاق.</p>
+      <div class="row" style="gap:8px"><button class="btn" onclick="UI.closeModal();VIEWS.activateChip('${key}')">تفعيل</button>
+      <button class="btn sec" onclick="UI.closeModal()">تراجع</button></div>`);
+  },
+  activateChip(key){
+    const team=DB.myTeam(); const st=DB.state;
+    if(GWADMIN.deadlinePassed(st.currentGW)){ UI.toast('أُغلقت الجولة — لا يمكن تفعيل الكروت بعد انطلاق المباراة',true); return; }
+    if(team.activeChip) return;
     team.activeChip=key;
     if(key==='freehit'){ team.fhBackup={squad:[...team.squad], xi:[...team.xi], bench:[...team.bench], cap:team.cap, vice:team.vice, bank:team.bank}; }
-    // يُحجز الاستخدام مؤقتاً؛ يُلغى بالضغط على «إلغاء»، ويُحسم نهائياً عند إغلاق الجولة
-    team.usedChips[key]=(team.usedChips[key]||0)+1;
     DB.save(); UI.toast(`فُعّل كرت ${st.rules.chips[key].label} لهذه الجولة`); APP.render();
   },
 

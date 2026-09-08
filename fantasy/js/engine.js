@@ -32,6 +32,7 @@ const DB = {
     this.save();
   },
   save(){
+    try{ const me=this.state.session; if(me && this.state.teams[me] && typeof TEAM!=='undefined') TEAM.normalize(this.state.teams[me], this.state); }catch(e){}
     try{ localStorage.setItem(this.KEY, JSON.stringify(this.state)); }
     catch(e){ console.warn('storage write failed', e); }
     this.pushTeam();
@@ -120,6 +121,7 @@ const DB = {
     } else t = Object.assign(blank, doc.team||{});
     t.history = doc.history || [];         // السجل مصدره السحابة وحدها
     t.joinedGW = doc.joinedGW || t.joinedGW;
+    if(TEAM.normalize(t, st)) this.pendingPush = true;   // فريق فيه تكرار: يُصلَح ويُرفع
     st.teams[uid] = t;
     if(st.teams['u1local'] && uid!=='u1local') delete st.teams['u1local'];
     try{ localStorage.setItem(this.KEY, JSON.stringify(st)); }catch(e){}
@@ -156,6 +158,13 @@ const DB = {
     if(remote && remote.lastGW>0 && remote.lastGW!==(t.rolledGW||0) && remote.team && (remote.team.squad||[]).length){
       await this.adoptManager(uid, remote);
       if(typeof UI!=='undefined') UI.toast(`حُدّث فريقك بعد احتساب الجولة ${remote.lastGW}`);
+      if(typeof APP!=='undefined') APP.render();
+      return false;
+    }
+    // المدير أصلح الفريق أو أرجع الكروت على الخادم بعد آخر تحميل: نعتمد نسخته بدل طمسها
+    if(remote && remote.team && remote.team.repairedAt && remote.team.repairedAt!==(t.repairedAt||null)){
+      await this.adoptManager(uid, remote);
+      if(typeof UI!=='undefined') UI.toast('حُدّث فريقك من الخادم');
       if(typeof APP!=='undefined') APP.render();
       return false;
     }
@@ -529,6 +538,44 @@ const TEAM = {
       errs.push(`الحد الأقصى ${R.maxPerClub} لاعبين من ${DB.club(c).name} (لديك ${byClub[c]})`);
     if(cost>R.budget+1e-9) errs.push(`تجاوزت الميزانية: ${fmtM(cost)} من ${fmtM(R.budget)} مليون`);
     return { ok:errs.length===0, errs, cost };
+  },
+  /* تشكيلة تلقائية من قائمة: الأغلى مع احترام القيود (تُستعمل عند اعتماد الفريق وعند الإصلاح) */
+  autoXI(squad, st){
+    st=st||DB.state;
+    const ps=squad.map(pid=>DB.player(pid)).filter(Boolean);
+    const best=pos=>ps.filter(p=>p.pos===pos).sort((a,b)=>b.price-a.price);
+    const xi=[best('G')[0], ...best('D').slice(0,3), ...best('M').slice(0,3), best('F')[0]].filter(Boolean);
+    const rest=ps.filter(p=>!xi.includes(p)&&p.pos!=='G').sort((a,b)=>b.price-a.price);
+    for(const p of rest){
+      if(xi.length>=11) break;
+      const counts={G:0,D:0,M:0,F:0}; xi.forEach(x=>counts[x.pos]++); counts[p.pos]++;
+      if(counts[p.pos]<=st.rules.formationMax[p.pos]) xi.push(p);
+    }
+    const xiIds=xi.map(p=>p.id);
+    const bench=squad.filter(pid=>!xiIds.includes(pid));
+    bench.sort((a,b)=>((DB.player(a)||{}).pos==='G'?-1:0)-((DB.player(b)||{}).pos==='G'?-1:0) || ((DB.player(b)||{}).price||0)-((DB.player(a)||{}).price||0));
+    return { xi:xiIds, bench };
+  },
+
+  /* إصلاح ذاتي للفريق: لا لاعب مكرر، ولا لاعب في التشكيلة والدكة معاً، وكل لاعب من القائمة في مكان واحد.
+     يُطبَّق عند التحميل والحفظ وعلى الخادم لكل مشترك. يعيد true إذا غُيّر شيء. */
+  normalize(team, st){
+    st=st||DB.state; if(!team) return false;
+    const before=JSON.stringify([team.squad,team.xi,team.bench,team.cap,team.vice]);
+    const squad=[]; (team.squad||[]).forEach(pid=>{ if(pid && DB.player(pid) && !squad.includes(pid)) squad.push(pid); });
+    team.squad=squad;
+    if(!squad.length){ team.xi=[]; team.bench=[]; team.cap=null; team.vice=null; return before!==JSON.stringify([team.squad,team.xi,team.bench,team.cap,team.vice]); }
+    let xi=[]; (team.xi||[]).forEach(pid=>{ if(squad.includes(pid) && !xi.includes(pid)) xi.push(pid); });
+    let bench=[]; (team.bench||[]).forEach(pid=>{ if(squad.includes(pid) && !xi.includes(pid) && !bench.includes(pid)) bench.push(pid); });
+    squad.forEach(pid=>{ if(!xi.includes(pid) && !bench.includes(pid)) bench.push(pid); });
+    if(xi.length!==11 || !this.validateXI(xi, st).ok){
+      // تشكيلة ناقصة أو غير صالحة بعد إزالة التكرار: نعيد بناءها تلقائياً من القائمة
+      const a=this.autoXI(squad, st); xi=a.xi; bench=a.bench;
+    }
+    team.xi=xi; team.bench=bench;
+    if(!xi.includes(team.cap)) team.cap=[...xi].sort((a,b)=>DB.player(b).price-DB.player(a).price)[0]||null;
+    if(!xi.includes(team.vice) || team.vice===team.cap) team.vice=[...xi].filter(p=>p!==team.cap).sort((a,b)=>DB.player(b).price-DB.player(a).price)[0]||null;
+    return before!==JSON.stringify([team.squad,team.xi,team.bench,team.cap,team.vice]);
   },
   validateXI(xi, st){
     st=st||DB.state; const R=st.rules, errs=[];
@@ -935,6 +982,8 @@ const GWADMIN = {
       team.cap=team.fhBackup.cap; team.vice=team.fhBackup.vice; team.bank=team.fhBackup.bank;
     }
     team.fhBackup=null;
+    // الكرت يُحسب مستخدماً هنا فقط (بعد احتساب الجولة) — قبلها يمكن إلغاؤه بلا خسارة
+    if(picks && picks.chip){ team.usedChips=team.usedChips||{}; team.usedChips[picks.chip]=(team.usedChips[picks.chip]||0)+1; }
     team.activeChip=null;
     team.pendingHits=0;
     team.ft=Math.min(st.rules.maxSavedTransfers, (+team.ft||0)+st.rules.freeTransfers);

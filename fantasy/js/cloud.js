@@ -411,6 +411,7 @@ const CLOUD = {
       const v=d.data();
       const team=fill(v.team);
       delete team.history;                                       // السجل يُكتب من هنا لا من الفريق
+      TEAM.normalize(team, st);                                  // لا لاعب مكرر عند الاحتساب
       const squad=team.squad||[];
       if(!squad.length){                                         // لم يكوّن فريقاً بعد
         if(v.email!==undefined) writes.push([d.id, {email: firebase.firestore.FieldValue.delete()}]);
@@ -469,6 +470,44 @@ const CLOUD = {
     return { ok:true, count, ranked:rows.length, own, transfers,
       avg: pts.length? Math.round(pts.reduce((a,b)=>a+b,0)/pts.length) : null,
       high: pts.length? Math.max(...pts) : null };
+  },
+
+  /* ---------- إصلاح كل الفرق وإرجاع الكروت ----------
+     لكل مشترك: إزالة التكرار وإصلاح التشكيلة، وتصفير الكروت المستخدمة (تعود كلها متاحة).
+     الكرت المفعّل للجولة الحالية يبقى مفعّلاً (يقدر يلغيه). repairedAt يجعل الأجهزة تعتمد النسخة الجديدة. */
+  async repairAll(st, opts){
+    opts=opts||{};
+    if(!this.admin) return {ok:false, err:'للمدير فقط'};
+    let snap;
+    try{ snap = await this.managers().get(); }
+    catch(e){ return {ok:false, err:'تعذّرت قراءة قائمة المشتركين'}; }
+    const now=new Date().toISOString();
+    const writes=[]; let fixed=0, chips=0;
+    snap.forEach(d=>{
+      const v=d.data(); if(!v.team || !(v.team.squad||[]).length) return;
+      const team=JSON.parse(JSON.stringify(v.team));
+      const changed=TEAM.normalize(team, st);
+      const hadChips=Object.values(team.usedChips||{}).some(n=>n>0);
+      if(opts.resetChips){ team.usedChips={}; }
+      if(changed) fixed++;
+      if(opts.resetChips && hadChips) chips++;
+      if(changed || (opts.resetChips && hadChips)){
+        team.repairedAt=now;
+        writes.push([d.id, {team}]);
+      }
+    });
+    let done=0;
+    for(let i=0;i<writes.length;i+=400){
+      const chunk=writes.slice(i,i+400);
+      const batch=this.db.batch();
+      chunk.forEach(([uid,data])=>batch.set(this.managers().doc(uid), data, {merge:true}));
+      const w = await this.race(batch.commit(), 20000);
+      if(!w.ok) return {ok:false, err:`تعذّر الحفظ (${done} من ${writes.length})`, done};
+      done += chunk.length;
+    }
+    // فرق هذا الجهاز
+    for(const uid in st.teams){ const t=st.teams[uid]; if(TEAM.normalize(t, st) || opts.resetChips){ if(opts.resetChips) t.usedChips={}; t.repairedAt=now; } }
+    return {ok:true, total:snap.size, fixed, chips, written:writes.length};
   },
 
   /* ---------- الدوريات ---------- */

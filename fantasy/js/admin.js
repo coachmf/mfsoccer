@@ -47,6 +47,7 @@ const ADMIN = {
       : `<div class="row" style="gap:8px;flex-wrap:wrap">
           <button class="btn" onclick="ADMIN.doPublish()">نشر حالة اللعبة للمشتركين</button>
           <button class="btn sec" onclick="ADMIN.refreshOwnership()">تحديث نسبة التملّك الآن</button>
+          <button class="btn sec" onclick="ADMIN.repairAllAsk()">إصلاح الفرق وإرجاع كل الكروت للجميع</button>
           <button class="btn sec" onclick="ADMIN.cloudLogout()">خروج من السحابة</button>
         </div>`}
     </div>
@@ -65,6 +66,24 @@ const ADMIN = {
         }
       }
     }})();<\/script>`;
+  },
+
+  /* إصلاح كل الفرق (لاعب مكرر) وإرجاع كل الكروت لكل المشتركين */
+  repairAllAsk(){
+    UI.modal(`<h3>إصلاح الفرق وإرجاع الكروت</h3>
+      <p class="muted" style="line-height:1.8">لكل مشترك على الخادم: يُزال أي لاعب مكرر وتُصلَح التشكيلة، وتُصفَّر الكروت المستخدمة فتعود
+      كلها متاحة (الكرت المفعّل لهذه الجولة يبقى مفعّلاً ويقدر صاحبه يلغيه). لا تتأثر النقاط ولا السجل.</p>
+      <div class="row" style="gap:8px"><button class="btn" onclick="UI.closeModal();ADMIN.repairAll(true)">نفّذ للجميع</button>
+      <button class="btn sec" onclick="UI.closeModal();ADMIN.repairAll(false)">إصلاح الفرق فقط</button>
+      <button class="btn sec" onclick="UI.closeModal()">تراجع</button></div>`);
+  },
+  async repairAll(resetChips){
+    if(typeof CLOUD==='undefined' || !CLOUD.ready){ UI.toast('السحابة غير متاحة', true); return; }
+    if(!CLOUD.admin){ UI.toast('سجّل دخول المدير في السحابة أولاً', true); return; }
+    UI.toast('جارٍ فحص فرق المشتركين…');
+    const r=await CLOUD.repairAll(DB.state, {resetChips});
+    if(r.ok){ DB.save(); UI.toast(`فُحص ${r.total} مشتركاً — أُصلح ${r.fixed} فريقاً${resetChips?` وأُرجعت الكروت لـ${r.chips} مشتركاً`:''}`); APP.render(); }
+    else UI.toast(r.err, true);
   },
 
   /* التملّك من فرق المشتركين الفعليين الآن — يُنشر وحده فيصل الجميع */
