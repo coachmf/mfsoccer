@@ -32,7 +32,7 @@ const APP = {
     document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) this.pollCloud(); });
     // شاشة الافتتاح
     const splash=document.getElementById('splash');
-    if(splash) setTimeout(()=>{ splash.classList.add('hide'); setTimeout(()=>splash.remove(),700); }, 1500);
+    if(splash) setTimeout(()=>{ splash.classList.add('hide'); setTimeout(()=>splash.remove(),700); }, 900);
   },
 
   /* ---------- السحابة ---------- */
@@ -49,10 +49,11 @@ const APP = {
       while(CLOUD.signingUp) await new Promise(r=>setTimeout(r,150));
       DB.muted = true;                       // لا نرفع أثناء تبديل الحساب
       try{
-        const h = await DB.hydrate();
+        // حالة اللعبة ومستند المشترك مستقلان: نقرؤهما معاً بدل التتابع
+        const [h, doc0] = await Promise.all([DB.hydrate(), u? CLOUD.getManager(u.uid) : Promise.resolve(null)]);
         this.cloudState = h.ok ? 'ready' : (h.err==='no-game' ? 'nogame' : 'offline');
         if(u){
-          let doc = await CLOUD.getManager(u.uid);
+          let doc = doc0;
           let fresh=false;
           if(!doc){
             // حساب جديد (غالباً Google): اسم مبدئي من الحساب، ويُطلب من المشترك إكمال اسمه واسم فريقه
@@ -180,7 +181,9 @@ const APP = {
     const r=this.route;
     // الحساب إلزامي: بلا دخول لا تُعرض إلا صفحة الدخول (وعن اللعبة/المطوّر للاطلاع)
     const cloudOn = typeof CLOUD!=='undefined' && CLOUD.ready && this.cloudState!=='offline';
-    const needAuth = cloudOn && !CLOUD.user && !['guide','about'].includes(r);
+    // مشترك سبق دخوله على هذا الجهاز: نرسم فريقه من نسخة الجهاز فوراً أثناء الاتصال بدل «جارٍ الاتصال…»
+    const cachedSession = this.cloudState==='init' && DB.state.session && DB.state.session!=='u1local' && DB.state.teams[DB.state.session];
+    const needAuth = cloudOn && !CLOUD.user && !cachedSession && !['guide','about'].includes(r);
     try{
       if(needAuth){ html = this.cloudState==='init' ? '<div class="card" style="text-align:center;padding:30px"><div class="muted">جارٍ الاتصال…</div></div>' : VIEWS.auth(); }
       else if(r==='team') html=VIEWS.team();

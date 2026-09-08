@@ -149,7 +149,8 @@ const DB = {
 
   /* رفع فريق المشترك — مؤجَّل حتى لا نكتب مع كل ضغطة */
   pushTeam(){
-    if(typeof CLOUD==='undefined' || !CLOUD.user || this.muted) return;
+    if(typeof CLOUD==='undefined' || !CLOUD.user) return;
+    if(this.muted){ this.pendingPush=true; return; }     // يُرفع بعد انتهاء المزامنة
     clearTimeout(this._pushT);
     this._pushT = setTimeout(()=>this.pushTeamNow(), 900);
   },

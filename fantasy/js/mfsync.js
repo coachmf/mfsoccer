@@ -22,6 +22,13 @@ const MFSYNC = {
   },
 
   async fetchSeason(){
+    // الأفضل: نفس اتصال Firestore الذي تستعمله اللعبة (قراءة واحدة، بلا مفتاح REST الذي يُحدّ بـ429)
+    if(typeof CLOUD!=='undefined' && CLOUD.ready && CLOUD.db){
+      try{
+        const s = await CLOUD.db.collection('seasons').doc('2026-2027').get();
+        if(s.exists) return s.data();
+      }catch(e){ /* نجرّب REST أدناه */ }
+    }
     const r = await fetch(this.URL);
     if(!r.ok) throw new Error('تعذر الوصول لموقع mfsoccer (HTTP '+r.status+')');
     const j = await r.json();

@@ -37,6 +37,10 @@ const GATE = {
   cachedPublic(){ try{ return localStorage.getItem(this.PUB_KEY)==='1'; }catch(e){ return false; } },
   async fetchPublic(){
     if(typeof MFSYNC==='undefined' || !MFSYNC.URL) return null;
+    // عبر اتصال Firestore نفسه (REST يُحدّ بـ429)
+    if(typeof CLOUD!=='undefined' && CLOUD.ready && CLOUD.db){
+      try{ const s = await CLOUD.db.collection('seasons').doc('2026-2027').get(); if(s.exists) return !!(s.data()||{}).fantasyOpen; }catch(e){}
+    }
     try{
       const r = await fetch(MFSYNC.URL, {cache:'no-store'});
       if(!r.ok) return null;
