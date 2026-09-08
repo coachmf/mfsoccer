@@ -264,6 +264,18 @@ const CLOUD = {
 
   /* لوحة الترتيب العام — من نقاط المشتركين الحقيقيين */
   async leaderboard(limit){
+    // اللقطة المنشورة (كل المشتركين، بلا قراءة إضافية). المشترك الجديد قبل تحديث اللقطة يُضاف محلياً.
+    const st = (typeof DB!=='undefined' && DB.state) || null;
+    if(st && Array.isArray(st.board) && st.board.length){
+      const rows = st.board.map(r=>({...r, hist:(r.hist||[]).slice()}));
+      const me = DB.me && DB.me(); const t = me && st.teams[me.id];
+      if(me && t && (t.squad||[]).length && !rows.some(r=>r.id===me.id)){
+        const hist=(t.history||[]).map(h=>({gw:+h.gw,pts:+h.pts||0}));
+        rows.push({ id:me.id, name:me.username||'مشترك', teamName:me.teamName||'', total:hist.reduce((s,h)=>s+h.pts,0), hist, last:hist.length?hist[hist.length-1].pts:0 });
+      }
+      rows.sort((a,b)=>b.total-a.total || (a.name||'').localeCompare(b.name||'','ar'));
+      return rows;
+    }
     try{
       const q = await this.managers().orderBy('total','desc').limit(limit||100).get();
       const rows=[];
@@ -277,6 +289,19 @@ const CLOUD = {
     }catch(e){ return null; }
   },
 
+  /* قائمة المشتركين كاملة — للمدير فقط (قراءة واحدة لكل مشترك، تُخزَّن في الجلسة) */
+  async listManagers(){
+    try{
+      const q = await this.managers().get();
+      const rows=[];
+      q.forEach(d=>{ const v=d.data()||{};
+        rows.push({ id:d.id, username:v.username||'', teamName:v.teamName||'', total:+v.total||0,
+          hasTeam: !!(v.team && (v.team.squad||[]).length), chip: (v.team && v.team.activeChip)||null,
+          joinedGW:v.joinedGW||null, created:v.created||'', updated:v.updated||'', lastGW:+v.lastGW||0 }); });
+      return rows;
+    }catch(e){ return null; }
+  },
+
   async managerCount(){
     try{ const q=await this.managers().get(); return q.size; }catch(e){ return null; }
   },
@@ -285,18 +310,26 @@ const CLOUD = {
      تُحسب من فرق المشتركين الفعليين على الخادم (من كوّن فريقاً فقط).
      قراءة واحدة لكل مشترك، فلا تُستدعى من كل زائر — المدير يحسبها وينشرها
      مع اللعبة فتصل الجميع بقراءة واحدة. */
+  /* سطر في لقطة الترتيب العام (تُنشر مع اللعبة فيقرؤها الجميع بقراءة واحدة بدل قراءة كل المشتركين) */
+  boardRow(uid, v, hist, total){
+    hist = (hist || v.history || []).map(h=>({gw:+h.gw, pts:+h.pts||0}));
+    return { id:uid, name:v.username||'مشترك', teamName:v.teamName||'', total: total!=null? +total : (+v.total||0),
+      hist, last: hist.length? hist[hist.length-1].pts : 0 };
+  },
   async computeOwnership(){
     let q;
     try{ q = await this.managers().get(); }
     catch(e){ return {ok:false, err:'تعذّرت قراءة قائمة المشتركين'}; }
-    const own={}; let count=0;
+    const own={}; let count=0; const board=[];
     q.forEach(d=>{
       const v=d.data(); const squad=(v.team && v.team.squad)||[];
       if(!squad.length) return;
       count++;
       squad.forEach(pid=>{ own[pid]=(own[pid]||0)+1; });
+      board.push(this.boardRow(d.id, v));
     });
-    return {ok:true, own, count, total:q.size};
+    board.sort((a,b)=>b.total-a.total || a.name.localeCompare(b.name,'ar'));
+    return {ok:true, own, count, total:q.size, board};
   },
 
   /* المدير: يحسب التملّك وينشره وحده (بلا إعادة نشر اللعبة كاملة) */
@@ -304,9 +337,9 @@ const CLOUD = {
     if(!this.admin) return {ok:false, err:'تحديث التملّك للمدير فقط'};
     const c = await this.computeOwnership();
     if(!c.ok) return c;
-    st.own = c.own; st.managerCount = c.count; st.ownUpdated = new Date().toISOString();
+    st.own = c.own; st.managerCount = c.count; st.ownUpdated = new Date().toISOString(); st.board = c.board;
     const r = await this.race(this.root().set({
-      own: c.own, managerCount: c.count, ownUpdated: st.ownUpdated,
+      own: c.own, managerCount: c.count, ownUpdated: st.ownUpdated, board: c.board,
       updated: st.ownUpdated, updatedBy: (this.user && this.user.email) || ''
     }, {merge:true}));
     if(!r.ok) return {ok:false, err: r.timeout ? 'الاتصال بطيء — لم يكتمل النشر' : this.errAr(r.err)};
@@ -347,7 +380,7 @@ const CLOUD = {
       gws: st.gws, news: st.news, liveSpeed: st.liveSpeed,
       clubs: st.clubs,
       own: st.own||{}, managerCount: st.managerCount||0, transferStats: st.transferStats||{},
-      ownUpdated: st.ownUpdated||null,
+      ownUpdated: st.ownUpdated||null, board: st.board||[],
       updated: new Date().toISOString(),
       updatedBy: (this.user && this.user.email) || ''
     };
@@ -406,7 +439,7 @@ const CLOUD = {
       ft:st.rules.freeTransfers, usedChips:{}, activeChip:null, joinedGW:1,
       transfers:[], gwPicks:{}, pendingHits:0 }, t||{});
 
-    const rows=[], writes=[]; const own={}, transfers={}; let count=0;
+    const rows=[], writes=[]; const own={}, transfers={}; let count=0; const board=[];
     snap.forEach(d=>{
       const v=d.data();
       const team=fill(v.team);
@@ -424,9 +457,9 @@ const CLOUD = {
         transfers[t.out]=transfers[t.out]||{in:0,out:0}; transfers[t.out].out++;
       });
       const joined = v.joinedGW || team.joinedGW || 1;
-      if(joined > gw) return;                                    // اشترك بعد هذه الجولة
+      if(joined > gw){ board.push(this.boardRow(d.id, v)); return; }                                    // اشترك بعد هذه الجولة
       const prev=(v.history||[]).find(h=>h.gw===gw);
-      if(prev && (team.rolledGW||0)>=gw && !opts.recompute) return;   // محتسبة ومرحَّلة مسبقاً
+      if(prev && (team.rolledGW||0)>=gw && !opts.recompute){ board.push(this.boardRow(d.id, v)); return; }   // محتسبة ومرحَّلة مسبقاً
       team.gwPicks = team.gwPicks||{};
       if(!team.gwPicks[gw]){
         team.gwPicks[gw] = TEAM.picksFrom(team);
@@ -451,6 +484,7 @@ const CLOUD = {
       }]).sort((a,b)=>a.gw-b.gw);
       GWADMIN.rollover(r.team, gw, st);
       const team = JSON.parse(JSON.stringify(r.team));           // لا undefined في Firestore
+      board.push(this.boardRow(r.uid, r.data, hist, hist.reduce((s,h)=>s+(h.pts||0), 0)));
       writes.push([r.uid, {
         history: hist,
         total: hist.reduce((s,h)=>s+(h.pts||0), 0),
@@ -471,7 +505,8 @@ const CLOUD = {
       done += chunk.length;
     }
     const pts=rows.map(r=>r.res.total);
-    return { ok:true, count, ranked:rows.length, own, transfers,
+    board.sort((a,b)=>b.total-a.total || a.name.localeCompare(b.name,'ar'));
+    return { ok:true, count, ranked:rows.length, own, transfers, board,
       avg: pts.length? Math.round(pts.reduce((a,b)=>a+b,0)/pts.length) : null,
       high: pts.length? Math.max(...pts) : null };
   },

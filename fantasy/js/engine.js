@@ -70,6 +70,7 @@ const DB = {
     if(game.gws)     st.gws     = game.gws;
     if(game.currentGW) st.currentGW = game.currentGW;
     if(game.own)            st.own = game.own;                     // تملّك اللاعبين — يحسبه المدير عند الاحتساب
+    if(Array.isArray(game.board)) st.board = game.board;           // لقطة الترتيب العام — ينشرها المدير مع التملّك
     if(game.managerCount!=null) st.managerCount = +game.managerCount;
     if(game.ownUpdated)     st.ownUpdated = game.ownUpdated;
     if(game.transferStats)  st.transferStats = game.transferStats;
@@ -955,6 +956,7 @@ const GWADMIN = {
       if(agg.avg!=null)  g.avg=agg.avg;
       if(agg.high!=null) g.high=agg.high;
       if(agg.own)        st.own=agg.own;
+      if(agg.board)      st.board=agg.board;
       if(agg.count!=null) st.managerCount=agg.count;
       if(agg.transfers)  st.transferStats=agg.transfers;
     }

@@ -19,6 +19,7 @@ const ADMIN = {
 
   /* ---------- السحابة ---------- */
   sec_cloud(){
+    setTimeout(()=>this.cloudAsync(),0);          // بعد الرسم: عدد المشتركين وحالة القفل
     const up = typeof CLOUD!=='undefined' && CLOUD.ready;
     const u  = up && CLOUD.user;
     const st = APP.cloudState;
@@ -51,21 +52,7 @@ const ADMIN = {
           <button class="btn sec" onclick="ADMIN.cloudLogout()">خروج من السحابة</button>
         </div>`}
     </div>
-    <script>(async()=>{ if(typeof CLOUD!=='undefined' && CLOUD.ready){
-      const n=await CLOUD.managerCount(); const el=document.getElementById('mgrCount');
-      if(el) el.textContent = n==null? 'تعذّرت القراءة' : n+' مشتركاً';
-      const lk=await CLOUD.readLock(); const le=document.getElementById('lockState');
-      if(le){
-        if(!lk) le.innerHTML='<span class="pill gold">لم يُنشر — التشكيلات مرفوضة</span>';
-        else{
-          const d=new Date(lk.deadlineISO || (lk.deadline&&lk.deadline.seconds*1000));
-          const open = lk.open && Date.now() < d.getTime();
-          le.innerHTML = '<span class="pill '+(open?'green':'')+'">الجولة '+lk.gw+' — '
-            + (open? 'مفتوحة حتى ' : 'مقفلة منذ ')
-            + d.toLocaleString('ar-KW',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})+'</span>';
-        }
-      }
-    }})();<\/script>`;
+    `;
   },
 
   /* إصلاح كل الفرق (لاعب مكرر) وإرجاع كل الكروت لكل المشتركين */
@@ -104,6 +91,22 @@ const ADMIN = {
   async cloudLogout(){ await CLOUD.logout(); UI.toast('خرجت من السحابة'); APP.render(); },
 
   /* ---------- الجولات ---------- */
+  cloudAsync(){ (async()=>{ if(typeof CLOUD!=='undefined' && CLOUD.ready){
+      const n=await CLOUD.managerCount(); const el=document.getElementById('mgrCount');
+      if(el) el.textContent = n==null? 'تعذّرت القراءة' : n+' مشتركاً';
+      const lk=await CLOUD.readLock(); const le=document.getElementById('lockState');
+      if(le){
+        if(!lk) le.innerHTML='<span class="pill gold">لم يُنشر — التشكيلات مرفوضة</span>';
+        else{
+          const d=new Date(lk.deadlineISO || (lk.deadline&&lk.deadline.seconds*1000));
+          const open = lk.open && Date.now() < d.getTime();
+          le.innerHTML = '<span class="pill '+(open?'green':'')+'">الجولة '+lk.gw+' — '
+            + (open? 'مفتوحة حتى ' : 'مقفلة منذ ')
+            + d.toLocaleString('ar-KW',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})+'</span>';
+        }
+      }
+    }})(); },
+
   sec_gws(){
     const st=DB.state;
     const cur=st.fixtures.filter(f=>f.gw===st.currentGW);
@@ -137,7 +140,7 @@ const ADMIN = {
     const all=await CLOUD.finalizeForAll(st, gw, (team,g)=>TEAM.gwPoints(team,g,st), {recompute:true});
     if(!all.ok){ UI.toast(all.err, true); return; }
     const g=DB.gw(gw); if(g){ g.avg=all.avg; g.high=all.high; }
-    st.own=all.own; st.managerCount=all.count;
+    st.own=all.own; st.managerCount=all.count; if(all.board) st.board=all.board;
     DB.save();
     const pub=await CLOUD.publishGame(st);
     UI.toast(pub.ok? `أُعيد احتساب الجولة ${gw} لـ${all.ranked} مشتركاً (متوسط ${all.avg??'—'} · الأعلى ${all.high??'—'}) ونُشرت` : 'أُعيد الاحتساب لكن تعذّر النشر: '+pub.err, !pub.ok);
@@ -175,7 +178,7 @@ const ADMIN = {
       UI.toast('جارٍ احتساب نقاط المشتركين على الخادم…');
       const all = await CLOUD.finalizeForAll(st, gw, (team, g)=>TEAM.gwPoints(team, g, st));
       if(!all.ok){ UI.toast(all.err, true); return; }
-      agg={avg:all.avg, high:all.high, own:all.own, count:all.count, transfers:all.transfers, ranked:all.ranked};
+      agg={avg:all.avg, high:all.high, own:all.own, count:all.count, transfers:all.transfers, ranked:all.ranked, board:all.board};
     } else if(typeof CLOUD!=='undefined' && CLOUD.ready){
       UI.toast('سجّل دخول المدير في السحابة أولاً — الاحتساب المحلي لا يصل للمشتركين', true); return;
     } else agg=GWADMIN.localAgg(st, gw);        // بلا سحابة: تجربة محلية
@@ -555,25 +558,54 @@ const ADMIN = {
     </div>`;
   },
 
-  /* ---------- المستخدمون ---------- */
-  sec_users(){
-    const st=DB.state;
-    return `<div class="card"><h3>المستخدمون (${st.users.length})</h3>
-      <div class="scroll-x"><table class="tbl"><tr><th>المستخدم</th><th>البريد</th><th>الفريق</th><th>نقاط</th><th>صلاحية</th><th></th></tr>
-      ${st.users.map(u=>{
-        const team=st.teams[u.id];
-        return `<tr><td><b>${esc(u.username)}</b></td><td class="tiny">${esc(u.email)} ${u.verified?'':''}</td>
-        <td>${esc(u.teamName)}</td><td class="num">${team?TEAM.totalPoints(team):0}</td>
-        <td class="tiny">${u.admin?'<span class="pill gold">مدير (جلسة نشطة)</span>':'—'}</td>
-        <td>${u.id!==DB.me().id? `<button class="btn sm danger" onclick="ADMIN.delUser('${u.id}')">حذف</button>`:''}</td></tr>`;}).join('')}
-      </table></div></div>`;
+  /* ---------- المستخدمون (المشتركون الحقيقيون من السحابة) ---------- */
+  loadManagers(force){
+    if(this._mgrsLoading) return;
+    if(this._mgrs && !force) return;
+    this._mgrsLoading=true; this._mgrsErr=false;
+    CLOUD.listManagers().then(rows=>{
+      this._mgrsLoading=false; this._mgrsErr=!rows; if(rows){ this._mgrs=rows; this._mgrsAt=new Date(); }
+      if(APP.route==='admin' && VIEWS.ui.adminSec==='users') APP.render();
+    });
   },
-  delUser(id){
-    const st=DB.state;
-    st.users=st.users.filter(u=>u.id!==id);
-    delete st.teams[id]; delete st.notifications[id];
-    st.leagues.forEach(l=>{ l.members=l.members.filter(m=>m!==id); });
-    DB.save(); UI.toast('حُذف المستخدم'); APP.render();
+  sec_users(){
+    const up = typeof CLOUD!=='undefined' && CLOUD.ready;
+    if(!up) return `<div class="card"><h3>المستخدمون</h3><div class="tiny">لا اتصال بالسحابة — قائمة المشتركين تُقرأ من الخادم فقط.</div></div>`;
+    this.loadManagers(false);
+    const rows=this._mgrs||[];
+    const withTeam=rows.filter(r=>r.hasTeam).length;
+    const status = this._mgrsLoading? 'جارٍ قراءة المشتركين من الخادم…'
+      : this._mgrsErr? 'تعذّرت قراءة قائمة المشتركين'
+      : `${rows.length} مشتركاً · ${withTeam} كوّنوا فريقاً · ${rows.length-withTeam} بلا فريق` + (this._mgrsAt? ' · قُرئت '+this._mgrsAt.toLocaleTimeString('ar-KW',{hour:'2-digit',minute:'2-digit'}) : '');
+    return `<div class="card"><h3>المستخدمون (${rows.length})</h3>
+      <div class="row" style="gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:8px">
+        <input id="mgrQ" placeholder="بحث باسم المشترك أو الفريق" value="${esc(this._mgrQ||'')}" style="width:auto;min-width:220px"
+          oninput="ADMIN._mgrQ=this.value;document.getElementById('mgrTable').innerHTML=ADMIN.usersTable()">
+        <button class="btn sm sec" onclick="ADMIN.loadManagers(true);APP.render()" ${this._mgrsLoading?'disabled':''}>تحديث من الخادم</button>
+      </div>
+      <div class="tiny" style="margin-bottom:8px">${status}. القائمة من الخادم (مجموعة managers) وتُقرأ مرة واحدة عند فتح القسم. اضغط مشتركاً لعرض تشكيلته.</div>
+      <div id="mgrTable">${this.usersTable()}</div>
+    </div>`;
+  },
+  usersTable(){
+    let rows=(this._mgrs||[]).slice();
+    const q=(this._mgrQ||'').trim();
+    if(q) rows=rows.filter(r=>(r.username+' '+r.teamName).includes(q));
+    rows.sort((a,b)=>(b.total-a.total) || (b.hasTeam-a.hasTeam) || (b.created>a.created?1:-1));
+    if(!rows.length) return `<div class="tiny">${this._mgrsLoading?'…':'لا نتائج'}</div>`;
+    const CH={wildcard:'وايلد كارد',benchboost:'دكة قوية',triplecap:'كابتن ثلاثي',freehit:'ضربة حرة'};
+    const dt=iso=>iso? new Date(iso).toLocaleDateString('ar-KW',{month:'short',day:'numeric'}) : '—';
+    return `<div class="scroll-x"><table class="tbl">
+      <tr><th>#</th><th>المشترك</th><th>الفريق</th><th>نقاط</th><th>الحالة</th><th>انضم</th><th>آخر تحديث</th></tr>
+      ${rows.slice(0,500).map((r,i)=>`<tr style="cursor:pointer" onclick="VIEWS.openManager('${r.id}')" title="عرض التشكيلة">
+        <td class="num">${i+1}</td>
+        <td><b>${esc(r.username||'—')}</b></td>
+        <td>${esc(r.teamName||'—')}</td>
+        <td class="num" style="color:var(--accent)">${r.total}</td>
+        <td class="tiny">${r.hasTeam? '<span class="pill green">فريق مكتمل</span>' : '<span class="pill">بلا فريق</span>'} ${r.chip? `<span class="pill gold">${CH[r.chip]||r.chip}</span>`:''}</td>
+        <td class="tiny">${r.joinedGW? 'ج'+r.joinedGW+' · ':''}${dt(r.created)}</td>
+        <td class="tiny">${dt(r.updated)}</td></tr>`).join('')}
+    </table></div>${rows.length>500? `<div class="tiny">يُعرض أول 500 من ${rows.length}</div>`:''}`;
   },
 
   /* ---------- البيانات ---------- */
