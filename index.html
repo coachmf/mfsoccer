@@ -537,6 +537,15 @@ details.squadbox summary label.lb{margin:0;cursor:pointer}
   border:1.5px solid var(--pe,rgba(255,255,255,.85));font-variant-numeric:tabular-nums}
 .pp-nm{font-size:clamp(8.5px,2.9cqw,12px);color:#fff;font-weight:600;max-width:100%;
   text-shadow:0 1px 3px rgba(0,0,0,.7);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* أيقونات الأحداث على لاعب الملعب: كرة/حذاء/كرت في شريحة بيضاء تُقرأ على العشب */
+.pp-ico{display:inline-flex;align-items:center;gap:2px;margin-top:2px;
+  background:rgba(255,255,255,.94);border-radius:6px;padding:1px 3px;
+  box-shadow:0 1px 3px rgba(0,0,0,.3)}
+.pp-ico .ico-ball,.pp-ico .ico-boot{width:clamp(9px,2.6cqw,12px);height:clamp(9px,2.6cqw,12px)}
+.pp-ico em{font-style:normal;font-size:clamp(7px,2cqw,9px);font-weight:800;color:#0B1F3A}
+.pp-card{width:clamp(6px,1.7cqw,8px);height:clamp(9px,2.5cqw,11px);border-radius:2px;display:inline-block}
+.pp-card.y{background:#E9B949}
+.pp-card.r{background:#D9453B}
 /* التشكيلة في صفحة المباراة وفي ملف النادي */
 .xi{margin:10px 0 4px}
 .xi-t{display:flex;align-items:center;gap:6px;min-width:0;font-size:.78rem;
@@ -3744,10 +3753,31 @@ function pitchSpots(round, comp, club){
   });
   return {form, spots};
 }
-function spotHTML(p, x, y, n, kit){
+/* أحداث لاعب في مباراة: أهداف (بلا العكسية)، صناعات، كرت */
+function playerMatchEvents(m, club, name){
+  const comp = compOf(m);
+  const gs = matchGoals(m).filter(g=>g.sc===club);
+  const goals   = gs.filter(g=>g.p===name && g.bp!=="هدف عكسي").length;
+  const assists = gs.filter(g=>g.a===name).length;
+  const cds = CARDS.filter(x=>x.r===m.round && compOf(x)===comp && x.club===club && x.p===name);
+  return {goals, assists, red:cds.some(c=>isRed(c.type)), yellow:cds.some(c=>isYellow(c.type))};
+}
+/* أيقونات صغيرة تحت اسم اللاعب على الملعب */
+function spotIcons(ev){
+  if(!ev) return "";
+  let s="";
+  const balls=Math.min(ev.goals,3);
+  for(let i=0;i<balls;i++) s+=ICO_BALL;
+  if(ev.goals>3) s+=`<em>×${ev.goals}</em>`;
+  if(ev.assists) s+=ICO_BOOT;
+  if(ev.red) s+=`<b class="pp-card r"></b>`;
+  else if(ev.yellow) s+=`<b class="pp-card y"></b>`;
+  return s ? `<span class="pp-ico">${s}</span>` : "";
+}
+function spotHTML(p, x, y, n, kit, ev){
   return `<div class="pp-spot" style="right:${x}%;top:${y}%;max-width:${(96/(n+1)).toFixed(1)}%">
     <span class="pp-dot" style="${dotVars(kit)}">${p.s||"–"}</span>
-    <span class="pp-nm">${esc(p.n)}</span></div>`;
+    <span class="pp-nm">${esc(p.n)}</span>${spotIcons(ev)}</div>`;
 }
 /* القميص الفاتح يحتاج حافة غامقة ليُرى على العشب، والغامق حافة فاتحة */
 function dotVars(kit){
@@ -3786,8 +3816,9 @@ function clubPitchHTML(round, comp, club){
   const S=pitchSpots(round, comp, club);
   if(!S) return "";
   const kit=kitOf(club);
+  const m=MATCHES.find(x=>x.round===round && compOf(x)===comp && (x.home===club||x.away===club));
   return `<div class="xipitch half"><div class="xip-lines"></div>
-    ${S.spots.map(({p,x,y,n})=>spotHTML(p,x,y,n,kit)).join("")}</div>`;
+    ${S.spots.map(({p,x,y,n})=>spotHTML(p,x,y,n,kit, m?playerMatchEvents(m,club,p.n):null)).join("")}</div>`;
 }
 /* ملعب للفريقين: المضيف في نصفه السفلي، والضيف في العلوي مقلوباً */
 function matchPitchHTML(m){
@@ -3798,7 +3829,7 @@ function matchPitchHTML(m){
     const kit=kitOf(club);
     return S.spots.map(({p,x,y,n})=>{
       const yy = top ? 48-(y/100)*48 : 52+(y/100)*48;
-      return spotHTML(p, top?100-x:x, +yy.toFixed(1), n, kit);
+      return spotHTML(p, top?100-x:x, +yy.toFixed(1), n, kit, playerMatchEvents(m,club,p.n));
     }).join("");
   };
   /* الاسم فوق نصف صاحبه وتحته، فيقرأ الملعب بلا لبس */
