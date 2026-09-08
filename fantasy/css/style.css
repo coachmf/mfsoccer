@@ -697,19 +697,14 @@ h3{font-size:.98rem;font-weight:800;}
 }
 .link-list{border-radius:14px;}
 
-/* بانر الفريق مسطح؛ بانر الرئيسية بألوان زين: ملعب مع تدرّج سماوي→كحلي كترويسة الموقع الرئيسي (بلا شعار) */
+/* بانر الفريق مسطح؛ بانر الرئيسية تدرّج زين سماوي→كحلي بلا صورة ملعب (طلب منصور 2026-09-09) */
 .squad-hero{ background:var(--zain2); border:none; box-shadow:none; backdrop-filter:none; border-radius:16px; }
 .squad-hero::before{display:none;}
 .home-hero{
   border:none; box-shadow:0 6px 20px rgba(9,60,114,.22); backdrop-filter:none; border-radius:16px;
-  background:#0D4F92 url('../assets/hero/stadium.jpg') center 38%/cover no-repeat;
+  background:linear-gradient(to left, #2EB0F0 0%, #1878BE 38%, #0D4F92 70%, #08284F 100%);
 }
-.home-hero::before{
-  display:block; content:''; position:absolute; inset:0; pointer-events:none;
-  background:
-    linear-gradient(to left, rgba(46,176,240,.60) 0%, rgba(24,120,190,.80) 38%, rgba(13,79,146,.90) 70%, rgba(8,40,79,.94) 100%),
-    linear-gradient(180deg, rgba(6,21,41,.25), transparent 40%, rgba(6,21,41,.45) 100%);
-}
+.home-hero::before{display:none;}
 .hh-badge{background:rgba(255,255,255,.12); border:none;}
 .big-pill{border-radius:11px; background:rgba(255,255,255,.1); border:1px solid rgba(255,255,255,.28); font-weight:700;}
 .big-pill.primary{font-weight:800;}
