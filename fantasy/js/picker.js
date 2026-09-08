@@ -238,6 +238,7 @@ Object.assign(VIEWS, {
         <button class="addp-i" onclick="event.stopPropagation();VIEWS.playerSheet('${p.id}','addp')">${p.status!=='a'? '<span class="addp-warn">!</span>' : UI.icon('info',18)}</button>
         ${UI.playerAvatar(p,36)}
         <div class="addp-name"><b>${esc(p.name)}</b><span>${DB.club(p.club).short} · ${POS_AR[p.pos]}${block?` · <i>${block}</i>`:''}</span></div>
+        <div class="addp-c">${DB.playerTotal(p.id)}</div>
         <div class="addp-c">${DB.playerForm(p.id).toFixed(1)}</div>
         <div class="addp-c">${fmtM(p.price)}</div>
         <div class="addp-c">${MARKET.ownership(p.id)}%</div>
@@ -272,6 +273,7 @@ Object.assign(VIEWS, {
           <button class="addp-i">${UI.icon('info',18)}</button>
           ${UI.playerAvatar(outP,36)}
           <div class="addp-name"><b>${esc(outP.name)}</b><span>${DB.club(outP.club).short} · ${POS_AR[outP.pos]}</span></div>
+          <div class="addp-c"><small>النقاط</small>${DB.playerTotal(outP.id)}</div>
           <div class="addp-c"><small>الفورمة</small>${DB.playerForm(outP.id).toFixed(1)}</div>
           <div class="addp-c"><small>السعر</small>${fmtM(outP.price)}</div>
           <div class="addp-c"><small>التملّك</small>${MARKET.ownership(outP.id)}%</div>
@@ -279,6 +281,7 @@ Object.assign(VIEWS, {
       <div class="addp-table">
         <div class="addp-head">
           <span class="addp-name" onclick="VIEWS.addpSort('name')">اللاعب ${arrow('name')}</span>
+          <span class="addp-c" onclick="VIEWS.addpSort('total')">النقاط ${arrow('total')}</span>
           <span class="addp-c" onclick="VIEWS.addpSort('form')">الفورمة ${arrow('form')}</span>
           <span class="addp-c" onclick="VIEWS.addpSort('price')">السعر ${arrow('price')}</span>
           <span class="addp-c" onclick="VIEWS.addpSort('owned')">التملّك ${arrow('owned')}</span>

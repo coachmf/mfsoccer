@@ -230,6 +230,12 @@ table.tbl{width:100%;border-collapse:collapse;font-size:.88rem;}
 .fdr-line .fdr{min-width:0;padding:2px 7px;font-size:.62rem;}
 .fdr.l1{background:var(--fdr1);} .fdr.l2{background:var(--fdr2);color:#08300f;} .fdr.l3{background:var(--fdr3);color:#1a2030;}
 .fdr.l4{background:var(--fdr4);} .fdr.l5{background:var(--fdr5);}
+/* جدول صعوبة المباريات: كل المربعات بعرض وارتفاع واحد مهما طال اسم النادي */
+.fdr-grid td{padding:5px 3px;text-align:center;}
+.fdr-grid td:first-child{text-align:right;padding-right:10px;white-space:nowrap;}
+.fdr-grid .fdr{display:flex;align-items:center;justify-content:center;gap:3px;width:76px;height:28px;
+  padding:0 4px;box-sizing:border-box;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin:0 auto;}
+@media (max-width:400px){ .fdr-grid .fdr{width:66px;height:26px;font-size:.62rem;} }
 
 /* ---------- شاشة التشكيلة (طراز FPL) ---------- */
 .pickteam{max-width:640px;margin:0 auto;}
@@ -740,9 +746,9 @@ body.addp-open{overflow:hidden;}
 .addp-name b{font-size:.86rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .addp-name span{font-size:.7rem;color:var(--text2);}
 .addp-name span i{font-style:normal;color:var(--red);font-weight:700;}
-.addp-c{width:50px;text-align:center;font-family:'Almarai';font-weight:700;font-size:.86rem;flex:none;display:flex;flex-direction:column;}
+.addp-c{width:46px;text-align:center;font-family:'Almarai';font-weight:700;font-size:.86rem;flex:none;display:flex;flex-direction:column;}
 .addp-c small{font-size:.58rem;color:var(--text3);font-weight:700;}
-@media (max-width:400px){ .addp-c{width:48px;font-size:.8rem;} .addp-filters select{padding:8px 6px;font-size:.78rem;} }
+@media (max-width:400px){ .addp-c{width:42px;font-size:.78rem;} .addp-filters select{padding:8px 6px;font-size:.78rem;} }
 
 /* ---------- قمصان على الملعب (طراز FPL) ---------- */
 .pslot .pk{display:grid;place-items:center;height:56px;}

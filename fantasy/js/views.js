@@ -685,7 +685,12 @@ const VIEWS = {
       </table></div>
     </div>`;
   },
-  openPlayer(pid){ this.ui.playerOpen=pid; APP.go('player'); },
+  openPlayer(pid){
+    // من بطاقة لاعب داخل شاشة الإضافة: الشاشة (طبقة ثابتة فوق الصفحة) تبقى فتحجب الملف
+    if(this.ui.addp && typeof this.closeAddPlayer==='function') this.closeAddPlayer();
+    UI.closeSheet(); UI.closeModal();
+    this.ui.playerOpen=pid; APP.go('player');
+  },
   player(){
     const pid=this.ui.playerOpen; const p=DB.player(pid);
     if(!p) return '<div class="card">لاعب غير موجود</div>';
@@ -760,7 +765,7 @@ const VIEWS = {
           </div>`).join('')}
       </div>
       <div class="card"><h3>صعوبة المباريات القادمة (لكل نادٍ)</h3>
-        <div class="scroll-x"><table class="tbl"><tr><th>النادي</th><th colspan="5">المباريات الخمس القادمة</th></tr>${fdrGrid}</table></div>
+        <div class="scroll-x"><table class="tbl fdr-grid"><tr><th>النادي</th><th colspan="5">المباريات الخمس القادمة</th></tr>${fdrGrid}</table></div>
         <div class="row" style="gap:6px;margin-top:10px;flex-wrap:wrap">
           <span class="fdr l1">سهلة جداً</span><span class="fdr l2">سهلة</span><span class="fdr l3">متوسطة</span><span class="fdr l4">صعبة</span><span class="fdr l5">صعبة جداً</span>
         </div>
