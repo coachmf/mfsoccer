@@ -2225,6 +2225,56 @@ function clubStats(c){
     head:gf.filter(g=>g.bp==="الرأس").length,
     late:gf.filter(g=>["76-90","90+"].includes(period(g))).length};
 }
+/* ===== دقائق اللعب والشباك النظيفة =====
+   تُحسب من المباريات الملعّبة: التشكيلة الأساسية + التبديلات (خروج/دخول)
+   والنتيجة. الأساسي يبدأ من 0، والبديل من دقيقة دخوله، وينتهي عند خروجه
+   أو نهاية المباراة. الشباك النظيفة للاعب: لعب 60 دقيقة فأكثر ولم يستقبل
+   فريقه هدفاً في تلك المباراة. */
+/* المباراة 90 دقيقة (بلا وقت بدل ضائع) لأرقام نظيفة ومفهومة */
+const MATCH_MIN = 90;
+const capMin = x => Math.max(0, Math.min(MATCH_MIN, x));
+function playerMatchMinutes(m, club, name){
+  const comp = compOf(m);
+  const starter = xiNames(m.round, comp, club).includes(name);
+  const subs = matchSubs(m).filter(s=>s.club===club);
+  const inSub  = subs.find(s=>s.in===name);
+  const outSub = subs.find(s=>s.out===name);
+  let start;
+  if(starter) start = 0;
+  else if(inSub) start = capMin(absMinute(inSub.h, inSub.m));
+  else return 0;                                   /* لم يشارك */
+  const end = outSub ? capMin(absMinute(outSub.h, outSub.m)) : MATCH_MIN;
+  return Math.max(0, end - start);
+}
+/* تجميع لكل لاعب: مباريات، دقائق، شباك نظيفة (على المسابقة المختارة) */
+function playerPlay(){
+  const out = {};
+  MATCHES.filter(m=>!isUpcoming(m)).forEach(m=>{
+    const comp = compOf(m);
+    [m.home, m.away].forEach(club=>{
+      const conceded = club===m.home ? +m.ag : +m.hg;
+      const men = new Set();
+      xiNames(m.round, comp, club).forEach(n=>men.add(n));
+      matchSubs(m).filter(s=>s.club===club && s.in).forEach(s=>men.add(s.in));
+      men.forEach(name=>{
+        const mins = playerMatchMinutes(m, club, name);
+        if(mins<=0) return;
+        const k = name+"|"+club;
+        const e = out[k] || (out[k] = {n:name, c:club, apps:0, mins:0, cs:0});
+        e.apps++; e.mins += mins;
+        if(conceded===0 && mins>=60) e.cs++;
+      });
+    });
+  });
+  return Object.values(out);
+}
+/* شباك نظيفة للنادي: مباريات ملعّبة لم يستقبل فيها هدفاً */
+function clubCleanSheets(c){
+  return MATCHES.filter(m=>!isUpcoming(m) && (m.home===c||m.away===c))
+    .filter(m => (c===m.home ? +m.ag : +m.hg)===0).length;
+}
+function playerPlayOf(club){ return playerPlay().filter(p=>p.c===club).sort((a,b)=>b.mins-a.mins); }
+
 function headlines(){
   const out=[];
   const byMargin=[...MATCHES].sort((a,b)=>Math.abs(b.hg-b.ag)-Math.abs(a.hg-a.ag))[0];
@@ -4811,6 +4861,21 @@ function renderClubBody(c){
   </div>
   ${CARDS.length?"":`<p class="hint">لا توجد بيانات انضباط بعد — أضف ورقة «سجل الإنذارات» في ملف الاستوديو.</p>`}
 
+  <h2 class="sec">دقائق اللعب والشباك النظيفة</h2>
+  <div class="card pad">
+    <div class="stat"><span>شباك نظيفة للنادي</span><span class="v">${clubCleanSheets(c)}${played?` · من ${played} مباراة`:""}</span></div>
+  </div>
+  ${(()=>{ const pp=playerPlayOf(c);
+    if(!pp.length) return `<p class="hint">لم تُرصد تشكيلات لهذا النادي بعد.</p>`;
+    return `<div class="card"><div class="twrap"><table style="min-width:420px">
+      <thead><tr><th>اللاعب</th><th>الدقائق</th><th>مباريات</th><th>شباك نظيفة</th></tr></thead>
+      <tbody>${pp.map(p=>`<tr><td><div class="teamcell">${pav(p.n)}<b>${esc(p.n)}</b></div></td>
+        <td style="color:var(--head);font-weight:700;font-variant-numeric:tabular-nums">${p.mins}′</td>
+        <td style="color:var(--slate)">${p.apps}</td>
+        <td style="color:${p.cs?'var(--win)':'var(--slate)'};font-weight:${p.cs?'700':'400'}">${p.cs||"—"}</td></tr>`).join("")}
+      </tbody></table></div></div>`;
+  })()}
+
   <h2 class="sec">ركلات الجزاء — خريطة المرمى</h2>
   <div class="card pad">${goalMap(PENS.filter(x=>x.by===c))}</div>
 
@@ -5158,6 +5223,29 @@ function renderPlayers(){
     <div class="card"><div class="twrap"><table style="min-width:380px">
       <thead><tr><th>اللاعب</th><th>النادي</th><th>صناعة</th></tr></thead>
       <tbody>${A.length?A.map((p,i)=>row(p,p.a,i)).join(""):'<tr><td colspan="3" style="text-align:center;color:var(--slate)">—</td></tr>'}</tbody></table></div></div>
+    ${(()=>{ const PP=playerPlay();
+      const byMin=[...PP].sort((a,b)=>b.mins-a.mins);
+      const byCS=PP.filter(p=>p.cs>0).sort((a,b)=>b.cs-a.cs||b.mins-a.mins);
+      const cs = byCS.length? `<h2 class="sec">الشباك النظيفة</h2>
+        <p class="hint">لاعبون لعبوا 60 دقيقة فأكثر في مباريات لم يستقبل فيها فريقهم هدفاً.</p>
+        <div class="card"><div class="twrap"><table style="min-width:420px">
+          <thead><tr><th>اللاعب</th><th>النادي</th><th>شباك نظيفة</th><th>مباريات</th></tr></thead>
+          <tbody>${byCS.map((p,i)=>`<tr><td><div class="teamcell"><span class="pos">${i+1}</span>${pav(p.n)}${crest(p.c)}<b>${esc(p.n)}</b></div></td>
+            <td style="color:var(--slate)">${esc(p.c)}</td>
+            <td style="color:var(--win);font-weight:700">${p.cs}</td>
+            <td style="color:var(--slate)">${p.apps}</td></tr>`).join("")}</tbody></table></div></div>`:'';
+      const mn = byMin.length? `<h2 class="sec">دقائق اللعب</h2>
+        <p class="hint">إجمالي دقائق كل لاعب من التشكيلات والتبديلات. اضغط رأس المباريات للترتيب الذهني.</p>
+        <div class="card"><div class="twrap"><table style="min-width:440px">
+          <thead><tr><th>اللاعب</th><th>النادي</th><th>الدقائق</th><th>مباريات</th><th>شباك نظيفة</th></tr></thead>
+          <tbody>${byMin.map((p,i)=>`<tr><td><div class="teamcell"><span class="pos">${i+1}</span>${pav(p.n)}${crest(p.c)}<b>${esc(p.n)}</b></div></td>
+            <td style="color:var(--slate)">${esc(p.c)}</td>
+            <td style="color:var(--head);font-weight:700;font-variant-numeric:tabular-nums">${p.mins}′</td>
+            <td style="color:var(--slate)">${p.apps}</td>
+            <td style="color:var(--slate)">${p.cs||"—"}</td></tr>`).join("")}</tbody></table></div></div>`:'';
+      return cs+mn;
+    })()}
+
     <h2 class="sec">الانضباط</h2>
     ${DL.length?`<div class="card"><div class="twrap"><table style="min-width:380px">
       <thead><tr><th>اللاعب</th><th>النادي</th><th>إنذار</th><th>طرد</th></tr></thead>
