@@ -62,7 +62,9 @@ const ROSTER = {
           let changed = false;
           if(hit.name !== sp.name){ hit.name = sp.name; changed = true; }
           if(sp.shirt && hit.shirt !== sp.shirt){ hit.shirt = sp.shirt; changed = true; }
-          if(sp.pos && hit.pos !== sp.pos){ hit.pos = sp.pos; rep.posChanged++; changed = true; }
+          /* المركز لا يتغيّر بعد بداية الموسم (كما في فانتسي الدوري الإنجليزي): تغييره يكسر قوائم
+             المشتركين (عدد المهاجمين) ونظام النقاط. يُحصى الاختلاف فقط ويقرّره المدير يدوياً من «اللاعبون». */
+          if(sp.pos && hit.pos !== sp.pos){ rep.posChanged++; (rep.posDiff = rep.posDiff || []).push(`${hit.name} (${hit.pos}→${sp.pos})`); }
           if(hit.status === 'u'){ hit.status = 'a'; changed = true; }   /* رجع للكشف */
           if(changed) rep.updated++;
         } else {
@@ -100,9 +102,10 @@ const ROSTER = {
     UI.modal(`<h3>سحب الكشوفات من mfsoccer</h3>
       <div class="tiny" style="margin-bottom:8px">آخر تحديث للموقع: ${upd || '—'} · ${r.clubs} نادياً</div>
       <div class="muted" style="line-height:2">
-        ${r.added} لاعب جديد · ${r.updated} محدّث · ${r.hidden} أُخفي · ${r.posChanged} تغيّر مركزه
+        ${r.added} لاعب جديد · ${r.updated} محدّث · ${r.hidden} أُخفي · ${r.posChanged} مركزه مختلف عن الموقع (لم يُغيَّر)
       </div>
       <div class="tiny" style="margin-top:8px">إجمالي اللاعبين الفعّالين الآن: ${active}</div>
+      ${(r.posDiff||[]).length ? `<div class="tiny" style="margin-top:8px">المراكز ثابتة طوال الموسم؛ لتغيير مركز لاعب بعينه: الإدارة ← اللاعبون. المختلفون: ${r.posDiff.slice(0,12).join('، ')}${r.posDiff.length>12?' …':''}</div>` : ''}
       ${r.unknown.length ? `<h3 style="font-size:.85rem;margin-top:10px;color:var(--red)">أندية ما انطابقت:</h3>
         <div class="tiny">${r.unknown.join('، ')}</div>` : ''}
       ${r.hidden ? `<div class="tiny" style="margin-top:8px;color:var(--gold)">اللاعبون المُخفون ما انحذفوا نهائياً — يرجعون تلقائياً لو رجعت أسماؤهم للكشف.</div>` : ''}
