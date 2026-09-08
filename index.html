@@ -537,15 +537,25 @@ details.squadbox summary label.lb{margin:0;cursor:pointer}
   border:1.5px solid var(--pe,rgba(255,255,255,.85));font-variant-numeric:tabular-nums}
 .pp-nm{font-size:clamp(8.5px,2.9cqw,12px);color:#fff;font-weight:600;max-width:100%;
   text-shadow:0 1px 3px rgba(0,0,0,.7);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-/* أيقونات الأحداث على لاعب الملعب: كرة/حذاء/كرت في شريحة بيضاء تُقرأ على العشب */
-.pp-ico{display:inline-flex;align-items:center;gap:2px;margin-top:2px;
-  background:rgba(255,255,255,.94);border-radius:6px;padding:1px 3px;
-  box-shadow:0 1px 3px rgba(0,0,0,.3)}
-.pp-ico .ico-ball,.pp-ico .ico-boot{width:clamp(9px,2.6cqw,12px);height:clamp(9px,2.6cqw,12px)}
-.pp-ico em{font-style:normal;font-size:clamp(7px,2cqw,9px);font-weight:800;color:#0B1F3A}
-.pp-card{width:clamp(6px,1.7cqw,8px);height:clamp(9px,2.5cqw,11px);border-radius:2px;display:inline-block}
-.pp-card.y{background:#E9B949}
-.pp-card.r{background:#D9453B}
+/* شارات الأحداث على شارة اللاعب: في الأركان الأربعة، بأحجام تتناسب مع الملعب */
+.pp-dot{position:relative}
+.pp-b{position:absolute;display:inline-flex;align-items:center;justify-content:center;z-index:3;
+  box-shadow:0 1px 2px rgba(0,0,0,.4);line-height:1}
+.pp-b .ico-ball,.pp-b .ico-boot{width:clamp(9px,2.7cqw,13px);height:clamp(9px,2.7cqw,13px)}
+/* الهدف: أعلى اليسار (شريحة بيضاء، وعدد إن تعدّد) */
+.pp-b.goal{top:-6px;left:-6px;background:#fff;border-radius:8px;padding:1px;gap:1px}
+.pp-b.goal em{font-style:normal;font-weight:800;color:#0B1F3A;font-size:clamp(7px,2.1cqw,10px);padding-inline-end:1px}
+/* الصناعة: أسفل اليمين */
+.pp-b.assist{bottom:-6px;right:-6px;background:#fff;border-radius:50%;padding:1px}
+/* الكرت: أعلى اليمين على القميص */
+.pp-b.card{top:-5px;right:-5px;width:clamp(7px,2cqw,9px);height:clamp(10px,2.8cqw,12px);border-radius:2px}
+.pp-b.card.y{background:#E9B949}
+.pp-b.card.r{background:#D9453B}
+/* الخروج: أسفل اليسار، دائرة حمراء بسهم أبيض للأسفل */
+.pp-b.off{bottom:-5px;left:-5px;width:clamp(11px,3cqw,15px);height:clamp(11px,3cqw,15px);
+  border-radius:50%;background:#D9453B}
+.pp-b.off::after{content:"";border-inline:clamp(2.5px,.7cqw,3.5px) solid transparent;
+  border-top:clamp(3.5px,1cqw,5px) solid #fff;margin-top:1px}
 /* التشكيلة في صفحة المباراة وفي ملف النادي */
 .xi{margin:10px 0 4px}
 .xi-t{display:flex;align-items:center;gap:6px;min-width:0;font-size:.78rem;
@@ -3760,24 +3770,24 @@ function playerMatchEvents(m, club, name){
   const goals   = gs.filter(g=>g.p===name && g.bp!=="هدف عكسي").length;
   const assists = gs.filter(g=>g.a===name).length;
   const cds = CARDS.filter(x=>x.r===m.round && compOf(x)===comp && x.club===club && x.p===name);
-  return {goals, assists, red:cds.some(c=>isRed(c.type)), yellow:cds.some(c=>isYellow(c.type))};
+  const off = (typeof matchSubs==="function") && matchSubs(m).some(s=>s.club===club && s.out===name);
+  return {goals, assists, off, red:cds.some(c=>isRed(c.type)), yellow:cds.some(c=>isYellow(c.type))};
 }
-/* أيقونات صغيرة تحت اسم اللاعب على الملعب */
-function spotIcons(ev){
+/* شارات على شارة اللاعب نفسها (أركان): الكرت أعلى يمين، الهدف أعلى يسار،
+   الصناعة أسفل يمين، وسهم الخروج الأحمر أسفل يسار. */
+function spotBadges(ev){
   if(!ev) return "";
-  let s="";
-  const balls=Math.min(ev.goals,3);
-  for(let i=0;i<balls;i++) s+=ICO_BALL;
-  if(ev.goals>3) s+=`<em>×${ev.goals}</em>`;
-  if(ev.assists) s+=ICO_BOOT;
-  if(ev.red) s+=`<b class="pp-card r"></b>`;
-  else if(ev.yellow) s+=`<b class="pp-card y"></b>`;
-  return s ? `<span class="pp-ico">${s}</span>` : "";
+  let b="";
+  if(ev.goals)   b+=`<span class="pp-b goal">${ICO_BALL}${ev.goals>1?`<em>${ev.goals}</em>`:""}</span>`;
+  if(ev.assists) b+=`<span class="pp-b assist">${ICO_BOOT}</span>`;
+  if(ev.red||ev.yellow) b+=`<span class="pp-b card ${ev.red?"r":"y"}"></span>`;
+  if(ev.off)     b+=`<span class="pp-b off" title="خرج"></span>`;
+  return b;
 }
 function spotHTML(p, x, y, n, kit, ev){
   return `<div class="pp-spot" style="right:${x}%;top:${y}%;max-width:${(96/(n+1)).toFixed(1)}%">
-    <span class="pp-dot" style="${dotVars(kit)}">${p.s||"–"}</span>
-    <span class="pp-nm">${esc(p.n)}</span>${spotIcons(ev)}</div>`;
+    <span class="pp-dot" style="${dotVars(kit)}">${p.s||"–"}${spotBadges(ev)}</span>
+    <span class="pp-nm">${esc(p.n)}</span></div>`;
 }
 /* القميص الفاتح يحتاج حافة غامقة ليُرى على العشب، والغامق حافة فاتحة */
 function dotVars(kit){
