@@ -101,8 +101,10 @@ const UI = {
     if(p.status==='d') return '<span class="pill gold">مشكوك</span>';
     return '';
   },
+  /* أرض/خارج بالشكل التقليدي: (H) على أرضه، (A) خارج أرضه */
+  ha(home){ return `<span class="ha">${home?'(H)':'(A)'}</span>`; },
   fdrPill(f){
-    return `<span class="fdr l${f.lvl}" title="${f.label}">${DB.club(f.opp).short} ${UI.icon(f.home?'home':'plane',10)}</span>`;
+    return `<span class="fdr l${f.lvl}" title="${f.label}${f.home?' — على أرضه':' — خارج أرضه'}">${DB.club(f.opp).short} ${UI.ha(f.home)}</span>`;
   },
   fmtDate(iso){
     if(!iso) return 'لم يُحدَّد بعد';

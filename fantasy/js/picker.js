@@ -44,7 +44,7 @@ Object.assign(VIEWS, {
           <div class="sh-sub">${R.posCount.G} حراس · ${R.posCount.D} مدافعين · ${R.posCount.M} وسط · ${R.posCount.F} مهاجمين · حد أقصى ${R.maxPerClub} من كل نادٍ</div>
         </div>
         <div class="sh-stats">
-          <div><b style="${cost>R.budget?'color:#ffb4b0':''}">${fmtM(R.budget-cost)}</b><span>بالبنك</span></div>
+          <div><b style="${cost>R.budget?'color:#ffb4b0':''}">${fmtM(R.budget-cost)}</b><span>بالبنك (${CUR})</span></div>
           <div><b>${sq.length}/${R.squadSize}</b><span>اللاعبون</span></div>
         </div>
       </div>
@@ -112,7 +112,7 @@ Object.assign(VIEWS, {
         <div class="club-tag">${DB.club(p.club).short}</div>
         ${UI.pitchKit(p,50)}
         <div class="nm">${esc(p.name.split(' ').slice(-1)[0])}</div>
-        <div class="pt">${next? `${DB.club(next.opp).short} ${UI.icon(next.home?'home':'plane',11)}` : fmtM(p.price)}</div></div>`;
+        <div class="pt">${next? `${DB.club(next.opp).short} ${UI.ha(next.home)}` : fmtM(p.price)}</div></div>`;
     };
     const board=['G','D','M','F'].map(pos=>
       `<div class="pitch-row">${team.squad.filter(pid=>DB.player(pid).pos===pos).map(card).join('')}</div>`).join('');
@@ -131,14 +131,14 @@ Object.assign(VIEWS, {
       <div class="tf-stats">
         <div><b>${team.ft}</b><span>مجاني</span></div>
         <div><b style="color:${hits?'var(--red)':'var(--text)'}">${freeMode?'حر':(hits?'−'+hits:'0')}</b><span>الخصم</span></div>
-        <div><b style="color:${bankAfter<0?'var(--red)':'var(--text)'}">${fmtM(bankAfter)}</b><span>بالبنك</span></div>
+        <div><b style="color:${bankAfter<0?'var(--red)':'var(--text)'}">${fmtM(bankAfter)}</b><span>بالبنك (${CUR})</span></div>
       </div>
       <div class="zain-frame"><div class="pitch tf-board">${board}</div></div>
       <div class="tiny" style="text-align:center;margin-top:8px;color:var(--text3)">اضغط أي لاعب لعرض خياراته: إزالة أو اختيار بديل.</div>
     </div>
     ${tOut.length? `<div class="tf-bar"><div class="tf-bar-in">
       <div><b>${nPairs}/${tOut.length}</b><span>صفقات</span></div>
-      <div><b style="color:${bankAfter<0?'var(--red)':'var(--text)'}">${fmtM(bankAfter)}</b><span>بالبنك</span></div>
+      <div><b style="color:${bankAfter<0?'var(--red)':'var(--text)'}">${fmtM(bankAfter)}</b><span>بالبنك (${CUR})</span></div>
       <div><b style="color:${hits?'var(--red)':'var(--text)'}">${freeMode?'حر':(hits?'−'+hits:'0')}</b><span>الخصم</span></div>
       <button class="btn" ${!allPaired||bankAfter<0||locked?'disabled':''} onclick="VIEWS.tConfirm()">تنفيذ</button>
       <button class="btn sec sm" onclick="VIEWS.tReset()">إلغاء</button>
@@ -256,7 +256,7 @@ Object.assign(VIEWS, {
         <button class="iconbtn" onclick="VIEWS.closeAddPlayer()">${UI.icon('back',20)}</button>
         <h3>إضافة لاعب</h3><span style="width:36px"></span>
       </div>
-      <div class="addp-bank">بالبنك ${fmtM(bank)}</div>
+      <div class="addp-bank">بالبنك ${fmtK(bank)}</div>
       <div class="addp-search">${UI.icon('search',20)}<input id="addpSearch" placeholder="بحث بالاسم" value="${esc(a.search)}" oninput="VIEWS.addpSearch(this.value)"></div>
       <div class="addp-filters">
         <select ${a.posLocked?'disabled':''} onchange="VIEWS.addpSet('pos',this.value)">

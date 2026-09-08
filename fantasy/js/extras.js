@@ -143,11 +143,11 @@ Object.assign(VIEWS, {
     const gp=p=>Object.keys(st.playerGW[p.id]||{}).length;
     const fin=RANKS.finishedGWs(st).slice(-4);
     const metrics=[
-      ['السعر', p=>p.price, v=>fmtM(v), 'low'],
+      ['السعر', p=>p.price, v=>fmtK(v), 'low'],
       ['مجموع النقاط', p=>DB.playerTotal(p.id), v=>v, 'high'],
       ['نقاط / مباراة', p=>gp(p)? DB.playerTotal(p.id)/gp(p):0, v=>v.toFixed(1), 'high'],
       ['الفورمة', p=>DB.playerForm(p.id), v=>v.toFixed(1), 'high'],
-      ['نقاط / مليون', p=>DB.playerTotal(p.id)/p.price, v=>v.toFixed(2), 'high'],
+      ['نقاط / KWD', p=>DB.playerTotal(p.id)/p.price, v=>v.toFixed(2), 'high'],
       ['التملّك', p=>MARKET.ownership(p.id), v=>v+'%', 'high'],
       ['أهداف', p=>DB.playerStatSum(p.id,'g'), v=>v, 'high'],
       ['صناعة', p=>DB.playerStatSum(p.id,'a'), v=>v, 'high'],

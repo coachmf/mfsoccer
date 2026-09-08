@@ -252,8 +252,8 @@ const VIEWS = {
           <div class="sh-sub">الجولة ${gw} · ${locked? (GWADMIN.inProgress(gw)? 'جارية — النقاط تظهر مباشرة في «ملخص الجولة»' : 'مقفلة') : (DB.gw(gw).deadline? 'الإغلاق: '+UI.fmtDate(DB.gw(gw).deadline) : 'مفتوحة — بانتظار صدور جدول الجولة')}</div>
         </div>
         <div class="sh-stats">
-          <div><b>${fmtM(TEAM.teamValue(team))}</b><span>القيمة</span></div>
-          <div><b>${fmtM(team.bank)}</b><span>بالبنك</span></div>
+          <div><b>${fmtM(TEAM.teamValue(team))}</b><span>القيمة (${CUR})</span></div>
+          <div><b>${fmtM(team.bank)}</b><span>بالبنك (${CUR})</span></div>
           <div><b>${team.ft}</b><span>انتقالات</span></div>
         </div>
       </div>
@@ -296,8 +296,8 @@ const VIEWS = {
     return `
       <div class="card" style="margin-bottom:12px"><h3>فريقي</h3>
         <div class="side-row"><span>مجموع النقاط</span><b style="color:var(--accent)">${total}</b></div>
-        <div class="side-row"><span>قيمة الفريق</span><b>${fmtM(TEAM.teamValue(team))}</b></div>
-        <div class="side-row"><span>بالبنك</span><b>${fmtM(team.bank)}</b></div>
+        <div class="side-row"><span>قيمة الفريق</span><b>${fmtK(TEAM.teamValue(team))}</b></div>
+        <div class="side-row"><span>بالبنك</span><b>${fmtK(team.bank)}</b></div>
         <div class="side-row"><span>انتقالات مجانية</span><b>${team.ft}</b></div>
         <button class="btn" style="width:100%;margin-top:10px" onclick="APP.go('transfers')">الانتقالات</button>
       </div>
@@ -379,7 +379,7 @@ const VIEWS = {
     const liveGw = st.gws.find(g=>g.status==='live');
     const r = liveGw? DB.pgw(pid, liveGw.n) : null;
     const next=FDR.next(p.club,1)[0];
-    const sub = r? `${r.pts} نقطة` : next? `${DB.club(next.opp).short} ${UI.icon(next.home?'home':'plane',11)}` : '—';
+    const sub = r? `${r.pts} نقطة` : next? `${DB.club(next.opp).short} ${UI.ha(next.home)}` : '—';
     const dim = this.ui.subMode && this.ui.sel && !this.canSwapWith(this.ui.sel, pid, team);
     return `<div class="pslot ${sel?'sel':''} ${dim?'dim':''}" onclick="VIEWS.slotClick('${pid}')">
       ${team.cap===pid? '<div class="badge">C</div>' : team.vice===pid? '<div class="badge v">V</div>':''}
@@ -435,7 +435,7 @@ const VIEWS = {
     const gpOf=x=>Object.keys(st.playerGW[x.id]||{}).length;
     const ppm=x=>{ const g=gpOf(x); return g? DB.playerTotal(x.id)/g : 0; };
     const stats=[
-      [fmtM(p.price), 'السعر', rankOf(x=>x.price)],
+      [fmtM(p.price), 'السعر ('+CUR+')', rankOf(x=>x.price)],
       [ppm(p).toFixed(1), 'نقاط/مباراة', rankOf(ppm)],
       [DB.playerForm(pid).toFixed(1), 'الفورمة', rankOf(x=>DB.playerForm(x.id))],
       [MARKET.ownership(pid)+'%', 'التملّك', rankOf(x=>MARKET.ownership(x.id))],
@@ -448,12 +448,12 @@ const VIEWS = {
       const pts=r?r.pts:0;
       const cls=pts>=8?'good':pts>=4?'ok':pts>=1?'mid':'bad';
       return `<div class="fcell"><div class="tiny">ج${gw}</div>${opp?UI.crest(opp):''}
-        <div class="tiny">${opp?DB.club(opp).short:'—'} ${UI.icon(home?'home':'plane',11)}</div>
+        <div class="tiny">${opp?DB.club(opp).short:'—'} ${UI.ha(home)}</div>
         <span class="ptschip ${cls}">${pts}</span></div>`;
     }).join('') || '<div class="muted tiny">لا جولات بعد</div>';
     const fxCells=FDR.next(p.club,3).map(x=>`
       <div class="fcell"><div class="tiny">ج${x.gw}</div>${UI.crest(x.opp)}
-        <div class="tiny">${DB.club(x.opp).short} ${UI.icon(x.home?'home':'plane',11)}</div>
+        <div class="tiny">${DB.club(x.opp).short} ${UI.ha(x.home)}</div>
         <span class="ptschip fdr-l${x.lvl}">${x.lvl}</span></div>`).join('');
     UI.sheet(`
       <div class="ps-head">
@@ -721,7 +721,7 @@ const VIEWS = {
         <div style="flex:1">
           <h2>${esc(p.name)} ${p.shirt?`<span class="tiny">#${p.shirt}</span>`:''} ${UI.statusPill(p)}</h2>
           <div class="row" style="gap:8px;margin-top:4px">${UI.crest(p.club)} <b>${c.name}</b> <span class="pill">${POS_AR[p.pos]}</span>
-          <span class="pill blue">${fmtM(p.price)} م.د ${p.price>p.startPrice?'▲':p.price<p.startPrice?'▼':''}</span></div>
+          <span class="pill blue">${fmtK(p.price)} ${p.price>p.startPrice?'▲':p.price<p.startPrice?'▼':''}</span></div>
           ${p.news? `<div class="muted" style="margin-top:8px">${esc(p.news)}</div>`:''}
         </div>
         ${team&&team.squad.length&&!team.squad.includes(pid)? `<button class="btn sec" onclick="APP.go('transfers')">تعاقد معه</button>`:''}
@@ -739,7 +739,7 @@ const VIEWS = {
       <div class="card"><h3>نقاط الفانتسي عبر الجولات</h3>${UI.lineChart(hist,560,180)}</div>
       <div class="card"><h3>المباريات القادمة</h3>
         ${FDR.next(p.club,6).map(x=>`<div class="fx"><div class="team">ج${x.gw}</div>
-          <div class="team">${UI.crest(x.opp)} ${DB.club(x.opp).name} ${UI.icon(x.home?'home':'plane',13)}</div>
+          <div class="team">${UI.crest(x.opp)} ${DB.club(x.opp).name} ${UI.ha(x.home)}</div>
           <span class="fdr l${x.lvl}">${x.label}</span></div>`).join('')||'<div class="muted">انتهى الموسم</div>'}
       </div>
       <div class="card" style="grid-column:1/-1"><h3>سجل الجولات</h3>
@@ -995,7 +995,7 @@ const VIEWS = {
       <div><h3>الصنّاع</h3>${tbl(['اللاعب','صناعة'],as.map(p=>prow(p,`<td class="num">${DB.playerStatSum(p.id,'a')}</td>`)).join(''))}</div></div>`;
     } else if(t==='value'){
       const list=[...players].filter(p=>DB.playerTotal(p.id)>0).sort((a,b)=>DB.playerTotal(b.id)/b.price-DB.playerTotal(a.id)/a.price).slice(0,20);
-      body=tbl(['اللاعب','نقاط/مليون','النقاط'],list.map(p=>prow(p,`<td class="num">${(DB.playerTotal(p.id)/p.price).toFixed(2)}</td><td class="num" style="color:var(--accent)">${DB.playerTotal(p.id)}</td>`)).join(''));
+      body=tbl(['اللاعب','نقاط/'+CUR,'النقاط'],list.map(p=>prow(p,`<td class="num">${(DB.playerTotal(p.id)/p.price).toFixed(2)}</td><td class="num" style="color:var(--accent)">${DB.playerTotal(p.id)}</td>`)).join(''));
     } else if(t==='pos'){
       body=`<div class="grid g2">${['G','D','M','F'].map(pos=>{
         const list=players.filter(p=>p.pos===pos).sort((a,b)=>DB.playerTotal(b.id)-DB.playerTotal(a.id)).slice(0,8);

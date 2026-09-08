@@ -425,7 +425,7 @@ const ADMIN = {
       <input type="number" step="0.1" value="${val}" onchange="ADMIN.setRule('${path}',+this.value)"></div>`;
     return `<div class="card"><h3>قواعد اللعبة</h3>
       <div class="grid g3">
-        ${num('budget','الميزانية (مليون)',R.budget)}
+        ${num('budget','الميزانية (KWD)',R.budget)}
         ${num('maxPerClub','أقصى عدد من نفس النادي',R.maxPerClub)}
         ${num('freeTransfers','انتقالات مجانية/جولة',R.freeTransfers)}
         ${num('maxSavedTransfers','أقصى انتقالات مدّخرة',R.maxSavedTransfers)}

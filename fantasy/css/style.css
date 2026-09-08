@@ -233,9 +233,10 @@ table.tbl{width:100%;border-collapse:collapse;font-size:.88rem;}
 /* جدول صعوبة المباريات: كل المربعات بعرض وارتفاع واحد مهما طال اسم النادي */
 .fdr-grid td{padding:5px 3px;text-align:center;}
 .fdr-grid td:first-child{text-align:right;padding-right:10px;white-space:nowrap;}
-.fdr-grid .fdr{display:flex;align-items:center;justify-content:center;gap:3px;width:76px;height:28px;
+.ha{font-family:'Almarai',system-ui,sans-serif;font-weight:800;font-size:.9em;letter-spacing:.2px;direction:ltr;display:inline-block;opacity:.9;}
+.fdr-grid .fdr{display:flex;align-items:center;justify-content:center;gap:3px;width:84px;height:28px;
   padding:0 4px;box-sizing:border-box;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin:0 auto;}
-@media (max-width:400px){ .fdr-grid .fdr{width:66px;height:26px;font-size:.62rem;} }
+@media (max-width:400px){ .fdr-grid .fdr{width:74px;height:26px;font-size:.62rem;} }
 
 /* ---------- شاشة التشكيلة (طراز FPL) ---------- */
 .pickteam{max-width:640px;margin:0 auto;}

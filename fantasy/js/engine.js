@@ -9,6 +9,9 @@ function hashStr(s){ let h=2166136261; for(let i=0;i<s.length;i++){ h^=s.charCod
 function mulberry32(seed){ let a=seed>>>0; return function(){ a|=0; a=(a+0x6D2B79F5)|0; let t=Math.imul(a^(a>>>15),1|a); t=(t+Math.imul(t^(t>>>7),61|t))^t; return ((t^(t>>>14))>>>0)/4294967296; }; }
 function gauss(rng){ return Math.sqrt(-2*Math.log(1-rng()))*Math.cos(2*Math.PI*rng()); }
 function fmtM(v){ return v.toFixed(1); }
+/* العملة: مسمّى للعرض فقط — الأرقام المخزّنة (أسعار، رصيد، ميزانية) لا تتغيّر */
+const CUR='KWD';
+function fmtK(v){ return fmtM(v)+' '+CUR; }
 function esc(s){ return String(s??'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 const POS_AR = { G:'حارس', D:'مدافع', M:'وسط', F:'مهاجم' };
 const POS_ORDER = { G:0, D:1, M:2, F:3 };
@@ -536,7 +539,7 @@ const TEAM = {
       errs.push(`${POS_AR[pos]}: المطلوب ${R.posCount[pos]} (لديك ${byPos[pos]})`);
     for(const c in byClub) if(byClub[c]>R.maxPerClub)
       errs.push(`الحد الأقصى ${R.maxPerClub} لاعبين من ${DB.club(c).name} (لديك ${byClub[c]})`);
-    if(cost>R.budget+1e-9) errs.push(`تجاوزت الميزانية: ${fmtM(cost)} من ${fmtM(R.budget)} مليون`);
+    if(cost>R.budget+1e-9) errs.push(`تجاوزت الميزانية: ${fmtM(cost)} من ${fmtK(R.budget)}`);
     return { ok:errs.length===0, errs, cost };
   },
   /* تشكيلة تلقائية من قائمة: الأغلى مع احترام القيود (تُستعمل عند اعتماد الفريق وعند الإصلاح) */
@@ -961,7 +964,7 @@ const GWADMIN = {
     for(const uid in st.teams){
       changes.slice(0,6).forEach(ch=>{
         if(st.teams[uid].squad.includes(ch.p.id))
-          NOTIF.push(uid,'price',`${ch.d>0?'ارتفع':'انخفض'} سعر ${ch.p.name} إلى ${fmtM(ch.p.price)}`);
+          NOTIF.push(uid,'price',`${ch.d>0?'ارتفع':'انخفض'} سعر ${ch.p.name} إلى ${fmtK(ch.p.price)}`);
       });
     }
     // الجولة التالية (وفي آخر جولة بالموسم تبقى الحالية منتهية)
