@@ -2,7 +2,7 @@
 'use strict';
 
 const VIEWS = {
-  ui: { sel:null, subMode:false, tOut:[], tIn:[], filters:{pos:'',club:'',sort:'total',search:'',fdr:false},
+  ui: { sel:null, subMode:false, tOut:[], tIn:[], filters:{pos:'',club:'',sort:'total',sortAsc:false,search:'',fdr:false},
         pickerSquad:[], authTab:'login', fxGw:null, statsTab:'transfers', playerOpen:null, leagueOpen:null,
         adminSec:'gws', adminGw:null, editFx:null, pointsGw:null, cmp:[], legacyAdmin:false },
 
@@ -661,6 +661,21 @@ const VIEWS = {
   },
 
   /* ======================= اللاعبون ======================= */
+  /* أعمدة جدول اللاعبين: الضغط على العنوان يرتّب من الأفضل إلى الأسوأ، والضغط مرة أخرى يعكس الترتيب */
+  PL_COLS: {
+    price:  { label:'السعر',            val:p=>p.price },
+    total:  { label:'نقاط',             val:p=>DB.playerTotal(p.id) },
+    form:   { label:'فورمة',            val:p=>DB.playerForm(p.id) },
+    owned:  { label:'تملّك',            val:p=>MARKET.ownership(p.id) },
+    goals:  { label:'أهداف',            val:p=>DB.playerStatSum(p.id,'g') },
+    assists:{ label:'صناعة',            val:p=>DB.playerStatSum(p.id,'a') },
+    fdr:    { label:'المباريات القادمة', val:p=>-FDR.avgNext(p.club,3) },   // الأسهل أولاً
+  },
+  plSort(key){
+    const f=this.ui.filters;
+    if(f.sort===key) f.sortAsc=!f.sortAsc; else { f.sort=key; f.sortAsc=false; }
+    APP.render();
+  },
   players(){
     const st=DB.state, f=this.ui.filters;
     let list=st.players.filter(p=>p.status!=='u');
@@ -668,24 +683,18 @@ const VIEWS = {
     if(f.pos) list=list.filter(p=>p.pos===f.pos);
     if(f.club) list=list.filter(p=>p.club===f.club);
     if(f.search) list=list.filter(p=>p.name.includes(f.search));
-    if(f.fdr) list.sort((a,b)=>FDR.avgNext(a.club,3)-FDR.avgNext(b.club,3)||DB.playerTotal(b.id)-DB.playerTotal(a.id));
-    else if(f.sort==='price') list.sort((a,b)=>b.price-a.price);
-    else if(f.sort==='form') list.sort((a,b)=>DB.playerForm(b.id)-DB.playerForm(a.id));
-    else if(f.sort==='owned') list.sort((a,b)=>MARKET.ownership(b.id)-MARKET.ownership(a.id));
-    else list.sort((a,b)=>DB.playerTotal(b.id)-DB.playerTotal(a.id));
+    const col=this.PL_COLS[f.sort]||this.PL_COLS.total, dir=f.sortAsc?1:-1;
+    list.sort((a,b)=>dir*(col.val(a)-col.val(b)) || DB.playerTotal(b.id)-DB.playerTotal(a.id));
+    const th=key=>{ const c=this.PL_COLS[key], on=f.sort===key;
+      return `<th class="th-sort ${on?'on':''}" onclick="VIEWS.plSort('${key}')">${c.label}<span class="th-arrow">${on?(f.sortAsc?'▲':'▼'):''}</span></th>`; };
     return `<div class="row spread" style="margin-bottom:12px"><h2>اللاعبون</h2><button class="btn sec sm" onclick="VIEWS.cmpOpen()">${UI.icon('swap',15)} مقارنة</button></div>
     <div class="card">
       <div class="row" style="flex-wrap:wrap;gap:6px;margin-bottom:6px">
         ${this.marketFilters()}
-        <select style="width:auto" onchange="VIEWS.ui.filters.sort=this.value;APP.render()">
-          <option value="total" ${f.sort==='total'?'selected':''}>الأعلى نقاطاً</option>
-          <option value="price" ${f.sort==='price'?'selected':''}>الأغلى</option>
-          <option value="form" ${f.sort==='form'?'selected':''}>الفورمة</option>
-          <option value="owned" ${f.sort==='owned'?'selected':''}>التملّك</option></select>
-        <label class="pill" style="cursor:pointer"><input type="checkbox" ${f.fdr?'checked':''} onchange="VIEWS.ui.filters.fdr=this.checked;APP.render()" style="width:auto"> مباريات سهلة قادمة</label>
       </div>
+      <div class="tiny" style="margin:0 0 6px;color:var(--text3)">اضغط عنوان العمود للترتيب من الأفضل إلى الأسوأ، ومرة أخرى لعكسه.</div>
       <div class="scroll-x"><table class="tbl">
-        <tr><th>اللاعب</th><th>السعر</th><th>نقاط</th><th>فورمة</th><th>تملّك</th><th>أهداف</th><th>صناعة</th><th>المباريات القادمة</th></tr>
+        <tr><th>اللاعب</th>${['price','total','form','owned','goals','assists','fdr'].map(th).join('')}</tr>
         ${list.slice(0,100).map(p=>`
           <tr onclick="VIEWS.openPlayer('${p.id}')" style="cursor:pointer">
             <td><div class="row">${UI.playerAvatar(p,30)}<div><b>${esc(p.name)}</b> ${UI.statusPill(p)}<div class="tiny">${DB.club(p.club).short} · ${POS_AR[p.pos]}</div></div></div></td>

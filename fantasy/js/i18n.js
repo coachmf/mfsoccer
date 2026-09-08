@@ -56,7 +56,7 @@ const I18N = {
     'المباريات القادمة':'Upcoming fixtures', 'صعوبة المباراة':'Fixture difficulty', 'لا جولات بعد':'No gameweeks yet', 'موقوف':'Suspended', 'مشكوك':'Doubtful',
     'متوسط النقاط/جولة':'Avg points/GW', 'نسبة التملّك':'Ownership', 'أهداف':'Goals', 'صناعة':'Assists', 'شباك نظيفة':'Clean sheets', 'دقائق':'Minutes',
     'تعاقد معه':'Sign him', 'جولة':'GW', 'شباك':'CS', 'إنذار':'YC', 'طرد':'RC', 'بونص':'Bonus', 'نقاط':'Pts', 'نقاط الفانتسي عبر الجولات':'Fantasy points by gameweek',
-    'مباريات سهلة قادمة':'Easy fixtures ahead', 'مقارنة':'Compare', 'اللاعب':'Player', 'فورمة':'Form', 'تملّك':'Owned',
+    'مباريات سهلة قادمة':'Easy fixtures ahead', 'اضغط عنوان العمود للترتيب من الأفضل إلى الأسوأ، ومرة أخرى لعكسه.':'Click a column header to sort best to worst; click again to reverse.', 'مقارنة':'Compare', 'اللاعب':'Player', 'فورمة':'Form', 'تملّك':'Owned',
     // المباريات
     'المباريات والنتائج':'Fixtures & results', 'منتهية':'Finished', 'لم يصدر الجدول':'Not scheduled', 'الإغلاق:':'Deadline:',
     'صعوبة المباريات القادمة (لكل نادٍ)':'Upcoming fixture difficulty (by club)', 'النادي':'Club', 'المباريات الخمس القادمة':'Next five fixtures',
