@@ -237,6 +237,12 @@ table.tbl{width:100%;border-collapse:collapse;font-size:.88rem;}
 .fdr-grid .fdr{display:flex;align-items:center;justify-content:center;gap:3px;width:84px;height:28px;
   padding:0 4px;box-sizing:border-box;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin:0 auto;}
 @media (max-width:400px){ .fdr-grid .fdr{width:74px;height:26px;font-size:.62rem;} }
+/* عمود «المباريات القادمة» في جدول اللاعبين: مربعات بحجم واحد — صف على الشاشة الكبيرة وعمود على الجوال */
+.fdr-col{padding-left:6px;padding-right:6px;}
+.fdr-stack{display:flex;flex-direction:row;gap:3px;align-items:center;justify-content:flex-start;}
+.fdr-stack .fdr{display:flex;align-items:center;justify-content:center;gap:3px;width:84px;height:24px;
+  padding:0 4px;box-sizing:border-box;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:.66rem;}
+@media (max-width:860px){ .fdr-stack{flex-direction:column;align-items:center;} .fdr-stack .fdr{width:78px;height:22px;font-size:.62rem;} }
 
 /* ---------- شاشة التشكيلة (طراز FPL) ---------- */
 .pickteam{max-width:640px;margin:0 auto;}

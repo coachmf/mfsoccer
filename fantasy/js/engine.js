@@ -11,7 +11,8 @@ function gauss(rng){ return Math.sqrt(-2*Math.log(1-rng()))*Math.cos(2*Math.PI*r
 function fmtM(v){ return v.toFixed(1); }
 /* العملة: مسمّى للعرض فقط — الأرقام المخزّنة (أسعار، رصيد، ميزانية) لا تتغيّر */
 const CUR='KWD';
-function fmtK(v){ return fmtM(v)+' '+CUR; }
+/* عزل اتجاه النص (LRI…PDI) حتى تبقى العملة بعد الرقم على يمينه داخل النص العربي: 79.5 KWD */
+function fmtK(v){ return '⁦'+fmtM(v)+' '+CUR+'⁩'; }
 function esc(s){ return String(s??'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 const POS_AR = { G:'حارس', D:'مدافع', M:'وسط', F:'مهاجم' };
 const POS_ORDER = { G:0, D:1, M:2, F:3 };

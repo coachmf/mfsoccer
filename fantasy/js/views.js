@@ -692,7 +692,7 @@ const VIEWS = {
             <td class="num">${DB.playerForm(p.id).toFixed(1)}</td>
             <td class="tiny">${MARKET.ownership(p.id)}%</td>
             <td>${DB.playerStatSum(p.id,'g')}</td><td>${DB.playerStatSum(p.id,'a')}</td>
-            <td>${FDR.next(p.club,3).map(x=>UI.fdrPill(x)).join(' ')}</td>
+            <td class="fdr-col"><div class="fdr-stack">${FDR.next(p.club,3).map(x=>UI.fdrPill(x)).join('')}</div></td>
           </tr>`).join('')}
       </table></div>
     </div>`;
