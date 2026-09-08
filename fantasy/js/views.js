@@ -519,6 +519,7 @@ const VIEWS = {
   },
   toggleChip(key){
     const team=DB.myTeam(); const st=DB.state;
+    if(GWADMIN.deadlinePassed(st.currentGW)){ UI.toast('أُغلقت الجولة — لا يمكن تفعيل الكروت بعد انطلاق المباراة',true); return; }
     if(team.activeChip===key){
       if(key==='freehit' && team.fhBackup){
         Object.assign(team, {squad:team.fhBackup.squad, xi:team.fhBackup.xi, bench:team.fhBackup.bench,
