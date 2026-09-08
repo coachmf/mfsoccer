@@ -432,6 +432,12 @@ table.tbl{width:100%;border-collapse:collapse;font-size:.88rem;}
 .ps-stats .rnk{font-size:.6rem;color:var(--text3);margin-top:1px;}
 .ps-two{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:0 14px 12px;}
 .ps-two h4{font-size:.78rem;margin-bottom:6px;color:var(--text2);}
+/* كل قسم في لوح مستقل بعنوانه حتى لا تختلط الفورمة بالمباريات القادمة */
+.ps-block{background:var(--surface2);border:1px solid var(--line);border-radius:14px;padding:10px 8px 8px;}
+.ps-block h4{display:flex;align-items:baseline;justify-content:space-between;gap:6px;margin:0 2px 8px;color:var(--text);font-size:.8rem;}
+.ps-block h4 span{font-size:.62rem;color:var(--text3);font-weight:600;}
+.ps-block .fcell{background:var(--surface);}
+@media (max-width:560px){ .ps-two{grid-template-columns:1fr;gap:8px;} }
 .ps-cells{display:flex;gap:6px;}
 .fcell{flex:1;background:var(--surface2);border:1px solid var(--line);border-radius:10px;padding:7px 3px;
   display:flex;flex-direction:column;align-items:center;gap:3px;min-width:0;}

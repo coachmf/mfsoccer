@@ -436,7 +436,7 @@ const VIEWS = {
     const stats=[
       [fmtM(p.price), 'السعر ('+CUR+')', rankOf(x=>x.price)],
       [ppm(p).toFixed(1), 'نقاط/مباراة', rankOf(ppm)],
-      [DB.playerForm(pid).toFixed(1), 'الفورمة', rankOf(x=>DB.playerForm(x.id))],
+      [DB.playerTotal(pid), 'مجموع النقاط', rankOf(x=>DB.playerTotal(x.id))],
       [MARKET.ownership(pid)+'%', 'التملّك', rankOf(x=>MARKET.ownership(x.id))],
     ];
     const fin=st.gws.filter(g=>g.status==='finished').map(g=>g.n).slice(-4);
@@ -469,8 +469,8 @@ const VIEWS = {
         ${stats.map(([v,l,r])=>`<div><b>${v}</b><div class="lbl">${l}</div><div class="rnk">${r} من ${same.length}</div></div>`).join('')}
       </div>
       <div class="ps-two">
-        <div><h4>الفورمة</h4><div class="ps-cells">${formCells}</div></div>
-        <div><h4>المباريات القادمة</h4><div class="ps-cells">${fxCells}</div></div>
+        <div class="ps-block"><h4>الفورمة <span>نقاطه في آخر الجولات</span></h4><div class="ps-cells">${formCells}</div></div>
+        <div class="ps-block"><h4>المباريات القادمة <span>صعوبة المباراة</span></h4><div class="ps-cells">${fxCells}</div></div>
       </div>
       ${(mode==='team' && !locked && inXI)? `<div class="ps-caps">
         <label><input type="checkbox" ${team.cap===pid?'checked':''} onclick="VIEWS.sheetCap('${pid}',false)"> كابتن</label>
