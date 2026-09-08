@@ -899,6 +899,7 @@ table.lb td.pt{font-family:var(--display);font-weight:700;color:var(--sky);
 .hero-admin.show{display:grid}
 .hero-admin.on{background:var(--sand);border-color:var(--sand);color:#20180a}
 .hero-sub{position:absolute;bottom:0;right:20px;display:flex;gap:4px;z-index:2}
+.hero-brand{-webkit-touch-callout:none;user-select:none}
 .hero-sub button{background:rgba(255,255,255,.62);color:var(--zain-deep);font-family:var(--display);font-weight:600;
   font-size:.84rem;padding:10px 18px;border-radius:9px 9px 0 0;transition:background .15s}
 .hero-sub button:hover{background:rgba(255,255,255,.85)}
@@ -6870,19 +6871,19 @@ window.addEventListener("hashchange", ()=>{
   if(location.hash==="#admin"){ ADMIN_REVEAL=true; paintAdminBtn(); go("admin"); }
 });
 if(location.hash==="#admin"){ ADMIN_REVEAL=true; paintAdminBtn(); }
-/* المدخل السرّي (ب): 5 نقرات سريعة على شعار الفوتر تكشف الزر */
+/* المدخل السرّي (ب): ضغطة مطوّلة (~0.8ث) على شعار الدوري أعلى الصفحة */
 (function(){
-  const foot=document.getElementById("siteFoot"); if(!foot) return;
-  let n=0, t=0;
-  foot.addEventListener("click", (e)=>{
-    if(!e.target.closest("img")) return;   /* الشعار فقط */
-    const now=Date.now();
-    n = (now - t < 700) ? n+1 : 1;
-    t = now;
-    if(n>=5){ n=0; ADMIN_REVEAL=true; paintAdminBtn();
-      const b=document.getElementById("adminBtn"); if(b) b.focus();
-      go("admin"); }
-  });
+  const brand=document.querySelector(".hero-brand"); if(!brand) return;
+  let timer=0, sx=0, sy=0;
+  const fire=()=>{ ADMIN_REVEAL=true; paintAdminBtn();
+    const b=document.getElementById("adminBtn"); if(b) b.focus(); go("admin"); };
+  brand.addEventListener("pointerdown", e=>{ sx=e.clientX; sy=e.clientY;
+    clearTimeout(timer); timer=setTimeout(fire, 800); });
+  brand.addEventListener("pointermove", e=>{
+    if(Math.abs(e.clientX-sx)>10 || Math.abs(e.clientY-sy)>10) clearTimeout(timer); });
+  ["pointerup","pointercancel","pointerleave"].forEach(ev=>
+    brand.addEventListener(ev, ()=>clearTimeout(timer)));
+  brand.addEventListener("contextmenu", e=>{ if(ADMIN_REVEAL) e.preventDefault(); });
 })();
 
 /* شريط الدقائق في الترويسة */
