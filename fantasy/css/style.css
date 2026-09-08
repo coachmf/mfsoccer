@@ -10,6 +10,21 @@
   --r:14px; --r-sm:10px;
   --fdr1:#12b76a; --fdr2:#7ac74f; --fdr3:#98a2b3; --fdr4:#f97066; --fdr5:#d92d20;
 }
+[data-theme="dark"]{
+  --bg:#061529; --bg2:#0A2242; --surface:#0E2B52; --surface2:#123463; --line:rgba(143,166,196,.22);
+  --text:#EDF3FA; --text2:#A9C4E0; --text3:#7F9BBB;
+  --accent:#5FB2E8; --blue:#5FB2E8;
+  --shadow:0 2px 12px rgba(0,0,0,.35);
+  --pitch1:#0c6b3b; --pitch2:#0a5c32;
+}
+[data-theme="dark"] body{ background-image:none; }
+[data-theme="dark"] input,[data-theme="dark"] select,[data-theme="dark"] textarea{ background:var(--surface); color:var(--text); border-color:var(--line); }
+[data-theme="dark"] #brand .lk-dark{ display:block; } [data-theme="dark"] #brand .lk-light{ display:none; }
+[data-theme="dark"] .tbl tr:hover td{ background:color-mix(in srgb,var(--surface2) 60%,transparent); }
+[data-theme="dark"] .big-pill.primary{ background:#fff; color:#0d4f92; }
+[data-theme="dark"] .link-list{ background:var(--surface); }
+[data-theme="dark"] .pill{ background:var(--surface2); color:var(--text2); }
+[data-theme="dark"] .pt-toggle button.active{ background:var(--accent); color:#061529; }
 [data-theme="light"]{
   --bg:#edf5fc; --bg2:#dfecf8; --surface:#ffffff; --surface2:#f2f8fd; --line:#cfe1f1;
   --text:#0b2540; --text2:#3d6488; --text3:#7295b3;
@@ -74,6 +89,7 @@ a{color:var(--blue); text-decoration:none;}
   filter:blur(22px); opacity:1;
 }
 .brand-lockup{ height:42px; width:auto; display:block; }
+#topActions .iconbtn.back .ic{ transform:scaleX(-1); }
 #brand .lk-dark{ display:none; } #brand .lk-light{ display:block; }
 [data-theme="light"] #brand .lk-dark{ display:none; }
 [data-theme="light"] #brand .lk-light{ display:block; }
@@ -121,16 +137,17 @@ a{color:var(--blue); text-decoration:none;}
 .home-wrap{ max-width:620px; margin:0 auto; }
 .home-hero{
   position:relative; overflow:hidden; border-radius:20px; padding:18px 16px;
-  background:linear-gradient(165deg, var(--zain1) 0%, var(--zain2) 70%, #093c72 100%);
+  background:#0D4F92 url('../assets/hero/stadium.jpg') center 38%/cover no-repeat;
   color:#fff; text-align:center; box-shadow:0 6px 20px rgba(9,60,114,.22);
 }
+/* نفس تدرّج زين في ترويسة الموقع الرئيسي: سماوي → أزرق → كحلي */
 .home-hero::before{
   content:''; position:absolute; inset:0; pointer-events:none;
   background:
-    radial-gradient(60% 45% at 85% -5%, rgba(120,215,255,.35), transparent 70%),
-    radial-gradient(50% 40% at 0% 105%, rgba(46,176,240,.28), transparent 70%),
-    linear-gradient(120deg, transparent 55%, rgba(255,255,255,.06) 56%, rgba(255,255,255,.06) 70%, transparent 71%);
+    linear-gradient(to left, rgba(46,176,240,.62) 0%, rgba(24,120,190,.80) 38%, rgba(13,79,146,.90) 70%, rgba(8,40,79,.94) 100%),
+    linear-gradient(180deg, rgba(6,21,41,.25), transparent 40%, rgba(6,21,41,.45) 100%);
 }
+.hh-zain{ position:absolute; top:12px; left:14px; height:26px; width:auto; opacity:.95; filter:drop-shadow(0 2px 6px rgba(0,0,0,.35)); z-index:1; }
 .home-hero > *{ position:relative; }
 .hh-top{ display:flex; align-items:center; gap:12px; text-align:right; }
 .hh-badge{
@@ -655,8 +672,8 @@ tr:hover .btn-view{background:var(--accent);color:#fff;}
 /* الشريطان العلوي والسفلي: أبيض صلب بلا backdrop-filter.
    الضبابية على عنصر position:fixed تجعل سفاري (آيفون) يؤخّر رسمه أثناء التمرير فيبدو الشريط
    كأنه يتحرك مع الصفحة ثم يلحق بها. translateZ(0) يضعه في طبقة مستقلة فيبقى ثابتاً. */
-#topbar{background:#fff; backdrop-filter:none; -webkit-backdrop-filter:none; border-bottom:1px solid rgba(13,79,146,.08);}
-#bottomnav{background:#fff; backdrop-filter:none; -webkit-backdrop-filter:none; border-top:1px solid rgba(13,79,146,.08);
+#topbar{background:var(--surface); backdrop-filter:none; -webkit-backdrop-filter:none; border-bottom:1px solid var(--line);}
+#bottomnav{background:var(--surface); backdrop-filter:none; -webkit-backdrop-filter:none; border-top:1px solid var(--line);
   transform:translateZ(0); -webkit-transform:translateZ(0); will-change:transform; -webkit-backface-visibility:hidden;}
 #bottomnav button.active{background:rgba(13,82,150,.09);}
 
@@ -685,11 +702,12 @@ h3{font-size:.98rem;font-weight:800;}
 }
 .link-list{border-radius:14px;}
 
-/* البانرات: لون واحد مسطح بلا لمعان ولا زجاج */
-.home-hero,.squad-hero{
+/* بانر الفريق (فريقي): لون واحد مسطح. بانر الرئيسية بألوان زين كالواجهة الرئيسية (أعلاه) */
+.squad-hero{
   background:var(--zain2); border:none; box-shadow:none; backdrop-filter:none; border-radius:16px;
 }
-.home-hero::before,.squad-hero::before{display:none;}
+.home-hero{ border:none; box-shadow:none; backdrop-filter:none; border-radius:16px; }
+.squad-hero::before{display:none;}
 .hh-badge{background:rgba(255,255,255,.12); border:none;}
 .big-pill{border-radius:11px; background:rgba(255,255,255,.1); border:1px solid rgba(255,255,255,.28); font-weight:700;}
 .big-pill.primary{font-weight:800;}
@@ -708,8 +726,8 @@ h3{font-size:.98rem;font-weight:800;}
 .btn{border-radius:11px; font-weight:700;}
 .iconbtn{border-color:var(--line); box-shadow:none;}
 #userchip{border-color:var(--line);}
-#topbar{background:#fff; backdrop-filter:none; border-bottom:1px solid var(--line);}
-#bottomnav{background:#fff; backdrop-filter:none; border-top:1px solid var(--line);}
+#topbar{background:var(--surface); backdrop-filter:none; border-bottom:1px solid var(--line);}
+#bottomnav{background:var(--surface); backdrop-filter:none; border-top:1px solid var(--line);}
 #bottomnav button{font-weight:700;}
 
 /* كروت الفانتسي أهدأ */

@@ -72,8 +72,21 @@ const VIEWS = {
   async doGoogle(ev){
     const b=ev&&ev.target.closest('button'); this._busy(b,true,'جارٍ فتح Google…');
     const r=await CLOUD.googleLogin();
-    if(r.ok){ this._holdBusy(b,'جارٍ الدخول…'); }   // النجاح يُلتقط من onAuthStateChanged
+    if(r.ok){
+      this._holdBusy(b,'جارٍ الدخول…');   // النجاح يُلتقط من onAuthStateChanged
+      if(!r.redirect) this.awaitAuth();
+    }
     else { this._busy(b,false); UI.toast(r.err, true); }
+  },
+  /* بعد نجاح نافذة Google: ننتظر اكتمال المزامنة؛ إن لم تصل الشاشة للرئيسية خلال 8 ثوانٍ نحدّث الصفحة تلقائياً */
+  awaitAuth(){
+    const t0=Date.now();
+    const tick=()=>{
+      if(APP.authSynced && CLOUD.user){ if(APP.route==='auth') APP.go('dashboard'); return; }
+      if(Date.now()-t0 > 8000){ location.reload(); return; }
+      setTimeout(tick, 300);
+    };
+    setTimeout(tick, 400);
   },
   /* حساب جديد عبر Google: إكمال اسم المستخدم واسم الفريق */
   completeProfile(){
@@ -156,6 +169,7 @@ const VIEWS = {
 
     return `<div class="home-wrap">
       <div class="home-hero">
+        <img class="hh-zain" src="assets/hero/zain-logo-white.png" alt="">
         <div class="hh-top">
           <div style="flex:1">
             <div class="hh-team">${esc(m.teamName)} ${this.championBadge(m.id)}</div>

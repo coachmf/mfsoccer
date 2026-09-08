@@ -16,7 +16,7 @@ const APP = {
     if(!DB.me()) AUTH.guest();
     ADMINAUTH.sync();
     this.initCloud();
-    document.documentElement.setAttribute('data-theme','light');
+    this.applyTheme(this.savedTheme());
     window.addEventListener('hashchange',()=>{
       const r=location.hash.slice(1)||'dashboard';
       if(r!==this.route){ this.route=r; this.render(); }
@@ -44,6 +44,7 @@ const APP = {
       if(typeof MFSYNC!=='undefined') MFSYNC.autoFixtures(true);   // الجدول والنتائج من mfsoccer حتى بلا سحابة
       return;
     }
+    try{ CLOUD.auth.getRedirectResult().then(r=>{ if(r && r.user) setTimeout(()=>{ if(!APP.authSynced) location.reload(); }, 9000); }).catch(()=>{}); }catch(e){}
     CLOUD.onAuth(async (u)=>{
       // أثناء التسجيل ينتظر المستمع حتى يكتب signup اسم المستخدم واسم الفريق أولاً
       while(CLOUD.signingUp) await new Promise(r=>setTimeout(r,150));
@@ -78,6 +79,7 @@ const APP = {
       if(DB.pendingPush){ DB.pendingPush=false; DB.pushTeam(); }   // فريق الضيف المرحَّل يُرفع للحساب
       ADMINAUTH.sync();
       if(u && this.route==='auth') this.route='dashboard';
+      this.authSynced = !!u;
       this.render();
       if(this.freshAccount){ this.freshAccount=false; setTimeout(()=>VIEWS.completeProfile(), 400); }
       // الجدول والنتائج من mfsoccer على كل جهاز عند كل تحميل؛ الكشوفات للمدير فقط (تُنشر مع اللعبة)
@@ -128,18 +130,23 @@ const APP = {
     </div>`;
   },
 
+  /* ---------- المظهر ---------- */
+  savedTheme(){ try{ return localStorage.getItem('kwf_theme')==='dark' ? 'dark' : 'light'; }catch(e){ return 'light'; } },
+  applyTheme(t){ document.documentElement.setAttribute('data-theme', t==='dark'?'dark':'light'); try{ localStorage.setItem('kwf_theme', t); }catch(e){} },
+  toggleTheme(){ const t=this.savedTheme()==='dark'?'light':'dark'; this.applyTheme(t); this.renderTopbar(); UI.toast(t==='dark'?'الوضع الداكن':'الوضع الفاتح'); },
+
+  /* ---------- الرجوع للصفحة السابقة ---------- */
+  hist:[],
+  back(){
+    const prev=this.hist.pop();
+    this._noHist=true; this.go(prev||'dashboard'); this._noHist=false;
+  },
   go(route){
+    if(!this._noHist && route!==this.route && this.route){ this.hist.push(this.route); if(this.hist.length>30) this.hist.shift(); }
     this.route=route; location.hash=route; this.render(); window.scrollTo(0,0);
     if((route==='dashboard' || route==='about') && typeof FEEDBACK!=='undefined') FEEDBACK.pollMine();   // ردود الدعم (مخفَّف: مرة بالدقيقة)
   },
 
-  toggleTheme(){
-    const cur=document.documentElement.getAttribute('data-theme')==='light'?'dark':'light';
-    if(cur==='light') document.documentElement.setAttribute('data-theme','light');
-    else document.documentElement.removeAttribute('data-theme');
-    localStorage.setItem('kwf_theme',cur==='light'?'light':'');
-    this.render();
-  },
 
   checkDeadline(){
     const st=DB.state; const m=DB.me();
@@ -228,7 +235,10 @@ const APP = {
       `<button class="${this.route===id?'active':''}" onclick="APP.go('${id}')">${l}</button>`).join('')
       + (ADMINAUTH.active()? `<button class="${this.route==='admin'?'active':''}" onclick="APP.go('admin')">الإدارة</button>`:'');
     const unread=NOTIF.unread();
+    const dark=this.savedTheme()==='dark';
     document.getElementById('topActions').innerHTML=`
+      ${this.hist.length && this.route!=='dashboard' ? `<button class="iconbtn back" title="رجوع" onclick="APP.back()">${UI.icon('back',18)}</button>` : ''}
+      <button class="iconbtn" title="${dark?'الوضع الفاتح':'الوضع الداكن'}" onclick="APP.toggleTheme()">${dark? '<svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>' : UI.icon('moon',18)}</button>
       <button class="iconbtn" title="الإشعارات" onclick="APP.toggleNotif()">${UI.icon('bell',18)}${unread?`<span class="dot">${unread}</span>`:''}</button>
       <div id="userchip" onclick="APP.go('profile')"><div class="av">${UI.icon('users',15)}</div><span class="uc-name">${esc(m.username)}</span></div>`;
   },
