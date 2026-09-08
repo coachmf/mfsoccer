@@ -51,6 +51,19 @@ const UI = {
     back.innerHTML=`<div class="psheet"><div class="ps-grab"></div>${html}</div>`;
     back.addEventListener('click',e=>{ if(e.target===back) UI.closeSheet(); });
     document.body.appendChild(back);
+    // السحب لأسفل يغلق البطاقة (عندما تكون في أعلى تمريرها)
+    const sh=back.querySelector('.psheet'); let y0=null, dy=0, top0=0;
+    sh.addEventListener('touchstart', e=>{ y0=e.touches[0].clientY; dy=0; top0=sh.scrollTop; sh.style.transition='none'; }, {passive:true});
+    sh.addEventListener('touchmove', e=>{
+      if(y0==null) return; dy=e.touches[0].clientY-y0;
+      if(top0<=0 && dy>0){ sh.style.transform=`translateY(${dy}px)`; if(e.cancelable) e.preventDefault(); }
+    }, {passive:false});
+    sh.addEventListener('touchend', ()=>{
+      if(y0==null) return;
+      if(top0<=0 && dy>90){ sh.style.transition='transform .18s'; sh.style.transform='translateY(110%)'; setTimeout(()=>UI.closeSheet(),160); }
+      else { sh.style.transition='transform .2s'; sh.style.transform=''; }
+      y0=null;
+    });
   },
   closeSheet(){ const b=document.getElementById('sheetBack'); if(b) b.remove(); },
 
@@ -109,12 +122,14 @@ const UI = {
   fmtDate(iso){
     if(!iso) return 'لم يُحدَّد بعد';
     const d=kwDate(iso);
-    return d.toLocaleDateString('ar-KW',{weekday:'long',day:'numeric',month:'long'})+' — '+d.toLocaleTimeString('ar-KW',{hour:'2-digit',minute:'2-digit'});
+    const L=(typeof I18N!=='undefined')? I18N.locale() : 'ar-KW';
+    return d.toLocaleDateString(L,{weekday:'long',day:'numeric',month:'long'})+' — '+d.toLocaleTimeString(L,{hour:'2-digit',minute:'2-digit'});
   },
   fmtDateShort(iso){
     if(!iso) return '—';
     const d=kwDate(iso);
-    return d.toLocaleDateString('ar-KW',{day:'numeric',month:'short'})+' '+d.toLocaleTimeString('ar-KW',{hour:'2-digit',minute:'2-digit'});
+    const L=(typeof I18N!=='undefined')? I18N.locale() : 'ar-KW';
+    return d.toLocaleDateString(L,{day:'numeric',month:'short'})+' '+d.toLocaleTimeString(L,{hour:'2-digit',minute:'2-digit'});
   },
   countdown(iso){
     if(!iso) return 'بانتظار الجدول';

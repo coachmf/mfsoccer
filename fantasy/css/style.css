@@ -924,3 +924,8 @@ tr.hl td{background:color-mix(in srgb,var(--gold) 14%,transparent);}
 [data-theme="dark"] .addp,[data-theme="dark"] #addpBack{ background:var(--bg); color:var(--text); }
 [data-theme="dark"] .addp-row:hover{ background:var(--surface2); }
 [data-theme="dark"] .big-pill.primary{ background:#fff; color:#0d4f92; }
+
+/* زر اللغة في الشريط العلوي */
+#topActions .iconbtn.lang{font-weight:800;font-size:.78rem;letter-spacing:.3px;}
+html.lang-en .ps-block h4{flex-direction:row;}
+.ps-grab{cursor:grab;}

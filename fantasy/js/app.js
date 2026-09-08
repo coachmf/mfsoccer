@@ -237,7 +237,8 @@ const APP = {
     const unread=NOTIF.unread();
     const dark=this.savedTheme()==='dark';
     document.getElementById('topActions').innerHTML=`
-      ${this.hist.length && this.route!=='dashboard' ? `<button class="iconbtn back" title="رجوع" onclick="APP.back()">${UI.icon('back',18)}</button>` : ''}
+      ${this.route!=='dashboard' ? `<button class="iconbtn back" title="رجوع" onclick="APP.back()">${UI.icon('back',18)}</button>` : ''}
+      <button class="iconbtn lang" title="اللغة" onclick="I18N.toggle()">${typeof I18N!=='undefined' && I18N.isEn() ? 'ع' : 'EN'}</button>
       <button class="iconbtn" title="${dark?'الوضع الفاتح':'الوضع الداكن'}" onclick="APP.toggleTheme()">${dark? '<svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>' : UI.icon('moon',18)}</button>
       <button class="iconbtn" title="الإشعارات" onclick="APP.toggleNotif()">${UI.icon('bell',18)}${unread?`<span class="dot">${unread}</span>`:''}</button>
       <div id="userchip" onclick="APP.go('profile')"><div class="av">${UI.icon('users',15)}</div><span class="uc-name">${esc(m.username)}</span></div>`;
