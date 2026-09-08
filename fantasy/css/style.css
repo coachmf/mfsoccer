@@ -929,3 +929,15 @@ tr.hl td{background:color-mix(in srgb,var(--gold) 14%,transparent);}
 #topActions .iconbtn.lang{font-weight:800;font-size:.78rem;letter-spacing:.3px;}
 html.lang-en .ps-block h4{flex-direction:row;}
 .ps-grab{cursor:grab;}
+
+/* ================= الإنجليزية: اتجاه الصفحة LTR (body يفرض RTL افتراضياً) ================= */
+html.lang-en body{direction:ltr;}
+html.lang-en .hh-top,html.lang-en .tbl th,html.lang-en .fdr-grid td:first-child,html.lang-en .ps-head,html.lang-en .link-row,html.lang-en .addp-name{text-align:left;}
+html.lang-en .fdr-grid td:first-child{padding-right:3px;padding-left:10px;}
+html.lang-en .addp-head .addp-name{padding-right:0;padding-left:46px;}
+html.lang-en #toSite svg{transform:none;}
+html.lang-en #topActions .iconbtn.back .ic{transform:none;}
+html.lang-en .lg-tbl td:last-child{text-align:right;}
+html.lang-en .goals2 .gh{text-align:left;} html.lang-en .goals2 .ga{text-align:right;direction:ltr;}
+html.lang-en .fx .team.a{flex-direction:row-reverse;justify-content:flex-start;}
+html.lang-en .ps-stats>div{border-left:none;border-right:1px solid var(--line);} html.lang-en .ps-stats>div:last-child{border-right:none;}
