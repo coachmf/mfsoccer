@@ -175,7 +175,7 @@ const VIEWS = {
       </div>
       <div class="link-list">
         ${links.map(([r,ic,l,sub])=>`<div class="link-row" onclick="APP.go('${r}')">
-          <span class="lr-lead">${UI.icon(ic,19)}<span><span class="lr-title">${l}</span><span class="lr-sub">${sub}</span></span></span>
+          <span class="lr-lead">${UI.icon(ic,19)}<span><span class="lr-title">${l}${r==='about'&&typeof FEEDBACK!=='undefined'? FEEDBACK.badge():''}</span><span class="lr-sub">${sub}</span></span></span>
           <span class="lr-arrow">${UI.icon('chev',16)}</span></div>`).join('')}
       </div>
       ${this.devCard(true)}

@@ -1135,8 +1135,24 @@ const LEAGUES = {
   cloud: { list:null, rows:{}, board:null, at:0, busy:false },
   online(){ return typeof CLOUD!=='undefined' && CLOUD.ready && !!CLOUD.user; },
 
+  /* نسخة محلية من آخر قراءة: تُعرض فوراً عند فتح الدوريات ثم تُحدَّث من الخادم في الخلفية */
+  CK:'kwf_leagues_cache',
+  restore(){
+    if(this.cloud.list || !this.online()) return false;
+    try{
+      const c=JSON.parse(localStorage.getItem(this.CK)||'null');
+      if(!c || c.uid!==CLOUD.user.uid) return false;
+      this.cloud.list=c.list||[]; this.cloud.board=c.board||[]; this.cloud.rows=c.rows||{}; this.cloud.at=0;
+      return true;
+    }catch(e){ return false; }
+  },
+  persist(){
+    try{ localStorage.setItem(this.CK, JSON.stringify({uid:CLOUD.user.uid, at:Date.now(), list:this.cloud.list, board:this.cloud.board, rows:this.cloud.rows})); }catch(e){}
+  },
+
   async refresh(force){
     if(!this.online()) return;
+    if(this.restore() && typeof APP!=='undefined' && APP.route==='leagues') APP.render();   // المحلية أولاً
     if(this.cloud.busy){ if(!force) return; while(this.cloud.busy) await new Promise(r=>setTimeout(r,120)); }
     if(!force && this.cloud.at && Date.now()-this.cloud.at < 45000) return;
     this.cloud.busy = true;
@@ -1148,6 +1164,7 @@ const LEAGUES = {
       for(const lg of this.cloud.list) rows[lg.id] = await CLOUD.leagueRows(lg);
       this.cloud.rows = rows;
       this.cloud.at = Date.now();
+      this.persist();
     }catch(e){ console.warn('leagues refresh failed', e); }
     this.cloud.busy = false;
     if(typeof APP!=='undefined' && APP.route==='leagues') APP.render();

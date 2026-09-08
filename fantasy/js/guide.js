@@ -52,13 +52,19 @@ const FEEDBACK = {
      المشترك يقرأ رسائله وحده (uid) ويضيف ردّاً واحداً في كل كتابة؛ المدير يرد ويغيّر الحالة. */
   col(){ return CLOUD.root().collection('feedback'); },
 
-  /* رسائل المشترك الحالي (بلا orderBy حتى لا نحتاج فهرساً مركّباً) */
+  /* رسائل المشترك الحالي (بلا orderBy حتى لا نحتاج فهرساً مركّباً) — مع نسخة محلية تُعرض فوراً */
+  MINE_KEY:'kwf_fb_mine',
+  cachedMine(){
+    try{ const c=JSON.parse(localStorage.getItem(this.MINE_KEY)||'null'); if(c && CLOUD.user && c.uid===CLOUD.user.uid) return c.list||[]; }catch(e){}
+    return null;
+  },
   async mine(){
     if(typeof CLOUD==='undefined' || !CLOUD.ready || !CLOUD.user) return null;
     try{
       const q=await this.col().where('uid','==',CLOUD.user.uid).limit(50).get();
       const out=[]; q.forEach(d=>out.push({id:d.id, ...d.data()}));
       out.sort((a,b)=>String(b.updated||b.created).localeCompare(String(a.updated||a.created)));
+      try{ localStorage.setItem(this.MINE_KEY, JSON.stringify({uid:CLOUD.user.uid, at:Date.now(), list:out})); }catch(e){}
       return out;
     }catch(e){ return null; }
   },
@@ -101,12 +107,16 @@ const FEEDBACK = {
     try{ await this.col().doc(id).update({userUnread:0}); }catch(e){}
   },
 
-  /* تنبيه المشترك بردود الدعم (يُستدعى عند التحميل وكل 5 دقائق) */
+  /* تنبيه المشترك بردود الدعم (عند التحميل، وكل 5 دقائق، وعند فتح الرئيسية/الدعم) */
   unreadMine: 0,
-  async pollMine(){
+  _pollAt: 0,
+  countUnread(list){ return (list||[]).reduce((s,f)=>s+(+f.userUnread||0),0); },
+  async pollMine(force){
     if(typeof CLOUD==='undefined' || !CLOUD.ready || !CLOUD.user) return;
+    if(!force && Date.now()-this._pollAt < 60000) return;
+    this._pollAt=Date.now();
     const list=await this.mine(); if(!list) return;
-    const n=list.reduce((s,f)=>s+(+f.userUnread||0),0);
+    const n=this.countUnread(list);
     const changed=n!==this.unreadMine; this.unreadMine=n;
     const m=DB.me();
     if(n>0 && m){
@@ -116,10 +126,15 @@ const FEEDBACK = {
       if(!DB.state.notifications[m.id].some(x=>x.type===key)){
         NOTIF.push(m.id, key, 'رد عليك الدعم الفني — افتح «الدعم والاقتراحات»');
         try{ localStorage.setItem(DB.KEY, JSON.stringify(DB.state)); }catch(e){}
-        if(typeof APP!=='undefined') APP.renderTopbar();
+        if(typeof APP!=='undefined'){ APP.renderTopbar(); if(APP.route!=='about') UI.toast('رد عليك الدعم الفني — افتح «الدعم والاقتراحات» من الرئيسية'); }
       }
     }
-    if(changed && typeof APP!=='undefined' && APP.route==='about') APP.render();
+    if(changed && typeof APP!=='undefined' && ['about','dashboard','guide'].includes(APP.route)) APP.render();
+  },
+  /* شارة «رد جديد» تُوضع بجانب اسم الدعم في القوائم */
+  badge(){
+    const n=this.unreadMine || this.countUnread(this.cachedMine()||[]);
+    return n>0? `<span class="pill red" style="padding:0 7px;margin-inline-start:6px">${n}</span>` : '';
   },
 
   /* عرض محادثة واحدة (مشترك أو مدير) */
@@ -158,131 +173,21 @@ const FEEDBACK = {
   async renderMine(elId){
     const el=document.getElementById(elId); if(!el) return;
     if(typeof CLOUD==='undefined' || !CLOUD.user){ el.innerHTML='<div class="muted">سجّل الدخول لترى محادثاتك مع الدعم.</div>'; return; }
+    const paint=(list)=>{
+      if(!list.length){ el.innerHTML='<div class="muted">لا رسائل بعد — أرسل أول رسالة من الصندوق أعلاه ويصلك الرد هنا.</div>'; return; }
+      el.innerHTML=list.map(f=>this.thread(f,'user')).join('');
+    };
+    // النسخة المحلية فوراً، ثم الخادم في الخلفية
+    const cached=this.cachedMine();
+    if(cached){ paint(cached); }
     const list=await this.mine();
-    if(list===null){ el.innerHTML='<div class="muted">تعذّر جلب محادثاتك الآن.</div>'; return; }
-    if(!list.length){ el.innerHTML='<div class="muted">لا رسائل بعد — أرسل أول رسالة من الصندوق أعلاه ويصلك الرد هنا.</div>'; return; }
-    el.innerHTML=list.map(f=>this.thread(f,'user')).join('');
+    if(!document.getElementById(elId)) return;                    // غادر الصفحة
+    if(list===null){ if(!cached) el.innerHTML='<div class="muted">تعذّر جلب محادثاتك الآن.</div>'; return; }
+    if(!cached || JSON.stringify(list)!==JSON.stringify(cached)) paint(list);
     list.filter(f=>(+f.userUnread||0)>0).forEach(f=>this.markRead(f.id));
-    if(this.unreadMine){ this.unreadMine=0; }
-  },
-
-  /* ---------- الدعم الفني: محادثة على كل رسالة ----------
-     الردود تُخزَّن داخل مستند الرسالة نفسه: replies:[{by:'admin'|'user', name, text, at}].
-     المشترك يقرأ رسائله وحده (uid) ويضيف ردّاً واحداً في كل كتابة؛ المدير يرد ويغيّر الحالة. */
-  col(){ return CLOUD.root().collection('feedback'); },
-
-  /* رسائل المشترك الحالي (بلا orderBy حتى لا نحتاج فهرساً مركّباً) */
-  async mine(){
-    if(typeof CLOUD==='undefined' || !CLOUD.ready || !CLOUD.user) return null;
-    try{
-      const q=await this.col().where('uid','==',CLOUD.user.uid).limit(50).get();
-      const out=[]; q.forEach(d=>out.push({id:d.id, ...d.data()}));
-      out.sort((a,b)=>String(b.updated||b.created).localeCompare(String(a.updated||a.created)));
-      return out;
-    }catch(e){ return null; }
-  },
-
-  /* رد المدير: يُضاف للمحادثة ويُعلَّم للمشترك كغير مقروء */
-  async adminReply(id, text){
-    text=String(text||'').trim(); if(text.length<1) return {ok:false, err:'اكتب الرد أولاً'};
-    if(text.length>1500) return {ok:false, err:'الرد طويل — 1500 حرف كحد أقصى'};
-    if(typeof CLOUD==='undefined' || !CLOUD.admin) return {ok:false, err:'الرد للمدير فقط'};
-    try{
-      const ref=this.col().doc(id); const s=await ref.get(); if(!s.exists) return {ok:false, err:'الرسالة غير موجودة'};
-      const v=s.data(); const replies=(v.replies||[]).slice();
-      const m=DB.me();
-      replies.push({by:'admin', name:'الدعم الفني'+(m&&m.username?' · '+m.username:''), text, at:new Date().toISOString()});
-      const patch={replies, updated:new Date().toISOString(), userUnread:(+v.userUnread||0)+1};
-      if((v.status||'new')==='new') patch.status='seen';
-      const r=await CLOUD.race(ref.set(patch,{merge:true}), 8000);
-      return r.ok? {ok:true} : {ok:false, err:'تعذّر حفظ الرد'};
-    }catch(e){ return {ok:false, err:CLOUD.errAr(e)}; }
-  },
-
-  /* رد المشترك على محادثته: يرجع الحالة «جديد» فيتنبّه فريق العمل */
-  async userReply(id, text){
-    text=String(text||'').trim(); if(text.length<1) return {ok:false, err:'اكتب ردك أولاً'};
-    if(text.length>1500) return {ok:false, err:'الرد طويل — 1500 حرف كحد أقصى'};
-    if(typeof CLOUD==='undefined' || !CLOUD.user) return {ok:false, err:'سجّل الدخول أولاً'};
-    try{
-      const ref=this.col().doc(id); const s=await ref.get(); if(!s.exists) return {ok:false, err:'الرسالة غير موجودة'};
-      const v=s.data(); const replies=(v.replies||[]).slice();
-      const m=DB.me();
-      replies.push({by:'user', name:(m&&m.username)||'مشترك', text, at:new Date().toISOString()});
-      const r=await CLOUD.race(ref.update({replies, updated:new Date().toISOString(), status:'new'}), 8000);
-      if(!r.ok) return {ok:false, err: r.timeout? 'الاتصال بطيء' : 'تعذّر الإرسال — قد تكون قواعد الخادم لم تُحدَّث بعد'};
-      return {ok:true};
-    }catch(e){ return {ok:false, err:CLOUD.errAr(e)}; }
-  },
-
-  /* المشترك فتح المحادثة: صفّر غير المقروء */
-  async markRead(id){
-    try{ await this.col().doc(id).update({userUnread:0}); }catch(e){}
-  },
-
-  /* تنبيه المشترك بردود الدعم (يُستدعى عند التحميل وكل 5 دقائق) */
-  unreadMine: 0,
-  async pollMine(){
-    if(typeof CLOUD==='undefined' || !CLOUD.ready || !CLOUD.user) return;
-    const list=await this.mine(); if(!list) return;
-    const n=list.reduce((s,f)=>s+(+f.userUnread||0),0);
-    const changed=n!==this.unreadMine; this.unreadMine=n;
-    const m=DB.me();
-    if(n>0 && m){
-      const latest=list.find(f=>(+f.userUnread||0)>0);
-      const key='fbr_'+latest.id+'_'+(latest.updated||'');
-      DB.state.notifications[m.id]=DB.state.notifications[m.id]||[];
-      if(!DB.state.notifications[m.id].some(x=>x.type===key)){
-        NOTIF.push(m.id, key, 'رد عليك الدعم الفني — افتح «الدعم والاقتراحات»');
-        try{ localStorage.setItem(DB.KEY, JSON.stringify(DB.state)); }catch(e){}
-        if(typeof APP!=='undefined') APP.renderTopbar();
-      }
-    }
-    if(changed && typeof APP!=='undefined' && APP.route==='about') APP.render();
-  },
-
-  /* عرض محادثة واحدة (مشترك أو مدير) */
-  thread(f, who){
-    const T=Object.fromEntries(this.TYPES);
-    const bubble=(by,name,text,at)=>`<div class="fb-msg ${by==='admin'?'a':'u'}"><div class="fb-who">${esc(name||(by==='admin'?'الدعم الفني':'أنت'))} · ${UI.fmtDateShort(at)}</div><div class="fb-txt">${esc(text)}</div></div>`;
-    const msgs=[bubble('user', who==='admin'? (f.username||'ضيف') : 'أنت', f.text, f.created)]
-      .concat((f.replies||[]).map(r=>bubble(r.by, who==='admin'&&r.by==='user'? (r.name||f.username) : (r.by==='user'?'أنت':r.name), r.text, r.at)));
-    const st={new:'جديد',seen:'مقروء',done:'منفّذ',rejected:'مرفوض'}[f.status||'new']||f.status;
-    const box=who==='admin'
-      ? `<div class="fb-reply"><textarea id="fbr_${f.id}" rows="2" maxlength="1500" placeholder="اكتب ردّك للمشترك…"></textarea><button class="btn sm" onclick="FEEDBACK.doAdminReply('${f.id}',this)">رد</button></div>`
-      : (f.status==='done'||f.status==='rejected'
-          ? '<div class="tiny" style="margin-top:6px">أُغلقت هذه المحادثة. أرسل رسالة جديدة إن احتجت.</div>'
-          : `<div class="fb-reply"><textarea id="fbr_${f.id}" rows="2" maxlength="1500" placeholder="اكتب ردّك…"></textarea><button class="btn sm" onclick="FEEDBACK.doUserReply('${f.id}',this)">إرسال</button></div>`);
-    return `<div class="fb-thread" id="fbt_${f.id}">
-      <div class="row spread" style="margin-bottom:6px"><span class="pill ${f.type==='bug'||f.type==='data'?'red':'blue'}">${T[f.type]||f.type}</span><span class="tiny">${st}${(+f.userUnread||0)>0&&who!=='admin'?` · <b style="color:var(--red)">رد جديد</b>`:''}</span></div>
-      <div class="fb-msgs">${msgs.join('')}</div>${box}</div>`;
-  },
-  async doAdminReply(id, btn){
-    const ta=document.getElementById('fbr_'+id); const text=ta? ta.value : '';
-    if(btn){ btn.disabled=true; btn.textContent='جارٍ الإرسال…'; }
-    const r=await this.adminReply(id, text);
-    if(btn){ btn.disabled=false; btn.textContent='رد'; }
-    if(r.ok){ UI.toast('أُرسل ردّك — يصل المشترك كتنبيه عند فتحه اللعبة'); APP.render(); }
-    else UI.toast(r.err, true);
-  },
-  async doUserReply(id, btn){
-    const ta=document.getElementById('fbr_'+id); const text=ta? ta.value : '';
-    if(btn){ btn.disabled=true; btn.textContent='جارٍ الإرسال…'; }
-    const r=await this.userReply(id, text);
-    if(btn){ btn.disabled=false; btn.textContent='إرسال'; }
-    if(r.ok){ UI.toast('أُرسل ردّك'); APP.render(); }
-    else UI.toast(r.err, true);
-  },
-  /* قائمة محادثات المشترك في صفحة الدعم */
-  async renderMine(elId){
-    const el=document.getElementById(elId); if(!el) return;
-    if(typeof CLOUD==='undefined' || !CLOUD.user){ el.innerHTML='<div class="muted">سجّل الدخول لترى محادثاتك مع الدعم.</div>'; return; }
-    const list=await this.mine();
-    if(list===null){ el.innerHTML='<div class="muted">تعذّر جلب محادثاتك الآن.</div>'; return; }
-    if(!list.length){ el.innerHTML='<div class="muted">لا رسائل بعد — أرسل أول رسالة من الصندوق أعلاه ويصلك الرد هنا.</div>'; return; }
-    el.innerHTML=list.map(f=>this.thread(f,'user')).join('');
-    list.filter(f=>(+f.userUnread||0)>0).forEach(f=>this.markRead(f.id));
-    if(this.unreadMine){ this.unreadMine=0; }
+    if(this.unreadMine){ this.unreadMine=0; if(typeof APP!=='undefined') APP.renderTopbar(); }
+    // بعد القراءة: النسخة المحلية بلا «غير مقروء» حتى لا تبقى الشارة
+    try{ localStorage.setItem(this.MINE_KEY, JSON.stringify({uid:CLOUD.user.uid, at:Date.now(), list:list.map(f=>({...f, userUnread:0}))})); }catch(e){}
   },
   async submit(ev){
     const btn=ev&&ev.target; const type=gv('fb_type'), text=gv('fb_text');
@@ -441,8 +346,8 @@ FEEDBACK.poll = async function(){
 };
 setTimeout(()=>FEEDBACK.poll(), 4000);
 setInterval(()=>FEEDBACK.poll(), 5*60000);
-setTimeout(()=>FEEDBACK.pollMine(), 6000);
-setInterval(()=>FEEDBACK.pollMine(), 5*60000);
+setTimeout(()=>FEEDBACK.pollMine(true), 6000);
+setInterval(()=>FEEDBACK.pollMine(true), 5*60000);
 
 /* ---------- لوحة الإدارة: قائمة الاقتراحات ---------- */
 if(typeof ADMIN!=='undefined'){

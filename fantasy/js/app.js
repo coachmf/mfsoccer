@@ -128,7 +128,10 @@ const APP = {
     </div>`;
   },
 
-  go(route){ this.route=route; location.hash=route; this.render(); window.scrollTo(0,0); },
+  go(route){
+    this.route=route; location.hash=route; this.render(); window.scrollTo(0,0);
+    if((route==='dashboard' || route==='about') && typeof FEEDBACK!=='undefined') FEEDBACK.pollMine();   // ردود الدعم (مخفَّف: مرة بالدقيقة)
+  },
 
   toggleTheme(){
     const cur=document.documentElement.getAttribute('data-theme')==='light'?'dark':'light';
@@ -184,8 +187,11 @@ const APP = {
     // مشترك سبق دخوله على هذا الجهاز: نرسم فريقه من نسخة الجهاز فوراً أثناء الاتصال بدل «جارٍ الاتصال…»
     const cachedSession = this.cloudState==='init' && DB.state.session && DB.state.session!=='u1local' && DB.state.teams[DB.state.session];
     const needAuth = cloudOn && !CLOUD.user && !cachedSession && !['guide','about'].includes(r);
+    // دخل الحساب لكن فريقه لم يصل بعد من الخادم: لا نعرض فريق الضيف الفارغ للحظات
+    const fetchingTeam = cloudOn && CLOUD.user && DB.muted && DB.state.session!==CLOUD.user.uid && !['guide','about','auth'].includes(r);
     try{
-      if(needAuth){ html = this.cloudState==='init' ? '<div class="card" style="text-align:center;padding:30px"><div class="muted">جارٍ الاتصال…</div></div>' : VIEWS.auth(); }
+      if(fetchingTeam){ html='<div class="card" style="text-align:center;padding:30px"><div class="muted">جارٍ تحميل فريقك…</div></div>'; }
+      else if(needAuth){ html = this.cloudState==='init' ? '<div class="card" style="text-align:center;padding:30px"><div class="muted">جارٍ الاتصال…</div></div>' : VIEWS.auth(); }
       else if(r==='team') html=VIEWS.team();
       else if(r==='transfers'){ VIEWS.ui.teamView='market'; this.route='team'; html=VIEWS.team(); }
       else if(r==='players') html=VIEWS.players();
