@@ -2246,7 +2246,13 @@ function playerMatchMinutes(m, club, name){
   const end = outSub ? capMin(absMinute(outSub.h, outSub.m)) : MATCH_MIN;
   return Math.max(0, end - start);
 }
-/* تجميع لكل لاعب: مباريات، دقائق، شباك نظيفة (على المسابقة المختارة) */
+/* هل اللاعب حارس مرمى؟ (من مركزه في الكشف) */
+function isGoalkeeper(club, name){
+  const e = (SQUADS[club]||[]).find(x=>sqName(x)===name);
+  return !!e && sqPos(e)==="GK";
+}
+/* تجميع لكل لاعب: مباريات، دقائق، شباك نظيفة (على المسابقة المختارة).
+   الشباك النظيفة للحرّاس فقط: حارس لعب 60 دقيقة فأكثر ولم يستقبل هدفاً. */
 function playerPlay(){
   const out = {};
   MATCHES.filter(m=>!isUpcoming(m)).forEach(m=>{
@@ -2260,9 +2266,9 @@ function playerPlay(){
         const mins = playerMatchMinutes(m, club, name);
         if(mins<=0) return;
         const k = name+"|"+club;
-        const e = out[k] || (out[k] = {n:name, c:club, apps:0, mins:0, cs:0});
+        const e = out[k] || (out[k] = {n:name, c:club, apps:0, mins:0, cs:0, gk:isGoalkeeper(club,name)});
         e.apps++; e.mins += mins;
-        if(conceded===0 && mins>=60) e.cs++;
+        if(e.gk && conceded===0 && mins>=60) e.cs++;
       });
     });
   });
@@ -5226,8 +5232,8 @@ function renderPlayers(){
     ${(()=>{ const PP=playerPlay();
       const byMin=[...PP].sort((a,b)=>b.mins-a.mins);
       const byCS=PP.filter(p=>p.cs>0).sort((a,b)=>b.cs-a.cs||b.mins-a.mins);
-      const cs = byCS.length? `<h2 class="sec">الشباك النظيفة</h2>
-        <p class="hint">لاعبون لعبوا 60 دقيقة فأكثر في مباريات لم يستقبل فيها فريقهم هدفاً.</p>
+      const cs = byCS.length? `<h2 class="sec">الشباك النظيفة (الحرّاس)</h2>
+        <p class="hint">حرّاس المرمى الذين لعبوا 60 دقيقة فأكثر في مباريات لم يستقبل فيها فريقهم هدفاً.</p>
         <div class="card"><div class="twrap"><table style="min-width:420px">
           <thead><tr><th>اللاعب</th><th>النادي</th><th>شباك نظيفة</th><th>مباريات</th></tr></thead>
           <tbody>${byCS.map((p,i)=>`<tr><td><div class="teamcell"><span class="pos">${i+1}</span>${pav(p.n)}${crest(p.c)}<b>${esc(p.n)}</b></div></td>
