@@ -514,7 +514,17 @@ details.squadbox summary label.lb{margin:0;cursor:pointer}
   user-select:none;max-width:400px;margin-inline:auto;
   background:linear-gradient(#1f7a45,#166035)}
 .xipitch.half{aspect-ratio:3/4}          /* فريق واحد */
-.xipitch.full{aspect-ratio:2/3}          /* الفريقان وجهاً لوجه */
+.xipitch.full{aspect-ratio:1/1.82}       /* الفريقان وجهاً لوجه: أطول ليتّسع للـ22 لاعباً */
+/* على ملعب الفريقين: دوائر وأسماء وشارات أصغر لتخفيف الازدحام */
+.xipitch.full .pp-dot{width:clamp(19px,7cqw,26px);height:clamp(19px,7cqw,26px);
+  font-size:clamp(9px,2.9cqw,12px);border-width:1.25px}
+.xipitch.full .pp-nm{font-size:clamp(7.5px,2.5cqw,10.5px);gap:1px}
+.xipitch.full .pp-b .ico-ball,.xipitch.full .pp-b .ico-boot{width:clamp(7px,2.2cqw,10px);height:clamp(7px,2.2cqw,10px)}
+.xipitch.full .pp-b.goal{top:-5px;left:-5px}
+.xipitch.full .pp-b.assist{bottom:-5px;right:-5px}
+.xipitch.full .pp-b.card{width:clamp(6px,1.7cqw,8px);height:clamp(8px,2.4cqw,10px)}
+.xipitch.full .pp-b.off{width:clamp(9px,2.5cqw,12px);height:clamp(9px,2.5cqw,12px)}
+.pp-spot.cmp{gap:1px}
 .xipitch::before,.xipitch::after{content:"";position:absolute;left:50%;transform:translateX(-50%);
   width:44%;height:11%;border:1px solid rgba(255,255,255,.28);pointer-events:none}
 .xipitch::before{top:0;border-top:0}
@@ -3784,10 +3794,12 @@ function spotBadges(ev){
   if(ev.off)     b+=`<span class="pp-b off" title="خرج"></span>`;
   return b;
 }
-function spotHTML(p, x, y, n, kit, ev){
-  return `<div class="pp-spot" style="right:${x}%;top:${y}%;max-width:${(96/(n+1)).toFixed(1)}%">
+const shortName = s => { const w=String(s||"").trim().split(/\s+/); return w.length>1 ? w[w.length-1] : (w[0]||""); };
+function spotHTML(p, x, y, n, kit, ev, compact){
+  const nm = compact ? shortName(p.n) : p.n;
+  return `<div class="pp-spot${compact?" cmp":""}" style="right:${x}%;top:${y}%;max-width:${(compact?90/(n+1):96/(n+1)).toFixed(1)}%">
     <span class="pp-dot" style="${dotVars(kit)}">${p.s||"–"}${spotBadges(ev)}</span>
-    <span class="pp-nm">${esc(p.n)}</span></div>`;
+    <span class="pp-nm">${esc(nm)}</span></div>`;
 }
 /* القميص الفاتح يحتاج حافة غامقة ليُرى على العشب، والغامق حافة فاتحة */
 function dotVars(kit){
@@ -3835,11 +3847,12 @@ function matchPitchHTML(m){
   const comp=compOf(m);
   const H=pitchSpots(m.round, comp, m.home), A=pitchSpots(m.round, comp, m.away);
   if(!H || !A) return "";
+  /* فجوة واضحة في المنتصف: الضيف [3,45] والمضيف [55,97]، فلا تتلامس خطوط الهجوم */
   const half=(S, club, top)=>{
     const kit=kitOf(club);
     return S.spots.map(({p,x,y,n})=>{
-      const yy = top ? 48-(y/100)*48 : 52+(y/100)*48;
-      return spotHTML(p, top?100-x:x, +yy.toFixed(1), n, kit, playerMatchEvents(m,club,p.n));
+      const yy = top ? 3 + ((90-y)/90)*42 : 97 - ((90-y)/90)*42;
+      return spotHTML(p, top?100-x:x, +yy.toFixed(1), n, kit, playerMatchEvents(m,club,p.n), true);
     }).join("");
   };
   /* الاسم فوق نصف صاحبه وتحته، فيقرأ الملعب بلا لبس */

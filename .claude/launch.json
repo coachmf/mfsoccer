@@ -1,0 +1,1 @@
+{"version":"0.0.1","configurations":[{"name":"mk","runtimeExecutable":"python","runtimeArgs":["-m","http.server","8931","--directory","C:/Users/coach/AppData/Local/Temp/claude/C--Users-coach-OneDrive-Desktop------------------2027-2026--------mfsoccer/5abc62f1-0908-4bad-87c5-e1d8402e827c/scratchpad"],"port":8931}]}
