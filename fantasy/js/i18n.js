@@ -118,6 +118,26 @@ const I18N = {
     [/^(.+) · (حارس|مدافع|وسط|مهاجم)$/, (m, c, p) => (I18N.DICT[c] || c) + ' · ' + I18N.DICT[p]],
   ],
 
+  /* مفاتيح القاموس مرتبة من الأطول للأقصر حتى يُفضَّل الاسم الكامل على جزء منه */
+  _keysSorted:null,
+  /* [مفتاح، نمط كلمة كاملة، ترجمة] — الاستبدال داخل النصوص الطويلة يكون لكلمات كاملة فقط
+     (لا يُلمس جزء من كلمة: «توليد» لا تُصبح «تWaleed») */
+  keys(){
+    if(!this._keysSorted){
+      const esc=s=>s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+      this._keysSorted = Object.keys(this.DICT).filter(k=>k.length>3).sort((a,b)=>b.length-a.length)
+        .map(k=>[k, new RegExp('(?<![\\u0600-\\u06FF])'+esc(k)+'(?![\\u0600-\\u06FF])','g'), this.DICT[k]]);
+    }
+    return this._keysSorted;
+  },
+  /* ترجمة ما يُعرف داخل نص طويل (أسماء لاعبين وأندية وعبارات) مع إبقاء الباقي */
+  trIn(str){
+    str = String(str==null? '' : str);
+    const exact = this.tr(str.trim()); if(exact!=null) return str.replace(str.trim(), exact);
+    let out = str;
+    for(const [k,rx,en] of this.keys()){ if(out.includes(k)) out = out.replace(rx, en); }
+    return out;
+  },
   tr(key){
     if(!key) return null;
     if(this.DICT[key]!=null) return this.DICT[key];
@@ -141,19 +161,30 @@ const I18N = {
     for(const node of nodes){
       const t=node.nodeValue, key=t.trim(); if(!key) continue;
       const en=this.tr(key);
-      if(en!=null){ node.nodeValue=t.replace(key, en); continue; }
+      if(en!=null){ if(en!==key){ if(node._i18nAr==null) node._i18nAr=t; node.nodeValue=t.replace(key, en); } continue; }
       // نص طويل يحوي عدة جمل: ترجمة كل جملة معروفة
       let changed=false, out=t;
-      for(const k in this.DICT){ if(k.length>3 && out.includes(k)){ out=out.split(k).join(this.DICT[k]); changed=true; } }
-      if(changed) node.nodeValue=out;
+      for(const [k,rx,en] of this.keys()){ if(out.includes(k)){ const o2=out.replace(rx,en); if(o2!==out){ out=o2; changed=true; } } }
+      if(changed){ if(node._i18nAr==null) node._i18nAr=t; node.nodeValue=out; }
     }
     const els=root.querySelectorAll ? root.querySelectorAll('[placeholder],[title],[aria-label]') : [];
     els.forEach(el=>{
       for(const a of ['placeholder','title','aria-label']){
-        const v=el.getAttribute(a); if(v && AR.test(v)){ const en=this.tr(v.trim()); if(en!=null) el.setAttribute(a, en); }
+        const v=el.getAttribute(a); if(v && AR.test(v)){ const en=this.tr(v.trim()); if(en!=null){ el._i18nAttr=el._i18nAttr||{}; if(el._i18nAttr[a]==null) el._i18nAttr[a]=v; el.setAttribute(a, en); } }
       }
     });
-    if(root.nodeType===1 && root.hasAttribute && root.hasAttribute('placeholder')){ const v=root.getAttribute('placeholder'); const en=this.tr((v||'').trim()); if(en!=null) root.setAttribute('placeholder', en); }
+    if(root.nodeType===1 && root.hasAttribute && root.hasAttribute('placeholder')){ const v=root.getAttribute('placeholder'); const en=this.tr((v||'').trim()); if(en!=null){ root._i18nAttr=root._i18nAttr||{}; if(root._i18nAttr.placeholder==null) root._i18nAttr.placeholder=v; root.setAttribute('placeholder', en); } }
+  },
+
+  /* الرجوع للعربية: العناصر الثابتة في الصفحة (الترويسة وغيرها) لا تُعاد كتابتها عند الرسم،
+     فنعيد لها نصها العربي الأصلي المحفوظ وقت الترجمة */
+  restore(root){
+    root = root || document.body; if(!root) return;
+    const walker=document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+    const nodes=[]; let n; while((n=walker.nextNode())) nodes.push(n);
+    for(const node of nodes){ if(node._i18nAr!=null){ node.nodeValue=node._i18nAr; node._i18nAr=null; } }
+    const els=root.querySelectorAll ? root.querySelectorAll('*') : [];
+    els.forEach(el=>{ if(el._i18nAttr){ for(const a in el._i18nAttr) el.setAttribute(a, el._i18nAttr[a]); el._i18nAttr=null; } });
   },
 
   /* مراقبة الرسم: أي محتوى جديد يُترجم فوراً */
@@ -163,8 +194,8 @@ const I18N = {
     this._obs=new MutationObserver(muts=>{
       if(!this.isEn()) return;
       for(const m of muts){
-        if(m.type==='childList') m.addedNodes.forEach(nd=>{ if(nd.nodeType===1) this.apply(nd); else if(nd.nodeType===3 && /[؀-ۿ]/.test(nd.nodeValue)){ const en=this.tr(nd.nodeValue.trim()); if(en!=null) nd.nodeValue=nd.nodeValue.replace(nd.nodeValue.trim(), en); } });
-        else if(m.type==='characterData' && /[؀-ۿ]/.test(m.target.nodeValue)){ const en=this.tr(m.target.nodeValue.trim()); if(en!=null) m.target.nodeValue=m.target.nodeValue.replace(m.target.nodeValue.trim(), en); }
+        if(m.type==='childList') m.addedNodes.forEach(nd=>{ if(nd.nodeType===1) this.apply(nd); else if(nd.nodeType===3 && /[؀-ۿ]/.test(nd.nodeValue)){ const en=this.tr(nd.nodeValue.trim()); if(en!=null && en!==nd.nodeValue.trim()){ if(nd._i18nAr==null) nd._i18nAr=nd.nodeValue; nd.nodeValue=nd.nodeValue.replace(nd.nodeValue.trim(), en); } } });
+        else if(m.type==='characterData' && /[؀-ۿ]/.test(m.target.nodeValue)){ const en=this.tr(m.target.nodeValue.trim()); if(en!=null && en!==m.target.nodeValue.trim()){ if(m.target._i18nAr==null) m.target._i18nAr=m.target.nodeValue; m.target.nodeValue=m.target.nodeValue.replace(m.target.nodeValue.trim(), en); } }
       }
     });
     this._obs.observe(document.body, {childList:true, subtree:true, characterData:true});
@@ -173,6 +204,7 @@ const I18N = {
   setLang(l){
     try{ localStorage.setItem(this.KEY, l==='en'?'en':'ar'); }catch(e){}
     this.applyDir();
+    if(l!=='en') this.restore(document.body);
     if(typeof APP!=='undefined'){ APP.render(); }
     if(l==='en') this.apply(document.body);
     if(typeof UI!=='undefined') UI.toast(l==='en' ? 'English' : 'العربية');

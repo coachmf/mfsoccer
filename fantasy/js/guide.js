@@ -208,33 +208,53 @@ Object.assign(VIEWS, {
   /* ======================= عن اللعبة والقوانين ======================= */
   guide(){
     const st=DB.state, R=st.rules, S=st.scoring;
+    const EN = typeof I18N!=='undefined' && I18N.isEn();
+    const T = (ar,en)=> EN? en : ar;
     const row=(k)=>S[k]? `<tr><td>${esc(S[k].label)}</td><td class="num" style="color:${S[k].val<0?'var(--red)':'var(--accent)'}">${S[k].val>0?'+':''}${S[k].val}</td></tr>` : '';
     const groups=[
-      ['المشاركة', ['appearance','appearance60']],
-      ['الأهداف والصناعة', ['goalG','goalD','goalM','goalF','assist']],
-      ['الدفاع', ['csG','csD','csM','concededPer2','penSave']],
-      ['خصومات', ['penMiss','ownGoal','yellow','red']],
+      [T('المشاركة','Appearance'), ['appearance','appearance60']],
+      [T('الأهداف والصناعة','Goals and assists'), ['goalG','goalD','goalM','goalF','assist']],
+      [T('الدفاع','Defence'), ['csG','csD','csM','concededPer2','penSave']],
+      [T('خصومات','Deductions'), ['penMiss','ownGoal','yellow','red']],
     ];
     const known=new Set(groups.flatMap(g=>g[1]));
     const extra=Object.keys(S).filter(k=>!known.has(k));
     const chips=Object.entries(R.chips||{}).filter(([k,c])=>c.enabled);
     const sec=(title,body)=>`<div class="card" style="margin-bottom:12px"><h3>${title}</h3><div class="muted" style="line-height:2">${body}</div></div>`;
     const li=arr=>`<ul style="margin:6px 0 0;padding-inline-start:20px">${arr.map(x=>`<li>${x}</li>`).join('')}</ul>`;
-    return `<div class="row spread" style="margin-bottom:12px;flex-wrap:wrap;gap:8px"><h2>عن اللعبة</h2>
-      <button class="btn sm sec" onclick="APP.go('about')">المطوّر والاقتراحات</button></div>
+    const chipLine=([k,c])=> EN
+      ? `<b>${esc(c.label)}</b> — ${esc(I18N.DICT[c.desc]||c.desc)} (${c.uses>1? c.uses+' times' : 'once'} per season).`
+      : `<b>${esc(c.label)}</b> — ${esc(c.desc)} (${c.uses>1? c.uses+' مرات' : 'مرة واحدة'} في الموسم).`;
+    return `<div class="row spread" style="margin-bottom:12px;flex-wrap:wrap;gap:8px"><h2>${T('عن اللعبة','About the game')}</h2>
+      <button class="btn sm sec" onclick="APP.go('about')">${T('المطوّر والاقتراحات','Developer and feedback')}</button></div>
 
-      ${sec('نبذة', `<b>فانتسي الدوري الكويتي</b> لعبة فانتسي بلاعبي الدوري الكويتي:
+      ${sec(T('نبذة','Overview'), T(`<b>فانتسي الدوري الكويتي</b> لعبة فانتسي بلاعبي الدوري الكويتي:
         تكوّن فريقاً من 15 لاعباً حقيقياً بميزانية محدودة، تختار تشكيلتك وكابتنك قبل كل جولة،
         وتجمع نقاطاً من أداء لاعبيك الفعلي في مباريات الدوري (أهداف، صناعة، شباك نظيفة…).
-        تنافس في الترتيب العام وفي دوريات خاصة مع أصحابك.`)}
+        تنافس في الترتيب العام وفي دوريات خاصة مع أصحابك.`,
+        `<b>Kuwait League Fantasy</b> is a fantasy game built on the players of the Kuwaiti league:
+        you build a squad of 15 real players within a limited budget, pick your lineup and captain before every gameweek,
+        and collect points from how your players actually perform in league matches (goals, assists, clean sheets…).
+        Compete in the overall table and in private leagues with your friends.`))}
 
-      ${sec('فريق العمل وضمان الجودة', `احتساب النقاط في هذه اللعبة عمل جماعي بالتعاون مع فريق موقع <b>mfsoccer.com</b>:
+      ${sec(T('فريق العمل وضمان الجودة','The team and quality assurance'), T(`احتساب النقاط في هذه اللعبة عمل جماعي بالتعاون مع فريق موقع <b>mfsoccer.com</b>:
         نتابع كل مباراة في الدوري، وتُسجَّل التشكيلات والتبديلات والأهداف والصناعة والكروت وركلات الجزاء
         <b>يدوياً</b> أثناء المباراة وبعدها، ثم تُراجع قبل اعتماد الجولة. لا توليد ولا تقدير — كل رقم في اللعبة
         من متابعة بشرية للمباراة، وأي خطأ يُكتشف يُصحَّح وتُعاد نقاط الجميع بأثر رجعي.
-        لاحظت خطأً في اسم لاعب أو دقيقة أو نتيجة؟ أبلغنا من صفحة <a href="#about" onclick="APP.go('about');return false;">المطوّر والاقتراحات</a>.`)}
+        لاحظت خطأً في اسم لاعب أو دقيقة أو نتيجة؟ أبلغنا من صفحة <a href="#about" onclick="APP.go('about');return false;">المطوّر والاقتراحات</a>.`,
+        `Scoring in this game is a team effort together with the <b>mfsoccer.com</b> crew:
+        we follow every league match, and lineups, substitutions, goals, assists, cards and penalties are recorded
+        <b>by hand</b> during and after the match, then reviewed before the gameweek is confirmed. Nothing is generated or estimated — every number in the game
+        comes from a person watching the match, and any error found is corrected with everyone's points recalculated retroactively.
+        Spotted a wrong player name, minute or result? Tell us on the <a href="#about" onclick="APP.go('about');return false;">Developer and feedback</a> page.`))}
 
-      ${sec('كيف تلعب', li([
+      ${sec(T('كيف تلعب','How to play'), li(EN ? [
+        `<b>Build your squad:</b> ${R.squadSize} players — ${R.posCount.G} goalkeepers, ${R.posCount.D} defenders, ${R.posCount.M} midfielders, ${R.posCount.F} forwards — within a ${fmtK(R.budget)} budget and a maximum of ${R.maxPerClub} players from any one club.`,
+        `<b>Pick your gameweek lineup:</b> 11 starters and 4 on the bench in priority order. Any formation within the limits: ${R.formationMin.D}–${R.formationMax.D} defenders, ${R.formationMin.M}–${R.formationMax.M} midfielders, ${R.formationMin.F}–${R.formationMax.F} forwards, and one goalkeeper.`,
+        `<b>Set a captain and vice-captain:</b> the captain's points are doubled (×2). If the captain does not play, the double passes to the vice-captain automatically.`,
+        `<b>Before the deadline:</b> each gameweek locks when its first match kicks off — you are free to change until then. After the deadline the lineup cannot be edited until the gameweek is scored.`,
+        `<b>Create an account:</b> without one your team stays on this device only and earns no points. With an account your team follows you on every device and enters the table.`,
+      ] : [
         `<b>كوّن فريقك:</b> ${R.squadSize} لاعباً — ${R.posCount.G} حارسان، ${R.posCount.D} مدافعين، ${R.posCount.M} لاعبي وسط، ${R.posCount.F} مهاجمين — بميزانية ${fmtK(R.budget)}، وبحد أقصى ${R.maxPerClub} لاعبين من النادي الواحد.`,
         `<b>اختر تشكيلة الجولة:</b> 11 أساسياً و4 على الدكة بترتيب الأولوية. الخطة حرة ضمن الحدود: ${R.formationMin.D}–${R.formationMax.D} مدافعين، ${R.formationMin.M}–${R.formationMax.M} وسط، ${R.formationMin.F}–${R.formationMax.F} مهاجمين، وحارس واحد.`,
         `<b>عيّن الكابتن ونائبه:</b> نقاط الكابتن تُضاعف (×2). إن لم يشارك الكابتن انتقلت المضاعفة للنائب تلقائياً.`,
@@ -242,7 +262,16 @@ Object.assign(VIEWS, {
         `<b>أنشئ حساباً:</b> بلا حساب يبقى فريقك على جهازك فقط ولا تُحتسب له نقاط. بالحساب يتبعك فريقك على كل أجهزتك ويدخل الترتيب.`,
       ]))}
 
-      ${sec('الانتقالات', li((R.freeChanges? [
+      ${sec(T('الانتقالات','Transfers'), li(EN ? (R.freeChanges? [
+        `<b>Free changes:</b> change your lineup and players as much as you like before the deadline <b>with no points deduction</b>.`,
+        `Prices change after every gameweek by ${R.priceRise} based on managers' net buying and selling — you sell at the player's current price.`,
+        `Changes lock when the gameweek starts; between the deadline and scoring they are suspended, then reopen once results are scored.`,
+      ] : [
+        `You get <b>${R.freeTransfers}</b> free transfer every gameweek, and can bank up to <b>${R.maxSavedTransfers}</b>.`,
+        `Every extra transfer beyond the free ones deducts <b>${R.transferCost}</b> points from the next gameweek's score.`,
+        `Prices change after every gameweek by ${R.priceRise} based on managers' actual net buying and selling — you sell at the player's current price.`,
+        `Transfers apply immediately and lock with the gameweek; between the deadline and scoring, transfers are suspended.`,
+      ]) : (R.freeChanges? [
         `<b>تغييرات حرة:</b> بدّل من تشكيلتك ولاعبيك كما تشاء قبل موعد الإغلاق <b>بلا أي خصم نقاط</b>.`,
         `الأسعار تتغيّر بعد كل جولة بمقدار ${R.priceRise} حسب صافي شراء وبيع المشتركين — البيع بسعر اللاعب الحالي.`,
         `التغييرات تُقفل مع بداية الجولة؛ بين الموعد والاحتساب تكون موقوفة، ثم تُفتح بعد احتساب النتائج.`,
@@ -253,16 +282,21 @@ Object.assign(VIEWS, {
         `الانتقالات تُنفَّذ فوراً وتُقفل مع الجولة؛ بين الموعد والاحتساب تكون الانتقالات موقوفة.`,
       ])))}
 
-      ${sec('الكروت الخاصة', `تُفعَّل من شاشة «فريقي» قبل الموعد، كرت واحد في الجولة:` + li(chips.map(([k,c])=>`<b>${esc(c.label)}</b> — ${esc(c.desc)} (${c.uses>1? c.uses+' مرات' : 'مرة واحدة'} في الموسم).`)))}
+      ${sec(T('الكروت الخاصة','Chips'), T(`تُفعَّل من شاشة «فريقي» قبل الموعد، كرت واحد في الجولة:`, `Activated from the "My Team" screen before the deadline, one chip per gameweek:`) + li(chips.map(chipLine)))}
 
-      <div class="card" style="margin-bottom:12px"><h3>نظام النقاط</h3>
-        <div class="tiny" style="margin-bottom:8px">تُحتسب لكل لاعب في كل مباراة يشارك فيها، ثم تُجمع لتشكيلتك الأساسية (والكابتن مضاعف).</div>
+      <div class="card" style="margin-bottom:12px"><h3>${T('نظام النقاط','Scoring system')}</h3>
+        <div class="tiny" style="margin-bottom:8px">${T('تُحتسب لكل لاعب في كل مباراة يشارك فيها، ثم تُجمع لتشكيلتك الأساسية (والكابتن مضاعف).','Counted for every player in every match he plays, then summed for your starting XI (captain doubled).')}</div>
         <div class="grid g2">
           ${groups.map(([t,keys])=>`<div><div class="tiny" style="font-weight:800;margin:6px 0">${t}</div><div class="scroll-x"><table class="tbl">${keys.map(row).join('')}</table></div></div>`).join('')}
-          ${extra.length? `<div><div class="tiny" style="font-weight:800;margin:6px 0">أخرى</div><div class="scroll-x"><table class="tbl">${extra.map(row).join('')}</table></div></div>`:''}
+          ${extra.length? `<div><div class="tiny" style="font-weight:800;margin:6px 0">${T('أخرى','Other')}</div><div class="scroll-x"><table class="tbl">${extra.map(row).join('')}</table></div></div>`:''}
         </div>
         <div class="muted" style="line-height:2;margin-top:10px">
-          ${li([
+          ${li(EN ? [
+            `<b>Clean sheets</b> go to players who played 60 minutes or more while their team conceded no goal with them on the pitch.`,
+            `<b>Goals conceded</b> count against goalkeepers and defenders only while they are on the pitch (every 2 goals ${S.concededPer2? S.concededPer2.val:''}).`,
+            `<b>A second yellow</b> counts as one red card (not added to the yellow).`,
+            `<b>Bonus</b> (3/2/1 for the best three in the match) is entered by the admins when available.`,
+          ] : [
             `<b>الشباك النظيفة</b> تُمنح لمن لعب 60 دقيقة فأكثر ولم يستقبل فريقه هدفاً وهو في الملعب.`,
             `<b>الأهداف المستقبلة</b> تُحسب على الحارس والمدافع فقط أثناء وجوده في الملعب (كل هدفين ${S.concededPer2? S.concededPer2.val:''}).`,
             `<b>الطرد بإنذارين</b> يُحتسب بطاقة حمراء واحدة (لا يُجمع مع الصفراء).`,
@@ -271,23 +305,33 @@ Object.assign(VIEWS, {
         </div>
       </div>
 
-      ${sec('التبديل التلقائي والدكة', li([
+      ${sec(T('التبديل التلقائي والدكة','Auto-subs and the bench'), li(EN ? [
+        `Scoring starts from Gameweek ${DB.state.rules.scoringFromGW||1}: earlier gameweeks are not scored for anyone.`,
+        `If a starter does not play (zero minutes), the first bench player who keeps the formation valid comes on, in bench order.`,
+        `The substitute goalkeeper only comes on for the starting goalkeeper.`,
+        `Bench points count only with the Bench Boost chip.`,
+      ] : [
         `الاحتساب يبدأ من الجولة ${DB.state.rules.scoringFromGW||1}: الجولات قبلها لا تُحتسب نقاطها لأحد.`,
         `إذا لم يشارك لاعب أساسي (صفر دقيقة) يحلّ محله أول بديل من الدكة يحفظ الخطة صالحة، بترتيب الدكة.`,
         `الحارس البديل لا يدخل إلا مكان الحارس الأساسي.`,
         `نقاط الدكة لا تُحتسب إلا بكرت «دكة قوية».`,
       ]))}
 
-      ${sec('الاحتساب والترتيب', li([
+      ${sec(T('الاحتساب والترتيب','Scoring and rankings'), li(EN ? [
+        `After the last match of the gameweek, results are pulled from mfsoccer and every manager's points are scored at once on the server, then the next gameweek opens.`,
+        `The overall table is by total points. Private leagues: classic (total points from the gameweek the league was created) or head-to-head H2H (3 points for a win, 1 for a draw).`,
+        `A gameweek whose fixtures are not yet published on the site appears empty with no deadline — the lineup stays open until the fixtures are released.`,
+        `If a match result is corrected after scoring, everyone's points are corrected retroactively.`,
+      ] : [
         `بعد آخر مباراة في الجولة تُسحب النتائج من mfsoccer وتُحتسب نقاط كل المشتركين دفعة واحدة على الخادم، ثم تُفتح الجولة التالية.`,
         `الترتيب العام بمجموع النقاط. الدوريات الخاصة: كلاسيكية (مجموع النقاط من جولة الإنشاء) أو مواجهات H2H (3 نقاط للفوز، 1 للتعادل).`,
         `الجولة التي لم ينشر الموقع جدولها تظهر فارغة وبلا موعد إغلاق — التشكيلة تبقى مفتوحة حتى يصدر الجدول.`,
         `عند تصحيح نتيجة مباراة بعد الاحتساب تُصحَّح نقاط الجميع بأثر رجعي.`,
       ]))}
 
-      <div class="card"><h3>لديك اقتراح أو لاحظت خطأ؟</h3>
-        <div class="muted" style="line-height:1.9">صفحة المطوّر فيها صندوق الاقتراحات وروابط التواصل.</div>
-        <div style="margin-top:10px"><button class="btn sm" onclick="APP.go('about')">الاقتراحات والتواصل</button></div>
+      <div class="card"><h3>${T('لديك اقتراح أو لاحظت خطأ؟','Have a suggestion or spotted an error?')}</h3>
+        <div class="muted" style="line-height:1.9">${T('صفحة المطوّر فيها صندوق الاقتراحات وروابط التواصل.','The developer page has the feedback box and contact links.')}</div>
+        <div style="margin-top:10px"><button class="btn sm" onclick="APP.go('about')">${T('الاقتراحات والتواصل','Feedback and contact')}</button></div>
       </div>`;
   },
 
