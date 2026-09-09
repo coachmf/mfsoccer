@@ -107,7 +107,8 @@ const VIEWS = {
     this._busy(b,false);
     if(r.ok) UI.modal(`<h3>أُرسل الرابط</h3>
       <p>أرسلنا رابط تغيير كلمة المرور إلى بريدك. افتحه من البريد وغيّرها، ثم عد وسجّل الدخول.</p>
-      <p class="tiny">لم تجده؟ تحقق من مجلد الرسائل غير المرغوبة.</p>
+      <p class="tiny">لم تجده؟ تحقق من «غير المرغوب» وابحث عن المرسل <span dir="ltr">noreply@mfsoccer-c7ee4.firebaseapp.com</span>. قد يتأخر دقائق.</p>
+      <p class="tiny">سجّلت حسابك بزر Google؟ حساب Google بلا كلمة مرور — ادخل بزر «الدخول عبر Google» مباشرة.</p>
       <button class="btn" style="width:100%" onclick="UI.closeModal()">حسناً</button>`);
     else UI.toast(r.err,true);
   },
