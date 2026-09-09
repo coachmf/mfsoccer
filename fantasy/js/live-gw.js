@@ -23,7 +23,13 @@ const LIVEGW = {
   /* نقاط كل المشتركين الآن (للترتيب والمتوسط):
      - جهاز المدير: يقرأ المشتركين، يحسب، وينشر لقطة meta/live (مرة كل 5 دقائق على الأكثر).
      - أي جهاز آخر: يقرأ اللقطة فقط (قراءة واحدة بدل قراءة كل المشتركين). */
-  PUB_EVERY: 5*60000, lastPub:0,
+  lastPub:0,
+  /* فترة النشر: 5 دقائق أثناء مباراة جارية (انطلقت خلال آخر 3 ساعات أو تنطلق خلال 10 دقائق)، وإلا 30 دقيقة */
+  pubEvery(){
+    const now=Date.now(); const gw=this.gw();
+    const on=DB.state.fixtures.some(f=>f.gw===gw && f.date && (()=>{ const k=kwDate(f.date).getTime(); return k-10*60000<=now && now<=k+3*3600*1000; })());
+    return on ? 5*60000 : 30*60000;
+  },
   async refresh(force){
     if(!this.active()) return null;
     if(this.busy) return this.cache.rows;
@@ -32,7 +38,7 @@ const LIVEGW = {
     try{
       const gw=this.gw(); let rows=[];
       if(typeof CLOUD!=='undefined' && CLOUD.ready && CLOUD.user){
-        if(CLOUD.admin && Date.now()-this.lastPub > this.PUB_EVERY){
+        if(CLOUD.admin && Date.now()-this.lastPub > this.pubEvery()){
           const r=await CLOUD.publishLive(gw, (t,g)=>this.calc(t,g));
           if(r.ok){ this.lastPub=Date.now(); rows=r.rows; this.snapAt=r.at; }
         }

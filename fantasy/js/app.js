@@ -123,14 +123,18 @@ const APP = {
 
   /* نسبة التملّك تتغيّر كلما انضم مشترك أو بدّل لاعباً، بينما لا تُنشر إلا مع الاحتساب.
      فكلما فتح المدير اللعبة تُحدَّث وتُنشر تلقائياً إن مضى على آخر تحديث أكثر من 3 ساعات. */
+  /* التملّك ولقطة الترتيب العام: ينشرهما جهاز أي مدير تلقائياً كل ساعة ما دامت اللعبة مفتوحة (وعند الفتح إن مرّت ساعة) */
+  OWN_EVERY: 3600*1000, _ownBusy:false,
   async autoOwnership(){
-    if(typeof CLOUD==='undefined' || !CLOUD.admin || this.cloudState!=='ready') return;
+    if(typeof CLOUD==='undefined' || !CLOUD.admin || this.cloudState!=='ready' || this._ownBusy) return;
     const last = Date.parse(DB.state.ownUpdated||'') || 0;
-    if(Date.now() - last < 3*3600*1000) return;
+    if(Date.now() - last < this.OWN_EVERY) return;
+    this._ownBusy=true;
     try{
       const r = await CLOUD.publishOwnership(DB.state);
-      if(r.ok){ DB.save(); if(this.route==='players' || this.route==='stats' || this.route==='player') this.render(); }
+      if(r.ok){ DB.save(); if(['players','stats','player','leagues','dashboard'].includes(this.route)) this.render(); }
     }catch(e){ console.warn('ownership refresh failed', e); }
+    this._ownBusy=false;
   },
 
   /* هل نُشرت جولة جديدة أو احتُسبت؟ */
@@ -141,6 +145,7 @@ const APP = {
       const changed = await DB.refreshFromCloud();
       if(changed){ ADMINAUTH.sync(); this.render(); if(typeof MFSYNC!=='undefined') MFSYNC.autoFixtures(true); }
     }catch(e){ console.warn('poll failed', e); }
+    if(typeof CLOUD!=='undefined' && CLOUD.admin && !document.hidden) this.autoOwnership();   // كل 5 دقائق يتحقق: مرّت ساعة؟ ينشر
   },
 
   /* هل المشترك داخل بحساب سحابي حقيقي؟ */
