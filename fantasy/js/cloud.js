@@ -85,7 +85,8 @@ const CLOUD = {
   leaguesCol(){ return this.root().collection('leagues'); },
   round(gw){ return this.root().collection('rounds').doc(String(gw)); },
   playersDoc(){ return this.root().collection('meta').doc('players'); },
-  liveDoc(){ return this.root().collection('meta').doc('live'); },      // نقاط الجولة الجارية لكل المشتركين — ينشرها المدير
+  liveDoc(){ return this.root().collection('meta').doc('live'); },
+  ownDoc(){ return this.root().collection('meta').doc('own'); },        // التملّك ولقطة الترتيب العام — مستند مستقل حتى لا يُعاد تحميل اللعبة كل ساعة      // نقاط الجولة الجارية لكل المشتركين — ينشرها المدير
   lockDoc(){ return this.root().collection('meta').doc('lock'); },
 
   /* ---------- قفل الجولة ----------
@@ -293,6 +294,10 @@ const CLOUD = {
   async leaderboard(limit){
     // اللقطة المنشورة (كل المشتركين، بلا قراءة إضافية). المشترك الجديد قبل تحديث اللقطة يُضاف محلياً.
     const st = (typeof DB!=='undefined' && DB.state) || null;
+    if(st && (!this._ownAt || Date.now()-this._ownAt > 5*60000)){      // لقطة أحدث؟ قراءة واحدة كل 5 دقائق على الأكثر
+      this._ownAt = Date.now();
+      const o = await this.loadOwn(); if(this.applyOwn(st, o)){ try{ localStorage.setItem(DB.KEY, JSON.stringify(st)); }catch(e){} }
+    }
     if(st && Array.isArray(st.board) && st.board.length){
       const rows = st.board.map(r=>({...r, hist:(r.hist||[]).slice()}));
       const me = DB.me && DB.me(); const t = me && st.teams[me.id];
@@ -365,10 +370,11 @@ const CLOUD = {
     const c = await this.computeOwnership();
     if(!c.ok) return c;
     st.own = c.own; st.managerCount = c.count; st.ownUpdated = new Date().toISOString(); st.board = c.board;
-    const r = await this.race(this.root().set({
+    // يُكتب في meta/own لا في مستند اللعبة: تغيير «updated» في مستند اللعبة يجعل كل جهاز مفتوح يعيد تحميلها كاملة (~25 قراءة)
+    const r = await this.race(this.ownDoc().set({
       own: c.own, managerCount: c.count, ownUpdated: st.ownUpdated, board: c.board,
-      updated: st.ownUpdated, updatedBy: (this.user && this.user.email) || ''
-    }, {merge:true}));
+      updatedBy: (this.user && this.user.email) || ''
+    }));
     if(!r.ok) return {ok:false, err: r.timeout ? 'الاتصال بطيء — لم يكتمل النشر' : this.errAr(r.err)};
     return {ok:true, count:c.count, total:c.total};
   },
@@ -380,6 +386,19 @@ const CLOUD = {
       const s = await this.root().get();
       return s.exists ? s.data() : null;
     }catch(e){ return null; }
+  },
+  /* التملّك واللقطة من meta/own (أحدث من نسخة مستند اللعبة عادةً) */
+  async loadOwn(){
+    try{ const s = await this.ownDoc().get(); return s.exists ? s.data() : null; }
+    catch(e){ return null; }
+  },
+  /* تطبيق نسخة التملّك/اللقطة على الحالة إن كانت أحدث */
+  applyOwn(st, o){
+    if(!o || !o.ownUpdated) return false;
+    if(st.ownUpdated && o.ownUpdated <= st.ownUpdated) return false;
+    if(o.own) st.own=o.own; if(Array.isArray(o.board)) st.board=o.board;
+    if(o.managerCount!=null) st.managerCount=+o.managerCount; st.ownUpdated=o.ownUpdated;
+    return true;
   },
 
   async loadPlayers(){

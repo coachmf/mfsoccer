@@ -50,8 +50,8 @@ const DB = {
   async hydrate(){
     if(typeof CLOUD==='undefined' || !CLOUD.ready) return {ok:false, err:'offline'};
     const st=this.state;
-    const [game, players, rounds] = await Promise.all(
-      [CLOUD.loadGame(), CLOUD.loadPlayers(), CLOUD.loadRounds()]);
+    const [game, players, rounds, ownDoc] = await Promise.all(
+      [CLOUD.loadGame(), CLOUD.loadPlayers(), CLOUD.loadRounds(), CLOUD.loadOwn()]);
     if(!game) return {ok:false, err:'no-game'};      // المدير لم ينشر بعد
 
     if(game.rules)   st.rules   = game.rules;
@@ -75,6 +75,7 @@ const DB = {
     if(game.managerCount!=null) st.managerCount = +game.managerCount;
     if(game.ownUpdated)     st.ownUpdated = game.ownUpdated;
     if(game.transferStats)  st.transferStats = game.transferStats;
+    CLOUD.applyOwn(st, ownDoc);                                    // meta/own أحدث من نسخة مستند اللعبة (ينشرها المدير كل ساعة)
     this.cloudUpdated = game.updated || null;
     if(players && players.list && players.list.length){
       st.players = players.list; st.fromCloud = true;
