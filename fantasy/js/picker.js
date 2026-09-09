@@ -161,17 +161,36 @@ Object.assign(VIEWS, {
     UI.closeSheet(); APP.render();
   },
   tReset(){ this.ui.tOut=[]; this.ui.tIn=[]; APP.render(); },
+  /* مسودة الانتقالات لو اختير pid لخانة outPid (بدون تطبيق):
+     - pid هو نفسه الخارج → تراجع عن إخراجه
+     - pid لاعب أُخرج من خانة أخرى وغيّر المستخدم رأيه → يرجع لفريقه، وبديله (إن وُجد) ينتقل لخانة outPid
+     - غير ذلك → صفقة عادية */
+  tDraftWith(pid, outPid){
+    const tOut=[...this.ui.tOut], tIn=[...this.ui.tIn];
+    const j=tOut.indexOf(pid);
+    if(pid===outPid){ if(j>=0){ tOut.splice(j,1); tIn.splice(j,1); } return {tOut,tIn,restore:true}; }
+    let carry=null;
+    if(j>=0){ carry=tIn[j]||null; tOut.splice(j,1); tIn.splice(j,1); }
+    let idx=tOut.indexOf(outPid); if(idx<0){ tOut.push(outPid); idx=tOut.length-1; }
+    tIn[idx]= j>=0 ? carry : pid;
+    return {tOut,tIn,restore:j>=0};
+  },
+  tSquadOf(tOut,tIn){ return DB.myTeam().squad.filter(x=>!tOut.includes(x)).concat(tIn.filter(Boolean)); },
+  tBankOf(tOut,tIn){
+    let b=DB.myTeam().bank;
+    tOut.forEach((o,i)=>{ b+=DB.player(o).price; if(tIn[i]) b-=DB.player(tIn[i]).price; });
+    return Math.round(b*10)/10;
+  },
   tPickIn(pid, outPid){
-    const team=DB.myTeam(); const p=DB.player(pid);
-    if(!this.ui.tOut.includes(outPid)) this.ui.tOut.push(outPid);
-    const idx=this.ui.tOut.indexOf(outPid);
-    if(DB.player(outPid).pos!==p.pos){ UI.toast('البديل يجب أن يكون بنفس المركز',true); return false; }
-    const newSquad=team.squad.filter(x=>!this.ui.tOut.includes(x)).concat(this.ui.tIn.filter((x,i)=>x&&i!==idx)).concat([pid]);
-    if(newSquad.includes(pid) && newSquad.filter(x=>x===pid).length>1){ UI.toast('اللاعب موجود في فريقك',true); return false; }
-    if(newSquad.filter(x=>DB.player(x).club===p.club).length>DB.state.rules.maxPerClub){
+    const p=DB.player(pid);
+    if(pid!==outPid && DB.player(outPid).pos!==p.pos){ UI.toast('البديل يجب أن يكون بنفس المركز',true); return false; }
+    const d=this.tDraftWith(pid,outPid);
+    const sq=this.tSquadOf(d.tOut,d.tIn);
+    if(sq.filter(x=>x===pid).length>1){ UI.toast('اللاعب موجود في فريقك',true); return false; }
+    if(sq.filter(x=>DB.player(x).club===p.club).length>DB.state.rules.maxPerClub){
       UI.toast(`الحد الأقصى ${DB.state.rules.maxPerClub} لاعبين من ${DB.club(p.club).name}`,true); return false; }
-    if(this.tBank(idx)-p.price< -1e-9){ UI.toast('الرصيد لا يكفي',true); return false; }
-    this.ui.tIn[idx]=pid; return true;
+    if(this.tBankOf(d.tOut,d.tIn)< -1e-9){ UI.toast('الرصيد لا يكفي',true); return false; }
+    this.ui.tOut=d.tOut; this.ui.tIn=d.tIn; return true;
   },
 
   /* ======================= شاشة «إضافة لاعب» ======================= */
@@ -203,12 +222,18 @@ Object.assign(VIEWS, {
   /* سبب عدم إمكانية اختيار لاعب (أو null) */
   addpBlock(p, bank){
     const a=this.ui.addp; const R=DB.state.rules; const team=DB.myTeam();
-    let squad;
-    if(a.ctx==='picker') squad=this.ui.pickerSquad.filter(x=>x!==a.outPid);
-    else { const idx=this.ui.tOut.indexOf(a.outPid);
-      squad=team.squad.filter(x=>!this.ui.tOut.includes(x) && x!==a.outPid).concat(this.ui.tIn.filter((x,i)=>x&&i!==idx)); }
-    if(squad.includes(p.id) || (a.ctx==='transfer' && (p.id===a.outPid || this.ui.tOut.includes(p.id)))) return 'في فريقك';
-    if(a.ctx==='transfer' && p.pos!==DB.player(a.outPid).pos) return 'مركز مختلف';
+    if(a.ctx==='transfer'){
+      /* لاعب أُخرج في هذه المسودة يمكن إرجاعه (لخانته أو لخانة أخرى بنفس المركز) */
+      if(p.id!==a.outPid && p.pos!==DB.player(a.outPid).pos) return 'مركز مختلف';
+      const d=this.tDraftWith(p.id,a.outPid);
+      const sq=this.tSquadOf(d.tOut,d.tIn);
+      if(sq.filter(x=>x===p.id).length>1) return 'في فريقك';
+      if(sq.filter(x=>DB.player(x).club===p.club).length>R.maxPerClub) return `${R.maxPerClub} من ${DB.club(p.club).short}`;
+      if(this.tBankOf(d.tOut,d.tIn)< -1e-9) return 'الرصيد لا يكفي';
+      return null;
+    }
+    const squad=this.ui.pickerSquad.filter(x=>x!==a.outPid);
+    if(squad.includes(p.id)) return 'في فريقك';
     if(a.ctx==='picker' && squad.filter(x=>DB.player(x).pos===p.pos).length>=R.posCount[p.pos]) return `اكتمل ${POS_AR[p.pos]}`;
     if(squad.filter(x=>DB.player(x).club===p.club).length>=R.maxPerClub) return `${R.maxPerClub} من ${DB.club(p.club).short}`;
     if(p.price>bank+1e-9) return 'الرصيد لا يكفي';
@@ -299,8 +324,9 @@ Object.assign(VIEWS, {
     if(a.ctx==='picker') ok=this.pickerAdd(pid, a.outPid);
     else ok=this.tPickIn(pid, a.outPid);
     if(!ok) return;
+    const restored = a.ctx==='transfer' && !this.ui.tIn.includes(pid);
     UI.closeSheet(); this.closeAddPlayer();
-    UI.toast(`أُضيف ${p.name}`);
+    UI.toast(restored? `رجع ${p.name} إلى فريقك` : `أُضيف ${p.name}`);
     APP.render();
   },
 });
