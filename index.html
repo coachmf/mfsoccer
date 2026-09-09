@@ -3470,8 +3470,11 @@ const POS_GROUPS = [
   ["حراسة", ["GK"]],
   ["دفاع",  ["RB","CB","LB","RWB","LWB"]],
   ["وسط",   ["CDM","CM","CAM","RM","LM"]],
-  ["هجوم",  ["RW","ST","LW"]],
+  ["هجوم",  ["ST"]],
 ];
+/* الأجنحة تُسجَّل LM/RM فقط (خط الوسط): اختيار LW/RW كان يحوّل اللاعب إلى مهاجم في الفانتسي.
+   اللاعبون المحفوظون سابقاً بـ LW/RW يبقون كما هم حتى يُعدَّلوا. */
+const POS_ALIAS = {LW:"LM", RW:"RM"};
 /* المركز التفصيلي ← الخط العام المستخدم في الفانتسي */
 const POS_MAIN = {GK:"G", RB:"D",CB:"D",LB:"D",RWB:"D",LWB:"D",
   CDM:"M",CM:"M",CAM:"M",RM:"M",LM:"M", RW:"F",ST:"F",LW:"F",
@@ -5524,7 +5527,7 @@ const SQ = {
       let s=0, p="";
       let t=line.replace(/^(\d{1,3})\s*[-.,]?\s*/, (m,d)=>{ s=+d; return ""; });   /* رقم في أول السطر */
       t=t.replace(/[\s,،-]+([A-Za-z]{1,3})$/, (m,code)=>{                          /* مركز في آخر السطر */
-        const up=code.toUpperCase();
+        const up=POS_ALIAS[code.toUpperCase()] || code.toUpperCase();
         if(POS_ALL.includes(up)){ p=up; return ""; }
         return m;
       });
