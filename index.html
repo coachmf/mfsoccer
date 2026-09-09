@@ -1877,11 +1877,11 @@ main{padding-bottom:48px}
       <span class="hero-word"><i class="hero-kick">دوري زين الممتاز</i><small>الموسم <span id="seasonLbl">2026/2027</span></small></span>
     </div>
     <div class="hero-players" aria-hidden="true">
-      <img src="assets/hero/qadsia_12.png" alt="">
-      <img src="assets/hero/arabi_77.png" alt="">
-      <img src="assets/hero/kuwait_26.png" alt="">
-      <img src="assets/hero/salmiya_9.png" alt="">
-      <img src="assets/hero/kazma_10.png" alt="">
+      <img src="assets/hero/qadsia_12.png" alt="" loading="lazy" decoding="async">
+      <img src="assets/hero/arabi_77.png" alt="" loading="lazy" decoding="async">
+      <img src="assets/hero/kuwait_26.png" alt="" loading="lazy" decoding="async">
+      <img src="assets/hero/salmiya_9.png" alt="" loading="lazy" decoding="async">
+      <img src="assets/hero/kazma_10.png" alt="" loading="lazy" decoding="async">
     </div>
     <button class="iconbtn hero-admin" id="adminBtn" title="دخول المدير" aria-label="دخول المدير">⚙</button>
     <div class="hero-sub" role="group" aria-label="أقسام الموقع">
@@ -2144,7 +2144,7 @@ function crest(club, big){
   const sc = (GSCALE/100) * ((LSCALE[club]??100)/100);
   const bg = LOGOBG ? "#fff" : "transparent";
   return `<div class="crest has-logo${big?' lg':''}" style="background:${bg}">
-    <img src="${l}" alt="${esc(club)}" style="transform:scale(${sc.toFixed(2)})"></div>`;
+    <img src="${l}" alt="${esc(club)}" loading="lazy" decoding="async" style="transform:scale(${sc.toFixed(2)})"></div>`;
 }
 const compOf = x => x.comp || "الدوري";
 function stampComp(d){
