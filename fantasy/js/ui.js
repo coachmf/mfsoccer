@@ -108,9 +108,25 @@ const UI = {
       <path d="M33 4 C36 8 42 13 50 13 C58 13 64 8 67 4 L61 1.5 C58 6.5 42 6.5 39 1.5 Z" fill="${trim}" stroke="${line}" stroke-width="1.6"/>
     </svg>`;
   },
+  /* حالة اللاعب: مصاب/موقوف = أحمر، مشكوك = ذهبي. لا نعرض نوع الإصابة ولا نسبة المشاركة — فقط الحالة */
+  statusCls(p){ return p.status==='i'||p.status==='s'||p.status==='n' ? 'st-r' : p.status==='d' ? 'st-y' : ''; },
+  statusLabel(p){ return p.status==='i'?'مصاب':p.status==='s'?'موقوف':p.status==='n'?'غير متوفر':p.status==='d'?'مشكوك بمشاركته':''; },
+  /* شارة مثلث تحذير (على طراز FPL) للبطاقات والقوائم */
+  statusFlag(p, size){
+    const cls=this.statusCls(p); if(!cls) return '';
+    size=size||18;
+    return `<span class="stflag ${cls}" title="${this.statusLabel(p)}"><svg width="${size}" height="${size}" viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M12 2.5 L23 21 H1 Z" fill="currentColor"/><rect x="11" y="9" width="2" height="7" rx="1" fill="#fff"/><circle cx="12" cy="18.3" r="1.2" fill="#fff"/></svg></span>`;
+  },
+  /* شريط أعلى ملف اللاعب */
+  statusBanner(p){
+    const cls=this.statusCls(p); if(!cls) return '';
+    return `<div class="ps-alert ${cls}">${this.statusFlag(p,18)}<span>${this.statusLabel(p)}</span></div>`;
+  },
   statusPill(p){
     if(p.status==='i') return '<span class="pill red">مصاب</span>';
     if(p.status==='s') return '<span class="pill red">موقوف</span>';
+    if(p.status==='n') return '<span class="pill red">غير متوفر</span>';
     if(p.status==='d') return '<span class="pill gold">مشكوك</span>';
     return '';
   },

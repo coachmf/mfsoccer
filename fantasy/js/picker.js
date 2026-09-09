@@ -235,7 +235,7 @@ Object.assign(VIEWS, {
     return list.slice(0,150).map(p=>{
       const block=this.addpBlock(p,bank);
       return `<div class="addp-row ${block?'dim':''}" onclick="VIEWS.addpPick('${p.id}')" ${block?`data-why="${esc(block)}"`:''}>
-        <button class="addp-i" onclick="event.stopPropagation();VIEWS.playerSheet('${p.id}','addp')">${p.status!=='a'? '<span class="addp-warn">!</span>' : UI.icon('info',18)}</button>
+        <button class="addp-i" onclick="event.stopPropagation();VIEWS.playerSheet('${p.id}','addp')">${p.status!=='a'? UI.statusFlag(p,20) : UI.icon('info',18)}</button>
         ${UI.playerAvatar(p,36)}
         <div class="addp-name"><b>${esc(p.name)}</b><span>${DB.club(p.club).short} · ${POS_AR[p.pos]}${block?` · <i>${block}</i>`:''}</span></div>
         <div class="addp-c">${DB.playerTotal(p.id)}</div>

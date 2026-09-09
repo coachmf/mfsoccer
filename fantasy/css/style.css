@@ -358,7 +358,15 @@ table.tbl{width:100%;border-collapse:collapse;font-size:.88rem;}
   border-radius:50%;display:grid;place-items:center;font-size:.64rem;font-weight:900;
   box-shadow:0 2px 6px rgba(0,0,0,.4);border:1.5px solid #fff;z-index:3;}
 .pslot .badge.v{background:#5b6b8c;}
-.pslot .flag{position:absolute;top:-6px;left:4px;font-size:.8rem;z-index:3;}
+/* حالة اللاعب على البطاقة: مثلث تحذير + شريط الاسم ملوّن (أحمر مصاب/موقوف، ذهبي مشكوك) */
+.stflag{display:inline-grid;place-items:center;line-height:0;}
+.stflag.st-r{color:#e03a2f;} .stflag.st-y{color:#f0a500;}
+.stflag svg{filter:drop-shadow(0 1px 2px rgba(0,0,0,.35));}
+.pslot .stflag{position:absolute;top:-4px;left:2px;z-index:3;}
+.pslot.st-r .nm{background:#d92d20;color:#fff;} .pslot.st-y .nm{background:#f0a500;color:#1a1a1a;}
+.ps-alert{display:flex;align-items:center;gap:10px;margin:4px 14px 8px;padding:11px 14px;border-radius:12px;font-weight:800;font-size:.92rem;}
+.ps-alert.st-r{background:#d92d20;color:#fff;} .ps-alert.st-r .stflag{color:#fff;} .ps-alert.st-r .stflag rect,.ps-alert.st-r .stflag circle{fill:#d92d20;}
+.ps-alert.st-y{background:#f0a500;color:#1a1a1a;} .ps-alert.st-y .stflag{color:#1a1a1a;} .ps-alert.st-y .stflag rect,.ps-alert.st-y .stflag circle{fill:#f0a500;}
 .pslot.sel .kit{outline:3px solid var(--gold);border-radius:8px;}
 .pslot.dim{opacity:.4;}
 .kit-sm .kit{display:block;}
@@ -545,6 +553,7 @@ tr:hover .btn-view{background:var(--accent);color:#fff;}
   .pslot{width:66px;}
   .pslot .kit{width:44px;height:40px;}
   .pslot .badge{top:16px;right:0;width:18px;height:18px;font-size:.56rem;}
+  .pslot .stflag svg{width:15px;height:15px;}
   .pslot .nm{max-width:66px;min-width:56px;font-size:.6rem;}
   .pslot .pt{max-width:70px;min-width:60px;font-size:.52rem;}
   .club-tag{font-size:.5rem;max-width:70px;padding:1px 6px;}

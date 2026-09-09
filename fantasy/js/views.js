@@ -367,8 +367,9 @@ const VIEWS = {
     const next=FDR.next(p.club,1)[0];
     const sub = opt.pts ? `${opt.pts[pid]??'—'} نقطة` : r? `${r.pts} نقطة` : next? `${DB.club(next.opp).short} ${UI.ha(next.home)}` : '—';
     if(opt.view){                       // تشكيلة مشترك آخر: عرض فقط، والضغط يفتح ملف اللاعب
-      return `<div class="pslot" onclick="VIEWS.playerSheet('${pid}','addp-out')">
+      return `<div class="pslot ${UI.statusCls(p)}" onclick="VIEWS.playerSheet('${pid}','addp-out')">
         ${team.cap===pid? '<div class="badge">C</div>' : team.vice===pid? '<div class="badge v">V</div>':''}
+        ${UI.statusFlag(p)}
         <div class="club-tag">${DB.club(p.club).short}</div>
         ${UI.pitchKit(p, 54)}
         <div class="nm">${esc(p.name.split(' ').slice(-1)[0])}</div>
@@ -376,9 +377,9 @@ const VIEWS = {
       </div>`;
     }
     const dim = this.ui.subMode && this.ui.sel && !this.canSwapWith(this.ui.sel, pid, team);
-    return `<div class="pslot ${sel?'sel':''} ${dim?'dim':''}" onclick="VIEWS.slotClick('${pid}')">
+    return `<div class="pslot ${sel?'sel':''} ${dim?'dim':''} ${UI.statusCls(p)}" onclick="VIEWS.slotClick('${pid}')">
       ${team.cap===pid? '<div class="badge">C</div>' : team.vice===pid? '<div class="badge v">V</div>':''}
-      ${p.status!=='a'? `<div class="flag">!</div>`:''}
+      ${UI.statusFlag(p)}
       <div class="club-tag">${DB.club(p.club).short}</div>
       ${UI.pitchKit(p, 54)}
       <div class="nm">${esc(p.name.split(' ').slice(-1)[0])}</div>
@@ -460,12 +461,13 @@ const VIEWS = {
         <div class="tiny">${DB.club(x.opp).short} ${UI.ha(x.home)}</div>
         <span class="ptschip fdr-l${x.lvl}">${x.lvl}</span></div>`).join('');
     UI.sheet(`
+      ${UI.statusBanner(p)}
       <div class="ps-head">
         <div class="ps-kit">${UI.playerPhoto(p)? `<img class="ps-photo" src="${esc(UI.playerPhoto(p))}" alt="">` : UI.kitShirt(p.club, p.pos==='G', 84)}</div>
         <div style="flex:1">
           <div class="ps-pos">${POS_FULL[p.pos]}</div>
           <div class="ps-name">${esc(p.name)}</div>
-          <div class="ps-club">${c.name}${p.shirt?` · #${p.shirt}`:''} ${UI.statusPill(p)}</div>
+          <div class="ps-club">${c.name}${p.shirt?` · #${p.shirt}`:''}</div>
         </div>
         ${UI.crest(p.club,'lg')}
       </div>
