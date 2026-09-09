@@ -91,7 +91,7 @@ const NAMES_EN = {
 
 const DICT_MORE = {
   // الأندية (أسماء طويلة/بديلة)
-  'الصليبيخات':'Sulaibikhat', 'الصليبخات':'Sulaibikhat', 'دوري زين الممتاز':'Zain Premier League', 'فانتسي دوري زين الممتاز':'Zain Premier League Fantasy',
+  'الصليبيخات':'Sulaibikhat', 'الصليبخات':'Sulaibikhat', 'الدوري الكويتي الممتاز':'Kuwait Premier League',
   'فانتسي الدوري الكويتي':'Kuwait League Fantasy', 'منصور الجمعة':'Mansour Aljumah',
   // نظام النقاط
   'المشاركة (أقل من 60 دقيقة)':'Appearance (under 60 min)', 'المشاركة 60 دقيقة فأكثر':'Appearance (60+ min)', 'هدف (حارس مرمى)':'Goal (goalkeeper)',
@@ -181,7 +181,7 @@ const DICT_MORE = {
   'تعذّر الوصول للخادم — اسحب الصفحة للأسفل أو أعد فتحها':'Could not reach the server — pull down to refresh or reopen the page',
   'حُدّث فريقك من الخادم':'Your team was updated from the server', '— على أرضه':'— home', '— خارج أرضه':'— away',
   'نسخة قيد المراجعة':'Preview build', 'هذا القسم مب مفتوح للجمهور بعد.':'This section is not open to the public yet.', 'أدخل رمز الدخول للمعاينة.':'Enter the access code to preview.',
-  'فانتسي دوري زين الممتاز · 2026/2027':'Zain Premier League Fantasy · 2026/2027', 'رمز الدخول':'Access code',
+  'فانتسي الدوري الكويتي · 2026/2027':'Kuwait League Fantasy · 2026/2027', 'رمز الدخول':'Access code',
   // التنبيهات
   'التنبيهات':'Notifications', 'تنبيه من المتصفح قبل إغلاق الجولة بساعتين':'Browser notification two hours before the deadline',
   'أرسل تذكير الإغلاق بالواتساب':'Send the deadline reminder on WhatsApp', 'المتصفح لا يدعم التنبيهات':'This browser does not support notifications',
@@ -190,8 +190,8 @@ const DICT_MORE = {
   'يصلك التنبيه إذا كان التطبيق مفتوحاً في أي تبويب.':'You get the notification if the app is open in any tab.',
   // الدعم والاقتراحات
   'تابع المطوّر':'Follow the developer', 'اللعبة':'The game', 'لوحة الإدارة':'Admin panel', 'دخول المطوّر':'Developer login',
-  'فانتسي دوري زين الممتاز — لعبة فانتسي كويتية على طراز FPL: كوّن فريقك من لاعبي الدوري، اختر الكابتن، فعّل الكروت، ونافس أصحابك على نقاط كل جولة بنتائج حقيقية.':
-    'Zain Premier League Fantasy — a Kuwaiti fantasy game in the FPL style: build your team from league players, pick a captain, play chips, and compete with friends on real results every gameweek.',
+  'فانتسي الدوري الكويتي — لعبة فانتسي كويتية على طراز FPL: كوّن فريقك من لاعبي الدوري، اختر الكابتن، فعّل الكروت، ونافس أصحابك على نقاط كل جولة بنتائج حقيقية.':
+    'Kuwait League Fantasy — a Kuwaiti fantasy game in the FPL style: build your team from league players, pick a captain, play chips, and compete with friends on real results every gameweek.',
   'اقتراح':'Suggestion', 'مشكلة أو خطأ':'Problem or bug', 'خطأ في بيانات لاعب/مباراة':'Player/match data error',
   'رسالة جديدة للدعم الفني':'New message to support', 'النوع':'Type', 'الرسالة':'Message', 'إرسال':'Send', 'محادثاتك مع الدعم':'Your support conversations',
   'التواصل مع المطوّر':'Contact the developer', 'جارٍ التحميل…':'Loading…', 'جارٍ الإرسال…':'Sending…', 'رد':'Reply', 'رد جديد':'New reply',
@@ -248,7 +248,7 @@ const RX_MORE = [
   [/^تشكيلة غير صالحة: الحد الأدنى (\d+) (.+)$/, (m, n, p) => 'Invalid formation: at least ' + n + ' ' + I18N.trIn(p)],
   [/^تشكيلة غير صالحة: الحد الأقصى (\d+) (.+)$/, (m, n, p) => 'Invalid formation: at most ' + n + ' ' + I18N.trIn(p)],
   [/^أرسلنا رابط تفعيل إلى (.+) — افتحه ثم اضغط «تحققت»$/, 'We sent a verification link to $1 — open it, then tap "Verified"'],
-  [/^دوري زين الممتاز (.+) — كوّن فريقك ونافس أصحابك$/, 'Zain Premier League $1 — build your team and compete with friends'],
+  [/^الدوري الكويتي الممتاز (.+) — كوّن فريقك ونافس أصحابك$/, 'Kuwait Premier League $1 — build your team and compete with friends'],
   [/^(.+) — (\d+) مرة$/, (m, a, n) => I18N.trIn(a) + ' — ' + n + ' times'],
   [/^(\d+) مرة$/, '$1 times'], [/^(\d+) مرات$/, '$1 times'],
   [/^\((\d+) (?:مرة|مرات) في الموسم\)$/, '($1 per season)'],

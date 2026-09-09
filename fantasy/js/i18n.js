@@ -66,14 +66,14 @@ const I18N = {
     // الدوريات
     '+ إنشاء دوري':'+ Create league', 'الانضمام برمز':'Join with code', 'فريق':'teams', 'مركزك:':'Your rank:', 'الرمز:':'Code:',
     '→ كل الدوريات':'← All leagues', '→ الدوريات':'← Leagues', 'رمز الدعوة:':'Invite code:', 'نسخ':'Copy', 'المدير':'Manager', 'الفريق':'Team',
-    'آخر جولة':'Last GW', 'المجموع':'Total', 'التشكيلة':'Lineup', 'أنت':'You', 'الترتيب العام — دوري زين الممتاز':'Overall table — Zain Premier League',
+    'آخر جولة':'Last GW', 'المجموع':'Total', 'التشكيلة':'Lineup', 'أنت':'You', 'الترتيب العام — الدوري الكويتي الممتاز':'Overall table — Kuwait Premier League',
     'ف/ت/خ':'W/D/L', 'ن. المواجهات':'H2H pts', 'جارٍ تحميل الدوري…':'Loading league…', 'عرض':'View',
     'جارٍ جلب التشكيلة…':'Loading lineup…', 'لم يكوّن هذا المشترك فريقاً بعد.':'This manager has not created a team yet.',
     // الدخول
     'دخول':'Log in', 'حساب جديد':'Sign up', 'نسيت كلمة المرور':'Forgot password', 'البريد الإلكتروني':'Email', 'كلمة المرور':'Password',
     'الدخول عبر Google':'Continue with Google', 'أو':'or', 'اسم المستخدم':'Username', 'اسم الفريق':'Team name', 'إنشاء الحساب':'Create account',
     'إرسال رابط الاستعادة':'Send reset link', 'فانتسي الدوري الكويتي':'Kuwait League Fantasy',
-    'دوري زين الممتاز 2026/27 — كوّن فريقك ونافس أصحابك':'Zain Premier League 2026/27 — build your team and compete with friends',
+    'الدوري الكويتي الممتاز 2026/27 — كوّن فريقك ونافس أصحابك':'Kuwait Premier League 2026/27 — build your team and compete with friends',
     'جارٍ الاتصال…':'Connecting…', 'جارٍ تحميل فريقك…':'Loading your team…', 'جارٍ الدخول…':'Signing in…', 'جارٍ فتح Google…':'Opening Google…',
     'خروج':'Log out', 'تسجيل الخروج':'Log out', 'الملف الشخصي':'Profile', 'حفظ':'Save',
     // الدعم

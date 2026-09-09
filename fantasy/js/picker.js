@@ -52,8 +52,8 @@ Object.assign(VIEWS, {
         <button class="btn sec sm" onclick="VIEWS.autoPick()">تعبئة تلقائية</button>
         ${sq.length? `<button class="btn ghost sm" onclick="VIEWS.ui.pickerSquad=[];APP.render()">إفراغ الكل</button>`:''}
       </div>
-      <div class="zain-frame"><div class="pitch picker-pitch">
-        <div class="pitch-brand"><img src="assets/logo-light.png" alt=""><img src="assets/logo-light.png" alt=""><img src="assets/logo-light.png" alt=""></div>
+      <div class="pitch-frame"><div class="pitch picker-pitch">
+        <div class="pitch-brand"><span class="pb"><img src="assets/ball.png" alt="">فانتسي الدوري الكويتي</span><span class="pb"><img src="assets/ball.png" alt="">فانتسي الدوري الكويتي</span><span class="pb"><img src="assets/ball.png" alt="">فانتسي الدوري الكويتي</span></div>
         <div class="pf-goal"></div><div class="pf-box6"></div><div class="pf-box"></div><div class="pf-circle"></div>
         ${['G','D','M','F'].map(slotRow).join('')}
       </div></div>
@@ -133,7 +133,7 @@ Object.assign(VIEWS, {
         <div><b style="color:${hits?'var(--red)':'var(--text)'}">${freeMode?'حر':(hits?'−'+hits:'0')}</b><span>الخصم</span></div>
         <div><b style="color:${bankAfter<0?'var(--red)':'var(--text)'}">${fmtM(bankAfter)}</b><span>بالبنك (${CUR})</span></div>
       </div>
-      <div class="zain-frame"><div class="pitch tf-board">${board}</div></div>
+      <div class="pitch-frame"><div class="pitch tf-board">${board}</div></div>
       <div class="tiny" style="text-align:center;margin-top:8px;color:var(--text3)">اضغط أي لاعب لعرض خياراته: إزالة أو اختيار بديل.</div>
     </div>
     ${tOut.length? `<div class="tf-bar"><div class="tf-bar-in">

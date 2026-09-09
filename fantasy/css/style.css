@@ -1,10 +1,10 @@
 /* فانتسي الدوري الكويتي — نظام التصميم */
 :root{
-  /* هوية دوري زين — أزرق */
+  /* هوية الدوري الكويتي الممتاز — أزرق */
   --bg:#eef5fc; --bg2:#e0edf9; --surface:#ffffff; --surface2:#f1f7fd; --line:#cfe2f2;
   --text:#0b2540; --text2:#3d6488; --text3:#7295b3;
   --green:#00c176; --green-dk:#00875a; --red:#ff5a55; --gold:#fdb913; --blue:#4aa8e8;
-  --accent:#0f7fc6; --zain1:#1a80c8; --zain2:#0d5296;
+  --accent:#0f7fc6; --kpl1:#1a80c8; --kpl2:#0d5296;
   --pitch1:#0c7a43; --pitch2:#0a6b3a;
   --shadow:0 2px 10px rgba(13,79,146,.08);
   --r:14px; --r-sm:10px;
@@ -19,7 +19,6 @@
 }
 [data-theme="dark"] body{ background-image:none; }
 [data-theme="dark"] input,[data-theme="dark"] select,[data-theme="dark"] textarea{ background:var(--surface); color:var(--text); border-color:var(--line); }
-[data-theme="dark"] #brand .lk-dark{ display:block; } [data-theme="dark"] #brand .lk-light{ display:none; }
 [data-theme="dark"] .tbl tr:hover td{ background:color-mix(in srgb,var(--surface2) 60%,transparent); }
 [data-theme="dark"] .big-pill.primary{ background:#fff; color:#0d4f92; }
 [data-theme="dark"] .link-list{ background:var(--surface); }
@@ -73,7 +72,7 @@ a{color:var(--blue); text-decoration:none;}
 #splash .s2{ width:160%; height:20vh; top:44%; left:-20%; background:linear-gradient(105deg, rgba(0,0,0,0) 0%, rgba(10,20,40,.028) 50%, rgba(0,0,0,0) 100%); }
 #splash .s3{ width:160%; height:30vh; top:66%; left:-35%; }
 #splash .splash-logo{
-  width:min(300px, 66vw); z-index:2;
+  width:min(150px, 40vw); z-index:2; display:block; margin:0 auto;
   filter:drop-shadow(0 10px 30px rgba(21,101,192,.18));
   animation:splashIn .7s cubic-bezier(.2,.9,.3,1.2);
 }
@@ -88,11 +87,10 @@ a{color:var(--blue); text-decoration:none;}
     radial-gradient(42% 62% at 98% 96%, rgba(255,110,80,.95), transparent 72%);
   filter:blur(22px); opacity:1;
 }
-.brand-lockup{ height:42px; width:auto; display:block; }
+.brand-ball{ height:38px; width:38px; display:block; flex:none; }
+.brand-name{ font-family:"Almarai"; font-weight:800; font-size:1.02rem; color:var(--text); white-space:nowrap; }
+#splash .splash-name{ margin-top:12px; text-align:center; font-family:"Almarai"; font-weight:800; font-size:1.15rem; color:#0d5296; }
 #topActions .iconbtn.back .ic{ transform:scaleX(-1); }
-#brand .lk-dark{ display:none; } #brand .lk-light{ display:block; }
-[data-theme="light"] #brand .lk-dark{ display:none; }
-[data-theme="light"] #brand .lk-light{ display:block; }
 .brand-tag{ align-self:flex-start; margin-top:2px; }
 
 /* ---------- الهيكل ---------- */
@@ -137,7 +135,7 @@ a{color:var(--blue); text-decoration:none;}
 .home-wrap{ max-width:620px; margin:0 auto; }
 .home-hero{
   position:relative; overflow:hidden; border-radius:20px; padding:18px 16px;
-  background:linear-gradient(165deg, var(--zain1) 0%, var(--zain2) 70%, #093c72 100%);
+  background:linear-gradient(165deg, var(--kpl1) 0%, var(--kpl2) 70%, #093c72 100%);
   color:#fff; text-align:center; box-shadow:0 6px 20px rgba(9,60,114,.22);
 }
 .home-hero::before{
@@ -184,7 +182,7 @@ a{color:var(--blue); text-decoration:none;}
   color:#fff; font-weight:700; font-size:.95rem; backdrop-filter:blur(4px); transition:.15s;
 }
 .big-pill:hover{ background:rgba(255,255,255,.24); }
-.big-pill.primary{ background:#fff; color:var(--zain2); font-weight:800; border-color:#fff; }
+.big-pill.primary{ background:#fff; color:var(--kpl2); font-weight:800; border-color:#fff; }
 .big-pill.primary:hover{ filter:brightness(.95); }
 .pill-row{ display:flex; gap:10px; }
 .pill-row .big-pill{ flex:1; }
@@ -239,8 +237,8 @@ a{color:var(--blue); text-decoration:none;}
 table.tbl{width:100%;border-collapse:collapse;font-size:.88rem;}
 .tbl th{color:var(--text3);font-size:.72rem;font-weight:600;text-align:right;padding:8px 10px;border-bottom:1px solid var(--line);}
 .tbl th.th-sort{cursor:pointer;user-select:none;white-space:nowrap;}
-.tbl th.th-sort:hover{color:var(--zain1);}
-.tbl th.th-sort.on{color:var(--zain1);font-weight:800;}
+.tbl th.th-sort:hover{color:var(--kpl1);}
+.tbl th.th-sort.on{color:var(--kpl1);font-weight:800;}
 .th-arrow{display:inline-block;width:.9em;font-size:.6rem;margin-right:3px;}
 [data-theme="dark"] .tbl th.th-sort.on,[data-theme="dark"] .tbl th.th-sort:hover{color:var(--accent);}
 .tbl td{padding:9px 10px;border-bottom:1px solid color-mix(in srgb,var(--line) 55%,transparent);}
@@ -467,7 +465,7 @@ tr:hover .btn-view{background:var(--accent);color:#fff;}
 .ps-grab{width:44px;height:4px;border-radius:2px;background:var(--line);margin:10px auto 8px;}
 .ps-head{
   display:flex;align-items:center;gap:14px;margin:4px 14px 10px;padding:16px;border-radius:18px;
-  background:linear-gradient(115deg,#54bdec 0%,var(--zain1) 55%,var(--zain2) 100%);color:#fff;
+  background:linear-gradient(115deg,#54bdec 0%,var(--kpl1) 55%,var(--kpl2) 100%);color:#fff;
 }
 .ps-head .ps-kit .kit{filter:drop-shadow(0 4px 8px rgba(0,20,40,.35));}
 .ps-photo{width:86px;height:86px;border-radius:50%;object-fit:cover;background:#eef2f7;
@@ -572,7 +570,7 @@ tr:hover .btn-view{background:var(--accent);color:#fff;}
 
 /* شارة نادي اللاعب أعلى البطاقة */
 .club-tag{font-size:.58rem;font-weight:800;background:#12294a;color:#fff;padding:1px 8px;border-radius:6px;margin-bottom:3px;max-width:92px;white-space:nowrap;overflow:hidden;}
-.pt-toggle button.active{background:var(--zain1);color:#fff;}
+.pt-toggle button.active{background:var(--kpl1);color:#fff;}
 
 /* صف الخطط */
 .form-now{text-align:center;font-weight:800;font-size:.9rem;color:var(--text2);letter-spacing:.06em;margin:0 0 10px;}
@@ -591,10 +589,10 @@ tr:hover .btn-view{background:var(--accent);color:#fff;}
 .tf-bar-in>div{text-align:center;font-size:.66rem;color:var(--text3);min-width:44px;}
 .tf-bar-in b{display:block;font-family:'Almarai';font-size:1.02rem;color:var(--text);}
 
-/* بانر شاشة الفريق بهوية دوري زين */
+/* بانر شاشة الفريق بهوية الدوري */
 .squad-hero{
   display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;
-  background:linear-gradient(115deg,#54bdec 0%,var(--zain1) 45%,var(--zain2) 100%);
+  background:linear-gradient(115deg,#54bdec 0%,var(--kpl1) 45%,var(--kpl2) 100%);
   color:#fff;border-radius:18px;padding:14px 18px;margin-bottom:12px;
   box-shadow:0 4px 14px rgba(13,79,146,.18);position:relative;overflow:hidden;
 }
@@ -606,17 +604,18 @@ tr:hover .btn-view{background:var(--accent);color:#fff;}
 .sh-stats>div{text-align:center;}
 .sh-stats b{display:block;font-family:'Almarai';font-size:1.05rem;font-weight:800;}
 .sh-stats span{font-size:.64rem;opacity:.8;}
-/* لوحة إعلانات دوري زين أعلى الملعب */
+/* لوحة إعلانات الدوري أعلى الملعب */
 .pitch-brand{
   position:absolute;top:0;left:0;right:0;height:26px;background:#fff;
   display:flex;justify-content:space-around;align-items:center;z-index:1;
   border-bottom:2px solid rgba(0,0,0,.08);
 }
+.pitch-brand .pb{display:inline-flex;align-items:center;gap:5px;font-family:"Almarai";font-weight:800;font-size:.66rem;color:#0d5296;white-space:nowrap;}
 .pitch-brand img{height:17px;width:auto;}
 /* لمسة عمق للملعب */
 .pitch{box-shadow:inset 0 -40px 80px rgba(0,50,20,.18), 0 10px 30px rgba(13,79,146,.18);}
 /* كروت الفانتسي: أيقونة بدائرة زرقاء */
-.chip-card .ci{background:color-mix(in srgb,var(--zain1) 12%,transparent);border-radius:50%;width:36px;height:36px;color:var(--zain1);}
+.chip-card .ci{background:color-mix(in srgb,var(--kpl1) 12%,transparent);border-radius:50%;width:36px;height:36px;color:var(--kpl1);}
 
 /* ===== جولة التكثيف الاحترافية ===== */
 /* الشريط العلوي أنظف */
@@ -662,7 +661,7 @@ tr:hover .btn-view{background:var(--accent);color:#fff;}
 
 /* الشريط السفلي: مؤشر نشط أوضح */
 #bottomnav button{position:relative;padding:5px 10px;border-radius:12px;}
-#bottomnav button.active{background:color-mix(in srgb,var(--zain1) 10%,transparent);}
+#bottomnav button.active{background:color-mix(in srgb,var(--kpl1) 10%,transparent);}
 
 /* الرئيسية: هيرو أدق */
 .home-hero{padding:16px 14px;}
@@ -680,14 +679,14 @@ tr:hover .btn-view{background:var(--accent);color:#fff;}
   transform:translateZ(0); -webkit-transform:translateZ(0); will-change:transform; -webkit-backface-visibility:hidden;}
 #bottomnav button.active{background:rgba(13,82,150,.09);}
 
-/* إطار زين حول الملعب */
-.zain-frame{
+/* إطار الدوري حول الملعب */
+.pitch-frame{
   background:url('../assets/bg.jpg') center/cover;
   border-radius:22px; padding:10px;
   box-shadow:0 8px 26px rgba(13,79,146,.22);
 }
-.zain-frame .pitch{border-radius:12px; box-shadow:inset 0 -40px 80px rgba(0,50,20,.15);}
-.zain-frame .bench-strip{
+.pitch-frame .pitch{border-radius:12px; box-shadow:inset 0 -40px 80px rgba(0,50,20,.15);}
+.pitch-frame .bench-strip{
   margin-top:10px; background:rgba(255,255,255,.92); backdrop-filter:blur(6px);
   border:none; border-radius:12px;
 }
@@ -705,8 +704,8 @@ h3{font-size:.98rem;font-weight:800;}
 }
 .link-list{border-radius:14px;}
 
-/* بانر الفريق مسطح؛ بانر الرئيسية تدرّج زين سماوي→كحلي بلا صورة ملعب (طلب منصور 2026-09-09) */
-.squad-hero{ background:var(--zain2); border:none; box-shadow:none; backdrop-filter:none; border-radius:16px; }
+/* بانر الفريق مسطح؛ بانر الرئيسية تدرّج سماوي→كحلي بلا صورة ملعب (طلب منصور 2026-09-09) */
+.squad-hero{ background:var(--kpl2); border:none; box-shadow:none; backdrop-filter:none; border-radius:16px; }
 .squad-hero::before{display:none;}
 .home-hero{
   border:none; box-shadow:0 6px 20px rgba(9,60,114,.22); backdrop-filter:none; border-radius:16px;
@@ -722,26 +721,26 @@ h3{font-size:.98rem;font-weight:800;}
 /* عناصر التحكم بسيطة */
 .pt-toggle{background:#e7eff7; backdrop-filter:none; border-radius:11px;}
 .pt-toggle button{color:var(--text2); font-weight:700;}
-.pt-toggle button.active{background:#fff; color:var(--zain2); box-shadow:0 1px 3px rgba(13,79,146,.12);}
+.pt-toggle button.active{background:#fff; color:var(--kpl2); box-shadow:0 1px 3px rgba(13,79,146,.12);}
 .tabs{background:#e7eff7; backdrop-filter:none;}
 .tabs button{color:var(--text2);}
-.tabs button.active{background:#fff; color:var(--zain2); box-shadow:0 1px 3px rgba(13,79,146,.12);}
+.tabs button.active{background:#fff; color:var(--kpl2); box-shadow:0 1px 3px rgba(13,79,146,.12);}
 .btn{border-radius:11px; font-weight:700;}
 .iconbtn{border-color:var(--line); box-shadow:none;}
 #userchip{border-color:var(--line);}
-/* الشريط العلوي: تدرّج زين (مُعرَّف أعلاه) */
+/* الشريط العلوي: تدرّج الدوري (مُعرَّف أعلاه) */
 #bottomnav{background:var(--surface); backdrop-filter:none; border-top:1px solid var(--line);}
 #bottomnav button{font-weight:700;}
 
 /* كروت الفانتسي أهدأ */
-.chip-card .ci{background:#eef5fb; color:var(--zain2);}
-.chip-card .cp{border-color:var(--line); color:var(--zain2); font-weight:700;}
-.chip-card.on{border-color:var(--zain2); background:#fff;}
-.chip-card.on .cp{background:var(--zain2); color:#fff;}
+.chip-card .ci{background:#eef5fb; color:var(--kpl2);}
+.chip-card .cp{border-color:var(--line); color:var(--kpl2); font-weight:700;}
+.chip-card.on{border-color:var(--kpl2); background:#fff;}
+.chip-card.on .cp{background:var(--kpl2); color:#fff;}
 
 /* الملعب وإطاره أبسط */
-.zain-frame{padding:8px; border-radius:16px; box-shadow:var(--shadow);}
-.zain-frame .pitch{box-shadow:none; border-radius:11px;}
+.pitch-frame{padding:8px; border-radius:16px; box-shadow:var(--shadow);}
+.pitch-frame .pitch{box-shadow:none; border-radius:11px;}
 .pitch{box-shadow:none;}
 .pitch-brand{border-bottom:1px solid rgba(0,0,0,.05);}
 .pslot .nm{box-shadow:none; font-weight:700; background:#fff;}
@@ -749,7 +748,7 @@ h3{font-size:.98rem;font-weight:800;}
 .club-tag{background:rgba(255,255,255,.92); color:#1d3a5f; font-weight:700; backdrop-filter:none;}
 .pslot .avatar{box-shadow:0 1px 4px rgba(0,25,10,.25);}
 .pslot .badge{box-shadow:none; border-width:1.5px;}
-.zain-frame .bench-strip{background:rgba(255,255,255,.94); backdrop-filter:none;}
+.pitch-frame .bench-strip{background:rgba(255,255,255,.94); backdrop-filter:none;}
 
 /* الشريط السفلي للصفقات */
 .tf-bar-in{box-shadow:0 6px 20px rgba(13,79,146,.18); border-radius:14px;}
@@ -764,7 +763,7 @@ h3{font-size:.98rem;font-weight:800;}
 
 /* إشعارات وأوراق */
 .psheet{border-radius:20px 20px 0 0;}
-.ps-head{background:var(--zain2); border-radius:14px;}
+.ps-head{background:var(--kpl2); border-radius:14px;}
 .ps-stats{border-radius:12px;}
 .fcell{border-radius:9px;}
 
@@ -776,7 +775,7 @@ h3{font-size:.98rem;font-weight:800;}
 .lu-grid{display:flex;flex-wrap:wrap;gap:5px;margin-top:5px;}
 .lu{padding:4px 10px;border-radius:9px;font-size:.72rem;font-weight:700;cursor:pointer;
   background:#eef2f7;color:#6a7f99;border:1px solid var(--line);user-select:none;}
-.lu.s{background:var(--zain2);color:#fff;border-color:var(--zain2);}
+.lu.s{background:var(--kpl2);color:#fff;border-color:var(--kpl2);}
 .lu.b{background:#f5c518;color:#4a3800;border-color:#e3b40e;}
 
 /* ---------- تكوين الفريق: ملعب بخانات فاضية ---------- */
@@ -785,7 +784,7 @@ h3{font-size:.98rem;font-weight:800;}
 .pslot.empty .empty-shirt{width:48px;height:48px;border-radius:50%;border:2px dashed rgba(255,255,255,.75);
   background:rgba(255,255,255,.16);box-shadow:0 2px 8px rgba(0,25,10,.25);}
 .pslot.empty .nm{opacity:.9;}
-.pslot.empty .pt{background:rgba(255,255,255,.85);color:var(--zain2);min-width:0;}
+.pslot.empty .pt{background:rgba(255,255,255,.85);color:var(--kpl2);min-width:0;}
 .picker-pitch .pitch-row{gap:6px;}
 .pslot.empty.out .empty-shirt{border-color:#ffb4b0;background:rgba(255,90,85,.18);}
 .picker-errs .tiny{color:var(--text2);padding:2px 0;}
@@ -801,7 +800,7 @@ body.addp-open{overflow:hidden;}
 .addp-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
 .addp-top h3{font-size:1.15rem;}
 .addp-top .iconbtn{width:38px;height:38px;border-radius:50%;background:var(--surface2);display:grid;place-items:center;}
-.addp-bank{background:linear-gradient(90deg,#54bdec,var(--zain1) 60%,var(--zain2));color:#fff;text-align:center;
+.addp-bank{background:linear-gradient(90deg,#54bdec,var(--kpl1) 60%,var(--kpl2));color:#fff;text-align:center;
   font-weight:800;font-family:'Almarai';padding:10px;border-radius:12px;margin-bottom:10px;font-size:1rem;}
 .addp-search{display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--line);
   border-radius:14px;padding:4px 12px;margin-bottom:8px;color:var(--text3);}
@@ -811,7 +810,7 @@ body.addp-open{overflow:hidden;}
 .addp-filters select{flex:1;min-width:0;padding:8px 10px;border-radius:12px;background:var(--surface);font-size:.85rem;}
 .addp-lbl{font-weight:800;font-size:.82rem;color:var(--text2);margin:0 4px 6px;}
 .addp-table{background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow:hidden;box-shadow:var(--shadow);margin-bottom:12px;}
-.addp-out{border-color:color-mix(in srgb,var(--zain1) 45%,var(--line));}
+.addp-out{border-color:color-mix(in srgb,var(--kpl1) 45%,var(--line));}
 .addp-head{display:flex;align-items:center;gap:8px;padding:10px 10px 8px;border-bottom:1px solid var(--line);
   font-size:.74rem;font-weight:800;color:var(--text2);}
 .addp-head span{cursor:pointer;display:flex;align-items:center;gap:2px;justify-content:center;}
@@ -883,21 +882,21 @@ tr.hl td{background:color-mix(in srgb,var(--gold) 14%,transparent);}
 
 /* ---------- بطاقة المطوّر ---------- */
 .dev-card{display:flex;align-items:center;gap:12px;padding:14px 16px;border-radius:16px;margin-top:12px;color:#fff;
-  background:linear-gradient(115deg,#54bdec 0%,var(--zain1) 55%,var(--zain2) 100%);box-shadow:0 8px 24px rgba(13,79,146,.22);}
+  background:linear-gradient(115deg,#54bdec 0%,var(--kpl1) 55%,var(--kpl2) 100%);box-shadow:0 8px 24px rgba(13,79,146,.22);}
 .dev-card.compact{cursor:pointer;}
 .dev-ic{width:42px;height:42px;border-radius:50%;background:rgba(255,255,255,.18);display:grid;place-items:center;flex:none;}
 .dev-l{font-size:.66rem;font-weight:700;opacity:.8;}
 .dev-n{font-family:'Almarai';font-weight:800;font-size:1.05rem;}
 .dev-r{font-size:.74rem;opacity:.9;}
 .dev-links{display:flex;gap:8px;flex:none;}
-.dev-links a{width:38px;height:38px;border-radius:50%;background:#fff;color:var(--zain2);display:grid;place-items:center;transition:.15s;}
+.dev-links a{width:38px;height:38px;border-radius:50%;background:#fff;color:var(--kpl2);display:grid;place-items:center;transition:.15s;}
 .dev-links a:hover{transform:translateY(-2px);}
 
 /* ================= الوضع الداكن — تعريف نهائي (آخر الملف حتى يغلب ما قبله) ================= */
 [data-theme="dark"]{
   --bg:#071a33; --bg2:#0A2242; --surface:#10305c; --surface2:#16386a; --line:rgba(160,185,215,.28);
   --text:#F4F8FC; --text2:#D2E1F1; --text3:#A7BFD8;
-  --accent:#6FC0F5; --blue:#6FC0F5; --zain1:#4DA8E8; --zain2:#2A7FD0;
+  --accent:#6FC0F5; --blue:#6FC0F5; --kpl1:#4DA8E8; --kpl2:#2A7FD0;
   --shadow:0 2px 12px rgba(0,0,0,.4);
 }
 [data-theme="dark"] .tbl th{ color:var(--text3); }

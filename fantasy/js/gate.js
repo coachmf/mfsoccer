@@ -95,13 +95,13 @@ const GATE = {
         #gate .g-foot{margin-top:26px;font-size:11.5px;color:#5f7ea1}
       </style>
       <div class="g-card">
-        <img src="assets/logo-light.png" alt="">
+        <img src="assets/ball.png" alt="">
         <h1>نسخة قيد المراجعة</h1>
         <p>هذا القسم مب مفتوح للجمهور بعد.<br>أدخل رمز الدخول للمعاينة.</p>
         <input id="gateInput" type="password" inputmode="text" autocomplete="off" placeholder="رمز الدخول">
         <button onclick="GATE.submit()">دخول</button>
         <div class="g-msg" id="gateMsg"></div>
-        <div class="g-foot">فانتسي دوري زين الممتاز · 2026/2027</div>
+        <div class="g-foot">فانتسي الدوري الكويتي · 2026/2027</div>
       </div>`;
     document.body.appendChild(box);
     document.body.style.overflow = 'hidden';

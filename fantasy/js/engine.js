@@ -27,7 +27,7 @@ const DB = {
   load(){
     try{
       const raw = localStorage.getItem(this.KEY);
-      if(raw){ this.state = JSON.parse(raw); if(this.state && this.state.ver===1){ this.syncClubs(); this.syncPlayers(); this.syncScoring();
+      if(raw){ this.state = JSON.parse(raw); if(this.state && this.state.ver===1){ (this.state.leagues||[]).forEach(l=>{ if(l.global) l.name='الترتيب العام — الدوري الكويتي الممتاز'; }); this.syncClubs(); this.syncPlayers(); this.syncScoring();
         if((this.state.priceVer||0) < SEED_PRICE_VER){ this.applySeedPrices(); this.save(); }
         if(normalizeFixtures(this.state)) this.save();
         return; } }
@@ -304,7 +304,7 @@ function buildSeedState(){
     scoring: JSON.parse(JSON.stringify(SEED_SCORING)),
     rules: JSON.parse(JSON.stringify(SEED_RULES)),
     users: [], teams: {}, session: null,
-    leagues: [ {id:'L1', code:'OVERALL', name:'الترتيب العام — دوري زين الممتاز', type:'classic', owner:null, members:[], global:true} ],
+    leagues: [ {id:'L1', code:'OVERALL', name:'الترتيب العام — الدوري الكويتي الممتاز', type:'classic', owner:null, members:[], global:true} ],
     bots: [],   // لا مدراء وهميين — الترتيب والدوريات للمشتركين الحقيقيين فقط
     news: SEED_NEWS.map((n,i)=>({id:'n'+(i+1),...n})),
     notifications: {},

@@ -28,9 +28,9 @@ const VIEWS = {
         <p class="tiny">يصلك رابط على بريدك تغيّر منه كلمة المرور، ثم تعود وتسجّل الدخول.</p>
       </div>`;
     return `<div class="auth-hero">
-      <img src="assets/logo-light.png" alt="" style="height:60px">
+      <img src="assets/ball.png" alt="" style="height:60px">
       <h1>فانتسي الدوري الكويتي</h1>
-      <div class="sub">دوري زين الممتاز ${DB.state.rules.season} — كوّن فريقك ونافس أصحابك</div>
+      <div class="sub">الدوري الكويتي الممتاز ${DB.state.rules.season} — كوّن فريقك ونافس أصحابك</div>
       <div class="card">
         <div class="tabs" style="width:100%">${tab('login','دخول')}${tab('signup','حساب جديد')}${tab('forgot','نسيت كلمة المرور')}</div>
         ${form}
@@ -285,7 +285,7 @@ const VIEWS = {
       <div class="pt-layout">
         <div>
           ${view==='pitch'? `
-            <div class="zain-frame">
+            <div class="pitch-frame">
             ${this.pitchHTML(team, {mode:'team', locked})}
             <div class="bench-strip">
               ${(()=>{ let k=0; return team.bench.map(pid=>{
@@ -353,7 +353,7 @@ const VIEWS = {
     const rows=['G','D','M','F'].map(pos=>
       `<div class="pitch-row">${xi.filter(p=>p.pos===pos).map(p=>this.slotHTML(p.id, team, opt)).join('')}</div>`);
     return `<div class="pitch">
-      <div class="pitch-brand"><img src="assets/logo-light.png" alt=""><img src="assets/logo-light.png" alt=""><img src="assets/logo-light.png" alt=""></div>
+      <div class="pitch-brand"><span class="pb"><img src="assets/ball.png" alt="">فانتسي الدوري الكويتي</span><span class="pb"><img src="assets/ball.png" alt="">فانتسي الدوري الكويتي</span><span class="pb"><img src="assets/ball.png" alt="">فانتسي الدوري الكويتي</span></div>
       <div class="pf-goal"></div><div class="pf-box6"></div><div class="pf-box"></div><div class="pf-circle"></div>
       ${rows.join('')}</div>`;
   },
@@ -985,7 +985,7 @@ const VIEWS = {
         <h3 style="margin:0">${locked? 'تشكيلة الجولة '+showGw : 'التشكيلة المقفلة للجولة '+showGw}</h3>
         <div class="row" style="gap:6px">${chip? `<span class="pill gold">كرت: ${esc(chip)}</span>`:''}${res? `<span class="pill blue">${res.total} نقطة</span>`:''}</div>
       </div>
-      <div class="zain-frame">
+      <div class="pitch-frame">
         ${this.pitchHTML(vt, {view:true, pts})}
         <div class="bench-strip">
           ${vt.bench.map(pid=>{ const p=DB.player(pid); const lbl=p.pos==='G'?'حارس':`بديل ${++k} · ${POS_AR[p.pos]}`;
