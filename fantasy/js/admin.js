@@ -476,8 +476,7 @@ const ADMIN = {
         <td><input type="number" step="0.1" value="${p.price}" style="width:70px;padding:4px" onchange="DB.player('${p.id}').price=+this.value;DB.save()"></td>
         <td><select style="width:auto;padding:4px" onchange="DB.player('${p.id}').status=this.value;DB.save();if(this.value!=='a')ADMIN.injuryNotify('${p.id}')">
           <option value="a" ${p.status==='a'?'selected':''}>متاح</option><option value="i" ${p.status==='i'?'selected':''}>مصاب</option>
-          <option value="s" ${p.status==='s'?'selected':''}>موقوف</option><option value="n" ${p.status==='n'?'selected':''}>غير متوفر</option>
-          <option value="d" ${p.status==='d'?'selected':''}>مشكوك</option></select></td>
+          <option value="s" ${p.status==='s'?'selected':''}>موقوف</option><option value="n" ${(p.status==='n'||p.status==='d')?'selected':''}>غير متوفر</option></select></td>
         <td class="num">${DB.playerTotal(p.id)}</td>
         <td><div class="row" style="gap:4px">
           <button class="btn sm sec" onclick="ADMIN.playerModal('${p.id}')"></button>
@@ -487,7 +486,7 @@ const ADMIN = {
   },
   injuryNotify(pid){
     const p=DB.player(pid); const st=DB.state;
-    const label=UI.statusLabel(p)||'مشكوك بمشاركته';
+    const label=UI.statusLabel(p)||'غير متوفر';
     for(const uid in st.teams) if(st.teams[uid].squad.includes(pid))
       NOTIF.push(uid,'injury',`${p.name} ${label} — فكّر ببديل قبل إغلاق الجولة`);
     DB.save();

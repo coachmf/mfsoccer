@@ -53,7 +53,7 @@ const I18N = {
     'تغييرات حرة حتى موعد الإغلاق':'Free changes until the deadline', 'انتقالات حرة — كرت مفعّل':'Free transfers — chip active',
     // بطاقة اللاعب
     'السعر (KWD)':'Price (KWD)', 'نقاط/مباراة':'Pts/match', 'نقاطه في آخر الجولات':'Points in recent gameweeks',
-    'المباريات القادمة':'Upcoming fixtures', 'صعوبة المباراة':'Fixture difficulty', 'لا جولات بعد':'No gameweeks yet', 'موقوف':'Suspended', 'مصاب':'Injured', 'غير متوفر':'Unavailable', 'مشكوك بمشاركته':'Doubtful', 'مشكوك':'Doubtful',
+    'المباريات القادمة':'Upcoming fixtures', 'صعوبة المباراة':'Fixture difficulty', 'لا جولات بعد':'No gameweeks yet', 'موقوف':'Suspended', 'مصاب':'Injured', 'غير متوفر':'Unavailable',  'مشكوك':'Doubtful',
     'متوسط النقاط/جولة':'Avg points/GW', 'نسبة التملّك':'Ownership', 'أهداف':'Goals', 'صناعة':'Assists', 'شباك نظيفة':'Clean sheets', 'دقائق':'Minutes',
     'تعاقد معه':'Sign him', 'جولة':'GW', 'شباك':'CS', 'إنذار':'YC', 'طرد':'RC', 'بونص':'Bonus', 'نقاط':'Pts', 'نقاط الفانتسي عبر الجولات':'Fantasy points by gameweek',
     'مباريات سهلة قادمة':'Easy fixtures ahead', 'اضغط عنوان العمود للترتيب من الأفضل إلى الأسوأ، ومرة أخرى لعكسه.':'Click a column header to sort best to worst; click again to reverse.', 'مقارنة':'Compare', 'اللاعب':'Player', 'فورمة':'Form', 'تملّك':'Owned',
