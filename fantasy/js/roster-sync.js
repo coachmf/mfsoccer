@@ -49,14 +49,32 @@ const ROSTER = {
 
     const { byClub, unknown } = this.parse(data.squads);
     const st = DB.state;
-    const rep = { added:0, updated:0, hidden:0, posChanged:0, unknown, clubs:Object.keys(byClub).length };
+    const rep = { added:0, updated:0, hidden:0, posChanged:0, moved:0, movedList:[], unknown, clubs:Object.keys(byClub).length };
+    /* انتقال داخل الدوري: الاسم ظهر في كشف نادٍ جديد واختفى من كشف ناديه القديم في الموقع
+       → نفس اللاعب (نفس الرقم، نفس النقاط، نفس المالكين) يُنقل بدل إنشاء نسخة مكرّرة. */
+    const stillListed = (p) => (byClub[p.club] || []).some(x => MFSYNC.norm(x.name) === MFSYNC.norm(p.name));
+    const transferOf = (name, cid) => {
+      const nm = MFSYNC.norm(name); if(!nm) return null;
+      const cands = st.players.filter(p => p.club !== cid && MFSYNC.norm(p.name) === nm && byClub[p.club] && !stillListed(p));
+      return cands.find(p => p.status !== 'u') || cands[0] || null;
+    };
     let maxId = st.players.reduce((m,p)=>Math.max(m, +String(p.id).replace(/\D/g,'')||0), 0);
 
     for(const cid in byClub){
       const seen = new Set();
 
       byClub[cid].forEach(sp => {
-        const hit = MFSYNC.resolvePlayer(sp.name, cid, null);
+        let hit = MFSYNC.resolvePlayer(sp.name, cid, null);
+        if(hit && hit.club !== cid) hit = null;            /* مطابقة عبر نادٍ سابق لا تُعدّ وجوداً في الكشف الجديد */
+        if(!hit){
+          const mv = transferOf(sp.name, cid);
+          if(mv){
+            mv.exClubs = [...new Set([...(mv.exClubs||[]), mv.club])].filter(c => c !== cid);
+            rep.movedList.push(`${mv.name}: ${DB.club(mv.club).short} ← ${DB.club(cid).short}`);
+            mv.club = cid; mv.status = 'a'; rep.moved++;
+            hit = mv;
+          }
+        }
         if(hit){
           seen.add(hit.id);
           let changed = false;
@@ -90,7 +108,7 @@ const ROSTER = {
     if(typeof APP !== 'undefined' && APP.render) APP.render();
 
     if(quiet){
-      if(rep.added || rep.updated) UI.toast(`حُدّثت الكشوفات: ${rep.added} جديد · ${rep.updated} معدّل`);
+      if(rep.added || rep.updated || rep.moved) UI.toast(`حُدّثت الكشوفات: ${rep.added} جديد · ${rep.updated} معدّل${rep.moved?` · ${rep.moved} انتقل`:''}`);
     } else {
       this.report(rep, data.lastUpdate || '');
     }
@@ -102,8 +120,9 @@ const ROSTER = {
     UI.modal(`<h3>سحب الكشوفات من mfsoccer</h3>
       <div class="tiny" style="margin-bottom:8px">آخر تحديث للموقع: ${upd || '—'} · ${r.clubs} نادياً</div>
       <div class="muted" style="line-height:2">
-        ${r.added} لاعب جديد · ${r.updated} محدّث · ${r.hidden} أُخفي · ${r.posChanged} مركزه مختلف عن الموقع (لم يُغيَّر)
+        ${r.added} لاعب جديد · ${r.updated} محدّث · ${r.moved||0} انتقل لنادٍ آخر · ${r.hidden} أُخفي · ${r.posChanged} مركزه مختلف عن الموقع (لم يُغيَّر)
       </div>
+      ${(r.movedList||[]).length ? `<div class="tiny" style="margin-top:8px">انتقالات (نفس اللاعب، نقاطه ومالكوه كما هم): ${r.movedList.join('، ')}</div>` : ''}
       <div class="tiny" style="margin-top:8px">إجمالي اللاعبين الفعّالين الآن: ${active}</div>
       ${(r.posDiff||[]).length ? `<div class="tiny" style="margin-top:8px">المراكز ثابتة طوال الموسم؛ لتغيير مركز لاعب بعينه: الإدارة ← اللاعبون. المختلفون: ${r.posDiff.slice(0,12).join('، ')}${r.posDiff.length>12?' …':''}</div>` : ''}
       ${r.unknown.length ? `<h3 style="font-size:.85rem;margin-top:10px;color:var(--red)">أندية ما انطابقت:</h3>

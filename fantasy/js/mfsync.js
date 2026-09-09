@@ -94,7 +94,8 @@ const MFSYNC = {
     if(al){ const p=DB.state.players.find(x=>x.club===clubId && x.name===al); if(p) return p; }
     const nm=this.norm(mfName);
     if(!nm) return null;
-    const squad=DB.state.players.filter(p=>p.club===clubId);
+    const squad=[...DB.state.players.filter(p=>p.club===clubId),
+                 ...DB.state.players.filter(p=>p.club!==clubId && (p.exClubs||[]).includes(clubId))];
     let hit = squad.find(p=>this.norm(p.name)===nm);
     if(!hit) hit = squad.find(p=>{const n=this.norm(p.name); return n.length>3 && nm.length>3 && (n.includes(nm)||nm.includes(n));});
     if(!hit) hit = squad.find(p=>this.lev(this.norm(p.name),nm)<=2);

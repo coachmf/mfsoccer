@@ -390,7 +390,7 @@ function absMinute(h, m){
    يعيد true إذا تغيّر شيء. */
 function fixLineupsFromSubs(st, f){
   if(!f.lineups) return false;
-  const find=(name,clubId)=>st.players.find(p=>p.club===clubId && p.name===name);
+  const find=(name,clubId)=>findByNameClub(st,name,clubId);
   let changed=false;
   for(const cid of [f.h,f.a]){
     const lu=f.lineups[cid]; if(!lu) continue;
@@ -421,10 +421,17 @@ function normalizeFixtures(st){
   return n;
 }
 
+/* لاعب انتقل بين ناديين خلال الموسم يحتفظ برقمه ونقاطه؛ exClubs = أنديته السابقة
+   حتى تبقى مبارياته القديمة (الأهداف/التبديلات/الكروت باسمه) تُحتسب على ناديه وقتها. */
+function playedFor(p, clubId){ return p.club===clubId || (p.exClubs||[]).includes(clubId); }
+function findByNameClub(st, name, clubId){
+  return st.players.find(p=>p.club===clubId && p.name===name)
+      || st.players.find(p=>playedFor(p,clubId) && p.name===name);
+}
 function genMatchStats(st, fx){
   // كل شيء من بيانات حقيقية: التشكيلة والتبديلات من موقع النتائج
   // + الأهداف/الكروت/الجزاءات/البونص. لا توليد عشوائي.
-  const find=(name,clubId)=>st.players.find(p=>p.club===clubId && p.name===name);
+  const find=(name,clubId)=>findByNameClub(st,name,clubId);
   // on/off = دقيقة الدخول والخروج (لحساب الأهداف المستقبلة أثناء وجوده في الملعب)
   const mkRow=(min,on,off)=>({min,on,off,g:0,a:0,cs:0,gc:0,ps:0,pm:0,og:0,yc:0,rc:0,bonus:0,pts:0});
   fx.stats={}; fx.stats[fx.h]={}; fx.stats[fx.a]={};
