@@ -85,6 +85,7 @@ const CLOUD = {
   leaguesCol(){ return this.root().collection('leagues'); },
   round(gw){ return this.root().collection('rounds').doc(String(gw)); },
   playersDoc(){ return this.root().collection('meta').doc('players'); },
+  liveDoc(){ return this.root().collection('meta').doc('live'); },      // نقاط الجولة الجارية لكل المشتركين — ينشرها المدير
   lockDoc(){ return this.root().collection('meta').doc('lock'); },
 
   /* ---------- قفل الجولة ----------
@@ -263,6 +264,29 @@ const CLOUD = {
         : 'تعذّر الحفظ — لا تملك صلاحية هذه العملية', true);
     }
     return false;
+  },
+
+  /* ---------- الجولة المباشرة ----------
+     كان كل زائر يقرأ كل المشتركين كل دقيقة ليحسب المتوسط والترتيب الحي (382 قراءة × كل زائر × كل دقيقة).
+     الآن جهاز المدير وحده يقرؤهم ويحسب ويكتب لقطة واحدة meta/live، وكل زائر يقرأ هذه اللقطة فقط (قراءة واحدة). */
+  async publishLive(gw, calc){
+    if(!this.admin) return {ok:false, err:'للمدير فقط'};
+    let q;
+    try{ q = await this.managers().get(); }
+    catch(e){ return {ok:false, err:'تعذّرت قراءة المشتركين'}; }
+    const rows=[];
+    q.forEach(d=>{ const v=d.data(); const t=v.team; if(!t || !(t.squad||[]).length) return;
+      let live=0; try{ live=+calc(t, gw).total||0; }catch(e){ live=0; }
+      rows.push({ id:d.id, name:v.username||'مشترك', teamName:v.teamName||'', live, total:+v.total||0 }); });
+    rows.sort((a,b)=>b.live-a.live);
+    const at=new Date().toISOString();
+    const r = await this.race(this.liveDoc().set({gw, at, rows, by:(this.user&&this.user.email)||''}));
+    if(!r.ok) return {ok:false, err:'تعذّر نشر اللقطة الحية'};
+    return {ok:true, rows, at, gw};
+  },
+  async readLive(){
+    try{ const s=await this.liveDoc().get(); return s.exists ? s.data() : null; }
+    catch(e){ return undefined; }
   },
 
   /* لوحة الترتيب العام — من نقاط المشتركين الحقيقيين */

@@ -20,20 +20,28 @@ const LIVEGW = {
     const t=DB.myTeam(); if(!t || !(t.squad||[]).length) return null;
     return this.calc(t, this.gw());
   },
-  /* نقاط كل المشتركين الآن (للترتيب والمتوسط) — تُحسب على الجهاز من مستنداتهم */
+  /* نقاط كل المشتركين الآن (للترتيب والمتوسط):
+     - جهاز المدير: يقرأ المشتركين، يحسب، وينشر لقطة meta/live (مرة كل 5 دقائق على الأكثر).
+     - أي جهاز آخر: يقرأ اللقطة فقط (قراءة واحدة بدل قراءة كل المشتركين). */
+  PUB_EVERY: 5*60000, lastPub:0,
   async refresh(force){
     if(!this.active()) return null;
     if(this.busy) return this.cache.rows;
     if(!force && this.cache.rows && this.cache.gw===this.gw() && Date.now()-this.cache.at < 60000) return this.cache.rows;
     this.busy=true;
     try{
-      const gw=this.gw(); const rows=[];
+      const gw=this.gw(); let rows=[];
       if(typeof CLOUD!=='undefined' && CLOUD.ready && CLOUD.user){
-        const q=await CLOUD.managers().get();
-        q.forEach(d=>{ const v=d.data(); const t=v.team; if(!t || !(t.squad||[]).length) return;
-          const res=this.calc(t, gw);
-          rows.push({ id:d.id, name:v.username||'مشترك', teamName:v.teamName||'', live:res.total, total:+v.total||0, hist:v.history||[] });
-        });
+        if(CLOUD.admin && Date.now()-this.lastPub > this.PUB_EVERY){
+          const r=await CLOUD.publishLive(gw, (t,g)=>this.calc(t,g));
+          if(r.ok){ this.lastPub=Date.now(); rows=r.rows; this.snapAt=r.at; }
+        }
+        if(!rows.length){
+          const snap=await CLOUD.readLive();
+          if(snap && snap.gw===gw && Array.isArray(snap.rows)){ rows=snap.rows.slice(); this.snapAt=snap.at; }
+          else if(snap===null || (snap && snap.gw!==gw)){ rows=[]; this.snapAt=null; }   // لا لقطة لهذه الجولة بعد
+          else { this.busy=false; return this.cache.rows; }                              // تعذّرت القراءة: نبقي القديم
+        }
       } else {
         for(const uid in DB.state.teams){ const t=DB.state.teams[uid]; if(!(t.squad||[]).length) continue; const u=DB.user(uid);
           const res=this.calc(t, gw);
@@ -52,7 +60,13 @@ const LIVEGW = {
     const rows=this.cache.rows; if(!rows || !rows.length || this.cache.gw!==this.gw()) return null;
     const me=DB.me(); const mine=me? rows.find(r=>r.id===me.id) : null;
     return { rank: mine? mine.liveRank : null, of: rows.length,
-      avg: Math.round(rows.reduce((s,r)=>s+r.live,0)/rows.length), high: rows[0].live };
+      avg: Math.round(rows.reduce((s,r)=>s+r.live,0)/rows.length), high: rows[0].live, at:this.snapAt||null };
+  },
+  /* «آخر تحديث» للقطة الحية — تُعرض للزائر حتى يعرف أن الأرقام لقطة لا لحظية */
+  snapLabel(){
+    if(!this.snapAt) return '';
+    const d=new Date(this.snapAt); if(isNaN(d)) return '';
+    return 'آخر تحديث '+d.toLocaleTimeString('ar-KW',{hour:'2-digit',minute:'2-digit'});
   },
   liveOf(id){ const r=(this.cache.rows||[]).find(x=>x.id===id); return r? r.live : null; },
   /* كتلة الرئيسية */
@@ -63,7 +77,7 @@ const LIVEGW = {
     const done = m.total && m.played===m.total;
     return `
       <div class="hh-gwtitle">الجولة ${st.currentGW} · <span class="pill red">مباشر</span>
-        <span class="tiny" style="opacity:.85">${done? 'اكتملت المباريات — بانتظار اعتماد الجولة' : `${m.played} من ${m.total} مباريات لُعبت`}</span></div>
+        <span class="tiny" style="opacity:.85">${done? 'اكتملت المباريات — بانتظار اعتماد الجولة' : `${m.played} من ${m.total} مباريات لُعبت`}${s&&s.at? ' · '+this.snapLabel() : ''}</span></div>
       <div class="hh-stats">
         <div><b>${s? s.avg : '—'}</b><span>المتوسط الآن</span></div>
         <div class="big" onclick="APP.go('points')"><b>${my? my.total : 0}</b><span>نقاطك الآن</span></div>
