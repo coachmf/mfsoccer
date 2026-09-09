@@ -471,7 +471,6 @@ const VIEWS = {
         </div>
         ${UI.crest(p.club,'lg')}
       </div>
-      ${p.news? `<div class="tiny" style="margin:0 18px 8px">${esc(p.news)}</div>`:''}
       <div class="ps-stats">
         ${stats.map(([v,l,r])=>`<div><b>${v}</b><div class="lbl">${l}</div><div class="rnk">${r} من ${same.length}</div></div>`).join('')}
       </div>
@@ -752,7 +751,6 @@ const VIEWS = {
           <h2>${esc(p.name)} ${p.shirt?`<span class="tiny">#${p.shirt}</span>`:''} ${UI.statusPill(p)}</h2>
           <div class="row" style="gap:8px;margin-top:4px">${UI.crest(p.club)} <b>${c.name}</b> <span class="pill">${POS_AR[p.pos]}</span>
           <span class="pill blue">${fmtK(p.price)} ${p.price>p.startPrice?'▲':p.price<p.startPrice?'▼':''}</span></div>
-          ${p.news? `<div class="muted" style="margin-top:8px">${esc(p.news)}</div>`:''}
         </div>
         ${team&&team.squad.length&&!team.squad.includes(pid)? `<button class="btn sec" onclick="APP.go('transfers')">تعاقد معه</button>`:''}
         <button class="btn ghost" onclick="VIEWS.cmpOpen('${pid}')">قارن</button>

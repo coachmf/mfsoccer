@@ -506,7 +506,6 @@ const ADMIN = {
         <div class="field" style="flex:1"><label>رقم القميص</label><input id="pl_shirt" type="number" value="${p?p.shirt:''}"></div>
       </div>
       <div class="field"><label>رابط الصورة (اختياري)</label><input id="pl_photo" value="${p?esc(p.photo):''}" placeholder="https://..."></div>
-      <div class="field"><label>ملاحظة/خبر (يظهر للمستخدمين)</label><input id="pl_news" value="${p?esc(p.news):''}" placeholder="مثال: غائب حتى الجولة 6"></div>
       <div class="row" style="gap:8px">
         <button class="btn" onclick="ADMIN.savePlayer('${pid||''}')">حفظ</button>
         ${p?`<button class="btn danger" onclick="ADMIN.removePlayer('${pid}')">حذف من اللعبة</button>`:''}
@@ -514,7 +513,7 @@ const ADMIN = {
   },
   savePlayer(pid){
     const st=DB.state;
-    const data={name:gv('pl_name'),club:gv('pl_club'),pos:gv('pl_pos'),price:+gv('pl_price')||5,shirt:+gv('pl_shirt')||0,photo:gv('pl_photo'),news:gv('pl_news')};
+    const data={name:gv('pl_name'),club:gv('pl_club'),pos:gv('pl_pos'),price:+gv('pl_price')||5,shirt:+gv('pl_shirt')||0,photo:gv('pl_photo'),news:''};
     if(!data.name){UI.toast('الاسم مطلوب',true);return;}
     if(pid){ Object.assign(DB.player(pid),data); }
     else st.players.push({id:'p'+(st.players.length+1)+'x', ...data, startPrice:data.price, status:'a'});
