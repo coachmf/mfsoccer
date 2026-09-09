@@ -33,7 +33,7 @@ const LIVEGW = {
   async refresh(force){
     if(!this.active()) return null;
     if(this.busy) return this.cache.rows;
-    if(!force && this.cache.rows && this.cache.gw===this.gw() && Date.now()-this.cache.at < 60000) return this.cache.rows;
+    if(!force && this.cache.rows && this.cache.gw===this.gw() && Date.now()-this.cache.at < 3*60000) return this.cache.rows;   // اللقطة تتجدد كل 5 دقائق: لا داعي لقراءتها كل دقيقة
     this.busy=true;
     try{
       const gw=this.gw(); let rows=[];

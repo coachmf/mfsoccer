@@ -119,7 +119,8 @@ const GATE = {
 
   init(){
     // مفتوحة أصلاً (رمز معاينة صالح، أو إشهار محفوظ من زيارة سابقة): لا بوابة
-    if(!this.PRIVATE || this.open() || this.cachedPublic()){ this.syncPublic(); return; }
+    if(!this.PRIVATE){ this.unlockPublic(); return; }          // عامة من الكود: لا قراءة لمستند الموسم ولا بوابة
+    if(this.open() || this.cachedPublic()){ this.syncPublic(); return; }
     if(document.body) this.render();
     else document.addEventListener('DOMContentLoaded', ()=>this.render());
     this.syncPublic();

@@ -50,9 +50,12 @@ const DB = {
   async hydrate(){
     if(typeof CLOUD==='undefined' || !CLOUD.ready) return {ok:false, err:'offline'};
     const st=this.state;
-    const [game, players, rounds, ownDoc] = await Promise.all(
-      [CLOUD.loadGame(), CLOUD.loadPlayers(), CLOUD.loadRounds(), CLOUD.loadOwn()]);
+    const [game, ownDoc] = await Promise.all([CLOUD.loadGame(), CLOUD.loadOwn()]);
     if(!game) return {ok:false, err:'no-game'};      // المدير لم ينشر بعد
+    /* اللاعبون والجولات (23 مستنداً) لا تُقرأ إلا إذا تغيّرت اللعبة منذ آخر تحميل ناجح على هذا الجهاز:
+       الفتح المعتاد يكلّف قراءتين بدل ~25 — أكبر توفير في حصة القراءات المجانية */
+    const unchanged = !!game.updated && st.cloudUpdated===game.updated && st.fromCloud && (st.players||[]).length>0 && (st.fixtures||[]).length>0;
+    const [players, rounds] = unchanged ? [null, null] : await Promise.all([CLOUD.loadPlayers(), CLOUD.loadRounds()]);
 
     if(game.rules)   st.rules   = game.rules;
     /* أسماء الكروت ووصفها من الكود دائماً (قابلة للتحديث فوراً على كل الأجهزة)،
@@ -97,6 +100,7 @@ const DB = {
       normalizeFixtures(st);
       if(typeof MFSYNC!=='undefined' && MFSYNC.applyCached) MFSYNC.applyCached();   // الجدول من mfsoccer يغلب أي جدول منشور قديم
     }
+    if(unchanged || (players && players.list && players.list.length && rounds)) st.cloudUpdated = game.updated;   // تحميل كامل ناجح: نحفظ الطابع
     this.cloudAt = Date.now();
     try{ localStorage.setItem(this.KEY, JSON.stringify(st)); }catch(e){}
     return {ok:true};
