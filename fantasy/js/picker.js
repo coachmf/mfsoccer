@@ -53,7 +53,7 @@ Object.assign(VIEWS, {
         ${sq.length? `<button class="btn ghost sm" onclick="VIEWS.ui.pickerSquad=[];APP.render()">إفراغ الكل</button>`:''}
       </div>
       <div class="pitch-frame"><div class="pitch picker-pitch">
-        <div class="pitch-brand"><span class="pb"><img src="assets/ball.png" alt="">فانتسي الدوري الكويتي</span><span class="pb"><img src="assets/ball.png" alt="">فانتسي الدوري الكويتي</span><span class="pb"><img src="assets/ball.png" alt="">فانتسي الدوري الكويتي</span></div>
+        <div class="pitch-brand"><img src="assets/logo-light.png" alt=""><img src="assets/logo-light.png" alt=""><img src="assets/logo-light.png" alt=""></div>
         <div class="pf-goal"></div><div class="pf-box6"></div><div class="pf-box"></div><div class="pf-circle"></div>
         ${['G','D','M','F'].map(slotRow).join('')}
       </div></div>

@@ -72,7 +72,7 @@ a{color:var(--blue); text-decoration:none;}
 #splash .s2{ width:160%; height:20vh; top:44%; left:-20%; background:linear-gradient(105deg, rgba(0,0,0,0) 0%, rgba(10,20,40,.028) 50%, rgba(0,0,0,0) 100%); }
 #splash .s3{ width:160%; height:30vh; top:66%; left:-35%; }
 #splash .splash-logo{
-  width:min(150px, 40vw); z-index:2; display:block; margin:0 auto;
+  width:min(300px, 66vw); z-index:2; display:block; margin:0 auto;
   filter:drop-shadow(0 10px 30px rgba(21,101,192,.18));
   animation:splashIn .7s cubic-bezier(.2,.9,.3,1.2);
 }
@@ -87,9 +87,10 @@ a{color:var(--blue); text-decoration:none;}
     radial-gradient(42% 62% at 98% 96%, rgba(255,110,80,.95), transparent 72%);
   filter:blur(22px); opacity:1;
 }
-.brand-ball{ height:38px; width:38px; display:block; flex:none; }
-.brand-name{ font-family:"Almarai"; font-weight:800; font-size:1.02rem; color:var(--text); white-space:nowrap; }
-#splash .splash-name{ margin-top:12px; text-align:center; font-family:"Almarai"; font-weight:800; font-size:1.15rem; color:#0d5296; }
+.brand-lockup{ height:42px; width:auto; display:block; }
+/* نسختا الشعار: فاتحة للوضع النهاري وبيضاء للوضع الليلي */
+.lk-dark{ display:none; } .lk-light{ display:block; }
+[data-theme="dark"] .lk-dark{ display:block; } [data-theme="dark"] .lk-light{ display:none; }
 #topActions .iconbtn.back .ic{ transform:scaleX(-1); }
 .brand-tag{ align-self:flex-start; margin-top:2px; }
 
@@ -610,7 +611,6 @@ tr:hover .btn-view{background:var(--accent);color:#fff;}
   display:flex;justify-content:space-around;align-items:center;z-index:1;
   border-bottom:2px solid rgba(0,0,0,.08);
 }
-.pitch-brand .pb{display:inline-flex;align-items:center;gap:5px;font-family:"Almarai";font-weight:800;font-size:.66rem;color:#0d5296;white-space:nowrap;}
 .pitch-brand img{height:17px;width:auto;}
 /* لمسة عمق للملعب */
 .pitch{box-shadow:inset 0 -40px 80px rgba(0,50,20,.18), 0 10px 30px rgba(13,79,146,.18);}

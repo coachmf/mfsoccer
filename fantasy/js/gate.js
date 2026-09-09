@@ -95,7 +95,7 @@ const GATE = {
         #gate .g-foot{margin-top:26px;font-size:11.5px;color:#5f7ea1}
       </style>
       <div class="g-card">
-        <img src="assets/ball.png" alt="">
+        <img src="assets/logo-dark.png" alt="Kuwait Fantasy League">
         <h1>نسخة قيد المراجعة</h1>
         <p>هذا القسم مب مفتوح للجمهور بعد.<br>أدخل رمز الدخول للمعاينة.</p>
         <input id="gateInput" type="password" inputmode="text" autocomplete="off" placeholder="رمز الدخول">

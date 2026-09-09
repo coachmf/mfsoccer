@@ -28,7 +28,8 @@ const VIEWS = {
         <p class="tiny">يصلك رابط على بريدك تغيّر منه كلمة المرور، ثم تعود وتسجّل الدخول.</p>
       </div>`;
     return `<div class="auth-hero">
-      <img src="assets/ball.png" alt="" style="height:60px">
+      <img class="lk-light" src="assets/logo-light.png" alt="Kuwait Fantasy League" style="height:60px;margin:0 auto">
+      <img class="lk-dark" src="assets/logo-dark.png" alt="Kuwait Fantasy League" style="height:60px;margin:0 auto">
       <h1>فانتسي الدوري الكويتي</h1>
       <div class="sub">الدوري الكويتي الممتاز ${DB.state.rules.season} — كوّن فريقك ونافس أصحابك</div>
       <div class="card">
@@ -353,7 +354,7 @@ const VIEWS = {
     const rows=['G','D','M','F'].map(pos=>
       `<div class="pitch-row">${xi.filter(p=>p.pos===pos).map(p=>this.slotHTML(p.id, team, opt)).join('')}</div>`);
     return `<div class="pitch">
-      <div class="pitch-brand"><span class="pb"><img src="assets/ball.png" alt="">فانتسي الدوري الكويتي</span><span class="pb"><img src="assets/ball.png" alt="">فانتسي الدوري الكويتي</span><span class="pb"><img src="assets/ball.png" alt="">فانتسي الدوري الكويتي</span></div>
+      <div class="pitch-brand"><img src="assets/logo-light.png" alt=""><img src="assets/logo-light.png" alt=""><img src="assets/logo-light.png" alt=""></div>
       <div class="pf-goal"></div><div class="pf-box6"></div><div class="pf-box"></div><div class="pf-circle"></div>
       ${rows.join('')}</div>`;
   },
