@@ -346,3 +346,4 @@ html[dir="ltr"] .head-story .tx{min-width:0;flex:1}
   nav.tabs button{font-size:.58rem}
   html[lang="en"] nav.tabs button{font-size:.53rem}
 }
+@media(max-width:899px){ nav.tabs button[data-v="matches"] .ic{stroke-width:1.6} }
