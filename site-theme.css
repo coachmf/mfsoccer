@@ -347,3 +347,8 @@ html[dir="ltr"] .head-story .tx{min-width:0;flex:1}
   html[lang="en"] nav.tabs button{font-size:.53rem}
 }
 @media(max-width:899px){ nav.tabs button[data-v="matches"] .ic{stroke-width:1.6} }
+
+/* روابط الخصوصية والشروط في الفوتر الداكن: بيضاء واضحة */
+.lfoot .legal{opacity:1!important;color:rgba(255,255,255,.85)}
+.lfoot .legal a{color:#fff;text-decoration:underline;text-underline-offset:3px;text-decoration-color:rgba(255,255,255,.55)}
+.lfoot .legal a:hover{text-decoration-color:#fff}
