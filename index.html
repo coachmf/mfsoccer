@@ -1887,6 +1887,17 @@ main{padding-bottom:48px}
 <script src="site-i18n.js?v=2" defer></script>
 </head>
 <body>
+<!-- navicons:sprite — أيقونات شريط التنقل في الهاتف (خط 1.75 بلون النص الحالي) -->
+<svg xmlns="http://www.w3.org/2000/svg" style="display:none" aria-hidden="true">
+  <symbol id="ni-home" viewBox="0 0 24 24"><path d="M3 11 12 3l9 8M5 10v10h5v-6h4v6h5V10"/></symbol>
+  <symbol id="ni-matches" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8.5l3.33 2.42-1.27 3.91H9.94L8.67 10.92zM12 8.5V3M15.33 10.92l5.23-1.7M14.06 14.83l3.23 4.45M9.94 14.83 6.71 19.28M8.67 10.92 3.44 9.22"/></symbol>
+  <symbol id="ni-clubs" viewBox="0 0 24 24"><path d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6z"/></symbol>
+  <symbol id="ni-players" viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c0-3.9 3.1-7 7-7s7 3.1 7 7"/></symbol>
+  <symbol id="ni-predict" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3.5"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/></symbol>
+  <symbol id="ni-fans" viewBox="0 0 24 24"><circle cx="12" cy="9" r="3"/><path d="M6.5 20c0-3 2.5-5.5 5.5-5.5s5.5 2.5 5.5 5.5"/><circle cx="5.5" cy="10" r="2.2"/><path d="M1.5 19c0-2.5 1.8-4.5 4-4.5"/><circle cx="18.5" cy="10" r="2.2"/><path d="M22.5 19c0-2.5-1.8-4.5-4-4.5"/></symbol>
+  <symbol id="ni-analysis" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 3v9h9"/></symbol>
+  <symbol id="ni-fantasy" viewBox="0 0 24 24"><path d="M8.5 3.5 2.5 6.5l2 3.6 2.5-1.2V20.5h10V8.9l2.5 1.2 2-3.6-6-3c-1 1.5-2.1 2.2-3.5 2.2s-2.5-.7-3.5-2.2z"/></symbol>
+</svg>
 
 <header class="topbar hero">
   <div class="hero-in">
@@ -1919,14 +1930,14 @@ main{padding-bottom:48px}
 
 <nav class="tabs" role="tablist">
   <div class="in">
-    <button role="tab" data-v="home" aria-selected="true"><span class="ic">▦</span>الرئيسية</button>
-    <button role="tab" data-v="matches" aria-selected="false"><span class="ic">⚽</span>المباريات</button>
-    <button role="tab" data-v="clubs" aria-selected="false"><span class="ic">🛡</span>الأندية</button>
-    <button role="tab" data-v="players" aria-selected="false"><span class="ic">★</span>اللاعبون</button>
-    <button role="tab" data-v="predict" aria-selected="false"><span class="ic">◈</span>التوقعات</button>
-    <button role="tab" data-v="fans" aria-selected="false"><span class="ic">♛</span>الجمهور</button>
-    <button role="tab" data-v="analysis" aria-selected="false"><span class="ic">◔</span>التحليل</button>
-    <button role="tab" data-v="fantasy" id="fantasyTab" aria-selected="false" style="display:none"><span class="ic">◆</span>فانتسي</button>
+    <button role="tab" data-v="home" aria-selected="true"><svg class="ic" aria-hidden="true"><use href="#ni-home"/></svg>الرئيسية</button>
+    <button role="tab" data-v="matches" aria-selected="false"><svg class="ic" aria-hidden="true"><use href="#ni-matches"/></svg>المباريات</button>
+    <button role="tab" data-v="clubs" aria-selected="false"><svg class="ic" aria-hidden="true"><use href="#ni-clubs"/></svg>الأندية</button>
+    <button role="tab" data-v="players" aria-selected="false"><svg class="ic" aria-hidden="true"><use href="#ni-players"/></svg>اللاعبون</button>
+    <button role="tab" data-v="predict" aria-selected="false"><svg class="ic" aria-hidden="true"><use href="#ni-predict"/></svg>التوقعات</button>
+    <button role="tab" data-v="fans" aria-selected="false"><svg class="ic" aria-hidden="true"><use href="#ni-fans"/></svg>الجمهور</button>
+    <button role="tab" data-v="analysis" aria-selected="false"><svg class="ic" aria-hidden="true"><use href="#ni-analysis"/></svg>التحليل</button>
+    <button role="tab" data-v="fantasy" id="fantasyTab" aria-selected="false" style="display:none"><svg class="ic" aria-hidden="true"><use href="#ni-fantasy"/></svg>فانتسي</button>
   </div>
 </nav>
 <!-- v3:strips -->

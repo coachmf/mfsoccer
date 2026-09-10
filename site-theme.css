@@ -320,3 +320,16 @@ html[lang="en"] .brandcard .bt b::after{content:"Statistics preparation and supe
   .hero-tools .iconbtn svg{width:15px;height:15px}
   .hero-in{padding-top:calc(34px + env(safe-area-inset-top))}
 }
+
+/* ---------- أيقونات شريط التنقل في الهاتف (خطية) ---------- */
+@media(max-width:899px){
+  nav.tabs button .ic{width:23px;height:23px;display:block;fill:none;stroke:currentColor;stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round;font-size:0}
+  nav.tabs button[aria-selected="true"] .ic{stroke-width:2.1}
+  nav.tabs button{gap:5px;font-size:.6rem;font-weight:600;padding:8px 1px 7px;white-space:nowrap}
+  html[lang="en"] nav.tabs button{font-size:.55rem;letter-spacing:-.01em}
+}
+@media(max-width:420px){
+  nav.tabs button .ic{width:21px;height:21px}
+  nav.tabs button{font-size:.56rem}
+  html[lang="en"] nav.tabs button{font-size:.5rem}
+}
