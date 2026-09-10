@@ -375,14 +375,19 @@ FEEDBACK.unseen = 0;
 FEEDBACK.poll = async function(){
   if(typeof CLOUD==='undefined' || !CLOUD.ready || !CLOUD.admin) return;
   const list = await this.list(); if(!list) return;
-  const n = list.filter(f=>(f.status||'new')==='new').length;
+  const news = list.filter(f=>(f.status||'new')==='new');
+  const n = news.length;
   const changed = n!==this.unseen; this.unseen = n;
   const m = DB.me();
   if(n>0 && m){
-    const key='fb'+n+'_'+(list.find(f=>(f.status||'new')==='new')||{}).id;
+    const key='fb'+n+'_'+(news[0]||{}).id;
     DB.state.notifications[m.id]=DB.state.notifications[m.id]||[];
     if(!DB.state.notifications[m.id].some(x=>x.type===key)){
-      NOTIF.push(m.id, key, `${n} اقتراح جديد من المشتركين — الإدارة ← الاقتراحات`);
+      /* رد المشترك داخل محادثة قائمة يُرجع حالتها «جديد» — نميّزه عن الاقتراح الجديد فعلاً */
+      const isReply = f => { const r=f.replies||[]; return r.length>0 && r[r.length-1].by==='user'; };
+      const nRep = news.filter(isReply).length, nNew = n-nRep;
+      const parts=[]; if(nNew) parts.push(`${nNew} اقتراح جديد من المشتركين`); if(nRep) parts.push(`${nRep} رد جديد من مشترك في محادثة الدعم`);
+      NOTIF.push(m.id, key, parts.join(' · ')+' — الإدارة ← الاقتراحات');
       try{ localStorage.setItem(DB.KEY, JSON.stringify(DB.state)); }catch(e){}
       if(typeof APP!=='undefined') APP.renderTopbar();
     }
