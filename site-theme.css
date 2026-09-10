@@ -333,3 +333,16 @@ html[lang="en"] .brandcard .bt b::after{content:"Statistics preparation and supe
   nav.tabs button{font-size:.56rem}
   html[lang="en"] nav.tabs button{font-size:.5rem}
 }
+
+/* الأرقام اللافتة: عمود الرقم يتسع للنسب الطويلة في الإنجليزي فلا يركب على العنوان */
+html[dir="ltr"] .head-story .num{min-width:5.2em;width:auto;flex:none;text-align:left;letter-spacing:-.01em}
+html[dir="ltr"] .head-story .tx{min-width:0;flex:1}
+/* عناوين شريط التنقل في الهاتف أوضح */
+@media(max-width:899px){
+  nav.tabs button{font-size:.62rem;font-weight:700}
+  html[lang="en"] nav.tabs button{font-size:.58rem;letter-spacing:0}
+}
+@media(max-width:420px){
+  nav.tabs button{font-size:.58rem}
+  html[lang="en"] nav.tabs button{font-size:.53rem}
+}

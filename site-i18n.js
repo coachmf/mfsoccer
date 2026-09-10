@@ -30,6 +30,7 @@ const I18N = {
     '⟨x⟩ أُقيمت · الترتيب بالنقاط ثم فارق الأهداف ثم الأهداف المسجلة.':'⟨x⟩ played · ranked by points, then goal difference, then goals scored.',
     '⟨x⟩ أُقيمت · ⟨x⟩ لم تبدأ بعد ولا تُحتسب في الجدول · الترتيب بالنقاط ثم فارق الأهداف ثم الأهداف المسجلة.':'⟨x⟩ played · ⟨x⟩ not started yet and not counted in the table · ranked by points, then goal difference, then goals scored.',
     '⟨x⟩ نقطة · المركز ⟨x⟩':'⟨x⟩ pts · position ⟨x⟩', '⟨x⟩ · من ⟨x⟩ مباراة':'⟨x⟩ · of ⟨x⟩ matches', 'أمام':'v', 'لم يلعب بعد':'Not played yet',
+    '⟨x⟩ أُقيمت · ⟨x⟩ قادمة':'⟨x⟩ played · ⟨x⟩ upcoming', '⟨x⟩ أُقيمت':'⟨x⟩ played', 'قادمة':'upcoming',
     // العنوان والوصف
     'إحصائيات الدوري الكويتي الممتاز 2026/2027 | mfsoccer':'Kuwait Premier League Statistics 2026/2027 | mfsoccer',
     'إحصائيات الدوري الكويتي الممتاز 2026/2027':'Kuwait Premier League Statistics 2026/2027',
