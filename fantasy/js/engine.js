@@ -1116,6 +1116,18 @@ const AUTH = {
     DB.state.session=null; DB.save();
   },
 
+  /* حذف الحساب نهائياً — شرط App Store 5.1.1(v). التنفيذ في CLOUD،
+     وهنا نمسح ما بقي على الجهاز بعد نجاحه. */
+  async deleteAccount(password){
+    if(!this.cloudUp()) return {ok:false, err:'تعذّر الاتصال بالخادم — حاول بعد قليل'};
+    const r = await CLOUD.deleteAccount(password);
+    if(r.ok){ DB.state.session=null; try{ DB.save(); }catch(e){} }
+    return r;
+  },
+
+  /* بأي طريقة سجّل دخوله — تحدّد هل نطلب كلمة المرور أم نافذة Google */
+  provider(){ return this.cloudUp() ? CLOUD.providerId() : 'password'; },
+
   /* استعادة كلمة المرور: رسالة حقيقية من Firebase لا رمز محلي */
   async forgot(email){
     if(!this.cloudUp()) return {ok:false, err:'تعذّر الاتصال بالخادم'};

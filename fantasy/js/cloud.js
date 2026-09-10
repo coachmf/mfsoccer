@@ -161,6 +161,92 @@ const CLOUD = {
 
   async logout(){ try{ await this.auth.signOut(); }catch(e){} },
 
+  /* ================= حذف الحساب نهائياً =================
+     شرط App Store (5.1.1(v)): من أنشأ حسابه داخل التطبيق لازم يقدر
+     يحذفه من داخله. الترتيب مهم: تُمسح مستندات Firestore أولاً وحساب
+     المصادقة لا يزال قائماً — بعد حذفه تسقط صلاحيات القواعد فوراً
+     ولن نستطيع لمس أي مستند. */
+
+  /* أي مزوّد استعمله المشترك للدخول */
+  providerId(){
+    const d = (this.user && this.user.providerData) || [];
+    return (d[0] && d[0].providerId) || 'password';
+  },
+
+  /* Firebase يرفض الحذف إن مضى وقت على آخر دخول — نؤكّد الهوية أولاً */
+  async reauth(password){
+    const u = this.user;
+    if(!u) return {ok:false, err:'لست مسجّل الدخول'};
+    try{
+      if(this.providerId() === 'google.com'){
+        const prov = new firebase.auth.GoogleAuthProvider();
+        prov.setCustomParameters({prompt:'select_account'});
+        await u.reauthenticateWithPopup(prov);
+      }else{
+        if(!password) return {ok:false, err:'اكتب كلمة المرور للتأكيد'};
+        const cred = firebase.auth.EmailAuthProvider.credential(u.email, password);
+        await u.reauthenticateWithCredential(cred);
+      }
+      return {ok:true};
+    }catch(e){ return {ok:false, err:this.errAr(e)}; }
+  },
+
+  /* حذف كل ما يخص المشترك من قاعدة البيانات. يُكمل رغم فشل أي جزء
+     ويعيد أسماء ما تعذّر حذفه حتى نصارح المشترك بدل ادّعاء النجاح. */
+  async purgeUserData(uid){
+    const failed = [];
+    const step = async (label, fn) => { try{ await fn(); }catch(e){ failed.push(label); } };
+
+    await step('فريق الفانتسي', () => this.managers().doc(uid).delete());
+    await step('حساب الموقع',  () => this.db.collection('fans').doc(uid).delete());
+
+    await step('التوقعات', async () => {
+      const q = await this.db.collection('preds').where('uid','==',uid).get();
+      await Promise.all(q.docs.map(d => d.ref.delete()));
+    });
+    await step('أصوات تشكيلة الجمهور', async () => {
+      const q = await this.db.collection('tots').where('uid','==',uid).get();
+      await Promise.all(q.docs.map(d => d.ref.delete()));
+    });
+    await step('رسائل الدعم', async () => {
+      const q = await this.root().collection('feedback').where('uid','==',uid).get();
+      await Promise.all(q.docs.map(d => d.ref.delete()));
+    });
+    /* الدوريات الخاصة: ما يملكه يُحذف، وما انضم إليه يخرج منه فقط
+       حتى لا نُفقد بقية الأعضاء دوريهم. */
+    await step('الدوريات الخاصة', async () => {
+      const q = await this.leaguesCol().where('members','array-contains',uid).get();
+      await Promise.all(q.docs.map(d => (d.data()||{}).owner === uid
+        ? d.ref.delete()
+        : d.ref.update({ members: firebase.firestore.FieldValue.arrayRemove(uid) })));
+    });
+    return failed;
+  },
+
+  async deleteAccount(password){
+    if(!this.ready)  return {ok:false, err:'السحابة غير متاحة — تأكد من الاتصال'};
+    if(!this.user)   return {ok:false, err:'لست مسجّل الدخول'};
+    const u = this.user, uid = u.uid;
+
+    const re = await this.reauth(password);
+    if(!re.ok) return re;
+
+    const failed = await this.purgeUserData(uid);
+
+    try{ await u.delete(); }
+    catch(e){ return {ok:false, err:this.errAr(e)}; }
+
+    /* الحساب زال — لا نُبقي فريقاً محلياً باسمه على الجهاز */
+    try{
+      Object.keys(localStorage)
+        .filter(k => k.indexOf('kwf_') === 0 || k === (DB && DB.KEY))
+        .forEach(k => localStorage.removeItem(k));
+    }catch(e){}
+
+    return failed.length ? {ok:true, warn:'حُذف حسابك، لكن تعذّر حذف: ' + failed.join('، ') + ' — راسلنا لإتمامها'}
+                         : {ok:true};
+  },
+
   /* هل نحن داخل متصفح تطبيق (إنستغرام/تيك توك/سناب/فيسبوك)؟ Google يرفض OAuth فيها */
   inAppBrowser(){
     const ua=(navigator.userAgent||'').toLowerCase();
@@ -210,6 +296,8 @@ const CLOUD = {
       'auth/popup-closed-by-user':'أُغلقت نافذة Google قبل إكمال الدخول',
       'auth/unauthorized-domain':'هذا النطاق غير مصرّح له في Firebase (Authorized domains)',
       'auth/account-exists-with-different-credential':'هذا البريد مسجّل بكلمة مرور — ادخل بالبريد وكلمة المرور',
+      'auth/requires-recent-login':'انتهت صلاحية جلستك — أعد تسجيل الدخول ثم كرّر المحاولة',
+      'auth/user-mismatch':'الحساب الذي أكّدت به لا يطابق حسابك الحالي',
       'permission-denied':'لا تملك صلاحية هذه العملية'
     };
     return map[c] || ((e && e.message) || 'حدث خطأ غير متوقع');

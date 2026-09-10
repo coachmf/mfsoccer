@@ -64,6 +64,8 @@ const VIEWS = {
     this._holdT=setTimeout(()=>{ this._busy(btn,false); }, 12000);
   },
   async doSignup(ev){
+    const bad = MODERATION.checkName(gv('f_user'),'اسم المستخدم') || MODERATION.checkName(gv('f_team'),'اسم الفريق');
+    if(bad){ UI.toast(bad,true); return; }
     const b=ev&&ev.target; this._busy(b,true,'جارٍ الإنشاء…');
     const r=await AUTH.signup(gv('f_user'), gv('f_email'), gv('f_pass'), gv('f_team'));
     this._busy(b,false);
@@ -100,6 +102,8 @@ const VIEWS = {
   saveCompleteProfile(){
     const m=DB.me(); const u=gv('cp_user').trim(), t=gv('cp_team').trim();
     if(!u || !t){ UI.toast('اكتب الاسمين', true); return; }
+    const bad = MODERATION.checkName(u,'اسم المستخدم') || MODERATION.checkName(t,'اسم الفريق');
+    if(bad){ UI.toast(bad,true); return; }
     m.username=u; m.teamName=t; DB.save(); UI.closeModal(); UI.toast('تم — كوّن فريقك الآن'); APP.go('team');
   },
   async doForgot(ev){
@@ -918,8 +922,8 @@ const VIEWS = {
         ${rows.map((r,i)=>`<tr style="cursor:pointer;${r.id===m.id?'background:color-mix(in srgb,var(--accent) 10%,transparent)':''}" onclick="VIEWS.openManager('${r.id}')" title="عرض التشكيلة">
           <td class="num" style="font-weight:800">${(r.rank||i+1).toLocaleString('ar')}</td>
           <td style="width:34px;white-space:nowrap">${this.moveIcon(r.move)}</td>
-          <td><span data-i18n="off">${esc(r.name)}</span> ${r.id===m.id?'<span class="pill green">أنت</span>':''}</td>
-          <td class="muted" data-i18n="off">${esc(r.teamName)}</td>
+          <td><span data-i18n="off">${esc(MODERATION.shown(r.id, r.name))}</span> ${r.id===m.id?'<span class="pill green">أنت</span>':''}${MODERATION.isBlocked(r.id)?'<span class="pill" style="margin-inline-start:4px">محظور</span>':''}</td>
+          <td class="muted" data-i18n="off">${esc(MODERATION.isBlocked(r.id)? '—' : r.teamName)}</td>
           ${isH2H?`<td class="tiny">${r.w||0}/${r.d||0}/${r.l||0}</td><td class="num">${r.h2hPts||0}</td>`:''}
           ${liveCol?`<td class="num" style="color:var(--red)">${LIVEGW.liveOf(r.id)??'—'}</td>`:''}
           <td>${r.last}</td><td class="num" style="color:var(--accent)">${r.total}</td>
@@ -961,13 +965,24 @@ const VIEWS = {
     else if(lastFin && (team.gwPicks||{})[lastFin]){ showGw=lastFin; picks=(team.gwPicks||{})[lastFin]; }
     const hist=doc.history||[]; const last=hist.length? hist[hist.length-1] : null;
     const total = doc.total!=null ? doc.total : hist.reduce((s,h)=>s+(h.pts||0),0);
+    const uid=this.ui.managerOpen;
+    const blocked=MODERATION.isBlocked(uid);
+    const shownName=MODERATION.shown(uid, doc.username||'مشترك');
+    const shownTeam=blocked? '—' : (doc.teamName||'فريق');
     const head=`<div class="card" style="margin-bottom:12px">
       <div class="row spread" style="flex-wrap:wrap;gap:8px">
-        <div><h2 style="margin:0">${esc(doc.teamName||'فريق')}</h2><div class="muted">${esc(doc.username||'مشترك')}</div></div>
+        <div><h2 style="margin:0">${esc(shownTeam)}</h2><div class="muted">${esc(shownName)}</div></div>
         <div class="row" style="gap:14px">
           <div style="text-align:center"><b style="font-family:'Almarai';font-size:1.2rem">${total}</b><div class="tiny">مجموع النقاط</div></div>
           <div style="text-align:center"><b style="font-family:'Almarai';font-size:1.2rem">${last? last.pts : '—'}</b><div class="tiny">${last? 'الجولة '+last.gw : 'آخر جولة'}</div></div>
         </div>
+      </div>
+      <div class="row" style="gap:8px;margin-top:12px;padding-top:10px;border-top:1px solid var(--line);flex-wrap:wrap">
+        <button class="btn sm sec" onclick="VIEWS.reportModal('${uid}')">إبلاغ</button>
+        ${blocked
+          ? `<button class="btn sm sec" onclick="MODERATION.unblock('${uid}');UI.toast('أُلغي الحظر');APP.render()">إلغاء الحظر</button>`
+          : `<button class="btn sm sec" onclick="VIEWS.blockAsk('${uid}')">حظر</button>`}
+        <span class="tiny muted" style="align-self:center">الحظر يخفي اسمه عنك في كل القوائم</span>
       </div></div>`;
     if(!picks){
       return back+head+`<div class="card"><div class="muted">لم تُقفل له تشكيلة بعد — تظهر تشكيلات المشتركين بعد إغلاق الجولة ${gw}${st.gws.find(g=>g.n===gw&&g.deadline)? ' ('+UI.fmtDateShort(st.gws.find(g=>g.n===gw).deadline)+')' : ''}.</div></div>`;
@@ -1029,6 +1044,8 @@ const VIEWS = {
   },
   async leagueCreate(){
     const name=gv('lg_name'); if(!name){UI.toast('اكتب اسماً',true);return;}
+    const bad = MODERATION.checkName(name,'اسم الدوري');
+    if(bad){ UI.toast(bad,true); return; }
     if(LEAGUES.online()){
       const r=await CLOUD.createLeague(name, gv('lg_type'));
       UI.closeModal();
@@ -1130,6 +1147,21 @@ const VIEWS = {
         </div>
         <div style="margin-top:18px;border-top:1px solid var(--line);padding-top:12px">
           <button class="btn danger sm" onclick="VIEWS.wipeTeam()">حذف فريقي والبدء من جديد</button>
+          ${APP.signedIn()? `<div style="margin-top:12px">
+            <button class="btn danger sm" onclick="VIEWS.askDeleteAccount()">حذف حسابي نهائياً</button>
+            <div class="tiny muted" style="margin-top:5px">يمسح حسابك وكل بياناتك من الخادم بلا رجعة</div>
+          </div>` : ''}
+        </div>
+        ${(()=>{ const b=MODERATION.list(); return b.length? `
+        <div style="margin-top:16px;border-top:1px solid var(--line);padding-top:12px">
+          <h3 style="margin:0 0 8px">المشتركون المحظورون (${b.length.toLocaleString('ar')})</h3>
+          ${b.map(x=>`<div class="row spread" style="padding:4px 0">
+            <span data-i18n="off">${esc(x.name||'مشترك')}</span>
+            <button class="btn sm sec" onclick="MODERATION.unblock('${x.id}');APP.render()">إلغاء الحظر</button>
+          </div>`).join('')}
+        </div>` : ''; })()}
+        <div class="tiny" style="margin-top:14px;border-top:1px solid var(--line);padding-top:10px">
+          <a href="/privacy.html">سياسة الخصوصية</a> · <a href="/terms.html">شروط الاستخدام</a>
         </div>
       </div>
     </div>`;
@@ -1138,8 +1170,81 @@ const VIEWS = {
   saveProfile(){
     const m=DB.me();
     const u=gv('pr_user'), t=gv('pr_team');
+    const bad = MODERATION.checkName(u,'اسم المستخدم') || MODERATION.checkName(t,'اسم الفريق');
+    if(bad){ UI.toast(bad,true); return; }
     if(u) m.username=u; if(t) m.teamName=t;
     DB.save(); UI.toast('تم الحفظ'); APP.render();
+  },
+  /* ---------- الإبلاغ والحظر (App Store 1.2) ---------- */
+  reportModal(uid){
+    const name = (this.ui.managerDoc && this.ui.managerDoc.username) || 'مشترك';
+    UI.modal(`<h3>إبلاغ عن مشترك</h3>
+      <p class="muted">بلاغك يصل لإدارة اللعبة وتُراجعه خلال ٢٤ ساعة. المشترك لا يُخطَر بهويتك.</p>
+      <div class="field"><label>السبب</label>
+        <select id="rp_reason">${MODERATION.REASONS.map(r=>`<option>${r}</option>`).join('')}</select></div>
+      <div class="field"><label>تفاصيل (اختياري)</label><textarea id="rp_note" rows="3" maxlength="400"></textarea></div>
+      <div id="rp_err" class="tiny" style="color:var(--red);min-height:16px"></div>
+      <div class="row" style="gap:8px;margin-top:12px">
+        <button class="btn" id="rp_go" onclick="VIEWS.sendReport('${uid}')">إرسال البلاغ</button>
+        <button class="btn sec" onclick="UI.closeModal()">إلغاء</button>
+      </div>`);
+    const el=document.getElementById('rp_reason'); if(el) el.dataset.name=name;
+  },
+  async sendReport(uid){
+    const err=document.getElementById('rp_err'), btn=document.getElementById('rp_go');
+    const name=(this.ui.managerDoc && this.ui.managerDoc.username) || '';
+    if(btn){ btn.disabled=true; btn.textContent='جارٍ الإرسال…'; }
+    const r = await MODERATION.send(uid, name, gv('rp_reason'), gv('rp_note'));
+    if(!r.ok){
+      if(err) err.textContent = r.err || 'تعذّر إرسال البلاغ';
+      if(btn){ btn.disabled=false; btn.textContent='إرسال البلاغ'; }
+      return;
+    }
+    UI.closeModal();
+    UI.toast('وصل بلاغك — شكراً لك');
+  },
+  blockAsk(uid){
+    const name=(this.ui.managerDoc && this.ui.managerDoc.username) || 'هذا المشترك';
+    UI.modal(`<h3>حظر ${esc(name)}</h3>
+      <p class="muted">لن يظهر اسمه ولا اسم فريقه لك في أي قائمة ترتيب. تقدر تلغي الحظر
+      متى شئت من الملف الشخصي.</p>
+      <div class="row" style="gap:8px;margin-top:12px">
+        <button class="btn danger" onclick="MODERATION.block('${uid}', ${JSON.stringify(name)});UI.closeModal();UI.toast('تم الحظر');APP.render()">حظر</button>
+        <button class="btn sec" onclick="UI.closeModal()">إلغاء</button>
+      </div>`);
+  },
+
+  /* ---------- حذف الحساب (App Store 5.1.1(v)) ---------- */
+  askDeleteAccount(){
+    const google = AUTH.provider() === 'google.com';
+    UI.modal(`<h3>حذف الحساب نهائياً</h3>
+      <p class="muted">سيُمسح من الخادم بلا رجعة: حسابك، فريق الفانتسي بنقاطه وتاريخه، توقّعاتك،
+      أصواتك في تشكيلة الجمهور، رسائل الدعم، والدوريات الخاصة التي أنشأتها.
+      الدوريات التي انضممت إليها فقط تبقى لبقية الأعضاء وتخرج أنت منها.</p>
+      ${google
+        ? '<p class="muted">ستُفتح نافذة Google لتأكيد هويتك قبل الحذف.</p>'
+        : '<div class="field"><label>كلمة المرور</label><input id="da_pass" type="password" autocomplete="current-password"></div>'}
+      <div class="field"><label>اكتب <b>حذف</b> للتأكيد</label><input id="da_word" autocomplete="off"></div>
+      <div id="da_err" class="tiny" style="color:var(--red);min-height:16px"></div>
+      <div class="row" style="gap:8px;margin-top:12px">
+        <button class="btn danger" id="da_go" onclick="VIEWS.doDeleteAccount()">نعم، احذف حسابي</button>
+        <button class="btn sec" onclick="UI.closeModal()">إلغاء</button>
+      </div>`);
+  },
+  async doDeleteAccount(){
+    const err=document.getElementById('da_err'), btn=document.getElementById('da_go');
+    const say=m=>{ if(err) err.textContent=m||''; };
+    if(gv('da_word').trim()!=='حذف'){ say('اكتب كلمة «حذف» للتأكيد'); return; }
+    say(''); if(btn){ btn.disabled=true; btn.textContent='جارٍ الحذف…'; }
+    const r = await AUTH.deleteAccount(gv('da_pass'));
+    if(!r.ok){
+      say(r.err||'تعذّر الحذف');
+      if(btn){ btn.disabled=false; btn.textContent='نعم، احذف حسابي'; }
+      return;
+    }
+    UI.closeModal();
+    UI.toast(r.warn || 'حُذف حسابك نهائياً', !!r.warn);
+    setTimeout(()=>location.reload(), r.warn? 3000 : 1000);
   },
   wipeTeam(){
     UI.modal(`<h3>تأكيد</h3><p class="muted">سيُحذف فريقك وتاريخ نقاطك وتبدأ من جديد بميزانية كاملة. متأكد؟</p>
