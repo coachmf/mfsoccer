@@ -8,7 +8,7 @@
 /* المظهر (فاتح/داكن): يُضبط قبل الرسم حتى لا تومض الصفحة — مفتاح mf_theme */
 const THEME={KEY:'mf_theme',
   get(){ try{ const q=new URLSearchParams(location.search).get('theme'); if(q==='dark'||q==='light'){ localStorage.setItem(this.KEY,q); return q; }
-      return localStorage.getItem(this.KEY)==='dark'?'dark':'light'; }catch(e){ return 'light'; } },
+      return localStorage.getItem(this.KEY)==='light'?'light':'dark'; }catch(e){ return 'dark'; } },   /* الافتراضي داكن */
   apply(t){ document.documentElement.setAttribute('data-theme',t);
     const m=document.querySelector('meta[name="theme-color"]'); if(m) m.content = t==='dark' ? '#081527' : '#061529';
     const b=document.getElementById('themeBtn'); if(b){ b.innerHTML = t==='dark' ? THEME.SUN : THEME.MOON; b.title = b.ariaLabel = (t==='dark' ? 'الوضع الفاتح' : 'الوضع الداكن'); } },
