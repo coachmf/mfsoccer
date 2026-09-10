@@ -312,3 +312,11 @@ html[lang="en"] .brandcard .bt b::after{content:"Statistics preparation and supe
   .hero-brand{margin:0 auto;gap:12px}
 }
 @media(max-width:420px){ .hero-in{min-height:260px} }
+
+/* الهاتف: الشعار أعلى قدر الإمكان تحت الأزرار مباشرة */
+@media(max-width:899px){
+  .hero-tools{top:calc(6px + env(safe-area-inset-top))}
+  .hero-tools .iconbtn{width:32px;height:26px;font-size:.7rem}
+  .hero-tools .iconbtn svg{width:15px;height:15px}
+  .hero-in{padding-top:calc(34px + env(safe-area-inset-top))}
+}
