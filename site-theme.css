@@ -366,3 +366,18 @@ html[dir="ltr"] .head-story .tx{min-width:0;flex:1}
   .hero-brand{margin:0 auto;justify-content:center}
   .hero-players,html[dir="ltr"] .hero-players{left:50%;transform:translateX(-50%)}
 }
+
+/* الكمبيوتر: أزرار الإحصائيات/التوقعات/فانتسي تحت الشعار تُخفى، وتبويبا فانتسي والتوقعات يجاوران «الرئيسية» في الشريط */
+@media(min-width:900px){
+  .hero-sub{display:none}
+  .hero-brand{margin-bottom:44px}
+  nav.tabs button[data-v="home"]{order:0}
+  nav.tabs button[data-v="fantasy"]{order:1}
+  nav.tabs button[data-v="predict"]{order:2}
+  nav.tabs button[data-v="matches"]{order:3}
+  nav.tabs button[data-v="clubs"]{order:4}
+  nav.tabs button[data-v="players"]{order:5}
+  nav.tabs button[data-v="fans"]{order:6}
+  nav.tabs button[data-v="analysis"]{order:7}
+  nav.tabs .navbrand{order:99}
+}
