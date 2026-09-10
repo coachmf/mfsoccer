@@ -301,8 +301,7 @@ html[lang="en"] .brandcard .bt b::after{content:"Statistics preparation and supe
 /* الهاتف: الصف فوق شريط الأزرار السفلي حتى لا يغطي الوجوه */
 @media(max-width:899px){
   .hero-in{min-height:270px}
-  .hero-players{bottom:38px;left:calc(50% + 14px)}
-  html[dir="ltr"] .hero-players{left:calc(50% - 14px)}
+  .hero-players{bottom:38px}
 }
 @media(max-width:420px){ .hero-in{min-height:252px} }
 
@@ -360,3 +359,10 @@ html[dir="ltr"] .head-story .tx{min-width:0;flex:1}
   .hero-in{min-height:240px}
 }
 @media(max-width:420px){ .hero-in{min-height:222px} }
+
+/* الهاتف: كل عناصر الترويسة في المنتصف تماماً (الشعار والاسم والموسم واللاعبون) */
+@media(max-width:899px){
+  .hero-in{justify-content:center;text-align:center}
+  .hero-brand{margin:0 auto;justify-content:center}
+  .hero-players,html[dir="ltr"] .hero-players{left:50%;transform:translateX(-50%)}
+}
