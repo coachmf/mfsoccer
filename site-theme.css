@@ -352,3 +352,11 @@ html[dir="ltr"] .head-story .tx{min-width:0;flex:1}
 .lfoot .legal{opacity:1!important;color:rgba(255,255,255,.85)}
 .lfoot .legal a{color:#fff;text-decoration:underline;text-underline-offset:3px;text-decoration-color:rgba(255,255,255,.55)}
 .lfoot .legal a:hover{text-decoration-color:#fff}
+
+/* الهاتف: أزرار الإحصائيات/فانتسي/التوقعات في الترويسة مكرّرة في شريط الأيقونات السفلي → تُخفى، واللاعبون في قاع الترويسة */
+@media(max-width:899px){
+  .hero-sub{display:none}
+  .hero-players{bottom:0}
+  .hero-in{min-height:240px}
+}
+@media(max-width:420px){ .hero-in{min-height:222px} }
