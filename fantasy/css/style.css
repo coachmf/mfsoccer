@@ -935,3 +935,8 @@ html.lang-en .lg-tbl td:last-child{text-align:right;}
 html.lang-en .goals2 .gh{text-align:left;} html.lang-en .goals2 .ga{text-align:right;direction:ltr;}
 html.lang-en .fx .team.a{flex-direction:row-reverse;justify-content:flex-start;}
 html.lang-en .ps-stats>div{border-left:none;border-right:1px solid var(--line);} html.lang-en .ps-stats>div:last-child{border-right:none;}
+
+/* الوضع الداكن: مبدّل الملعب/قائمة/الانتقالات كان يبقى بخلفية فاتحة فتختفي العناوين غير النشطة */
+[data-theme="dark"] .pt-toggle{ background:var(--surface2); box-shadow:inset 0 0 0 1px var(--line); }
+[data-theme="dark"] .pt-toggle button{ color:var(--text2); }
+[data-theme="dark"] .pt-toggle button.active{ background:var(--accent); color:#071a33; box-shadow:0 1px 4px rgba(0,0,0,.35); }
