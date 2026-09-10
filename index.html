@@ -882,7 +882,7 @@ table.lb td.pt{font-family:var(--display);font-weight:700;color:var(--sky);
 .hero-in{position:relative;z-index:1;max-width:1180px;margin:0 auto;display:flex;align-items:flex-end;gap:16px;
   padding:calc(16px + env(safe-area-inset-top)) 20px 0;min-height:158px}
 .hero-brand{display:flex;align-items:center;gap:12px;margin-bottom:50px;flex:none}
-.hero-logo{height:86px;width:auto;filter:drop-shadow(0 4px 12px rgba(0,0,0,.28))}
+.hero-logo{height:86px;width:auto;flex:none;max-width:100%;filter:drop-shadow(0 4px 12px rgba(0,0,0,.28))}
 .hero-word{display:flex;flex-direction:column;line-height:1}
 .hero-word b{font-family:var(--display);font-weight:700;font-size:2.35rem;color:#fff;text-shadow:0 2px 10px rgba(6,21,41,.35)}
 .hero-word small{font-family:var(--display);font-size:.82rem;color:#eaf8ff;letter-spacing:.1em;margin-top:8px;font-weight:600}
@@ -1244,7 +1244,7 @@ main{padding-bottom:48px}
   clip-path:polygon(0 0,100% 26px,100% 31px,0 5px)}
 .lfoot-in{position:relative;max-width:1180px;margin:0 auto}
 .lfoot-top{display:flex;align-items:center;gap:18px;flex-wrap:wrap}
-.lfoot-logo{height:84px;width:auto}
+.lfoot-logo{height:84px;width:auto;flex:none;max-width:100%}
 .lfoot-tag b{display:block;font-family:var(--display);font-weight:800;font-size:1.25rem}
 .lfoot-tag span{font-size:.8rem;color:#BFD8EE}
 .lfoot-crests{display:flex;flex-wrap:wrap;gap:8px;margin:26px 0 22px;padding:14px 0;border-top:1px solid rgba(255,255,255,.1);border-bottom:1px solid rgba(255,255,255,.1)}
@@ -1873,7 +1873,7 @@ main{padding-bottom:48px}
 <header class="topbar hero">
   <div class="hero-in">
     <div class="hero-brand">
-      <img class="hero-logo" src="assets/hero/zain-logo-white.png" alt="الدوري الكويتي الممتاز">
+      <img class="hero-logo" src="assets/hero/kpl-light.png" alt="الدوري الكويتي الممتاز">
       <span class="hero-word"><i class="hero-kick">الدوري الكويتي الممتاز</i><small>الموسم <span id="seasonLbl">2026/2027</span></small></span>
     </div>
     <div class="hero-players" aria-hidden="true">
@@ -1933,7 +1933,7 @@ main{padding-bottom:48px}
 <footer class="lfoot" id="lfoot">
   <div class="lfoot-in">
     <div class="lfoot-top">
-      <img class="lfoot-logo" src="assets/hero/zain-logo-white.png" alt="الدوري الكويتي الممتاز">
+      <img class="lfoot-logo" src="assets/hero/kpl-light.png" alt="الدوري الكويتي الممتاز">
       <div class="lfoot-tag"><b>إحصائيات الدوري الكويتي الممتاز</b><span>موسم 2026/2027 · أرقام المباريات والأهداف واللاعبين وجدول الترتيب</span></div>
     </div>
     <div class="lfoot-crests" id="footCrests"></div>
@@ -6990,7 +6990,7 @@ const LOCAL_CRESTS={
 function useLocalCrests(){
   LOGOS=Object.assign({},LOGOS,LOCAL_CRESTS);
   LSCALE={}; GSCALE=100; LOGOBG=true;
-  LEAGUE="assets/hero/zain-logo-dark.png";
+  LEAGUE="assets/hero/kpl-dark.png";
 }
 const _applyAssetsOrig=applyAssets;
 applyAssets=function(a){ _applyAssetsOrig(a); useLocalCrests(); };
