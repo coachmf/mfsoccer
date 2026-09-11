@@ -293,7 +293,10 @@ const APP = {
   },
   renderBottomNav(){
     const m=DB.me(); if(!m) return;
-    const items=[['dashboard','home','الرئيسية'],['team','shirt','فريقي'],['players','users','اللاعبون'],['leagues','trophy','دوريات'],['guide','news','عن اللعبة']];
+    /* «حسابي» في الشريط السفلي عمداً: حذف الحساب شرط App Store 5.1.1(v)
+   ولازم يكون سهل العثور عليه. كان خلف دائرة صغيرة في الترويسة فلم
+   يجده مُراجع آبل ورُفض التطبيق. */
+    const items=[['dashboard','home','الرئيسية'],['team','shirt','فريقي'],['players','users','اللاعبون'],['leagues','trophy','دوريات'],['profile','gear','حسابي'],['guide','news','عن اللعبة']];
     if(ADMINAUTH.active()) items.push(['admin','gear','إدارة']);
     document.getElementById('bottomnav').innerHTML=items.map(([id,ic,l])=>
       `<button class="${this.route===id?'active':''}" onclick="APP.go('${id}')"><span class="ic">${UI.icon(ic,21)}</span>${l}</button>`).join('');

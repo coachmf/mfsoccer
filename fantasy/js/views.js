@@ -36,6 +36,9 @@ const VIEWS = {
         <div class="tabs" style="width:100%">${tab('login','دخول')}${tab('signup','حساب جديد')}${tab('forgot','نسيت كلمة المرور')}</div>
         ${form}
         <div class="row" style="align-items:center;gap:10px;margin:14px 0 10px"><div style="flex:1;height:1px;background:var(--line)"></div><span class="tiny">أو</span><div style="flex:1;height:1px;background:var(--line)"></div></div>
+        <button class="btn sec" style="width:100%;display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:8px" onclick="VIEWS.doApple(event)">
+          <svg width="17" height="17" viewBox="0 0 384 512" aria-hidden="true" fill="currentColor"><path d="M318.7 268.7c-.2-36.7 16.4-64.4 50-84.8-18.8-26.9-47.2-41.7-84.7-44.6-35.5-2.8-74.3 20.7-88.5 20.7-15 0-49.4-19.7-76.4-19.7C63.3 141.2 4 184.8 4 273.5q0 39.3 14.4 81.2c12.8 36.7 59 126.7 107.2 125.2 25.2-.6 43-17.9 75.8-17.9 31.8 0 48.3 17.9 76.4 17.9 48.6-.7 90.4-82.5 102.6-119.3-65.2-30.7-61.7-90-61.7-91.9zm-56.6-164.2c27.3-32.4 24.8-61.9 24-72.5-24.1 1.4-52 16.4-67.9 34.9-17.5 19.8-27.8 44.3-25.6 71.9 26.1 2 49.9-11.4 69.5-34.3z"/></svg>
+          الدخول عبر Apple</button>
         <button class="btn sec" style="width:100%;display:flex;align-items:center;justify-content:center;gap:10px" onclick="VIEWS.doGoogle(event)">
           <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9 3.5l6.7-6.7C35.6 2.6 30.2 0 24 0 14.6 0 6.5 5.4 2.6 13.3l7.8 6.1C12.3 13.6 17.7 9.5 24 9.5z"/><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.7c-.6 3-2.3 5.5-4.8 7.2l7.5 5.8c4.4-4.1 7.1-10.1 7.1-17.5z"/><path fill="#FBBC05" d="M10.4 28.6A14.5 14.5 0 0 1 9.5 24c0-1.6.3-3.1.8-4.6l-7.8-6.1A24 24 0 0 0 0 24c0 3.9.9 7.5 2.6 10.7l7.8-6.1z"/><path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.5-5.8c-2.1 1.4-4.9 2.3-8.4 2.3-6.3 0-11.7-4.1-13.6-9.9l-7.8 6.1C6.5 42.6 14.6 48 24 48z"/></svg>
           الدخول عبر Google</button>
@@ -71,6 +74,15 @@ const VIEWS = {
     this._busy(b,false);
     if(r.ok){ UI.toast('تم إنشاء الحساب — راجع بريدك لتفعيله'); this.ui.authTab='login'; }
     else UI.toast(r.err, true);
+  },
+  async doApple(ev){
+    const b=ev&&ev.target.closest('button'); this._busy(b,true,'جارٍ فتح Apple…');
+    const r=await AUTH.apple();
+    if(r.ok){
+      this._holdBusy(b,'جارٍ الدخول…');
+      if(!r.redirect) this.awaitAuth();
+    }
+    else { this._busy(b,false); UI.toast(r.err, true); }
   },
   async doGoogle(ev){
     const b=ev&&ev.target.closest('button'); this._busy(b,true,'جارٍ فتح Google…');

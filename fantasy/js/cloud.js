@@ -272,6 +272,31 @@ const CLOUD = {
     }
   },
 
+  /* الدخول بحساب Apple — شرط App Store 4.8: أي تطبيق يعرض دخولاً بطرف
+     ثالث (Google) لازم يعرض بديلاً يحصر البيانات بالاسم والبريد ويتيح
+     إخفاء البريد. Sign in with Apple يحقق ذلك.
+     ملاحظة للغلاف: appleid.apple.com ونطاق Firebase لازم يكونا في
+     WKAppBoundDomains وauthOrigins وإلا منع iOS النافذة فصار الزر ميتاً. */
+  async appleLogin(){
+    if(!this.ready) return {ok:false, err:'السحابة غير متاحة — تأكد من الاتصال'};
+    let prov;
+    try{
+      prov = new firebase.auth.OAuthProvider('apple.com');
+      prov.addScope('email'); prov.addScope('name');
+      prov.setCustomParameters({ locale: 'ar_KW' });
+    }catch(e){ return {ok:false, err:'الدخول عبر Apple غير متاح في هذه النسخة'}; }
+    try{ await this.auth.signInWithPopup(prov); return {ok:true}; }
+    catch(e){
+      const c = (e && e.code) || '';
+      if(c==='auth/popup-blocked' || c==='auth/cancelled-popup-request'){
+        try{ await this.auth.signInWithRedirect(prov); return {ok:true, redirect:true}; }
+        catch(e2){ return {ok:false, err:this.errAr(e2)}; }
+      }
+      if(c==='auth/popup-closed-by-user') return {ok:false, err:'أُغلقت نافذة Apple قبل إكمال الدخول'};
+      return {ok:false, err:this.errAr(e)};
+    }
+  },
+
   /* استعادة كلمة المرور برسالة حقيقية من Firebase — لا رمز محلي */
   async resetEmail(email){
     if(!this.ready) return {ok:false, err:'السحابة غير متاحة'};
@@ -295,7 +320,8 @@ const CLOUD = {
       'auth/operation-not-allowed':'طريقة الدخول هذه غير مفعّلة في إعدادات Firebase',
       'auth/popup-closed-by-user':'أُغلقت نافذة Google قبل إكمال الدخول',
       'auth/unauthorized-domain':'هذا النطاق غير مصرّح له في Firebase (Authorized domains)',
-      'auth/account-exists-with-different-credential':'هذا البريد مسجّل بكلمة مرور — ادخل بالبريد وكلمة المرور',
+      'auth/account-exists-with-different-credential':'هذا البريد مسجّل بطريقة أخرى — ادخل بالطريقة التي سجّلت بها أول مرة',
+      'auth/invalid-credential':'تعذّر التحقق من الحساب — أعد المحاولة',
       'auth/requires-recent-login':'انتهت صلاحية جلستك — أعد تسجيل الدخول ثم كرّر المحاولة',
       'auth/user-mismatch':'الحساب الذي أكّدت به لا يطابق حسابك الحالي',
       'permission-denied':'لا تملك صلاحية هذه العملية'
