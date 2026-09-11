@@ -1229,7 +1229,9 @@ const VIEWS = {
   /* ---------- حذف الحساب (App Store 5.1.1(v)) ---------- */
   askDeleteAccount(){
     const pid = AUTH.provider();
-    const needsPass = (typeof CLOUD!=='undefined' && CLOUD.needsPassword) ? CLOUD.needsPassword() : (pid==='password');
+    const C = (typeof CLOUD!=='undefined') ? CLOUD : null;
+    const fresh = C && C.sessionFresh ? C.sessionFresh() : false;
+    const needsPass = C && C.needsPassword ? C.needsPassword() : (pid==='password');
     const provName = pid==='google.com' ? 'Google' : (pid==='apple.com' ? 'Apple' : '');
     UI.modal(`<h3>حذف الحساب نهائياً</h3>
       <p class="muted">سيُمسح من الخادم بلا رجعة: حسابك، فريق الفانتسي بنقاطه وتاريخه، توقّعاتك،
@@ -1237,7 +1239,8 @@ const VIEWS = {
       الدوريات التي انضممت إليها فقط تبقى لبقية الأعضاء وتخرج أنت منها.</p>
       ${needsPass
         ? '<div class="field"><label>كلمة المرور</label><input id="da_pass" type="password" autocomplete="current-password"></div>'
-        : `<p class="muted">ستُفتح نافذة ${provName} لتأكيد هويتك قبل الحذف.</p>`}
+        : (fresh || !provName ? ''
+           : `<p class="muted">ستُفتح نافذة ${provName} لتأكيد هويتك قبل الحذف.</p>`)}
       <div class="field"><label>اكتب <b>حذف</b> أو <b>DELETE</b> للتأكيد</label><input id="da_word" autocomplete="off" placeholder="حذف / DELETE"></div>
       <div id="da_err" class="tiny" style="color:var(--red);min-height:16px"></div>
       <div class="row" style="gap:8px;margin-top:12px">
