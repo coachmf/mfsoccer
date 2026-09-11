@@ -76,6 +76,20 @@ const I18N = {
     'الدوري الكويتي الممتاز 2026/27 — كوّن فريقك ونافس أصحابك':'Kuwait Premier League 2026/27 — build your team and compete with friends',
     'جارٍ الاتصال…':'Connecting…', 'جارٍ تحميل فريقك…':'Loading your team…', 'جارٍ الدخول…':'Signing in…', 'جارٍ فتح Google…':'Opening Google…',
     'خروج':'Log out', 'تسجيل الخروج':'Log out', 'الملف الشخصي':'Profile', 'حفظ':'Save',
+    // حذف الحساب — شرط App Store 5.1.1(v). المُراجع يتصفّح بالإنجليزية
+    // فلا بد أن يقرأ المسار كاملاً: التبويب والزر ونافذة التأكيد.
+    'حسابي':'My Account', 'الحساب':'Account',
+    'حذف حسابي نهائياً':'Delete my account permanently',
+    'يمسح حسابك وكل بياناتك من الخادم بلا رجعة':'Erases your account and all your data from the server, permanently',
+    'حذف الحساب نهائياً':'Delete account permanently',
+    'نعم، احذف حسابي':'Yes, delete my account',
+    'إلغاء':'Cancel', 'كلمة المرور':'Password',
+    'جارٍ الحذف…':'Deleting…',
+    'حُذف حسابك نهائياً':'Your account has been permanently deleted',
+    'المشتركون المحظورون':'Blocked players', 'إلغاء الحظر':'Unblock',
+    'سياسة الخصوصية':'Privacy Policy', 'شروط الاستخدام':'Terms of Use',
+    'إبلاغ':'Report', 'حظر':'Block',
+    'جارٍ فتح Apple…':'Opening Apple…', 'الدخول عبر Apple':'Continue with Apple',
     // الدعم
     'رسالة جديدة للدعم الفني':'New message to support', 'محادثاتك مع الدعم':'Your support conversations', 'النوع':'Type', 'الرسالة':'Message',
     'إرسال':'Send', 'اقتراح':'Suggestion', 'مشكلة أو خطأ':'Problem or bug', 'خطأ في بيانات لاعب/مباراة':'Wrong player/match data', 'أخرى':'Other',

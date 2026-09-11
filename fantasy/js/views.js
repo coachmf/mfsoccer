@@ -1228,15 +1228,17 @@ const VIEWS = {
 
   /* ---------- حذف الحساب (App Store 5.1.1(v)) ---------- */
   askDeleteAccount(){
-    const google = AUTH.provider() === 'google.com';
+    const pid = AUTH.provider();
+    const needsPass = (typeof CLOUD!=='undefined' && CLOUD.needsPassword) ? CLOUD.needsPassword() : (pid==='password');
+    const provName = pid==='google.com' ? 'Google' : (pid==='apple.com' ? 'Apple' : '');
     UI.modal(`<h3>حذف الحساب نهائياً</h3>
       <p class="muted">سيُمسح من الخادم بلا رجعة: حسابك، فريق الفانتسي بنقاطه وتاريخه، توقّعاتك،
       أصواتك في تشكيلة الجمهور، رسائل الدعم، والدوريات الخاصة التي أنشأتها.
       الدوريات التي انضممت إليها فقط تبقى لبقية الأعضاء وتخرج أنت منها.</p>
-      ${google
-        ? '<p class="muted">ستُفتح نافذة Google لتأكيد هويتك قبل الحذف.</p>'
-        : '<div class="field"><label>كلمة المرور</label><input id="da_pass" type="password" autocomplete="current-password"></div>'}
-      <div class="field"><label>اكتب <b>حذف</b> للتأكيد</label><input id="da_word" autocomplete="off"></div>
+      ${needsPass
+        ? '<div class="field"><label>كلمة المرور</label><input id="da_pass" type="password" autocomplete="current-password"></div>'
+        : `<p class="muted">ستُفتح نافذة ${provName} لتأكيد هويتك قبل الحذف.</p>`}
+      <div class="field"><label>اكتب <b>حذف</b> أو <b>DELETE</b> للتأكيد</label><input id="da_word" autocomplete="off" placeholder="حذف / DELETE"></div>
       <div id="da_err" class="tiny" style="color:var(--red);min-height:16px"></div>
       <div class="row" style="gap:8px;margin-top:12px">
         <button class="btn danger" id="da_go" onclick="VIEWS.doDeleteAccount()">نعم، احذف حسابي</button>
@@ -1246,7 +1248,9 @@ const VIEWS = {
   async doDeleteAccount(){
     const err=document.getElementById('da_err'), btn=document.getElementById('da_go');
     const say=m=>{ if(err) err.textContent=m||''; };
-    if(gv('da_word').trim()!=='حذف'){ say('اكتب كلمة «حذف» للتأكيد'); return; }
+    /* لوحة مفاتيح إنجليزية لا تستطيع كتابة «حذف» — نقبل الكلمتين */
+    const w = gv('da_word').trim().toLowerCase();
+    if(w!=='حذف' && w!=='delete'){ say('اكتب «حذف» أو DELETE للتأكيد'); return; }
     say(''); if(btn){ btn.disabled=true; btn.textContent='جارٍ الحذف…'; }
     const r = await AUTH.deleteAccount(gv('da_pass'));
     if(!r.ok){

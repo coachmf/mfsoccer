@@ -174,13 +174,22 @@ const CLOUD = {
   },
 
   /* Firebase يرفض الحذف إن مضى وقت على آخر دخول — نؤكّد الهوية أولاً */
+  /* هل يحتاج المشترك كلمة مرور للتأكيد، أم نافذة مزوّد؟ */
+  needsPassword(){ return this.providerId() === 'password'; },
+
   async reauth(password){
     const u = this.user;
     if(!u) return {ok:false, err:'لست مسجّل الدخول'};
+    const pid = this.providerId();
     try{
-      if(this.providerId() === 'google.com'){
+      if(pid === 'google.com'){
         const prov = new firebase.auth.GoogleAuthProvider();
         prov.setCustomParameters({prompt:'select_account'});
+        await u.reauthenticateWithPopup(prov);
+      }else if(pid === 'apple.com'){
+        /* من دخل بـApple لا يملك كلمة مرور — نعيد مصادقته بنافذة Apple */
+        const prov = new firebase.auth.OAuthProvider('apple.com');
+        prov.addScope('email');
         await u.reauthenticateWithPopup(prov);
       }else{
         if(!password) return {ok:false, err:'اكتب كلمة المرور للتأكيد'};
