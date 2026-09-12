@@ -3413,6 +3413,26 @@ function applyAssets(a){
   if(a.LOGOBG!==undefined) LOGOBG=a.LOGOBG;
   if(a.PHOTOSON!==undefined) PHOTOSON=a.PHOTOSON;
 }
+/* كان هذا المقطع في آخر الملف فيُرسم أول إطار (نسخة الجهاز) وLOGOS فارغة: أقراص المباراة القادمة
+   بيضاء حتى نهاية الإقلاع (~6 ث على آيفون). الآن يُطبَّق قبل أي رسم. */
+/* شعارات PNG محلية لكل الأندية + شعار الدوري الكويتي — تُطبَّق فوق أي شعارات من السحابة */
+/* رابط الفانتسي الخارجي (اتركه فارغاً إذا كان تبويب الفانتسي داخل الموقع) */
+/* مسار اللعبة — يستعمله زر الهيدر حين يكون تبويب التنقل مخفياً */
+window.FANTASY_URL = window.FANTASY_URL || "/fantasy/";
+const LOCAL_CRESTS={
+  "القادسية":"assets/crests/sq/qadsia.png","الكويت":"assets/crests/sq/kuwait.png","العربي":"assets/crests/sq/arabi.png",
+  "كاظمة":"assets/crests/sq/kazma.png","السالمية":"assets/crests/sq/salmiya.png","النصر":"assets/crests/sq/nasr.png",
+  "الجهراء":"assets/crests/sq/jahra.png","الساحل":"assets/crests/sq/sahel.png","الفحيحيل":"assets/crests/sq/fahaheel.png",
+  "التضامن":"assets/crests/sq/tadamon.png","الشباب":"assets/crests/sq/shabab.png","الصليبخات":"assets/crests/sq/sulaibikhat.png"
+};
+function useLocalCrests(){
+  LOGOS=Object.assign({},LOGOS,LOCAL_CRESTS);
+  LSCALE={}; GSCALE=100; LOGOBG=true;
+  LEAGUE="assets/hero/kpl-dark.webp";
+}
+const _applyAssetsOrig=applyAssets;
+applyAssets=function(a){ _applyAssetsOrig(a); useLocalCrests(); };
+useLocalCrests();
 async function fbSaveAssets(){
   if(!fbDb || !isOwner) return false;   /* الشعارات والهوية للمالك وحده */
   const payload=assetsObject();
@@ -7098,26 +7118,6 @@ const domReady = () => new Promise(r => document.readyState!=="loading" ? r() : 
 })();
 </script>
 
-<script>
-/* شعارات PNG محلية لكل الأندية + شعار الدوري الكويتي — تُطبَّق فوق أي شعارات من السحابة */
-/* رابط الفانتسي الخارجي (اتركه فارغاً إذا كان تبويب الفانتسي داخل الموقع) */
-/* مسار اللعبة — يستعمله زر الهيدر حين يكون تبويب التنقل مخفياً */
-window.FANTASY_URL = window.FANTASY_URL || "/fantasy/";
-const LOCAL_CRESTS={
-  "القادسية":"assets/crests/sq/qadsia.png","الكويت":"assets/crests/sq/kuwait.png","العربي":"assets/crests/sq/arabi.png",
-  "كاظمة":"assets/crests/sq/kazma.png","السالمية":"assets/crests/sq/salmiya.png","النصر":"assets/crests/sq/nasr.png",
-  "الجهراء":"assets/crests/sq/jahra.png","الساحل":"assets/crests/sq/sahel.png","الفحيحيل":"assets/crests/sq/fahaheel.png",
-  "التضامن":"assets/crests/sq/tadamon.png","الشباب":"assets/crests/sq/shabab.png","الصليبخات":"assets/crests/sq/sulaibikhat.png"
-};
-function useLocalCrests(){
-  LOGOS=Object.assign({},LOGOS,LOCAL_CRESTS);
-  LSCALE={}; GSCALE=100; LOGOBG=true;
-  LEAGUE="assets/hero/kpl-dark.webp";
-}
-const _applyAssetsOrig=applyAssets;
-applyAssets=function(a){ _applyAssetsOrig(a); useLocalCrests(); };
-useLocalCrests();
-</script>
 
 
 <script>/* v3 */
