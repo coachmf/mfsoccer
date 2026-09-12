@@ -2,13 +2,14 @@
    خادم الخدمة — يجعل mfsoccer تطبيقاً قابلاً للتثبيت على
    الآيفون والأندرويد، ويفتح بلا إنترنت على آخر ما شُوهد.
 
-   المبدأ: الصفحات من الشبكة أولاً (فالنتائج لا تتأخر)، والملفات
-   الثابتة من الذاكرة أولاً (فالفتح فوري). وبيانات Firestore
-   لا تُخزَّن إطلاقاً — الأرقام تُقرأ حيّة دائماً.
+   المبدأ: الصفحة والملفات الثابتة من الذاكرة أولاً (فالفتح فوري)،
+   ويُجلب الجديد في الخلفية؛ فإن اختلفت الصفحة أُخبرت النافذة
+   فعرضت زر «تحديث». وبيانات Firestore لا تُخزَّن إطلاقاً —
+   الأرقام تُقرأ حيّة دائماً (النتائج ليست في الصفحة أصلاً).
 
    عند كل نشر: ارفع رقم VER فتُبنى ذاكرة جديدة وتُحذف القديمة.
    ========================================================= */
-const VER   = 'mf-2026-09-12-2';
+const VER   = 'mf-2026-09-13-1';
 const SHELL = 'shell-' + VER;
 const RUN   = 'run-'   + VER;
 
@@ -22,7 +23,10 @@ const PRECACHE = [
   '/assets/crests/sq/shabab.png',  '/assets/crests/sq/jahra.png',
   '/assets/crests/sq/fahaheel.png','/assets/crests/sq/sahel.png',
   '/assets/crests/sq/tadamon.png', '/assets/crests/sq/sulaibikhat.png',
-  '/assets/hero/kpl-light.png',
+  '/assets/hero/kpl-light.webp', '/assets/hero/kpl-dark.webp', '/assets/hero/brand-mf.png',
+  '/assets/hero/qadsia_12.webp', '/assets/hero/arabi_77.webp', '/assets/hero/kuwait_26.webp',
+  '/assets/hero/salmiya_9.webp', '/assets/hero/kazma_10.webp',
+  '/assets/hero/stadium.jpg', '/assets/hero/stadium_dark.jpg',
   '/site-theme.css', '/site-i18n.js', '/fantasy/js/i18n-more.js'
 ];
 
@@ -51,6 +55,14 @@ self.addEventListener('message', e => {
 });
 
 const isFont = url => FONT_HOSTS.includes(url.hostname);
+
+/* مفتاح الصفحة في الذاكرة بلا استعلام: /?v=matches و / نسخة واحدة */
+const pageKey = url => new Request(url.origin + url.pathname);
+
+async function notifyClients(msg) {
+  const cs = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+  cs.forEach(c => { try { c.postMessage(msg); } catch (err) {} });
+}
 
 self.addEventListener('fetch', e => {
   const req = e.request;
@@ -82,19 +94,33 @@ self.addEventListener('fetch', e => {
     return;
   }
 
-  /* الصفحات: الشبكة أولاً، وعند انقطاعها آخر نسخة محفوظة */
+  /* الصفحات: من الذاكرة فوراً (الفتح لا ينتظر الشبكة)، ويُجلب الجديد في الخلفية.
+     كانت الشبكة أولاً فبقي التطبيق فارغاً بطول زمن تنزيل الصفحة (≈470 ك.ب) في كل فتح.
+     النتائج ليست في الصفحة (تُقرأ من Firestore) فلا يتأخر أي رقم. إن اختلفت الصفحة
+     الجديدة عن المحفوظة تُخزَّن وتُخبَر النافذة فتعرض زر التحديث. */
   if (req.mode === 'navigate') {
     e.respondWith((async () => {
-      try {
-        const res = await fetch(req);
-        const c = await caches.open(SHELL);
-        c.put(req, res.clone());
-        return res;
-      } catch (err) {
-        return (await caches.match(req))
-            || (await caches.match('/index.html'))
-            || Response.error();
-      }
+      const c = await caches.open(SHELL);
+      const key = pageKey(url);
+      const hit = (await c.match(key)) || (url.pathname === '/' ? await c.match('/index.html') : null);
+      /* النسخة تُقرأ قبل تسليم الرد للنافذة، فبعد التسليم لا يمكن استنساخه */
+      const hitText = hit ? hit.clone().text().catch(() => '') : null;
+      const refresh = (async () => {
+        try {
+          const res = await fetch(req);
+          if (!res.ok) return res;
+          if (hit) {
+            const [a, b] = await Promise.all([hitText, res.clone().text()]);
+            await c.put(key, res.clone());
+            if (a !== b) notifyClients({ type: 'HTML_UPDATED', path: url.pathname });
+          } else {
+            await c.put(key, res.clone());
+          }
+          return res;
+        } catch (err) { return null; }
+      })();
+      if (hit) { e.waitUntil(refresh); return hit; }
+      return (await refresh) || (await c.match('/index.html')) || Response.error();
     })());
     return;
   }
@@ -105,6 +131,7 @@ self.addEventListener('fetch', e => {
     const hit = await c.match(req);
     const net = fetch(req).then(res => { if (res.ok) c.put(req, res.clone()); return res; })
                           .catch(() => null);
-    return hit || (await net) || Response.error();
+    if (hit) { e.waitUntil(net); return hit; }
+    return (await net) || Response.error();
   })());
 });
