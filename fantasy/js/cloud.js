@@ -21,7 +21,10 @@
 const CLOUD = {
   CFG: {
     apiKey: "AIzaSyD_ZzAE4HEKPIuAKCmta8tzN5KOa8IUfuo",
-    authDomain: "mfsoccer-c7ee4.firebaseapp.com",
+    /* نطاقنا لا نطاق Firebase الوسيط: المتصفحات تعزل تخزين
+       النطاقات، فكانت حالة الدخول تضيع بين التحويل والعودة
+       («missing initial state»). netlify.toml يمرّر /__/auth/*. */
+    authDomain: "mfsoccer.com",
     projectId: "mfsoccer-c7ee4",
     storageBucket: "mfsoccer-c7ee4.firebasestorage.app",
     messagingSenderId: "574478199897",
