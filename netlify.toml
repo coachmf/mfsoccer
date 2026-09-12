@@ -1,6 +1,25 @@
 [build]
   publish = "."
 
+# ——— معالج تسجيل الدخول على نطاقنا ———
+# Firebase يوجّه الدخول بـGoogle/Apple عبر نطاقه الوسيط، والمتصفحات
+# الحديثة تعزل تخزين النطاقات (Safari وiOS خاصة) فتضيع الحالة بين
+# التحويل والعودة، ويظهر للمستخدم:
+#   "Unable to process request due to missing initial state"
+# تمرير المعالج من نطاقنا يجعل التخزين على نفس الأصل فيزول العطل.
+# status = 200 تمرير لا تحويل — لا بد أن يبقى الرابط على mfsoccer.com
+[[redirects]]
+  from = "/__/auth/*"
+  to = "https://mfsoccer-c7ee4.firebaseapp.com/__/auth/:splat"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/__/firebase/*"
+  to = "https://mfsoccer-c7ee4.firebaseapp.com/__/firebase/:splat"
+  status = 200
+  force = true
+
 # ——— ترويسات أمان عامة ———
 [[headers]]
   for = "/*"
