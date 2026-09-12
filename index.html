@@ -4,6 +4,20 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=5">
 <meta name="theme-color" content="#061529">
+<script>
+/* المظهر (فاتح/داكن): يُضبط قبل الرسم حتى لا تومض الصفحة — مفتاح mf_theme */
+const THEME={KEY:'mf_theme',
+  get(){ try{ const q=new URLSearchParams(location.search).get('theme'); if(q==='dark'||q==='light'){ localStorage.setItem(this.KEY,q); return q; }
+      return localStorage.getItem(this.KEY)==='light'?'light':'dark'; }catch(e){ return 'dark'; } },   /* الافتراضي داكن */
+  apply(t){ document.documentElement.setAttribute('data-theme',t);
+    const m=document.querySelector('meta[name="theme-color"]'); if(m) m.content = t==='dark' ? '#081527' : '#061529';
+    const b=document.getElementById('themeBtn'); if(b){ b.innerHTML = t==='dark' ? THEME.SUN : THEME.MOON; b.title = b.ariaLabel = (t==='dark' ? 'الوضع الفاتح' : 'الوضع الداكن'); } },
+  set(t){ try{ localStorage.setItem(this.KEY,t); }catch(e){} this.apply(t); },
+  toggle(){ const t=this.get()==='dark'?'light':'dark'; this.set(t); if(typeof toast==='function') toast(t==='dark' ? 'الوضع الداكن' : 'الوضع الفاتح'); },
+  MOON:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>',
+  SUN:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>'};
+THEME.apply(THEME.get());
+</script>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="mobile-web-app-capable" content="yes">
@@ -1867,8 +1881,23 @@ main{padding-bottom:48px}
 .tl-ev.sub.a .tl-card{align-items:flex-start}
 /* ===== /v25 ===== */
 </style>
+<!-- اللغة الإنجليزية والوضع الداكن -->
+<link rel="stylesheet" href="site-theme.css?v=5">
+<script src="fantasy/js/i18n-more.js" defer></script>
+<script src="site-i18n.js?v=3" defer></script>
 </head>
 <body>
+<!-- navicons:sprite — أيقونات شريط التنقل في الهاتف (خط 1.75 بلون النص الحالي) -->
+<svg xmlns="http://www.w3.org/2000/svg" style="display:none" aria-hidden="true">
+  <symbol id="ni-home" viewBox="0 0 24 24"><path d="M3 11 12 3l9 8M5 10v10h5v-6h4v6h5V10"/></symbol>
+  <symbol id="ni-matches" viewBox="0 2.5 24 19"><rect x="3" y="4" width="18" height="16" rx="1.4"/><path d="M12 4v16M3 10.2H1.2v3.6H3M21 10.2h1.8v3.6H21"/><circle cx="12" cy="12" r="2.8"/><path d="M3 8.2h2.6v7.6H3M21 8.2h-2.6v7.6H21"/></symbol>
+  <symbol id="ni-clubs" viewBox="0 0 24 24"><path d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6z"/></symbol>
+  <symbol id="ni-players" viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c0-3.9 3.1-7 7-7s7 3.1 7 7"/></symbol>
+  <symbol id="ni-predict" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3.5"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/></symbol>
+  <symbol id="ni-fans" viewBox="0 0 24 24"><circle cx="12" cy="9" r="3"/><path d="M6.5 20c0-3 2.5-5.5 5.5-5.5s5.5 2.5 5.5 5.5"/><circle cx="5.5" cy="10" r="2.2"/><path d="M1.5 19c0-2.5 1.8-4.5 4-4.5"/><circle cx="18.5" cy="10" r="2.2"/><path d="M22.5 19c0-2.5-1.8-4.5-4-4.5"/></symbol>
+  <symbol id="ni-analysis" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 3v9h9"/></symbol>
+  <symbol id="ni-fantasy" viewBox="0 0 24 24"><path d="M8.5 3.5 2.5 6.5l2 3.6 2.5-1.2V20.5h10V8.9l2.5 1.2 2-3.6-6-3c-1 1.5-2.1 2.2-3.5 2.2s-2.5-.7-3.5-2.2z"/></symbol>
+</svg>
 
 <header class="topbar hero">
   <div class="hero-in">
@@ -1883,7 +1912,12 @@ main{padding-bottom:48px}
       <img src="assets/hero/salmiya_9.png" alt="" loading="lazy" decoding="async">
       <img src="assets/hero/kazma_10.png" alt="" loading="lazy" decoding="async">
     </div>
-    <button class="iconbtn hero-admin" id="adminBtn" title="دخول المدير" aria-label="دخول المدير">⚙</button>
+    <div class="hero-tools">
+      <button class="iconbtn" id="langBtn" title="English" aria-label="English" onclick="I18N.toggle()">EN</button>
+      <button class="iconbtn" id="themeBtn" title="الوضع الداكن" aria-label="الوضع الداكن" onclick="THEME.toggle()"></button>
+      <button class="iconbtn hero-admin" id="adminBtn" title="دخول المدير" aria-label="دخول المدير">⚙</button>
+    </div>
+    <script>THEME.apply(THEME.get());</script>
     <div class="hero-sub" role="group" aria-label="أقسام الموقع">
       <button class="on" data-go="home">الإحصائيات</button>
       <button data-go="fantasy">فانتسي</button>
@@ -1896,14 +1930,14 @@ main{padding-bottom:48px}
 
 <nav class="tabs" role="tablist">
   <div class="in">
-    <button role="tab" data-v="home" aria-selected="true"><span class="ic">▦</span>الرئيسية</button>
-    <button role="tab" data-v="matches" aria-selected="false"><span class="ic">⚽</span>المباريات</button>
-    <button role="tab" data-v="clubs" aria-selected="false"><span class="ic">🛡</span>الأندية</button>
-    <button role="tab" data-v="players" aria-selected="false"><span class="ic">★</span>اللاعبون</button>
-    <button role="tab" data-v="predict" aria-selected="false"><span class="ic">◈</span>التوقعات</button>
-    <button role="tab" data-v="fans" aria-selected="false"><span class="ic">♛</span>الجمهور</button>
-    <button role="tab" data-v="analysis" aria-selected="false"><span class="ic">◔</span>التحليل</button>
-    <button role="tab" data-v="fantasy" id="fantasyTab" aria-selected="false" style="display:none"><span class="ic">◆</span>فانتسي</button>
+    <button role="tab" data-v="home" aria-selected="true"><svg class="ic" aria-hidden="true" width="23" height="23" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><use href="#ni-home"/></svg>الرئيسية</button>
+    <button role="tab" data-v="matches" aria-selected="false"><svg class="ic" aria-hidden="true" width="23" height="23" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><use href="#ni-matches"/></svg>المباريات</button>
+    <button role="tab" data-v="clubs" aria-selected="false"><svg class="ic" aria-hidden="true" width="23" height="23" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><use href="#ni-clubs"/></svg>الأندية</button>
+    <button role="tab" data-v="players" aria-selected="false"><svg class="ic" aria-hidden="true" width="23" height="23" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><use href="#ni-players"/></svg>اللاعبون</button>
+    <button role="tab" data-v="predict" aria-selected="false"><svg class="ic" aria-hidden="true" width="23" height="23" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><use href="#ni-predict"/></svg>التوقعات</button>
+    <button role="tab" data-v="fans" aria-selected="false"><svg class="ic" aria-hidden="true" width="23" height="23" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><use href="#ni-fans"/></svg>الجمهور</button>
+    <button role="tab" data-v="analysis" aria-selected="false"><svg class="ic" aria-hidden="true" width="23" height="23" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><use href="#ni-analysis"/></svg>التحليل</button>
+    <button role="tab" data-v="fantasy" id="fantasyTab" aria-selected="false" style="display:none"><svg class="ic" aria-hidden="true" width="23" height="23" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><use href="#ni-fantasy"/></svg>فانتسي</button>
   </div>
 </nav>
 <!-- v3:strips -->

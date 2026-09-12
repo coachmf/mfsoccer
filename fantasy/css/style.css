@@ -512,7 +512,10 @@ tr:hover .btn-view{background:var(--accent);color:#fff;}
 .chart{width:100%;}
 
 /* ---------- لوحة الإدارة ---------- */
-.admin-grid{display:grid;grid-template-columns:220px 1fr;gap:16px;}
+/* minmax(0,1fr) لا 1fr: عمود 1fr لا ينكمش تحت عرض محتواه، فجدول الجولات (حقول التاريخ 200px) كان
+   يوسّع العمود ثم الصفحة كلها فتنقصّ من اليسار على الجوال رغم .scroll-x */
+.admin-grid{display:grid;grid-template-columns:220px minmax(0,1fr);gap:16px;}
+.admin-grid>*{min-width:0;}
 .admin-menu{display:flex;flex-direction:column;gap:4px;}
 .admin-menu button{text-align:right;padding:10px 14px;border-radius:9px;font-weight:600;font-size:.88rem;color:var(--text2);}
 .admin-menu button.active{background:var(--surface);color:var(--accent);border:1px solid var(--line);}
@@ -535,13 +538,24 @@ tr:hover .btn-view{background:var(--accent);color:#fff;}
   /* الصفحة كانت تنزلق أفقياً ~90px على شاشات 375px، فيُزاح الشريط
      السفلي الثابت ويُقصّ آخر عنصر منه. الجداول لها .scroll-x الخاصة
      بها فلا شيء يحتاج تمريراً أفقياً على مستوى الصفحة. */
-  html,body{overflow-x:hidden;max-width:100%;}
+  html{overflow-x:hidden;max-width:100%;}
+  /* overflow-x:hidden على body يجعله حاوية تمرير فيفسد sticky للشريط العلوي، وسفاري آيفون يتجاهله
+     أصلاً عند التمرير باللمس. الحل الحقيقي: لا عنصر أعرض من الشاشة (الشريط العلوي مضغوط على الجوال،
+     شبكة الإدارة minmax(0,1fr))، مع قصّ احتياطي على المحتوى نفسه. */
+  #main,#topbar{overflow-x:clip;}
   #bottomnav{display:none;}
 @media (max-width:860px){
   html{font-size:14px;}
   #navlinks{display:none;}
   .g2,.g3,.g4{grid-template-columns:1fr;}
-  .admin-grid{grid-template-columns:1fr;}
+  .admin-grid{grid-template-columns:minmax(0,1fr);}
+  /* الشريط العلوي على الجوال: كان أعرض من الشاشة (شعار 130px + «العودة للموقع» + 5 أزرار) فتُقصّ
+     أزرار الوضع الداكن والإشعارات والملف عن يسار الشاشة وتنزلق الصفحة أفقياً */
+  #topbar{padding:8px 10px;gap:8px;}
+  .brand-lockup{height:32px;}
+  #toSite{padding:6px 9px;font-size:.74rem;gap:3px;}
+  #topActions{gap:5px;}
+  #topActions .iconbtn{width:34px;height:34px;border-radius:9px;}
   .admin-menu{flex-direction:row;overflow-x:auto;}
   .admin-menu button{white-space:nowrap;}
   #bottomnav{
@@ -624,6 +638,7 @@ tr:hover .btn-view{background:var(--accent);color:#fff;}
 /* ===== جولة التكثيف الاحترافية ===== */
 /* الشريط العلوي أنظف */
 #topbar{padding:8px 14px;}
+@media (max-width:860px){ #topbar{padding:8px 10px;} }
 #userchip{padding:4px 10px 4px 5px;}
 @media (max-width:860px){ .uc-name{display:none;} #userchip{padding:4px;border-radius:50%;} }
 
@@ -678,7 +693,17 @@ tr:hover .btn-view{background:var(--accent);color:#fff;}
 /* الشريطان العلوي والسفلي: أبيض صلب بلا backdrop-filter.
    الضبابية على عنصر position:fixed تجعل سفاري (آيفون) يؤخّر رسمه أثناء التمرير فيبدو الشريط
    كأنه يتحرك مع الصفحة ثم يلحق بها. translateZ(0) يضعه في طبقة مستقلة فيبقى ثابتاً. */
-#topbar{background:var(--surface); backdrop-filter:none; -webkit-backdrop-filter:none; border-bottom:1px solid var(--line);}
+#topbar{background:var(--surface); backdrop-filter:none; -webkit-backdrop-filter:none; border-bottom:1px solid var(--line);
+  /* تطبيق iOS/PWA بشريط حالة شفاف: الشريط العلوي يمتد تحت شريط الحالة بلونه نفسه ويبدأ محتواه تحته */
+  padding-top:calc(8px + env(safe-area-inset-top,0px));}
+#notifPanel{top:calc(62px + env(safe-area-inset-top,0px));}
+#addpBack{padding-top:env(safe-area-inset-top,0px);}
+@media (max-width:430px){
+  /* شاشات 375–430px: «العودة للموقع» أيقونة فقط حتى تتسع كل الأزرار بلا قصّ */
+  #toSite span{display:none;}
+  #toSite{width:34px;height:34px;padding:0;justify-content:center;border-radius:9px;}
+  #toSite svg{width:18px;height:18px;}
+}
 #bottomnav{background:var(--surface); backdrop-filter:none; -webkit-backdrop-filter:none; border-top:1px solid var(--line);
   transform:translateZ(0); -webkit-transform:translateZ(0); will-change:transform; -webkit-backface-visibility:hidden;}
 #bottomnav button.active{background:rgba(13,82,150,.09);}

@@ -169,7 +169,10 @@ const APP = {
 
   /* ---------- المظهر ---------- */
   savedTheme(){ try{ return localStorage.getItem('kwf_theme')==='dark' ? 'dark' : 'light'; }catch(e){ return 'light'; } },
-  applyTheme(t){ document.documentElement.setAttribute('data-theme', t==='dark'?'dark':'light'); try{ localStorage.setItem('kwf_theme', t); }catch(e){} },
+  applyTheme(t){ const dark=t==='dark'; document.documentElement.setAttribute('data-theme', dark?'dark':'light');
+    /* لون شريط الحالة في تطبيق iOS/PWA يتبع الوضع: نفس لون الشريط العلوي (--surface) */
+    const mc=document.querySelector('meta[name="theme-color"]'); if(mc) mc.setAttribute('content', dark?'#10305c':'#ffffff');
+    try{ localStorage.setItem('kwf_theme', t); }catch(e){} },
   toggleTheme(){ const t=this.savedTheme()==='dark'?'light':'dark'; this.applyTheme(t); this.renderTopbar(); UI.toast(t==='dark'?'الوضع الداكن':'الوضع الفاتح'); },
 
   /* عند مغادرة صفحة: إغلاق أي بطاقة/نافذة معلّقة والخروج من وضع التبديل — لا تبقى فوق الصفحة التالية */

@@ -22,7 +22,8 @@ const PRECACHE = [
   '/assets/crests/sq/shabab.png',  '/assets/crests/sq/jahra.png',
   '/assets/crests/sq/fahaheel.png','/assets/crests/sq/sahel.png',
   '/assets/crests/sq/tadamon.png', '/assets/crests/sq/sulaibikhat.png',
-  '/assets/hero/kpl-light.png'
+  '/assets/hero/kpl-light.png',
+  '/site-theme.css', '/site-i18n.js', '/fantasy/js/i18n-more.js'
 ];
 
 /* نطاقات تُخزَّن عند أول استعمال: الخطوط ثابتة فلا داعي لإعادة جلبها */
