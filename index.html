@@ -4608,9 +4608,16 @@ let SELR=null, SELDAY=null, CALM=null;
 const AR_DOW=["أحد","إثنين","ثلاثاء","أربعاء","خميس","جمعة","سبت"];  /* getDay(): 0=الأحد */
 const AR_MON=["يناير","فبراير","مارس","أبريل","مايو","يونيو","يوليو","أغسطس","سبتمبر","أكتوبر","نوفمبر","ديسمبر"];
 
+/* الشهر الافتراضي للتقويم: الشهر الحالي إن كان فيه مباريات، وإلا أقرب شهر قادم فيه مباريات،
+   وإلا آخر شهر في الموسم (كان يفتح دائماً على آخر شهر — مايو). */
 function calMonth(){
+  if(CALM) return CALM;
   const dates=MATCHES.map(m=>m.date).filter(Boolean).sort();
-  return CALM || (dates.length ? dates[dates.length-1].slice(0,7) : new Date().toISOString().slice(0,7));
+  const now=new Date(), ym=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0")}`;
+  if(!dates.length) return ym;
+  if(dates.some(d=>d.slice(0,7)===ym)) return ym;
+  const next=dates.find(d=>d.slice(0,7)>ym);
+  return (next || dates[dates.length-1]).slice(0,7);
 }
 /* ===== المناسبات وفترات التوقف =====
    مناسبة واحدة: {d:"من", to:"إلى"(اختياري), t:"العنوان", k:"النوع", n:"تفصيل"}
@@ -6917,7 +6924,18 @@ function go(v){
   RENDER[v]();
   window.scrollTo({top:0,behavior:"instant"});
 }
-function renderAll(){ renderHome(); renderMatches(); if($("#clubSel")) renderClubs(); renderPlayers(); }
+/* يُرسم القسم الظاهر فقط؛ الأقسام الأخرى تُرسم عند فتحها (go يستدعي RENDER دائماً، ومغلّفات
+   go/renderAll في v3/v4/v5 تُكمل التلوين والشرائط). كان يرسم المباريات (≈7.8 ألف عنصر) واللاعبين
+   والأندية معاً في كل تطبيق للبيانات (نسخة محلية ثم سحابة ثم تحديثات حيّة) فيتجمد الهاتف ثواني ولا
+   تستجيب لمسات التنقل. */
+function renderAll(){
+  const cur=document.querySelector(".view.on");
+  const v=cur ? cur.id.replace(/^v-/,"") : "home";
+  if(v==="matches") renderMatches();
+  else if(v==="players") renderPlayers();
+  else if(v==="clubs"){ if($("#clubSel")) renderClubs(); else renderHome(); }
+  else renderHome();
+}
 
 function paintHeader(){ const el=$("#leagueMark"); if(el && !el.hidden) el.src = LEAGUE; }
 function paintFoot(){
