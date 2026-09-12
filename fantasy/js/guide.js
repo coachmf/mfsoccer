@@ -379,13 +379,18 @@ FEEDBACK.poll = async function(){
   const n = news.length;
   const changed = n!==this.unseen; this.unseen = n;
   const m = DB.me();
-  if(n>0 && m){
-    const key='fb'+n+'_'+(news[0]||{}).id;
+  /* نُنبّه فقط عمّا لم نُنبّه عنه من قبل: نحفظ معرّفات الرسائل التي كانت «جديد» في آخر فحص،
+     فتغيّر العدد وحده (5 ثم 4 ثم 1 بعد قراءة بعضها) لا يُنشئ تنبيهاً جديداً. */
+  const KNOWN='kwf_fb_known'; let known=[]; try{ known=JSON.parse(localStorage.getItem(KNOWN)||'[]'); }catch(e){}
+  const fresh = news.filter(f=>!known.includes(f.id));
+  try{ localStorage.setItem(KNOWN, JSON.stringify(news.map(f=>f.id))); }catch(e){}
+  if(fresh.length && m){
+    const key='fb_'+fresh.map(f=>f.id).join(',');
     DB.state.notifications[m.id]=DB.state.notifications[m.id]||[];
     if(!DB.state.notifications[m.id].some(x=>x.type===key)){
       /* رد المشترك داخل محادثة قائمة يُرجع حالتها «جديد» — نميّزه عن الاقتراح الجديد فعلاً */
       const isReply = f => { const r=f.replies||[]; return r.length>0 && r[r.length-1].by==='user'; };
-      const nRep = news.filter(isReply).length, nNew = n-nRep;
+      const nRep = fresh.filter(isReply).length, nNew = fresh.length-nRep;
       const parts=[]; if(nNew) parts.push(`${nNew} اقتراح جديد من المشتركين`); if(nRep) parts.push(`${nRep} رد جديد من مشترك في محادثة الدعم`);
       NOTIF.push(m.id, key, parts.join(' · ')+' — الإدارة ← الاقتراحات');
       try{ localStorage.setItem(DB.KEY, JSON.stringify(DB.state)); }catch(e){}

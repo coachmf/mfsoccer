@@ -532,7 +532,11 @@ tr:hover .btn-view{background:var(--accent);color:#fff;}
 .news-card p{color:var(--text2);font-size:.87rem;line-height:1.75;}
 
 /* ---------- شريط جوال سفلي ---------- */
-#bottomnav{display:none;}
+  /* الصفحة كانت تنزلق أفقياً ~90px على شاشات 375px، فيُزاح الشريط
+     السفلي الثابت ويُقصّ آخر عنصر منه. الجداول لها .scroll-x الخاصة
+     بها فلا شيء يحتاج تمريراً أفقياً على مستوى الصفحة. */
+  html,body{overflow-x:hidden;max-width:100%;}
+  #bottomnav{display:none;}
 @media (max-width:860px){
   html{font-size:14px;}
   #navlinks{display:none;}
@@ -545,7 +549,7 @@ tr:hover .btn-view{background:var(--accent);color:#fff;}
     background:var(--bg2);   /* خلفية صلبة بدل blur — يمنع الرجرجة على آيفون */
     border-top:1px solid var(--line);justify-content:space-around;padding:7px 4px calc(7px + env(safe-area-inset-bottom));
   }
-  #bottomnav button{display:flex;flex-direction:column;align-items:center;gap:2px;font-size:.62rem;color:var(--text3);font-weight:700;padding:4px 8px;border-radius:8px;}
+  #bottomnav button{display:flex;flex-direction:column;align-items:center;gap:2px;font-size:.6rem;color:var(--text3);font-weight:700;padding:4px 5px;border-radius:8px;white-space:nowrap;}
   #bottomnav button .ic{font-size:1.15rem;}
   #bottomnav button.active{color:var(--accent);}
   .pslot{width:66px;}
@@ -935,3 +939,8 @@ html.lang-en .lg-tbl td:last-child{text-align:right;}
 html.lang-en .goals2 .gh{text-align:left;} html.lang-en .goals2 .ga{text-align:right;direction:ltr;}
 html.lang-en .fx .team.a{flex-direction:row-reverse;justify-content:flex-start;}
 html.lang-en .ps-stats>div{border-left:none;border-right:1px solid var(--line);} html.lang-en .ps-stats>div:last-child{border-right:none;}
+
+/* الوضع الداكن: مبدّل الملعب/قائمة/الانتقالات كان يبقى بخلفية فاتحة فتختفي العناوين غير النشطة */
+[data-theme="dark"] .pt-toggle{ background:var(--surface2); box-shadow:inset 0 0 0 1px var(--line); }
+[data-theme="dark"] .pt-toggle button{ color:var(--text2); }
+[data-theme="dark"] .pt-toggle button.active{ background:var(--accent); color:#071a33; box-shadow:0 1px 4px rgba(0,0,0,.35); }

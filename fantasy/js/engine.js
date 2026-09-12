@@ -1128,6 +1128,11 @@ const AUTH = {
   /* بأي طريقة سجّل دخوله — تحدّد هل نطلب كلمة المرور أم نافذة Google */
   provider(){ return this.cloudUp() ? CLOUD.providerId() : 'password'; },
 
+  async apple(){
+    if(!this.cloudUp()) return {ok:false, err:'تعذّر الاتصال بالخادم — حاول بعد قليل'};
+    return await CLOUD.appleLogin();
+  },
+
   /* استعادة كلمة المرور: رسالة حقيقية من Firebase لا رمز محلي */
   async forgot(email){
     if(!this.cloudUp()) return {ok:false, err:'تعذّر الاتصال بالخادم'};

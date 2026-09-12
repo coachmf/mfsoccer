@@ -174,13 +174,29 @@ const CLOUD = {
   },
 
   /* Firebase يرفض الحذف إن مضى وقت على آخر دخول — نؤكّد الهوية أولاً */
+  /* جلسة طازجة = لا تأكيد مطلوباً إطلاقاً */
+  sessionFresh(){
+    const u = this.user; if(!u) return false;
+    const last = Date.parse((u.metadata && u.metadata.lastSignInTime) || 0);
+    return !!last && (Date.now() - last) < 4 * 60 * 1000;
+  },
+  /* هل يحتاج المشترك كلمة مرور للتأكيد، أم نافذة مزوّد؟ */
+  needsPassword(){ return this.providerId() === 'password' && !this.sessionFresh(); },
+
   async reauth(password){
     const u = this.user;
     if(!u) return {ok:false, err:'لست مسجّل الدخول'};
+    const pid = this.providerId();
     try{
-      if(this.providerId() === 'google.com'){
+      if(pid === 'google.com'){
         const prov = new firebase.auth.GoogleAuthProvider();
         prov.setCustomParameters({prompt:'select_account'});
+        await u.reauthenticateWithPopup(prov);
+      }else if(pid === 'apple.com'){
+        /* من دخل بـApple لا يملك كلمة مرور — نعيد مصادقته بنافذة Apple */
+        /* بلا addScope: طلب نطاقات من جديد يستدعي شاشة موافقة، وإلغاؤها
+           يرجع auth/user-cancelled. التأكيد وحده يكفي هنا. */
+        const prov = new firebase.auth.OAuthProvider('apple.com');
         await u.reauthenticateWithPopup(prov);
       }else{
         if(!password) return {ok:false, err:'اكتب كلمة المرور للتأكيد'};
@@ -228,13 +244,29 @@ const CLOUD = {
     if(!this.user)   return {ok:false, err:'لست مسجّل الدخول'};
     const u = this.user, uid = u.uid;
 
-    const re = await this.reauth(password);
-    if(!re.ok) return re;
+    /* Firebase لا يطلب تأكيداً إلا إن قدمت الجلسة. ومن أنشأ حسابه للتو
+       جلسته طازجة، فلا نفتح له نافذة أصلاً — وهذا يتجنّب فشل النوافذ
+       المنبثقة على Safari الجوال (auth/user-cancelled). */
+    const last = Date.parse((u.metadata && u.metadata.lastSignInTime) || 0);
+    const fresh = last && (Date.now() - last) < 4 * 60 * 1000;
+    if(!fresh){
+      const re = await this.reauth(password);
+      if(!re.ok) return re;
+    }
 
     const failed = await this.purgeUserData(uid);
 
     try{ await u.delete(); }
-    catch(e){ return {ok:false, err:this.errAr(e)}; }
+    catch(e){
+      /* الجلسة قدمت بين الفحص والحذف: نؤكّد الهوية مرة واحدة ونعيد */
+      if(e && e.code === 'auth/requires-recent-login'){
+        const re = await this.reauth(password);
+        if(!re.ok) return re;
+        try{ await u.delete(); }
+        catch(e2){ return {ok:false, err:this.errAr(e2)}; }
+      }
+      else return {ok:false, err:this.errAr(e)};
+    }
 
     /* الحساب زال — لا نُبقي فريقاً محلياً باسمه على الجهاز */
     try{
@@ -272,6 +304,31 @@ const CLOUD = {
     }
   },
 
+  /* الدخول بحساب Apple — شرط App Store 4.8: أي تطبيق يعرض دخولاً بطرف
+     ثالث (Google) لازم يعرض بديلاً يحصر البيانات بالاسم والبريد ويتيح
+     إخفاء البريد. Sign in with Apple يحقق ذلك.
+     ملاحظة للغلاف: appleid.apple.com ونطاق Firebase لازم يكونا في
+     WKAppBoundDomains وauthOrigins وإلا منع iOS النافذة فصار الزر ميتاً. */
+  async appleLogin(){
+    if(!this.ready) return {ok:false, err:'السحابة غير متاحة — تأكد من الاتصال'};
+    let prov;
+    try{
+      prov = new firebase.auth.OAuthProvider('apple.com');
+      prov.addScope('email'); prov.addScope('name');
+      prov.setCustomParameters({ locale: 'ar_KW' });
+    }catch(e){ return {ok:false, err:'الدخول عبر Apple غير متاح في هذه النسخة'}; }
+    try{ await this.auth.signInWithPopup(prov); return {ok:true}; }
+    catch(e){
+      const c = (e && e.code) || '';
+      if(c==='auth/popup-blocked' || c==='auth/cancelled-popup-request'){
+        try{ await this.auth.signInWithRedirect(prov); return {ok:true, redirect:true}; }
+        catch(e2){ return {ok:false, err:this.errAr(e2)}; }
+      }
+      if(c==='auth/popup-closed-by-user') return {ok:false, err:'أُغلقت نافذة Apple قبل إكمال الدخول'};
+      return {ok:false, err:this.errAr(e)};
+    }
+  },
+
   /* استعادة كلمة المرور برسالة حقيقية من Firebase — لا رمز محلي */
   async resetEmail(email){
     if(!this.ready) return {ok:false, err:'السحابة غير متاحة'};
@@ -295,8 +352,11 @@ const CLOUD = {
       'auth/operation-not-allowed':'طريقة الدخول هذه غير مفعّلة في إعدادات Firebase',
       'auth/popup-closed-by-user':'أُغلقت نافذة Google قبل إكمال الدخول',
       'auth/unauthorized-domain':'هذا النطاق غير مصرّح له في Firebase (Authorized domains)',
-      'auth/account-exists-with-different-credential':'هذا البريد مسجّل بكلمة مرور — ادخل بالبريد وكلمة المرور',
+      'auth/account-exists-with-different-credential':'هذا البريد مسجّل بطريقة أخرى — ادخل بالطريقة التي سجّلت بها أول مرة',
+      'auth/invalid-credential':'تعذّر التحقق من الحساب — أعد المحاولة',
       'auth/requires-recent-login':'انتهت صلاحية جلستك — أعد تسجيل الدخول ثم كرّر المحاولة',
+      'auth/user-cancelled':'أُلغي التأكيد. سجّل خروجاً ثم ادخل من جديد وأعد المحاولة مباشرة',
+      'auth/popup-blocked':'المتصفح حجب نافذة التأكيد — سجّل خروجاً ثم ادخل من جديد وأعد المحاولة مباشرة',
       'auth/user-mismatch':'الحساب الذي أكّدت به لا يطابق حسابك الحالي',
       'permission-denied':'لا تملك صلاحية هذه العملية'
     };
