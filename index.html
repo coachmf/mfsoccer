@@ -2131,7 +2131,11 @@ let LSCALE = {};           /* حجم دقيق لكل نادٍ % */
 let LOGOBG = true;         /* لوحة بيضاء خلف الشعار */
 let LASTUPDATE = "الجولة 1 · 27 أغسطس 2026";
 let isAdmin = false;
-let FANTASY_OPEN = false;   /* إشهار لعبة الفانتسي للجمهور — يأتي من السحابة */
+/* إشهار لعبة الفانتسي للجمهور — المرجع هو السحابة (حقل fantasyOpen في مستند الموسم).
+   القيمة الابتدائية true لا false: اللعبة معلنة منذ الجولة 4، وكان تبويب «فانتسي» يختفي
+   في التطبيق حتى تصل وثيقة الموسم (ثوانٍ على الجوال) ثم يظهر فجأة. لو أخفاها المدير
+   يصل الحقل من السحابة ويخفيها paintFantasyTab فوراً. */
+let FANTASY_OPEN = true;
 
 /* ================= أدوات ================= */
 const $ = s => document.querySelector(s);
@@ -3353,9 +3357,16 @@ function watchSeason(){
     }, ()=>{});
   }catch(e){}
 }
+/* نسخة الجهاز: آخر وثيقة موسم وصلت من السحابة (~100 ك.ب) تُحفظ لكل زائر لا للمدير فقط،
+   فيُرسم الموقع منها فوراً عند الفتح التالي بينما تُقرأ السحابة في الخلفية. */
+function cacheSeasonLocal(d){
+  if(!d || !d.clubs || !d.matches) return;
+  try{ localSet("zain_data", JSON.stringify(d)); }catch(e){}
+}
 function applyRemote(d){
   const mine=(FBUSER&&FBUSER.email)||"";
   applyData(d,"السحابة (تحديث حيّ)");
+  cacheSeasonLocal(d);
   if(!EDIT) renderMatchAdmin();   /* v27: قائمة المباريات في لوحة التحكم تتحدّث أيضاً */
   if(d.updatedBy && d.updatedBy!==mine) toast(`وصل تحديث من ${d.updatedBy}`,"ok");
 }
@@ -6899,6 +6910,9 @@ function paintFoot(){
         <a class="hchip wa" href="${WA_URL}" target="_blank" rel="noopener">${WA_SVG}اقتراحاتكم</a>
     </div>`;
 }
+/* لمسة حقيقية من المستخدم على التنقل أثناء الإقلاع: نهاية الإقلاع لا تُرجعه للرئيسية */
+let USER_NAV = false;
+document.addEventListener('click', e=>{ if(e.isTrusted && e.target.closest('nav.tabs, .hero-sub')) USER_NAV=true; }, true);
 document.querySelectorAll('nav.tabs button').forEach(b=>b.onclick=()=>{
   if(b.dataset.v==="fantasy"){ location.href = FANTASY_URL; return; }
   go(b.dataset.v);
@@ -6935,35 +6949,61 @@ function paintRail(){
 }
 $("#seasonLbl").textContent = SEASON;
 
-/* الإقلاع: ملف data.json المنشور بجوار الصفحة يفوز إن كان أحدث من النسخة المحفوظة محلياً */
-async function bootData(){
-  const cands=[];
-  const cloud = await fbLoad(seasonId());
-  if(cloud && cloud.clubs && cloud.matches) cands.push([cloud,"السحابة (Firestore)"]);
-  try{ const v=await localGet("zain_data"); if(v){
-    const d=JSON.parse(v); if(d.clubs&&d.matches) cands.push([d,"نسخة محلية محفوظة"]); } }catch(e){}
+/* الإقلاع على مرحلتين:
+   1) رسم فوري من نسخة الجهاز (آخر وثيقة موسم وصلت من السحابة) — بلا انتظار للشبكة.
+   2) السحابة هي المرجع: تُقرأ بالتوازي مع الشعارات ولوحة الحساب ووصف الجولة (كانت
+      خمس قراءات متتابعة قبل أول رسم، فبدا التطبيق فارغاً ثوانيَ وتبويب الفانتسي غائباً)،
+      ثم تُطبَّق فقط إن اختلفت عن المرسوم. ساعات الأجهزة تختلف فلا يُعتمد على الطابع الزمني. */
+async function bootLocal(){
+  try{ const v=await localGet("zain_data"); if(!v) return false;
+    const d=JSON.parse(v); if(!(d.clubs&&d.matches)) return false;
+    LASTSTAMP=stampOf(d); applyData(d,"نسخة محلية محفوظة"); return true; }catch(e){ return false; }
+}
+async function bootData(cloudP, painted){
+  const cloud = await cloudP;
+  if(cloud && cloud.clubs && cloud.matches){
+    const st=stampOf(cloud);
+    if(st!==LASTSTAMP || !painted){ LASTSTAMP=st; applyData(cloud,"السحابة (Firestore)"); }
+    cacheSeasonLocal(cloud);
+    return;
+  }
+  if(painted) return;   /* لا سحابة، والجهاز رسم نسخته — تكفي */
   try{
     const res=await fetch("./data.json",{cache:"no-store"});
-    if(res.ok){ const d=await res.json(); if(d.clubs&&d.goals&&d.matches) cands.push([d,"data.json المنشور"]); }
+    if(res.ok){ const d=await res.json(); if(d.clubs&&d.goals&&d.matches){ LASTSTAMP=stampOf(d); applyData(d,"data.json المنشور"); } }
   }catch(e){}
-  if(!cands.length) return;
-  /* السحابة هي المرجع متى ما وُجدت — ساعات الأجهزة تختلف فلا يُعتمد على الطابع الزمني */
-  const pick = cands.find(c=>c[1]==="السحابة (Firestore)")
-            || cands.sort((a,b)=> new Date(b[0].updated||0) - new Date(a[0].updated||0))[0];
-  LASTSTAMP=(pick[0].updated||"")+"|"+(pick[0].updatedBy||"");
-  applyData(pick[0], pick[1]);
+}
+/* تدفئة ملفات الفانتسي في ذاكرة خادم الخدمة بعد اكتمال الإقلاع: تبويب «فانتسي» يفتح صفحة
+   كاملة (ورقة أنماط + ~20 ملف JS)، وكان أول فتح من التطبيق يبدو معلّقاً. الروابط تُقرأ من
+   صفحة الفانتسي نفسها فلا يرتبط هذا برقم إصدارها. */
+function warmFantasy(){
+  try{
+    if(navigator.connection && navigator.connection.saveData) return;
+    if(!('serviceWorker' in navigator)) return;
+    const run=()=>fetch(FANTASY_URL,{cache:"no-store"}).then(r=>r.ok?r.text():"").then(html=>{
+      const urls=[...html.matchAll(/(?:src|href)="((?:js|css)\/[^"]+)"/g)].map(m=>FANTASY_URL+m[1]);
+      urls.forEach(u=>fetch(u).catch(()=>{}));
+    }).catch(()=>{});
+    if('requestIdleCallback' in window) requestIdleCallback(run,{timeout:8000}); else setTimeout(run,3000);
+  }catch(e){}
 }
 (async()=>{
   fbInit();
-  await bootAssets();
   ALL = stampComp({matches:MATCHES, goals:GOALS, pens:PENS, cards:CARDS, lineups:[], subs:[]});
   applyComp();
-  await bootData();
+  const painted = await bootLocal();
+  if(painted){ paintRail(); paintHeader(); paintFoot(); go("home"); }
+  const cloudP = fbLoad(seasonId());          /* بالتوازي مع الشعارات */
+  await bootAssets();
+  await bootData(cloudP, painted);
   watchSeason();
-  await loadBoard();
-  await loadRoundMeta();
+  await Promise.all([loadBoard(), loadRoundMeta()]);
   countVisit();
-  paintRail(); paintHeader(); paintFoot(); go("home");
+  paintRail(); paintHeader(); paintFoot();
+  /* المستخدم اختار قسماً أثناء الإقلاع؟ نعيد رسمه في مكانه ولا نسحبه للرئيسية */
+  const cur=document.querySelector('nav.tabs button[aria-selected="true"]');
+  if(USER_NAV && cur && RENDER[cur.dataset.v]) RENDER[cur.dataset.v](); else go("home");
+  warmFantasy();
 })();
 </script>
 
