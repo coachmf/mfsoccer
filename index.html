@@ -2178,13 +2178,15 @@ const gw = n => (n>=3&&n<=10) ? `${n} أهداف` : `${n} هدفاً`;
 const mw = n => n===2 ? "مباراتين" : (n>=3&&n<=10) ? `${n} مباريات` : `${n} مباراة`;
 const pw = n => (n>=3&&n<=10) ? `${n} ركلات` : `${n} ركلة`;
 
+/* الشعارات داخل البطاقات بلا loading="lazy": سفاري iOS يؤخّر الصور الكسولة التي يُعاد رسمها أثناء الإقلاع
+   (أقراص المباراة القادمة بقيت بيضاء ~5 ث)، والملفات صغيرة ومخزّنة أصلاً فلا فائدة من التأجيل. */
 function crest(club, big){
   const l = LOGOS[club];
   if(!l) return `<div class="crest${big?' lg':''}" style="background:${TINT[club]||'#3B5578'}">${esc(MONO[club]||club.slice(0,2))}</div>`;
   const sc = (GSCALE/100) * ((LSCALE[club]??100)/100);
   const bg = LOGOBG ? "#fff" : "transparent";
   return `<div class="crest has-logo${big?' lg':''}" style="background:${bg}">
-    <img src="${l}" alt="${esc(club)}" loading="lazy" decoding="async" style="transform:scale(${sc.toFixed(2)})"></div>`;
+    <img src="${l}" alt="${esc(club)}" decoding="async" style="transform:scale(${sc.toFixed(2)})"></div>`;
 }
 const compOf = x => x.comp || "الدوري";
 function stampComp(d){
