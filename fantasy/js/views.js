@@ -111,11 +111,15 @@ const VIEWS = {
       <div class="field"><label>اسم فريقك في الفانتسي</label><input id="cp_team" value="${esc(m.teamName)}" placeholder="مثال: نسور الديرة"></div>
       <button class="btn" style="width:100%" onclick="VIEWS.saveCompleteProfile()">حفظ والبدء</button>`);
   },
-  saveCompleteProfile(){
+  async saveCompleteProfile(){
     const m=DB.me(); const u=gv('cp_user').trim(), t=gv('cp_team').trim();
     if(!u || !t){ UI.toast('اكتب الاسمين', true); return; }
     const bad = MODERATION.checkName(u,'اسم المستخدم') || MODERATION.checkName(t,'اسم الفريق');
     if(bad){ UI.toast(bad,true); return; }
+    /* هذا مسار من دخل بـGoogle أو Apple، وكان بلا تحقّق من التعارض
+       إطلاقاً — فتكرّرت الأسماء المتشابهة في لوحة الترتيب. */
+    const clash = await CLOUD.usernameConflict(u, m.id);
+    if(clash){ UI.toast(`اسم المستخدم يشبه «${clash}» — اختر اسماً مميّزاً`, true); return; }
     m.username=u; m.teamName=t; DB.save(); UI.closeModal(); UI.toast('تم — كوّن فريقك الآن'); APP.go('team');
   },
   async doForgot(ev){
@@ -1179,11 +1183,15 @@ const VIEWS = {
     </div>`;
   },
   setAvatar(a){ DB.me().avatar=a; DB.save(); APP.render(); },
-  saveProfile(){
+  async saveProfile(){
     const m=DB.me();
-    const u=gv('pr_user'), t=gv('pr_team');
+    const u=gv('pr_user').trim(), t=gv('pr_team').trim();
     const bad = MODERATION.checkName(u,'اسم المستخدم') || MODERATION.checkName(t,'اسم الفريق');
     if(bad){ UI.toast(bad,true); return; }
+    if(u && u!==m.username){
+      const clash = await CLOUD.usernameConflict(u, m.id);
+      if(clash){ UI.toast(`اسم المستخدم يشبه «${clash}» — اختر اسماً مميّزاً`, true); return; }
+    }
     if(u) m.username=u; if(t) m.teamName=t;
     DB.save(); UI.toast('تم الحفظ'); APP.render();
   },

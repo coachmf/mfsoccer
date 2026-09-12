@@ -134,8 +134,8 @@ const CLOUD = {
     username=String(username||'').trim(); teamName=String(teamName||'').trim();
     if(!email || !pass || !username || !teamName) return {ok:false, err:'كل الحقول مطلوبة'};
     if(pass.length < 6) return {ok:false, err:'كلمة المرور 6 أحرف على الأقل'};
-    const taken = await this.usernameTaken(username);
-    if(taken) return {ok:false, err:'اسم المستخدم محجوز — اختر غيره'};
+    const clash = await this.usernameConflict(username, null);
+    if(clash) return {ok:false, err:`اسم المستخدم يشبه «${clash}» — اختر اسماً مميّزاً`};
     // أثناء التسجيل يتوقف مستمع الدخول (APP.initCloud) عن إنشاء مستند افتراضي
     // حتى لا يطمس اسم المستخدم واسم الفريق اللذين كتبهما المشترك.
     this.signingUp = true;
@@ -369,6 +369,36 @@ const CLOUD = {
       const q = await this.managers().where('username','==',username).limit(1).get();
       return !q.empty;
     }catch(e){ return false; }   // تعذّر التحقق: لا نمنع التسجيل
+  },
+
+  /* تعارض الاسم — أوسع من المطابقة الحرفية.
+     «أحمد» و«احمد» و«Ahmed» و«أحـمد» تبدو أسماءً مختلفة للخادم لكنها
+     واحدة في عين القارئ، فتلتبس لوحة الترتيب. نوحّدها بنفس تطبيع
+     MODERATION (تجريد التشكيل، توحيد الألف والياء والهاء، إسقاط
+     المسافات، توحيد حالة الأحرف) ثم نقارن.
+
+     نفحص مصدرين: لقطة الترتيب المحمّلة أصلاً (مجانية وتغطي الجميع)،
+     ثم استعلام حرفي للخادم يلتقط من سجّل بعد آخر لقطة.
+     يعيد الاسم المتعارض أو null. */
+  async usernameConflict(username, myUid){
+    const norm = (t) => (typeof MODERATION!=='undefined')
+      ? MODERATION.norm(t)
+      : String(t||'').trim().toLowerCase();
+    const want = norm(username);
+    if(!want) return null;
+
+    try{
+      const board = (typeof DB!=='undefined' && DB.state && Array.isArray(DB.state.board)) ? DB.state.board : [];
+      const hit = board.find(r => r && r.id !== myUid && norm(r.name) === want);
+      if(hit) return hit.name;
+    }catch(e){}
+
+    /* المسجَّل حديثاً قد لا يكون في اللقطة بعد */
+    try{
+      const q = await this.managers().where('username','==',String(username).trim()).limit(1).get();
+      if(!q.empty && q.docs[0].id !== myUid) return (q.docs[0].data()||{}).username || String(username).trim();
+    }catch(e){}
+    return null;
   },
 
   /* البريد لا يُحفظ في المستند: مجموعة المشتركين مقروءة للجميع (لوحة الترتيب)،
