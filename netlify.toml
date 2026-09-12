@@ -67,3 +67,44 @@
   for = "/apple-touch-icon.png"
   [headers.values]
     Cache-Control = "public, max-age=2592000"
+
+# ——— السرعة في التطبيق والمتصفح: الصور والملفات المرقّمة تُحفظ عند المستخدم ———
+# كانت كل الملفات max-age=0 فيُعاد التحقق من ~25 ملفاً (شعارات، صور الترويسة، ملفات js) في كل فتح
+# للتطبيق — وWKWebView في تطبيق iOS لا يملك خادم خدمة فيعتمد على هذه الترويسات وحدها.
+# الشعارات وصور الترويسة: 30 يوماً (عند تغيير صورة بنفس الاسم يظهر التغيير خلال 30 يوماً — أو غيّر الاسم).
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=2592000"
+
+[[headers]]
+  for = "/fantasy/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=2592000"
+
+# ملفات js/css المرقّمة بـ?v= : يوم واحد (التحديث الفوري يأتي من رفع الرقم في index.html)
+[[headers]]
+  for = "/fantasy/js/*"
+  [headers.values]
+    Cache-Control = "public, max-age=86400"
+
+[[headers]]
+  for = "/fantasy/css/*"
+  [headers.values]
+    Cache-Control = "public, max-age=86400"
+
+[[headers]]
+  for = "/site-theme.css"
+  [headers.values]
+    Cache-Control = "public, max-age=86400"
+
+[[headers]]
+  for = "/site-i18n.js"
+  [headers.values]
+    Cache-Control = "public, max-age=86400"
+
+# صفحة الفانتسي كالرئيسية: لا تُخزَّن حتى تصل التحديثات فوراً
+[[headers]]
+  for = "/fantasy/index.html"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
