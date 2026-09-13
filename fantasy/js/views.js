@@ -82,7 +82,7 @@ const VIEWS = {
       this._holdBusy(b,'جارٍ الدخول…');
       if(!r.redirect) this.awaitAuth();
     }
-    else { this._busy(b,false); UI.toast(r.err, true); }
+    else { this._busy(b,false); if(r.openBrowser) this.browserSignInModal('Apple', r.err); else UI.toast(r.err, true); }
   },
   async doGoogle(ev){
     const b=ev&&ev.target.closest('button'); this._busy(b,true,'جارٍ فتح Google…');
@@ -91,7 +91,7 @@ const VIEWS = {
       this._holdBusy(b,'جارٍ الدخول…');   // النجاح يُلتقط من onAuthStateChanged
       if(!r.redirect) this.awaitAuth();
     }
-    else { this._busy(b,false); UI.toast(r.err, true); }
+    else { this._busy(b,false); if(r.openBrowser) this.browserSignInModal('Google', r.err); else UI.toast(r.err, true); }
   },
   /* بعد نجاح نافذة Google: ننتظر اكتمال المزامنة؛ إن لم تصل الشاشة للرئيسية خلال 8 ثوانٍ نحدّث الصفحة تلقائياً */
   awaitAuth(){
@@ -1195,6 +1195,24 @@ const VIEWS = {
     if(u) m.username=u; if(t) m.teamName=t;
     DB.save(); UI.toast('تم الحفظ'); APP.render();
   },
+  /* داخل تطبيق أندرويد: التحويل يفقد sessionStorage فيفشل الدخول.
+     لكن التطبيق يتشارك تخزين Chrome لنفس النطاق، فالدخول من المتصفح
+     يسري عليه تلقائياً. */
+  browserSignInModal(prov, msg){
+    const url = location.origin + '/fantasy/';
+    UI.modal(`<h3>سجّل الدخول عبر المتصفح</h3>
+      <p class="muted">${esc(msg)}</p>
+      <ol class="muted" style="padding-inline-start:18px;margin:10px 0;line-height:2">
+        <li>يفتح المتصفح على صفحة الفانتسي</li>
+        <li>اضغط «الدخول عبر ${prov}» هناك وأكمل</li>
+        <li>ارجع للتطبيق — ستجد نفسك داخلاً</li>
+      </ol>
+      <div class="row" style="gap:8px;margin-top:12px">
+        <a class="btn" href="${url}" target="_blank" rel="noopener" onclick="UI.closeModal()">افتح المتصفح</a>
+        <button class="btn sec" onclick="UI.closeModal()">إلغاء</button>
+      </div>`);
+  },
+
   /* ---------- الإبلاغ والحظر (App Store 1.2) ---------- */
   reportModal(uid){
     const name = (this.ui.managerDoc && this.ui.managerDoc.username) || 'مشترك';

@@ -282,6 +282,20 @@ const CLOUD = {
                          : {ok:true};
   },
 
+  /* هل نحن داخل تطبيق أندرويد (TWA)؟
+     TWA يفتح صفحة المزوّد في سياق تصفّح منفصل، وحين يعود يُنشئ Chrome
+     سياقاً جديداً فلا ينجو sessionStorage — فيفشل signInWithRedirect
+     برسالة «missing initial state» مهما كان authDomain.
+     لكنه يتشارك تخزين Chrome لنفس النطاق، فالدخول من المتصفح يسري
+     على التطبيق تلقائياً. نكشفه بـdisplay-mode ونوجّه المستخدم. */
+  isTWA(){
+    try{
+      if(document.referrer.indexOf('android-app://') === 0) return true;
+      return window.matchMedia('(display-mode: standalone)').matches
+          && /Android/i.test(navigator.userAgent);
+    }catch(e){ return false; }
+  },
+
   /* هل نحن داخل متصفح تطبيق (إنستغرام/تيك توك/سناب/فيسبوك)؟ Google يرفض OAuth فيها */
   inAppBrowser(){
     const ua=(navigator.userAgent||'').toLowerCase();
@@ -297,6 +311,9 @@ const CLOUD = {
     try{ await this.auth.signInWithPopup(prov); return {ok:true}; }
     catch(e){
       if(e && (e.code==='auth/popup-blocked' || e.code==='auth/cancelled-popup-request')){
+        /* داخل TWA التحويل يفشل حتماً — نوجّه للمتصفح بدل رسالة مبهمة */
+        if(this.isTWA()) return {ok:false, openBrowser:true,
+          err:'افتح الموقع في المتصفح لتسجيل الدخول بـGoogle، ثم ارجع للتطبيق — ستجد نفسك داخلاً.'};
         try{ await this.auth.signInWithRedirect(prov); return {ok:true, redirect:true}; }catch(e2){ return {ok:false, err:this.errAr(e2)}; }
       }
       // شبكات العمل والمدارس تحجب أحياناً نافذة Google (firebaseapp.com) فتظهر «can't reach this page» وتُغلق
@@ -324,6 +341,8 @@ const CLOUD = {
     catch(e){
       const c = (e && e.code) || '';
       if(c==='auth/popup-blocked' || c==='auth/cancelled-popup-request'){
+        if(this.isTWA()) return {ok:false, openBrowser:true,
+          err:'افتح الموقع في المتصفح لتسجيل الدخول بـApple، ثم ارجع للتطبيق — ستجد نفسك داخلاً.'};
         try{ await this.auth.signInWithRedirect(prov); return {ok:true, redirect:true}; }
         catch(e2){ return {ok:false, err:this.errAr(e2)}; }
       }
