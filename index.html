@@ -625,8 +625,10 @@ details.squadbox summary label.lb{margin:0;cursor:pointer}
 .pp-b{position:absolute;display:inline-flex;align-items:center;justify-content:center;z-index:3;
   box-shadow:0 1px 2px rgba(0,0,0,.4);line-height:1}
 .pp-b .ico-ball,.pp-b .ico-boot{width:clamp(9px,2.7cqw,13px);height:clamp(9px,2.7cqw,13px)}
+.pp-b .pp-ball{font-size:clamp(11px,3.4cqw,16px);line-height:1;display:block}
+.xipitch.full .pp-b .pp-ball{font-size:clamp(9px,2.8cqw,13px)}
 /* الهدف: أعلى اليسار (شريحة بيضاء، وعدد إن تعدّد) */
-.pp-b.goal{top:-6px;left:-6px;background:#fff;border-radius:8px;padding:1px;gap:1px}
+.pp-b.goal{top:-6px;left:-6px;background:#fff;border-radius:999px;padding:1px 2px;gap:1px}
 .pp-b.goal em{font-style:normal;font-weight:800;color:#0B1F3A;font-size:clamp(7px,2.1cqw,10px);padding-inline-end:1px}
 /* الصناعة: أسفل اليمين */
 .pp-b.assist{bottom:-6px;right:-6px;background:#fff;border-radius:50%;padding:1px}
@@ -4141,7 +4143,7 @@ function playerMatchEvents(m, club, name){
 function spotBadges(ev){
   if(!ev) return "";
   let b="";
-  if(ev.goals)   b+=`<span class="pp-b goal">${ICO_BALL}${ev.goals>1?`<em>${ev.goals}</em>`:""}</span>`;
+  if(ev.goals)   b+=`<span class="pp-b goal"><span class="pp-ball">⚽</span>${ev.goals>1?`<em>${ev.goals}</em>`:""}</span>`;
   if(ev.assists) b+=`<span class="pp-b assist">${ICO_BOOT}</span>`;
   if(ev.red||ev.yellow) b+=`<span class="pp-b card ${ev.red?"r":"y"}"></span>`;
   if(ev.off)     b+=`<span class="pp-b off" title="خرج"></span>`;
