@@ -491,7 +491,7 @@ const VIEWS = {
         <span class="ptschip fdr-l${x.lvl}">${x.lvl}</span></div>`).join('');
     UI.sheet(`
       ${UI.statusBanner(p)}
-      <div class="ps-head${UI.playerPhoto(p)?' ps-head-photo':''}" ${UI.playerPhoto(p)?`style="background:linear-gradient(135deg,${c.color} 0%,${c.dark} 100%)"`:''}>
+      <div class="ps-head ps-head-photo" style="background:linear-gradient(135deg,${c.color} 0%,${c.dark} 100%)">
         <div class="ps-kit">${UI.playerPhoto(p)? `<img class="ps-photo ps-cut" src="${esc(UI.playerPhoto(p))}" alt="">` : UI.kitShirt(p.club, p.pos==='G', 84)}</div>
         <div style="flex:1">
           <div class="ps-pos">${POS_FULL[p.pos]}</div>
@@ -773,7 +773,7 @@ const VIEWS = {
     const team=DB.myTeam();
     const stat=(v,l)=>`<div class="statbox"><div class="v" style="font-size:1.15rem">${v}</div><div class="l">${l}</div></div>`;
     return `<button class="btn sm sec" onclick="APP.back()" style="margin-bottom:12px">→ رجوع</button>
-    <div class="card${UI.playerPhoto(p)?' pp-head':''}" style="margin-bottom:14px${UI.playerPhoto(p)?`;background:linear-gradient(135deg,${c.color} 0%,${c.dark} 100%)`:''}">
+    <div class="card pp-head" style="margin-bottom:14px;background:linear-gradient(135deg,${c.color} 0%,${c.dark} 100%)">
       <div class="row" style="gap:16px;flex-wrap:wrap">
         ${UI.playerPhoto(p)? `<img class="pp-cut" src="${esc(UI.playerPhoto(p))}" alt="">` : UI.playerAvatar(p,74)}
         <div style="flex:1 1 0;min-width:0">
