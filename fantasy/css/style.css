@@ -1043,3 +1043,7 @@ html.lang-en .ps-stats>div{border-left:none;border-right:1px solid var(--line);}
 .card.pp-head .btn.sec,.card.pp-head .btn.ghost{background:rgba(255,255,255,.92);color:#0b2a6b;border-color:transparent;}
 .pp-cut{width:120px;height:150px;object-fit:contain;object-position:bottom center;flex:none;filter:drop-shadow(0 6px 10px rgba(0,0,0,.35));margin:-16px 0 -18px;}
 @media (max-width:520px){.pp-cut{width:96px;height:120px;}}
+
+/* أزرار ملف اللاعب: صف مستقل أسفل البطاقة، محاذاة لليسار (بعيداً عن القصّة التي تقف يميناً) */
+.pp-actions{width:100%;display:flex;gap:8px;justify-content:flex-end;margin-top:6px;}
+html.lang-en .pp-actions{justify-content:flex-start;}

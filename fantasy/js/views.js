@@ -781,8 +781,10 @@ const VIEWS = {
           <div class="row" style="gap:8px;margin-top:4px">${UI.crest(p.club)} <b>${c.name}</b> <span class="pill">${POS_AR[p.pos]}</span>
           <span class="pill blue">${fmtK(p.price)} ${p.price>p.startPrice?'▲':p.price<p.startPrice?'▼':''}</span></div>
         </div>
+        <div class="pp-actions">
         ${team&&team.squad.length&&!team.squad.includes(pid)? `<button class="btn sec" onclick="APP.go('transfers')">تعاقد معه</button>`:''}
         <button class="btn ghost" onclick="VIEWS.cmpOpen('${pid}')">قارن</button>
+        </div>
       </div>
     </div>
     <div class="grid g4" style="margin-bottom:14px">
