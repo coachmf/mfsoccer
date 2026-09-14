@@ -17,8 +17,8 @@ exports.handler = async (event) => {
   if(event.httpMethod !== 'POST')
     return { statusCode:405, headers:CORS, body: JSON.stringify({ok:false, err:'POST فقط'}) };
 
-  let token, unsubscribe;
-  try{ ({ token, unsubscribe } = JSON.parse(event.body||'{}')); }
+  let token, unsubscribe, info;
+  try{ ({ token, unsubscribe, info } = JSON.parse(event.body||'{}')); }
   catch(e){ return { statusCode:400, headers:CORS, body: JSON.stringify({ok:false, err:'جسم غير صالح'}) }; }
 
   /* رموز FCM طويلة ومحدودة الأحرف — نرفض ما لا يشبهها قبل أي نداء */
@@ -27,6 +27,17 @@ exports.handler = async (event) => {
 
   try{
     const at = await accessToken('https://www.googleapis.com/auth/firebase.messaging');
+
+    /* تشخيص: يقرأ عضوية الرمز من FCM نفسه — الطريق الوحيد للتأكد
+       أن الاشتراك ثبت فعلاً بدل الاكتفاء بنجاح نداء الاشتراك. */
+    if(info){
+      const r = await fetch(`https://iid.googleapis.com/iid/info/${encodeURIComponent(token)}?details=true`, {
+        headers:{ Authorization:'Bearer '+at, access_token_auth:'true' }
+      });
+      const t = await r.text();
+      return { statusCode: r.ok?200:502, headers:CORS, body: JSON.stringify({ok:r.ok, info:t.slice(0,1200)}) };
+    }
+
     const res = await fetch(`https://iid.googleapis.com/iid/v1/${encodeURIComponent(token)}/rel/topics/all`, {
       method: unsubscribe ? 'DELETE' : 'POST',
       headers: { Authorization:'Bearer '+at, access_token_auth:'true', 'Content-Type':'application/json' }

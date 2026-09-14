@@ -33,8 +33,8 @@ exports.handler = async (event) => {
   if(event.httpMethod === 'OPTIONS') return { statusCode:204, headers:CORS, body:'' };
   if(event.httpMethod !== 'POST') return reply(405, {ok:false, err:'POST فقط'});
 
-  let title, body, url;
-  try{ ({ title, body, url } = JSON.parse(event.body||'{}')); }
+  let title, body, url, token;
+  try{ ({ title, body, url, token } = JSON.parse(event.body||'{}')); }
   catch(e){ return reply(400, {ok:false, err:'جسم غير صالح'}); }
 
   title = String(title||'').trim();
@@ -63,18 +63,20 @@ exports.handler = async (event) => {
     if(uid !== OWNER_UID && !(await isStaff(uid, projectId, at)))
       return reply(403, {ok:false, err:'للمدير فقط'});
 
+    /* الإرسال لرمز بعينه للتشخيص — للمالك وحده، لا تعرضه الواجهة */
+    if(token && (typeof token !== 'string' || token.length < 100 || uid !== OWNER_UID))
+      return reply(400, {ok:false, err:'رمز غير مقبول'});
+
     const res = await fetch(`https://fcm.googleapis.com/v1/projects/${projectId}/messages:send`, {
       method:'POST',
       headers:{ Authorization:'Bearer '+at, 'Content-Type':'application/json' },
-      body: JSON.stringify({ message:{
-        topic:'all',
-        notification:{ title, body },
-        webpush:{
-          notification:{ title, body, icon:'/icon-192.png', badge:'/icon-192.png', dir:'rtl', lang:'ar' },
-          fcm_options:{ link }
-        },
-        data:{ url: link }
-      }})
+      /* الحمولة مطابقة لما تُرسله حملة Firebase المُثبَت وصولها:
+         notification وحدها + رابط الفتح. أي حقول webpush إضافية
+         تزيد احتمال الرفض الصامت بلا فائدة تُذكر. */
+      body: JSON.stringify({ message: Object.assign(
+        token ? { token } : { topic: 'all' },
+        { notification:{ title, body }, webpush:{ fcm_options:{ link } } }
+      )})
     });
     const out = await res.json();
     if(!res.ok) return reply(502, {ok:false, err:'رفض FCM الإرسال', detail: JSON.stringify(out).slice(0,300)});
