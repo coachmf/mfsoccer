@@ -200,6 +200,9 @@ const PLAYER_PHOTOS = {
   'QAD|ايوب لخضر': '/assets/players/qad/77',
   'QAD|سالم الريس': '/assets/players/qad/78',
   // الجهراء (16)
+  'JAH|مبارك الحربي': '/assets/players/jah/1',   // من رسم تشكيلة النادي (دقة أقل — مؤقتاً)
+  'JAH|تاكامبا ناسام': '/assets/players/jah/26',   // من رسم تشكيلة النادي (دقة أقل — مؤقتاً)
+  'JAH|ماركوس راموس': '/assets/players/jah/13',   // من رسم تشكيلة النادي (دقة أقل — مؤقتاً)
   'JAH|عبدالله الداحس': '/assets/players/jah/80',
   'JAH|جاسم العنزي': '/assets/players/jah/4',
   'JAH|عادل جاسم الشمري': '/assets/players/jah/8',
