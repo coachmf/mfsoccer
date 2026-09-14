@@ -296,6 +296,21 @@ const CLOUD = {
     }catch(e){ return false; }
   },
 
+  /* هل نحن داخل غلاف iOS (WKWebView)؟
+     الغلاف يعترض window.open ويحمّل الوجهة في النافذة الرئيسية نفسها
+     (WebView.swift: createWebViewWith → webView.load)، فتُدمَّر الصفحة
+     التي كتبت حالة الانتظار في sessionStorage، ويعود المستخدم إلى
+     /__/auth/handler بلا حالة: «missing initial state».
+     لذا لا نستعمل النافذة المنبثقة هنا إطلاقاً بل التحويل المباشر.
+     الكشف: كوكي يضعها الغلاف (Settings.swift: platformCookie)،
+     واحتياطاً بصمة الـUser-Agent التي يوقّع بها نفسه. */
+  isIOSApp(){
+    try{
+      if(/(^|;\s*)app-platform=iOS%20App%20Store|(^|;\s*)app-platform=iOS App Store/.test(document.cookie||'')) return true;
+      return /PWAShell/.test(navigator.userAgent||'');
+    }catch(e){ return false; }
+  },
+
   /* هل نحن داخل متصفح تطبيق (إنستغرام/تيك توك/سناب/فيسبوك)؟ Google يرفض OAuth فيها */
   inAppBrowser(){
     const ua=(navigator.userAgent||'').toLowerCase();
@@ -305,6 +320,9 @@ const CLOUD = {
   async googleLogin(){
     if(!this.ready) return {ok:false, err:'السحابة غير متاحة — تأكد من الاتصال'};
     if(this.inAppBrowser()) return {ok:false, err:'الدخول عبر Google لا يعمل داخل متصفح التطبيق (إنستغرام/تيك توك/سناب). افتح mfsoccer.com في Safari أو Chrome، أو ادخل بالبريد وكلمة المرور.'};
+    /* Google يحجب OAuth داخل أي WebView مدمج منذ 2021، فيردّ 400 على
+       accounts.youtube.com. لا التفاف ممكن — نوجّه للبديلين الصالحين. */
+    if(this.isIOSApp()) return {ok:false, err:'الدخول عبر Google لا يعمل داخل التطبيق — هذا قيد من Google على التطبيقات. ادخل بـApple أو بالبريد وكلمة المرور. وإن كان حسابك بـGoogle، اضغط «نسيت كلمة المرور» وعيّن كلمة مرور لنفس الحساب.'};
     let prov;
     try{ prov=new firebase.auth.GoogleAuthProvider(); prov.setCustomParameters({prompt:'select_account'}); }
     catch(e){ return {ok:false, err:'الدخول عبر Google غير متاح في هذه النسخة'}; }
@@ -337,6 +355,11 @@ const CLOUD = {
       prov.addScope('email'); prov.addScope('name');
       prov.setCustomParameters({ locale: 'ar_KW' });
     }catch(e){ return {ok:false, err:'الدخول عبر Apple غير متاح في هذه النسخة'}; }
+    /* داخل الغلاف: تحويل مباشر بلا نافذة منبثقة — النافذة هي ما يكسر الجلسة */
+    if(this.isIOSApp()){
+      try{ await this.auth.signInWithRedirect(prov); return {ok:true, redirect:true}; }
+      catch(e2){ return {ok:false, err:this.errAr(e2)}; }
+    }
     try{ await this.auth.signInWithPopup(prov); return {ok:true}; }
     catch(e){
       const c = (e && e.code) || '';
