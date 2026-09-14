@@ -100,6 +100,11 @@ UI.pitchKit=function(p,w){ return `<div class="pk">${this.kitImg(p.club,p.pos===
 
 /* الصورة تظهر فقط لمن له صورة رسمية معتمدة في js/photos.js (بدأنا بالصليبخات 2026-09-14)؛
    من لا صورة له يبقى بالقميص كما كان (طلب منصور 2026-09-02). بطاقات الملعب تبقى قمصاناً دائماً (UI.pitchKit). */
+/* الصورة من js/photos.js فقط (نادي نادي، بعد التحقق من الهوية) — حقل photo في الإدارة لا يُعرض */
+UI.playerPhoto=function(p){
+  if(typeof PLAYER_PHOTOS==='undefined' || !p) return null;
+  return PLAYER_PHOTOS[p.club+'|'+p.name] || null;
+};
 UI.playerAvatar=function(p, size){
   size=size||36;
   const ph=this.playerPhoto(p);
