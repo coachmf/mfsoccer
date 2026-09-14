@@ -773,9 +773,9 @@ const VIEWS = {
     const team=DB.myTeam();
     const stat=(v,l)=>`<div class="statbox"><div class="v" style="font-size:1.15rem">${v}</div><div class="l">${l}</div></div>`;
     return `<button class="btn sm sec" onclick="APP.back()" style="margin-bottom:12px">→ رجوع</button>
-    <div class="card" style="margin-bottom:14px">
+    <div class="card${UI.playerPhoto(p)?' pp-head':''}" style="margin-bottom:14px${UI.playerPhoto(p)?`;background:linear-gradient(135deg,${c.color} 0%,${c.dark} 100%)`:''}">
       <div class="row" style="gap:16px;flex-wrap:wrap">
-        ${UI.playerAvatar(p,74)}
+        ${UI.playerPhoto(p)? `<img class="pp-cut" src="${esc(UI.playerPhoto(p))}" alt="">` : UI.playerAvatar(p,74)}
         <div style="flex:1">
           <h2>${esc(p.name)} ${p.shirt?`<span class="tiny">#${p.shirt}</span>`:''} ${UI.statusPill(p)}</h2>
           <div class="row" style="gap:8px;margin-top:4px">${UI.crest(p.club)} <b>${c.name}</b> <span class="pill">${POS_AR[p.pos]}</span>

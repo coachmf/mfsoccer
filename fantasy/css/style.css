@@ -1034,3 +1034,12 @@ html.lang-en .ps-stats>div{border-left:none;border-right:1px solid var(--line);}
 .ps-photo.ps-cut{width:104px;height:130px;border-radius:0;background:none;border:none;box-shadow:none;object-fit:contain;object-position:bottom center;
   filter:drop-shadow(0 6px 10px rgba(0,0,0,.35));margin:-16px 0 -16px;}
 .ps-head.ps-head-photo{overflow:hidden;}
+
+/* ملف اللاعب: القصّة الكبيرة على تدرّج ألوان ناديه */
+.card.pp-head{color:#fff;overflow:hidden;}
+.card.pp-head h2,.card.pp-head b,.card.pp-head .tiny{color:#fff;}
+.card.pp-head .pill{background:rgba(255,255,255,.18);color:#fff;border-color:transparent;}
+.card.pp-head .pill.blue{background:rgba(255,255,255,.92);color:#0b2a6b;}
+.card.pp-head .btn.sec,.card.pp-head .btn.ghost{background:rgba(255,255,255,.92);color:#0b2a6b;border-color:transparent;}
+.pp-cut{width:120px;height:150px;object-fit:contain;object-position:bottom center;flex:none;filter:drop-shadow(0 6px 10px rgba(0,0,0,.35));margin:-16px 0 -18px;}
+@media (max-width:520px){.pp-cut{width:96px;height:120px;}}
