@@ -16,21 +16,21 @@ const KIT_STYLE = {
   ARB:{ body:'#0f8a4b', neck:'v', collar:'#ffffff', collar2:'#0b4a2a', cuff:'#ffffff', cuff2:'#0b4a2a', crest:'#ffffff',
         gk:{ body:'#182a63', collar:'#ffffff', collar2:'#0b1a44', cuff:'#ffffff', cuff2:'#0b1a44' } },
   SLB:{ body:'#e3262b', neck:'v', collar:'#ffffff', shoulder:'#ffffff', cuff:'#ffffff', cuff2:'#e3262b', crest:'#ffffff',
-        gk:{ body:'#ffd23f', neck:'v', collar:'#141414', cuff:'#141414', crest:'#141414' } },
+        gk:{ body:'#1c1c1e', neck:'v', collar:'#ffffff', cuff:'#ffffff', crest:'#ffffff' } },   // حارس الصليبخات أسود (صور 2026-09-15)
   FAH:{ body:'#d81f26', neck:'round', collar:'#d81f26', sleeve:'#e9e9f0', cuff:'#e9e9f0', crest:'#ffffff',
-        gk:{ body:'#9b6ef3', collar:'#ffffff', cuff:'#ffffff', crest:'#ffffff' } },
+        gk:{ body:'#1c1c1e', collar:'#ffffff', cuff:'#ffffff', crest:'#ffffff' } },   // حارس الفحيحيل أسود (علي فاضل)
   JAH:{ body:'#ffffff', neck:'round', collar:'#ffffff', cuff:'#1a5fb4', panel:'#1a5fb4', crest:'#1a5fb4',
-        gk:{ body:'#ff7a00', collar:'#ffffff', cuff:'#ffffff' } },
+        gk:{ body:'#39c6d6', collar:'#0b1a3a', cuff:'#0b1a3a', crest:'#0b1a3a' } },   // حارس الجهراء تركوازي
   KAZ:{ body:'#f26a1b', neck:'round', collar:'#f26a1b', shoulder:'#ffffff', shoulderWide:true, cuff:'#f26a1b', crest:'#ffffff',
         gk:{ body:'#222222', collar:'#f26a1b', cuff:'#f26a1b', crest:'#f26a1b' } },
   SAL:{ body:'#5fb3e6', neck:'round', collar:'#ffffff', sleeve:'#ffffff', cuff:'#1d2b6b', crest:'#ffffff',
-        gk:{ body:'#d64fa8', collar:'#ffffff', cuff:'#ffffff', crest:'#ffffff' } },
+        gk:{ body:'#1c1c1e', collar:'#ffffff', cuff:'#ffffff', crest:'#ffffff' } },   // حارس السالمية أسود
   SAH:{ body:'#f5d90a', neck:'round', collar:'#1e3f9e', cuff:'#1e3f9e', crest:'#1e3f9e',
-        gk:{ body:'#2e9e5b', collar:'#ffffff', cuff:'#ffffff', crest:'#ffffff' } },
+        gk:{ body:'#d0342c', collar:'#ffffff', cuff:'#ffffff', crest:'#ffffff' } },   // حارس الساحل أحمر (فواز الدوسري)
   SHB:{ body:'#1f4fd1', neck:'v', collar:'#ffffff', shoulder:'#ffffff', cuff:'#ffffff', panel:'#ffffff', crest:'#ffffff',
-        gk:{ body:'#7ac74f', neck:'v', collar:'#ffffff', cuff:'#ffffff', crest:'#ffffff' } },
+        gk:{ body:'#1c1c1e', neck:'v', collar:'#ffffff', cuff:'#ffffff', crest:'#ffffff' } },   // حارس الشباب أسود
   NSR:{ body:'#8e1b3a', neck:'round', collar:'#8e1b3a', cuff:'#e6e6ee', panel:'#e6e6ee', crest:'#ffffff',
-        gk:{ body:'#ffd23f', collar:'#141414', cuff:'#141414', crest:'#141414' } },
+        gk:{ body:'#1c1c1e', collar:'#ffffff', cuff:'#ffffff', crest:'#ffffff' } },   // حارس النصر أسود
   TDM:{ body:'#1b4fd8', neck:'round', collar:'#ffffff', cuff:'#ffffff', crest:'#ffffff',
         gk:{ body:'#ff7a00', collar:'#ffffff', cuff:'#ffffff', crest:'#ffffff' } },
 };

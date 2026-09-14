@@ -4151,14 +4151,33 @@ function spotBadges(ev){
   return b;
 }
 const shortName = s => { const w=String(s||"").trim().split(/\s+/); return w.length>1 ? w[w.length-1] : (w[0]||""); };
+/* أطقم الحراس كما في صور جلسات الأندية (منصور 2026-09-15) — تُستخدم لبطاقة الحارس على الملعب.
+   by: لون بحسب رقم الحارس حين يختلف الطقم بين حراس النادي نفسه. الأندية غير المذكورة تبقى بلون الفريق. */
+const GK_KITS = {
+  "الكويت":    { bg:"#1c1c1e", fg:"#ffffff" },
+  "الساحل":    { bg:"#1c1c1e", fg:"#ffffff", by:{ 22:{bg:"#d0342c",fg:"#ffffff"}, 12:{bg:"#1c1c1e",fg:"#ffffff"}, 1:{bg:"#2e9e5b",fg:"#ffffff"} } },
+  "السالمية":  { bg:"#1c1c1e", fg:"#ffffff" },
+  "النصر":     { bg:"#1c1c1e", fg:"#ffffff" },
+  "القادسية":  { bg:"#f2a7c3", fg:"#0B1F3A", by:{ 33:{bg:"#8b1a2b",fg:"#ffffff"} } },
+  "الفحيحيل":  { bg:"#1c1c1e", fg:"#ffffff", by:{ 26:{bg:"#1f4fd1",fg:"#ffffff"} } },
+  "الجهراء":   { bg:"#39c6d6", fg:"#0B1F3A" },
+  "الصليبخات": { bg:"#1c1c1e", fg:"#ffffff" },
+  "الشباب":    { bg:"#1c1c1e", fg:"#ffffff" }
+};
+function gkKitOf(club, shirt){
+  const g=GK_KITS[club]; if(!g) return null;
+  const by=g.by && g.by[+shirt];
+  return by ? {bg:by.bg, fg:by.fg} : {bg:g.bg, fg:g.fg};
+}
 /* بطاقة لاعب على الملعب (طلب منصور 2026-09-15): بطاقة بألوان النادي فيها قصّة اللاعب (إن وُجدت) ورقمه،
    والاسم تحتها. بلا صورة: البطاقة نفسها بالرقم كبيراً. الشارات (هدف/صناعة/كرت/خروج) على أركان البطاقة كما كانت. */
 function spotHTML(p, x, y, n, kit, ev, compact){
   const nm = compact ? shortName(p.n) : p.n;
   const cut = (typeof LOCAL_PHOTOS!=="undefined") ? LOCAL_PHOTOS[p.n] : null;
   const num = p.s||"–";
+  const k = (String(p.p||"").toUpperCase()==="GK" && kit.club) ? (gkKitOf(kit.club, p.s)||kit) : kit;
   return `<div class="pp-spot${compact?" cmp":""}" style="right:${x}%;top:${y}%;max-width:${(compact?90/(n+1):96/(n+1)).toFixed(1)}%">
-    <span class="pp-card${cut?"":" nophoto"}" style="${dotVars(kit)}">
+    <span class="pp-card${cut?"":" nophoto"}" style="${dotVars(k)}">
       ${cut?`<img class="pp-img" src="${cut}_f.webp?v=4" alt="" loading="lazy" draggable="false">`:""}
       <span class="pp-num">${num}</span>
       <span class="pp-nm">${esc(nm)}</span>${spotBadges(ev)}</span></div>`;
@@ -4204,7 +4223,7 @@ const clubColor=c=>kitOf(c).bg;
 function clubPitchHTML(round, comp, club){
   const S=pitchSpots(round, comp, club);
   if(!S) return "";
-  const kit=kitOf(club);
+  const kit=Object.assign(kitOf(club),{club});
   const m=MATCHES.find(x=>x.round===round && compOf(x)===comp && (x.home===club||x.away===club));
   return `<div class="xipitch half"><div class="xip-lines"></div>
     ${S.spots.map(({p,x,y,n})=>spotHTML(p,x,y,n,kit, m?playerMatchEvents(m,club,p.n):null)).join("")}</div>`;
@@ -4216,7 +4235,7 @@ function matchPitchHTML(m){
   if(!H || !A) return "";
   /* فجوة واضحة في المنتصف: الضيف [3,45] والمضيف [55,97]، فلا تتلامس خطوط الهجوم */
   const half=(S, club, top)=>{
-    const kit=kitOf(club);
+    const kit=Object.assign(kitOf(club),{club});
     return S.spots.map(({p,x,y,n})=>{
       const yy = top ? 3 + ((90-y)/90)*42 : 97 - ((90-y)/90)*42;
       return spotHTML(p, top?100-x:x, +yy.toFixed(1), n, kit, playerMatchEvents(m,club,p.n), true);
