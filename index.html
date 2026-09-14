@@ -4665,7 +4665,7 @@ function pav(name, size, placeholder){
     <img src="${src}" alt="${esc(name)}" style="${pavStyle(name)}"></span>`;
   const cut = PHOTOSON ? LOCAL_PHOTOS[name] : null;
   if(cut) return `<span class="pav pav-cut" style="width:${Math.round(S*0.8)}px;height:${S}px">
-    <img src="${cut}_s.webp" alt="${esc(name)}" loading="lazy"></span>`;
+    <img src="${cut}_s.webp?v=4" alt="${esc(name)}" loading="lazy"></span>`;
   /* بلا صورة: لا يظهر شيء — شعار النادي وحده بجانب الاسم.
      الحروف الأولى تُعرض في لوحة المدير فقط لتمييز من ينقصه صورة. */
   if(!placeholder) return "";

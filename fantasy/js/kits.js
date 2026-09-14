@@ -107,13 +107,14 @@ UI.playerPhotoBase=function(p){
   if(typeof PLAYER_PHOTOS==='undefined' || !p) return null;
   return PLAYER_PHOTOS[p.club+'|'+p.name] || null;
 };
-UI.playerPhoto=function(p){ const b=this.playerPhotoBase(p); return b? b+'.webp' : null; };
-UI.playerPhotoSmall=function(p){ const b=this.playerPhotoBase(p); return b? b+'_s.webp' : null; };
+UI.photoVer=function(){ return (typeof PLAYER_PHOTOS_VER!=='undefined')? '?v='+PLAYER_PHOTOS_VER : ''; };
+UI.playerPhoto=function(p){ const b=this.playerPhotoBase(p); return b? b+'.webp'+this.photoVer() : null; };
+UI.playerPhotoSmall=function(p){ const b=this.playerPhotoBase(p); return b? b+'_s.webp'+this.photoVer() : null; };
 UI.playerAvatar=function(p, size){
   size=size||36;
   const b=this.playerPhotoBase(p);
   if(b){
-    const src = size>60 ? b+'.webp' : b+'_s.webp';
+    const src = (size>60 ? b+'.webp' : b+'_s.webp') + this.photoVer();
     const w=Math.round(size*0.8);
     return `<img class="avatar photo-cut" style="width:${w}px;height:${size}px" src="${esc(src)}" alt="" loading="lazy">`;
   }
