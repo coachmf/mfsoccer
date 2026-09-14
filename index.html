@@ -481,6 +481,8 @@ details.squadbox summary label.lb{margin:0;cursor:pointer}
 .pav{display:inline-block;border-radius:50%;flex:none;overflow:hidden;background:var(--navy-800);
   box-shadow:inset 0 0 0 1.5px rgba(95,178,232,.4);vertical-align:middle}
 .pav img{width:100%;height:100%;object-fit:cover;display:block;transform-origin:center}
+.pav.pav-cut{border-radius:0;background:none;box-shadow:none}
+.pav.pav-cut img{object-fit:contain;object-position:bottom center;transform:none}
 .pavph{border-radius:50%;flex:none;display:grid;place-items:center;
   background:var(--navy-800);color:var(--slate);font-weight:700;
   box-shadow:inset 0 0 0 1.5px rgba(143,166,196,.3);vertical-align:middle}
@@ -1039,6 +1041,7 @@ label.lb,.fld label{color:var(--slate)}
 .rsum div{background:#fff;border:1px solid var(--line)} .rsum .n{color:var(--head)} .rsum .l{color:var(--slate)}
 .ctag{color:var(--slate)}
 .pav{background:#EEF3F9;box-shadow:inset 0 0 0 1.5px #CFE0F0}
+.pav.pav-cut{background:none;box-shadow:none}
 .pavph{background:#EEF3F9;color:var(--slate);box-shadow:inset 0 0 0 1.5px var(--line2)}
 .toggle input{accent-color:var(--zain-mid)}
 .nextm{background:linear-gradient(135deg,#0D4F92 0%,#0B3B73 55%,#08284F 100%);border-color:transparent;box-shadow:0 10px 26px rgba(13,79,146,.25)}
@@ -3425,6 +3428,89 @@ const LOCAL_CRESTS={
   "الجهراء":"assets/crests/sq/jahra.png","الساحل":"assets/crests/sq/sahel.png","الفحيحيل":"assets/crests/sq/fahaheel.png",
   "التضامن":"assets/crests/sq/tadamon.png","الشباب":"assets/crests/sq/shabab.png","الصليبخات":"assets/crests/sq/sulaibikhat.png"
 };
+/* قصّات لاعبين رسمية محلية (assets/players/<نادي>/<رقم>) — تُستخدم حين لا توجد صورة مرفوعة في السحابة للاسم نفسه.
+   القيمة مسار أساس: <base>_s.webp للقوائم (240×300 شفافة) و<base>.webp كبيرة. مطابقة بالرقم مع الكشف والوجه (منصور 2026-09-14). */
+const LOCAL_PHOTOS={
+  /* الصليبخات */
+  "صالح خميس":"assets/players/slb/2",
+  "علي الموسوي":"assets/players/slb/4",
+  "خالد الشهري":"assets/players/slb/7",
+  "نواف الشيباني":"assets/players/slb/8",
+  "عبدالمحسن الصليلي":"assets/players/slb/10",
+  "أحمد الفهد":"assets/players/slb/13",
+  "ياسر دشتي":"assets/players/slb/14",
+  "ويلفز دامسينا":"assets/players/slb/20",
+  "عبدالرحمن الشريفي":"assets/players/slb/22",
+  "ناصر الفيلكاوي":"assets/players/slb/25",
+  "لوكاس شالون":"assets/players/slb/27",
+  "عبدالله عيسى":"assets/players/slb/36",
+  "إيليلسون بيبي":"assets/players/slb/44",
+  "برونو دومنيغيس":"assets/players/slb/55",
+  "عبدالعزيز القطان":"assets/players/slb/77",
+  "عبدالله العوضي":"assets/players/slb/88",
+  "علي علاء الدين":"assets/players/slb/93",
+  /* الساحل */
+  "مشعل الرشيدي":"assets/players/sah/1",
+  "عمر العنزي":"assets/players/sah/4",
+  "عبدالرحمن الديحاني":"assets/players/sah/5",
+  "يوسف بادي":"assets/players/sah/6",
+  "محمد العلاطي":"assets/players/sah/7",
+  "أحمد غازي":"assets/players/sah/8",
+  "محمد العتيبي":"assets/players/sah/11",
+  "فيصل المكيمي":"assets/players/sah/12",
+  "ناصر القحطاني":"assets/players/sah/14",
+  "موريسيو":"assets/players/sah/15",
+  "جابر العجاجي":"assets/players/sah/19",
+  "فواز الدوسري":"assets/players/sah/22",
+  "لوكاس دي سوزا":"assets/players/sah/23",
+  "كليتون":"assets/players/sah/27",
+  "محمد الراشد":"assets/players/sah/28",
+  "ألن دي سوزا":"assets/players/sah/29",
+  "عبدالعزيز العنزي":"assets/players/sah/30",
+  "جواو":"assets/players/sah/33",
+  "بدر الزايد":"assets/players/sah/44",
+  "حمزه زياد":"assets/players/sah/66",
+  "راشد بن علي":"assets/players/sah/77",
+  "غازي العتيبي":"assets/players/sah/87",
+  /* الشباب */
+  "عبدالله جابر":"assets/players/shb/1",
+  "سعد العذاب":"assets/players/shb/3",
+  "يوسف محمد":"assets/players/shb/4",
+  "يعقوب الطراروه":"assets/players/shb/10",
+  "علي مصطفى":"assets/players/shb/11",
+  "محمد خليل":"assets/players/shb/12",
+  "سعد المطيري":"assets/players/shb/18",
+  "محمد القحطاني":"assets/players/shb/20",
+  "شاهين الخميس":"assets/players/shb/22",
+  "راشد فراج":"assets/players/shb/23",
+  "جيوفاني دي سيلفا":"assets/players/shb/33",
+  "عمر الحبيتر":"assets/players/shb/37",
+  "جاسم عتيق":"assets/players/shb/45",
+  "ماركوس مارتينلي":"assets/players/shb/73",
+  "ميشيل دي ليما":"assets/players/shb/97",
+  "ماثيوس توتو":"assets/players/shb/99",
+  /* الفحيحيل */
+  "علي فاضل":"assets/players/fah/1",
+  "حسين دشتي":"assets/players/fah/2",
+  "فهد سياف":"assets/players/fah/3",
+  "هاشم عدنان":"assets/players/fah/4",
+  "مشعل رومي":"assets/players/fah/5",
+  "محمد نعيم":"assets/players/fah/6",
+  "حمد الطويل":"assets/players/fah/7",
+  "عمر المطر":"assets/players/fah/8",
+  "رانجا شيفافيرو":"assets/players/fah/9",
+  "سلمان البوص":"assets/players/fah/10",
+  "الفين فورتيس":"assets/players/fah/11",
+  "شريدة الشريدة":"assets/players/fah/15",
+  "همام صبحي":"assets/players/fah/17",
+  "احمد النصر":"assets/players/fah/24",
+  "جاتوش بانوم":"assets/players/fah/25",
+  "احمد دشتي":"assets/players/fah/26",
+  "جاسم كرم":"assets/players/fah/45",
+  "عبدالعزيز ناجي":"assets/players/fah/60",
+  "محمد الفارسي":"assets/players/fah/70",
+  "خالد سليمان الشمري":"assets/players/fah/77"
+};
 function useLocalCrests(){
   LOGOS=Object.assign({},LOGOS,LOCAL_CRESTS);
   LSCALE={}; GSCALE=100; LOGOBG=true;
@@ -4577,6 +4663,9 @@ function pav(name, size, placeholder){
   const src = PHOTOSON ? PHOTOS[name] : null;
   if(src) return `<span class="pav" style="width:${S}px;height:${S}px">
     <img src="${src}" alt="${esc(name)}" style="${pavStyle(name)}"></span>`;
+  const cut = PHOTOSON ? LOCAL_PHOTOS[name] : null;
+  if(cut) return `<span class="pav pav-cut" style="width:${Math.round(S*0.8)}px;height:${S}px">
+    <img src="${cut}_s.webp" alt="${esc(name)}" loading="lazy"></span>`;
   /* بلا صورة: لا يظهر شيء — شعار النادي وحده بجانب الاسم.
      الحروف الأولى تُعرض في لوحة المدير فقط لتمييز من ينقصه صورة. */
   if(!placeholder) return "";
