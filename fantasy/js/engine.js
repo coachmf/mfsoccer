@@ -257,7 +257,12 @@ const DB = {
     if(dirty) this.save();
   },
 
-  club(id){ return this.state.clubs.find(c=>c.id===id); },
+  /* ألوان النادي تُؤخذ دائماً من data.js: نسخة السحابة القديمة كانت تُرجع الأزرق للساحل بعد التحميل من الخادم */
+  club(id){
+    const c=this.state.clubs.find(c=>c.id===id);
+    if(c && typeof SEED_CLUBS!=='undefined'){ const s=SEED_CLUBS.find(x=>x.id===id); if(s){ if(c.color!==s.color) c.color=s.color; if(c.dark!==s.dark) c.dark=s.dark; } }
+    return c;
+  },
   player(id){ return this.state.players.find(p=>p.id===id); },
   user(id){ return this.state.users.find(u=>u.id===id); },
   me(){ return this.state.session ? this.user(this.state.session) : null; },
