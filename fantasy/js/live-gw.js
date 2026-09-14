@@ -86,7 +86,7 @@ const LIVEGW = {
         <span class="tiny" style="opacity:.85">${done? 'اكتملت المباريات — بانتظار اعتماد الجولة' : `${m.played} من ${m.total} مباريات لُعبت`}${s&&s.at? ' · '+this.snapLabel() : ''}</span></div>
       <div class="hh-stats">
         <div><b>${s? s.avg : '—'}</b><span>المتوسط الآن</span></div>
-        <div class="big" onclick="APP.go('points')"><b>${my? my.total : 0}</b><span>نقاطك الآن</span></div>
+        <div class="big" onclick="APP.go('points')"><b>${my? my.total : 0}</b><span>نقاطك الآن ${UI.icon('chev',13)}</span></div>
         <div><b>${s && s.rank? s.rank.toLocaleString('ar') : '—'}<small style="font-size:.55em;opacity:.8">${s&&s.rank? ' / '+s.of.toLocaleString('ar') : ''}</small></b><span>ترتيبك الآن</span></div>
       </div>`;
   },

@@ -168,13 +168,15 @@ const VIEWS = {
     const hasPts = typeof this.pointsGws==='function' && this.pointsGws(team).gws.length>0;   // جولة جارية أو معتمدة → صفحة النقاط
 
     const fromGW = st.rules.scoringFromGW||1;
-    const gwBlock = (lastFin && lastFin.n < fromGW) ? `
+    const liveGW = typeof LIVEGW!=='undefined' && LIVEGW.active();
+    // أثناء جولة جارية تكفي كتلة المباشر (المتوسط/نقاطك/الترتيب) — لا نكرر تنبيه «الاحتساب يبدأ»
+    const gwBlock = (lastFin && lastFin.n < fromGW) ? (liveGW ? '' : `
       <div class="hh-gwtitle">الاحتساب يبدأ من الجولة ${fromGW}</div>
-      <div class="tiny" style="color:rgba(255,255,255,.8);text-align:center">الجولات السابقة لا تُحتسب لأحد — أول نقاط بعد الجولة ${fromGW}.</div>` : lastFin? `
+      <div class="tiny" style="color:rgba(255,255,255,.8);text-align:center">الجولات السابقة لا تُحتسب لأحد — أول نقاط بعد الجولة ${fromGW}.</div>`) : lastFin? `
       <div class="hh-gwtitle">الجولة ${lastFin.n}</div>
       <div class="hh-stats">
         <div><b>${lastFin.avg||'—'}</b><span>المتوسط</span></div>
-        <div class="big" ${lastH?`onclick="APP.go('points')"`:''}><b>${lastH? lastH.pts:0}</b><span>نقاطك</span></div>
+        <div class="big" ${lastH?`onclick="APP.go('points')"`:''}><b>${lastH? lastH.pts:0}</b><span>نقاطك${lastH? ' '+UI.icon('chev',13):''}</span></div>
         <div><b>${(GWADMIN.champion(lastFin.n)||{}).pts||lastFin.high||'—'}</b><span>الأعلى</span></div>
       </div>
       ${this.championCard(lastFin.n)}` : '';
