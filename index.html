@@ -616,7 +616,8 @@ details.squadbox summary label.lb{margin:0;cursor:pointer}
 .pp-card .pp-b.goal{top:-6px;left:-6px}
 .pp-card .pp-b.assist{bottom:-6px;right:-6px}
 .pp-card .pp-b.card{right:auto;left:-4px;top:auto;bottom:34%}
-.pp-card .pp-b.goal{top:auto;bottom:30%;left:-6px}
+.pp-card .pp-b.goal{top:auto;left:auto;bottom:-6px;right:-6px;background:#fff}
+.pp-card .pp-b.goal + .pp-b.assist{bottom:calc(-6px + 1.5em)}
 .pp-card .pp-b.off{bottom:-5px;left:-5px}
 .pp-nm{font-size:clamp(8.5px,2.9cqw,12px);color:#fff;font-weight:600;max-width:100%;
   text-shadow:0 1px 3px rgba(0,0,0,.7);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -625,7 +626,7 @@ details.squadbox summary label.lb{margin:0;cursor:pointer}
 .pp-b{position:absolute;display:inline-flex;align-items:center;justify-content:center;z-index:3;
   box-shadow:0 1px 2px rgba(0,0,0,.4);line-height:1}
 .pp-b .ico-ball,.pp-b .ico-boot{width:clamp(9px,2.7cqw,13px);height:clamp(9px,2.7cqw,13px)}
-.pp-b .pp-ball{font-size:clamp(11px,3.4cqw,16px);line-height:1;display:block}
+.pp-b .pp-ball{font-size:clamp(11px,3.4cqw,16px);line-height:1;display:block;filter:grayscale(1) brightness(1.25) contrast(1.1)} /* كرة بيضاء وسوداء بدل الملوّنة */
 .xipitch.full .pp-b .pp-ball{font-size:clamp(9px,2.8cqw,13px)}
 /* الهدف: أعلى اليسار (شريحة بيضاء، وعدد إن تعدّد) */
 .pp-b.goal{top:-6px;left:-6px;background:#fff;border-radius:999px;padding:1px 2px;gap:1px}
