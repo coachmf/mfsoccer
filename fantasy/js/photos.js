@@ -8,6 +8,7 @@ const PLAYER_PHOTOS_VER = '4';
 
 const PLAYER_PHOTOS = {
   // الصليبخات (17)
+  'SLB|عبدالعزيز البشر': '/assets/players/slb/9',   // من منشور النادي في إنستغرام
   'SLB|فهد زويد': '/assets/players/slb/19',
   'SLB|محمد صفر': '/assets/players/slb/28',   // غير موجود في الكشف بعد — يظهر عند إضافته
   'SLB|علي صفر': '/assets/players/slb/28',
