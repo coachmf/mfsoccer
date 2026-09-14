@@ -8,6 +8,9 @@ const PLAYER_PHOTOS_VER = '4';
 
 const PLAYER_PHOTOS = {
   // الصليبخات (17)
+  'SLB|فهد زويد': '/assets/players/slb/19',
+  'SLB|محمد صفر': '/assets/players/slb/28',   // غير موجود في الكشف بعد — يظهر عند إضافته
+  'SLB|علي صفر': '/assets/players/slb/28',
   'SLB|صالح خميس': '/assets/players/slb/2',
   'SLB|علي الموسوي': '/assets/players/slb/4',
   'SLB|خالد الشهري': '/assets/players/slb/7',
