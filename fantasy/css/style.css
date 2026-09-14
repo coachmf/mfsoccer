@@ -969,3 +969,62 @@ html.lang-en .ps-stats>div{border-left:none;border-right:1px solid var(--line);}
 [data-theme="dark"] .pt-toggle{ background:var(--surface2); box-shadow:inset 0 0 0 1px var(--line); }
 [data-theme="dark"] .pt-toggle button{ color:var(--text2); }
 [data-theme="dark"] .pt-toggle button.active{ background:var(--accent); color:#071a33; box-shadow:0 1px 4px rgba(0,0,0,.35); }
+
+/* ---------- صفحة النقاط (طراز FPL) ---------- */
+.pts-page{max-width:640px;margin:0 auto;}
+.pts-hero{
+  position:relative;overflow:hidden;text-align:center;color:#fff;border-radius:18px;padding:14px 16px 12px;margin-bottom:12px;
+  background:linear-gradient(115deg,#54bdec 0%,var(--kpl1) 45%,var(--kpl2) 100%);box-shadow:0 4px 14px rgba(13,79,146,.18);
+}
+.pts-hero::before{content:'';position:absolute;inset:0;pointer-events:none;
+  background:linear-gradient(115deg,transparent 55%,rgba(255,255,255,.09) 56%,rgba(255,255,255,.09) 72%,transparent 73%);}
+.pts-hero>*{position:relative;}
+.pts-team{font-family:'Almarai';font-weight:800;font-size:1.05rem;}
+.pts-nav{display:flex;align-items:center;justify-content:center;gap:10px;margin-top:6px;}
+.pts-nav button{color:#fff;width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:rgba(255,255,255,.14);transition:.15s;}
+.pts-nav button:hover{background:rgba(255,255,255,.26);}
+.pts-nav button:disabled{opacity:.28;}
+.pts-nav .ic{vertical-align:middle;}
+.pts-nav .prev svg{transform:scaleX(-1);}                 /* السابقة يميناً في العربية */
+[dir="ltr"] .pts-nav .prev svg{transform:none;} [dir="ltr"] .pts-nav .next svg{transform:scaleX(-1);}
+.pts-gw{font-weight:700;font-size:.95rem;min-width:120px;}
+.pts-stats{display:flex;justify-content:center;align-items:flex-end;gap:5%;margin-top:10px;}
+.pts-stats>div{min-width:76px;text-align:center;}
+.pts-stats b{display:block;font-family:'Almarai';font-weight:800;font-size:1.5rem;line-height:1.1;}
+.pts-stats span{display:block;font-size:.7rem;opacity:.78;font-weight:600;margin-top:2px;}
+.pts-stats .big{background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.26);border-radius:14px;padding:8px 14px 7px;min-width:118px;}
+.pts-stats .big b{font-size:2.6rem;}
+.pts-stats .big em{display:inline-block;font-style:normal;font-size:.62rem;font-weight:800;background:#12203a;color:#fff;border-radius:999px;padding:2px 9px;margin-top:6px;}
+.pts-stats .link{cursor:pointer;}
+.pts-note{margin-top:10px;font-size:.72rem;opacity:.82;line-height:1.6;}
+.pts-foot{margin-top:10px;text-align:center;color:var(--text2);line-height:1.7;}
+/* بطاقة اللاعب على ملعب النقاط: الرقم في شريط داكن كما في FPL */
+.pts-slot .pt.score{background:#12203a;color:#fff;font-family:'Almarai';font-weight:800;font-size:.82rem;padding:3px 8px;}
+.pts-slot .pt.score.zero{background:#5b6b8c;}
+.pts-slot .pt.score.bn{background:#8a97b0;}
+.pts-slot .pt.score.neg{background:#d92d20;}
+.pts-slot .pt.score.pend{background:#e6ebf2;color:#3d4a63;font-family:inherit;font-size:.6rem;font-weight:700;}
+.pts-slot .sub{position:absolute;top:20px;left:4px;z-index:3;background:#fff;color:#12203a;font-size:.56rem;font-weight:800;padding:1px 6px;border-radius:999px;box-shadow:0 1px 4px rgba(0,0,0,.3);}
+.pts-slot.out .kit,.pts-slot.out .nm{opacity:.55;}
+.pt-toggle.w4{width:320px;}
+/* بطاقة تفصيل النقاط */
+.bd-gw{margin:0 14px 8px;text-align:center;color:var(--text2);font-size:.8rem;font-weight:700;}
+.bd-match{display:flex;align-items:center;justify-content:center;gap:12px;margin:0 14px 12px;padding:12px;border-radius:14px;background:var(--surface2);border:1px solid var(--line);font-weight:800;}
+.bd-match .tm{display:inline-flex;align-items:center;gap:8px;font-size:.92rem;}
+.bd-match .tm.me{color:var(--accent);}
+.bd-match .crest{width:30px;height:30px;}
+.bd-match .sc{display:inline-flex;justify-content:center;gap:6px;font-family:'Almarai';font-size:1.25rem;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:4px 14px;min-width:74px;text-align:center;white-space:nowrap;}
+.bd-match .sc i{font-style:normal;}   /* نتيجة المضيف بجانب المضيف أياً كان اتجاه الصفحة */
+.bd-match .sc.tm{font-size:.7rem;font-weight:700;color:var(--text2);font-family:inherit;}
+.bd-card{margin:0 14px 12px;background:var(--surface2);border:1px solid var(--line);border-radius:14px;padding:12px 12px 4px;}
+.bd-card h4{margin:0 0 6px;font-size:1rem;font-family:'Almarai';}
+.bd-tbl{width:100%;border-collapse:collapse;font-size:.88rem;}
+.bd-tbl th{font-size:.68rem;color:var(--text3);font-weight:700;text-align:right;padding:6px 4px;}
+.bd-tbl td{padding:10px 4px;border-top:1px solid color-mix(in srgb,var(--line) 70%,transparent);}
+.bd-tbl th:not(:first-child),.bd-tbl td:not(:first-child){text-align:center;font-family:'Almarai';font-weight:800;width:22%;}
+.bd-tbl td:not(:first-child){direction:ltr;unicode-bidi:isolate;}   /* السالب «-1» لا «1-» في الاتجاه العربي */
+.bd-tbl td.neg{color:var(--red);}
+.bd-tbl tr.tot td{font-weight:800;border-top:2px solid var(--line);}
+.bd-tbl tr.tot td:last-child{color:var(--accent);font-size:1.05rem;}
+.bd-tbl tr.tot.cap td{border-top-width:1px;}
+.bd-note{margin:0 14px 12px;font-size:.76rem;color:var(--text2);line-height:1.7;}

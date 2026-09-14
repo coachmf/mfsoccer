@@ -165,6 +165,7 @@ const VIEWS = {
     const next=DB.gw(st.currentGW);
     const liveNow=LIVE.running();
     const hasSquad=team.squad.length>0;
+    const hasPts = typeof this.pointsGws==='function' && this.pointsGws(team).gws.length>0;   // جولة جارية أو معتمدة → صفحة النقاط
 
     const fromGW = st.rules.scoringFromGW||1;
     const gwBlock = (lastFin && lastFin.n < fromGW) ? `
@@ -209,7 +210,7 @@ const VIEWS = {
         ${mainBtn}
         <div class="pill-row">
           <button class="big-pill" onclick="APP.go('transfers')">${UI.icon('swap',18)} الانتقالات</button>
-          <button class="big-pill" onclick="APP.go('${liveNow?'live':(hist.length?'points':'live')}')">${UI.icon(liveNow?'live':'spark',18)} ${liveNow?'المباشر':'ملخص الجولة'}</button>
+          <button class="big-pill" onclick="APP.go('${hasPts?'points':'live'}')">${UI.icon(hasPts?'stats':'live',18)} ${hasPts?'النقاط':'المباشر'}</button>
         </div>
       </div>
       <div class="link-list">
@@ -271,6 +272,7 @@ const VIEWS = {
     const xiV=TEAM.validateXI(team.xi);
     const chips=st.rules.chips;
     const view=this.ui.teamView||'pitch';
+    const hasPts = typeof this.pointsGws==='function' && this.pointsGws(team).gws.length>0;   // زر «النقاط» بعد انطلاق أول جولة
     const CHIP_IC={wildcard:'swap', benchboost:'stats', triplecap:'trophy', freehit:'spark'};
     const chipCard=(key)=>{
       const c=chips[key]; if(!c.enabled) return '';
@@ -297,10 +299,11 @@ const VIEWS = {
       </div>
       <div class="chips-row">${Object.keys(chips).map(chipCard).join('')}</div>
       ${xiV.ok? '' : `<div class="card" style="border-color:var(--red);margin:0 0 10px">${xiV.errs.map(e=>`<div style="color:var(--red)">${e}</div>`).join('')}</div>`}
-      <div class="pt-toggle">
+      <div class="pt-toggle ${hasPts?'w4':''}">
         <button class="${view==='pitch'?'active':''}" onclick="VIEWS.ui.teamView='pitch';APP.render()">الملعب</button>
         <button class="${view==='list'?'active':''}" onclick="VIEWS.ui.teamView='list';APP.render()">قائمة</button>
         <button class="${view==='market'?'active':''}" onclick="VIEWS.ui.teamView='market';APP.render()">الانتقالات</button>
+        ${hasPts ? `<button onclick="APP.go('points')">النقاط</button>` : ''}
       </div>
       ${view==='market'? this.transfers() : `
       ${view==='pitch' && xiV.ok? `<div class="form-now" dir="ltr">${xiV.formation}</div>` : ''}
@@ -371,9 +374,11 @@ const VIEWS = {
     </div>`;
   },
   pitchHTML(team, opt){
+    opt=opt||{};
     const xi=team.xi.map(pid=>DB.player(pid)).filter(Boolean);
+    const slot = opt.slot || (pid=>this.slotHTML(pid, team, opt));   // صفحة النقاط تمرّر بطاقتها الخاصة
     const rows=['G','D','M','F'].map(pos=>
-      `<div class="pitch-row">${xi.filter(p=>p.pos===pos).map(p=>this.slotHTML(p.id, team, opt)).join('')}</div>`);
+      `<div class="pitch-row">${xi.filter(p=>p.pos===pos).map(p=>slot(p.id)).join('')}</div>`);
     return `<div class="pitch">
       <div class="pitch-brand"><img src="assets/logo-light.png" alt=""><img src="assets/logo-light.png" alt=""><img src="assets/logo-light.png" alt=""></div>
       <div class="pf-goal"></div><div class="pf-box6"></div><div class="pf-box"></div><div class="pf-circle"></div>
@@ -1012,6 +1017,9 @@ const VIEWS = {
       try{ res=TEAM.gwPoints({...vt, gwPicks:{[showGw]:picks}}, showGw, st, {live:g.status==='live'}); pts={}; res.rows.forEach(r=>{ pts[r.pid]=r.eff; }); }catch(e){}
     }
     const chip=picks.chip? (st.rules.chips[picks.chip]||{}).label||picks.chip : null;
+    // مع نقاط محتسبة: بطاقات صفحة النقاط (الضغط يفتح تفصيل النقاط) بدل بطاقة العرض العادية
+    const info = (res && typeof this.pointsSlotInfo==='function') ? this.pointsSlotInfo(res, picks, showGw) : null;
+    const opt = info ? {view:true, pts, slot:pid=>this.pointsSlot(pid, info[pid], showGw)} : {view:true, pts};
     let k=0;
     return back+head+`<div class="card">
       <div class="row spread" style="flex-wrap:wrap;gap:8px;margin-bottom:10px">
@@ -1019,10 +1027,10 @@ const VIEWS = {
         <div class="row" style="gap:6px">${chip? `<span class="pill gold">كرت: ${esc(chip)}</span>`:''}${res? `<span class="pill blue">${res.total} نقطة</span>`:''}</div>
       </div>
       <div class="pitch-frame">
-        ${this.pitchHTML(vt, {view:true, pts})}
+        ${this.pitchHTML(vt, opt)}
         <div class="bench-strip">
           ${vt.bench.map(pid=>{ const p=DB.player(pid); const lbl=p.pos==='G'?'حارس':`بديل ${++k} · ${POS_AR[p.pos]}`;
-            return `<div class="bench-slot"><div class="bench-pos">${lbl}</div>${this.slotHTML(pid, vt, {view:true, pts})}</div>`; }).join('')}
+            return `<div class="bench-slot"><div class="bench-pos">${lbl}</div>${opt.slot? opt.slot(pid) : this.slotHTML(pid, vt, opt)}</div>`; }).join('')}
         </div>
       </div>
       ${!locked? `<div class="tiny" style="margin-top:8px">تشكيلته الحالية تظهر بعد إغلاق الجولة ${gw}، كما في فانتسي الدوري الإنجليزي.</div>`:''}

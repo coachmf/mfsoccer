@@ -530,6 +530,27 @@ function scoreFixture(st, fx){
   }
 }
 
+/* تفصيل نقاط لاعب في مباراة، بنداً بنداً — نفس معادلة scoreFixture أعلاه حرفياً
+   (لبطاقة «تفصيل النقاط» على طراز FPL). أي تعديل هناك يُعدَّل هنا. */
+function explainPoints(st, p, r){
+  const S = k => st.scoring[k] ? st.scoring[k].val : 0;
+  const rows=[];
+  if(!p || !r || !(r.min > 0)) return { rows, total:0, played:false };
+  const add=(label,val,pts)=>rows.push({label,val,pts});
+  add('الدقائق', r.min, r.min>=60 ? S('appearance60') : S('appearance'));
+  if(r.g)  add('الأهداف', r.g, r.g*S('goal'+p.pos));
+  if(r.a)  add('صناعة الأهداف', r.a, r.a*S('assist'));
+  if(r.cs){ const k = p.pos==='G'?'csG' : p.pos==='D'?'csD' : p.pos==='M'?'csM' : null; if(k) add('شباك نظيفة', 1, S(k)); }
+  if((p.pos==='G'||p.pos==='D') && r.min>=60 && r.gc) add('أهداف مستقبلة', r.gc, Math.floor(r.gc/2)*S('concededPer2'));
+  if(r.ps) add('تصدي لركلة جزاء', r.ps, r.ps*S('penSave'));
+  if(r.pm) add('إهدار ركلة جزاء', r.pm, r.pm*S('penMiss'));
+  if(r.og) add('هدف عكسي', r.og, r.og*S('ownGoal'));
+  if(r.yc) add('بطاقة صفراء', r.yc, r.yc*S('yellow'));
+  if(r.rc) add('بطاقة حمراء', r.rc, r.rc*S('red'));
+  if(r.bonus) add('نقاط البونص', r.bonus, r.bonus);
+  return { rows, total: rows.reduce((s,x)=>s+x.pts,0), played:true };
+}
+
 /* متوسط الجولة وأعلى نقاط — من نقاط المشتركين الفعليين.
    قبل احتساب الجولة (أو بلا مشتركين) تبقى null وتُعرض «—». */
 function finalizeGWStats(st, gw){

@@ -90,6 +90,18 @@ const NAMES_EN = {
 };
 
 const DICT_MORE = {
+  // صفحة النقاط وبطاقة تفصيل النقاط
+  'الدقائق':'Minutes played', 'الأهداف':'Goals', 'صناعة الأهداف':'Assists', 'شباك نظيفة':'Clean sheet', 'أهداف مستقبلة':'Goals conceded',
+  'تصدي لركلة جزاء':'Penalty save', 'نقاط البونص':'Bonus points', 'تفصيل النقاط':'Points breakdown', 'البند':'Type', 'العدد':'Value',
+  'الأعلى':'Highest', 'نقاطك':'Your points', 'نقاطك الآن':'Your points now', 'لم تُلعب':'Not played', 'بلا مباراة':'No match', 'دخل':'In', 'خرج':'Out',
+  'لم يشارك في المباراة':'Did not play', 'لا مباراة لناديه في هذه الجولة':'His club has no match this gameweek',
+  'لا مباراة — لا نقاط في هذه الجولة':'No match — no points this gameweek', 'الجولة السابقة':'Previous gameweek', 'الجولة التالية':'Next gameweek',
+  'دخل من الدكة تلقائياً مكان لاعب أساسي لم يشارك.':'Auto-subbed in for a starter who did not play.',
+  'لم يشارك، فدخل بديله من الدكة تلقائياً.':'Did not play, so a substitute came in automatically.',
+  'على الدكة — نقاطه لا تُضاف إلى مجموعك (إلا مع كرت الدكة القوية).':'On the bench — his points do not count (unless Bench Boost is active).',
+  'لا نقاط بعد — تظهر نقاط فريقك هنا بعد موعد إغلاق الجولة، وتتحدث مع كل مباراة تُلعب.':'No points yet — your team points appear here after the gameweek deadline and update with every match played.',
+  'النقاط تتحدث مع كل مباراة تُسجَّل، وتُعتمد رسمياً عند إغلاق الجولة. لاعب لم تُلعب مباراته بعد يبقى في تشكيلتك.':'Points update as each match is recorded and become official when the gameweek is closed. A player whose match has not been played stays in your lineup.',
+  'دكة قوية — نقاط الدكة محسوبة ضمن مجموعك':'Bench Boost — bench points count towards your total',
   // الأندية (أسماء طويلة/بديلة)
   'الصليبيخات':'Sulaibikhat', 'الصليبخات':'Sulaibikhat', 'الدوري الكويتي الممتاز':'Kuwait Premier League',
   'فانتسي الدوري الكويتي':'Kuwait League Fantasy', 'منصور الجمعة':'Mansour Aljumah',
