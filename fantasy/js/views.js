@@ -1155,6 +1155,7 @@ const VIEWS = {
         <div class="field"><label>اسم الفريق</label><input id="pr_team" value="${esc(m.teamName)}"></div>
         <button class="btn" onclick="VIEWS.saveProfile()">حفظ</button>
       </div>
+      ${PUSH.card()}
       ${REMIND.card()}
       <div class="card"><h3>الحساب</h3>
         <div class="muted">${APP.signedIn()? 'حسابك محفوظ على الخادم — يتبعك على كل أجهزتك' : 'وضع محلي بدون تسجيل دخول — كل شيء محفوظ على هذا الجهاز'}</div>

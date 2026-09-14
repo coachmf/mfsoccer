@@ -9,7 +9,7 @@
 
    عند كل نشر: ارفع رقم VER فتُبنى ذاكرة جديدة وتُحذف القديمة.
    ========================================================= */
-const VER   = 'mf-2026-09-14-1';
+const VER   = 'mf-2026-09-14-2';
 const SHELL = 'shell-' + VER;
 const RUN   = 'run-'   + VER;
 
@@ -133,5 +133,47 @@ self.addEventListener('fetch', e => {
                           .catch(() => null);
     if (hit) { e.waitUntil(net); return hit; }
     return (await net) || Response.error();
+  })());
+});
+
+/* =========================================================
+   الإشعارات الفورية (Web Push عبر Firebase Cloud Messaging)
+
+   لا نستعمل firebase-messaging-sw.js: خادمان على النطاق نفسه
+   يتنازعان السيطرة وأحدهما يُبطل الآخر. بدلاً منه نستقبل الدفعة
+   هنا مباشرة، ويمرّر PUSH تسجيلَ هذا الخادم إلى getToken.
+
+   شكل الحمولة يختلف بين حملات Console وواجهة HTTP v1، فنقرأ
+   الشكلين ونسقط بأمان إلى رسالة عامة بدل إشعار فارغ.
+   ========================================================= */
+self.addEventListener('push', e => {
+  let p = {};
+  try { p = e.data ? e.data.json() : {}; } catch (err) { p = {}; }
+  const n = p.notification || (p.data && p.data.notification) || p.data || p;
+  const title = n.title || 'الدوري الكويتي الممتاز';
+  const body  = n.body  || n.message || '';
+  const url   = (p.fcmOptions && p.fcmOptions.link) || (p.data && p.data.url) || n.click_action || '/';
+  e.waitUntil(self.registration.showNotification(title, {
+    body,
+    icon: '/icon-192.png',
+    badge: '/icon-192.png',
+    dir: 'rtl',
+    lang: 'ar',
+    tag: n.tag || 'mf',
+    renotify: true,
+    data: { url }
+  }));
+});
+
+self.addEventListener('notificationclick', e => {
+  e.notification.close();
+  const url = (e.notification.data && e.notification.data.url) || '/';
+  e.waitUntil((async () => {
+    const all = await clients.matchAll({ type: 'window', includeUncontrolled: true });
+    /* تبويب مفتوح على الموقع: نركّز عليه بدل فتح نسخة ثانية */
+    for (const c of all) {
+      if (c.url.indexOf(self.location.origin) === 0) { await c.focus(); return c.navigate ? c.navigate(url) : null; }
+    }
+    return clients.openWindow(url);
   })());
 });

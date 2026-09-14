@@ -27,6 +27,8 @@ const APP = {
     setInterval(()=>this.tickCountdown(),30000);
     setInterval(()=>REMIND.check(),60000);
     REMIND.check();
+    /* تجديد رمز FCM بصمت — المتصفح يُبطله دورياً */
+    try{ PUSH.refresh(); }catch(e){}
     // نشر جولة أو احتسابها على الخادم يصل للأجهزة المفتوحة بلا إعادة تحميل
     setInterval(()=>this.pollCloud(), 5*60000);
     document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) this.pollCloud(); });
