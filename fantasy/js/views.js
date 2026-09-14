@@ -210,7 +210,7 @@ const VIEWS = {
         ${mainBtn}
         <div class="pill-row">
           <button class="big-pill" onclick="APP.go('transfers')">${UI.icon('swap',18)} الانتقالات</button>
-          <button class="big-pill" onclick="APP.go('${hasPts?'points':'live'}')">${UI.icon(hasPts?'stats':'live',18)} ${hasPts?'النقاط':'المباشر'}</button>
+          <button class="big-pill" onclick="APP.go('points')">${UI.icon('stats',18)} النقاط</button>
         </div>
       </div>
       <div class="link-list">
@@ -875,7 +875,7 @@ const VIEWS = {
         <div class="row" style="width:100%">
           <div class="team" style="flex:1;font-weight:700">${UI.crest(f.h,'lg')} ${DB.club(f.h).name}</div>
           <div class="score ${f.status==='L'?'live':''}" style="font-size:1.3rem;min-width:88px">
-            ${f.status!=='U'? f.hs+' - '+f.as : 'ضد'}
+            ${f.status!=='U'? f.hs+' - '+f.as : ''}
             <span class="t">${f.status==='L'? f.live.min+"'" : f.status==='F'?'انتهت':UI.fmtDateShort(f.date)}</span></div>
           <div class="team a" style="flex:1;font-weight:700">${UI.crest(f.a,'lg')} ${DB.club(f.a).name}</div>
         </div>
