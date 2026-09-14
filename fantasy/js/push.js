@@ -40,8 +40,22 @@ const PUSH = {
     try{ await this._token(); }catch(e){ /* صامت — لا نزعج المستخدم عند الإقلاع */ }
   },
 
+  /* صفحة الفانتسي لا تسجّل sw.js — التسجيل في الصفحة الرئيسية وحدها.
+     فمن يفتح /fantasy/ مباشرة لا خادم خدمة لديه، و`ready` تنتظر للأبد
+     بلا خطأ. نسجّله هنا إن غاب، ونضع سقفاً زمنياً حتى لا يتجمّد الزر. */
+  async _reg(){
+    let reg = await navigator.serviceWorker.getRegistration('/');
+    if(!reg) reg = await navigator.serviceWorker.register('/sw.js', {scope:'/'});
+    if(reg.active) return reg;
+    await Promise.race([
+      navigator.serviceWorker.ready,
+      new Promise((_,rej)=>setTimeout(()=>rej(new Error('sw-timeout')), 10000))
+    ]);
+    return (await navigator.serviceWorker.getRegistration('/')) || reg;
+  },
+
   async _token(){
-    const reg = await navigator.serviceWorker.ready;
+    const reg = await this._reg();
     return await firebase.messaging().getToken({ vapidKey: this.VAPID, serviceWorkerRegistration: reg });
   },
 
