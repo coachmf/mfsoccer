@@ -550,8 +550,8 @@ details.squadbox summary label.lb{margin:0;cursor:pointer}
 .xipitch{position:relative;container-type:inline-size;border-radius:10px;overflow:hidden;
   user-select:none;max-width:400px;margin-inline:auto;
   background:linear-gradient(#1f7a45,#166035)}
-.xipitch.half{aspect-ratio:3/4}          /* فريق واحد */
-.xipitch.full{aspect-ratio:1/1.82}       /* الفريقان وجهاً لوجه: أطول ليتّسع للـ22 لاعباً */
+.xipitch.half{aspect-ratio:5/7}          /* فريق واحد — أطول قليلاً لتتّسع البطاقات */
+.xipitch.full{aspect-ratio:1/2}          /* الفريقان وجهاً لوجه: أطول ليتّسع للـ22 بطاقة */
 /* على ملعب الفريقين: دوائر وأسماء وشارات أصغر لتخفيف الازدحام */
 .xipitch.full .pp-dot{width:clamp(19px,7cqw,26px);height:clamp(19px,7cqw,26px);
   font-size:clamp(9px,2.9cqw,12px);border-width:1.25px}
@@ -582,6 +582,29 @@ details.squadbox summary label.lb{margin:0;cursor:pointer}
   display:grid;place-items:center;background:var(--pc);color:var(--pt,#0B1F3A);font-weight:800;
   font-size:clamp(10px,3.4cqw,14px);line-height:1;box-shadow:0 2px 6px rgba(0,0,0,.35);
   border:1.5px solid var(--pe,rgba(255,255,255,.85));font-variant-numeric:tabular-nums}
+/* بطاقة اللاعب على الملعب: خلفية بتدرّج لون النادي، القصّة داخلها، الرقم في الزاوية */
+.pp-card{position:relative;display:block;width:clamp(44px,16cqw,66px);aspect-ratio:4/5;border-radius:8px;
+  background:linear-gradient(165deg,var(--pc) 0%,var(--pd,#0B1F3A) 100%);
+  border:1.5px solid var(--pe,rgba(255,255,255,.85));box-shadow:0 3px 8px rgba(0,0,0,.4);overflow:visible}
+.pp-card .pp-img{position:absolute;left:0;right:0;top:0;width:100%;height:78%;object-fit:contain;object-position:bottom center;
+  border-radius:8px 8px 0 0;pointer-events:none}
+/* الاسم شريط داخل البطاقة من الأسفل — فلا يزيد ارتفاع العقدة ولا تتداخل الخطوط */
+.pp-card .pp-nm{position:absolute;left:0;right:0;bottom:0;height:22%;display:flex;align-items:center;justify-content:center;
+  background:rgba(8,20,40,.78);color:#fff;font-size:clamp(7px,2.4cqw,10px);font-weight:700;padding:0 3px;
+  border-radius:0 0 7px 7px;text-shadow:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:none}
+.pp-card.nophoto .pp-num{position:absolute;inset:0 0 22% 0;display:grid;place-items:center;width:auto;height:auto;background:none;
+  color:var(--pt,#fff);font-size:clamp(13px,4.6cqw,20px);padding:0;border-radius:8px 8px 0 0}
+.pp-card .pp-num{position:absolute;top:2px;right:2px;min-width:1.5em;padding:1px 3px;border-radius:5px;
+  background:rgba(255,255,255,.92);color:#0B1F3A;font-weight:800;font-size:clamp(8px,2.6cqw,11px);line-height:1.15;
+  font-variant-numeric:tabular-nums;text-align:center;z-index:2}
+.xipitch.full .pp-card{width:clamp(34px,12.5cqw,52px);border-width:1.25px;border-radius:6px}
+.xipitch.full .pp-card .pp-nm{font-size:clamp(6px,2cqw,8.5px)}
+.xipitch.full .pp-card .pp-num{font-size:clamp(7px,2.2cqw,9.5px)}
+.xipitch.full .pp-card.nophoto .pp-num{font-size:clamp(11px,3.6cqw,16px)}
+.pp-card .pp-b.goal{top:-6px;left:-6px}
+.pp-card .pp-b.assist{bottom:-6px;right:-6px}
+.pp-card .pp-b.card{top:-5px;right:auto;left:-4px;top:auto;bottom:34%}
+.pp-card .pp-b.off{bottom:-5px;left:-5px}
 .pp-nm{font-size:clamp(8.5px,2.9cqw,12px);color:#fff;font-weight:600;max-width:100%;
   text-shadow:0 1px 3px rgba(0,0,0,.7);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 /* شارات الأحداث على شارة اللاعب: في الأركان الأربعة، بأحجام تتناسب مع الملعب */
@@ -4110,16 +4133,27 @@ function spotBadges(ev){
   return b;
 }
 const shortName = s => { const w=String(s||"").trim().split(/\s+/); return w.length>1 ? w[w.length-1] : (w[0]||""); };
+/* بطاقة لاعب على الملعب (طلب منصور 2026-09-15): بطاقة بألوان النادي فيها قصّة اللاعب (إن وُجدت) ورقمه،
+   والاسم تحتها. بلا صورة: البطاقة نفسها بالرقم كبيراً. الشارات (هدف/صناعة/كرت/خروج) على أركان البطاقة كما كانت. */
 function spotHTML(p, x, y, n, kit, ev, compact){
   const nm = compact ? shortName(p.n) : p.n;
+  const cut = (typeof LOCAL_PHOTOS!=="undefined") ? LOCAL_PHOTOS[p.n] : null;
+  const num = p.s||"–";
   return `<div class="pp-spot${compact?" cmp":""}" style="right:${x}%;top:${y}%;max-width:${(compact?90/(n+1):96/(n+1)).toFixed(1)}%">
-    <span class="pp-dot" style="${dotVars(kit)}">${p.s||"–"}${spotBadges(ev)}</span>
-    <span class="pp-nm">${esc(nm)}</span></div>`;
+    <span class="pp-card${cut?"":" nophoto"}" style="${dotVars(kit)}">
+      ${cut?`<img class="pp-img" src="${cut}_f.webp?v=4" alt="" loading="lazy" draggable="false">`:""}
+      <span class="pp-num">${num}</span>
+      <span class="pp-nm">${esc(nm)}</span>${spotBadges(ev)}</span></div>`;
 }
 /* القميص الفاتح يحتاج حافة غامقة ليُرى على العشب، والغامق حافة فاتحة */
 function dotVars(kit){
   const edge = lumOf(kit.bg)>.72 ? "rgba(11,31,58,.45)" : "rgba(255,255,255,.85)";
-  return `--pc:${kit.bg};--pt:${kit.fg};--pe:${edge}`;
+  return `--pc:${kit.bg};--pd:${darkenHex(kit.bg,.55)};--pt:${kit.fg};--pe:${edge}`;
+}
+function darkenHex(h,f){
+  const c=String(h||"").replace("#",""); if(c.length!==6) return "#0B1F3A";
+  const v=[0,2,4].map(i=>Math.round(parseInt(c.slice(i,i+2),16)*f));
+  return "#"+v.map(x=>x.toString(16).padStart(2,"0")).join("");
 }
 /* ===== ألوان القميص على الملعب =====
    لكل نادٍ لون قميص ولون رقم. الافتراضي مشتقّ من ألوان النادي: اللون
