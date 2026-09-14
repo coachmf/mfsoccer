@@ -114,8 +114,9 @@ UI.playerAvatar=function(p, size){
   size=size||36;
   const b=this.playerPhotoBase(p);
   if(b){
-    const src = (size>60 ? b+'.webp' : b+'_s.webp') + this.photoVer();
-    const w=Math.round(size*0.8);
+    /* القوائم: قصّة الرأس والكتفين (_f) — إطار واحد للجميع مهما اختلف طول الجسم في مصدر الصورة */
+    const src = (size>60 ? b+'.webp' : b+'_f.webp') + this.photoVer();
+    const w=size>60? Math.round(size*0.8) : size;
     return `<img class="avatar photo-cut" style="width:${w}px;height:${size}px" src="${esc(src)}" alt="" loading="lazy">`;
   }
   return `<span class="avatar kit-av" style="width:${size}px;height:${size}px">${this.kitImg(p.club, p.pos==='G', size)}</span>`;
