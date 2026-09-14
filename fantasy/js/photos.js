@@ -122,6 +122,9 @@ const PLAYER_PHOTOS = {
   'SAL|عبدالرحمن الفضلي': '/assets/players/sal/35',
   'SAL|ديفيــد سامبيسا': '/assets/players/sal/77',
   // الكويت (20)
+  'KUW|فهد حمود': '/assets/players/kuw/13',   // غير موجود في الكشف بعد
+  'KUW|عبدالرحمن كميل': '/assets/players/kuw/40',   // حارس، غير موجود في الكشف بعد
+  'KUW|ياسين الخنيسي': '/assets/players/kuw/27',
   'KUW|المهدي برحمة': '/assets/players/kuw/66',
   'KUW|طه الخنيسي': '/assets/players/kuw/27',   // يُفعَّل تلقائياً عند إضافته للكشف
   'KUW|خالد الرشيدي': '/assets/players/kuw/1',
