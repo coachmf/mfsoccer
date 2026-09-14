@@ -8,6 +8,7 @@ const PLAYER_PHOTOS_VER = '4';
 
 const PLAYER_PHOTOS = {
   // الصليبخات (17)
+  'SLB|مبارك سعيد': '/assets/players/slb/23',   // صورة من Sports Corner (دقة أقل)
   'SLB|أوكتشكو أربيزو': '/assets/players/slb/97',   // من منشور النادي
   'SLB|عبدالعزيز البشر': '/assets/players/slb/9',   // من منشور النادي في إنستغرام
   'SLB|فهد زويد': '/assets/players/slb/19',
