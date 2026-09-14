@@ -100,12 +100,22 @@ UI.pitchKit=function(p,w){ return `<div class="pk">${this.kitImg(p.club,p.pos===
 
 /* الصورة تظهر فقط لمن له صورة رسمية معتمدة في js/photos.js (بدأنا بالصليبخات 2026-09-14)؛
    من لا صورة له يبقى بالقميص كما كان (طلب منصور 2026-09-02). بطاقات الملعب تبقى قمصاناً دائماً (UI.pitchKit). */
+/* الصور الرسمية من js/photos.js فقط (نادي نادي بعد التحقق). القيمة مسار أساس بلا امتداد:
+   <base>.webp = قصّة كبيرة 800×1000 شفافة (البطاقة والملف)، <base>_s.webp = 240×300 للقوائم.
+   بلا دائرة خلف اللاعب: القصّة واقفة على خلفية الصف كما في مواقع الدوريات الرسمية. */
+UI.playerPhotoBase=function(p){
+  if(typeof PLAYER_PHOTOS==='undefined' || !p) return null;
+  return PLAYER_PHOTOS[p.club+'|'+p.name] || null;
+};
+UI.playerPhoto=function(p){ const b=this.playerPhotoBase(p); return b? b+'.webp' : null; };
+UI.playerPhotoSmall=function(p){ const b=this.playerPhotoBase(p); return b? b+'_s.webp' : null; };
 UI.playerAvatar=function(p, size){
   size=size||36;
-  const ph=this.playerPhoto(p);
-  if(ph){
-    const c=DB.club(p.club);
-    return `<img class="avatar photo-av" style="width:${size}px;height:${size}px;object-fit:cover;background:#fff;border:2px solid ${c.color}" src="${esc(ph)}" alt="" loading="lazy">`;
+  const b=this.playerPhotoBase(p);
+  if(b){
+    const src = size>60 ? b+'.webp' : b+'_s.webp';
+    const w=Math.round(size*0.8);
+    return `<img class="avatar photo-cut" style="width:${w}px;height:${size}px" src="${esc(src)}" alt="" loading="lazy">`;
   }
   return `<span class="avatar kit-av" style="width:${size}px;height:${size}px">${this.kitImg(p.club, p.pos==='G', size)}</span>`;
 };

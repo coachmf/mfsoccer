@@ -491,8 +491,8 @@ const VIEWS = {
         <span class="ptschip fdr-l${x.lvl}">${x.lvl}</span></div>`).join('');
     UI.sheet(`
       ${UI.statusBanner(p)}
-      <div class="ps-head">
-        <div class="ps-kit">${UI.playerPhoto(p)? `<img class="ps-photo" src="${esc(UI.playerPhoto(p))}" alt="">` : UI.kitShirt(p.club, p.pos==='G', 84)}</div>
+      <div class="ps-head${UI.playerPhoto(p)?' ps-head-photo':''}" ${UI.playerPhoto(p)?`style="background:linear-gradient(135deg,${c.color} 0%,${c.dark} 100%)"`:''}>
+        <div class="ps-kit">${UI.playerPhoto(p)? `<img class="ps-photo ps-cut" src="${esc(UI.playerPhoto(p))}" alt="">` : UI.kitShirt(p.club, p.pos==='G', 84)}</div>
         <div style="flex:1">
           <div class="ps-pos">${POS_FULL[p.pos]}</div>
           <div class="ps-name">${esc(p.name)}</div>

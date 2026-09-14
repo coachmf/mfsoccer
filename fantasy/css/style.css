@@ -1028,3 +1028,9 @@ html.lang-en .ps-stats>div{border-left:none;border-right:1px solid var(--line);}
 .bd-tbl tr.tot td:last-child{color:var(--accent);font-size:1.05rem;}
 .bd-tbl tr.tot.cap td{border-top-width:1px;}
 .bd-note{margin:0 14px 12px;font-size:.76rem;color:var(--text2);line-height:1.7;}
+
+/* قصّات اللاعبين الرسمية (بلا دائرة) */
+.avatar.photo-cut{border-radius:0;background:none;border:none;box-shadow:none;object-fit:contain;object-position:bottom center;flex:none;}
+.ps-photo.ps-cut{width:104px;height:130px;border-radius:0;background:none;border:none;box-shadow:none;object-fit:contain;object-position:bottom center;
+  filter:drop-shadow(0 6px 10px rgba(0,0,0,.35));margin:-16px 0 -16px;}
+.ps-head.ps-head-photo{overflow:hidden;}
