@@ -98,9 +98,14 @@ UI.kitImg=function(clubId,isGK,w){
 /* بطاقة اللاعب على الملعب: القميص بدل الصورة (الصورة تبقى في البطاقة والبروفايل) */
 UI.pitchKit=function(p,w){ return `<div class="pk">${this.kitImg(p.club,p.pos==='G',w)}</div>`; };
 
-/* لا صور لاعبين في أي مكان (طلب منصور 2026-09-02) — القميص يحل محل الصورة في القوائم والبطاقة والبروفايل */
-UI.playerPhoto=function(){ return null; };
+/* الصورة تظهر فقط لمن له صورة رسمية معتمدة في js/photos.js (بدأنا بالصليبخات 2026-09-14)؛
+   من لا صورة له يبقى بالقميص كما كان (طلب منصور 2026-09-02). بطاقات الملعب تبقى قمصاناً دائماً (UI.pitchKit). */
 UI.playerAvatar=function(p, size){
   size=size||36;
+  const ph=this.playerPhoto(p);
+  if(ph){
+    const c=DB.club(p.club);
+    return `<img class="avatar photo-av" style="width:${size}px;height:${size}px;object-fit:cover;background:#fff;border:2px solid ${c.color}" src="${esc(ph)}" alt="" loading="lazy">`;
+  }
   return `<span class="avatar kit-av" style="width:${size}px;height:${size}px">${this.kitImg(p.club, p.pos==='G', size)}</span>`;
 };

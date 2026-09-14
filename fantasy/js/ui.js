@@ -76,7 +76,7 @@ const UI = {
     if(typeof PLAYER_PHOTOS!=='undefined'){
       const v=PLAYER_PHOTOS[p.club+'|'+p.name];
       if(typeof v==='number') return 'assets/players/'+v+'.png';
-      if(typeof v==='string') return 'assets/players/'+v;
+      if(typeof v==='string') return (v.startsWith('/')||/^https?:/.test(v))? v : 'assets/players/'+v;
     }
     return null;
   },

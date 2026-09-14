@@ -39,9 +39,11 @@
     return `<div class="pk">${withNumber(this.kitImg(p.club, p.pos==='G', w), p, w)}</div>`;
   };
 
-  /* القميص في القوائم والجداول ونافذة اختيار اللاعب */
+  /* القميص في القوائم والجداول ونافذة اختيار اللاعب — من له صورة رسمية (kits.js/photos.js) تبقى صورته */
+  const avatarWithPhoto = UI.playerAvatar;
   UI.playerAvatar = function(p, size){
     size = size || 36;
+    if(this.playerPhoto && this.playerPhoto(p)) return avatarWithPhoto.call(this, p, size);
     return `<span class="avatar kit-av" style="width:${size}px;height:${size}px">`
       + withNumber(this.kitImg(p.club, p.pos==='G', size), p, size) + `</span>`;
   };
