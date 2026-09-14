@@ -4781,7 +4781,9 @@ function pav(name, size, placeholder){
   /* القصّة الرسمية الموحّدة لها الأولوية على الصورة المرفوعة من الإدارة (حتى يتوحّد الشكل) */
   const cut = PHOTOSON ? LOCAL_PHOTOS[name] : null;
   if(cut) return `<img class="pcut" src="${cut}_f.webp?v=4" alt="${esc(name)}" loading="lazy">`;
-  const src = PHOTOSON ? PHOTOS[name] : null;
+  /* الصور المرفوعة من لوحة الإدارة (PHOTOS في السحابة) لم تعد تُعرض في الموقع — طلب منصور 2026-09-15:
+     الشكل الرسمي الموحّد فقط. البيانات نفسها باقية في السحابة ولوحة الإدارة، وتُعرض في المعاينة هناك فقط. */
+  const src = (PHOTOSON && placeholder) ? PHOTOS[name] : null;
   if(src) return `<span class="pav" style="width:${S}px;height:${S}px">
     <img src="${src}" alt="${esc(name)}" style="${pavStyle(name)}"></span>`;
   /* بلا صورة: لا يظهر شيء — شعار النادي وحده بجانب الاسم.
