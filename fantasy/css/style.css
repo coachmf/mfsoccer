@@ -1030,7 +1030,11 @@ html.lang-en .ps-stats>div{border-left:none;border-right:1px solid var(--line);}
 .bd-note{margin:0 14px 12px;font-size:.76rem;color:var(--text2);line-height:1.7;}
 
 /* قصّات اللاعبين الرسمية (بلا دائرة) */
-.avatar.photo-cut{border-radius:0;background:none;border:none;box-shadow:none;object-fit:contain;object-position:bottom center;flex:none;}
+.avatar.photo-cut{border-radius:0;background:none;border:none;box-shadow:none;object-fit:contain;object-position:bottom center;flex:none;
+  /* القصّة تمتد على ارتفاع الصف كاملاً (طلب منصور): تتجاوز المقاس المضمّن في القوائم والجداول */
+  height:4.8em !important;width:3.9em !important;margin:-12px 0 -12px;filter:drop-shadow(0 3px 5px rgba(0,0,0,.35));}
+.tbl td .avatar.photo-cut,.row .avatar.photo-cut{height:4.8em !important;width:3.9em !important;}
+.cmp-res .avatar.photo-cut{height:3.2em !important;width:2.6em !important;margin:-6px 0;}
 .ps-photo.ps-cut{width:104px;height:130px;border-radius:0;background:none;border:none;box-shadow:none;object-fit:contain;object-position:bottom center;
   filter:drop-shadow(0 6px 10px rgba(0,0,0,.35));margin:-16px 0 -16px;}
 .ps-head.ps-head-photo{overflow:hidden;}
