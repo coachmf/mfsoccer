@@ -12,7 +12,7 @@ const KIT_STYLE = {
   KUW:{ body:'#ffffff', neck:'round', collar:'#E31B23', cuff:'#E31B23', panel:'#E31B23', crest:'#E31B23',
         gk:{ body:'#151515', collar:'#E31B23', cuff:'#E31B23' } },   // حارس الكويت أسود (منصور)
   QAD:{ body:'#F6B800', neck:'round', collar:'#141414', cuff:'#141414', crest:'#141414',
-        gk:{ body:'#ff5fa8', collar:'#141414', cuff:'#141414' } },  // حارس القادسية وردي (منصور)
+        gk:{ body:'#8b1a2b', collar:'#ffffff', cuff:'#ffffff', crest:'#ffffff' } },  // حارس القادسية عنابي (منصور 2026-09-15)
   ARB:{ body:'#0f8a4b', neck:'v', collar:'#ffffff', collar2:'#0b4a2a', cuff:'#ffffff', cuff2:'#0b4a2a', crest:'#ffffff',
         gk:{ body:'#182a63', collar:'#ffffff', collar2:'#0b1a44', cuff:'#ffffff', cuff2:'#0b1a44' } },
   SLB:{ body:'#e3262b', neck:'v', collar:'#ffffff', shoulder:'#ffffff', cuff:'#ffffff', cuff2:'#e3262b', crest:'#ffffff',

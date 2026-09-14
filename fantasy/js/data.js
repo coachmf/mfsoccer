@@ -15,7 +15,7 @@ const SEED_CLUBS = [
   { id:'SHB', name:'الشباب',     short:'الشباب',    crest:'assets/crests/shabab.png',      color:'#1f4fd1', dark:'#0b1f5c', strength:3.5, stadium:'ملعب الشباب' },
   { id:'JAH', name:'الجهراء',    short:'الجهراء',   crest:'assets/crests/jahra.png',       color:'#0E3C8C', dark:'#071e4a', strength:3.5, stadium:'استاد مبارك العيار' },
   { id:'FAH', name:'الفحيحيل',   short:'الفحيحيل',  crest:'assets/crests/fahaheel.png',    color:'#d81f26', dark:'#480108', strength:3.0, stadium:'ملعب الفحيحيل' },
-  { id:'SAH', name:'الساحل',     short:'الساحل',    crest:'assets/crests/sahel.png',       color:'#f5d90a', dark:'#1e3f9e', strength:3.0, stadium:'ملعب الساحل' },
+  { id:'SAH', name:'الساحل',     short:'الساحل',    crest:'assets/crests/sahel.png',       color:'#f5d90a', dark:'#b38f00', strength:3.0, stadium:'ملعب الساحل' },
   { id:'TDM', name:'التضامن',    short:'التضامن',   crest:'assets/crests/tadamon.png',     color:'#1b4fd8', dark:'#10213c', strength:2.5, stadium:'ملعب التضامن' },
   { id:'SLB', name:'الصليبيخات', short:'الصليبيخات', crest:'assets/crests/sulaibikhat.png', color:'#d81f26', dark:'#480108', strength:2.5, stadium:'استاد عبدالله الخليفة الصباح' },
 ];
