@@ -8,6 +8,8 @@ const PLAYER_PHOTOS_VER = '4';
 
 const PLAYER_PHOTOS = {
   // الصليبخات (17)
+  'SLB|عثمان الفيلكاوي': '/assets/players/slb/11',   // من صورة تتويج
+  'SLB|مساعد طراد': '/assets/players/slb/5',   // تركيب: وجهه الحقيقي على طقم النادي (مؤقت)
   'SLB|مبارك سعيد': '/assets/players/slb/23',   // صورة من Sports Corner (دقة أقل)
   'SLB|أوكتشكو أربيزو': '/assets/players/slb/97',   // من منشور النادي
   'SLB|عبدالعزيز البشر': '/assets/players/slb/9',   // من منشور النادي في إنستغرام
