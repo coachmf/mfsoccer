@@ -95,6 +95,7 @@ const PLAYER_PHOTOS = {
   'FAH|محمد الفارسي': '/assets/players/fah/70',
   'FAH|خالد سليمان الشمري': '/assets/players/fah/77',
   // السالمية (25)
+  'SAL|معاذ الاصيمع': '/assets/players/sal/19',
   'SAL|عبدالله الايوب': '/assets/players/sal/1',
   'SAL|عبدالله الجزاف': '/assets/players/sal/2',
   'SAL|عبد الرحمن الخضر': '/assets/players/sal/3',
