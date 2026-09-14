@@ -4778,12 +4778,12 @@ function pavStyle(name){
 }
 function pav(name, size, placeholder){
   const S=size||PAVSIZE;
+  /* القصّة الرسمية الموحّدة لها الأولوية على الصورة المرفوعة من الإدارة (حتى يتوحّد الشكل) */
+  const cut = PHOTOSON ? LOCAL_PHOTOS[name] : null;
+  if(cut) return `<img class="pcut" src="${cut}_f.webp?v=4" alt="${esc(name)}" loading="lazy">`;
   const src = PHOTOSON ? PHOTOS[name] : null;
   if(src) return `<span class="pav" style="width:${S}px;height:${S}px">
     <img src="${src}" alt="${esc(name)}" style="${pavStyle(name)}"></span>`;
-  const cut = PHOTOSON ? LOCAL_PHOTOS[name] : null;
-  /* قصّة رسمية شفافة واقفة، بلا إطار ولا خلفية، بحجم يقارب الشعار المجاور */
-  if(cut) return `<img class="pcut" src="${cut}_f.webp?v=4" alt="${esc(name)}" loading="lazy">`;
   /* بلا صورة: لا يظهر شيء — شعار النادي وحده بجانب الاسم.
      الحروف الأولى تُعرض في لوحة المدير فقط لتمييز من ينقصه صورة. */
   if(!placeholder) return "";
