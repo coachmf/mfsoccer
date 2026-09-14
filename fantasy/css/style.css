@@ -1032,21 +1032,24 @@ html.lang-en .ps-stats>div{border-left:none;border-right:1px solid var(--line);}
 /* قصّات اللاعبين الرسمية (بلا دائرة) */
 .avatar.photo-cut{border-radius:0;background:none;border:none;box-shadow:none;object-fit:contain;object-position:bottom center;flex:none;
   /* القصّة تمتد على ارتفاع الصف كاملاً (طلب منصور): تتجاوز المقاس المضمّن في القوائم والجداول */
-  height:4.8em !important;width:3.9em !important;margin:-12px 0 -12px;filter:drop-shadow(0 3px 5px rgba(0,0,0,.35));}
+  height:4.8em !important;width:3.9em !important;margin:-12px 0 -12px;object-position:top center;filter:drop-shadow(0 3px 5px rgba(0,0,0,.35));}
 .tbl td .avatar.photo-cut,.row .avatar.photo-cut{height:4.8em !important;width:3.9em !important;}
 .cmp-res .avatar.photo-cut{height:3.2em !important;width:2.6em !important;margin:-6px 0;}
-.ps-photo.ps-cut{width:104px;height:130px;border-radius:0;background:none;border:none;box-shadow:none;object-fit:contain;object-position:bottom center;
+.ps-photo.ps-cut{width:120px;height:150px;border-radius:0;background:none;border:none;box-shadow:none;object-fit:contain;object-position:top center;
   filter:drop-shadow(0 6px 10px rgba(0,0,0,.35));margin:-16px 0 -16px;}
 .ps-head.ps-head-photo{overflow:hidden;}
 
 /* ملف اللاعب: القصّة الكبيرة على تدرّج ألوان ناديه */
 .card.pp-head{color:#fff;overflow:hidden;}
+.card.pp-head > .row{flex-wrap:nowrap;align-items:center;}
+.card.pp-head h2{font-size:1.25rem;line-height:1.3;}
 .card.pp-head h2,.card.pp-head b,.card.pp-head .tiny{color:#fff;}
 .card.pp-head .pill{background:rgba(255,255,255,.18);color:#fff;border-color:transparent;}
 .card.pp-head .pill.blue{background:rgba(255,255,255,.92);color:#0b2a6b;}
 .card.pp-head .btn.sec,.card.pp-head .btn.ghost{background:rgba(255,255,255,.92);color:#0b2a6b;border-color:transparent;}
-.pp-cut{width:120px;height:150px;object-fit:contain;object-position:bottom center;flex:none;filter:drop-shadow(0 6px 10px rgba(0,0,0,.35));margin:-16px 0 -18px;}
-@media (max-width:520px){.pp-cut{width:96px;height:120px;}}
+/* كل القصّات بنفس التأطير (الوجه عند 8.5% من أعلى الصورة) فالمحاذاة من الأعلى تجعل الرؤوس في مكان واحد مهما اختلف طول الجسم في المصدر */
+.pp-cut{width:150px;height:188px;object-fit:contain;object-position:top center;flex:none;align-self:center;filter:drop-shadow(0 6px 10px rgba(0,0,0,.35));margin:-6px 0 -34px;}
+@media (max-width:520px){.pp-cut{width:116px;height:145px;margin:-4px 0 -26px;}}
 
 /* أزرار ملف اللاعب: صف مستقل أسفل البطاقة، محاذاة لليسار (بعيداً عن القصّة التي تقف يميناً) */
 .pp-actions{width:100%;display:flex;gap:8px;justify-content:flex-end;margin-top:6px;}

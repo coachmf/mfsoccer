@@ -776,15 +776,15 @@ const VIEWS = {
     <div class="card${UI.playerPhoto(p)?' pp-head':''}" style="margin-bottom:14px${UI.playerPhoto(p)?`;background:linear-gradient(135deg,${c.color} 0%,${c.dark} 100%)`:''}">
       <div class="row" style="gap:16px;flex-wrap:wrap">
         ${UI.playerPhoto(p)? `<img class="pp-cut" src="${esc(UI.playerPhoto(p))}" alt="">` : UI.playerAvatar(p,74)}
-        <div style="flex:1">
+        <div style="flex:1 1 0;min-width:0">
           <h2>${esc(p.name)} ${p.shirt?`<span class="tiny">#${p.shirt}</span>`:''} ${UI.statusPill(p)}</h2>
-          <div class="row" style="gap:8px;margin-top:4px">${UI.crest(p.club)} <b>${c.name}</b> <span class="pill">${POS_AR[p.pos]}</span>
+          <div class="row" style="gap:8px;margin-top:4px;flex-wrap:wrap">${UI.crest(p.club)} <b>${c.name}</b> <span class="pill">${POS_AR[p.pos]}</span>
           <span class="pill blue">${fmtK(p.price)} ${p.price>p.startPrice?'▲':p.price<p.startPrice?'▼':''}</span></div>
         </div>
-        <div class="pp-actions">
+      </div>
+      <div class="pp-actions">
         ${team&&team.squad.length&&!team.squad.includes(pid)? `<button class="btn sec" onclick="APP.go('transfers')">تعاقد معه</button>`:''}
         <button class="btn ghost" onclick="VIEWS.cmpOpen('${pid}')">قارن</button>
-        </div>
       </div>
     </div>
     <div class="grid g4" style="margin-bottom:14px">
