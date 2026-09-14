@@ -197,7 +197,9 @@ const PLAYER_PHOTOS = {
   'QAD|ايوب لخضر': '/assets/players/qad/77',
   'QAD|سالم الريس': '/assets/players/qad/78',
   // الجهراء (16)
-  'JAH|مبارك الحربي': '/assets/players/jah/1',
+  'JAH|عبدالله الداحس': '/assets/players/jah/80',
+  'JAH|جاسم العنزي': '/assets/players/jah/4',
+  'JAH|عادل جاسم الشمري': '/assets/players/jah/8',
   'JAH|عبدالعزيز رسام': '/assets/players/jah/2',
   'JAH|مشاري البارود': '/assets/players/jah/3',
   'JAH|منصور بندر': '/assets/players/jah/5',
