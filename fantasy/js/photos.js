@@ -8,6 +8,7 @@ const PLAYER_PHOTOS_VER = '4';
 
 const PLAYER_PHOTOS = {
   // الصليبخات (17)
+  'SLB|أوكتشكو أربيزو': '/assets/players/slb/97',   // من منشور النادي
   'SLB|عبدالعزيز البشر': '/assets/players/slb/9',   // من منشور النادي في إنستغرام
   'SLB|فهد زويد': '/assets/players/slb/19',
   'SLB|محمد صفر': '/assets/players/slb/28',   // غير موجود في الكشف بعد — يظهر عند إضافته
@@ -123,6 +124,7 @@ const PLAYER_PHOTOS = {
   'SAL|عبدالرحمن الفضلي': '/assets/players/sal/35',
   'SAL|ديفيــد سامبيسا': '/assets/players/sal/77',
   // الكويت (20)
+  'KUW|فينيسيوس': '/assets/players/kuw/17',   // من منشور النادي
   'KUW|فهد حمود': '/assets/players/kuw/13',   // غير موجود في الكشف بعد
   'KUW|عبدالرحمن كميل': '/assets/players/kuw/40',   // حارس، غير موجود في الكشف بعد
   'KUW|ياسين الخنيسي': '/assets/players/kuw/27',
@@ -201,6 +203,8 @@ const PLAYER_PHOTOS = {
   'QAD|ايوب لخضر': '/assets/players/qad/77',
   'QAD|سالم الريس': '/assets/players/qad/78',
   // الجهراء (16)
+  'JAH|ايفانز امبوفو': '/assets/players/jah/15',   // من صورة مباراة
+  'JAH|كيريست افالانا': '/assets/players/jah/98',
   'JAH|مبارك الحربي': '/assets/players/jah/1',   // من رسم تشكيلة النادي (دقة أقل — مؤقتاً)
   'JAH|تاكامبا ناسام': '/assets/players/jah/26',   // من رسم تشكيلة النادي (دقة أقل — مؤقتاً)
   'JAH|ماركوس راموس': '/assets/players/jah/13',   // من رسم تشكيلة النادي (دقة أقل — مؤقتاً)
