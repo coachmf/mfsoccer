@@ -37,7 +37,8 @@ const PUSH = {
   async refresh(){
     if(!this.enabled() || !this.supported()) return;
     if(Notification.permission !== 'granted'){ this._off(); return; }
-    try{ await this._token(); }catch(e){ /* صامت — لا نزعج المستخدم عند الإقلاع */ }
+    try{ const t = await this._token(); if(t) await this._topic(t, false); }
+    catch(e){ /* صامت — لا نزعج المستخدم عند الإقلاع */ }
   },
 
   /* صفحة الفانتسي لا تسجّل sw.js — التسجيل في الصفحة الرئيسية وحدها.
@@ -61,9 +62,24 @@ const PUSH = {
 
   _off(){ try{ localStorage.setItem(this.KEY,''); }catch(e){} },
 
+  /* الاشتراك في موضوع لا يمكن من العميل — يتطلّب صلاحية الخادم،
+     فتتولّاه دالة Netlify. فشلُه لا يُبطل التفعيل: الرمز مسجّل لدى
+     FCM على كل حال، ويُعاد المحاولة عند كل إقلاع. */
+  async _topic(token, unsubscribe){
+    try{
+      const r = await fetch('/.netlify/functions/push-subscribe', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ token, unsubscribe: !!unsubscribe })
+      });
+      return r.ok;
+    }catch(e){ return false; }
+  },
+
   async toggle(on){
     if(!on){
       this._off();
+      /* نُلغي الاشتراك قبل حذف الرمز — بعد الحذف لا يبقى ما نُلغيه */
+      try{ const t = await this._token(); if(t) await this._topic(t, true); }catch(e){}
       try{ await firebase.messaging().deleteToken(); }catch(e){}
       UI.toast('أُوقفت الإشعارات');
       APP.render(); return;
@@ -77,6 +93,7 @@ const PUSH = {
       }
       const t = await this._token();
       if(!t){ UI.toast('تعذّر تسجيل الجهاز — أعد المحاولة', true); APP.render(); return; }
+      await this._topic(t, false);
       try{ localStorage.setItem(this.KEY,'1'); }catch(e){}
       UI.toast('تم التفعيل — يصلك إشعار بأهداف المباريات وإغلاق الجولة');
     }catch(e){

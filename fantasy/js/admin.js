@@ -7,7 +7,7 @@ const ADMIN = {
     const sec=VIEWS.ui.adminSec;
     const menu=[['gws','الجولات والاحتساب'],['results','النتائج والإحصاءات'],['scoring','نظام النقاط'],
       ['rules','قواعد اللعبة'],['players','اللاعبون'],['clubs','الأندية'],
-      ['users','المستخدمون'],['admins','المديرون'],['feedback','الاقتراحات'],['cloud','السحابة'],['data','البيانات']];
+      ['users','المستخدمون'],['admins','المديرون'],['feedback','الاقتراحات'],['push','الإشعارات'],['cloud','السحابة'],['data','البيانات']];
     return `<h2 style="margin-bottom:12px">لوحة الإدارة</h2>
     <div class="admin-grid">
       <div class="admin-menu">${menu.map(([id,l])=>`<button class="${sec===id?'active':''}" onclick="VIEWS.ui.adminSec='${id}';APP.render()">${l}</button>`).join('')}</div>
@@ -16,6 +16,59 @@ const ADMIN = {
   },
 
   sec_admins(){ return ADMINAUTH.section(); },
+
+  /* ---------- الإشعارات ----------
+     يصل كل من فعّل الإشعارات: الموقع، وتطبيق أندرويد. الإرسال يمرّ
+     بدالة Netlify تتحقّق من هويتك على الخادم — فلا يكفي أن تكون
+     الشاشة أمامك. */
+  sec_push(){
+    return `<div class="card"><h3>إرسال إشعار</h3>
+      <div class="tiny" style="margin-bottom:12px;color:var(--text3)">
+        يصل فوراً لكل من فعّل الإشعارات، والتطبيق مغلق.
+        اكتب بوضوح — لا يمكن سحب إشعار بعد إرساله.</div>
+      <div class="field"><label>العنوان <span class="tiny">(80 حرفاً)</span></label>
+        <input id="pn_title" maxlength="80" placeholder="⚽ الكويت 1-0 القادسية"></div>
+      <div class="field"><label>النص <span class="tiny">(240 حرفاً)</span></label>
+        <input id="pn_body" maxlength="240" placeholder="هدف في الدقيقة 23"></div>
+      <div class="field"><label>الوجهة عند الضغط</label>
+        <select id="pn_url">
+          <option value="/">الصفحة الرئيسية</option>
+          <option value="/fantasy/">الفانتسي</option>
+          <option value="/fantasy/#players">اللاعبون</option>
+        </select></div>
+      <button class="btn" onclick="ADMIN.pushSend(event)">إرسال للجميع</button>
+      <div class="tiny" style="margin-top:12px;color:var(--text3)">
+        قوالب جاهزة: <a href="#" onclick="ADMIN.pushFill('⚽ هدف!','');return false">هدف</a> ·
+        <a href="#" onclick="ADMIN.pushFill('⏰ الجولة تُغلق بعد ساعتين','راجع تشكيلتك وانتقالاتك');return false">إغلاق الجولة</a> ·
+        <a href="#" onclick="ADMIN.pushFill('📊 النقاط اعتُمدت','شوف نقاطك وترتيبك في الجولة');return false">اعتماد النقاط</a>
+      </div>
+    </div>`;
+  },
+
+  pushFill(t,b){ const a=document.getElementById('pn_title'), c=document.getElementById('pn_body');
+    if(a) a.value=t; if(c) c.value=b; if(a) a.focus(); },
+
+  async pushSend(ev){
+    const btn = ev && ev.target;
+    const title = gv('pn_title'), body = gv('pn_body');
+    const sel = document.getElementById('pn_url');
+    if(!title){ UI.toast('اكتب العنوان', true); return; }
+    if(!confirm(`سيصل هذا الإشعار لكل المشتركين فوراً ولا يمكن سحبه:\n\n${title}\n${body}`)) return;
+    VIEWS._busy(btn, true, 'جارٍ الإرسال…');
+    try{
+      if(!CLOUD.user) throw new Error('سجّل الدخول بحساب الموقع أولاً');
+      const idt = await CLOUD.user.getIdToken();
+      const r = await fetch('/.netlify/functions/push-send', {
+        method:'POST',
+        headers:{'Content-Type':'application/json', Authorization:'Bearer '+idt},
+        body: JSON.stringify({ title, body, url: sel? sel.value : '/' })
+      });
+      const j = await r.json().catch(()=>({ok:false, err:'ردّ غير مفهوم من الخادم'}));
+      if(j.ok){ UI.toast('أُرسل الإشعار'); this.pushFill('',''); }
+      else UI.toast(j.err || 'تعذّر الإرسال', true);
+    }catch(e){ UI.toast(String(e.message||e), true); }
+    VIEWS._busy(btn, false);
+  },
 
   /* ---------- السحابة ---------- */
   sec_cloud(){

@@ -1,5 +1,6 @@
 [build]
   publish = "."
+  functions = "netlify/functions"
 
 # ——— معالج تسجيل الدخول على نطاقنا ———
 # Firebase يوجّه الدخول بـGoogle/Apple عبر نطاقه الوسيط، والمتصفحات
