@@ -1,25 +1,65 @@
-/* صور اللاعبين الرسمية — المفتاح "النادي|الاسم كما في meta/players"، القيمة مسار من جذر الموقع.
-   الصليبخات (2026-09-14): جلسة تصوير النادي، مطابقة بالرقم مع كشف الموقع + الوجه مع Sofascore.
-   يقرأها UI.playerPhoto (ui.js). من لا مدخل له يبقى بالقميص. لا تضع صورة إلا بعد التأكد من هوية اللاعب. */
+/* صور اللاعبين الرسمية — المفتاح "النادي|الاسم كما في meta/players"، القيمة مسار أساس بلا امتداد:
+   <base>.webp = قصّة شفافة 800×1000 (البطاقة والملف)، <base>_s.webp = 240×300 (القوائم).
+   كل نادٍ يُضاف بعد التحقق من الهوية (رقم القميص ↔ كشف الموقع + مطابقة الوجه). من لا مدخل له يبقى بالقميص. */
 'use strict';
 
 const PLAYER_PHOTOS = {
-  'SLB|صالح خميس': '/assets/players/slb/2.webp',   // #2
-  'SLB|علي الموسوي': '/assets/players/slb/4.webp',   // #4
-  'SLB|خالد الشهري': '/assets/players/slb/7.webp',   // #7
-  'SLB|نواف الشيباني': '/assets/players/slb/8.webp',   // #8
-  'SLB|عبدالعزيز البشر': '/assets/players/slb/9.webp',   // #9
-  'SLB|عبدالمحسن الصليلي': '/assets/players/slb/10.webp',   // #10
-  'SLB|أحمد الفهد': '/assets/players/slb/13.webp',   // #13
-  'SLB|ياسر دشتي': '/assets/players/slb/14.webp',   // #14
-  'SLB|ويلفز دامسينا': '/assets/players/slb/20.webp',   // #20
-  'SLB|عبدالرحمن الشريفي': '/assets/players/slb/22.webp',   // #22
-  'SLB|ناصر الفيلكاوي': '/assets/players/slb/25.webp',   // #25
-  'SLB|لوكاس شالون': '/assets/players/slb/27.webp',   // #27
-  'SLB|عبدالله عيسى': '/assets/players/slb/36.webp',   // #36
-  'SLB|إيليلسون بيبي': '/assets/players/slb/44.webp',   // #44
-  'SLB|برونو دومنيغيس': '/assets/players/slb/55.webp',   // #55
-  'SLB|عبدالعزيز القطان': '/assets/players/slb/77.webp',   // #77
-  'SLB|عبدالله العوضي': '/assets/players/slb/88.webp',   // #88
-  'SLB|علي علاء الدين': '/assets/players/slb/93.webp',   // #93
+  // الصليبخات (17)
+  'SLB|صالح خميس': '/assets/players/slb/2',
+  'SLB|علي الموسوي': '/assets/players/slb/4',
+  'SLB|خالد الشهري': '/assets/players/slb/7',
+  'SLB|نواف الشيباني': '/assets/players/slb/8',
+  'SLB|عبدالمحسن الصليلي': '/assets/players/slb/10',
+  'SLB|أحمد الفهد': '/assets/players/slb/13',
+  'SLB|ياسر دشتي': '/assets/players/slb/14',
+  'SLB|ويلفز دامسينا': '/assets/players/slb/20',
+  'SLB|عبدالرحمن الشريفي': '/assets/players/slb/22',
+  'SLB|ناصر الفيلكاوي': '/assets/players/slb/25',
+  'SLB|لوكاس شالون': '/assets/players/slb/27',
+  'SLB|عبدالله عيسى': '/assets/players/slb/36',
+  'SLB|إيليلسون بيبي': '/assets/players/slb/44',
+  'SLB|برونو دومنيغيس': '/assets/players/slb/55',
+  'SLB|عبدالعزيز القطان': '/assets/players/slb/77',
+  'SLB|عبدالله العوضي': '/assets/players/slb/88',
+  'SLB|علي علاء الدين': '/assets/players/slb/93',
+  // الساحل (22)
+  'SAH|مشعل الرشيدي': '/assets/players/sah/1',
+  'SAH|عمر العنزي': '/assets/players/sah/4',
+  'SAH|عبدالرحمن الديحاني': '/assets/players/sah/5',
+  'SAH|يوسف بادي': '/assets/players/sah/6',
+  'SAH|محمد العلاطي': '/assets/players/sah/7',
+  'SAH|أحمد غازي': '/assets/players/sah/8',
+  'SAH|محمد العتيبي': '/assets/players/sah/11',
+  'SAH|فيصل المكيمي': '/assets/players/sah/12',
+  'SAH|ناصر القحطاني': '/assets/players/sah/14',
+  'SAH|موريسيو': '/assets/players/sah/15',
+  'SAH|جابر العجاجي': '/assets/players/sah/19',
+  'SAH|فواز الدوسري': '/assets/players/sah/22',
+  'SAH|لوكاس دي سوزا': '/assets/players/sah/23',
+  'SAH|كليتون': '/assets/players/sah/27',
+  'SAH|محمد الراشد': '/assets/players/sah/28',
+  'SAH|ألن دي سوزا': '/assets/players/sah/29',
+  'SAH|عبدالعزيز العنزي': '/assets/players/sah/30',
+  'SAH|جواو': '/assets/players/sah/33',
+  'SAH|بدر الزايد': '/assets/players/sah/44',
+  'SAH|حمزه زياد': '/assets/players/sah/66',
+  'SAH|راشد بن علي': '/assets/players/sah/77',
+  'SAH|غازي العتيبي': '/assets/players/sah/87',
+  // الشباب (16)
+  'SHB|عبدالله جابر': '/assets/players/shb/1',
+  'SHB|سعد العذاب': '/assets/players/shb/3',
+  'SHB|يوسف محمد': '/assets/players/shb/4',
+  'SHB|يعقوب الطراروه': '/assets/players/shb/10',
+  'SHB|علي مصطفى': '/assets/players/shb/11',
+  'SHB|محمد خليل': '/assets/players/shb/12',
+  'SHB|سعد المطيري': '/assets/players/shb/18',
+  'SHB|محمد القحطاني': '/assets/players/shb/20',
+  'SHB|شاهين الخميس': '/assets/players/shb/22',
+  'SHB|راشد فراج': '/assets/players/shb/23',
+  'SHB|جيوفاني دي سيلفا': '/assets/players/shb/33',
+  'SHB|عمر الحبيتر': '/assets/players/shb/37',
+  'SHB|جاسم عتيق': '/assets/players/shb/45',
+  'SHB|ماركوس مارتينلي': '/assets/players/shb/73',
+  'SHB|ميشيل دي ليما': '/assets/players/shb/97',
+  'SHB|ماثيوس توتو': '/assets/players/shb/99',
 };

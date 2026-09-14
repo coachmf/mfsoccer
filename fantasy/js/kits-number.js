@@ -43,7 +43,7 @@
   const avatarWithPhoto = UI.playerAvatar;
   UI.playerAvatar = function(p, size){
     size = size || 36;
-    if(this.playerPhoto && this.playerPhoto(p)) return avatarWithPhoto.call(this, p, size);
+    if(this.playerPhotoBase && this.playerPhotoBase(p)) return avatarWithPhoto.call(this, p, size);
     return `<span class="avatar kit-av" style="width:${size}px;height:${size}px">`
       + withNumber(this.kitImg(p.club, p.pos==='G', size), p, size) + `</span>`;
   };
