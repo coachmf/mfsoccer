@@ -115,6 +115,8 @@ const PLAYER_PHOTOS = {
   'SAL|عبدالرحمن الفضلي': '/assets/players/sal/35',
   'SAL|ديفيــد سامبيسا': '/assets/players/sal/77',
   // الكويت (20)
+  'KUW|المهدي برحمة': '/assets/players/kuw/66',
+  'KUW|طه الخنيسي': '/assets/players/kuw/27',   // يُفعَّل تلقائياً عند إضافته للكشف
   'KUW|خالد الرشيدي': '/assets/players/kuw/1',
   'KUW|سامي الصانع': '/assets/players/kuw/2',
   'KUW|مشاري غنام': '/assets/players/kuw/3',
@@ -136,6 +138,7 @@ const PLAYER_PHOTOS = {
   'KUW|حسن حمدان': '/assets/players/kuw/44',
   'KUW|حمود السنعوسي': '/assets/players/kuw/72',
   // النصر (22)
+  'NSR|يوسف محمد': '/assets/players/nsr/11',   // الاسم الصحيح للاعب رقم 11 (المسجّل حالياً «يوسف ثامر»)
   'NSR|ناصر خضر': '/assets/players/nsr/2',
   'NSR|علي عبدالله الظفيري': '/assets/players/nsr/3',
   'NSR|موريبا ديارا': '/assets/players/nsr/4',
