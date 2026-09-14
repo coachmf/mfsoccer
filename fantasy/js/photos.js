@@ -66,6 +66,8 @@ const PLAYER_PHOTOS = {
   'SHB|ميشيل دي ليما': '/assets/players/shb/97',
   'SHB|ماثيوس توتو': '/assets/players/shb/99',
   // الفحيحيل (20)
+  'FAH|كارلوس': '/assets/players/fah/35',
+  'FAH|فيتور دا سيلفا': '/assets/players/fah/33',
   'FAH|علي فاضل': '/assets/players/fah/1',
   'FAH|حسين دشتي': '/assets/players/fah/2',
   'FAH|فهد سياف': '/assets/players/fah/3',
