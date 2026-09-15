@@ -187,10 +187,11 @@ tbody tr.rel{box-shadow:inset 3px 0 0 rgba(224,100,79,.7)}
 .ts-pod{overflow:hidden}
 .ts-pod-bg{position:absolute;left:50%;top:42%;width:150%;max-width:none;transform:translate(-50%,-50%);opacity:.07;pointer-events:none;filter:grayscale(.2)}
 .ts-pod>*:not(.ts-pod-bg){position:relative;z-index:1}
-.ts-pod-av{position:relative;width:150px;height:188px;margin:0 0 8px}
+.ts-pod-av{position:relative;width:150px;height:188px;margin:0 0 8px;overflow:hidden;border-radius:10px}
 .ts-pod.first .ts-pod-av{width:196px;height:245px}
-.ts-pod-img{width:100%;height:100%;object-fit:contain;object-position:bottom;filter:drop-shadow(0 4px 6px rgba(0,0,0,.3))}
-.ts-pod-img.ts-crestfb{padding:14px;filter:none}
+/* كل القصّات بإطار موحّد (الوجه 190 من 1000 عند 85) → تكبير موحّد 1.55 من الأعلى فيظهر الثلاثة بحجم واحد وتُقصّ الخصور بحد الصندوق */
+.ts-pod-img{width:100%;height:100%;object-fit:contain;object-position:top;transform:scale(1.55);transform-origin:top center;filter:drop-shadow(0 4px 6px rgba(0,0,0,.3))}
+.ts-pod-img.ts-crestfb{padding:14px;filter:none;transform:none}
 .ts-pod-crest{position:absolute;bottom:6px;left:2px;width:34px;height:34px;background:#fff;border:1px solid var(--line);border-radius:50%;padding:3px;display:grid;place-items:center}
 .ts-pod-crest img{width:100%;height:100%;object-fit:contain}
 .ts-pod-info{width:100%;min-width:0}
@@ -5973,7 +5974,7 @@ function topScorersHTML(){
   const podCard=(p,i)=>`<div class="ts-pod${i===0?" first":""} ${medal(p.rk)}" data-player="${esc(p.n)}" data-club="${esc(p.c)}" role="button" tabindex="0">
       ${LOGOS[p.c]?`<img class="ts-pod-bg" src="${LOGOS[p.c]}" alt="" aria-hidden="true">`:""}
       <span class="ts-badge">${p.rk}</span>
-      <div class="ts-pod-av">${av(p,"ts-pod-img",true)}${(cut(p)&&LOGOS[p.c])?`<span class="ts-pod-crest"><img src="${LOGOS[p.c]}" alt=""></span>`:""}</div>
+      <div class="ts-pod-av">${av(p,"ts-pod-img",true)}</div>
       <div class="ts-pod-info"><div class="ts-pod-nm">${esc(p.n)}</div><div class="ts-pod-club">${esc(p.c)}</div></div>
       <div class="ts-pod-stat"><b>${p[key]}</b><small>${label}</small></div></div>`;
   const podium = L.length>=3 ? `<div class="ts-podium">${L.slice(0,3).map(podCard).join("")}</div>` : "";
@@ -6033,7 +6034,7 @@ function renderPlayers(){
   const DL=Object.values(disc).sort((a,b)=>b.r-a.r||b.y-a.y);
   $("#v-players").innerHTML=`
     ${compChips()}
-    <h2 class="sec">الهدافون</h2>
+    <h2 class="sec">المساهمون</h2>
     ${topScorersHTML()}
     ${(()=>{ const PP=playerPlay();
       const byMin=[...PP].sort((a,b)=>b.mins-a.mins);

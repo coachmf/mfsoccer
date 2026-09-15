@@ -110,7 +110,7 @@ const I18N = {
     'تشكيلة الجولة':'Round line-up', 'لم تُرصد تشكيلة أساسية لهذا النادي بعد.':'No starting line-up recorded for this club yet.', 'خارج أرضه':'Away', 'على أرضه':'Home', '⟨x⟩ أمام ⟨x⟩':'⟨x⟩ v ⟨x⟩',
     'حارس':'GK', 'مدافع':'DEF', 'وسط':'MID', 'مهاجم':'FWD', 'حراسة':'Goalkeeping', 'دفاع':'Defence', 'هجوم':'Attack',
     // اللاعبون
-    'الهدافون':'Top scorers', 'صنّاع الأهداف':'Assists', 'صناعة':'Assist', 'الشباك النظيفة (الحرّاس)':'Clean sheets (goalkeepers)',
+    'الهدافون':'Top scorers', 'المساهمون':'Contributors', 'صنّاع الأهداف':'Assists', 'صناعة':'Assist', 'الشباك النظيفة (الحرّاس)':'Clean sheets (goalkeepers)',
     'حرّاس المرمى الذين لعبوا 60 دقيقة فأكثر في مباريات لم يستقبل فيها فريقهم هدفاً.':'Goalkeepers who played 60 minutes or more in matches where their team did not concede.',
     'دقائق اللعب':'Minutes played', 'إجمالي دقائق كل لاعب من التشكيلات والتبديلات. اضغط رأس المباريات للترتيب الذهني.':"Each player's total minutes from line-ups and substitutions.",
     'لا توجد بيانات إنذارات بعد. أضف ورقة «سجل الإنذارات» في ملف الاستوديو بالأعمدة: الجولة · المسابقة · النادي · اللاعب · الدقيقة · النوع.':'No card data yet. Add the "Cards log" sheet to the studio file with the columns: Round · Competition · Club · Player · Minute · Type.',
