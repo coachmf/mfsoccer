@@ -184,11 +184,14 @@ tbody tr.rel{box-shadow:inset 3px 0 0 rgba(224,100,79,.7)}
 .ts-pod.gold .ts-badge{background:var(--sand);color:#0B1F3A;border-color:transparent}
 .ts-pod.silver .ts-badge{background:#A0B2C6;color:#0B1F3A;border-color:transparent}
 .ts-pod.bronze .ts-badge{background:#C8864B;color:#fff;border-color:transparent}
-.ts-pod-av{position:relative;width:84px;height:84px;margin:6px 0 10px}
-.ts-pod.first .ts-pod-av{width:104px;height:104px}
+.ts-pod{overflow:hidden}
+.ts-pod-bg{position:absolute;left:50%;top:42%;width:150%;max-width:none;transform:translate(-50%,-50%);opacity:.07;pointer-events:none;filter:grayscale(.2)}
+.ts-pod>*:not(.ts-pod-bg){position:relative;z-index:1}
+.ts-pod-av{position:relative;width:150px;height:188px;margin:4px 0 8px}
+.ts-pod.first .ts-pod-av{width:196px;height:245px}
 .ts-pod-img{width:100%;height:100%;object-fit:contain;object-position:bottom;filter:drop-shadow(0 4px 6px rgba(0,0,0,.3))}
 .ts-pod-img.ts-crestfb{padding:14px;filter:none}
-.ts-pod-crest{position:absolute;bottom:0;left:0;width:26px;height:26px;background:#fff;border:1px solid var(--line);border-radius:50%;padding:3px;display:grid;place-items:center}
+.ts-pod-crest{position:absolute;bottom:6px;left:2px;width:34px;height:34px;background:#fff;border:1px solid var(--line);border-radius:50%;padding:3px;display:grid;place-items:center}
 .ts-pod-crest img{width:100%;height:100%;object-fit:contain}
 .ts-pod-info{width:100%;min-width:0}
 .ts-pod-nm{font-weight:700;font-size:.95rem;color:var(--head);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -209,7 +212,7 @@ tbody tr.rel{box-shadow:inset 3px 0 0 rgba(224,100,79,.7)}
 .ts-rk{font-weight:700;font-size:.85rem;color:var(--slate);font-variant-numeric:tabular-nums}
 .ts-row.top .ts-rk{color:var(--sand)}
 .ts-pl{display:flex;align-items:center;gap:10px;min-width:0}
-.ts-av{width:38px;height:38px;border-radius:50%;background:var(--navy-800);border:1px solid var(--line);flex:none;overflow:hidden;display:grid;place-items:center}
+.ts-av{width:42px;height:42px;border-radius:50%;background:var(--navy-800);border:1px solid var(--line);flex:none;overflow:hidden;display:grid;place-items:center}
 .ts-av img{width:100%;height:100%;object-fit:cover;object-position:top}
 .ts-av img.ts-crestfb{object-fit:contain;padding:6px;background:#fff}
 .ts-pi{display:flex;flex-direction:column;min-width:0}
@@ -219,12 +222,20 @@ tbody tr.rel{box-shadow:inset 3px 0 0 rgba(224,100,79,.7)}
 .ts-sub i{font-style:normal;color:var(--slate);font-size:.68rem}
 .ts-val{font-size:1.2rem;font-weight:800;color:var(--head);font-variant-numeric:tabular-nums}
 .ts-empty{padding:16px;text-align:center;color:var(--slate)}
+.ts-more[hidden]{display:none}
+.ts-hid{display:none}
+.ts-morebtn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:11px;border:0;border-top:1px solid var(--line);background:var(--navy-800);color:var(--head);font-family:var(--display);font-weight:700;font-size:.8rem;cursor:pointer}
+.ts-morebtn small{font-size:.7rem;color:var(--slate);font-variant-numeric:tabular-nums}
+.ts-morebtn:hover{background:var(--blue-bg)}
+.ts-morebtn.open{color:var(--slate)}
+.card>.ts-morebtn{border-radius:0 0 14px 14px}
 @media (max-width:640px){
   .ts-podium{grid-template-columns:1fr;gap:8px}
   .ts-pod:nth-child(n){order:0}
   .ts-pod{flex-direction:row;justify-content:space-between;text-align:right;padding:10px 12px;gap:10px}
   .ts-badge{position:static;flex:none}
-  .ts-pod-av,.ts-pod.first .ts-pod-av{width:52px;height:52px;margin:0;flex:none}
+  .ts-pod-av,.ts-pod.first .ts-pod-av{width:96px;height:120px;margin:0;flex:none}
+  .ts-pod-bg{width:64%;left:24%;top:50%;opacity:.06}
   .ts-pod-info{flex:1}
   .ts-pod-club{margin-bottom:0}
   .ts-pod-stat{flex:none}
@@ -5961,17 +5972,19 @@ function topScorersHTML(){
   const mins=p=>(PP[p.n+"|"+p.c]||{}).mins||0;
   const L=scorers().filter(p=>p[key]>0)
     .sort((a,b)=>b[key]-a[key] || (key==="g"?b.a-a.a:b.g-a.g) || mins(a)-mins(b));
-  let rk=0; L.forEach((p,i)=>{ if(i===0 || p[key]!==L[i-1][key]) rk=i+1; p.rk=rk; });
+  L.forEach((p,i)=>{ p.rk=i+1; });   /* ترقيم تسلسلي 1،2،3… حتى عند التساوي (منصور 2026-09-15) */
   const max=L.length?L[0][key]:1;
   const cut=p=>(PHOTOSON && typeof LOCAL_PHOTOS!=="undefined") ? photoCut(p.n,p.c) : null;
-  const av=(p,cls)=>{ const c=cut(p);
-    return c ? `<img class="${cls}" src="${c}_s.webp?v=6" alt="" loading="lazy" decoding="async">`
+  /* المنصّة: القصّة الكبيرة (800×1000) لأنها تُعرض كبيرة؛ القوائم: قصّة الوجه _f نفسها المستخدمة في كل قوائم الموقع */
+  const av=(p,cls,big)=>{ const c=cut(p);
+    return c ? `<img class="${cls}" src="${c}${big?"":"_f"}.webp?v=6" alt="" loading="lazy" decoding="async">`
              : (LOGOS[p.c] ? `<img class="${cls} ts-crestfb" src="${LOGOS[p.c]}" alt="" loading="lazy">` : ""); };
   const sub=p=>{ const s=PP[p.n+"|"+p.c]; return s?`<span class="ts-sub">${s.apps} <i>مباراة</i></span><span class="ts-sub">${s.mins}′</span>`:""; };
   const medal=r=>r===1?"gold":r===2?"silver":r===3?"bronze":"";
   const podCard=(p,i)=>`<div class="ts-pod${i===0?" first":""} ${medal(p.rk)}" data-player="${esc(p.n)}" data-club="${esc(p.c)}" role="button" tabindex="0">
+      ${LOGOS[p.c]?`<img class="ts-pod-bg" src="${LOGOS[p.c]}" alt="" aria-hidden="true">`:""}
       <span class="ts-badge">${p.rk}</span>
-      <div class="ts-pod-av">${av(p,"ts-pod-img")}${(cut(p)&&LOGOS[p.c])?`<span class="ts-pod-crest"><img src="${LOGOS[p.c]}" alt=""></span>`:""}</div>
+      <div class="ts-pod-av">${av(p,"ts-pod-img",true)}${(cut(p)&&LOGOS[p.c])?`<span class="ts-pod-crest"><img src="${LOGOS[p.c]}" alt=""></span>`:""}</div>
       <div class="ts-pod-info"><div class="ts-pod-nm">${esc(p.n)}</div><div class="ts-pod-club">${esc(p.c)}</div></div>
       <div class="ts-pod-stat"><b>${p[key]}</b><small>${label}</small></div></div>`;
   const podium = L.length>=3 ? `<div class="ts-podium">${L.slice(0,3).map(podCard).join("")}</div>` : "";
@@ -5982,6 +5995,7 @@ function topScorersHTML(){
       <span class="ts-val">${p[key]}</span>
       <i class="ts-bar" style="width:${(p[key]/max*100).toFixed(0)}%"></i></div>`).join("");
   const cnt = L.length===1?"لاعب":L.length===2?"لاعبان":L.length<=10?"لاعبين":"لاعباً";
+  const list = tsMore(rows, L.length, "ts-"+key);
   return `<div class="ts-wrap" id="tsWrap">
     <div class="ts-controls">
       <div class="ts-toggle"><button type="button" data-ts="g" class="${key==="g"?"on":""}">الأهداف</button><button type="button" data-ts="a" class="${key==="a"?"on":""}">صناعة الأهداف</button></div>
@@ -5990,14 +6004,38 @@ function topScorersHTML(){
     ${podium}
     <div class="ts-list">
       <div class="ts-head"><span>#</span><span>اللاعب</span><span class="ts-subs-h">مباريات · دقائق</span><span>${label}</span></div>
-      ${rows || `<div class="ts-empty">—</div>`}
+      ${L.length ? list : `<div class="ts-empty">—</div>`}
     </div></div>`;
+}
+/* القوائم الطويلة: أول TS_SHOW صفوف ظاهرة والباقي خلف زر «عرض المزيد» (منصور 2026-09-15) */
+const TS_SHOW = 6;
+function tsMore(rowsHTML, total, id){
+  if(total<=TS_SHOW) return rowsHTML;
+  const parts = rowsHTML.split('<div class="ts-row');
+  const head = parts.slice(0, TS_SHOW+1).join('<div class="ts-row');
+  const rest = '<div class="ts-row' + parts.slice(TS_SHOW+1).join('<div class="ts-row');
+  return head + `<div class="ts-more" id="more-${id}" hidden>${rest}</div>
+    <button type="button" class="ts-morebtn" data-more="more-${id}" data-n="${total-TS_SHOW}"><span>عرض المزيد</span><small>+${total-TS_SHOW}</small></button>`;
+}
+function tsMoreTable(trsHTML, total, id){
+  if(total<=TS_SHOW) return {rows:trsHTML, btn:""};
+  const parts = trsHTML.split('<tr'); const head = parts.slice(0, TS_SHOW+1).join('<tr');
+  const rest = parts.slice(TS_SHOW+1).map(x=>'<tr class="ts-hid" data-more-row="more-'+id+'"'+x).join('');
+  return {rows: head+rest, btn: `<button type="button" class="ts-morebtn" data-more="more-${id}" data-n="${total-TS_SHOW}"><span>عرض المزيد</span><small>+${total-TS_SHOW}</small></button>`};
+}
+function wireMore(box){
+  box.querySelectorAll("[data-more]").forEach(b=>b.onclick=()=>{
+    const id=b.dataset.more, open=b.classList.toggle("open");
+    const blk=box.querySelector("#"+id); if(blk) blk.hidden=!open;
+    box.querySelectorAll(`[data-more-row="${id}"]`).forEach(tr=>tr.classList.toggle("ts-hid",!open));
+    b.querySelector("span").textContent = open ? "عرض أقل" : "عرض المزيد";
+  });
 }
 function wireTS(box){
   box.querySelectorAll("[data-ts]").forEach(b=>b.onclick=()=>{
     TS_MODE=b.dataset.ts;
     const w=box.querySelector("#tsWrap"); if(!w) return;
-    w.outerHTML=topScorersHTML(); wireTS(box);
+    w.outerHTML=topScorersHTML(); wireTS(box); wireMore(box);
   });
 }
 function renderPlayers(){
@@ -6011,33 +6049,41 @@ function renderPlayers(){
     ${(()=>{ const PP=playerPlay();
       const byMin=[...PP].sort((a,b)=>b.mins-a.mins);
       const byCS=PP.filter(p=>p.cs>0).sort((a,b)=>b.cs-a.cs||b.mins-a.mins);
+      const gkAv=p=>{ const c=(PHOTOSON && typeof LOCAL_PHOTOS!=="undefined") ? photoCut(p.n,p.c) : null;
+        return c ? `<img src="${c}_f.webp?v=6" alt="" loading="lazy" decoding="async">` : (LOGOS[p.c]?`<img class="ts-crestfb" src="${LOGOS[p.c]}" alt="" loading="lazy">`:""); };
+      const csMax = byCS.length ? byCS[0].cs : 1;
+      const csRows = byCS.map((p,i)=>{ const csRk=i+1;
+        return `<div class="ts-row${csRk<=3?" top":""}" data-player="${esc(p.n)}" data-club="${esc(p.c)}" role="button" tabindex="0">
+          <span class="ts-rk">${csRk}</span>
+          <span class="ts-pl"><span class="ts-av">${gkAv(p)}</span><span class="ts-pi"><b>${esc(p.n)}</b><small>${esc(p.c)}</small></span></span>
+          <span class="ts-subs"><span class="ts-sub">${p.apps} <i>مباراة</i></span><span class="ts-sub">${p.mins}′</span></span>
+          <span class="ts-val" style="color:var(--win)">${p.cs}</span>
+          <i class="ts-bar" style="width:${(p.cs/csMax*100).toFixed(0)}%"></i></div>`; }).join("");
       const cs = byCS.length? `<h2 class="sec">الشباك النظيفة (الحرّاس)</h2>
         <p class="hint">حرّاس المرمى الذين لعبوا 60 دقيقة فأكثر في مباريات لم يستقبل فيها فريقهم هدفاً.</p>
-        <div class="card"><div class="twrap"><table style="min-width:420px">
-          <thead><tr><th>اللاعب</th><th>النادي</th><th>شباك نظيفة</th><th>مباريات</th></tr></thead>
-          <tbody>${byCS.map((p,i)=>`<tr><td><div class="teamcell" data-player="${esc(p.n)}" data-club="${esc(p.c)}"><span class="pos">${i+1}</span>${pav(p.n,0,false,p.c)}${crest(p.c)}<b>${esc(p.n)}</b></div></td>
-            <td style="color:var(--slate)">${esc(p.c)}</td>
-            <td style="color:var(--win);font-weight:700">${p.cs}</td>
-            <td style="color:var(--slate)">${p.apps}</td></tr>`).join("")}</tbody></table></div></div>`:'';
+        <div class="ts-wrap"><div class="ts-list">
+          <div class="ts-head"><span>#</span><span>الحارس</span><span class="ts-subs-h">مباريات · دقائق</span><span>شباك نظيفة</span></div>
+          ${tsMore(csRows, byCS.length, "cs")}
+        </div></div>`:'';
       const mn = byMin.length? `<h2 class="sec">دقائق اللعب</h2>
         <p class="hint">إجمالي دقائق كل لاعب من التشكيلات والتبديلات. اضغط رأس المباريات للترتيب الذهني.</p>
         <div class="card"><div class="twrap"><table style="min-width:440px">
           <thead><tr><th>اللاعب</th><th>النادي</th><th>الدقائق</th><th>مباريات</th><th>شباك نظيفة</th></tr></thead>
-          <tbody>${byMin.map((p,i)=>`<tr><td><div class="teamcell" data-player="${esc(p.n)}" data-club="${esc(p.c)}"><span class="pos">${i+1}</span>${pav(p.n,0,false,p.c)}${crest(p.c)}<b>${esc(p.n)}</b></div></td>
+          <tbody>${(()=>{ const t=tsMoreTable(byMin.map((p,i)=>`<tr><td><div class="teamcell" data-player="${esc(p.n)}" data-club="${esc(p.c)}"><span class="pos">${i+1}</span>${pav(p.n,0,false,p.c)}${crest(p.c)}<b>${esc(p.n)}</b></div></td>
             <td style="color:var(--slate)">${esc(p.c)}</td>
             <td style="color:var(--head);font-weight:700;font-variant-numeric:tabular-nums">${p.mins}′</td>
             <td style="color:var(--slate)">${p.apps}</td>
-            <td style="color:var(--slate)">${p.cs||"—"}</td></tr>`).join("")}</tbody></table></div></div>`:'';
+            <td style="color:var(--slate)">${p.cs||"—"}</td></tr>`).join(""), byMin.length, "min"); return t.rows+`</tbody></table></div>${t.btn}</div>`; })()}`:'';
       return cs+mn;
     })()}
 
     <h2 class="sec">الانضباط</h2>
     ${DL.length?`<div class="card"><div class="twrap"><table style="min-width:380px">
       <thead><tr><th>اللاعب</th><th>النادي</th><th>إنذار</th><th>طرد</th></tr></thead>
-      <tbody>${DL.map((p,i)=>`<tr><td><div class="teamcell" data-player="${esc(p.n)}" data-club="${esc(p.c)}"><span class="pos">${i+1}</span>${pav(p.n,0,false,p.c)}${crest(p.c)}<b>${esc(p.n)}</b></div></td>
+      <tbody>${(()=>{ const t=tsMoreTable(DL.map((p,i)=>`<tr><td><div class="teamcell" data-player="${esc(p.n)}" data-club="${esc(p.c)}"><span class="pos">${i+1}</span>${pav(p.n,0,false,p.c)}${crest(p.c)}<b>${esc(p.n)}</b></div></td>
         <td style="color:var(--slate)">${esc(p.c)}</td>
         <td style="color:var(--sand);font-weight:700">${p.y}</td>
-        <td style="color:var(--loss);font-weight:700">${p.r}</td></tr>`).join("")}</tbody></table></div></div>`
+        <td style="color:var(--loss);font-weight:700">${p.r}</td></tr>`).join(""), DL.length, "disc"); return t.rows+`</tbody></table></div>${t.btn}</div>`; })()}`
       :`<div class="card pad" style="color:var(--slate);font-size:.85rem">لا توجد بيانات إنذارات بعد. أضف ورقة «سجل الإنذارات» في ملف الاستوديو بالأعمدة: الجولة · المسابقة · النادي · اللاعب · الدقيقة · النوع.</div>`}
 
     <h2 class="sec">ركلات الجزاء</h2>
@@ -6045,7 +6091,7 @@ function renderPlayers(){
       <span><span data-player="${esc(p.p)}" data-club="${esc(p.by)}">${esc(p.p)}</span> <span style="color:var(--slate);font-size:.75rem">· ${esc(p.by)} ضد ${esc(p.vs)}</span></span>
       <span class="v">${p.m}' ${esc(p.res)}${p.place?` · ${esc(p.place)}`:""}</span></div>`).join(""):'<span style="color:var(--slate)">—</span>'}</div>`;
   wireComp($("#v-players"));
-  wireTS($("#v-players"));
+  wireTS($("#v-players")); wireMore($("#v-players"));
 }
 
 function renderAnalysis(){
