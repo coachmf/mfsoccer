@@ -8703,6 +8703,15 @@ html[data-theme="dark"] .rs-btn,html[data-theme="dark"] .rs-nav,html[data-theme=
 .kfa-rec .kfa-av{width:34px;height:34px;border-radius:10px;object-fit:cover;object-position:top;flex:none;background:#fff}
 .kfa-rec .kfa-av.ph{display:inline-block;background:rgba(143,166,196,.18)}
 .kfa-rec td.kfa-span{font-size:.72rem;color:var(--slate);font-family:var(--f-body);white-space:nowrap}
+/* الهاتف: جدول الأساطير يعرض كل أعمدته (قاعدة hm-tbl العامة تخفي الأعمدة 3–6) والاسم كاملاً */
+@media(max-width:600px){
+  .hm-tbl.kfa-rec tr>th,.hm-tbl.kfa-rec tr>td{display:table-cell;padding:8px 4px}
+  .hm-tbl.kfa-rec td.club span{max-width:none;flex-wrap:wrap;gap:6px}
+  .hm-tbl.kfa-rec td.club b{white-space:normal;font-size:.82rem;line-height:1.3}
+  .hm-tbl.kfa-rec .kfa-note{display:block;width:100%;font-size:.56rem}
+  .hm-tbl.kfa-rec td.kfa-span{font-size:.6rem}
+  .hm-tbl.kfa-rec td.pts{font-size:.95rem}
+  .hm-tbl.kfa-rec .kfa-av{width:30px;height:30px}}
 .mx-comp .rs-btn{min-width:210px}
 .mx-comp .rs-menu{min-width:240px;max-height:360px;inset-inline-start:auto;inset-inline-end:0}   /* القائمة على يسار الصفحة: تُفتح نحو الداخل لا خارج الحافة */
 .rs-grp{padding:8px 10px 3px;font-size:.62rem;font-weight:800;color:var(--slate);letter-spacing:.02em}
@@ -9092,7 +9101,7 @@ function kfaPlayerCard(name, gk){
   const cut=(f && PHOTOSON && typeof LOCAL_PHOTOS!=="undefined") ? photoCut(f.site, f.club) : null;
   const pos=gk?"حارس مرمى":(f?posLabel(f.pos):"");
   return `<div class="pcard kfa-pc" ${f?`data-player="${esc(f.site)}" data-club="${esc(f.club)}" role="button" tabindex="0"`:""} aria-label="${esc(name)}">
-    <div class="ph">${cut?`<img src="${cut}_s.webp?v=6" alt="" loading="lazy" decoding="async" draggable="false">`
+    <div class="ph">${cut?`<img src="${cut}_s.webp?v=8" alt="" loading="lazy" decoding="async" draggable="false">`
                        :`<img class="noph" src="${KFA_INFO.img.logo}" alt="" loading="lazy" draggable="false">`}</div>
     ${f&&f.num?`<span class="no">${f.num}</span>`:""}
     <div class="nm">${esc(name)}</div>
@@ -9116,7 +9125,7 @@ function kfaRecordsHTML(list, kind){
     <tbody>${list.map((r,i)=>`<tr class="${i<3?"champ":""}">
       <td class="c">${i+1}</td>
       <td class="club"><span>${(()=>{ const f=r.site?kfaFind(r.site):null; const cut=(f&&PHOTOSON&&typeof LOCAL_PHOTOS!=="undefined")?photoCut(f.site,f.club):null;
-          return cut?`<img class="kfa-av" src="${cut}_f.webp?v=6" alt="" loading="lazy" decoding="async">` : r.img?`<img class="kfa-av" src="${r.img}" alt="" loading="lazy" decoding="async">`:`<span class="kfa-av ph"></span>`; })()}<b>${esc(r.n)}</b>${r.note?`<small class="kfa-note">${esc(r.note)}</small>`:""}</span></td>
+          return cut?`<img class="kfa-av" src="${cut}_f.webp?v=8" alt="" loading="lazy" decoding="async">` : r.img?`<img class="kfa-av" src="${r.img}" alt="" loading="lazy" decoding="async">`:`<span class="kfa-av ph"></span>`; })()}<b>${esc(r.n)}</b>${r.note?`<small class="kfa-note">${esc(r.note)}</small>`:""}</span></td>
       <td class="pts">${goals?r.g:r.caps}</td><td>${goals?r.caps:r.g}</td><td class="frm kfa-span" dir="ltr">${esc(r.span||"")}</td></tr>`).join("")}</tbody>
   </table></div></div>`;
 }
@@ -9132,9 +9141,9 @@ function kfaTeamPanel(sq){
       <div class="kfa-coach-ttl"><small>المدرب</small><b>${esc(sq.coach)}</b></div>
       <div class="kfa-coach-sub">${esc(sq.camp)} · ${sq.gk.length+sq.out.length} لاعباً</div>
     </div>
-    ${kfaMatchesHTML(sq)}
     <h2 class="sec">القائمة<span class="sq-n">${sq.gk.length+sq.out.length}</span></h2>
-    ${sq.poster?`<a class="card kfa-poster" href="${sq.poster}" target="_blank" rel="noopener" aria-label="${esc(sq.camp)}"><img src="${sq.poster}" alt="${esc(sq.camp)}" loading="lazy" decoding="async"></a>`:kfaSquadHTML(sq)}`;   /* القائمة كما نشرها الاتحاد (ملصقه الرسمي) — بطلب منصور بدل شبكة البطاقات */
+    ${sq.poster?`<a class="card kfa-poster" href="${sq.poster}" target="_blank" rel="noopener" aria-label="${esc(sq.camp)}"><img src="${sq.poster}" alt="${esc(sq.camp)}" loading="lazy" decoding="async"></a>`:kfaSquadHTML(sq)}
+    ${kfaMatchesHTML(sq)}`;   /* القائمة (ملصق الاتحاد الرسمي) أولاً ثم المباريات — بطلب منصور */
 }
 function kfaAboutHTML(){
   const I=KFA_INFO;
