@@ -4,6 +4,11 @@
    في محرر النتائج: النتيجة، الأهداف والصناعة، الكروت، الجزاءات.
    البونص والتشكيلات تبقى يدوية إلى أن ينزلها الموقع.
    ========================================================= */
+/* لاعبون انضموا للكشف قبل إدخالهم في كشوفات الموقع (نفس SQUAD_ADD في index.html للموقع).
+   يُدمجون في squads عند القراءة فيصلون لسحب الكشوفات كلاعبين جدد بانتظار التأكيد، و price = سعره المقترح في اللعبة. */
+const MF_SQUAD_ADD = {
+  'العربي': [ {n:'وليد ولد الشيخ', p:'CAM', s:0, price:8.5} ],
+};
 const MFSYNC = {
   URL: 'https://firestore.googleapis.com/v1/projects/mfsoccer-c7ee4/databases/(default)/documents/seasons/2026-2027?key=AIzaSyD_ZzAE4HEKPIuAKCmta8tzN5KOa8IUfuo',
 
@@ -39,6 +44,16 @@ const MFSYNC = {
   },
 
   async fetchSeason(){
+    const d = await this.fetchSeasonRaw();
+    if(d && d.squads){
+      for(const c in MF_SQUAD_ADD){
+        if(!Array.isArray(d.squads[c])) continue;
+        MF_SQUAD_ADD[c].forEach(x=>{ if(!d.squads[c].some(e=>this.norm(typeof e==='string'?e:(e&&e.n))===this.norm(x.n))) d.squads[c].push({n:x.n, p:x.p, s:x.s}); });
+      }
+    }
+    return d;
+  },
+  async fetchSeasonRaw(){
     // الأفضل: نفس اتصال Firestore الذي تستعمله اللعبة (قراءة واحدة، بلا مفتاح REST الذي يُحدّ بـ429)
     if(typeof CLOUD!=='undefined' && CLOUD.ready && CLOUD.db){
       try{
