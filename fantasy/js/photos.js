@@ -248,7 +248,6 @@ const PLAYER_PHOTOS = {
   'JAH|عبدالرحمن الظفيري': '/assets/players/jah/88',
   // العربي (1)
   'ARB|سليمان عبدالغفور': '/assets/players/arb/22',
-  'ARB|احمد عادي': '/assets/players/arb/1',
   'ARB|عبدالرحمن عجاج': '/assets/players/arb/35',
   'ARB|عبدالوهاب العوضي': '/assets/players/arb/2',
   'ARB|محمد خالد': '/assets/players/arb/4',
