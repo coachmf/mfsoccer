@@ -4,7 +4,7 @@
 'use strict';
 
 /* رقم نسخة الصور: ارفعه عند إعادة توليد أي قصّة حتى لا يبقى المتصفح على النسخة القديمة */
-const PLAYER_PHOTOS_VER = '4';
+const PLAYER_PHOTOS_VER = '5';
 
 const PLAYER_PHOTOS = {
   // الصليبخات (17)
@@ -211,8 +211,8 @@ const PLAYER_PHOTOS = {
   'QAD|ايوب لخضر': '/assets/players/qad/77',
   'QAD|سالم الريس': '/assets/players/qad/78',
   // الجهراء (16)
-  'JAH|ايفانز امبوفو': '/assets/players/jah/15',   // من صورة مباراة
-  'JAH|كيريست افالانا': '/assets/players/jah/98',
+  'JAH|ايفانز امبوفو': '/assets/players/jah/15',   // بورتريه مولّد بوجهه (Gemini) من صورة المباراة
+  'JAH|كيريست افالانا': '/assets/players/jah/98',   // بورتريه مولّد بوجهه (Gemini) من صورة المباراة
   'JAH|مبارك الحربي': '/assets/players/jah/1',   // من رسم تشكيلة النادي (دقة أقل — مؤقتاً)
   'JAH|تاكامبا ناسام': '/assets/players/jah/26',   // من رسم تشكيلة النادي (دقة أقل — مؤقتاً)
   'JAH|ماركوس راموس': '/assets/players/jah/13',   // من رسم تشكيلة النادي (دقة أقل — مؤقتاً)
