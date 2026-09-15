@@ -186,6 +186,7 @@ const PLAYER_PHOTOS = {
   'NSR|محمد حمد': '/assets/players/nsr/77',
   'NSR|حازم الحاج حسن': '/assets/players/nsr/99',
   // القادسية (27)
+  'QAD|عبدالوهاب الشلال': '/assets/players/qad/29',   // انضم للكشف 2026-09-15 (Qadsia Club2558)
   'QAD|احمد اليحيى': '/assets/players/qad/2',
   'QAD|معاذ الظفيري': '/assets/players/qad/3',
   'QAD|راشد الدوسري': '/assets/players/qad/4',
