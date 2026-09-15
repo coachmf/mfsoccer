@@ -41,7 +41,7 @@ const I18N = {
     'دخول المدير':'Admin login', 'أقسام الموقع':'Site sections', 'الإحصائيات':'Statistics', 'فانتسي':'Fantasy', 'التوقعات':'Predictions',
     'الرئيسية':'Home', 'المباريات':'Matches', 'الأندية':'Clubs', 'اللاعبون':'Players', 'الجمهور':'Fans', 'التحليل':'Analysis',
     'نتائج آخر جولة':'Latest round results', 'راسلنا على واتساب':'Message us on WhatsApp', 'اقتراح؟ راسلنا':'Suggestion? Message us',
-    'اقتراحاتكم':'Your suggestions', 'بإشراف':'Supervised by', 'القادم':'Next', 'نتائج الجولة ⟨x⟩':'Round ⟨x⟩ results',
+    'اقتراحاتكم':'Your suggestions', 'ابحث عن لاعب':'Search for a player', 'مسح البحث':'Clear search', 'لا يوجد لاعب بهذا الاسم':'No player with this name','بإشراف':'Supervised by', 'القادم':'Next', 'نتائج الجولة ⟨x⟩':'Round ⟨x⟩ results',
     'سياسة الخصوصية':'Privacy policy', 'شروط الاستخدام':'Terms of use',
     'اللغة':'Language', 'الوضع الداكن':'Dark mode', 'الوضع الفاتح':'Light mode',
     // التطبيق

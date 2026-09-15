@@ -2,6 +2,14 @@
   publish = "."
   functions = "netlify/functions"
 
+# ——— لقطة البيانات من CDN (netlify/functions/doc.js) ———
+# الصفحة ترسم منها فوراً بدل انتظار قناة Firestore (ثوانٍ في تطبيق iOS)
+[[redirects]]
+  from = "/api/doc/*"
+  to = "/.netlify/functions/doc/:splat"
+  status = 200
+  force = true
+
 # ——— معالج تسجيل الدخول على نطاقنا ———
 # Firebase يوجّه الدخول بـGoogle/Apple عبر نطاقه الوسيط، والمتصفحات
 # الحديثة تعزل تخزين النطاقات (Safari وiOS خاصة) فتضيع الحالة بين
