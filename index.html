@@ -8663,8 +8663,11 @@ h2.sec.sq-grp{margin-top:22px}
   background:radial-gradient(90% 70% at 50% 18%,rgba(255,255,255,.18),transparent 62%),linear-gradient(165deg,var(--ca) 0%,var(--cb) 100%)}
 .sq-coach:hover,.sq-coach:active{transform:none;box-shadow:none;border-color:rgba(var(--ca-rgb),.9)}
 .sq-coach .ph::before{display:none}
-.sq-coach .nm,[data-theme="light"] .sq-coach .nm{color:var(--ctab-fg,#fff)}
-.sq-coach .ps,[data-theme="light"] .sq-coach .ps{color:var(--ctab-fg,#fff);opacity:.82;font-weight:600}
+/* النص فوق الطرف الداكن من التدرّج دائماً (أصفر القادسية ينتهي بالأسود) — أبيض مع ظل خفيف تحت الاسم */
+.sq-coach::after{content:"";position:absolute;inset:auto 0 0;height:42%;background:linear-gradient(180deg,transparent,rgba(0,0,0,.34));pointer-events:none}
+.sq-coach .nm,.sq-coach .ps{position:relative;z-index:1}
+.sq-coach .nm,[data-theme="light"] .sq-coach .nm{color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.45)}
+.sq-coach .ps,[data-theme="light"] .sq-coach .ps{color:#fff;opacity:.86;font-weight:600;text-shadow:0 1px 2px rgba(0,0,0,.4)}
 .sq-coach .ph img.noph{opacity:.28;filter:none}
 /* --- عناصر اللاعب القابلة للنقر في كل الموقع --- */
 [data-player]{cursor:pointer}
@@ -9136,19 +9139,18 @@ const crestSrcOf = c => (typeof LOCAL_CRESTS!=="undefined" && LOCAL_CRESTS[c]) |
 /* مدربو الأندية (موسم 2026/27) — تُعرض في صف الحراس بقائمة الفريق. n = الاسم، nat = الجنسية،
    img = مسار القصّة بلا امتداد (assets/coaches/<slug>)، src = مصدر التحقق. نادٍ بلا مدخل لا تظهر له بطاقة. */
 const CLUB_COACH = {
-  /* الأسماء: معاينات ونتائج جريدة الراي للجولات 1–3 (25/8–6/9/2026)، أكّدها منصور 2026-09-15.
-     بلا img = شعار النادي مؤقتاً: صور القادسية والعربي والنصر والجهراء والساحل والتضامن والشباب في assets/coaches قيد إعادة التأطير. */
-  "القادسية":  {n:"محمد إبراهيم",      nat:"الكويت"},
+  /* الأسماء: معاينات ونتائج جريدة الراي للجولات 1–3 (25/8–6/9/2026)، أكّدها منصور 2026-09-15. */
+  "القادسية":  {n:"محمد إبراهيم",      nat:"الكويت", img:"assets/coaches/qadsia"},
   "الكويت":    {n:"فراس الخطيب",       nat:"سوريا",    img:"assets/coaches/kuwait"},      /* خلف ألكسندر سانتوس 23/8/2026 */
-  "العربي":    {n:"غوران سابليتش",     nat:"كرواتيا"},
+  "العربي":    {n:"غوران سابليتش",     nat:"كرواتيا", img:"assets/coaches/arabi"},
   "كاظمة":     {n:"دراغان تاديتش",     nat:"كرواتيا",  img:"assets/coaches/kazma"},
   "السالمية":  {n:"علي عاشور",         nat:"البحرين",  img:"assets/coaches/salmiya"},
-  "النصر":     {n:"ظاهر العدواني",     nat:"الكويت"},
-  "الجهراء":   {n:"أحمد عبدالكريم",    nat:"الكويت"},
-  "الساحل":    {n:"علي عبدالرضا",      nat:"الكويت"},
+  "النصر":     {n:"ظاهر العدواني",     nat:"الكويت", img:"assets/coaches/nasr"},
+  "الجهراء":   {n:"أحمد عبدالكريم",    nat:"الكويت", img:"assets/coaches/jahra"},
+  "الساحل":    {n:"علي عبدالرضا",      nat:"الكويت", img:"assets/coaches/sahel"},
   "الفحيحيل":  {n:"مارتن سيفيلا",      nat:"سلوفاكيا", img:"assets/coaches/fahaheel"},
-  "التضامن":   {n:"إيغور ريميتش",      nat:"البوسنة"},
-  "الشباب":    {n:"واغنر أندرادي",     nat:"البرازيل"},
+  "التضامن":   {n:"إيغور ريميتش",      nat:"البوسنة", img:"assets/coaches/tadamon"},
+  "الشباب":    {n:"واغنر أندرادي",     nat:"البرازيل", img:"assets/coaches/shabab"},
   "الصليبخات": {n:"أنطونيو ميراندا",   nat:"البرتغال", img:"assets/coaches/sulaibikhat"},
 };
 
@@ -9419,7 +9421,7 @@ function playerCardHTML(p, c){
 function coachCardHTML(c){
   const k=(typeof CLUB_COACH!=="undefined") && CLUB_COACH[c]; if(!k) return "";
   return `<div class="pcard sq-coach" aria-label="المدرب ${esc(k.n)}">
-    <div class="ph">${k.img?`<img src="${k.img}_s.webp?v=8" alt="" loading="lazy" decoding="async" draggable="false">`
+    <div class="ph">${k.img?`<img src="${k.img}_s.webp?v=9" alt="" loading="lazy" decoding="async" draggable="false">`
                            :`<img class="noph" src="${crestSrcOf(c)}" alt="" loading="lazy" draggable="false">`}</div>
     <div class="nm">${esc(k.n)}</div>
     <div class="ps">المدرب${k.nat?` · ${esc(k.nat)}`:""}</div>
