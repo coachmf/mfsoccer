@@ -2396,7 +2396,7 @@ function compSelect(){
 function extTeamCell(x){
   const logo = x.t==="club" ? crest(x.n)
     : x.t==="ext" ? `<div class="crest has-logo" style="background:#fff"><img src="${x.src}" alt="" decoding="async"></div>`
-    : x.t==="flag" ? `<div class="crest has-logo mc-flag"><img src="https://flagcdn.com/w80/${x.c}.png" alt="" decoding="async"></div>`
+    : x.t==="flag" ? `<img class="ev-flag mc-flag" src="https://flagcdn.com/w80/${x.c}.png" srcset="https://flagcdn.com/w160/${x.c}.png 2x" alt="" decoding="async">`   /* علم مستطيل بنسبته — القصّ المربّع كان يُخفي مثلث علم الكويت */
     : `<div class="crest" style="background:#3B5578">${esc(x.n.slice(0,2))}</div>`;
   return `${logo}<b>${esc(x.n)}</b>`;
 }
@@ -8547,8 +8547,7 @@ html[data-theme="dark"] .rs-btn,html[data-theme="dark"] .rs-nav,html[data-theme=
 .rs-opt+.rs-grp{border-top:1px solid var(--line,rgba(143,166,196,.16));margin-top:4px}
 .mc-stage{display:flex;align-items:center;gap:10px;padding:12px 14px;font-family:var(--display);font-weight:700;font-size:.85rem;color:var(--head,#fff)}
 .mc-stage em{font-style:normal;font-size:.66rem;font-weight:600;color:var(--slate)}
-.mc-team .crest.mc-flag,.hm-tbl .crest.mc-flag{background:#fff}
-.mc-team .crest.mc-flag img,.hm-tbl .crest.mc-flag img{object-fit:cover;border-radius:6px}
+.mc-team .ev-flag.mc-flag,.hm-tbl .ev-flag.mc-flag{width:33px;height:22px;border-radius:5px;object-fit:fill;flex:none}
 .hm-std.xt{margin:0 0 16px}
 .hm-tbl tr.kw td{background:rgba(46,176,240,.08)}
 .hm-tbl tr.kw td.club b{color:var(--zain-text,var(--sky))}
