@@ -7929,7 +7929,8 @@ const domReady = () => new Promise(r => document.readyState!=="loading" ? r() : 
 .cabout-ttl .sub{font-size:.78rem;color:var(--slate);margin-top:4px}
 .cabout-ttl .sub b{color:var(--ca);font-weight:700}
 .cabout-facts{position:relative;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;padding:16px 18px 6px}
-@media(min-width:720px){.cabout-facts{grid-template-columns:repeat(4,minmax(0,1fr))}}
+@media(min-width:720px){.cabout-facts{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(min-width:1000px){.cabout-facts{grid-template-columns:repeat(6,minmax(0,1fr))}}
 .cfact{padding:10px 12px;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid rgba(143,166,196,.16);
   border-inline-start:3px solid var(--ca);min-width:0}
 [data-theme="light"] .cfact{background:#fff;border-color:var(--line);border-inline-start-color:var(--ca)}
@@ -8026,18 +8027,19 @@ html.pp-open,html.pp-open body{overflow:hidden}
 /* بيانات تعريف الأندية: مرجع عام ثابت (سنة التأسيس، الملعب، المنطقة، أسماء الألوان). ما ليس هنا لا يُعرض.
    صورة الملعب: assets/stadiums/<slug>.jpg إن وُجدت، وإلا الصورة العامة assets/hero/stadium.jpg */
 const CLUB_INFO = {
-  "القادسية": {f:1960, st:"ملعب محمد الحمد",      loc:"حولي",       col:"الأصفر والأسود",    slug:"qadsia"},
-  "الكويت":   {f:1960, st:"ملعب نادي الكويت",      loc:"كيفان",      col:"الأبيض والأحمر",    slug:"kuwait"},
-  "العربي":   {f:1960, st:"ملعب صباح السالم",      loc:"المنصورية",  col:"الأخضر والأبيض",    slug:"arabi"},
-  "كاظمة":    {f:1964, st:"ملعب الصداقة والسلام",  loc:"العديلية",   col:"البرتقالي والأبيض", slug:"kazma"},
-  "السالمية": {f:1964, st:"ملعب ثامر",             loc:"السالمية",   col:"السماوي والأبيض",   slug:"salmiya"},
-  "النصر":    {f:1965, st:"ملعب علي صباح السالم",  loc:"العارضية",   col:"العنابي والأبيض",   slug:"nasr"},
-  "الجهراء":  {f:1966, st:"ملعب مبارك العيار",     loc:"الجهراء",    col:"الأبيض والأزرق",    slug:"jahra"},
-  "الساحل":   {f:1972, st:"ملعب نادي الساحل",      loc:"أبو حليفة",  col:"الأصفر والأزرق",    slug:"sahel"},
-  "الفحيحيل": {f:1963, st:"ملعب نادي الفحيحيل",    loc:"الفحيحيل",   col:"الأحمر والأبيض",    slug:"fahaheel"},
-  "التضامن":  {f:1965, st:"ملعب نادي التضامن",     loc:"الفروانية",  col:"الأزرق والأبيض",    slug:"tadamon"},
-  "الشباب":   {f:1976, st:"ملعب نادي الشباب",      loc:"الأحمدي",    col:"الأزرق والأبيض",    slug:"shabab"},
-  "الصليبخات":{f:1972, st:"ملعب نادي الصليبخات",   loc:"الصليبخات",  col:"الأحمر والأبيض",    slug:"sulaibikhat"},
+  /* مصادر التحقق (2026-09-15): ويكيبيديا العربية والإنجليزية لكل نادٍ. nick = اللقب، cap = سعة الملعب. الأندية بلا لقب متداول تُترك بلا nick. */
+  "القادسية": {f:1960, nick:"الملكي",        st:"ستاد محمد الحمد",       loc:"حولي",       cap:22000, col:"الأصفر والأسود",    slug:"qadsia"},
+  "الكويت":   {f:1960, nick:"العميد",        st:"ملعب نادي الكويت",      loc:"كيفان",      cap:12350, col:"الأبيض والأحمر",    slug:"kuwait"},
+  "العربي":   {f:1960, nick:"الأخضر",        st:"ستاد صباح السالم",      loc:"المنصورية",  cap:26000, col:"الأخضر والأبيض",    slug:"arabi"},
+  "كاظمة":    {f:1964, nick:"السفير",        st:"ستاد الصداقة والسلام",  loc:"العديلية",   cap:21500, col:"البرتقالي والأبيض", slug:"kazma"},
+  "السالمية": {f:1964, nick:"الرهيب",        st:"ستاد ثامر",             loc:"السالمية",   cap:12000, col:"السماوي والأبيض",   slug:"salmiya"},
+  "النصر":    {f:1965, nick:"العنابي",       st:"ملعب علي صباح السالم",  loc:"العارضية",   cap:11000, col:"العنابي والأبيض",   slug:"nasr"},
+  "الجهراء":  {f:1966, nick:"أبناء الشهداء", st:"ملعب مبارك العيار",     loc:"الجهراء",    cap:15000, col:"الأبيض والأزرق",    slug:"jahra"},
+  "الساحل":   {f:1967,                        st:"ملعب نادي الساحل",      loc:"أبو حليفة",  cap:5000,  col:"الأصفر والأزرق",    slug:"sahel"},
+  "الفحيحيل": {f:1964,                        st:"ستاد نايف الدبوس",      loc:"الفحيحيل",   cap:2000,  col:"الأحمر والأبيض",    slug:"fahaheel"},
+  "التضامن":  {f:1965, nick:"العنيد",        st:"ملعب مساعد الشنفا",     loc:"الفروانية",  cap:14000, col:"الأزرق والأبيض",    slug:"tadamon"},
+  "الشباب":   {f:1963,                        st:"ملعب الأحمدي",          loc:"الأحمدي",    cap:18000, col:"الأزرق والأبيض",    slug:"shabab"},
+  "الصليبخات":{f:1972,                        st:"ستاد الصليبخات",        loc:"الصليبخات",  cap:15000, col:"الأحمر والأبيض",    slug:"sulaibikhat"},
 };
 const POS_FULL = {GK:"حارس مرمى",RB:"ظهير أيمن",CB:"قلب دفاع",LB:"ظهير أيسر",RWB:"ظهير جناح أيمن",LWB:"ظهير جناح أيسر",
   CDM:"وسط مدافع",CM:"وسط ميدان",CAM:"صانع ألعاب",RM:"جناح أيمن",LM:"جناح أيسر",RW:"جناح أيمن",LW:"جناح أيسر",ST:"مهاجم"};
@@ -8077,6 +8079,7 @@ function clubAboutHTML(c, r, played){
   const pos = played ? standings().findIndex(x=>x.c===c)+1 : 0;
   const stImg = I.slug ? `url('assets/stadiums/${I.slug}.jpg'),` : "";
   const facts=[
+    I.nick? ["اللقب", esc(I.nick)] : null,
     I.f   ? ["تأسس عام", String(I.f)] : null,
     I.st  ? ["الملعب", esc(I.st)] : null,
     I.cap ? ["سعة الملعب", `${I.cap.toLocaleString("en-US")} متفرج`] : null,
@@ -8084,7 +8087,7 @@ function clubAboutHTML(c, r, played){
     cc.length ? ["ألوان النادي", `<span class="sw">${cc.map(h=>`<i style="background:${esc(h)}"></i>`).join("")}</span>${esc(I.col||"")}`] : null,
   ].filter(Boolean);
   const desc = (I.f||I.st||I.loc)
-    ? `${esc(c)} نادٍ كويتي${I.loc?` من منطقة ${esc(I.loc)}`:""}${I.f?`، تأسس عام ${I.f}`:""}${I.st?`، ويخوض مبارياته على ${esc(I.st)}`:""}.`
+    ? `${esc(c)}${I.nick?` «${esc(I.nick)}»`:""} نادٍ كويتي${I.loc?` من منطقة ${esc(I.loc)}`:""}${I.f?`، تأسس عام ${I.f}`:""}${I.st?`، ويخوض مبارياته على ${esc(I.st)}${I.cap?` الذي يتسع لنحو ${I.cap.toLocaleString("en-US")} متفرج`:""}`:""}.`
       + ` يشارك في ${esc(COMP||"الدوري")} موسم ${esc(SEASON)}${played?`، ولعب ${mw(r.P)} حتى الآن`:""}.`
     : "";
   return `<div class="cabout">
