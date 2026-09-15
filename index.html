@@ -5181,10 +5181,15 @@ function calendarBar(){
   const base=calMonth();
   const [Y,Mo]=base.split("-").map(Number);
   const days=new Date(Y,Mo,0).getDate();
-  const counts={}, soonDays={};
+  const counts={}, soonDays={}, dayComps={};      /* dayComps: البطولة وعدد مبارياتها في اليوم (بدل النقاط) */
   MATCHES.forEach(m=>{ if(m.date && m.date.startsWith(base)){
     counts[m.date]=(counts[m.date]||0)+1;
+    const c=compOf(m); (dayComps[m.date]??={})[c]=((dayComps[m.date]||{})[c]||0)+1;
     if(isUpcoming(m)) soonDays[m.date]=(soonDays[m.date]||0)+1; } });
+  const COMP_SHORT={"كأس الأمير":"الأمير","كأس سمو ولي العهد":"ولي العهد","كأس السوبر":"السوبر"};
+  const dayMarks=iso=>Object.entries(dayComps[iso]||{}).map(([c,k])=> c==="الدوري"
+      ? `<i class="dk" title="الدوري"><img src="assets/hero/kpl-mark.webp" alt="" decoding="async">${k>1?`<em>${k}</em>`:""}</i>`
+      : `<i class="dk cup" title="${esc(c)}">${esc(COMP_SHORT[c]||c)}${k>1?`<em>${k}</em>`:""}</i>`).join("");
   const evDayset=new Set();
   const evs=allEvents().filter(e=>evDays(e).some(d=>d.startsWith(base)));
   evs.forEach(e=>evDays(e).forEach(d=>{ if(d.startsWith(base)) evDayset.add(d); }));
@@ -5196,7 +5201,7 @@ function calendarBar(){
     const dow=AR_DOW[new Date(Y,Mo-1,d).getDay()];
     const dws=["أحد","اثنين","ثلاثاء","أربعاء","خميس","جمعة","سبت"][new Date(Y,Mo-1,d).getDay()];
     cells.push(`<button type="button" class="dp${n?" has":""}${sn?" soon":""}${ev?" evd":""}${iso===todayIso?" today":""}" data-day="${iso}" ${n?"":"disabled"} aria-pressed="${SELDAY===iso}" aria-label="${dow} ${d}${n?` · ${mw(n)}`:""}">
-      <span class="dw">${dws}</span><span class="dn">${d}</span><span class="dd">${n?"●".repeat(Math.min(n,3)):""}</span></button>`);
+      <span class="dw">${dws}</span><span class="dn">${d}</span><span class="dd">${dayMarks(iso)}</span></button>`);
   }
   const total=Object.values(counts).reduce((a,b)=>a+b,0);
   return `<div class="dstrip">
@@ -5225,10 +5230,23 @@ function currentRound(){
 function roundStrip(){
   const rounds=[...new Set(MATCHES.map(m=>m.round))].sort((a,b)=>a-b);
   if(!rounds.length) return "";
-  return `<div class="rpills" role="tablist" aria-label="الجولة">
+  const cr=currentRound();
+  const cur = SELR===null ? "all" : String(SELR);
+  const i = rounds.indexOf(SELR);
+  const chevR=`<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>`;
+  const chevL=`<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>`;
+  return `<div class="rsel" aria-label="الجولة">
     <span class="rp-lab">الجولة</span>
-    <button type="button" class="rp" data-round="all" aria-pressed="${SELR===null}">الكل</button>
-    ${rounds.map(r=>`<button type="button" class="rp" data-round="${r}" aria-pressed="${SELR===r}">${r}</button>`).join("")}
+    <button type="button" class="rs-nav" data-rstep="-1" ${SELR===null||i<=0?"disabled":""} aria-label="الجولة السابقة">${chevR}</button>
+    <div class="rs-dd">
+      <button type="button" class="rs-btn" id="rsBtn" aria-haspopup="listbox" aria-expanded="false"><span>${cur==="all"?"كل الجولات":`الجولة ${SELR}${SELR===cr?" · الحالية":""}`}</span><i class="chev"></i></button>
+      <div class="rs-menu" id="rsMenu" role="listbox" hidden>
+        <button type="button" class="rs-opt" role="option" data-round="all" aria-selected="${cur==="all"}">كل الجولات</button>
+        ${rounds.map(r=>`<button type="button" class="rs-opt" role="option" data-round="${r}" aria-selected="${cur===String(r)}">الجولة ${r}${r===cr?`<em>الحالية</em>`:""}</button>`).join("")}
+      </div>
+    </div>
+    <button type="button" class="rs-nav" data-rstep="1" ${SELR===null||i<0||i>=rounds.length-1?"disabled":""} aria-label="الجولة التالية">${chevL}</button>
+    ${(cr!==null && SELR!==cr)?`<button type="button" class="rs-now" data-round="${cr}">الجولة الحالية</button>`:""}
   </div>`;
 }
 
@@ -5526,6 +5544,22 @@ function renderMatches(){
   wireComp(V);
   V.querySelectorAll("[data-round]").forEach(b=>b.onclick=()=>{
     SELR_AUTO=false; SELR = b.dataset.round==="all" ? null : +b.dataset.round; SELDAY=null; renderMatches(); });
+  const rsBtn=V.querySelector("#rsBtn"), rsMenu=V.querySelector("#rsMenu");
+  if(rsBtn && rsMenu){
+    const close=()=>{ rsMenu.hidden=true; rsBtn.setAttribute("aria-expanded","false"); document.removeEventListener("click",onDoc,true); };
+    const onDoc=e=>{ if(!rsBtn.contains(e.target) && !rsMenu.contains(e.target)) close(); };
+    rsBtn.onclick=()=>{
+      const open=rsMenu.hidden; rsMenu.hidden=!open; rsBtn.setAttribute("aria-expanded",String(open));
+      if(open){ document.addEventListener("click",onDoc,true);
+        const cur=rsMenu.querySelector('[aria-selected="true"]'); if(cur) cur.scrollIntoView({block:"nearest"}); }
+    };
+    rsMenu.addEventListener("keydown",e=>{ if(e.key==="Escape"){ close(); rsBtn.focus(); } });
+  }
+  V.querySelectorAll("[data-rstep]").forEach(b=>b.onclick=()=>{
+    const rounds=[...new Set(MATCHES.map(m=>m.round))].sort((a,b)=>a-b);
+    const base=SELR===null?currentRound():SELR;
+    let i=rounds.indexOf(base)+(+b.dataset.rstep); i=Math.max(0,Math.min(rounds.length-1,i));
+    SELR_AUTO=false; SELR=rounds[i]; SELDAY=null; renderMatches(); });
   V.querySelectorAll("[data-day]").forEach(b=>b.onclick=()=>{
     SELDAY = SELDAY===b.dataset.day ? null : b.dataset.day; renderMatches(); });
   V.querySelectorAll("[data-cal]").forEach(b=>b.onclick=()=>{
@@ -8304,6 +8338,23 @@ html[data-theme="dark"] .mc-note{background:#0B1729;border-color:#1D3150}
 .mc .mtog{border-top:1px solid var(--line,rgba(143,166,196,.14));font-size:.74rem;padding:8px}
 .mc .mdet{padding:0 10px 12px}
 @media(min-width:900px){.mc-row{padding:14px 16px 10px}.mc-team .crest{width:36px;height:36px}.mc-team b{font-size:.95rem}.mc-foot{padding:0 16px 12px;font-size:.72rem}}
+/* --- اختيار الجولة: قائمة منسدلة + سابق/تالي + اختصار «الجولة الحالية» (بدل 22 حبّة) --- */
+.rsel{display:flex;align-items:center;gap:6px;margin:0 0 12px;flex-wrap:wrap}
+.rs-nav{width:32px;height:32px;border-radius:9px;border:1px solid var(--line,rgba(143,166,196,.28));background:var(--navy-900);color:var(--head,#fff);display:grid;place-items:center;cursor:pointer;padding:0;transition:background .15s}
+.rs-nav:hover:not(:disabled){background:rgba(143,166,196,.14)}
+.rs-nav:disabled{opacity:.35;cursor:default}
+.rs-dd{position:relative}
+.rs-btn{height:32px;min-width:170px;padding-inline:14px 12px;border-radius:9px;border:1px solid var(--line,rgba(143,166,196,.28));background:var(--navy-900);color:var(--head,#fff);font-family:var(--display);font-weight:700;font-size:.82rem;cursor:pointer;display:inline-flex;align-items:center;justify-content:space-between;gap:10px}
+.rs-btn .chev{width:0;height:0;border-inline:4.5px solid transparent;border-top:5px solid var(--slate);transition:transform .15s}
+.rs-btn[aria-expanded="true"]{border-color:var(--zain-mid,#1878be);box-shadow:0 0 0 3px rgba(46,176,240,.16)}
+.rs-btn[aria-expanded="true"] .chev{transform:rotate(180deg)}
+.rs-menu{position:absolute;top:calc(100% + 6px);inset-inline-start:0;z-index:30;min-width:200px;max-height:280px;overflow:auto;padding:6px;border-radius:12px;border:1px solid var(--line,rgba(143,166,196,.28));background:var(--navy-900);box-shadow:0 12px 30px rgba(6,21,41,.35)}
+.rs-opt{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;text-align:start;padding:8px 10px;border:0;border-radius:8px;background:transparent;color:var(--mist);font-family:var(--display);font-weight:600;font-size:.82rem;cursor:pointer;font-variant-numeric:tabular-nums}
+.rs-opt:hover{background:rgba(143,166,196,.12)}
+.rs-opt[aria-selected="true"]{background:var(--blue-bg,rgba(143,166,196,.12));color:var(--head,#fff);font-weight:800}
+.rs-opt em{font-style:normal;font-size:.66rem;font-weight:700;color:var(--zain-text,var(--zain-mid,#1878be));background:rgba(46,176,240,.14);padding:1px 7px;border-radius:999px}
+.rs-now{height:32px;padding:0 12px;border-radius:9px;border:1px solid var(--blue-ln,rgba(143,166,196,.3));background:var(--blue-bg,rgba(143,166,196,.08));color:var(--zain-text,var(--zain-mid,#1878be));font-family:var(--display);font-size:.74rem;font-weight:700;cursor:pointer}
+html[data-theme="dark"] .rs-btn,html[data-theme="dark"] .rs-nav,html[data-theme="dark"] .rs-menu{background:#0D1C30;border-color:#23395C}
 /* --- مركز المباريات: رأس + شريط الأيام + الملخص + تجميع الكروت بالأيام --- */
 .mx-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin:2px 0 12px}
 .mx-title{margin:0;font-family:var(--display);font-weight:800;font-size:1.25rem;color:var(--head,#fff)}
@@ -8319,13 +8370,19 @@ html[data-theme="dark"] .dstrip{background:#0F1E35;border-color:#213653;box-shad
 .ds-nav .ds-clear{width:auto;padding:0 10px;font-size:.68rem;font-weight:700;color:var(--zain-text,var(--sky));border-color:transparent}
 .ds-days{display:flex;gap:4px;overflow-x:auto;padding:2px 0 4px;scrollbar-width:none;-webkit-overflow-scrolling:touch;scroll-snap-type:x proximity}
 .ds-days::-webkit-scrollbar{display:none}
-.dp{flex:none;width:42px;height:56px;border-radius:12px;border:1px solid transparent;background:transparent;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;
+.dp{flex:none;width:48px;height:66px;border-radius:12px;border:1px solid transparent;background:transparent;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
   color:var(--slate);cursor:default;padding:0;scroll-snap-align:center;transition:background .15s,border-color .15s,color .15s;clip-path:none}
-.dp .dw{font-size:.52rem;letter-spacing:0;opacity:.8;white-space:nowrap}
+.dp .dw{font-size:.56rem;letter-spacing:0;opacity:.8;white-space:nowrap}
 .dp .dn{font-family:var(--display);font-weight:700;font-size:.92rem;line-height:1.1;font-variant-numeric:tabular-nums}
-.dp .dd{font-size:.42rem;line-height:1;letter-spacing:.1em;height:6px;color:var(--zain-text,var(--sky))}
-.dp.has{color:var(--head,#fff);cursor:pointer;border-color:var(--line,rgba(143,166,196,.22));background:rgba(143,166,196,.06)}
-.dp.has.soon .dd{color:var(--sand)}
+/* علامة البطولة تحت رقم اليوم بدل النقاط: كرة الدوري (والعدد إن تعدّدت المباريات) أو اسم الكأس مختصراً */
+.dp .dd{height:16px;display:flex;align-items:center;justify-content:center;gap:3px;line-height:1}
+.dp .dk{display:inline-flex;align-items:center;gap:2px;font-style:normal}
+.dp .dk img{width:15px;height:15px;object-fit:contain;display:block}
+.dp .dk em{font-style:normal;font-family:var(--display);font-size:.6rem;font-weight:800;color:var(--head,#fff);font-variant-numeric:tabular-nums}
+.dp .dk.cup{font-size:.5rem;font-weight:700;color:var(--sand);white-space:nowrap;letter-spacing:0}
+.dp[aria-pressed="true"] .dk em,.dp[aria-pressed="true"] .dk.cup{color:#fff}
+.dp.has{color:var(--head,#fff);cursor:pointer;border-color:var(--blue-ln,rgba(143,166,196,.3));background:var(--blue-bg,rgba(143,166,196,.08))}
+.dp.has.soon{border-color:rgba(233,185,73,.5)}
 .dp.evd .dw{text-decoration:underline;text-decoration-color:var(--sand);text-underline-offset:2px}
 .dp.today{box-shadow:inset 0 0 0 1px var(--zain-text,var(--sky))}
 .dp:disabled{opacity:.45}
