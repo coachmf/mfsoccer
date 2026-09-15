@@ -246,6 +246,10 @@ const PLAYER_PHOTOS = {
   'KAZ|محمد عنتر': '/assets/players/kaz/12',
   'KAZ|اماث نداو': '/assets/players/kaz/19',
   'KAZ|ادريس شعيبي': '/assets/players/kaz/97',
+  'KAZ|بدر ذكرالله': '/assets/players/kaz/3',   // بورتريه مولّد بوجهه (Gemini)
+  'KAZ|ناصر محمدوه': '/assets/players/kaz/7',   // بورتريه مولّد بوجهه (Gemini)
+  'KAZ|ناصر فالح': '/assets/players/kaz/8',   // بورتريه مولّد بوجهه (Gemini)
+  'KAZ|تروليس كنول': '/assets/players/kaz/99',   // بورتريه مولّد بوجهه (Gemini)
   // التضامن (18) — بورتريهات النادي الرسمية (أرسلها منصور 2026-09-15)
   'TDM|داود الخالدي': '/assets/players/tdm/1',
   'TDM|فيصل الشطي': '/assets/players/tdm/2',
