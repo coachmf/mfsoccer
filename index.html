@@ -8675,6 +8675,8 @@ html[data-theme="dark"] .rs-btn,html[data-theme="dark"] .rs-nav,html[data-theme=
 @media(max-width:600px){.kfa-tl-it{grid-template-columns:1fr;gap:2px}}
 .kfa-rec td.club span{gap:10px}
 .kfa-rec .kfa-note{display:block;font-size:.6rem;color:var(--slate);font-weight:500;margin-top:1px}
+.kfa-poster{display:block;overflow:hidden;max-width:820px;margin:0 auto}
+.kfa-poster img{display:block;width:100%;height:auto}
 .kfa-hq{position:relative;overflow:hidden}
 .kfa-hq img{width:100%;height:clamp(160px,36vw,300px);object-fit:cover;display:block}
 .kfa-hq .st-cap{position:absolute;right:14px;bottom:12px;padding:5px 10px;border-radius:999px;background:rgba(6,21,41,.72);color:#fff;font-size:.72rem}
@@ -8994,12 +8996,12 @@ const KFA_INFO={
   about:"تأسس الاتحاد الكويتي لكرة القدم عام 1952 باسم «الاتحاد الكويتي للألعاب الرياضية» وحمل اسمه الحالي عام 1957، وانضم إلى الفيفا عام 1962 وإلى الاتحاد الآسيوي عام 1964، وهو عضو في الاتحاد العربي منذ 1974 واتحاد غرب آسيا منذ 2010 وعضو مؤسس في اتحاد كأس الخليج العربي عام 2016. يدير الاتحاد المنتخبات الوطنية والمسابقات المحلية (الدوري الممتاز، الدرجة الأولى، كأس الأمير، كأس ولي العهد، كأس الاتحاد)، ومقره في العديلية، ويملك استاد جابر الأحمد الدولي أكبر ملاعب الكويت. يُلقّب المنتخب الأول بـ«الأزرق»، وهو بطل آسيا 1980 وصاحب الرقم القياسي في ألقاب كأس الخليج بعشرة ألقاب."
 };
 const KFA_SQUADS={
-  first:{title:"الفريق الأول", coach:"هيليو سوزا", camp:"قائمة الأزرق — معسكر الدوحة، سبتمبر 2026", comp:"gulf27", compName:"خليجي 27",
+  first:{title:"الفريق الأول", coach:"هيليو سوزا", poster:"assets/kfa/squad_first.jpg", camp:"قائمة الأزرق — معسكر الدوحة، سبتمبر 2026", comp:"gulf27", compName:"خليجي 27",
     gk:["خالد الرشيدي","سعود الحوشان","عبدالرحمن الفضلي","راكان السعيد"],
     out:["محسن فلاح","معاذ الظفيري","راشد الدوسري","عبدالوهاب العوضي","عبدالعزيز مهران","يوسف الحقان","خالد صباح","فهد الهاجري",
          "مهدي دشتي","ناصر فالح","عبدالله القرزعي","عذبي شهاب","أحمد الظفيري","جاسم المطر","خالد المرشد","رضا هاني",
          "يوسف ناصر","شبيب الخالدي","عبدالله العوضي","مبارك الفنيني","محمد دحام","يوسف ماجد","عيد الرشيدي"]},
-  olympic:{title:"المنتخب الأولمبي", coach:"ديفيد دونيغا", camp:"قائمة المنتخب الأولمبي — دورة الألعاب الآسيوية العشرين، ناغويا 2026", comp:"asiad", compName:"الألعاب الآسيوية 2026",
+  olympic:{title:"المنتخب الأولمبي", coach:"ديفيد دونيغا", poster:"assets/kfa/squad_olympic.jpg", camp:"قائمة المنتخب الأولمبي — دورة الألعاب الآسيوية العشرين، ناغويا 2026", comp:"asiad", compName:"الألعاب الآسيوية 2026",
     gk:["ضاري المسري","عبدالرحمن عجاج","عبدالرضا شهاب"],
     out:["بندر السلامة","جاسم العنزي","علي حسن","منتصر العبدالسلام","أحمد بودي","بندر البرازي","حمود السنعوسي",
          "معاذ الاصيمع","طلال القيسي","صالح المحطب","عبدالله فارس","عمر المطر","عبدالله الغنيمان","جاسم شموه",
@@ -9102,7 +9104,8 @@ function kfaTeamPanel(sq){
       <div class="kfa-coach-sub">${esc(sq.camp)} · ${sq.gk.length+sq.out.length} لاعباً</div>
     </div>
     ${kfaMatchesHTML(sq)}
-    ${kfaSquadHTML(sq)}`;
+    <h2 class="sec">القائمة<span class="sq-n">${sq.gk.length+sq.out.length}</span></h2>
+    ${sq.poster?`<a class="card kfa-poster" href="${sq.poster}" target="_blank" rel="noopener" aria-label="${esc(sq.camp)}"><img src="${sq.poster}" alt="${esc(sq.camp)}" loading="lazy" decoding="async"></a>`:kfaSquadHTML(sq)}`;   /* القائمة كما نشرها الاتحاد (ملصقه الرسمي) — بطلب منصور بدل شبكة البطاقات */
 }
 function kfaAboutHTML(){
   const I=KFA_INFO;
