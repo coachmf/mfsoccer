@@ -36,6 +36,7 @@ const PLAYER_PHOTOS = {
   'SLB|عبدالله العوضي': '/assets/players/slb/88',
   'SLB|علي علاء الدين': '/assets/players/slb/93',
   // الساحل (22)
+  'SAH|علي جوهر': '/assets/players/sah/2',   // من ملصق النادي (الطقم الثاني)
   'SAH|مشعل الرشيدي': '/assets/players/sah/1',
   'SAH|عمر العنزي': '/assets/players/sah/4',
   'SAH|عبدالرحمن الديحاني': '/assets/players/sah/5',
