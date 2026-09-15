@@ -836,6 +836,20 @@ details.squadbox summary label.lb{margin:0;cursor:pointer}
 .tot-pill.ok{background:var(--zain-deep);border-color:var(--zain-deep);color:#fff}
 .tot-n{font-size:.75rem;color:var(--slate);font-variant-numeric:tabular-nums}
 
+.refadd{display:grid;gap:10px;border:1px solid var(--line);border-radius:10px;padding:12px;margin-bottom:12px}
+.refin{width:100%;background:var(--navy-800);border:1px solid rgba(143,166,196,.3);color:#fff;border-radius:9px;padding:9px 10px;font-family:var(--body);font-size:.86rem}
+.refin:focus{outline:2px solid var(--sky);outline-offset:1px}
+.refcats{display:flex;flex-wrap:wrap;gap:6px}
+.refcat{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:999px;padding:5px 11px;font-size:.78rem;cursor:pointer;user-select:none}
+.refcat input{margin:0;accent-color:#0b5fa5}
+.refcat.on{border-color:#0b5fa5;background:rgba(11,95,165,.1);color:var(--head);font-weight:700}
+.refcounts{display:flex;flex-wrap:wrap;gap:6px 14px;margin:0 0 10px;font-size:.78rem}
+.refcnt b{color:var(--head)}
+.reflist{display:grid;gap:6px;max-height:520px;overflow:auto}
+.refrow{display:flex;align-items:center;gap:10px;flex-wrap:wrap;border:1px solid var(--line);border-radius:9px;padding:8px 10px}
+.refrow b{flex:1;min-width:130px;font-size:.86rem;color:var(--head)}
+.refrow[hidden]{display:none}
+@media(max-width:600px){.refrow{gap:6px}.refrow b{flex:1 1 100%}.refrow .refcats{flex:1 1 0;min-width:0}.refcat{padding:4px 9px;font-size:.72rem}}
 .kits{display:grid;gap:8px}
 .kitrow{display:flex;align-items:center;gap:10px;flex-wrap:wrap;
   border:1px solid var(--line);border-radius:9px;padding:8px 10px;background:#F7FAFD}
@@ -3056,7 +3070,8 @@ function applyData(d, source){
                    shapes:  keepField(d.shapes,  ALL && ALL.shapes),
                    kits:    keepField(d.kits,    ALL && ALL.kits),
                    tots:    keepField(d.tots,    ALL && ALL.tots),
-                   mev:     keepField(d.mev,     ALL && ALL.mev)});   /* أحداث المباراة الإضافية: فرصة خطيرة / VAR / تعليق */
+                   mev:     keepField(d.mev,     ALL && ALL.mev),
+                   refpool: keepField(d.refpool, ALL && ALL.refpool)});   /* قائمة الحكام وفئاتهم */   /* أحداث المباراة الإضافية: فرصة خطيرة / VAR / تعليق */
   SQUADS = d.squads || SQUADS || {};   /* ملف بلا كشوفات لا يمسح الكشوفات الحالية */
   if("fantasyOpen" in (d||{})) FANTASY_OPEN = !!d.fantasyOpen;
   if(typeof paintFantasyTab==="function") paintFantasyTab();  /* التبويب يظهر فور وصول حالة الإشهار */
@@ -3087,6 +3102,7 @@ function dataObject(){
           tots:(ALL&&ALL.tots)||[],
           events:(ALL&&ALL.events)||[],
           mev:(ALL&&ALL.mev)||[],
+          refpool:(ALL&&ALL.refpool)||[],
           lastUpdate:LASTUPDATE, updated:new Date().toISOString(),
           fantasyOpen:FANTASY_OPEN,
           updatedBy:(FBUSER&&FBUSER.email)||""};
@@ -3242,6 +3258,70 @@ async function saveTotRow(round, comp, patch){
 
 /* ===== ألوان القمصان — إدارة =====
    لون القميص ولون الرقم لكل نادٍ، كما يظهران على الملعب. */
+let REFDRAFT=null;   /* مسودة قائمة الحكام حتى الضغط على «حفظ الحكام» */
+function refsAdminHTML(){
+  if(!REFDRAFT){ const p=refPool(); REFDRAFT=p.filter(r=>!(r.saved&&!r.roles.length)).map(r=>({name:r.name, roles:[...r.roles]})); REFDRAFT.removed=p.filter(r=>r.saved&&!r.roles.length).map(r=>r.name); }
+  const counts=REF_CATS.map(([c,t])=>`<span class="refcnt">${t} <b>${REFDRAFT.filter(r=>r.roles.includes(c)).length}</b></span>`).join("");
+  const box=(c,on,attr)=>`<label class="refcat${on?" on":""}"><input type="checkbox" ${attr} ${on?"checked":""}>${REF_CATS.find(x=>x[0]===c)[1]}</label>`;
+  return `<div id="refsAdmin"><h2 class="sec">الحكام</h2>
+    <div class="card pad">
+      <p class="hint" style="margin:0 0 12px">قائمة حكام الدوري وفئاتهم. كل حكم يظهر كاقتراح في خانة فئته داخل «طاقم التحكيم» بمحرّر المباراة.
+      الحكم الواحد يمكن أن يكون في أكثر من فئة. القائمة تبدأ بكل من أدار مباراة مسجّلة.</p>
+      <div class="refadd">
+        <input id="refNewName" class="refin" placeholder="اسم الحكم الجديد" autocomplete="off">
+        <div class="refcats">${REF_CATS.map(([c])=>box(c,false,`data-refnew="${c}"`)).join("")}</div>
+        <button class="btn" id="refAddBtn" type="button">إضافة الحكم</button>
+      </div>
+      <div class="refcounts">${counts}</div>
+      <input id="refFilter" class="refin" placeholder="بحث في القائمة" autocomplete="off" style="margin:4px 0 10px">
+      <div class="reflist">${REFDRAFT.map((r,i)=>`<div class="refrow" data-refrow="${i}" data-refname="${esc(r.name)}">
+          <b>${esc(r.name)}</b>
+          <div class="refcats">${REF_CATS.map(([c])=>box(c,r.roles.includes(c),`data-refi="${i}" data-refc="${c}"`)).join("")}</div>
+          <button class="dl" type="button" data-refdel="${i}" title="حذف من القائمة">حذف</button>
+        </div>`).join("")}</div>
+      <div style="height:12px"></div>
+      <button class="btn" id="refsSave" type="button">حفظ الحكام</button>
+    </div></div>`;
+}
+function wireRefs(){
+  const root=$("#refsAdmin"); if(!root) return;
+  const repaint=()=>{ const f=($("#refFilter")||{}).value||""; root.outerHTML=refsAdminHTML(); wireRefs(); const nf=$("#refFilter"); if(nf&&f){ nf.value=f; nf.oninput(); } };
+  $("#refAddBtn").onclick=()=>{
+    const n=$("#refNewName").value.trim().replace(/\s+/g," ");
+    const roles=[...root.querySelectorAll("[data-refnew]:checked")].map(x=>x.dataset.refnew);
+    if(!n){ toast("اكتب اسم الحكم","err"); return; }
+    if(!roles.length){ toast("اختر فئة واحدة على الأقل","err"); return; }
+    const ex=REFDRAFT.find(r=>r.name===n);
+    if(ex) ex.roles=[...new Set([...ex.roles,...roles])]; else REFDRAFT.push({name:n,roles});
+    REFDRAFT.sort((a,b)=>a.name.localeCompare(b.name,"ar"));
+    toast(ex?"أُضيفت الفئات للحكم الموجود — اضغط «حفظ الحكام»":"أُضيف الحكم — اضغط «حفظ الحكام»","ok"); repaint();
+  };
+  $("#refNewName").onkeydown=e=>{ if(e.key==="Enter"){ e.preventDefault(); $("#refAddBtn").click(); } };
+  root.querySelectorAll("[data-refnew]").forEach(x=>x.onchange=()=>x.parentElement.classList.toggle("on",x.checked));
+  root.querySelectorAll("[data-refi]").forEach(x=>x.onchange=()=>{
+    const r=REFDRAFT[+x.dataset.refi], c=x.dataset.refc;
+    r.roles = x.checked ? [...new Set([...r.roles,c])] : r.roles.filter(k=>k!==c);
+    x.parentElement.classList.toggle("on",x.checked);
+  });
+  root.querySelectorAll("[data-refdel]").forEach(b=>b.onclick=()=>{
+    const r=REFDRAFT[+b.dataset.refdel];
+    if(confirm(`حذف «${r.name}» من قائمة الحكام؟ (لا يغيّر الطواقم المسجّلة في المباريات)`)){ const rm=[...(REFDRAFT.removed||[]),r.name]; REFDRAFT=REFDRAFT.filter(x=>x!==r); REFDRAFT.removed=rm; repaint(); }
+  });
+  const flt=$("#refFilter");
+  flt.oninput=()=>{ const q=flt.value.trim(); root.querySelectorAll("[data-refrow]").forEach(row=>row.hidden=!!q && !row.dataset.refname.includes(q)); };
+  $("#refsSave").onclick=async()=>{
+    const btn=$("#refsSave"); busy(btn,true,"جارٍ الحفظ…");
+    const reb=await rebaseOnCloud();
+    if(reb.changed) toast(`وصل تحديث من ${reb.by||"محرّر آخر"} — دُمج قبل الحفظ`,"busy");
+    /* المحذوف يُحفظ بلا فئات حتى لا يرجع من الطواقم المسجّلة */
+    const removed=(REFDRAFT.removed||[]).filter(n=>!REFDRAFT.some(r=>r.name===n));
+    ALL.refpool=[...REFDRAFT.map(r=>({name:r.name, roles:[...r.roles]})), ...removed.map(n=>({name:n, roles:[]}))];
+    const ok=await persistData();
+    busy(btn,false);
+    if(ok===true){ LASTSYNC=new Date(); REFDRAFT=null; toast("حُفظت قائمة الحكام","ok"); renderAdmin(); }
+    else toast(SYNCMSG||"حُفظت محلياً، لكن تعذّر الحفظ في السحابة","err");
+  };
+}
 function kitsAdminHTML(){
   const rows=CLUBS.filter(c=>c).map(c=>{
     const k=kitOf(c), d=defaultKit(c);
@@ -4239,6 +4319,19 @@ const REF_BOOK={
   "3|السالمية|الساحل":{"ref":"سعود السمحان","ar1":"عبد الرحمن الكندري","ar2":"علي كرم","fourth":"عباس حسين","var":"يوسف شطب","avar":"علي عوض"},
   "3|الشباب|كاظمة":{"ref":"احمد العلي","ar1":"احمد عباس","ar2":"ظافر العجمي","fourth":"سعود الشطي","var":"محمد العطار","avar":"طلال الشمري"}
 };
+/* فئات الحكام: الساحة، المساعد (للمساعد الأول والثاني)، الرابع، VAR، AVAR */
+const REF_CATS=[["ref","حكم ساحة"],["ar","حكم مساعد"],["fourth","حكم رابع"],["var","حكم فيديو VAR"],["avar","مساعد فيديو AVAR"]];
+const refCatOf=k=>(k==="ar1"||k==="ar2")?"ar":k;
+/* القائمة = ما أضافته الإدارة (ALL.refpool) + أسماء مستنتجة من الطواقم المسجّلة.
+   الاسم المحفوظ في القائمة تُعتمد فئاته كما حُددت (بلا فئات = مخفي من الاقتراحات). */
+function refPool(){
+  const map=new Map(), add=(n,c)=>{ n=String(n||"").trim(); if(!n||n==="لا يوجد") return; if(!map.has(n)) map.set(n,new Set()); map.get(n).add(c); };
+  Object.values(REF_BOOK).forEach(b=>Object.entries(b).forEach(([k,v])=>add(v,refCatOf(k))));
+  (ALL&&ALL.matches||[]).forEach(m=>{ add(m.ref,"ref"); Object.entries(m.refs||{}).forEach(([k,v])=>add(v,refCatOf(k))); });
+  const out=new Map([...map].map(([n,set])=>[n,{name:n,roles:[...set],saved:false}]));
+  (ALL&&ALL.refpool||[]).forEach(r=>{ const n=String(r.name||"").trim(); if(n) out.set(n,{name:n,roles:(r.roles||[]).filter(c=>REF_CATS.some(([k])=>k===c)),saved:true}); });
+  return [...out.values()].sort((a,b)=>a.name.localeCompare(b.name,"ar"));
+}
 function crewOf(m){ const b=REF_BOOK[`${m.round}|${m.home}|${m.away}`]||{}, saved=m.refs||{}, refs={};
   REF_ROLES.forEach(([k])=>{ const v=saved[k]||b[k]; if(v) refs[k]=v; });
   return {ref:m.ref||b.ref||"", refs}; }
@@ -6831,6 +6924,8 @@ function renderEditorAdmin(){
     <p class="hint">أضف مباراة كاملة: الجولة والملعب والتاريخ والوقت، ثم الأهداف والبطاقات وركلات الجزاء. النتيجة تُحسب من الأهداف.</p>
     <div id="matchAdmin"></div>
 
+    ${refsAdminHTML()}
+
     ${squadsSectionHTML()}
 
     ${totAdminHTML()}
@@ -6850,6 +6945,7 @@ function renderEditorAdmin(){
   renderMatchAdmin();
   wireSquads();
   wireKits();
+  wireRefs();
   wireTot();
   const lo=$("#logout");
   if(lo) lo.onclick=async()=>{
@@ -7025,6 +7121,8 @@ function renderAdmin(){
     <h2 class="sec">إدارة المباريات</h2>
     <p class="hint">أضف مباراة كاملة يدوياً: الجولة والملعب والتاريخ والوقت، ثم الأهداف والبطاقات وركلات الجزاء بنفس حقول ملف الإكسل. النتيجة تُحسب من الأهداف.</p>
     <div id="matchAdmin"></div>
+
+    ${refsAdminHTML()}
 
     <h2 class="sec">لعبة الفانتسي</h2>
     <div class="card pad">
@@ -7220,6 +7318,7 @@ function renderAdmin(){
   const du=$("#dataUp");
   if(du) du.onchange=e=>{ const f=e.target.files[0]; if(f) readDataFile(f); };
   wireKits();
+  wireRefs();
   wireTot();
   const eva=$("#evAdd");
   if(eva) eva.onclick=async()=>{
@@ -11091,7 +11190,7 @@ html.mx-editing #waFab{display:none!important}   /* زر واتساب كان ي�
 
   /* ===================== التبويبات ===================== */
   function tabMatch(){
-    const m=EDIT.match, refs=[...new Set([...(ALL.matches||[]).flatMap(x=>[x.ref, ...Object.values(x.refs||{})]), ...Object.values(REF_BOOK).flatMap(Object.values)].filter(v=>v&&v!=="لا يوجد"))].sort((a,b)=>a.localeCompare(b,"ar"));
+    const m=EDIT.match, pool=refPool();
     const stHome=m.home&&typeof CLUB_INFO!=="undefined"&&CLUB_INFO[m.home]?CLUB_INFO[m.home].st:"";
     return `<div class="mx-card"><h3>المسابقة والجولة</h3>
         <div class="mx-chips">${COMPS.map(c=>`<button class="mx-chip${m.comp===c?" on":""}" data-mcomp="${esc(c)}">${esc(c)}</button>`).join("")}</div>
@@ -11116,10 +11215,11 @@ html.mx-editing #waFab{display:none!important}   /* زر واتساب كان ي�
             ${stHome&&stHome!==m.venue?`<div class="mx-sug">ملعب ${esc(m.home)}: <button data-mvenue="${esc(stHome)}">${esc(stHome)}</button></div>`:""}</div>
           <div class="mx-span mx-crew"><span class="mx-lbl" style="font-size:.8rem;color:var(--head,#fff)">طاقم التحكيم</span>
             <div class="mx-grid g3">
-              <div><span class="mx-lbl">حكم الساحة</span><input data-mf="ref" list="mxRefs" value="${esc(m.ref||"")}" placeholder="اسم الحكم"></div>
-              ${REF_ROLES.map(([k,t])=>`<div><span class="mx-lbl">${t}</span><input data-mref="${k}" list="mxRefs" value="${esc((m.refs||{})[k]||"")}" placeholder="—"></div>`).join("")}
+              <div><span class="mx-lbl">حكم الساحة</span><input data-mf="ref" list="mxRefs-ref" value="${esc(m.ref||"")}" placeholder="اسم الحكم"></div>
+              ${REF_ROLES.map(([k,t])=>`<div><span class="mx-lbl">${t}</span><input data-mref="${k}" list="mxRefs-${refCatOf(k)}" value="${esc((m.refs||{})[k]||"")}" placeholder="—"></div>`).join("")}
             </div>
-            <datalist id="mxRefs">${refs.map(r=>`<option value="${esc(r)}">`).join("")}</datalist></div>
+            ${REF_CATS.map(([c])=>`<datalist id="mxRefs-${c}">${pool.filter(r=>r.roles.includes(c)).map(r=>`<option value="${esc(r.name)}">`).join("")}</datalist>`).join("")}
+            <p class="mx-hint">الاقتراحات حسب فئة كل حكم. أضف حكاماً جدداً من قسم «الحكام» في الإدارة، واكتب «لا يوجد» حين لا يُستخدم الدور.</p></div>
           <div class="mx-span"><span class="mx-lbl">ملاحظة تظهر للجمهور (اختيارية)</span><input data-mf="note" value="${esc(m.note)}" placeholder="مثال: المباراة غير منقولة"></div>
         </div></div>
       <p class="mx-hint">النتيجة تُحتسب تلقائياً من الأهداف في تبويب الأحداث.</p>`;
