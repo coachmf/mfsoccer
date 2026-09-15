@@ -3061,6 +3061,11 @@ function buildFromWorkbook(wb){
 function keepField(incoming, current){
   return incoming === undefined ? (current || []) : (incoming || []);
 }
+/* لاعبون جدد انضموا للكشف قبل إدخالهم من الإدارة: يُضافون إن لم يكونوا موجودين بالاسم.
+   s:0 = بلا رقم بعد (يُحدَّد الرقم لاحقاً من «الكشوفات» في الإدارة) */
+const SQUAD_ADD={
+  "العربي":[{n:"وليد ولد الشيخ", p:"CAM", s:0}],
+};
 function applyData(d, source){
   SEASON = d.season || SEASON;
   ALL = stampComp({matches:d.matches||[], goals:d.goals||[], pens:d.pens||[], cards:d.cards||[],
@@ -3073,6 +3078,8 @@ function applyData(d, source){
                    mev:     keepField(d.mev,     ALL && ALL.mev),
                    refpool: keepField(d.refpool, ALL && ALL.refpool)});   /* قائمة الحكام وفئاتهم */   /* أحداث المباراة الإضافية: فرصة خطيرة / VAR / تعليق */
   SQUADS = d.squads || SQUADS || {};   /* ملف بلا كشوفات لا يمسح الكشوفات الحالية */
+  Object.entries(SQUAD_ADD).forEach(([c,list])=>{ if(!Array.isArray(SQUADS[c])) return;
+    list.forEach(x=>{ if(!SQUADS[c].some(e=>(typeof e==="string"?e:e&&e.n)===x.n)) SQUADS[c].push(Object.assign({},x)); }); });
   if("fantasyOpen" in (d||{})) FANTASY_OPEN = !!d.fantasyOpen;
   if(typeof paintFantasyTab==="function") paintFantasyTab();  /* التبويب يظهر فور وصول حالة الإشهار */
   SQNUMS_FOUND = squadsExtractNums();   /* فصل الأرقام المكتوبة داخل الأسماء */
@@ -4135,6 +4142,7 @@ const LOCAL_PHOTOS={
   "عبدالرحمن الظفيري":"assets/players/jah/88",
   /* العربي */
   "زيد قنبر":"assets/players/arb/98",
+  "وليد ولد الشيخ":"assets/players/arb/walid",   /* انضم 2026-09-15، بلا رقم بعد — صورة من بطاقة المركز الإعلامي للنادي */
   /* كاظمة */
   "حسين كنكوني":"assets/players/kaz/1",
   "خالد شامان":"assets/players/kaz/5",
