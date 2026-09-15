@@ -239,4 +239,11 @@ const PLAYER_PHOTOS = {
   'JAH|عبدالرحمن الظفيري': '/assets/players/jah/88',
   // العربي (1)
   'ARB|زيد قنبر': '/assets/players/arb/98',
+  // كاظمة (6) — بورتريهات النادي الرسمية من حساب X
+  'KAZ|حسين كنكوني': '/assets/players/kaz/1',
+  'KAZ|خالد شامان': '/assets/players/kaz/5',
+  'KAZ|شبيب الخالدي': '/assets/players/kaz/10',
+  'KAZ|محمد عنتر': '/assets/players/kaz/12',
+  'KAZ|اماث نداو': '/assets/players/kaz/19',
+  'KAZ|ادريس شعيبي': '/assets/players/kaz/97',
 };
