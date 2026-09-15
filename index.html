@@ -9130,10 +9130,14 @@ html[data-theme="light"] .hm{--bg-card:#FFFFFF;--border-card:#E2E8F0;--text-prim
 .rt-colhd .crest{width:22px;height:22px}
 .rt-colhd b{flex:1;font-size:.86rem;color:var(--text-primary,#fff)}
 .pp-rtg{position:absolute;left:50%;bottom:-19px;transform:translateX(-50%);min-width:26px;height:16px;font-size:.62rem;border-radius:4px;box-shadow:0 1px 3px rgba(0,0,0,.4);z-index:2}
-/* ملعب صفحة المباراة: أرضية داكنة هادئة بخطوط رمادية خفيفة */
-.mp-xi .xipitch{background:#1b2027 !important;box-shadow:none !important;border:1px solid rgba(255,255,255,.08)}
-.mp-xi .xipitch::before,.mp-xi .xipitch::after{display:none !important}
-.mp-xi .xip-lines{opacity:1;filter:grayscale(1) brightness(.75)}
+/* ملعب التشكيلة الموحّد للموقع كله (منصور 2026-09-15، من صفحة رفيجه): عشب #1F6F45 بشرائط #25804F وخطوط بيضاء */
+.xipitch{background:repeating-linear-gradient(180deg,color-mix(in srgb,var(--pitch-grass2,#25804F) 55%,transparent) 0 5%,transparent 5% 10%),var(--pitch-grass,#1F6F45) !important;
+  border:0 !important;box-shadow:0 8px 22px rgba(0,0,0,.28) !important;border-radius:12px}
+.xipitch::before,.xipitch::after{display:none !important}
+.xip-lines{background:url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20500%20700%22%20preserveAspectRatio%3D%22none%22%3E%3Cg%20fill%3D%22none%22%20stroke%3D%22rgba%28255%2C255%2C255%2C.8%29%22%20stroke-width%3D%222.6%22%3E%3Crect%20x%3D%2212%22%20y%3D%2212%22%20width%3D%22476%22%20height%3D%22676%22%2F%3E%3Cpath%20d%3D%22M185%2012a65%2065%200%200%200%20130%200%22%2F%3E%3Crect%20x%3D%22120%22%20y%3D%22542%22%20width%3D%22260%22%20height%3D%22146%22%2F%3E%3Crect%20x%3D%22182%22%20y%3D%22636%22%20width%3D%22136%22%20height%3D%2252%22%2F%3E%3Cpath%20d%3D%22M200%20542a65%2065%200%200%201%20100%200%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E') center/100% 100% no-repeat !important;opacity:1 !important;filter:none !important}
+.xip-lines::before{display:none !important}
+.xipitch.full .xip-lines{background:url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20400%20800%22%20preserveAspectRatio%3D%22none%22%3E%3Cg%20fill%3D%22none%22%20stroke%3D%22rgba%28255%2C255%2C255%2C.8%29%22%20stroke-width%3D%222.4%22%3E%3Crect%20x%3D%2210%22%20y%3D%2210%22%20width%3D%22380%22%20height%3D%22780%22%2F%3E%3Cline%20x1%3D%2210%22%20y1%3D%22400%22%20x2%3D%22390%22%20y2%3D%22400%22%2F%3E%3Ccircle%20cx%3D%22200%22%20cy%3D%22400%22%20r%3D%2252%22%2F%3E%3Ccircle%20cx%3D%22200%22%20cy%3D%22400%22%20r%3D%222.5%22%20fill%3D%22rgba%28255%2C255%2C255%2C.8%29%22%2F%3E%3Crect%20x%3D%2296%22%20y%3D%2210%22%20width%3D%22208%22%20height%3D%22118%22%2F%3E%3Crect%20x%3D%22146%22%20y%3D%2210%22%20width%3D%22108%22%20height%3D%2242%22%2F%3E%3Crect%20x%3D%2296%22%20y%3D%22672%22%20width%3D%22208%22%20height%3D%22118%22%2F%3E%3Crect%20x%3D%22146%22%20y%3D%22748%22%20width%3D%22108%22%20height%3D%2242%22%2F%3E%3Cpath%20d%3D%22M160%20128a52%2052%200%200%200%2080%200M160%20672a52%2052%200%200%201%2080%200%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E') center/100% 100% no-repeat !important}
+.xipitch.half.epitch{background-image:repeating-linear-gradient(180deg,color-mix(in srgb,var(--pitch-grass2,#25804F) 55%,transparent) 0 5%,transparent 5% 10%) !important}
 /* ===== صفحة المباراة (2026-09-15) ===== */
 .mc[data-mopen]{cursor:pointer}
 .mc[data-mopen] .mc-row:hover .mc-mid{opacity:.85}
@@ -10190,6 +10194,7 @@ function mpInfoRows(m){
   rows.push(["الجولة", String(m.round)]);
   if(m.date) rows.push(["التاريخ", `${mpDateLabel(m)}${m.time?` · <span dir="ltr">${esc(m.time)}</span>`:""}`]);
   if(m.venue) rows.push(["الملعب", esc(m.venue)]);
+  if(m.ref) rows.push(["الحكم", esc(m.ref)]);
   return `<div class="mp-card mp-info">${rows.map(([k,v])=>`<div class="mp-irow"><span>${k}</span><b>${v}</b></div>`).join("")}
     ${m.note?`<div class="mp-note">${esc(m.note)}</div>`:""}</div>`;
 }
@@ -10220,9 +10225,44 @@ function mpDetails(m){
   const comp=`<button type="button" class="mp-card mp-compcard" data-mp-tab="table"><span>${esc(compOf(m))} · الجولة ${m.round} · ${esc(SEASON)}</span><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg></button>`;
   return comp + body + (soon?"":mpMotmHTML(m)) + mpInfoRows(m) + mpMiniTable(m);
 }
+/* ملعب صفحة المباراة: توزيع مرتّب حسب خطة كل فريق — الخطوط تُستنتج من ترتيب اللاعبين عمقاً (y) وعدد كل خط
+   من الخطة، ثم تتوزع البطاقات أفقياً بالتساوي داخل الخط، مع هامش للحارس داخل الملعب فلا تتداخل ولا تُقصّ. */
+function mpTidyLines(S){
+  const counts=[1, ...String(S.form||"").split("-").map(n=>+n).filter(n=>n>0)];
+  const total=counts.reduce((a,b)=>a+b,0);
+  const L=[...S.spots].sort((a,b)=>b.y-a.y);
+  if(total!==L.length) return null;
+  let i=0; return counts.map(c=>{ const line=L.slice(i,i+c); i+=c; return line.sort((a,b)=>a.x-b.x); });
+}
+function mpPitchHTML(m){
+  const comp=compOf(m);
+  const H=pitchSpots(m.round, comp, m.home), A=pitchSpots(m.round, comp, m.away);
+  if(!H || !A) return "";
+  const half=(S, club, top)=>{
+    const kit=Object.assign(kitOf(club),{club});
+    const lines=mpTidyLines(S);
+    if(!lines) return S.spots.map(({p,x,y,n})=>{               /* خطة لا تطابق عدد اللاعبين: المواضع كما سُجّلت */
+      const yy = top ? 7 + ((90-y)/90)*37 : 93 - ((90-y)/90)*37;
+      return spotHTML(p, top?100-x:x, +yy.toFixed(1), n, kit, playerMatchEvents(m,club,p.n), true);
+    }).join("");
+    const G=lines.length-1;
+    return lines.map((line,li)=>line.map((sp,k)=>{
+      const n=line.length, pad = n===2 ? 28 : n===3 ? 18 : 10, x = n===1 ? 50 : pad + k*((100-2*pad)/(n-1));
+      const y = top ? 6.5 + li*(37/G) : 93.5 - li*(37/G);
+      return spotHTML(sp.p, top?100-x:x, +y.toFixed(1), Math.max(n,3), kit, playerMatchEvents(m,club,sp.p.n), true);
+    }).join("")).join("");
+  };
+  const tag=c=>`<div class="xi-t">${crest(c)}<b>${esc(c)}</b>`;
+  return `<div class="xi">
+    ${tag(m.away)}<i>${esc(A.form)}</i></div>
+    <div class="xipitch full"><div class="xip-lines"></div>
+      ${half(A, m.away, true)}${half(H, m.home, false)}</div>
+    ${tag(m.home)}<i>${esc(H.form)}</i></div>
+  </div>`;
+}
 function mpLineups(m){
   if(isUpcoming(m)) return `<div class="mp-card mp-empty">تُنشر التشكيلة بعد انطلاق المباراة.</div>`;
-  const xi=matchPitchHTML(m), subs=subsHTML(m);
+  const xi=mpPitchHTML(m), subs=subsHTML(m);
   if(!xi && !subs) return `<div class="mp-card mp-empty">لم تُسجَّل تشكيلة هذه المباراة بعد.</div>`;
   return `${xi?`<div class="mp-card mp-xi">${xi}</div>`:""}${mpRatingsHTML(m)}${subs?`<div class="mp-card">${subs}</div>`:""}`;
 }
