@@ -2090,7 +2090,7 @@ main{padding-bottom:48px}
 </style>
 <!-- اللغة الإنجليزية والوضع الداكن -->
 <link rel="stylesheet" href="site-theme.css?v=5">
-<script src="fantasy/js/i18n-more.js" defer></script>
+<script src="fantasy/js/i18n-more.js?v=9" defer></script>
 <script src="site-i18n.js?v=4" defer></script>
 </head>
 <body>
@@ -2598,7 +2598,10 @@ function stampLabel(ts){
 function isUpcoming(m){
   if(matchGoals(m).length) return false;      /* فيها أهداف = أُقيمت */
   const k=kickoffTS(m);
-  return k!==null && k > Date.now();
+  if(k!==null && k > Date.now()) return true;
+  /* مضى الموعد بلا أهداف: تُعدّ مُقامة (0-0) فقط إذا سُجّلت تشكيلة — وإلا فهي مؤجلة أو لم تُدخل بياناتها بعد */
+  const comp=compOf(m);
+  return !(xiNames(m.round, comp, m.home).length || xiNames(m.round, comp, m.away).length);
 }
 function isLive(m){
   if(isUpcoming(m)) return false;
@@ -2608,7 +2611,7 @@ function isLive(m){
   return n>=k && n < k+2*60*60*1000;
 }
 const playedMatches = () => MATCHES.filter(m=>!isUpcoming(m));
-const matchGoals = m => GOALS.filter(g=>g.r===m.round &&
+const matchGoals = m => GOALS.filter(g=>g.r===m.round && compOf(g)===compOf(m) &&
   ((g.sc===m.home&&g.cd===m.away)||(g.sc===m.away&&g.cd===m.home))).sort((a,b)=>abs(a)-abs(b));
 
 /* ================= الحسابات ================= */
@@ -2630,7 +2633,7 @@ function standings(){
 }
 function scorers(){
   const p={};
-  GOALS.forEach(g=>{ const k=g.p+"|"+g.sc; (p[k]??={n:g.p,c:g.sc,g:0,a:0}).g++; });
+  GOALS.forEach(g=>{ if(g.bp==="هدف عكسي") return; const k=g.p+"|"+g.sc; (p[k]??={n:g.p,c:g.sc,g:0,a:0}).g++; });   /* الهدف العكسي ليس للمسجّل — نفس تعريف ملف اللاعب */
   GOALS.forEach(g=>{ if(!g.a) return; const k=g.a+"|"+g.sc; (p[k]??={n:g.a,c:g.sc,g:0,a:0}).a++; });
   return Object.values(p).sort((a,b)=>b.g-a.g||b.a-a.a);
 }
@@ -2678,7 +2681,7 @@ function playerMatchMinutes(m, club, name){
   else if(inSub) start = capMin(absMinute(inSub.h, inSub.m));
   else return 0;                                   /* لم يشارك */
   const end = outSub ? capMin(absMinute(outSub.h, outSub.m)) : MATCH_MIN;
-  return Math.max(0, end - start);
+  return Math.max(inSub ? 1 : 0, end - start);   /* بديل دخل في الدقيقة 90+ يُحسب له ظهور بدقيقة واحدة */
 }
 /* هل اللاعب حارس مرمى؟ (من مركزه في الكشف) */
 function isGoalkeeper(club, name){
@@ -3064,8 +3067,9 @@ function applyData(d, source){
   DATA_BY = d.updatedBy || "";
   CUR_STAMP = stampOf(d);   /* v27 */
   DATA_SOURCE  = source || "ملف بيانات";
-  const mx = ALL.matches.length ? Math.max(...ALL.matches.map(m=>m.round)) : 0;
-  if(!/الجولة/.test(LASTUPDATE)) LASTUPDATE = `الجولة ${mx}`;
+  const playedR = ALL.matches.filter(m=>!isUpcoming(m)).map(m=>+m.round||0);   /* آخر جولة لُعبت فعلاً، لا آخر جولة في الجدول */
+  const mx = playedR.length ? Math.max(...playedR) : 0;
+  if(mx && (!/الجولة/.test(LASTUPDATE) || /^الجولة \d+( · 27 أغسطس 2026)?$/.test(LASTUPDATE))) LASTUPDATE = `الجولة ${mx}`;   /* لا يبقى على الافتراضي؛ نصّ المدير المخصّص يُحترم */
   $("#seasonLbl").textContent = SEASON;
   paintRail(); paintFoot(); renderAll();
 }
@@ -5613,7 +5617,7 @@ function roundSummary(list){
   const soon=list.filter(isUpcoming).length;
   const done=list.filter(m=>!isUpcoming(m));
   const goals=done.reduce((a,m)=>a+m.hg+m.ag,0);
-  const inScope=x=>list.some(m=>m.round===x.r&&(m.home===x.club||m.away===x.club));
+  const inScope=x=>list.some(m=>m.round===x.r&&compOf(m)===compOf(x)&&(m.home===x.club||m.away===x.club));
   const yc=CARDS.filter(x=>isYellow(x.type)&&inScope(x)).length;
   const rc=CARDS.filter(x=>isRed(x.type)&&inScope(x)).length;
   if(!list.length) return "";
@@ -5856,7 +5860,7 @@ function renderMatches(){
   let lastDay=null;
   const matchCards = list.map(m=>{
     const gs=matchGoals(m);
-    const mc=CARDS.filter(x=>x.r===m.round && (x.club===m.home||x.club===m.away));
+    const mc=CARDS.filter(x=>x.r===m.round && compOf(x)===compOf(m) && (x.club===m.home||x.club===m.away));
     const y=mc.filter(x=>isYellow(x.type)).length, r=mc.filter(x=>isRed(x.type)).length;
     const soon=isUpcoming(m), live=isLive(m);
     const st = soon ? '<span class="mc-st soon">لم تبدأ</span>' : live ? '<span class="mc-st live"><i></i>جارية الآن</span>' : '<span class="mc-st done">انتهت</span>';
@@ -5938,6 +5942,7 @@ function renderClubs(){
 }
 function renderClubBody(c){
   if(c===KFA_KEY){ renderKFABody(); return; }   /* صفحة الاتحاد الكويتي (ليست نادياً) */
+  if(!CLUBS.includes(c)){ $("#clubBody").innerHTML=`<div class="card pad"><p class="hint" style="margin:0">لا توجد بيانات لهذا النادي.</p></div>`; return; }
   const s=clubStats(c), r=s.row;
   const mx=Math.max(1,...s.timing.map(t=>Math.max(t.f,t.a)));
   const played=r.P;
@@ -9457,7 +9462,8 @@ function playerWindow(m, club, name){
   const subs=matchSubs(m).filter(s=>s.club===club);
   const inSub=subs.find(s=>s.in===name), outSub=subs.find(s=>s.out===name);
   let start; if(starter) start=0; else if(inSub) start=capMin(absMinute(inSub.h,inSub.m)); else return null;
-  const end = outSub ? capMin(absMinute(outSub.h,outSub.m)) : MATCH_MIN;
+  let end = outSub ? capMin(absMinute(outSub.h,outSub.m)) : MATCH_MIN;
+  if(inSub && end<=start) end=start+1;           /* بديل الدقيقة 90+: نافذة بدقيقة واحدة حتى يظهر في السجل */
   return {start, end};
 }
 function clubOfPlayer(name){
@@ -9485,7 +9491,7 @@ function playerProfileData(name, club){
       const gs=matchGoals(m);
       const g=gs.filter(x=>x.sc===club && x.p===name && x.bp!=="هدف عكسي").length;
       const a=gs.filter(x=>x.sc===club && x.a===name).length;
-      const con=gs.filter(x=>x.sc!==club && abs(x)>=w.start && abs(x)<=w.end).length; conceded+=con;
+      const con=gs.filter(x=>x.sc!==club && abs(x)>=w.start && (w.end>=MATCH_MIN || abs(x)<=w.end)).length; conceded+=con;   /* ما لم يُستبدل، أهداف 90+ عليه أيضاً */
       const cd=CARDS.filter(x=>x.r===m.round && compOf(x)===compOf(m) && x.club===club && x.p===name);
       const home=m.home===club, opp=home?m.away:m.home;
       const gf=home?+m.hg:+m.ag, ga=home?+m.ag:+m.hg;
@@ -9518,7 +9524,7 @@ function playerProfileHTML(D){
       <div class="wm" style="background-image:url('${crestSrcOf(D.club)}')"></div>
       <div class="ph">${cut?`<img src="${cut}.webp?v=8" alt="" decoding="async">`:`<img class="noph" src="${crestSrcOf(D.club)}" alt="">`}</div>
       <div class="pprof-id">
-        <div class="club" data-club-link="${esc(D.club)}">${crest(D.club)}<span>${esc(D.club)}</span></div>
+        ${D.club?`<div class="club" data-club-link="${esc(D.club)}">${crest(D.club)}<span>${esc(D.club)}</span></div>`:""}
         <h3>${esc(D.name)}</h3>
         <div class="meta">${D.num?`<span class="num">${D.num}</span>`:""}${D.pos?`<span>${esc(posLabel(D.pos))}</span>`:""}</div>
       </div>
@@ -9627,7 +9633,7 @@ function topPlayersHTML(){
       </div>
     </article>`;
   };
-  return `<h2 class="sec">أبرز اللاعبين<span class="sq-n">الموسم كاملاً</span></h2>
+  return `<h2 class="sec">أبرز اللاعبين<span class="sq-n">${COMP==="الكل"?"كل المسابقات":esc(COMP)}</span></h2>
     <div class="tp-row">${uniq.map(card).join("")}</div>`;
 }
 function teamFormHTML(T){
@@ -9859,6 +9865,7 @@ const I18N_EXTRA = {
   // منتخبات وبطولات تظهر في الأجندة (أسماء من بيانات الإدارة)
   'السعودية':'Saudi Arabia', 'العراق':'Iraq', 'عمان':'Oman', 'قطر':'Qatar', 'البحرين':'Bahrain', 'الإمارات':'UAE', 'اليمن':'Yemen', 'الوحدة':'Al-Wahda',
   'خليجي 27 ( السعودية)':'Gulf Cup 27 (Saudi Arabia)', 'خليجي 27':'Gulf Cup 27', 'كاس الخليج - السعودية':'Gulf Cup – Saudi Arabia', 'كأس الخليج':'Gulf Cup', 'اسيا 2':'AFC Champions League Two', 'آسيا 2':'AFC Champions League Two', 'منتخب':'National team', 'بطولة خارجية':'External competition',
+  'الفريق الأول':'First team', 'المنتخب الأولمبي':'Olympic team', 'نبذة عن الاتحاد':'About the FA', 'الهدافون التاريخيون':'All-time top scorers', 'الأكثر مشاركة':'Most capped',
   'دوري أبطال الخليج للأندية':'Gulf Club Champions League', 'دوري أبطال آسيا 2':'AFC Champions League Two', 'دوري التحدي الآسيوي':'AFC Challenge League', 'محلي':'Domestic', 'خارجي':'International', 'كل المسابقات':'All competitions', 'أُقيمت':'Played', 'مجموعة الأزرق':'Kuwait’s group', 'مجموعة كاظمة':'Kazma’s group', 'مجموعة الكويت':'Kuwait SC’s group', 'المجموعة C · القادسية':'Group C · Qadsia', 'مجموعة العربي':'Al-Arabi’s group', 'الفريق':'Team',
 };
 document.addEventListener("DOMContentLoaded", ()=>{
@@ -9994,7 +10001,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
   }
   function face(p){
     const cut=(typeof photoCut==="function" && typeof LOCAL_PHOTOS!=="undefined" && (typeof PHOTOSON==="undefined" || PHOTOSON)) ? photoCut(p.n,p.c) : null;
-    return cut ? `<img src="${cut}_f.webp?v=6" alt="" loading="lazy" decoding="async">`
+    return cut ? `<img src="${cut}_f.webp?v=8" alt="" loading="lazy" decoding="async">`
                : esc(p.n.split(/\s+/).slice(0,2).map(w=>w[0]||"").join(""));
   }
   function paint(){
