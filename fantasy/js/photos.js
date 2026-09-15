@@ -4,7 +4,7 @@
 'use strict';
 
 /* رقم نسخة الصور: ارفعه عند إعادة توليد أي قصّة حتى لا يبقى المتصفح على النسخة القديمة */
-const PLAYER_PHOTOS_VER = '6';
+const PLAYER_PHOTOS_VER = '7';
 
 const PLAYER_PHOTOS = {
   // الصليبخات (17)
@@ -133,7 +133,7 @@ const PLAYER_PHOTOS = {
   'SAL|ديفيــد سامبيسا': '/assets/players/sal/77',
   // الكويت (20)
   'KUW|فينيسيوس': '/assets/players/kuw/17',   // من منشور النادي
-  'KUW|عبدالله القرزعي': '/assets/players/kuw/88',   // بورتريه مولّد بوجهه (Gemini) من إعلان التعاقد
+  'KUW|عبدالله القرزعي': '/assets/players/kuw/88',   // جلسة النادي الرسمية (Drive) من إعلان التعاقد
   'KUW|عمر غونزاليس': '/assets/players/kuw/25',   // صورة استوديو أرسلها منصور
   'KUW|فهد حمود': '/assets/players/kuw/13',   // غير موجود في الكشف بعد
   'KUW|عبدالرحمن كميل': '/assets/players/kuw/40',   // حارس، غير موجود في الكشف بعد
@@ -213,12 +213,12 @@ const PLAYER_PHOTOS = {
   'QAD|ايوب لخضر': '/assets/players/qad/77',
   'QAD|سالم الريس': '/assets/players/qad/78',
   // الجهراء (16)
-  'JAH|ايفانز امبوفو': '/assets/players/jah/15',   // بورتريه مولّد بوجهه (Gemini) من صورة المباراة
-  'JAH|كيريست افالانا': '/assets/players/jah/98',   // بورتريه مولّد بوجهه (Gemini) من صورة المباراة
-  'JAH|مبارك الحربي': '/assets/players/jah/1',   // بورتريه مولّد بوجهه (Gemini) من رسم تشكيلة النادي
-  'JAH|تاكامبا ناسام': '/assets/players/jah/26',   // بورتريه مولّد بوجهه (Gemini) من رسم تشكيلة النادي
-  'JAH|ماركوس راموس': '/assets/players/jah/13',   // بورتريه مولّد بوجهه (Gemini) من رسم تشكيلة النادي
-  'JAH|تركي المطيري': '/assets/players/jah/22',   // بورتريه مولّد بوجهه (Gemini) من صورة منصور
+  'JAH|ايفانز امبوفو': '/assets/players/jah/15',   // جلسة النادي الرسمية (Drive) من صورة المباراة
+  'JAH|كيريست افالانا': '/assets/players/jah/98',   // جلسة النادي الرسمية (Drive) من صورة المباراة
+  'JAH|مبارك الحربي': '/assets/players/jah/1',   // جلسة النادي الرسمية (Drive) من رسم تشكيلة النادي
+  'JAH|تاكامبا ناسام': '/assets/players/jah/26',   // جلسة النادي الرسمية (Drive) من رسم تشكيلة النادي
+  'JAH|ماركوس راموس': '/assets/players/jah/13',   // جلسة النادي الرسمية (Drive) من رسم تشكيلة النادي
+  'JAH|تركي المطيري': '/assets/players/jah/22',   // جلسة النادي الرسمية (Drive) من صورة منصور
   'JAH|عبدالله الداحس': '/assets/players/jah/80',
   'JAH|جاسم العنزي': '/assets/players/jah/4',
   'JAH|عادل جاسم الشمري': '/assets/players/jah/8',
@@ -246,10 +246,27 @@ const PLAYER_PHOTOS = {
   'KAZ|محمد عنتر': '/assets/players/kaz/12',
   'KAZ|اماث نداو': '/assets/players/kaz/19',
   'KAZ|ادريس شعيبي': '/assets/players/kaz/97',
-  'KAZ|بدر ذكرالله': '/assets/players/kaz/3',   // بورتريه مولّد بوجهه (Gemini)
-  'KAZ|ناصر محمدوه': '/assets/players/kaz/7',   // بورتريه مولّد بوجهه (Gemini)
-  'KAZ|ناصر فالح': '/assets/players/kaz/8',   // بورتريه مولّد بوجهه (Gemini)
-  'KAZ|تروليس كنول': '/assets/players/kaz/99',   // بورتريه مولّد بوجهه (Gemini)
+  'KAZ|بدر ذكرالله': '/assets/players/kaz/3',   // جلسة النادي الرسمية (Drive)
+  'KAZ|ناصر محمدوه': '/assets/players/kaz/7',   // جلسة النادي الرسمية (Drive)
+  'KAZ|ناصر فالح': '/assets/players/kaz/8',   // جلسة النادي الرسمية (Drive)
+  'KAZ|تروليس كنول': '/assets/players/kaz/99',   // جلسة النادي الرسمية (Drive)
+  'KAZ|صالح المحطب': '/assets/players/kaz/2',
+  'KAZ|فهد الهاجري': '/assets/players/kaz/4',
+  'KAZ|عبدالله الفهد': '/assets/players/kaz/6',
+  'KAZ|بندر بورسلي': '/assets/players/kaz/9',
+  'KAZ|مشعل الشمري': '/assets/players/kaz/11',
+  'KAZ|المنتصر عبدالسلام': '/assets/players/kaz/14',
+  'KAZ|ضاري الرقم': '/assets/players/kaz/16',
+  'KAZ|جراح الهليلي': '/assets/players/kaz/17',
+  'KAZ|يوسف الخطيب': '/assets/players/kaz/20',
+  'KAZ|خليفة رحيل': '/assets/players/kaz/22',
+  'KAZ|احمد الزنكي': '/assets/players/kaz/29',
+  'KAZ|سلطان العنزي': '/assets/players/kaz/30',
+  'KAZ|فيصل السبيعي': '/assets/players/kaz/35',
+  'KAZ|ضاري المسري': '/assets/players/kaz/36',
+  'KAZ|بندر البرازي': '/assets/players/kaz/66',
+  'KAZ|عثمان الشمري': '/assets/players/kaz/74',
+  'KAZ|باتريك روبسون': '/assets/players/kaz/98',
   // التضامن (18) — بورتريهات النادي الرسمية (أرسلها منصور 2026-09-15)
   'TDM|داود الخالدي': '/assets/players/tdm/1',
   'TDM|فيصل الشطي': '/assets/players/tdm/2',
