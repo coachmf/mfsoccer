@@ -82,6 +82,13 @@ const PLAYER_PHOTOS = {
   'SHB|ماركوس مارتينلي': '/assets/players/shb/73',
   'SHB|ميشيل دي ليما': '/assets/players/shb/97',
   'SHB|ماثيوس توتو': '/assets/players/shb/99',
+  'SHB|حسين الحربي': '/assets/players/shb/7',   // جلسة النادي، رقم القميص
+  'SHB|محمد حمد': '/assets/players/shb/8',   // جلسة النادي، رقم القميص
+  'SHB|يوسف نجف': '/assets/players/shb/15',   // جلسة النادي، رقم القميص
+  'SHB|محمد غانم': '/assets/players/shb/30',   // جلسة النادي، رقم القميص
+  'SHB|عبدالعزيز كميل': '/assets/players/shb/32',   // جلسة النادي، رقم القميص
+  'SHB|ضاري العتيبي': '/assets/players/shb/34',   // جلسة النادي، رقم القميص
+  'SHB|فيكتور فيليب': '/assets/players/shb/44',   // جلسة النادي، رقم القميص
   // الفحيحيل (20)
   'FAH|كارلوس': '/assets/players/fah/35',
   'FAH|فيتور دا سيلفا': '/assets/players/fah/33',
