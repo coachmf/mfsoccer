@@ -2071,7 +2071,7 @@ main{padding-bottom:48px}
 <!-- v3:strips -->
 <div class="strip" id="resStrip" aria-label="نتائج آخر جولة"></div>
 <!-- شريط الشعارات مرسوم في الملف نفسه: يظهر مع أول رسم ولا ينتظر البيانات ولا الجافاسكربت؛ يُعاد رسمه من CLUBS لاحقاً -->
-<div class="crestbar" id="crestBar" aria-label="الأندية"><div class="crestbar-in"><button type="button" title="القادسية" aria-label="القادسية" onclick="window.openClub&&openClub('القادسية')"><img src="assets/crests/sq/qadsia.png" alt="القادسية" width="46" height="46"></button><button type="button" title="الكويت" aria-label="الكويت" onclick="window.openClub&&openClub('الكويت')"><img src="assets/crests/sq/kuwait.png" alt="الكويت" width="46" height="46"></button><button type="button" title="العربي" aria-label="العربي" onclick="window.openClub&&openClub('العربي')"><img src="assets/crests/sq/arabi.png" alt="العربي" width="46" height="46"></button><button type="button" title="كاظمة" aria-label="كاظمة" onclick="window.openClub&&openClub('كاظمة')"><img src="assets/crests/sq/kazma.png" alt="كاظمة" width="46" height="46"></button><button type="button" title="السالمية" aria-label="السالمية" onclick="window.openClub&&openClub('السالمية')"><img src="assets/crests/sq/salmiya.png" alt="السالمية" width="46" height="46"></button><button type="button" title="النصر" aria-label="النصر" onclick="window.openClub&&openClub('النصر')"><img src="assets/crests/sq/nasr.png" alt="النصر" width="46" height="46"></button><button type="button" title="الجهراء" aria-label="الجهراء" onclick="window.openClub&&openClub('الجهراء')"><img src="assets/crests/sq/jahra.png" alt="الجهراء" width="46" height="46"></button><button type="button" title="الساحل" aria-label="الساحل" onclick="window.openClub&&openClub('الساحل')"><img src="assets/crests/sq/sahel.png" alt="الساحل" width="46" height="46"></button><button type="button" title="الفحيحيل" aria-label="الفحيحيل" onclick="window.openClub&&openClub('الفحيحيل')"><img src="assets/crests/sq/fahaheel.png" alt="الفحيحيل" width="46" height="46"></button><button type="button" title="التضامن" aria-label="التضامن" onclick="window.openClub&&openClub('التضامن')"><img src="assets/crests/sq/tadamon.png" alt="التضامن" width="46" height="46"></button><button type="button" title="الشباب" aria-label="الشباب" onclick="window.openClub&&openClub('الشباب')"><img src="assets/crests/sq/shabab.png" alt="الشباب" width="46" height="46"></button><button type="button" title="الصليبخات" aria-label="الصليبخات" onclick="window.openClub&&openClub('الصليبخات')"><img src="assets/crests/sq/sulaibikhat.png" alt="الصليبخات" width="46" height="46"></button></div></div>
+<div class="crestbar" id="crestBar" aria-label="الأندية"><div class="crestbar-in"><button type="button" title="القادسية" aria-label="القادسية" data-club="القادسية"><img src="assets/crests/sq/qadsia.png" alt="القادسية" width="46" height="46"></button><button type="button" title="الكويت" aria-label="الكويت" data-club="الكويت"><img src="assets/crests/sq/kuwait.png" alt="الكويت" width="46" height="46"></button><button type="button" title="العربي" aria-label="العربي" data-club="العربي"><img src="assets/crests/sq/arabi.png" alt="العربي" width="46" height="46"></button><button type="button" title="كاظمة" aria-label="كاظمة" data-club="كاظمة"><img src="assets/crests/sq/kazma.png" alt="كاظمة" width="46" height="46"></button><button type="button" title="السالمية" aria-label="السالمية" data-club="السالمية"><img src="assets/crests/sq/salmiya.png" alt="السالمية" width="46" height="46"></button><button type="button" title="النصر" aria-label="النصر" data-club="النصر"><img src="assets/crests/sq/nasr.png" alt="النصر" width="46" height="46"></button><button type="button" title="الجهراء" aria-label="الجهراء" data-club="الجهراء"><img src="assets/crests/sq/jahra.png" alt="الجهراء" width="46" height="46"></button><button type="button" title="الساحل" aria-label="الساحل" data-club="الساحل"><img src="assets/crests/sq/sahel.png" alt="الساحل" width="46" height="46"></button><button type="button" title="الفحيحيل" aria-label="الفحيحيل" data-club="الفحيحيل"><img src="assets/crests/sq/fahaheel.png" alt="الفحيحيل" width="46" height="46"></button><button type="button" title="التضامن" aria-label="التضامن" data-club="التضامن"><img src="assets/crests/sq/tadamon.png" alt="التضامن" width="46" height="46"></button><button type="button" title="الشباب" aria-label="الشباب" data-club="الشباب"><img src="assets/crests/sq/shabab.png" alt="الشباب" width="46" height="46"></button><button type="button" title="الصليبخات" aria-label="الصليبخات" data-club="الصليبخات"><img src="assets/crests/sq/sulaibikhat.png" alt="الصليبخات" width="46" height="46"></button></div></div>
 <!-- /v3:strips -->
 
 
@@ -5529,7 +5529,7 @@ function renderMatches(){
 let STADIUMS_WARM=false;
 function warmStadiums(){
   if(STADIUMS_WARM || typeof CLUB_INFO==="undefined") return; STADIUMS_WARM=true;
-  const run=()=>Object.values(CLUB_INFO).forEach(I=>{ if(I.slug){ const im=new Image(); im.decoding="async"; im.src=`assets/stadiums/${I.slug}.jpg?v=6`; } });
+  const run=()=>Object.values(CLUB_INFO).forEach(I=>{ if(I.slug){ const im=new Image(); im.decoding="async"; im.src=`assets/stadiums/${I.slug}.jpg?v=7`; } });
   ("requestIdleCallback" in window) ? requestIdleCallback(run,{timeout:2500}) : setTimeout(run,800);
 }
 function renderClubs(){
@@ -7692,8 +7692,20 @@ const domReady = () => new Promise(r => document.readyState!=="loading" ? r() : 
     window.scrollTo({top:0,behavior:"instant"});
   }
   window.openClub=openClub;
+  /* شريط الشعارات: نحدد الشعار المضغوط من إحداثيات اللمسة لا من هدف الحدث — على iOS في الأشرطة المنزلقة RTL كان
+     الضغط على كاظمة يفتح السالمية (الشعار المجاور). */
+  document.addEventListener("click", e=>{
+    const cb=e.target.closest("#crestBar, #footCrests"); if(!cb) return;
+    const btns=[...cb.querySelectorAll("button[data-club]")]; if(!btns.length) return;
+    let b=null;
+    if(typeof e.clientX==="number" && (e.clientX||e.clientY)){
+      b=btns.find(x=>{ const r=x.getBoundingClientRect(); return e.clientX>=r.left && e.clientX<=r.right && e.clientY>=r.top-8 && e.clientY<=r.bottom+8; });
+    }
+    b=b || e.target.closest("button[data-club]"); if(!b) return;
+    e.preventDefault(); openClub(b.dataset.club);
+  }, true);
   function crestButtons(){
-    return (CLUBS||[]).map(c=>`<button type="button" title="${esc(c)}" aria-label="${esc(c)}" onclick="openClub('${esc(c)}')"><img src="${crestImg(c)}" alt="${esc(c)}"></button>`).join("");
+    return (CLUBS||[]).map(c=>`<button type="button" title="${esc(c)}" aria-label="${esc(c)}" data-club="${esc(c)}"><img src="${crestImg(c)}" alt="${esc(c)}"></button>`).join("");
   }
   function paintStrips(){
     try{
@@ -8388,7 +8400,7 @@ function wireClubTabs(){
 function clubAboutHTML(c, r, played){
   const I=CLUB_INFO[c]||{}, cc=(window.CLUB_COLORS||{})[c]||[];
   const pos = played ? standings().findIndex(x=>x.c===c)+1 : 0;
-  const stSrc = I.slug ? `assets/stadiums/${I.slug}.jpg?v=6` : "assets/hero/stadium.jpg";   /* صورة الملعب تُحمَّل كعنصر img يظهر بعد اكتمال تحميله — لا طبقة احتياطية تُظهر ملعباً آخر أثناء التحميل */
+  const stSrc = I.slug ? `assets/stadiums/${I.slug}.jpg?v=7` : "assets/hero/stadium.jpg";   /* صورة الملعب تُحمَّل كعنصر img يظهر بعد اكتمال تحميله — لا طبقة احتياطية تُظهر ملعباً آخر أثناء التحميل */
   const facts=[
     I.nick? ["اللقب", esc(I.nick)] : null,
     I.f   ? ["تأسس عام", String(I.f)] : null,
