@@ -8434,7 +8434,7 @@ html[data-theme="light"] .hm{--bg-card:#FFFFFF;--border-card:#E2E8F0;--text-prim
 .hm-tile b{font-family:var(--f-head);font-weight:700;font-size:24px;line-height:1;font-variant-numeric:tabular-nums;color:var(--text-primary)}
 .hm-tile span{font-size:12px;color:var(--text-muted)}
 .hm-tile em{font-style:normal;font-size:12px;font-weight:700;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
-.hm-story{margin-top:var(--gap-content);background:var(--bg-card);border:1px solid var(--border-card);border-radius:14px;padding:var(--p-sm) var(--p-md);display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 14px;align-items:center}
+.hm-story{margin-top:var(--gap-content);background:var(--bg-card);border:1px solid var(--border-card);border-radius:14px;padding:var(--p-sm) var(--p-md);display:flex;flex-direction:column;gap:4px}
 .hm-spark{width:120px;height:34px;grid-row:span 3}
 .hm-spark path{fill:none;stroke:var(--skyc);stroke-width:2;stroke-linejoin:round;stroke-linecap:round}
 .hm-spark circle{fill:var(--gold)}
@@ -8883,7 +8883,7 @@ function hmKpiHTML(){
     <div class="hm-sec-hd"><h2>أرقام لافتة</h2><span class="hm-muted">${mw(played)} أُقيمت</span></div>
     <div class="hm-tiles">${tiles.map(t=>`<div class="hm-tile"${t.player?` data-player="${esc(t.player.n)}" data-club="${esc(t.player.c)}" role="button" tabindex="0"`:""}>
       <b>${t.v}</b><span>${esc(t.l)}</span>${t.sub?`<em>${esc(t.sub)}</em>`:""}</div>`).join("")}</div>
-    <div class="hm-story">${hmSparkline()}${hs.map(h=>`<p><b>${esc(h.t)}</b> ${esc(h.d)}</p>`).join("")}</div>
+    <div class="hm-story">${hs.map(h=>`<p><b>${esc(h.t)}</b> ${esc(h.d)}</p>`).join("")}</div>
   </section>`;
 }
 function hmStandingsHTML(T){
