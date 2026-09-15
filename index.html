@@ -4076,6 +4076,7 @@ const LOCAL_PHOTOS={
   "عثمان الشمري":"assets/players/kaz/74",
   "باتريك روبسون":"assets/players/kaz/98",
   "داود الخالدي":"assets/players/tdm/1",
+  "داوود الخالدي":"assets/players/tdm/1",   /* الموقع يكتب الاسم بواوين */
   "فيصل الشطي":"assets/players/tdm/2",
   "أحمد رحيل":"assets/players/tdm/5",
   "محمد عليان":"assets/players/tdm/4",
@@ -8639,6 +8640,29 @@ h2.sec.sq-grp{margin-top:22px}
   display:grid;place-items:center;box-shadow:0 2px 6px rgba(0,0,0,.30),inset 0 0 0 1px rgba(255,255,255,.18);font-variant-numeric:tabular-nums}
 .pcard .nm{font-family:var(--display);font-weight:700;font-size:.85rem;color:var(--head,#fff);padding:8px 8px 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .pcard .ps{font-size:.68rem;color:var(--slate);margin-top:2px}
+/* بطاقة المدرب: أقصى يسار صف الحراس (آخر عمود في الشبكة RTL)، مفصولة وبلا رقم */
+.sq-coach-lb{margin-inline-start:auto;font-size:.8rem;font-weight:700;color:var(--slate);letter-spacing:.02em}
+/* صف الحراس = شبكة الحراس (عمود أقل) + عمود المدرب بعرض بطاقة واحدة، بينهما فراغ واسع وخط فاصل */
+.sq-gkrow{--cols:2;--gap:10px;--sep:34px;display:grid;column-gap:var(--sep);align-items:start;
+  grid-template-columns:minmax(0,1fr) calc((100% - var(--sep) - (var(--cols) - 1) * var(--gap)) / var(--cols))}
+/* الجوال: الحراس بعمودين كالمعتاد، والمدرب في سطر مستقل أقصى اليسار بعرض بطاقة يفصله خط أفقي */
+@media(max-width:639px){
+  .sq-gkrow{display:block}
+  .sq-gkrow .sq-coachcol{width:calc((100% - var(--gap)) / 2);margin-inline-start:auto;margin-top:26px}
+  .sq-gkrow .sq-coachcol::before{top:-14px;bottom:auto;inset-inline-start:auto;inset-inline-end:0;width:calc(200% + var(--gap));height:1px;
+    background:linear-gradient(90deg,rgba(143,166,196,.5),rgba(143,166,196,.08))}
+}
+@media(min-width:640px){.sq-gkrow{--cols:3;--sep:44px}.sq-gkrow>.sq-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(min-width:960px){.sq-gkrow{--cols:4;--gap:12px;--sep:56px}.sq-gkrow>.sq-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(min-width:1180px){.sq-gkrow{--cols:5}.sq-gkrow>.sq-grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
+.sq-coachcol{position:relative}
+.sq-coachcol::before{content:"";position:absolute;top:6%;bottom:6%;inset-inline-start:calc(var(--sep) / -2);width:1px;
+  background:linear-gradient(180deg,transparent,rgba(143,166,196,.45) 20%,rgba(143,166,196,.45) 80%,transparent)}
+.sq-coach{cursor:default;border-style:dashed;
+  background:linear-gradient(180deg,rgba(255,255,255,.07) 0%,rgba(255,255,255,.02) 58%,rgba(0,0,0,.14) 100%),var(--navy-900)}
+.sq-coach:hover,.sq-coach:active{transform:none;box-shadow:none;border-color:rgba(var(--ca-rgb),.45)}
+.sq-coach .ps{color:var(--head,#fff);opacity:.72;font-weight:600}
+[data-theme="light"] .sq-coach{background:linear-gradient(180deg,rgba(0,0,0,.035) 0%,#fff 62%),#fff}
 /* --- عناصر اللاعب القابلة للنقر في كل الموقع --- */
 [data-player]{cursor:pointer}
 .teamcell[data-player]:hover b,.tl-name[data-player]:hover,.tl-assist[data-player]:hover,.fx-p[data-player]:hover b,.plk:hover{text-decoration:underline;text-decoration-color:rgba(143,166,196,.6);text-underline-offset:3px}
@@ -9105,6 +9129,10 @@ function clubAccent(c){
 }
 const accentVars = c => { const k=clubAccent(c); return `--ca:${k.a};--cb:${k.b};--ca-rgb:${k.rgb};--ctab-fg:${k.fg}`; };
 const crestSrcOf = c => (typeof LOCAL_CRESTS!=="undefined" && LOCAL_CRESTS[c]) || (LOGOS||{})[c] || "";
+/* مدربو الأندية (موسم 2026/27) — تُعرض في صف الحراس بقائمة الفريق. n = الاسم، nat = الجنسية،
+   img = مسار القصّة بلا امتداد (assets/coaches/<slug>)، src = مصدر التحقق. نادٍ بلا مدخل لا تظهر له بطاقة. */
+const CLUB_COACH = {
+};
 
 /* ================= الاتحاد الكويتي لكرة القدم (2026-09-15) =================
    صفحة بجانب الأندية بثلاثة تبويبات. الحقائق في KFA_INFO (مصادرها في AlArabiTest/kfa/facts.md)، القوائم من ملصقات
@@ -9368,14 +9396,29 @@ function playerCardHTML(p, c){
     <div class="ps">${esc(posLabel(p.p))||"—"}</div>
   </div>`;
 }
+/* بطاقة المدرب: آخر خلية في صف الحراس (أقصى اليسار في RTL) مفصولة بخط، و«المدرب» في طرف عنوان الحراس.
+   البيانات في CLUB_COACH (الاسم والجنسية ومصدر التحقق)؛ الصورة قصّة 800×1000 بنفس نمط اللاعبين. */
+function coachCardHTML(c){
+  const k=(typeof CLUB_COACH!=="undefined") && CLUB_COACH[c]; if(!k) return "";
+  return `<div class="pcard sq-coach" aria-label="المدرب ${esc(k.n)}">
+    <div class="ph">${k.img?`<img src="${k.img}_s.webp?v=8" alt="" loading="lazy" decoding="async" draggable="false">`
+                           :`<img class="noph" src="${crestSrcOf(c)}" alt="" loading="lazy" draggable="false">`}</div>
+    <div class="nm">${esc(k.n)}</div>
+    <div class="ps">المدرب${k.nat?` · ${esc(k.nat)}`:""}</div>
+  </div>`;
+}
 function clubSquadHTML(c){
   const men=squadEntriesOf(c);
   if(!men.length) return `<div class="card pad"><p class="hint" style="margin:0">لم يُرفع كشف لاعبي هذا النادي بعد.</p></div>`;
   const groups=[["G","حراس المرمى"],["D","الدفاع"],["M","الوسط"],["F","الهجوم"],["","بدون مركز محدد"]];
+  const coach=coachCardHTML(c);
   return groups.map(([k,t])=>{
     const L=men.filter(p=>(POS_MAIN[String(p.p||"").toUpperCase()]||"")===k);
     if(!L.length) return "";
-    return `<h2 class="sec sq-grp">${t}<span class="sq-n">${L.length}</span></h2><div class="sq-grid">${L.map(p=>playerCardHTML(p,c)).join("")}</div>`;
+    const withCoach = k==="G" && coach;
+    const cards=`<div class="sq-grid">${L.map(p=>playerCardHTML(p,c)).join("")}</div>`;
+    return `<h2 class="sec sq-grp">${t}<span class="sq-n">${L.length}</span>${withCoach?`<span class="sq-coach-lb">المدرب</span>`:""}</h2>
+      ${withCoach?`<div class="sq-gkrow">${cards}<div class="sq-coachcol">${coach}</div></div>`:cards}`;
   }).join("");
 }
 

@@ -278,6 +278,7 @@ const PLAYER_PHOTOS = {
   'KAZ|باتريك روبسون': '/assets/players/kaz/98',
   // التضامن (18) — بورتريهات النادي الرسمية (أرسلها منصور 2026-09-15)
   'TDM|داود الخالدي': '/assets/players/tdm/1',
+  'TDM|داوود الخالدي': '/assets/players/tdm/1',   // تهجئة كشف الموقع (بواوين)
   'TDM|فيصل الشطي': '/assets/players/tdm/2',
   'TDM|أحمد رحيل': '/assets/players/tdm/5',   // بلا رقم في الصورة — الهوية حسب منصور
   'TDM|محمد عليان': '/assets/players/tdm/4',
