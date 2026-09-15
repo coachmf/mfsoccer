@@ -5406,7 +5406,7 @@ function renderClubs(){
     <label class="lb">اختر النادي</label>
     <select id="clubSel">${CLUBS.map(c=>`<option ${c===sel?"selected":""}>${esc(c)}</option>`).join("")}</select>
     <div id="clubBody" style="margin-top:16px"></div>`;
-  $("#clubSel").onchange = e => { renderClubBody(e.target.value); };
+  $("#clubSel").onchange = e => { CLUB_TAB="about"; renderClubBody(e.target.value); };   /* كل نادٍ يُفتح على النبذة أولاً (منصور 2026-09-15) */
   renderClubBody(sel);
 }
 function renderClubBody(c){
@@ -7516,6 +7516,7 @@ const domReady = () => new Promise(r => document.readyState!=="loading" ? r() : 
   function openClub(c){
     go("clubs");
     const sel=document.querySelector("#clubSel");
+    if(!/^#c\/[^/]+\/(stats|squad)$/.test(location.hash)) CLUB_TAB="about";   /* النبذة أولاً إلا برابط عميق يطلب تبويباً آخر */
     if(sel){ sel.value=c; if(typeof renderClubBody==="function") renderClubBody(c); }
     window.scrollTo({top:0,behavior:"instant"});
   }
