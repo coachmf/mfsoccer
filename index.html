@@ -4215,7 +4215,7 @@ const ICO_BOOT = `<svg class="ico-boot" viewBox="0 0 24 24" width="15" height="1
 
 function newEdit(){
   return {orig:null, match:{round:"", comp:(compsPresent()[0]||"الدوري"), home:"", away:"",
-          venue:"", date:"", time:"", note:""}, goals:[], cards:[], pens:[], lineup:[], subs:[], shapes:{}};
+          venue:"", date:"", time:"", note:"", ref:""}, goals:[], cards:[], pens:[], lineup:[], subs:[], shapes:{}};
 }
 function loadEdit(m){
   const gs=(ALL.goals||[]).filter(g=>g.r===m.round && compOf(g)===compOf(m) &&
@@ -4230,10 +4230,10 @@ function loadEdit(m){
   (ALL.shapes||[]).filter(x=>x.r===m.round && compOf(x)===compOf(m) && (x.club===m.home||x.club===m.away))
     .forEach(x=>{ shp[x.club]={f:x.f||"", pos:JSON.parse(JSON.stringify(x.pos||{}))}; });
   return {orig:mkey(m), shapes:shp,
-    match:{round:m.round, comp:compOf(m), home:m.home, away:m.away, venue:m.venue||"", date:m.date||"", time:m.time||"", note:m.note||""},
+    match:{round:m.round, comp:compOf(m), home:m.home, away:m.away, venue:m.venue||"", date:m.date||"", time:m.time||"", note:m.note||"", ref:m.ref||""},
     lineup:lus.map(x=>({club:x.club, p:x.p})),
     subs:sbs.map(x=>({club:x.club, out:x.out||"", in:x.in||"", h:x.h||1, m:x.m||""})),
-    goals:gs.map(g=>({sc:g.sc,p:g.p,a:g.a||"",m:g.m,x:g.x||0,det:g.det||"",bp:g.bp||"",zone:g.zone||""})),
+    goals:gs.map(g=>({sc:g.sc,p:g.p,a:g.a||"",m:g.m,x:g.x||0,det:g.det||"",bp:g.bp||"",zone:g.zone||"",og:g.og||""})),   /* og كان يضيع عند إعادة التحرير */
     cards:cs.map(x=>({club:x.club,p:x.p,m:x.m,type:x.type})),
     pens:ps.map(x=>({by:x.by,p:x.p,m:x.m,res:x.res,place:x.place||""}))};
 }
@@ -4945,7 +4945,7 @@ async function saveMatch(){
   if(EDIT.orig) removeMatchByKey(EDIT.orig);
   const other = t => t===m.home ? m.away : m.home;
   ALL.matches.push({n:ALL.matches.length+1, round, comp:m.comp, date:m.date, time:m.time,
-                    venue:m.venue, home:m.home, away:m.away, note:(m.note||"").trim(), hg:0, ag:0});
+                    venue:m.venue, home:m.home, away:m.away, note:(m.note||"").trim(), ref:(m.ref||"").trim(), hg:0, ag:0});   /* ref = الحكم */
   EDIT.goals.forEach(g=>ALL.goals.push({r:round, comp:m.comp, sc:g.sc, cd:other(g.sc), p:g.p, a:g.a||"",
       m:+g.m, x:+g.x||0, cat:catOf(g.det), det:g.det, bp:g.bp||"", zone:g.zone||"",
       og: g.bp==="هدف عكسي" ? (g.og||"") : ""}));
@@ -10009,6 +10009,609 @@ document.addEventListener("DOMContentLoaded", ()=>{
     const r=_rp.apply(this,arguments); mount(st); return r; };
   if(typeof RENDER==="object") RENDER.players=renderPlayers;
   if(document.querySelector("#v-players.on")) mount();
+})();
+</script>
+
+<style>/* ===== محرّر المباراة في الإدارة (MX) — 2026-09-15 =====
+   واجهة جديدة فوق نموذج EDIT نفسه وsaveMatch نفسها: البيانات والحفظ لم يتغيّرا، فكل ما يُحفظ هنا
+   يظهر في تبويب المباريات وتفاصيلها كما كان. ملعب التشكيلة بألوان العشب الموحّدة (--pitch-*). */
+:root{--pitch-grass:#1F6F45;--pitch-grass2:#25804F;--pitch-line:rgba(255,255,255,.8)}
+#mxSheetHost{padding:0!important}
+.mx{--mx-r:16px;--mx-card:var(--navy-900,#0F1E35);--mx-soft:rgba(143,166,196,.10);--mx-ln:rgba(143,166,196,.20);
+  font-family:var(--body,inherit);color:var(--head,#fff);padding-bottom:8px}
+[data-theme="light"] .mx{--mx-card:#fff;--mx-soft:rgba(11,31,58,.05);--mx-ln:rgba(11,31,58,.12)}
+.mx button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.mx input,.mx select{font:inherit;font-size:15px;color:var(--head,#fff);background:var(--mx-soft);border:1px solid var(--mx-ln);
+  border-radius:12px;padding:11px 12px;width:100%;min-width:0;outline:none;transition:border-color .15s,box-shadow .15s}
+.mx input:focus,.mx select:focus{border-color:var(--sky,#5FB2E8);box-shadow:0 0 0 3px rgba(95,178,232,.18)}
+.mx select{appearance:none;-webkit-appearance:none;padding-inline-end:12px;padding-inline-start:34px;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%238FA6C4' stroke-width='2' fill='none'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:left 12px center}
+[data-theme="light"] .mx select option,.mx select option{color:#0B1F3A}
+.mx-lbl{display:block;font-size:.72rem;font-weight:700;color:var(--slate);margin:0 2px 6px;letter-spacing:.01em}
+
+/* الشريط العلوي */
+.mx-top{display:flex;align-items:center;gap:10px;margin:6px 0 12px}
+.mx-top h2{margin:0;font-family:var(--display);font-size:1.15rem;font-weight:800;flex:1}
+.mx-ghost{display:inline-flex;align-items:center;gap:6px;padding:9px 14px;border-radius:12px;border:1px solid var(--mx-ln)!important;
+  font-weight:700;font-size:.85rem;color:var(--head,#fff)}
+.mx-ghost:hover{background:var(--mx-soft)!important}
+.mx-ghost svg{width:16px;height:16px}
+.mx-err{display:flex;gap:10px;align-items:center;padding:12px 14px;margin-bottom:12px;border-radius:14px;
+  background:rgba(229,72,77,.12);border:1px solid rgba(229,72,77,.45);color:#ff9aa0;font-weight:700;font-size:.88rem}
+.mx-err svg{flex:none;width:18px;height:18px}
+
+/* لوحة النتيجة */
+.mx-board{position:relative;overflow:hidden;border-radius:20px;padding:18px 14px 14px;border:1px solid var(--mx-ln);
+  background:radial-gradient(120% 90% at 100% 0%,rgba(var(--hrgb),.28),transparent 60%),radial-gradient(120% 90% at 0% 0%,rgba(var(--argb),.28),transparent 60%),var(--mx-card)}
+.mx-teams{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:8px}
+.mx-team{display:flex;flex-direction:column;align-items:center;gap:8px;min-width:0;padding:8px 4px;border-radius:14px;transition:background .15s}
+.mx-team:hover{background:var(--mx-soft)}
+.mx-team .crest{width:62px!important;height:62px!important;border-radius:14px}
+.mx-team .mx-crest-ph{width:62px;height:62px;border-radius:16px;border:2px dashed var(--mx-ln);display:grid;place-items:center;color:var(--slate)}
+.mx-team .mx-crest-ph svg{width:24px;height:24px}
+.mx-team b{font-family:var(--display);font-weight:800;font-size:1rem;text-align:center;overflow-wrap:anywhere;line-height:1.2}
+.mx-team small{font-size:.66rem;color:var(--slate);font-weight:700}
+.mx-sc{display:flex;flex-direction:column;align-items:center;gap:4px}
+.mx-sc .n{font-family:var(--display);font-weight:800;font-size:2.4rem;line-height:1;font-variant-numeric:tabular-nums;direction:ltr;letter-spacing:.02em}
+.mx-sc .n i{font-style:normal;color:var(--slate);margin:0 6px;font-weight:600}
+.mx-sc .st{font-size:.68rem;font-weight:700;color:var(--slate);padding:3px 9px;border-radius:999px;background:var(--mx-soft)}
+.mx-meta{display:flex;flex-wrap:wrap;justify-content:center;gap:6px 14px;margin-top:10px;font-size:.74rem;color:var(--slate)}
+.mx-meta span{display:inline-flex;align-items:center;gap:5px}
+.mx-meta svg{width:13px;height:13px;opacity:.8}
+
+/* التبويبات */
+.mx-tabs{position:sticky;top:var(--mx-top,0px);z-index:6;display:grid;grid-template-columns:repeat(3,1fr);gap:4px;padding:4px;margin:14px 0;
+  border-radius:14px;background:var(--mx-card);border:1px solid var(--mx-ln);box-shadow:0 8px 20px rgba(0,0,0,.18)}
+.mx-tab{display:flex;flex-direction:column;align-items:center;gap:1px;padding:9px 4px;border-radius:10px;font-weight:800;font-size:.9rem;color:var(--slate)}
+.mx-tab small{font-size:.66rem;font-weight:700;opacity:.85;font-variant-numeric:tabular-nums}
+.mx-tab.on{background:linear-gradient(135deg,#1c6fd1,#0e3f86);color:#fff;box-shadow:0 6px 14px rgba(24,120,190,.35)}
+.mx-tab.bad small{color:#ffb0b4}
+.mx-tab.on.bad small{color:#ffd1d3}
+
+.mx-card{border-radius:var(--mx-r);background:var(--mx-card);border:1px solid var(--mx-ln);padding:14px;margin-bottom:12px}
+.mx-card h3{margin:0 0 12px;font-family:var(--display);font-size:.95rem;font-weight:800;display:flex;align-items:center;gap:8px}
+.mx-card h3 small{font-family:var(--body);font-weight:600;font-size:.72rem;color:var(--slate);margin-inline-start:auto}
+.mx-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+@media(min-width:760px){.mx-grid.g3{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.mx-span{grid-column:1/-1}
+.mx-chips{display:flex;flex-wrap:wrap;gap:6px}
+.mx-chip{padding:8px 13px;border-radius:999px;border:1px solid var(--mx-ln)!important;font-size:.8rem;font-weight:700;color:var(--head,#fff);background:var(--mx-soft)!important;transition:all .15s}
+.mx-chip:hover{border-color:rgba(95,178,232,.6)!important}
+.mx-chip.on{background:#1c6fd1!important;border-color:#1c6fd1!important;color:#fff}
+.mx-chip.warn.on{background:#d99a00!important;border-color:#d99a00!important;color:#0B1F3A}
+.mx-chip.red.on{background:#d33a40!important;border-color:#d33a40!important}
+.mx-chip.ok.on{background:#1f9d62!important;border-color:#1f9d62!important}
+.mx-step{display:grid;grid-template-columns:44px minmax(0,1fr) 44px;gap:6px;align-items:center}
+.mx-step button{height:46px;border-radius:12px;background:var(--mx-soft)!important;border:1px solid var(--mx-ln)!important;font-size:1.3rem;font-weight:800}
+.mx-step input{text-align:center;font-family:var(--display);font-weight:800;font-size:1.25rem;padding:8px 4px}
+.mx-sug{margin-top:6px;font-size:.74rem;color:var(--slate)}
+.mx-sug button{color:var(--sky,#5FB2E8);font-weight:700;text-decoration:underline;text-underline-offset:3px}
+
+/* التشكيلة */
+.mx-sides{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+.mx-side{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:14px;border:1px solid var(--mx-ln)!important;background:var(--mx-card)!important;text-align:start;min-width:0}
+.mx-side .crest{width:34px!important;height:34px!important;flex:none;border-radius:9px}
+.mx-side div{display:flex;flex-direction:column;min-width:0}
+.mx-side b{font-family:var(--display);font-weight:800;font-size:.9rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mx-side small{font-size:.7rem;color:var(--slate);font-weight:700;font-variant-numeric:tabular-nums}
+.mx-side small.full{color:#3ecf8e}
+.mx-side.on{border-color:rgba(var(--srgb),.95)!important;box-shadow:0 0 0 2px rgba(var(--srgb),.45) inset;background:linear-gradient(135deg,rgba(var(--srgb),.22),transparent 70%),var(--mx-card)!important}
+.mx-xi{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);gap:14px;align-items:start}
+@media(max-width:860px){.mx-xi{grid-template-columns:minmax(0,1fr)}}
+.mx-pitchwrap{position:sticky;top:calc(var(--mx-top,0px) + 70px)}
+@media(max-width:860px){.mx-pitchwrap{position:relative;top:0}}
+.mx-ptools{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-bottom:10px}
+.mx-ptools .sp{flex:1}
+.mx-pitch{position:relative;width:100%;aspect-ratio:68/76;border-radius:16px;overflow:hidden;touch-action:none;user-select:none;
+  background:var(--pitch-grass);box-shadow:inset 0 0 0 1px rgba(0,0,0,.25),0 14px 30px rgba(0,0,0,.28);container-type:inline-size}
+.mx-pitch svg.lines{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.mx-pitch .mx-empty{position:absolute;inset:0;display:grid;place-items:center;text-align:center;padding:24px;color:rgba(255,255,255,.85);font-weight:700;font-size:.9rem}
+.mx-spot{position:absolute;transform:translate(50%,-50%);display:flex;flex-direction:column;align-items:center;z-index:2;cursor:grab;touch-action:none}
+.mx-spot.drag{cursor:grabbing;z-index:9}
+.mx-pc{position:relative;width:clamp(40px,13.5cqw,64px);aspect-ratio:4/5;border-radius:10px;overflow:hidden;
+  background:linear-gradient(180deg,var(--pc,#1c6fd1),var(--pd,#0e3f86));box-shadow:0 0 0 1.5px var(--pe,rgba(255,255,255,.85)),0 6px 12px rgba(0,0,0,.35);transition:transform .15s,box-shadow .15s}
+.mx-spot:hover .mx-pc{transform:translateY(-2px)}
+.mx-spot.drag .mx-pc{transform:scale(1.08);box-shadow:0 0 0 2px #fff,0 14px 24px rgba(0,0,0,.45)}
+.mx-spot.sel .mx-pc{box-shadow:0 0 0 3px #ffd84d,0 8px 18px rgba(0,0,0,.45)}
+.mx-pc img{position:absolute;inset:0 0 22% 0;width:100%;height:78%;object-fit:cover;object-position:top center;pointer-events:none}
+.mx-pc .ini{position:absolute;inset:0 0 22% 0;display:grid;place-items:center;font-family:var(--display);font-weight:800;font-size:clamp(12px,4cqw,18px);color:var(--pt,#fff)}
+.mx-pc .nm{position:absolute;left:0;right:0;bottom:0;height:22%;display:flex;align-items:center;justify-content:center;padding:0 2px;
+  background:rgba(8,18,34,.86);color:#fff;font-weight:700;font-size:clamp(7px,2.3cqw,10px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mx-pc .no{position:absolute;top:2px;right:2px;min-width:1.5em;padding:0 3px;border-radius:5px;background:rgba(8,18,34,.8);color:#fff;
+  font-family:var(--display);font-weight:800;font-size:clamp(7px,2.2cqw,10px);line-height:1.5;text-align:center}
+.mx-pc.gk{--pc:#1c1c1e;--pd:#000}
+.mx-pbar{display:flex;align-items:center;gap:8px;margin-top:10px;padding:10px 12px;border-radius:12px;background:rgba(255,216,77,.12);border:1px solid rgba(255,216,77,.45);font-size:.82rem;font-weight:700}
+.mx-pbar .sp{flex:1}
+.mx-pbar button{padding:6px 10px;border-radius:9px;background:rgba(255,255,255,.08)!important;font-size:.78rem}
+.mx-hint{font-size:.74rem;color:var(--slate);margin:8px 2px 0;line-height:1.6}
+.mx-search{position:relative;margin-bottom:10px}
+.mx-search input{padding-inline-start:36px}
+.mx-search svg{position:absolute;inset-inline-start:12px;top:50%;transform:translateY(-50%);width:16px;height:16px;color:var(--slate);pointer-events:none}
+.mx-grp{font-size:.72rem;font-weight:800;color:var(--slate);margin:12px 2px 8px;display:flex;align-items:center;gap:8px}
+.mx-grp::after{content:"";flex:1;height:1px;background:var(--mx-ln)}
+.mx-roster{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+@media(max-width:420px){.mx-roster{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.mx-pl{position:relative;display:flex;align-items:center;gap:9px;padding:7px 9px;border-radius:12px;border:1px solid var(--mx-ln)!important;
+  background:var(--mx-soft)!important;text-align:start;min-width:0;transition:border-color .15s,background .15s,transform .1s}
+.mx-pl:hover{border-color:rgba(95,178,232,.55)!important}
+.mx-pl:active{transform:scale(.98)}
+.mx-face{position:relative;flex:none;width:38px;height:38px;border-radius:50%;overflow:hidden;background:rgba(var(--srgb,24,120,190),.35);display:grid;place-items:center;
+  font-family:var(--display);font-weight:800;font-size:.8rem;color:#fff}
+.mx-face img{width:100%;height:100%;object-fit:cover;object-position:top center}
+.mx-pl .tx{display:flex;flex-direction:column;min-width:0;flex:1}
+.mx-pl .tx b{font-weight:700;font-size:.82rem;line-height:1.25;overflow-wrap:anywhere}
+.mx-pl .tx small{font-size:.66rem;color:var(--slate);font-weight:600}
+.mx-pl .num{flex:none;font-family:var(--display);font-weight:800;font-size:.8rem;color:var(--slate);font-variant-numeric:tabular-nums}
+.mx-pl.in{border-color:rgba(62,207,142,.75)!important;background:rgba(62,207,142,.12)!important}
+.mx-pl.in::after{content:"";position:absolute;top:-5px;inset-inline-start:-5px;width:16px;height:16px;border-radius:50%;
+  background:#3ecf8e url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M4 8.5l2.5 2.5L12 5.5' stroke='%23062' stroke-width='2.2' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/12px no-repeat;box-shadow:0 0 0 2px var(--mx-card)}
+.mx-pl.swap{border-color:#ffd84d!important;background:rgba(255,216,77,.10)!important}
+.mx-pl.picked{border-color:#1c6fd1!important;background:rgba(28,111,209,.22)!important;box-shadow:0 0 0 1px #1c6fd1 inset}
+.mx-pl.dim{opacity:.45}
+
+/* البدلاء والتبديلات + خط الأحداث */
+.mx-add{display:flex;flex-wrap:wrap;gap:8px}
+.mx-addb{display:inline-flex;align-items:center;gap:8px;padding:10px 14px;border-radius:12px;border:1px solid var(--mx-ln)!important;background:var(--mx-soft)!important;font-weight:800;font-size:.84rem}
+.mx-addb:hover{border-color:rgba(95,178,232,.6)!important}
+.mx-addb svg,.mx-ev .ic svg{width:18px;height:18px;flex:none}
+.mx-tl{display:flex;flex-direction:column;gap:8px;margin-top:12px}
+.mx-ev{display:grid;grid-template-columns:54px 30px minmax(0,1fr) auto;align-items:center;gap:10px;padding:9px 10px;border-radius:14px;
+  border:1px solid var(--mx-ln);background:var(--mx-soft);border-inline-start:4px solid rgba(var(--srgb),.95)}
+.mx-ev .mn{font-family:var(--display);font-weight:800;font-size:.95rem;text-align:center;direction:ltr;font-variant-numeric:tabular-nums}
+.mx-ev .mn small{display:block;font-family:var(--body);font-weight:700;font-size:.6rem;color:var(--slate)}
+.mx-ev .ic{display:grid;place-items:center}
+.mx-ev .who{display:flex;align-items:center;gap:9px;min-width:0}
+.mx-ev .who .tx{display:flex;flex-direction:column;min-width:0}
+.mx-ev .who b{font-weight:800;font-size:.86rem;overflow-wrap:anywhere;line-height:1.25}
+.mx-ev .who small{font-size:.7rem;color:var(--slate);font-weight:600;overflow-wrap:anywhere}
+.mx-ev .acts{display:flex;gap:4px}
+.mx-ev .acts button{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;color:var(--slate)}
+.mx-ev .acts button:hover{background:rgba(255,255,255,.08);color:var(--head,#fff)}
+.mx-ev .acts button.del:hover{color:#ff8a90}
+.mx-ev .acts svg{width:16px;height:16px}
+.mx-none{padding:22px;text-align:center;color:var(--slate);font-size:.85rem;border:1px dashed var(--mx-ln);border-radius:14px}
+.ic-card{display:inline-block;width:12px;height:16px;border-radius:2.5px;box-shadow:0 1px 2px rgba(0,0,0,.35)}
+.ic-card.y{background:#f5c518}.ic-card.r{background:#e5484d}
+.ic-card.yr{background:linear-gradient(135deg,#f5c518 50%,#e5484d 50%)}
+
+/* شريط الحفظ */
+.mx-bar{position:sticky;bottom:var(--mx-bottom,0px);z-index:7;display:flex;gap:10px;align-items:center;margin-top:14px;padding:10px;border-radius:16px;
+  background:color-mix(in srgb,var(--mx-card) 92%,transparent);border:1px solid var(--mx-ln);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);box-shadow:0 -8px 24px rgba(0,0,0,.25)}
+.mx-bar .sum{flex:1;font-size:.74rem;color:var(--slate);font-weight:700;line-height:1.4}
+.mx-save{display:inline-flex;align-items:center;gap:8px;padding:12px 20px;border-radius:12px;font-weight:800;font-size:.95rem;color:#fff!important;
+  background:linear-gradient(135deg,#22b573,#128a52)!important;box-shadow:0 8px 18px rgba(18,138,82,.35)}
+.mx-save:hover{filter:brightness(1.06)}
+.mx-save svg{width:18px;height:18px}
+
+/* النافذة السفلية (إضافة/تعديل حدث، اختيار نادٍ) */
+.mx-sheet{position:fixed;inset:0;z-index:1000;display:flex;align-items:flex-end;justify-content:center;background:rgba(3,10,22,.62);animation:mxFade .18s ease}
+@media(min-width:760px){.mx-sheet{align-items:center;padding:24px}}
+.mx-sheet .box{width:100%;max-width:640px;max-height:92dvh;overflow:auto;overscroll-behavior:contain;border-radius:22px 22px 0 0;
+  background:var(--mx-card);border:1px solid var(--mx-ln);box-shadow:0 -20px 60px rgba(0,0,0,.45);animation:mxUp .22s cubic-bezier(.2,.8,.2,1)}
+@media(min-width:760px){.mx-sheet .box{border-radius:22px}}
+.mx-sheet .hd{position:sticky;top:0;z-index:2;display:flex;align-items:center;gap:10px;padding:14px 16px;background:var(--mx-card);border-bottom:1px solid var(--mx-ln)}
+.mx-sheet .hd h3{margin:0;flex:1;font-family:var(--display);font-weight:800;font-size:1.02rem;display:flex;align-items:center;gap:8px}
+.mx-sheet .hd button{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;background:var(--mx-soft)!important}
+.mx-sheet .hd svg{width:16px;height:16px}
+.mx-sheet .bd{padding:14px 16px;display:flex;flex-direction:column;gap:14px}
+.mx-sheet .ft{position:sticky;bottom:0;display:flex;gap:8px;padding:12px 16px calc(12px + env(safe-area-inset-bottom));background:var(--mx-card);border-top:1px solid var(--mx-ln)}
+.mx-sheet .ft .sp{flex:1}
+.mx-tsw{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.mx-clubs{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:8px}
+.mx-clubb{display:flex;flex-direction:column;align-items:center;gap:6px;padding:12px 6px;border-radius:14px;border:1px solid var(--mx-ln)!important;background:var(--mx-soft)!important;font-weight:700;font-size:.78rem}
+.mx-clubb .crest{width:40px!important;height:40px!important}
+.mx-clubb.on{border-color:#1c6fd1!important;background:rgba(28,111,209,.2)!important}
+.mx-clubb:disabled{opacity:.35;cursor:not-allowed}
+.mx-del{display:inline-flex;align-items:center;gap:6px;padding:11px 14px;border-radius:12px;color:#ff8a90;font-weight:800;border:1px solid rgba(229,72,77,.45)!important}
+@keyframes mxFade{from{opacity:0}to{opacity:1}}
+@keyframes mxUp{from{transform:translateY(24px);opacity:.6}to{transform:none;opacity:1}}
+@media(prefers-reduced-motion:reduce){.mx-sheet,.mx-sheet .box{animation:none}}
+html.mx-open,html.mx-open body{overflow:hidden}
+html.mx-editing #waFab{display:none!important}   /* زر واتساب كان يغطي «حفظ المباراة» */
+</style>
+<script>
+/* ===== محرّر المباراة (MX) =====
+   يستبدل واجهة النموذج فقط: EDIT وvalidateEdit وsaveMatch وremoveMatchByKey كما هي.
+   قائمة المباريات (EDIT=null) تبقى من renderMatchAdmin الأصلية. */
+(function(){
+  if(typeof renderMatchAdmin!=="function") return;
+  const MX = window.MX = {tab:"match", side:"home", sel:null, q:"", sheet:null};
+  const SV = {
+    x:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>',
+    back:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>',
+    save:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>',
+    edit:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16v4z"/></svg>',
+    trash:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg>',
+    plus:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>',
+    swap:'<svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4v14M7 18l-3-3M7 18l3-3" stroke="#3ecf8e"/><path d="M17 20V6M17 6l-3 3M17 6l3 3" stroke="#e5484d"/></svg>',
+    flip:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 7h11l-3-3M17 17H6l3 3"/></svg>',
+    search:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>',
+    cal:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>',
+    pin:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>',
+    whistle:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="14" r="5"/><path d="M13.5 11.5 21 8V5l-9.5 4.2"/></svg>',
+    shield:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6l7-3z"/></svg>',
+    warn:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 8v5M12 16.5v.5"/><circle cx="12" cy="12" r="9"/></svg>',
+    pen:'<svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9.2" fill="#fff" stroke="#0B1F3A" stroke-width="1.5"/><text x="12" y="16" text-anchor="middle" font-size="11" font-weight="800" fill="#0B1F3A" font-family="Arial">P</text></svg>'
+  };
+  const hexRgb=h=>{ const c=String(h||"").replace("#",""); if(c.length!==6) return "24,120,190"; return [0,2,4].map(i=>parseInt(c.slice(i,i+2),16)).join(","); };
+  const sideClub=s=>EDIT.match[s]||"";
+  const sideOf=club=>club&&club===EDIT.match.home?"home":club&&club===EDIT.match.away?"away":"";
+  const rgbOf=club=>{ try{ return clubAccent(club).rgb; }catch(e){ return hexRgb(kitOf(club).bg); } };
+  const initials=n=>esc(String(n||"").trim().split(/\s+/).slice(0,2).map(w=>w[0]||"").join(""));
+  const face=(n,club)=>{ const cut=(typeof photoCut==="function"&&n&&club)?photoCut(n,club):null;
+    return `<span class="mx-face">${cut?`<img src="${cut}_f.webp?v=8" alt="" loading="lazy" decoding="async">`:initials(n)}</span>`; };
+  const crestOr=c=>c?crest(c):`<span class="mx-crest-ph">${SV.shield}</span>`;
+  const starters=club=>{ const seen={},out=[]; (EDIT.lineup||[]).forEach(x=>{ if(x.club===club&&x.p&&!seen[x.p]){ seen[x.p]=1; out.push(x.p);} }); return out; };
+  const roster=club=>{
+    if(!club) return [];
+    const ent=squadEntriesOf(club,[club]);
+    const names=new Set(ent.map(e=>e.n));
+    /* أسماء مسجّلة في المباراة وليست في الكشف (قديمة/مكتوبة يدوياً) تبقى قابلة للاختيار */
+    const extra=[...starters(club), ...(EDIT.subs||[]).filter(s=>s.club===club).flatMap(s=>[s.in,s.out])].filter(n=>n&&!names.has(n));
+    [...new Set(extra)].forEach(n=>ent.push({n, s:0, p:"", club}));
+    return ent;
+  };
+  const posOf=(club,n)=>{ const e=squadEntriesOf(club,[club]).find(z=>z.n===n); return e?e.p:""; };
+  const numOf=(club,n)=>{ const e=squadEntriesOf(club,[club]).find(z=>z.n===n); return e&&e.s?e.s:""; };
+  const score=()=>{ const h=EDIT.match.home, a=EDIT.match.away; let hg=0,ag=0;
+    (EDIT.goals||[]).forEach(g=>{ if(g.sc&&g.sc===h) hg++; else if(g.sc&&g.sc===a) ag++; }); return [hg,ag]; };
+  const errTab=msg=>/^(الهدف|البطاقة|ركلة)/.test(msg)?"events":"match";
+
+  /* ===================== الملعب ===================== */
+  const PITCH_SVG=`<svg class="lines" viewBox="0 0 680 760" preserveAspectRatio="none" aria-hidden="true">
+    ${Array.from({length:10},(_,i)=>`<rect x="0" y="${i*76}" width="680" height="38" fill="var(--pitch-grass2)" opacity=".55"/>`).join("")}
+    <g fill="none" stroke="var(--pitch-line)" stroke-width="3">
+      <rect x="18" y="18" width="644" height="724"/>
+      <path d="M18 18H662"/><path d="M248.5 18A91.5 91.5 0 0 0 431.5 18"/>
+      <rect x="138.5" y="577" width="403" height="165"/><rect x="248.5" y="687" width="183" height="55"/>
+      <path d="M268 577A91.5 91.5 0 0 1 412 577"/>
+    </g>
+    <circle cx="340" cy="632" r="4" fill="var(--pitch-line)"/><circle cx="340" cy="18" r="4" fill="var(--pitch-line)"/>
+  </svg>`;
+  function slotsFor(club){
+    const st=(EDIT.shapes||{})[club]||{f:"",pos:{}};
+    const men=shapeMenFrom(starters(club), club);
+    const form=st.f||autoForm(men);
+    return {form, spots:shapeSlots(men, form).map(({p,x,y,n})=>{ const ov=(st.pos||{})[p.n]; return {p, x:ov?ov.x:x, y:ov?ov.y:y, n}; })};
+  }
+  function pitchHTML(club){
+    const S=slotsFor(club), kit=kitOf(club);
+    const spots=S.spots.map(({p,x,y})=>{
+      const cut=photoCut(p.n, club);
+      const gk=p.line==="G"; const k=gk?(gkKitOf(club,p.s)||kit):kit;
+      /* حدود المواضع تُبقي البطاقة كاملة داخل الملعب */
+      const xx=Math.max(9,Math.min(91,x)), yy=Math.max(9,Math.min(92,y));
+      return `<div class="mx-spot${MX.sel===p.n?" sel":""}" data-sp="${esc(p.n)}" style="right:${xx}%;top:${yy}%">
+        <span class="mx-pc" style="${dotVars(k)}">${cut?`<img src="${cut}_f.webp?v=8" alt="" draggable="false">`:`<span class="ini">${initials(p.n)}</span>`}
+          ${p.s?`<span class="no">${p.s}</span>`:""}<span class="nm">${esc(shortName(p.n))}</span></span></div>`;
+    }).join("");
+    return `<div class="mx-pitch" data-mxpitch="${esc(club)}">${PITCH_SVG}${spots||`<div class="mx-empty">اختر اللاعبين الأساسيين من القائمة — ينزلون على الملعب مباشرة</div>`}</div>`;
+  }
+
+  /* ===================== التبويبات ===================== */
+  function tabMatch(){
+    const m=EDIT.match, refs=[...new Set((ALL.matches||[]).map(x=>x.ref).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"ar"));
+    const stHome=m.home&&typeof CLUB_INFO!=="undefined"&&CLUB_INFO[m.home]?CLUB_INFO[m.home].st:"";
+    return `<div class="mx-card"><h3>المسابقة والجولة</h3>
+        <div class="mx-chips">${COMPS.map(c=>`<button class="mx-chip${m.comp===c?" on":""}" data-mcomp="${esc(c)}">${esc(c)}</button>`).join("")}</div>
+        <div class="mx-grid g3" style="margin-top:14px">
+          <div><span class="mx-lbl">الجولة</span><div class="mx-step"><button data-mround="-1" aria-label="أنقص">−</button>
+            <input type="number" min="1" inputmode="numeric" data-mf="round" value="${esc(m.round)}"><button data-mround="1" aria-label="زد">+</button></div></div>
+          <div><span class="mx-lbl">التاريخ</span><input type="date" data-mf="date" value="${esc(m.date)}"></div>
+          <div><span class="mx-lbl">وقت الانطلاق</span><input type="time" data-mf="time" value="${esc(m.time)}"></div>
+        </div></div>
+      <div class="mx-card"><h3>الملعب والحكم</h3>
+        <div class="mx-grid">
+          <div class="mx-span"><span class="mx-lbl">الملعب</span><input data-mf="venue" value="${esc(m.venue)}" placeholder="اسم الملعب">
+            ${stHome&&stHome!==m.venue?`<div class="mx-sug">ملعب ${esc(m.home)}: <button data-mvenue="${esc(stHome)}">${esc(stHome)}</button></div>`:""}</div>
+          <div class="mx-span"><span class="mx-lbl">حكم الساحة</span><input data-mf="ref" list="mxRefs" value="${esc(m.ref||"")}" placeholder="اسم الحكم">
+            <datalist id="mxRefs">${refs.map(r=>`<option value="${esc(r)}">`).join("")}</datalist></div>
+          <div class="mx-span"><span class="mx-lbl">ملاحظة تظهر للجمهور (اختيارية)</span><input data-mf="note" value="${esc(m.note)}" placeholder="مثال: المباراة غير منقولة"></div>
+        </div></div>
+      <p class="mx-hint">النتيجة تُحتسب تلقائياً من الأهداف في تبويب الأحداث.</p>`;
+  }
+
+  function tabLineup(){
+    const club=sideClub(MX.side);
+    const sideBtn=s=>{ const c=sideClub(s), n=c?starters(c).length:0;
+      return `<button class="mx-side${MX.side===s?" on":""}" data-mside="${s}" style="--srgb:${rgbOf(c)}">${crestOr(c)}
+        <div><b>${esc(c||(s==="home"?"المضيف":"الضيف"))}</b><small class="${n===11?"full":""}">${c?`${n} من 11 أساسياً`:"لم يُحدَّد"}</small></div></button>`; };
+    if(!club) return `<div class="mx-sides">${sideBtn("home")}${sideBtn("away")}</div><div class="mx-none">اختر ${MX.side==="home"?"الفريق المضيف":"الفريق الضيف"} من لوحة النتيجة أعلاه أولاً.</div>`;
+    const S=slotsFor(club), xi=starters(club), st=(EDIT.shapes||{})[club];
+    const list=FORMATIONS.includes(S.form)?FORMATIONS:[S.form,...FORMATIONS];
+    const q=MX.q.trim();
+    const ent=roster(club).filter(e=>!q||e.n.includes(q)||String(e.s)===q);
+    const groups=[["G","حراس المرمى"],["D","الدفاع"],["M","الوسط"],["F","الهجوم"],["","بدون مركز"]];
+    const plBtn=e=>{ const on=xi.includes(e.n);
+      return `<button class="mx-pl${on?" in":""}${MX.sel&&!on?" swap":""}" data-mpl="${esc(e.n)}" style="--srgb:${rgbOf(club)}">
+        ${face(e.n,club)}<span class="tx"><b>${esc(e.n)}</b><small>${esc(posLabel(e.p)||"—")}</small></span>${e.s?`<span class="num">${e.s}</span>`:""}</button>`; };
+    const clubSubs=(EDIT.subs||[]).map((s,i)=>({s,i})).filter(o=>o.s.club===club);
+    return `<div class="mx-sides">${sideBtn("home")}${sideBtn("away")}</div>
+      <div class="mx-xi">
+        <div class="mx-pitchwrap"><div class="mx-card">
+          <div class="mx-ptools">
+            <div class="mx-chips">${list.map(f=>`<button class="mx-chip${S.form===f?" on":""}" data-mform="${esc(f)}">${esc(f)}</button>`).join("")}</div>
+          </div>
+          ${pitchHTML(club)}
+          ${MX.sel?`<div class="mx-pbar"><span>${esc(MX.sel)}</span><span class="sp"></span><span style="font-weight:600;color:var(--slate)">اختر لاعباً من القائمة للاستبدال</span>
+            <button data-mxout="1">إخراج</button><button data-mxsel="">إلغاء</button></div>`:""}
+          <div class="mx-ptools" style="margin:10px 0 0">
+            <button class="mx-ghost" data-mflip="1">${SV.flip}اعكس الجهات</button>
+            ${st&&(st.f||Object.keys(st.pos||{}).length)?`<button class="mx-ghost" data-mreset="1">المواضع التلقائية</button>`:""}
+          </div>
+          <p class="mx-hint">اسحب أي لاعب لموضعه الفعلي في المباراة، واضغط عليه لإخراجه أو استبداله.</p>
+        </div></div>
+        <div>
+          <div class="mx-card"><h3>قائمة ${esc(club)}<small>${xi.length} من 11</small></h3>
+            <div class="mx-search">${SV.search}<input data-mq="1" value="${esc(MX.q)}" placeholder="ابحث بالاسم أو الرقم"></div>
+            ${groups.map(([k,t])=>{ const L=ent.filter(e=>(POS_MAIN[String(e.p||"").toUpperCase()]||"")===k); if(!L.length) return "";
+              return `<div class="mx-grp">${t}</div><div class="mx-roster">${L.map(plBtn).join("")}</div>`; }).join("") || `<div class="mx-none">لا يوجد لاعب بهذا البحث</div>`}
+          </div>
+          <div class="mx-card"><h3>البدلاء والتبديلات<small>${clubSubs.length} تبديل</small></h3>
+            <div class="mx-add"><button class="mx-addb" data-mnew="sub" data-mclub="${esc(club)}">${SV.swap}إضافة تبديل</button></div>
+            ${clubSubs.length?`<div class="mx-tl">${clubSubs.sort((a,b)=>absMinute(a.s.h,a.s.m)-absMinute(b.s.h,b.s.m)).map(o=>evRow({k:"sub",i:o.i,r:o.s})).join("")}</div>`
+              :`<p class="mx-hint">لم يُسجَّل تبديل بعد. الاحتياط = كل من في القائمة وليس أساسياً.</p>`}
+          </div>
+        </div>
+      </div>`;
+  }
+
+  function evItems(){
+    const out=[];
+    (EDIT.goals||[]).forEach((r,i)=>out.push({k:"goal",i,r,t:(+r.m||0)+(+r.x||0)/100}));
+    (EDIT.cards||[]).forEach((r,i)=>out.push({k:"card",i,r,t:+r.m||0}));
+    (EDIT.pens||[]).forEach((r,i)=>out.push({k:"pen",i,r,t:+r.m||0}));
+    (EDIT.subs||[]).forEach((r,i)=>out.push({k:"sub",i,r,t:absMinute(r.h,r.m)}));
+    return out.sort((a,b)=>a.t-b.t);
+  }
+  function evRow({k,i,r}){
+    let club="", who="", sub="", ic="", mn="";
+    if(k==="goal"){ club=r.sc; who=r.p; ic=ICO_BALL; mn=r.m?`${r.m}${+r.x?`+${r.x}`:""}'`:"—";
+      sub=[r.bp==="هدف عكسي"?"هدف عكسي":"", r.a?`صناعة: ${r.a}`:"", r.det||""].filter(Boolean).join(" · "); }
+    if(k==="card"){ club=r.club; who=r.p; mn=r.m?`${r.m}'`:"—";
+      const t=r.type||""; ic=`<span class="ic-card ${/ثان/.test(t)?"yr":isRed(t)?"r":"y"}"></span>`; sub=t; }
+    if(k==="pen"){ club=r.by; who=r.p; ic=SV.pen; mn=r.m?`${r.m}'`:"—"; sub=`ركلة جزاء · ${r.res||""}`; }
+    if(k==="sub"){ club=r.club; who=r.in||"—"; ic=SV.swap; mn=r.m?`${absMinute(r.h,r.m)}'`:"—"; sub=`خرج: ${r.out||"—"}`; }
+    return `<div class="mx-ev" style="--srgb:${rgbOf(club)}">
+      <div class="mn">${esc(mn)}<small>${k==="sub"?`الشوط ${+r.h||1}`:esc(club||"")}</small></div>
+      <div class="ic">${ic}</div>
+      <div class="who">${face(who,club)}<div class="tx"><b>${esc(who||"بلا لاعب")}</b><small>${esc(sub)}</small></div></div>
+      <div class="acts"><button data-medit="${k}.${i}" aria-label="تعديل">${SV.edit}</button><button class="del" data-mdel="${k}.${i}" aria-label="حذف">${SV.trash}</button></div></div>`;
+  }
+  function tabEvents(){
+    const items=evItems();
+    return `<div class="mx-card"><h3>إضافة حدث</h3>
+      <div class="mx-add">
+        <button class="mx-addb" data-mnew="goal">${ICO_BALL}هدف</button>
+        <button class="mx-addb" data-mnew="card" data-mtype="إنذار"><span class="ic-card y"></span>إنذار</button>
+        <button class="mx-addb" data-mnew="card" data-mtype="طرد مباشر"><span class="ic-card r"></span>طرد</button>
+        <button class="mx-addb" data-mnew="sub">${SV.swap}تبديل</button>
+        <button class="mx-addb" data-mnew="pen">${SV.pen}ركلة جزاء</button>
+      </div></div>
+      <div class="mx-card"><h3>مجريات المباراة<small>${items.length} حدث</small></h3>
+      ${items.length?`<div class="mx-tl">${items.map(evRow).join("")}</div>`:`<div class="mx-none">لا أحداث بعد — أضف الأهداف والبطاقات والتبديلات بالأزرار أعلاه.</div>`}</div>`;
+  }
+
+  /* ===================== النافذة السفلية ===================== */
+  const BLANK={goal:()=>({sc:"",p:"",a:"",m:"",x:0,det:"",bp:"",zone:"",og:""}),
+               card:()=>({club:"",p:"",m:"",type:"إنذار"}), pen:()=>({by:"",p:"",m:"",res:"سجلت",place:""}),
+               sub:()=>({club:"",out:"",in:"",h:"1",m:""})};
+  const ARR={goal:"goals",card:"cards",pen:"pens",sub:"subs"};
+  const CLUBKEY={goal:"sc",card:"club",pen:"by",sub:"club"};
+  const TITLE={goal:"هدف",card:"بطاقة",pen:"ركلة جزاء",sub:"تبديل"};
+  function openEv(k,i,preset){
+    const d=i>=0?JSON.parse(JSON.stringify(EDIT[ARR[k]][i])):Object.assign(BLANK[k](),preset||{});
+    if(!d[CLUBKEY[k]]) d[CLUBKEY[k]]=sideClub(MX.tab==="lineup"?MX.side:"home")||"";
+    MX.sheet={kind:"ev",k,i,d,err:""}; renderMatchAdmin();
+  }
+  function pickGrid(club, key, cur, opt){
+    opt=opt||{};
+    if(!club) return `<div class="mx-none">اختر الفريق أولاً</div>`;
+    const xi=starters(club); let ent=roster(club);
+    if(opt.only==="xi") ent=ent.filter(e=>xi.includes(e.n)||(EDIT.subs||[]).some(s=>s.club===club&&s.in===e.n));
+    if(opt.only==="bench") ent=ent.filter(e=>!xi.includes(e.n));
+    ent.sort((a,b)=>(xi.includes(b.n)-xi.includes(a.n))||((a.s||999)-(b.s||999)));
+    return `<div class="mx-roster">${opt.none?`<button class="mx-pl${!cur?" picked":""}" data-mpick="${key}" data-mname=""><span class="mx-face">—</span><span class="tx"><b>${esc(opt.none)}</b></span></button>`:""}
+      ${ent.map(e=>`<button class="mx-pl${cur===e.n?" picked":""}${opt.exclude&&opt.exclude===e.n?" dim":""}" data-mpick="${key}" data-mname="${esc(e.n)}" style="--srgb:${rgbOf(club)}">
+        ${face(e.n,club)}<span class="tx"><b>${esc(e.n)}</b><small>${xi.includes(e.n)?"أساسي":"احتياط"}</small></span>${e.s?`<span class="num">${e.s}</span>`:""}</button>`).join("")}</div>`;
+  }
+  const chips=(key,list,cur,cls)=>`<div class="mx-chips">${list.map(v=>`<button class="mx-chip${cls?" "+cls(v):""}${cur===v?" on":""}" data-mset="${key}" data-mval="${esc(v)}">${esc(v)}</button>`).join("")}</div>`;
+  const stepper=(key,val,label,max)=>`<div><span class="mx-lbl">${label}</span><div class="mx-step"><button data-mstep="${key}" data-mby="-1" aria-label="أنقص">−</button>
+    <input type="number" min="0" max="${max||130}" inputmode="numeric" data-msf="${key}" value="${esc(val)}"><button data-mstep="${key}" data-mby="1" aria-label="زد">+</button></div></div>`;
+  function sheetHTML(){
+    const S=MX.sheet; if(!S) return "";
+    if(S.kind==="club"){
+      const other=S.side==="home"?EDIT.match.away:EDIT.match.home, cur=EDIT.match[S.side];
+      return `<div class="mx-sheet" data-mclose="bg"><div class="box" role="dialog" aria-modal="true">
+        <div class="hd"><h3>${S.side==="home"?"الفريق المضيف":"الفريق الضيف"}</h3><button data-mclose="x" aria-label="إغلاق">${SV.x}</button></div>
+        <div class="bd"><div class="mx-clubs">${CLUBS.map(c=>`<button class="mx-clubb${c===cur?" on":""}" data-mclub="${esc(c)}" ${c===other?"disabled":""}>${crest(c)}<span>${esc(c)}</span></button>`).join("")}</div></div></div></div>`;
+    }
+    const {k,i,d}=S, h=EDIT.match.home, a=EDIT.match.away, ck=CLUBKEY[k], club=d[ck], opp=club===h?a:h;
+    const team=`<div><span class="mx-lbl">${k==="goal"?"الفريق المسجّل":k==="pen"?"الفريق المنفّذ":"الفريق"}</span><div class="mx-tsw">
+      ${[h,a].filter(Boolean).map(c=>`<button class="mx-side${club===c?" on":""}" data-mset="${ck}" data-mval="${esc(c)}" style="--srgb:${rgbOf(c)}">${crest(c)}<div><b>${esc(c)}</b></div></button>`).join("")}</div></div>`;
+    let body=team;
+    if(k==="goal"){
+      body+=`<div><span class="mx-lbl">المسجّل</span>${pickGrid(club,"p",d.p)}</div>
+        <div class="mx-grid">${stepper("m",d.m,"الدقيقة",130)}${stepper("x",d.x||0,"وقت بدل ضائع +",20)}</div>
+        <div><span class="mx-lbl">طريقة التسجيل</span>${chips("bp",LIST.bp,d.bp)}</div>
+        ${d.bp==="هدف عكسي"?`<div><span class="mx-lbl">ارتدت عن (لاعب ${esc(opp||"الخصم")})</span>${pickGrid(opp,"og",d.og)}</div>`:""}
+        <div><span class="mx-lbl">صانع الهدف</span>${pickGrid(club,"a",d.a,{none:"بدون صناعة",exclude:d.p})}</div>
+        <div class="mx-grid">
+          <div><span class="mx-lbl">تفصيل الهجمة</span><select data-msf="det">${opt(LIST.det,d.det,"اختر")}</select></div>
+          <div><span class="mx-lbl">منطقة التسجيل</span><select data-msf="zone">${opt(LIST.zone,d.zone,"اختر")}</select></div>
+        </div>`;
+    }
+    if(k==="card"){
+      body+=`<div><span class="mx-lbl">نوع البطاقة</span>${chips("type",LIST.cardtype,d.type,v=>isRed(v)&&!/ثان/.test(v)?"red":"warn")}</div>
+        <div><span class="mx-lbl">اللاعب</span>${pickGrid(club,"p",d.p)}</div>
+        <div class="mx-grid">${stepper("m",d.m,"الدقيقة",130)}</div>`;
+    }
+    if(k==="pen"){
+      body+=`<div><span class="mx-lbl">المنفّذ</span>${pickGrid(club,"p",d.p)}</div>
+        <div class="mx-grid">${stepper("m",d.m,"الدقيقة",130)}</div>
+        <div><span class="mx-lbl">النتيجة</span>${chips("res",LIST.penres,d.res,v=>v==="سجلت"?"ok":"")}</div>
+        <div><span class="mx-lbl">مكان التسديد</span>${chips("place",PZONES,d.place)}</div>
+        <p class="mx-hint">ركلة الجزاء المسجّلة تُضاف أيضاً كهدف من تبويب الأحداث (هدف ← تفصيل «ركلة جزاء»).</p>`;
+    }
+    if(k==="sub"){
+      body+=`<div class="mx-grid">
+          <div><span class="mx-lbl">الشوط</span>${chips("h",["1","2"],String(d.h||"1"))}</div>${stepper("m",d.m,"الدقيقة",130)}</div>
+        <div><span class="mx-lbl">خرج</span>${pickGrid(club,"out",d.out,{only:"xi"})}</div>
+        <div><span class="mx-lbl">دخل</span>${pickGrid(club,"in",d.in,{only:"bench",exclude:d.out})}</div>`;
+    }
+    return `<div class="mx-sheet" data-mclose="bg"><div class="box" role="dialog" aria-modal="true">
+      <div class="hd"><h3>${i>=0?"تعديل":"إضافة"} ${TITLE[k]}</h3><button data-mclose="x" aria-label="إغلاق">${SV.x}</button></div>
+      <div class="bd">${S.err?`<div class="mx-err">${SV.warn}${esc(S.err)}</div>`:""}${body}</div>
+      <div class="ft">${i>=0?`<button class="mx-del" data-mdel="${k}.${i}">${SV.trash}حذف</button>`:""}<span class="sp"></span>
+        <button class="mx-ghost" data-mclose="x">إلغاء</button><button class="mx-save" data-mcommit="1">${SV.save}${i>=0?"حفظ التعديل":"إضافة"}</button></div>
+    </div></div>`;
+  }
+  function commitEv(){
+    const S=MX.sheet, d=S.d, k=S.k;
+    const need=(c,msg)=>{ if(!c){ S.err=msg; renderMatchAdmin(); return false; } return true; };
+    if(k==="goal"){ if(!need(d.sc,"اختر الفريق المسجّل")||!need(d.p,"اختر اللاعب المسجّل")||!need(+d.m>=1,"أدخل دقيقة الهدف")||!need(d.det,"اختر تفصيل الهجمة (مطلوب لإحصاءات الأهداف)")) return; }
+    if(k==="card"){ if(!need(d.club,"اختر الفريق")||!need(d.p,"اختر اللاعب")||!need(d.type,"اختر نوع البطاقة")) return; }
+    if(k==="pen"){ if(!need(d.by,"اختر الفريق المنفّذ")||!need(d.res,"اختر نتيجة الركلة")) return; }
+    if(k==="sub"){ if(!need(d.club,"اختر الفريق")||!need(d.out||d.in,"اختر اللاعب الخارج أو الداخل")) return; }
+    if(k==="goal" && d.a===d.p) d.a="";
+    const arr=EDIT[ARR[k]];
+    if(S.i>=0) arr[S.i]=d; else arr.push(d);
+    MX.sheet=null; FORMERR=""; renderMatchAdmin();
+  }
+
+  /* ===================== الرسم والربط ===================== */
+  function render(box){
+    EDIT.shapes=EDIT.shapes||{};
+    const m=EDIT.match, [hg,ag]=score();
+    const hx=m.home?starters(m.home).length:0, ax=m.away?starters(m.away).length:0;
+    const evs=(EDIT.goals.length+EDIT.cards.length+EDIT.pens.length+EDIT.subs.length);
+    const teamBtn=s=>{ const c=m[s]; return `<button class="mx-team" data-mpickclub="${s}">${crestOr(c)}<b>${esc(c||(s==="home"?"اختر المضيف":"اختر الضيف"))}</b><small>${s==="home"?"المضيف":"الضيف"}</small></button>`; };
+    const upcoming=m.date && !EDIT.goals.length && (typeof kickoffTS==="function") && (kickoffTS({date:m.date,time:m.time})||0)>Date.now();
+    box.innerHTML=`<div class="mx" style="--hrgb:${rgbOf(m.home)};--argb:${rgbOf(m.away)}">
+      <div class="mx-top"><button class="mx-ghost" data-act="cancel">${SV.back}القائمة</button><h2>${EDIT.orig?"تعديل مباراة":"مباراة جديدة"}</h2></div>
+      ${FORMERR?`<div class="mx-err">${SV.warn}${esc(FORMERR)}</div>`:""}
+      <div class="mx-board">
+        <div class="mx-teams">${teamBtn("home")}
+          <div class="mx-sc"><div class="n">${hg}<i>:</i>${ag}</div><span class="st">${upcoming?"لم تبدأ":m.round?`الجولة ${esc(m.round)}`:"—"}</span></div>
+          ${teamBtn("away")}</div>
+        <div class="mx-meta">${m.date?`<span>${SV.cal}<bdi dir="ltr">${esc(m.date)}${m.time?` · ${esc(m.time)}`:""}</bdi></span>`:""}${m.venue?`<span>${SV.pin}${esc(m.venue)}</span>`:""}${m.ref?`<span>${SV.whistle}${esc(m.ref)}</span>`:""}<span>${esc(m.comp||"")}</span></div>
+      </div>
+      <nav class="mx-tabs">
+        <button class="mx-tab${MX.tab==="match"?" on":""}" data-mtab="match">المباراة<small>${m.round?`الجولة ${esc(m.round)}`:"البيانات"}</small></button>
+        <button class="mx-tab${MX.tab==="lineup"?" on":""}${(hx&&hx!==11)||(ax&&ax!==11)?" bad":""}" data-mtab="lineup">التشكيلة<small>${hx}/11 · ${ax}/11</small></button>
+        <button class="mx-tab${MX.tab==="events"?" on":""}" data-mtab="events">الأحداث<small>${evs} حدث</small></button>
+      </nav>
+      <section>${MX.tab==="lineup"?tabLineup():MX.tab==="events"?tabEvents():tabMatch()}</section>
+      <div class="mx-bar"><div class="sum">${esc(m.home||"—")} ${hg} - ${ag} ${esc(m.away||"—")}<br>${hx+ax} لاعباً أساسياً · ${evs} حدث</div>
+        <button class="mx-ghost" data-act="cancel">إلغاء</button><button class="mx-save" data-act="save">${SV.save}حفظ المباراة</button></div>
+    </div>`;
+    /* النافذة على مستوى body: داخل المحتوى تبقى تحت شريط التنقل السفلي مهما ارتفع z-index */
+    let host=document.getElementById("mxSheetHost");
+    if(!host){ host=document.createElement("div"); host.id="mxSheetHost"; host.className="mx"; document.body.appendChild(host); }
+    host.innerHTML=sheetHTML();
+    document.documentElement.classList.toggle("mx-open", !!MX.sheet);
+    document.documentElement.classList.add("mx-editing");
+    const nav=document.querySelector("nav.tabs"); const cs=nav?getComputedStyle(nav):null;
+    const fixedBottom=cs&&cs.position==="fixed"&&nav.getBoundingClientRect().top>innerHeight/2;
+    box.style.setProperty("--mx-bottom", fixedBottom?(innerHeight-nav.getBoundingClientRect().top+8)+"px":"8px");
+    box.style.setProperty("--mx-top", (cs&&/sticky|fixed/.test(cs.position)&&!fixedBottom)?((parseFloat(cs.top)||0)+nav.offsetHeight+6)+"px":"8px");   /* ارتفاع القائمة الثابتة لا موضعها الحالي على الشاشة */
+    wire(box);
+  }
+  /* busy: إزالة حقل مُركَّز أثناء إعادة الرسم تُطلق change ← إعادة رسم متداخلة تكسر innerHTML */
+  function rerender(){ if(MX.busy) return; renderMatchAdmin(); }
+  function wire(box){
+    const host=document.getElementById("mxSheetHost");
+    const q=(s,f)=>[box,host].forEach(r=>r&&r.querySelectorAll(s).forEach(f));
+    q("[data-act]",b=>b.onclick=()=>{ const a=b.dataset.act;
+      if(a==="cancel"){ if(!confirm("الخروج بدون حفظ؟ ستضيع التعديلات غير المحفوظة.")) return; MX.sheet=null; MX.sel=null; document.documentElement.classList.remove("mx-open"); EDIT=null; FORMERR=""; renderMatchAdmin(); flushRemote(); }
+      if(a==="save"){ MX.sheet=null; MX.sel=null; document.documentElement.classList.remove("mx-open"); const pre=validateEdit(); if(pre){ FORMERR=pre; MX.tab=errTab(pre); rerender(); return; } saveMatch(); }
+    });
+    q("[data-mtab]",b=>b.onclick=()=>{ MX.tab=b.dataset.mtab; MX.sel=null; rerender(); window.scrollTo({top:box.getBoundingClientRect().top+scrollY-80,behavior:"smooth"}); });
+    q("[data-mcomp]",b=>b.onclick=()=>{ EDIT.match.comp=b.dataset.mcomp; rerender(); });
+    q("[data-mf]",el=>{ el.oninput=()=>{ EDIT.match[el.dataset.mf]=el.value; }; el.onchange=()=>{ if(!EDIT) return; EDIT.match[el.dataset.mf]=el.value; if(!MX.busy && el.isConnected) rerender(); }; });
+    q("[data-mround]",b=>b.onclick=()=>{ EDIT.match.round=String(Math.max(1,(+EDIT.match.round||0)+(+b.dataset.mround))); rerender(); });
+    q("[data-mvenue]",b=>b.onclick=()=>{ EDIT.match.venue=b.dataset.mvenue; rerender(); });
+    q("[data-mpickclub]",b=>b.onclick=()=>{ MX.sheet={kind:"club",side:b.dataset.mpickclub}; rerender(); });
+    q("[data-mclub]",b=>b.onclick=()=>{ const s=MX.sheet.side, old=EDIT.match[s], nw=b.dataset.mclub;
+      if(old&&old!==nw){ /* تبديل النادي: تشكيلته وتبديلاته ومواضعه القديمة لا تخصّ النادي الجديد */
+        EDIT.lineup=EDIT.lineup.filter(x=>x.club!==old); EDIT.subs=EDIT.subs.filter(x=>x.club!==old); delete EDIT.shapes[old];
+        EDIT.goals.forEach(g=>{ if(g.sc===old){ g.sc=nw; g.p=""; g.a=""; } });
+        EDIT.cards.forEach(c=>{ if(c.club===old){ c.club=nw; c.p=""; } });
+        EDIT.pens.forEach(p=>{ if(p.by===old){ p.by=nw; p.p=""; } }); }
+      EDIT.match[s]=nw;
+      if(s==="home" && !EDIT.match.venue && typeof CLUB_INFO!=="undefined" && CLUB_INFO[nw]) EDIT.match.venue=CLUB_INFO[nw].st||"";
+      MX.sheet=null; rerender(); });
+    q("[data-mclose]",el=>el.onclick=e=>{ if(el.dataset.mclose==="bg" && e.target!==el) return; MX.sheet=null; rerender(); });
+    q("[data-mside]",b=>b.onclick=()=>{ MX.side=b.dataset.mside; MX.sel=null; MX.q=""; rerender(); });
+    q("[data-mq]",el=>el.oninput=()=>{ MX.q=el.value; const pos=el.selectionStart; rerender(); const n=box.querySelector("[data-mq]"); if(n){ n.focus(); try{ n.setSelectionRange(pos,pos); }catch(_){} } });
+    q("[data-mform]",b=>b.onclick=()=>{ const cl=sideClub(MX.side); EDIT.shapes[cl]={f:b.dataset.mform,pos:{}}; rerender(); });
+    q("[data-mreset]",b=>b.onclick=()=>{ delete EDIT.shapes[sideClub(MX.side)]; rerender(); });
+    q("[data-mflip]",b=>b.onclick=()=>{ const cl=sideClub(MX.side), S=slotsFor(cl), pos={};
+      S.spots.forEach(({p,x,y})=>{ pos[p.n]={x:+(100-x).toFixed(1),y}; }); EDIT.shapes[cl]={f:S.form,pos}; rerender(); });
+    q("[data-mxsel]",b=>b.onclick=()=>{ MX.sel=null; rerender(); });
+    q("[data-mxout]",b=>b.onclick=()=>{ const cl=sideClub(MX.side), n=MX.sel; removeStarter(cl,n); MX.sel=null; rerender(); });
+    q("[data-mpl]",b=>b.onclick=()=>{ const cl=sideClub(MX.side), n=b.dataset.mpl, xi=starters(cl);
+      if(xi.includes(n)){ if(MX.sel===n){ MX.sel=null; } else { removeStarter(cl,n); } rerender(); return; }
+      if(MX.sel){ swapStarter(cl, MX.sel, n); MX.sel=null; rerender(); return; }
+      if(xi.length>=11){ toast("التشكيلة مكتملة (11) — اضغط لاعباً على الملعب ثم اختر بديله","err"); return; }
+      EDIT.lineup=EDIT.lineup.filter(x=>!(x.club===cl&&!x.p)); EDIT.lineup.push({club:cl,p:n}); rerender(); });
+    q("[data-mnew]",b=>b.onclick=()=>{ const k=b.dataset.mnew, preset={}; if(b.dataset.mtype) preset.type=b.dataset.mtype; if(b.dataset.mclub) preset[CLUBKEY[k]]=b.dataset.mclub; openEv(k,-1,preset); });
+    q("[data-medit]",b=>b.onclick=()=>{ const [k,i]=b.dataset.medit.split("."); openEv(k,+i); });
+    q("[data-mdel]",b=>b.onclick=()=>{ const [k,i]=b.dataset.mdel.split("."); if(!confirm(`حذف ${TITLE[k]}؟`)) return; EDIT[ARR[k]].splice(+i,1); MX.sheet=null; rerender(); });
+    if(MX.sheet && MX.sheet.kind==="ev"){
+      const d=MX.sheet.d;
+      q("[data-mset]",b=>b.onclick=()=>{ const key=b.dataset.mset, v=b.dataset.mval;
+        if(key===CLUBKEY[MX.sheet.k] && d[key]!==v){ ["p","a","og","out","in"].forEach(f=>{ if(f in d) d[f]=""; }); }
+        d[key]=v; if(key==="bp"&&v!=="هدف عكسي") d.og=""; rerender(); });
+      q("[data-mpick]",b=>b.onclick=()=>{ const key=b.dataset.mpick, v=b.dataset.mname; d[key]=(d[key]===v&&key==="a")?"":v; rerender(); });
+      q("[data-msf]",el=>{ el.oninput=()=>{ d[el.dataset.msf]=el.value; }; el.onchange=()=>{ d[el.dataset.msf]=el.value; }; });
+      q("[data-mstep]",b=>b.onclick=()=>{ const key=b.dataset.mstep; d[key]=String(Math.max(0,(+d[key]||0)+(+b.dataset.mby))); rerender(); });
+      q("[data-mcommit]",b=>b.onclick=commitEv);
+    }
+    const pitch=box.querySelector("[data-mxpitch]");
+    if(pitch){
+      let cur=null, rect=null, moved=false, sx=0, sy=0;
+      pitch.addEventListener("pointerdown",e=>{ const s=e.target.closest(".mx-spot"); if(!s) return;
+        cur=s; rect=pitch.getBoundingClientRect(); moved=false; sx=e.clientX; sy=e.clientY; s.setPointerCapture(e.pointerId); e.preventDefault(); });
+      pitch.addEventListener("pointermove",e=>{ if(!cur) return;
+        if(!moved && Math.hypot(e.clientX-sx,e.clientY-sy)<6) return;
+        moved=true; cur.classList.add("drag");
+        const x=Math.max(9,Math.min(91,(rect.right-e.clientX)/rect.width*100));
+        const y=Math.max(9,Math.min(92,(e.clientY-rect.top)/rect.height*100));
+        cur.style.right=x+"%"; cur.style.top=y+"%"; });
+      const up=()=>{ if(!cur) return; const n=cur.dataset.sp, cl=pitch.dataset.mxpitch;
+        if(moved){ const S=slotsFor(cl), st=EDIT.shapes[cl]=EDIT.shapes[cl]||{f:"",pos:{}};
+          if(!st.f) st.f=S.form;
+          /* أول سحب يثبّت مواضع الجميع كما تُرى، فلا يقفز الباقون عند تغيّر العدد */
+          S.spots.forEach(({p,x,y})=>{ if(!st.pos[p.n]) st.pos[p.n]={x:+x.toFixed(1),y:+y.toFixed(1)}; });
+          st.pos[n]={x:+parseFloat(cur.style.right).toFixed(1), y:+parseFloat(cur.style.top).toFixed(1)};
+          cur.classList.remove("drag"); cur=null; }
+        else { cur=null; MX.sel=(MX.sel===n?null:n); rerender(); } };
+      pitch.addEventListener("pointerup",up); pitch.addEventListener("pointercancel",up);
+    }
+  }
+  function removeStarter(cl,n){
+    EDIT.lineup=EDIT.lineup.filter(x=>!(x.club===cl&&x.p===n));
+    const st=EDIT.shapes[cl]; if(st&&st.pos) delete st.pos[n];
+  }
+  function swapStarter(cl,outN,inN){
+    const row=EDIT.lineup.find(x=>x.club===cl&&x.p===outN); if(row) row.p=inN; else EDIT.lineup.push({club:cl,p:inN});
+    const st=EDIT.shapes[cl]; if(st&&st.pos&&st.pos[outN]){ st.pos[inN]=st.pos[outN]; delete st.pos[outN]; }
+  }
+
+  const baseRender=renderMatchAdmin;
+  renderMatchAdmin=function(){
+    const box=$("#matchAdmin"); if(!box) return;
+    if(MX.busy) return;
+    MX.busy=true;
+    try{
+    if(!EDIT){ MX.sheet=null; MX.sel=null; MX.q=""; document.documentElement.classList.remove("mx-open","mx-editing"); const h=document.getElementById("mxSheetHost"); if(h) h.innerHTML=""; return baseRender(); }
+    if(EDIT!==MX._edit){ MX._edit=EDIT; MX.tab=FORMERR?errTab(FORMERR):"match"; MX.side="home"; MX.sel=null; MX.q=""; MX.sheet=null; }
+    else if(FORMERR) MX.tab=errTab(FORMERR);
+    render(box);
+    } finally { MX.busy=false; }
+  };
 })();
 </script>
 
