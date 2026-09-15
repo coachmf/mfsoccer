@@ -212,9 +212,10 @@ tbody tr.rel{box-shadow:inset 3px 0 0 rgba(224,100,79,.7)}
 .ts-rk{font-weight:700;font-size:.85rem;color:var(--slate);font-variant-numeric:tabular-nums}
 .ts-row.top .ts-rk{color:var(--sand)}
 .ts-pl{display:flex;align-items:center;gap:10px;min-width:0}
-.ts-av{width:42px;height:42px;border-radius:50%;background:var(--navy-800);border:1px solid var(--line);flex:none;overflow:hidden;display:grid;place-items:center}
-.ts-av img{width:100%;height:100%;object-fit:cover;object-position:top}
-.ts-av img.ts-crestfb{object-fit:contain;padding:6px;background:#fff}
+.ts-av{width:56px;height:56px;flex:none;display:grid;place-items:end center;overflow:visible;margin:-8px 0}  /* قصّة الوجه كما في جدول الدقائق (منصور 2026-09-15) */
+.ts-av img{width:100%;height:100%;object-fit:contain;object-position:bottom center;filter:drop-shadow(0 2px 3px rgba(0,0,0,.35))}
+.ts-av img.ts-crestfb{width:38px;height:38px;object-fit:contain;padding:5px;background:#fff;border-radius:50%;border:1px solid var(--line);filter:none;align-self:center}
+.ts-pl .crest{width:26px;height:26px;border-radius:7px;flex:none}
 .ts-pi{display:flex;flex-direction:column;min-width:0}
 .ts-pi b{font-weight:700;font-size:.88rem;color:var(--head);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ts-pi small{font-size:.73rem;color:var(--slate)}
@@ -5990,7 +5991,7 @@ function topScorersHTML(){
   const podium = L.length>=3 ? `<div class="ts-podium">${L.slice(0,3).map(podCard).join("")}</div>` : "";
   const rows=L.map(p=>`<div class="ts-row${p.rk<=3?" top":""}" data-player="${esc(p.n)}" data-club="${esc(p.c)}" role="button" tabindex="0">
       <span class="ts-rk">${p.rk}</span>
-      <span class="ts-pl"><span class="ts-av">${av(p,"")}</span><span class="ts-pi"><b>${esc(p.n)}</b><small>${esc(p.c)}</small></span></span>
+      <span class="ts-pl"><span class="ts-av">${av(p,"")}</span>${crest(p.c)}<span class="ts-pi"><b>${esc(p.n)}</b><small>${esc(p.c)}</small></span></span>
       <span class="ts-subs">${sub(p)}</span>
       <span class="ts-val">${p[key]}</span>
       <i class="ts-bar" style="width:${(p[key]/max*100).toFixed(0)}%"></i></div>`).join("");
@@ -6055,7 +6056,7 @@ function renderPlayers(){
       const csRows = byCS.map((p,i)=>{ const csRk=i+1;
         return `<div class="ts-row${csRk<=3?" top":""}" data-player="${esc(p.n)}" data-club="${esc(p.c)}" role="button" tabindex="0">
           <span class="ts-rk">${csRk}</span>
-          <span class="ts-pl"><span class="ts-av">${gkAv(p)}</span><span class="ts-pi"><b>${esc(p.n)}</b><small>${esc(p.c)}</small></span></span>
+          <span class="ts-pl"><span class="ts-av">${gkAv(p)}</span>${crest(p.c)}<span class="ts-pi"><b>${esc(p.n)}</b><small>${esc(p.c)}</small></span></span>
           <span class="ts-subs"><span class="ts-sub">${p.apps} <i>مباراة</i></span><span class="ts-sub">${p.mins}′</span></span>
           <span class="ts-val" style="color:var(--win)">${p.cs}</span>
           <i class="ts-bar" style="width:${(p.cs/csMax*100).toFixed(0)}%"></i></div>`; }).join("");
