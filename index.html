@@ -8667,12 +8667,20 @@ html[data-theme="dark"] .rs-btn,html[data-theme="dark"] .rs-nav,html[data-theme=
 .kfa-board-it b{font-family:var(--display);font-size:.86rem;color:var(--head,#fff)}
 .kfa-links{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
 .kfa-links .hchip b{font-weight:700}
+.kfa-tl{display:flex;flex-direction:column;gap:0}
+.kfa-tl-it{display:grid;grid-template-columns:150px 1fr;gap:12px;padding:9px 0;border-bottom:1px solid var(--line,rgba(143,166,196,.14));font-size:.8rem;line-height:1.6}
+.kfa-tl-it:last-child{border-bottom:0}
+.kfa-tl-it .d{font-family:var(--display);font-weight:700;color:var(--zain-text,var(--sky));font-variant-numeric:tabular-nums}
+.kfa-tl-it .t{color:var(--head,#fff)}
+@media(max-width:600px){.kfa-tl-it{grid-template-columns:1fr;gap:2px}}
+.kfa-rec td.club span{gap:10px}
+.kfa-rec .kfa-note{display:block;font-size:.6rem;color:var(--slate);font-weight:500;margin-top:1px}
 .kfa-hq{position:relative;overflow:hidden}
 .kfa-hq img{width:100%;height:clamp(160px,36vw,300px);object-fit:cover;display:block}
 .kfa-hq .st-cap{position:absolute;right:14px;bottom:12px;padding:5px 10px;border-radius:999px;background:rgba(6,21,41,.72);color:#fff;font-size:.72rem}
 .kfa-rec .kfa-av{width:34px;height:34px;border-radius:10px;object-fit:cover;object-position:top;flex:none;background:#fff}
 .kfa-rec .kfa-av.ph{display:inline-block;background:rgba(143,166,196,.18)}
-.kfa-rec td.kfa-span{font-size:.72rem;color:var(--slate);font-family:var(--f-body)}
+.kfa-rec td.kfa-span{font-size:.72rem;color:var(--slate);font-family:var(--f-body);white-space:nowrap}
 .mx-comp .rs-btn{min-width:210px}
 .mx-comp .rs-menu{min-width:240px;max-height:360px;inset-inline-start:auto;inset-inline-end:0}   /* القائمة على يسار الصفحة: تُفتح نحو الداخل لا خارج الحافة */
 .rs-grp{padding:8px 10px 3px;font-size:.62rem;font-weight:800;color:var(--slate);letter-spacing:.02em}
@@ -8997,7 +9005,48 @@ const KFA_SQUADS={
          "معاذ الاصيمع","طلال القيسي","صالح المحطب","عبدالله فارس","عمر المطر","عبدالله الغنيمان","جاسم شموه",
          "محمد الشريفي","ناصر خضر","فواز المبيليش","محمد الصريعي","أحمد خورشيد","عيد العازمي"]}
 };
-const KFA_RECORDS={scorers:[], caps:[]};   /* {n, g, caps, span, img} */
+/* السجلات التاريخية — ويكيبيديا الإنجليزية مع مقارنة RSSSF (2 أبريل 2026)؛ التفاصيل والخلافات في AlArabiTest/kfa/records.md.
+   img = صورة حرة من كومنز؛ اللاعبون النشطون تُؤخذ صورتهم من كشوف الأندية تلقائياً؛ الباقون بلا صورة حرة. */
+const KFA_RECORDS={
+  scorers:[
+    {n:"بشار عبدالله", g:75, caps:134, span:"1996–2007"},
+    {n:"جاسم الهويدي", g:63, caps:83,  span:"1992–2003", img:"assets/kfa/players/jasem-al-huwaidi.jpg"},
+    {n:"يوسف ناصر",    g:58, caps:131, span:"2009–الآن", site:"يوسف ناصر"},
+    {n:"بدر المطوع",   g:56, caps:202, span:"2003–2022", img:"assets/kfa/players/bader-al-mutawa.jpg"},
+    {n:"فيصل الدخيل",  g:46, caps:97,  span:"1974–1988", note:"غير مؤكد (RSSSF: 39 في 85)"},
+    {n:"جاسم يعقوب",   g:36, caps:49,  span:"1972–1982", img:"assets/kfa/players/jasem-yaqoub.jpg"},
+    {n:"فرج لهيب",     g:23, caps:45,  span:"1998–2008"},
+    {n:"يوسف السويد",  g:21, caps:61,  span:"1979–1990"},
+    {n:"مساعد ندا",    g:20, caps:125, span:"2002–2015", img:"assets/kfa/players/musaed-neda.jpg"},
+    {n:"وائل سليمان",  g:19, caps:109, span:"1986–1996", note:"غير مؤكد (ويكيبيديا: 16)"}
+  ],
+  caps:[
+    {n:"بدر المطوع",    caps:202, g:56, span:"2003–2022", img:"assets/kfa/players/bader-al-mutawa.jpg", note:"أول لاعب في العالم يبلغ 200 مباراة دولية"},
+    {n:"وليد علي",      caps:136, g:8,  span:"2002–2014"},
+    {n:"بشار عبدالله",  caps:134, g:75, span:"1996–2007"},
+    {n:"يوسف ناصر",     caps:131, g:58, span:"2009–الآن", site:"يوسف ناصر"},
+    {n:"مساعد ندا",     caps:125, g:20, span:"2002–2015", img:"assets/kfa/players/musaed-neda.jpg"},
+    {n:"نواف الخالدي",  caps:115, g:0,  span:"2000–2014", note:"الحارس الأكثر مشاركة"},
+    {n:"جراح العتيقي",  caps:112, g:4,  span:"2001–2013"},
+    {n:"نهير الشمري",   caps:109, g:2,  span:"1996–2009"},
+    {n:"وائل سليمان",   caps:109, g:16, span:"1986–1996"},
+    {n:"جمال مبارك",    caps:107, g:9,  span:"1994–2004"}
+  ],
+  milestones:[
+    ["3 سبتمبر 1961","أول مباراة دولية: ليبيا 2–2 الكويت في الدار البيضاء ضمن دورة الألعاب العربية"],
+    ["1970","أول لقب في كأس الخليج العربي (البحرين) — بداية سلسلة الألقاب العشرة"],
+    ["1976","وصيف كأس آسيا في طهران بعد الفوز على العراق 3–2 في نصف النهائي"],
+    ["21 يوليو 1980","أولمبياد موسكو: الكويت 3–1 نيجيريا بثلاثية فيصل الدخيل، ثم ربع النهائي أمام الاتحاد السوفيتي"],
+    ["30 سبتمبر 1980","بطل آسيا: الكويت 3–0 كوريا الجنوبية في نهائي كأس آسيا على استاد صباح السالم (الحوطي، الدخيل هدفان)"],
+    ["17 يونيو 1982","كأس العالم في إسبانيا: تعادل 1–1 مع تشيكوسلوفاكيا بهدف فيصل الدخيل — أول منتخب عربي آسيوي في النهائيات"],
+    ["1990","لقب كأس الخليج العاشرة على أرض الكويت بقيادة لويس فيليبي سكولاري"],
+    ["ديسمبر 1998","أعلى تصنيف في تاريخ الأزرق: المركز 24 عالمياً"],
+    ["14 فبراير 2000","أكبر فوز: الكويت 20–0 بوتان في تصفيات كأس آسيا، 8 أهداف لبشار عبدالله"],
+    ["3 أكتوبر 2010","بطل غرب آسيا بالفوز 2–1 على إيران في الأردن، وفي العام نفسه اللقب الخليجي العاشر في اليمن"],
+    ["18 ديسمبر 2015","افتتاح استاد جابر الأحمد الدولي (60,000 متفرج) — البيت الجديد للأزرق"],
+    ["4 يونيو 2021","بدر المطوع يصبح الأكثر مشاركة في تاريخ الكرة الدولية للرجال بمباراته 185 أمام البحرين"]
+  ]
+};
 /* مطابقة اسم من ملصق الاتحاد بكشوف الأندية في الموقع (تجاهل الهمزات/التاء المربوطة) → النادي والمركز والرقم والصورة */
 function kfaFind(name){
   const n=_norm(name);
@@ -9035,7 +9084,8 @@ function kfaRecordsHTML(list, kind){
     <thead><tr><th class="c">#</th><th class="club">اللاعب</th><th>${goals?"أهداف":"مباريات"}</th><th>${goals?"مباريات":"أهداف"}</th><th class="frm">الفترة</th></tr></thead>
     <tbody>${list.map((r,i)=>`<tr class="${i<3?"champ":""}">
       <td class="c">${i+1}</td>
-      <td class="club"><span>${r.img?`<img class="kfa-av" src="${r.img}" alt="" loading="lazy" decoding="async">`:`<span class="kfa-av ph"></span>`}<b>${esc(r.n)}</b></span></td>
+      <td class="club"><span>${(()=>{ const f=r.site?kfaFind(r.site):null; const cut=(f&&PHOTOSON&&typeof LOCAL_PHOTOS!=="undefined")?photoCut(f.site,f.club):null;
+          return cut?`<img class="kfa-av" src="${cut}_f.webp?v=6" alt="" loading="lazy" decoding="async">` : r.img?`<img class="kfa-av" src="${r.img}" alt="" loading="lazy" decoding="async">`:`<span class="kfa-av ph"></span>`; })()}<b>${esc(r.n)}</b>${r.note?`<small class="kfa-note">${esc(r.note)}</small>`:""}</span></td>
       <td class="pts">${goals?r.g:r.caps}</td><td>${goals?r.caps:r.g}</td><td class="frm kfa-span" dir="ltr">${esc(r.span||"")}</td></tr>`).join("")}</tbody>
   </table></div></div>`;
 }
@@ -9087,6 +9137,8 @@ function kfaAboutHTML(){
     <div class="kfa-board-grid">${I.board.map(([r,n])=>`<div class="kfa-board-it"><small>${esc(r)}</small><b>${esc(n)}</b></div>`).join("")}</div></div>`:""}`:""}
   ${I.honours.length?`<h2 class="sec">الإنجازات<span class="sq-n">${I.honours.length}</span></h2>
   <div class="kfa-hon">${I.honours.map(h=>`<div class="card pad kfa-hon-it"><b>${esc(h.t)}</b><small>${esc(h.d)}</small></div>`).join("")}</div>`:""}
+  ${(KFA_RECORDS.milestones||[]).length?`<h2 class="sec">محطات في تاريخ الأزرق<span class="sq-n">${KFA_RECORDS.milestones.length}</span></h2>
+  <div class="card pad kfa-tl">${KFA_RECORDS.milestones.map(([d,t])=>`<div class="kfa-tl-it"><span class="d">${esc(d)}</span><span class="t">${esc(t)}</span></div>`).join("")}</div>`:""}
   <h2 class="sec">مقر الاتحاد</h2>
   <div class="card kfa-hq"><img src="${I.img.hq}" alt="" loading="lazy" onerror="this.parentElement.remove()"><span class="st-cap">${esc(I.hq)}${I.hqCity?` · ${esc(I.hqCity)}`:""}</span></div>
   <div class="kfa-links">${I.site?`<a class="hchip" href="${I.site}" target="_blank" rel="noopener">الموقع الرسمي</a>`:""}${(I.social||[]).map(([k,v])=>`<span class="hchip">${esc(k)} <b>${esc(v)}</b></span>`).join("")}</div>`;
