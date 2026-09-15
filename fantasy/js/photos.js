@@ -246,9 +246,10 @@ const PLAYER_PHOTOS = {
   'KAZ|محمد عنتر': '/assets/players/kaz/12',
   'KAZ|اماث نداو': '/assets/players/kaz/19',
   'KAZ|ادريس شعيبي': '/assets/players/kaz/97',
-  // التضامن (17) — بورتريهات النادي الرسمية (أرسلها منصور 2026-09-15)
+  // التضامن (18) — بورتريهات النادي الرسمية (أرسلها منصور 2026-09-15)
   'TDM|داود الخالدي': '/assets/players/tdm/1',
   'TDM|فيصل الشطي': '/assets/players/tdm/2',
+  'TDM|حسن حسون': '/assets/players/tdm/8',   // بلا رقم في الصورة — الهوية حسب منصور
   'TDM|محمد عليان': '/assets/players/tdm/4',
   'TDM|فهد الرشيدي': '/assets/players/tdm/9',
   'TDM|أحمد شبيب': '/assets/players/tdm/10',
