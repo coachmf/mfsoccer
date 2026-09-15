@@ -4,7 +4,7 @@
 'use strict';
 
 /* رقم نسخة الصور: ارفعه عند إعادة توليد أي قصّة حتى لا يبقى المتصفح على النسخة القديمة */
-const PLAYER_PHOTOS_VER = '5';
+const PLAYER_PHOTOS_VER = '6';
 
 const PLAYER_PHOTOS = {
   // الصليبخات (17)
@@ -133,6 +133,8 @@ const PLAYER_PHOTOS = {
   'SAL|ديفيــد سامبيسا': '/assets/players/sal/77',
   // الكويت (20)
   'KUW|فينيسيوس': '/assets/players/kuw/17',   // من منشور النادي
+  'KUW|عبدالله القرزعي': '/assets/players/kuw/88',   // بورتريه مولّد بوجهه (Gemini) من إعلان التعاقد
+  'KUW|عمر غونزاليس': '/assets/players/kuw/25',   // صورة استوديو أرسلها منصور
   'KUW|فهد حمود': '/assets/players/kuw/13',   // غير موجود في الكشف بعد
   'KUW|عبدالرحمن كميل': '/assets/players/kuw/40',   // حارس، غير موجود في الكشف بعد
   'KUW|ياسين الخنيسي': '/assets/players/kuw/27',
@@ -213,9 +215,10 @@ const PLAYER_PHOTOS = {
   // الجهراء (16)
   'JAH|ايفانز امبوفو': '/assets/players/jah/15',   // بورتريه مولّد بوجهه (Gemini) من صورة المباراة
   'JAH|كيريست افالانا': '/assets/players/jah/98',   // بورتريه مولّد بوجهه (Gemini) من صورة المباراة
-  'JAH|مبارك الحربي': '/assets/players/jah/1',   // من رسم تشكيلة النادي (دقة أقل — مؤقتاً)
-  'JAH|تاكامبا ناسام': '/assets/players/jah/26',   // من رسم تشكيلة النادي (دقة أقل — مؤقتاً)
-  'JAH|ماركوس راموس': '/assets/players/jah/13',   // من رسم تشكيلة النادي (دقة أقل — مؤقتاً)
+  'JAH|مبارك الحربي': '/assets/players/jah/1',   // بورتريه مولّد بوجهه (Gemini) من رسم تشكيلة النادي
+  'JAH|تاكامبا ناسام': '/assets/players/jah/26',   // بورتريه مولّد بوجهه (Gemini) من رسم تشكيلة النادي
+  'JAH|ماركوس راموس': '/assets/players/jah/13',   // بورتريه مولّد بوجهه (Gemini) من رسم تشكيلة النادي
+  'JAH|تركي المطيري': '/assets/players/jah/22',   // بورتريه مولّد بوجهه (Gemini) من صورة منصور
   'JAH|عبدالله الداحس': '/assets/players/jah/80',
   'JAH|جاسم العنزي': '/assets/players/jah/4',
   'JAH|عادل جاسم الشمري': '/assets/players/jah/8',

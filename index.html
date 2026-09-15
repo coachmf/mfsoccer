@@ -200,6 +200,12 @@ tbody tr.rel{box-shadow:inset 3px 0 0 rgba(224,100,79,.7)}
 .ev-k{display:inline-block;font-size:.66rem;font-weight:700;padding:1px 7px;border-radius:999px;
   background:rgba(11,31,58,.08);color:var(--slate,#8FA6C4);margin-inline-start:6px}
 .ev-n{display:block;font-size:.72rem;color:var(--slate,#8FA6C4);margin-top:2px}
+.ev-match{display:inline-flex;align-items:center;flex-wrap:wrap;gap:6px 8px;vertical-align:middle}
+.ev-team{display:inline-flex;align-items:center;gap:6px;font-weight:700}
+.ev-team .crest{width:24px;height:24px;border-radius:7px;font-size:.6rem}
+.ev-flag{width:24px;height:17px;border-radius:4px;object-fit:cover;flex:none;box-shadow:inset 0 0 0 1px rgba(11,31,58,.15)}
+.ev-x{color:var(--slate,#8FA6C4);font-weight:400}
+.ev-comp{display:inline-block;font-style:normal;font-size:.74rem;color:var(--slate,#8FA6C4);margin-inline-start:8px}
 .cday.evd{box-shadow:inset 0 -3px 0 #E9B949}
 /* ---- المباريات الجارية على الرئيسية ---- */
 .livewrap{background:#fff;border:1px solid var(--line,rgba(143,166,196,.18));border-radius:14px;
@@ -3601,6 +3607,8 @@ const LOCAL_PHOTOS={
   "ديفيــد سامبيسا":"assets/players/sal/77",
   /* الكويت */
   "فينيسيوس":"assets/players/kuw/17",
+  "عبدالله القرزعي":"assets/players/kuw/88",
+  "عمر غونزاليس":"assets/players/kuw/25",
   "فهد حمود":"assets/players/kuw/13",
   "عبدالرحمن كميل":"assets/players/kuw/40",
   "ياسين الخنيسي":"assets/players/kuw/27",
@@ -3681,6 +3689,7 @@ const LOCAL_PHOTOS={
   /* الجهراء */
   "ايفانز امبوفو":"assets/players/jah/15",
   "كيريست افالانا":"assets/players/jah/98",
+  "تركي المطيري":"assets/players/jah/22",
   "مبارك الحربي":"assets/players/jah/1",
   "تاكامبا ناسام":"assets/players/jah/26",
   "ماركوس راموس":"assets/players/jah/13",
@@ -4211,7 +4220,7 @@ function spotHTML(p, x, y, n, kit, ev, compact){
   const k = (String(p.p||"").toUpperCase()==="GK" && kit.club) ? (gkKitOf(kit.club, p.s)||kit) : kit;
   return `<div class="pp-spot${compact?" cmp":""}" data-player="${esc(p.n)}" data-club="${esc(kit.club||"")}" style="right:${x}%;top:${y}%;max-width:${(compact?90/(n+1):96/(n+1)).toFixed(1)}%">
     <span class="pp-card${cut?"":" nophoto"}" style="${dotVars(k)}">
-      ${cut?`<img class="pp-img" src="${cut}_f.webp?v=5" alt="" loading="lazy" draggable="false">`:""}
+      ${cut?`<img class="pp-img" src="${cut}_f.webp?v=6" alt="" loading="lazy" draggable="false">`:""}
       <span class="pp-num">${num}</span>
       <span class="pp-nm">${esc(nm)}</span>${spotBadges(ev)}</span></div>`;
 }
@@ -4884,7 +4893,7 @@ function pav(name, size, placeholder){
   const S=size||PAVSIZE;
   /* القصّة الرسمية الموحّدة لها الأولوية على الصورة المرفوعة من الإدارة (حتى يتوحّد الشكل) */
   const cut = PHOTOSON ? LOCAL_PHOTOS[name] : null;
-  if(cut) return `<img class="pcut" src="${cut}_f.webp?v=5" alt="${esc(name)}" loading="lazy">`;
+  if(cut) return `<img class="pcut" src="${cut}_f.webp?v=6" alt="${esc(name)}" loading="lazy">`;
   /* الصور المرفوعة من لوحة الإدارة (PHOTOS في السحابة) لم تعد تُعرض في الموقع — طلب منصور 2026-09-15:
      الشكل الرسمي الموحّد فقط. البيانات نفسها باقية في السحابة ولوحة الإدارة، وتُعرض في المعاينة هناك فقط. */
   const src = (PHOTOSON && placeholder) ? PHOTOS[name] : null;
@@ -4975,13 +4984,56 @@ function evRange(e){
   const f=s=>{ const d=new Date(s+"T12:00:00"); return isNaN(d)?s:(d.getDate()+" "+AR_MON[d.getMonth()]); };
   return (e.to && e.to!==e.d) ? f(e.d)+" — "+f(e.to) : f(e.d);
 }
+/* شعارات الفرق في صف المناسبة: العنوان «أ - ب - البطولة» يُقرأ فريقاه الأولان؛ نادٍ محلي → شعاره،
+   منتخب → علم الدولة (flagcdn)، نادٍ خارجي → دائرة بحرفين. في مناسبة «منتخب» تُفضَّل الأعلام (الكويت = الأزرق). */
+const FLAG_CODES={"الكويت":"kw","الازرق":"kw","السعودية":"sa","الامارات":"ae","قطر":"qa","البحرين":"bh","عمان":"om","العراق":"iq",
+ "اليمن":"ye","الاردن":"jo","سوريا":"sy","لبنان":"lb","فلسطين":"ps","مصر":"eg","المغرب":"ma","تونس":"tn","الجزائر":"dz","ليبيا":"ly",
+ "السودان":"sd","ايران":"ir","استراليا":"au","اليابان":"jp","كوريا الجنوبية":"kr","كوريا":"kr","كوريا الشمالية":"kp","اوزبكستان":"uz",
+ "الهند":"in","تايلاند":"th","تايلند":"th","ماليزيا":"my","اندونيسيا":"id","الصين":"cn","فيتنام":"vn","طاجيكستان":"tj","قيرغيزستان":"kg",
+ "تركمانستان":"tm","هونغ كونغ":"hk","الفلبين":"ph","ميانمار":"mm","افغانستان":"af","نيبال":"np","بنغلاديش":"bd","سريلانكا":"lk",
+ "المالديف":"mv","باكستان":"pk","تركيا":"tr","كازاخستان":"kz","سنغافورة":"sg","كمبوديا":"kh","لاوس":"la","منغوليا":"mn","بوتان":"bt",
+ "البرازيل":"br","الارجنتين":"ar","انجلترا":"gb-eng","انكلترا":"gb-eng","فرنسا":"fr","المانيا":"de","اسبانيا":"es","ايطاليا":"it",
+ "البرتغال":"pt","هولندا":"nl","بلجيكا":"be","امريكا":"us","الولايات المتحدة":"us","المكسيك":"mx","نيجيريا":"ng","السنغال":"sn",
+ "الكاميرون":"cm","غانا":"gh","جنوب افريقيا":"za","روسيا":"ru","كرواتيا":"hr","سويسرا":"ch","الدنمارك":"dk","السويد":"se","النرويج":"no"};
+const _norm=t=>String(t||"").replace(/[أإآ]/g,"ا").replace(/ة$/,"ه").replace(/ـ/g,"").replace(/\s+/g," ").trim();
+const FLAG_N={}; Object.keys(FLAG_CODES).forEach(k=>{ FLAG_N[_norm(k)]=FLAG_CODES[k]; });
+function evTeam(name, kind){
+  const shown=String(name||"").trim().replace(/^(نادي|منتخب)\s+/,"").trim();
+  const raw=shown.replace(/\s+(الكويتي|الاماراتي|الإماراتي|السعودي|القطري|البحريني|العماني|العراقي|الاردني|الأردني)$/,"").trim();
+  if(!raw) return null;
+  const n=_norm(raw);
+  const club=Object.keys(LOGOS).find(c=>_norm(c)===n) || null;
+  const flag=FLAG_N[n] || null;
+  const preferFlag = kind==="منتخب";
+  if(preferFlag && flag) return {t:"flag",n:raw,c:flag};
+  if(club) return {t:"club",n:club};
+  if(flag) return {t:"flag",n:raw,c:flag};
+  return {t:"other",n:shown};
+}
+function evTeamHTML(x){
+  const logo = x.t==="club" ? crest(x.n)
+    : x.t==="flag" ? `<img class="ev-flag" src="https://flagcdn.com/w40/${x.c}.png" srcset="https://flagcdn.com/w80/${x.c}.png 2x" alt="" decoding="async">`
+    : `<div class="crest" style="background:#3B5578">${esc(x.n.slice(0,2))}</div>`;
+  return `<span class="ev-team">${logo}<b>${esc(x.n)}</b></span>`;
+}
+function evTitleHTML(e){
+  const parts=String(e.t||"").split(/\s*[-–—]\s*/).map(p=>p.trim()).filter(Boolean);
+  if(parts.length>=2){
+    const a=evTeam(parts[0],e.k), b=evTeam(parts[1],e.k);
+    if(a && b && a.t!=="other" && b.t!=="other" || (a&&b&&e.k==="بطولة خارجية"&&(a.t!=="other"||b.t!=="other"))){
+      const rest=parts.slice(2).join(" - ");
+      return `<span class="ev-match">${evTeamHTML(a)}<span class="ev-x">–</span>${evTeamHTML(b)}</span>${rest?`<em class="ev-comp">${esc(rest)}</em>`:""}`;
+    }
+  }
+  return esc(e.t||"");
+}
 function eventsBlock(base){
   const evs=eventsOfMonth(base);
   if(!evs.length) return "";
   return `<div class="evlist">${evs.map(e=>`
     <div class="evrow${e.k==="توقف الدوري"?" brk":""}">
       <span class="ev-d">${esc(evRange(e))}</span>
-      <span class="ev-t">${esc(e.t||"")}${e.k?`<i class="ev-k">${esc(e.k)}</i>`:""}
+      <span class="ev-t">${evTitleHTML(e)}${e.k?`<i class="ev-k">${esc(e.k)}</i>`:""}
         ${e.n?`<em class="ev-n">${esc(e.n)}</em>`:""}</span>
     </div>`).join("")}</div>`;
 }
@@ -8055,7 +8107,7 @@ function clubAboutHTML(c, r, played){
 function playerCardHTML(p, c){
   const cut = (PHOTOSON && typeof LOCAL_PHOTOS!=="undefined") ? LOCAL_PHOTOS[p.n] : null;
   return `<div class="pcard" data-player="${esc(p.n)}" data-club="${esc(c)}" role="button" tabindex="0" aria-label="${esc(p.n)}">
-    <div class="ph">${cut?`<img src="${cut}_s.webp?v=5" alt="" loading="lazy" decoding="async" draggable="false">`
+    <div class="ph">${cut?`<img src="${cut}_s.webp?v=6" alt="" loading="lazy" decoding="async" draggable="false">`
                          :`<img class="noph" src="${crestSrcOf(c)}" alt="" loading="lazy" draggable="false">`}</div>
     ${p.s?`<span class="no">${p.s}</span>`:""}
     <div class="nm">${esc(p.n)}</div>
@@ -8140,7 +8192,7 @@ function playerProfileHTML(D){
     <button type="button" class="pprof-close" aria-label="إغلاق" onclick="closePlayer()">✕</button>
     <div class="pprof-hero">
       <div class="wm" style="background-image:url('${crestSrcOf(D.club)}')"></div>
-      <div class="ph">${cut?`<img src="${cut}.webp?v=5" alt="" decoding="async">`:`<img class="noph" src="${crestSrcOf(D.club)}" alt="">`}</div>
+      <div class="ph">${cut?`<img src="${cut}.webp?v=6" alt="" decoding="async">`:`<img class="noph" src="${crestSrcOf(D.club)}" alt="">`}</div>
       <div class="pprof-id">
         <div class="club" data-club-link="${esc(D.club)}">${crest(D.club)}<span>${esc(D.club)}</span></div>
         <h3>${esc(D.name)}</h3>
