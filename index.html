@@ -1240,10 +1240,10 @@ body{background:
 .crestbar button{flex:none;width:52px;height:52px;display:grid;place-items:center;border-radius:8px;transition:transform .15s,background .15s}
 .crestbar button img{width:46px;height:46px;object-fit:contain;filter:drop-shadow(0 1px 1px rgba(0,0,0,.15))}
 .crestbar button:hover{transform:translateY(-3px);background:var(--blue-bg)}
-/* ---- headings ---- */
-h2.sec{font-size:1.35rem;font-weight:800;margin:30px 0 14px;gap:12px}
-h2.sec::before{width:12px;height:22px;border-radius:2px;background:linear-gradient(180deg,var(--zain),var(--zain-deep));transform:skewX(-14deg)}
-h2.sec::after{content:"";flex:1;height:1px;background:linear-gradient(to left,var(--line2),transparent)}
+/* ---- headings: عنوان قسم مسطّح بلا شريط مائل — خط تأكيد قصير تحت النص يمتد كخط فاصل رفيع ---- */
+h2.sec{position:relative;font-size:1.3rem;font-weight:800;letter-spacing:-.01em;line-height:1.25;color:var(--head);margin:30px 0 16px;padding-bottom:10px;gap:10px;align-items:baseline}
+h2.sec::before{content:"";position:absolute;inset-inline-start:0;bottom:-1px;width:30px;height:3px;border-radius:3px;background:linear-gradient(to left,var(--zain),var(--zain-ice));transform:none;z-index:1}
+h2.sec::after{content:"";position:absolute;inset-inline:0;bottom:0;height:1px;background:linear-gradient(to left,var(--line2) 0,var(--line2) 55%,transparent)}
 .hint{font-size:.8rem}
 /* ---- cards ---- */
 .card,.match,.calbar{border-radius:14px}
@@ -3711,11 +3711,10 @@ const LOCAL_PHOTOS={
   "أحمد الشمري":"assets/players/jah/77",
   "عبدالرحمن الظفيري":"assets/players/jah/88"
 };/* صورة بحسب النادي (2026-09-15): الاسم وحده لا يكفي حين يتكرر في ناديين — «يوسف محمد» قلب دفاع الشباب 4
-   وجناح النصر 11. يُبحث أولاً في الخريطة المقيّدة بالنادي، ثم في LOCAL_PHOTOS بشرط أن يكون مجلد الصورة لمجلد النادي نفسه. */
+   كان يأخذ صورة النصر 11 (المسجّل في الكشف باسم يوسف ثامر — قرار منصور 2026-09-15: يبقى يوسف ثامر). يُبحث أولاً في الخريطة المقيّدة بالنادي، ثم في LOCAL_PHOTOS بشرط أن يكون مجلد الصورة لمجلد النادي نفسه. */
 const CLUB_DIR={"القادسية":"qad","الكويت":"kuw","النصر":"nsr","الجهراء":"jah","الساحل":"sah","الفحيحيل":"fah","السالمية":"sal","الشباب":"shb","الصليبخات":"slb"};
 const LOCAL_PHOTOS_BY_CLUB={
   "الشباب|يوسف محمد":"assets/players/shb/4",
-  "النصر|يوسف محمد":"assets/players/nsr/11",
 };
 function photoCut(name, club){
   const k = club ? LOCAL_PHOTOS_BY_CLUB[club+"|"+name] : null; if(k) return k;
@@ -7952,8 +7951,8 @@ const domReady = () => new Promise(r => document.readyState!=="loading" ? r() : 
 .cfact .sw i{width:15px;height:15px;border-radius:50%;box-shadow:inset 0 0 0 1px rgba(0,0,0,.25),0 0 0 1px rgba(255,255,255,.35);display:inline-block}
 .cabout-desc{position:relative;padding:8px 18px 18px;font-size:.86rem;line-height:1.8;color:var(--mist)}
 /* --- قائمة الفريق --- */
-h2.sec.sq-grp{margin-top:18px}
-.sq-n{font-size:.7rem;font-weight:600;color:var(--slate);background:rgba(143,166,196,.14);padding:2px 8px;border-radius:999px}
+h2.sec.sq-grp{margin-top:22px}
+.sq-n{font-family:var(--display);font-size:.72rem;font-weight:700;line-height:1;color:var(--zain-text2,var(--zain-mid));background:var(--blue-bg);border:1px solid var(--blue-ln);padding:5px 9px 4px;border-radius:8px;min-width:26px;text-align:center;font-variant-numeric:tabular-nums}
 .sq-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
 @media(min-width:640px){.sq-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(min-width:960px){.sq-grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}}
