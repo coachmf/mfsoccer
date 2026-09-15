@@ -237,4 +237,6 @@ const PLAYER_PHOTOS = {
   'JAH|حمد الخالدي': '/assets/players/jah/40',
   'JAH|أحمد الشمري': '/assets/players/jah/77',
   'JAH|عبدالرحمن الظفيري': '/assets/players/jah/88',
+  // العربي (1)
+  'ARB|زيد قنبر': '/assets/players/arb/98',
 };
