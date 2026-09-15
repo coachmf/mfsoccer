@@ -180,14 +180,14 @@ tbody tr.rel{box-shadow:inset 3px 0 0 rgba(224,100,79,.7)}
 .ts-pod:nth-child(1){order:2}.ts-pod:nth-child(2){order:1}.ts-pod:nth-child(3){order:3}
 .ts-pod.first{background:linear-gradient(180deg,var(--blue-bg),var(--navy-900))}
 .ts-pod.gold{border-color:rgba(233,185,73,.45)}
-.ts-badge{position:absolute;top:10px;right:10px;width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font-family:var(--display);font-weight:800;font-size:.85rem;font-variant-numeric:tabular-nums;background:var(--navy-800);color:var(--head);border:1px solid var(--line)}
+.ts-badge{position:static;margin:0 auto 8px;width:30px;height:30px;border-radius:50%;display:grid;place-items:center;font-family:var(--display);font-weight:800;font-size:.85rem;font-variant-numeric:tabular-nums;background:var(--navy-800);color:var(--head);border:1px solid var(--line)}
 .ts-pod.gold .ts-badge{background:var(--sand);color:#0B1F3A;border-color:transparent}
 .ts-pod.silver .ts-badge{background:#A0B2C6;color:#0B1F3A;border-color:transparent}
 .ts-pod.bronze .ts-badge{background:#C8864B;color:#fff;border-color:transparent}
 .ts-pod{overflow:hidden}
 .ts-pod-bg{position:absolute;left:50%;top:42%;width:150%;max-width:none;transform:translate(-50%,-50%);opacity:.07;pointer-events:none;filter:grayscale(.2)}
 .ts-pod>*:not(.ts-pod-bg){position:relative;z-index:1}
-.ts-pod-av{position:relative;width:150px;height:188px;margin:4px 0 8px}
+.ts-pod-av{position:relative;width:150px;height:188px;margin:0 0 8px}
 .ts-pod.first .ts-pod-av{width:196px;height:245px}
 .ts-pod-img{width:100%;height:100%;object-fit:contain;object-position:bottom;filter:drop-shadow(0 4px 6px rgba(0,0,0,.3))}
 .ts-pod-img.ts-crestfb{padding:14px;filter:none}
@@ -233,7 +233,7 @@ tbody tr.rel{box-shadow:inset 3px 0 0 rgba(224,100,79,.7)}
   .ts-podium{grid-template-columns:1fr;gap:8px}
   .ts-pod:nth-child(n){order:0}
   .ts-pod{flex-direction:row;justify-content:space-between;text-align:right;padding:10px 12px;gap:10px}
-  .ts-badge{position:static;flex:none}
+  .ts-badge{margin:0;flex:none}
   .ts-pod-av,.ts-pod.first .ts-pod-av{width:96px;height:120px;margin:0;flex:none}
   .ts-pod-bg{width:64%;left:24%;top:50%;opacity:.06}
   .ts-pod-info{flex:1}
