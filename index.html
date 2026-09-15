@@ -9860,7 +9860,7 @@ function clubAboutHTML(c, r, played){
     <div class="wm" style="background-image:url('${crestSrcOf(c)}')"></div>
     <div class="cabout-hero"><img class="st-img" src="${stSrc}" alt="" style="${I.stPos?`object-position:${I.stPos}`:""}" decoding="async" onload="this.classList.add('on')" onerror="this.onerror=null;this.src='assets/hero/stadium.jpg'">
       ${I.st?`<span class="st-cap">${esc(I.st)}</span>`:""}
-      ${I.kit?`<div class="cabout-kits">${[[I.kit,"الطقم الأساسي"],[`${I.kit}_gk`,"طقم الحارس"]].filter(x=>x[0]).map(([f,l])=>`<figure class="ckit"><img src="fantasy/assets/kits/${f}.webp?v=2" alt="${l}" loading="lazy" decoding="async" onerror="this.parentElement.remove()"><figcaption>${l}</figcaption></figure>`).join("")}</div>`:""}
+      ${I.kit?`<div class="cabout-kits">${[[I.kit,"الطقم الأساسي"],[`${I.kit}_gk`,"طقم الحارس"]].filter(x=>x[0]).map(([f,l])=>`<figure class="ckit"><img src="fantasy/assets/kits/${f}.webp?v=3" alt="${l}" loading="lazy" decoding="async" onerror="this.parentElement.remove()"><figcaption>${l}</figcaption></figure>`).join("")}</div>`:""}
     </div>
     <div class="cabout-head">
       ${crest(c,true)}

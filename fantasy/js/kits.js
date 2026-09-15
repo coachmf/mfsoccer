@@ -3,7 +3,7 @@
 'use strict';
 
 /* الأطقم الحقيقية 2026/27 (منصور 2026-09-15): صور منتج شفافة مبنية من صور التصوير الرسمي، بلا رقم ولا اسم. */
-const KIT_V = 2;
+const KIT_V = 3;
 const KIT_IMG = Object.fromEntries(
   ['KUW','QAD','ARB','KAZ','SAL','NSR','JAH','SAH','FAH','TDM','SHB','SLB'].map(c =>
     [c, {out:`${c}.webp?v=${KIT_V}`, gk:`${c}_gk.webp?v=${KIT_V}`}])
