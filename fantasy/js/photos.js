@@ -4,7 +4,7 @@
 'use strict';
 
 /* رقم نسخة الصور: ارفعه عند إعادة توليد أي قصّة حتى لا يبقى المتصفح على النسخة القديمة */
-const PLAYER_PHOTOS_VER = '12';
+const PLAYER_PHOTOS_VER = '13';
 
 const PLAYER_PHOTOS = {
   // الصليبخات (17)
@@ -264,6 +264,7 @@ const PLAYER_PHOTOS = {
   'ARB|احمد عادي': '/assets/players/arb/26',
   'ARB|علي عبدالرسول': '/assets/players/arb/16',
   'ARB|علي الدوخي': '/assets/players/arb/9',
+  'ARB|كينان ماليكو': '/assets/players/arb/18',
   'ARB|شيلدون': '/assets/players/arb/23',
   'ARB|خادم رسول': '/assets/players/arb/95',
   'ARB|بندر السلامة': '/assets/players/arb/10',
