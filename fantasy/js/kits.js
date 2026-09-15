@@ -2,9 +2,13 @@
    لو وُجدت صورة حقيقية في assets/kits/<CLUB>.png تُستخدم بدل الرسم. */
 'use strict';
 
-const KIT_IMG = {
-  // QAD:{out:'QAD.png', gk:'QAD_gk.png'},
-};
+/* الأطقم الحقيقية 2026/27 (منصور 2026-09-15): صور منتج شفافة مبنية من صور التصوير الرسمي، بلا رقم ولا اسم.
+   نادٍ بلا صورة حارس (العربي) يرجع للرسم تلقائياً. */
+const KIT_V = 1;
+const KIT_IMG = Object.fromEntries(
+  ['KUW','QAD','ARB','KAZ','SAL','NSR','JAH','SAH','FAH','TDM','SHB','SLB'].map(c =>
+    [c, {out:`${c}.webp?v=${KIT_V}`, gk: c==='ARB' ? null : `${c}_gk.webp?v=${KIT_V}`}])
+);
 
 /* تصميم كل قميص: body لون الجسم، collar لون الياقة، collar2 خط ثانٍ بالياقة،
    neck: round|v، cuff/cuff2 أطراف الأكمام، panel لوح جانبي، sponsor نص الراعي */

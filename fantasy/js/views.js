@@ -492,7 +492,7 @@ const VIEWS = {
     UI.sheet(`
       ${UI.statusBanner(p)}
       <div class="ps-head ps-head-photo" style="background:linear-gradient(135deg,${c.color} 0%,${c.dark} 100%)">
-        <div class="ps-kit">${UI.playerPhoto(p)? `<img class="ps-photo ps-cut" src="${esc(UI.playerPhoto(p))}" alt="">` : UI.kitShirt(p.club, p.pos==='G', 84)}</div>
+        <div class="ps-kit">${UI.playerPhoto(p)? `<img class="ps-photo ps-cut" src="${esc(UI.playerPhoto(p))}" alt="">` : UI.kitImg(p.club, p.pos==='G', 84)}</div>
         <div style="flex:1">
           <div class="ps-pos">${POS_FULL[p.pos]}</div>
           <div class="ps-name">${esc(p.name)}</div>

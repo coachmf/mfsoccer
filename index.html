@@ -8816,6 +8816,24 @@ html .squadbox .sqrow .sqno::placeholder{color:var(--cct,#fff);opacity:.6}
 .cabout-hero::after{content:"";position:absolute;inset:0;background:linear-gradient(to top,var(--navy-900) 4%,rgba(var(--ca-rgb),.25) 60%,rgba(0,0,0,.05) 100%)}
 .cabout-hero .st-cap{position:absolute;right:14px;top:12px;padding:5px 10px;border-radius:999px;background:rgba(6,21,41,.55);color:#fff;
   font-size:.7rem;backdrop-filter:blur(6px);border:1px solid rgba(255,255,255,.18)}
+/* الطقم الأساسي وطقم الحارس على طرف صورة الملعب + بطاقة رئيس النادي (2026-09-15) */
+.cabout:has(.cabout-kits) .cabout-hero{height:clamp(190px,48vw,290px)}
+.cabout-kits{position:absolute;left:10px;top:14px;bottom:52px;z-index:2;display:flex;gap:2px;align-items:center}
+.ckit{margin:0;display:flex;flex-direction:column;align-items:center;gap:2px}
+.ckit img{width:clamp(76px,21vw,128px);aspect-ratio:1;object-fit:contain;filter:drop-shadow(0 8px 14px rgba(0,0,0,.5))}
+.ckit:nth-child(2) img{width:clamp(62px,17vw,104px)}
+.ckit figcaption{font-size:.64rem;font-weight:700;color:#fff;padding:2px 8px;border-radius:999px;background:rgba(6,21,41,.6);white-space:nowrap}
+.cpres{position:relative;overflow:hidden;display:flex;align-items:center;gap:16px;margin-top:12px;padding:0;padding-inline-end:18px;border:1px solid rgba(var(--ca-rgb),.35);
+  background:linear-gradient(100deg,rgba(var(--ca-rgb),.16),transparent 70%)}
+.cpres-ph{width:104px;height:130px;flex:none;align-self:flex-end;display:grid;place-items:end center;
+  background:radial-gradient(circle at 50% 38%,rgba(var(--ca-rgb),.55),rgba(var(--ca-rgb),.08) 70%)}
+.cpres-ph img{width:100%;height:100%;object-fit:cover;object-position:top}
+.cpres-ph img.noph{width:56%;height:auto;object-fit:contain;opacity:.6;align-self:center}
+.cpres-txt{display:flex;flex-direction:column;gap:4px;min-width:0;padding:14px 0}
+.cpres-txt small{font-size:.72rem;font-weight:700;color:var(--ca)}
+.cpres-txt b{font-family:var(--display);font-size:clamp(1rem,4.2vw,1.2rem);color:var(--head,#fff);line-height:1.3}
+.cpres-txt span{display:flex;align-items:center;gap:6px;font-size:.74rem;color:var(--slate)}
+.cpres-txt .crest{width:18px;height:18px}
 .cabout-head{position:relative;display:flex;align-items:flex-end;gap:14px;padding:0 18px;margin-top:-44px}
 .cabout-head .crest.lg{width:88px;height:88px;border-radius:20px;background:#fff!important;box-shadow:0 8px 24px rgba(0,0,0,.35),0 0 0 3px rgba(var(--ca-rgb),.7)}
 .cabout-head .crest.lg img{width:100%;height:100%;object-fit:contain;padding:6px}
@@ -9556,18 +9574,18 @@ html.mp-open{overflow:hidden}
    صورة الملعب: assets/stadiums/<slug>.jpg إن وُجدت، وإلا الصورة العامة assets/hero/stadium.jpg */
 const CLUB_INFO = {
   /* مصادر التحقق (2026-09-15): ويكيبيديا العربية والإنجليزية لكل نادٍ. nick = اللقب، cap = سعة الملعب. الأندية بلا لقب متداول تُترك بلا nick. */
-  "القادسية": {f:1960, nick:"الملكي",        st:"ستاد محمد الحمد",       loc:"حولي",       cap:22000, col:"الأصفر والأسود",    slug:"qadsia"},
-  "الكويت":   {f:1960, nick:"العميد",        st:"ملعب نادي الكويت",      loc:"كيفان",      cap:12350, col:"الأبيض والأحمر",    slug:"kuwait"},
-  "العربي":   {f:1960, nick:"الزعيم",        st:"ستاد صباح السالم",      loc:"المنصورية",  cap:26000, col:"الأخضر والأبيض",    slug:"arabi"},
-  "كاظمة":    {f:1964, nick:"السفير",        st:"ستاد الصداقة والسلام",  loc:"العديلية",   cap:21500, col:"البرتقالي والأبيض", slug:"kazma"},
-  "السالمية": {f:1964, nick:"الرهيب",        st:"ستاد ثامر",             loc:"السالمية",   cap:12000, col:"السماوي والأبيض",   slug:"salmiya"},
-  "النصر":    {f:1965, nick:"العنابي",       st:"ملعب علي صباح السالم",  loc:"العارضية",   cap:11000, col:"العنابي والأبيض",   slug:"nasr"},
-  "الجهراء":  {f:1966, nick:"أبناء الشهداء", st:"ملعب مبارك العيار",     loc:"الجهراء",    cap:15000, col:"الأبيض والأزرق",    slug:"jahra"},
-  "الساحل":   {f:1967,                        st:"ملعب نادي الساحل",      loc:"أبو حليفة",  cap:5000,  col:"الأصفر والأزرق",    slug:"sahel", stPos:"center 74%"},
-  "الفحيحيل": {f:1964,                        st:"ستاد نايف الدبوس",      loc:"الفحيحيل",   cap:12000, col:"الأحمر والأبيض",    slug:"fahaheel"},
-  "التضامن":  {f:1965, nick:"العنيد",        st:"ملعب مساعد الشنفا",     loc:"الفروانية",  cap:14000, col:"الأزرق والأبيض",    slug:"tadamon"},
-  "الشباب":   {f:1963,                        st:"ملعب الأحمدي",          loc:"الأحمدي",    cap:18000, col:"الأزرق والأبيض",    slug:"shabab"},
-  "الصليبخات":{f:1972,                        st:"ستاد الصليبخات",        loc:"الصليبخات",  cap:15000, col:"الأحمر والأبيض",    slug:"sulaibikhat"},
+  "القادسية": {f:1960, nick:"الملكي",        st:"ستاد محمد الحمد",       loc:"حولي",       cap:22000, col:"الأصفر والأسود",    slug:"qadsia", kit:"QAD", pres:"الشيخ مشعل طلال الفهد"},
+  "الكويت":   {f:1960, nick:"العميد",        st:"ملعب نادي الكويت",      loc:"كيفان",      cap:12350, col:"الأبيض والأحمر",    slug:"kuwait", kit:"KUW", pres:"خالد علي الغانم", presImg:"kuwait"},
+  "العربي":   {f:1960, nick:"الزعيم",        st:"ستاد صباح السالم",      loc:"المنصورية",  cap:26000, col:"الأخضر والأبيض",    slug:"arabi", kit:"ARB", pres:"عبدالعزيز أحمد عاشور", presImg:"arabi"},
+  "كاظمة":    {f:1964, nick:"السفير",        st:"ستاد الصداقة والسلام",  loc:"العديلية",   cap:21500, col:"البرتقالي والأبيض", slug:"kazma", kit:"KAZ", pres:"أسعد أحمد البنوان", presImg:"kazma"},
+  "السالمية": {f:1964, nick:"الرهيب",        st:"ستاد ثامر",             loc:"السالمية",   cap:12000, col:"السماوي والأبيض",   slug:"salmiya", kit:"SAL", pres:"الشيخ تركي أحمد اليوسف الصباح", presImg:"salmiya"},
+  "النصر":    {f:1965, nick:"العنابي",       st:"ملعب علي صباح السالم",  loc:"العارضية",   cap:11000, col:"العنابي والأبيض",   slug:"nasr", kit:"NSR", pres:"خالد شريدة المطيري", presImg:"nasr"},
+  "الجهراء":  {f:1966, nick:"أبناء الشهداء", st:"ملعب مبارك العيار",     loc:"الجهراء",    cap:15000, col:"الأبيض والأزرق",    slug:"jahra", kit:"JAH", pres:"يوسف كريم العنزي", presImg:"jahra"},
+  "الساحل":   {f:1967,                        st:"ملعب نادي الساحل",      loc:"أبو حليفة",  cap:5000,  col:"الأصفر والأزرق",    slug:"sahel", stPos:"center 74%", kit:"SAH", pres:"خالد خليفة العازمي"},
+  "الفحيحيل": {f:1964,                        st:"ستاد نايف الدبوس",      loc:"الفحيحيل",   cap:12000, col:"الأحمر والأبيض",    slug:"fahaheel", kit:"FAH", pres:"حمد الدبوس", presImg:"fahaheel"},
+  "التضامن":  {f:1965, nick:"العنيد",        st:"ملعب مساعد الشنفا",     loc:"الفروانية",  cap:14000, col:"الأزرق والأبيض",    slug:"tadamon", kit:"TDM", pres:"مبارك محمد النزال", presImg:"tadamon"},
+  "الشباب":   {f:1963,                        st:"ملعب الأحمدي",          loc:"الأحمدي",    cap:18000, col:"الأزرق والأبيض",    slug:"shabab", kit:"SHB", pres:"د. مناحي فلاح العازمي"},
+  "الصليبخات":{f:1972,                        st:"ستاد الصليبخات",        loc:"الصليبخات",  cap:15000, col:"الأحمر والأبيض",    slug:"sulaibikhat", kit:"SLB", pres:"سعد عناد", presImg:"sulaibikhat"},
 };
 const POS_FULL = {GK:"حارس مرمى",RB:"ظهير أيمن",CB:"قلب دفاع",LB:"ظهير أيسر",RWB:"ظهير جناح أيمن",LWB:"ظهير جناح أيسر",
   CDM:"وسط مدافع",CM:"وسط ميدان",CAM:"صانع ألعاب",RM:"جناح أيمن",LM:"جناح أيسر",RW:"جناح أيمن",LW:"جناح أيسر",ST:"مهاجم"};
@@ -9842,6 +9860,7 @@ function clubAboutHTML(c, r, played){
     <div class="wm" style="background-image:url('${crestSrcOf(c)}')"></div>
     <div class="cabout-hero"><img class="st-img" src="${stSrc}" alt="" style="${I.stPos?`object-position:${I.stPos}`:""}" decoding="async" onload="this.classList.add('on')" onerror="this.onerror=null;this.src='assets/hero/stadium.jpg'">
       ${I.st?`<span class="st-cap">${esc(I.st)}</span>`:""}
+      ${I.kit?`<div class="cabout-kits">${[[I.kit,"الطقم الأساسي"],[I.kit==="ARB"?"":`${I.kit}_gk`,"طقم الحارس"]].filter(x=>x[0]).map(([f,l])=>`<figure class="ckit"><img src="fantasy/assets/kits/${f}.webp?v=1" alt="${l}" loading="lazy" decoding="async" onerror="this.parentElement.remove()"><figcaption>${l}</figcaption></figure>`).join("")}</div>`:""}
     </div>
     <div class="cabout-head">
       ${crest(c,true)}
@@ -9852,7 +9871,11 @@ function clubAboutHTML(c, r, played){
     </div>
     ${facts.length?`<div class="cabout-facts">${facts.map(([k,v])=>`<div class="cfact"><small>${k}</small><b>${v}</b></div>`).join("")}</div>`:""}
     ${desc?`<p class="cabout-desc">${desc}</p>`:""}
-  </div>`;
+  </div>
+  ${I.pres?`<div class="card cpres">
+    <span class="cpres-ph">${I.presImg?`<img src="assets/presidents/${I.presImg}_s.webp?v=1" alt="${esc(I.pres)}" loading="lazy" decoding="async">`:`<img class="noph" src="${crestSrcOf(c)}" alt="">`}</span>
+    <div class="cpres-txt"><small>رئيس مجلس الإدارة</small><b>${esc(I.pres)}</b><span>${crest(c)}${esc(c)}</span></div>
+  </div>`:""}`;   /* الأطقم حول صورة الملعب ورئيس النادي تحتها (منصور 2026-09-15) */
 }
 /* ---------- قائمة الفريق ---------- */
 function playerCardHTML(p, c){
