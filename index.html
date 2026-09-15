@@ -725,6 +725,12 @@ details.squadbox summary label.lb{margin:0;cursor:pointer}
 .xipitch.full .pp-card .pp-num{font-size:clamp(7px,2.2cqw,9.5px)}
 .xipitch.full .pp-card.nophoto .pp-num{font-size:clamp(11px,3.6cqw,16px)}
 .pp-card .pp-b.goal{top:-6px;left:-6px}
+/* علم جنسية المحترف بجانب الصورة */
+.natf{position:absolute;z-index:3;display:block;width:clamp(18px,5.4cqw,24px);aspect-ratio:3/2;object-fit:cover;border-radius:3px;
+  box-shadow:0 0 0 1.5px #fff,0 2px 5px rgba(0,0,0,.35);pointer-events:none}
+.pp-card .natf{left:auto;right:-8px;top:56%}
+.pcard .natf{top:10px;left:10px;width:26px}
+.pprof-hero .ph img.natf{position:absolute;top:auto;bottom:14px;left:14px;width:34px;height:auto;max-width:none;filter:none}
 .pp-card .pp-b.assist{bottom:-6px;right:-6px}
 .pp-card .pp-b.card{right:auto;left:-4px;top:auto;bottom:34%}
 .pp-card .pp-b.goal{top:auto;left:auto;bottom:-6px;right:-6px;background:#fff}
@@ -4220,6 +4226,86 @@ const LOCAL_PHOTOS_BY_CLUB={
   "الشباب|يوسف محمد":"assets/players/shb/4",
   "الشباب|محمد حمد":"assets/players/shb/8",
 };
+/* جنسيات المحترفين (طلب محمد الفيلكاوي 2026-09-16): "النادي|الاسم" → رمز الدولة (flagcdn). الكويتي لا يُكتب هنا. */
+const PLAYER_NAT={
+/*PLAYER_NAT_START*/
+  "الكويت|المهدي برحمة":"ma",
+  "الكويت|زولا":"cd",
+  "الكويت|عموري":"eg",
+  "الكويت|فينيسيوس":"br",
+  "الكويت|عمر غونزاليس":"cm",
+  "الكويت|ياسين الخنيسي":"tn",
+  "الجهراء|تاكامبا ناسام":"cm",
+  "الجهراء|ايفانز امبوفو":"gh",
+  "الجهراء|ماركوس راموس":"br",
+  "الجهراء|كيريست افالانا":"cm",
+  "السالمية|شاهزود":"uz",
+  "السالمية|تريسور":"cd",
+  "السالمية|محمود الأسود":"sy",
+  "السالمية|ديفيد سامبيسا":"ga",
+  "الشباب|ماركوس مارتينلي":"br",
+  "الشباب|جيوفاني دي سيلفا":"br",
+  "الشباب|ميشيل دي ليما":"br",
+  "الشباب|احمد الرياحي":"jo",
+  "الشباب|ماثيوس توتو":"br",
+  "الفحيحيل|كارلوس":"br",
+  "الفحيحيل|جاتوش بانوم":"et",
+  "الفحيحيل|فيتور دا سيلفا":"br",
+  "الفحيحيل|الفين فورتيس":"cv",
+  "الفحيحيل|رانجا شيفافيرو":"za",
+  "الفحيحيل|همام صبحي":"sy",
+  "العربي|شيلدون":"br",
+  "العربي|خادم رسول":"sn",
+  "العربي|كينان ماليكو":"et",
+  "العربي|ايوالا":"ng",
+  "العربي|زيد قنبر":"ps",
+  "العربي|وليد ولد الشيخ":"nl",
+  "كاظمة|ادريس شعيبي":"dz",
+  "كاظمة|اماث نداو":"sn",
+  "كاظمة|باتريك روبسون":"br",
+  "كاظمة|تروليس كنول":"de",
+  "كاظمة|محمد عنتر":"eg",
+  "القادسية|سيدريك جبو":"ci",
+  "القادسية|غابرييل اوروك":"ng",
+  "القادسية|ايوب لخضر":"ma",
+  "القادسية|حمزة خابا":"ma",
+  "التضامن|سانتوس":"br",
+  "التضامن|بيريرا":"br",
+  "التضامن|أبوبكر دومبيا":"ci",
+  "التضامن|أحمد دالي":"sy",
+  "الساحل|موريسيو":"br",
+  "الساحل|لوكاس دي سوزا":"br",
+  "الساحل|جواو":"br",
+  "الساحل|كليتون":"br",
+  "الساحل|ألن دي سوزا":"br",
+  "النصر|موريبا ديارا":"ml",
+  "النصر|ايمن لقجع":"dz",
+  "النصر|سيدي يعقوب":"mr",
+  "النصر|حازم الحاج حسن":"tn",
+  "النصر|كريم سليم شاهين":"lb",
+  "الصليبخات|دانيل سيلفا":"br",
+  "الصليبخات|برونو دومنيغيس":"br",
+  "الصليبخات|أوكتشكو أربيزو":"ng",
+  "الصليبخات|إيليلسون بيبي":"br",
+  "الصليبخات|ويلفز دامسينا":"br",
+  "الصليبخات|لوكاس شالون":"br",
+  "الصليبخات|علي علاء الدين":"lb",
+  "الكويت|محمد مرهون":"bh",
+  "السالمية|عبد الله يوسف":"bh",
+  "العربي|جمعة عبود":"sy",
+  "كاظمة|ناصر محمدوه":"ye",
+  "القادسية|عبدالرحمن المشيفري":"om",
+  "التضامن|محمد عليان":"sy",
+  "النصر|عبدالرحمن كوكو":"sd",
+/*PLAYER_NAT_END*/
+};
+const _natKey=(c,n)=>String(c||"")+"|"+String(n||"").replace(/ـ/g,"").replace(/\s+/g," ").trim();
+let _NATN=null;
+function natOf(name, club){
+  if(!_NATN){ _NATN={}; Object.entries(PLAYER_NAT).forEach(([k,v])=>{ const i=k.indexOf("|"); _NATN[_natKey(k.slice(0,i),k.slice(i+1))]=v; }); }
+  return _NATN[_natKey(club,name)] || ""; }
+function natFlag(name, club, cls){ const c=natOf(name, club); if(!c) return "";
+  return `<img class="natf${cls?" "+cls:""}" src="https://flagcdn.com/w40/${c}.png" srcset="https://flagcdn.com/w80/${c}.png 2x" alt="" decoding="async" draggable="false">`; }
 function photoCut(name, club){
   const k = club ? LOCAL_PHOTOS_BY_CLUB[club+"|"+name] : null; if(k) return k;
   const cut = LOCAL_PHOTOS[name]; if(!cut) return null;
@@ -4791,7 +4877,7 @@ function spotHTML(p, x, y, n, kit, ev, compact, extraNm){
     <span class="pp-card${cut?"":" nophoto"}" style="${dotVars(k)}">
       ${cut?`<img class="pp-img" src="${cut}_f.webp?v=10" alt="" loading="lazy" draggable="false">`:""}
       <span class="pp-num">${num}</span>
-      <span class="pp-nm">${esc(nm)}${extraNm||""}</span>${spotBadges(ev)}</span></div>`;
+      <span class="pp-nm">${esc(nm)}${extraNm||""}</span>${spotBadges(ev)}${natFlag(p.n, kit.club)}</span></div>`;
 }
 /* القميص الفاتح يحتاج حافة غامقة ليُرى على العشب، والغامق حافة فاتحة */
 function dotVars(kit){
@@ -9883,7 +9969,7 @@ function playerCardHTML(p, c){
   return `<div class="pcard" data-player="${esc(p.n)}" data-club="${esc(c)}" role="button" tabindex="0" aria-label="${esc(p.n)}">
     <div class="ph">${cut?`<img src="${cut}_s.webp?v=10" alt="" loading="lazy" decoding="async" draggable="false">`
                          :`<img class="noph" src="${crestSrcOf(c)}" alt="" loading="lazy" draggable="false">`}</div>
-    ${p.s?`<span class="no">${p.s}</span>`:""}
+    ${p.s?`<span class="no">${p.s}</span>`:""}${natFlag(p.n, c)}
     <div class="nm">${esc(p.n)}</div>
     <div class="ps">${esc(posLabel(p.p))||"—"}</div>
   </div>`;
@@ -9981,7 +10067,7 @@ function playerProfileHTML(D){
     <button type="button" class="pprof-close" aria-label="إغلاق" onclick="closePlayer()">✕</button>
     <div class="pprof-hero">
       <div class="wm" style="background-image:url('${crestSrcOf(D.club)}')"></div>
-      <div class="ph">${cut?`<img src="${cut}.webp?v=10" alt="" decoding="async">`:`<img class="noph" src="${crestSrcOf(D.club)}" alt="">`}</div>
+      <div class="ph">${cut?`<img src="${cut}.webp?v=10" alt="" decoding="async">`:`<img class="noph" src="${crestSrcOf(D.club)}" alt="">`}${natFlag(D.name, D.club, "pprof-flag")}</div>
       <div class="pprof-id">
         ${D.club?`<div class="club" data-club-link="${esc(D.club)}">${crest(D.club)}<span>${esc(D.club)}</span></div>`:""}
         <h3>${esc(D.name)}</h3>
@@ -10674,7 +10760,7 @@ function mpTeamXI(m, club){
     return `<div class="mpx-p" data-player="${esc(p.n)}" data-club="${esc(club)}" style="right:${x.toFixed(2)}%;top:${((TOP+li*ROW)/H*100).toFixed(2)}%;width:${w.toFixed(2)}%">
       <span class="pp-card mpx-card${cut?"":" nophoto"}" style="${dotVars(kk)}">
         ${cut?`<img class="pp-img mpx-stand" src="${cut}_s.webp?v=10" alt="" loading="lazy" draggable="false">`:`<span class="pp-num">${p.s||"–"}</span>`}
-        ${spotBadges(playerMatchEvents(m, club, p.n))}
+        ${spotBadges(playerMatchEvents(m, club, p.n))}${natFlag(p.n, club)}
         ${v!=null?`<span class="rtg mpx-r ${ratingCls(v)}">${v.toFixed(1)}</span>`:""}
       </span>
       <span class="mpx-nm">${p.s?`<em>${p.s}</em>`:""}${esc(shortName(p.n))}</span>
