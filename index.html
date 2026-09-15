@@ -470,6 +470,16 @@ details.squadbox summary label.lb{margin:0;cursor:pointer}
 .cday .dw{display:none}
 .cday .dn{font-family:var(--display);font-weight:700;font-size:.95rem;font-variant-numeric:tabular-nums;color:#fff}
 .cday .dd{font-size:.55rem;color:var(--sky);height:9px}
+.cday .dteams{display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:3px;min-height:22px;margin-top:3px;padding:0 3px}
+.cday .dteams img.cl{width:22px;height:22px;object-fit:contain;border-radius:6px;background:#fff;padding:1.5px;box-shadow:inset 0 0 0 1px rgba(11,31,58,.12)}
+.cday .dteams img.fl{width:22px;height:15px;object-fit:cover;border-radius:3px;box-shadow:inset 0 0 0 1px rgba(11,31,58,.18)}
+.cday .dteams i{font-style:normal;font-size:.6rem;font-weight:700;color:var(--slate)}
+.cday.evonly{cursor:default}
+@media (max-width:640px){
+  .cday .dteams{gap:2px;min-height:18px;padding:0 2px}
+  .cday .dteams img.cl{width:17px;height:17px;border-radius:4px;padding:1px}
+  .cday .dteams img.fl{width:18px;height:12px}
+}
 .cday.off{opacity:.32}
 .cday.has{border-color:rgba(95,178,232,.5);background:rgba(23,65,122,.6)}
 .cday[aria-pressed="true"]{background:var(--sand);border-color:var(--sand)}
@@ -5008,24 +5018,54 @@ const FLAG_CODES={"الكويت":"kw","الازرق":"kw","السعودية":"sa
  "الكاميرون":"cm","غانا":"gh","جنوب افريقيا":"za","روسيا":"ru","كرواتيا":"hr","سويسرا":"ch","الدنمارك":"dk","السويد":"se","النرويج":"no"};
 const _norm=t=>String(t||"").replace(/[أإآ]/g,"ا").replace(/ة$/,"ه").replace(/ـ/g,"").replace(/\s+/g," ").trim();
 const FLAG_N={}; Object.keys(FLAG_CODES).forEach(k=>{ FLAG_N[_norm(k)]=FLAG_CODES[k]; });
+/* شعارات الأندية الخارجية (ملفات محلية 160×160 من ويكيميديا) — تُقرأ باسم النادي بعد حذف النسبة (الاماراتي/البحريني…) */
+const EXT_CRESTS={
+  "الوحدة":"assets/crests/ext/wahda_uae.png","الخالدية":"assets/crests/ext/khaldiya_bhr.png",
+  "ناساف":"assets/crests/ext/nasaf_uzb.png","نسف":"assets/crests/ext/nasaf_uzb.png",
+  "فورتيس":"assets/crests/ext/fortis_ban.png","ريغار":"assets/crests/ext/regar_tjk.png","ريجار":"assets/crests/ext/regar_tjk.png",
+  "استقلول":"assets/crests/ext/istiklol_tjk.png","استقلال":"assets/crests/ext/istiklol_tjk.png",
+  "غوا":"assets/crests/ext/goa_ind.png","جوا":"assets/crests/ext/goa_ind.png","النجمة":"assets/crests/ext/nejmeh_lbn.png",
+  "حمص الفداء":"assets/crests/ext/homs_syr.png","حمص الفدا":"assets/crests/ext/homs_syr.png","الفداء":"assets/crests/ext/homs_syr.png","الوثبة":"assets/crests/ext/homs_syr.png"
+};
+const EXT_N={}; Object.keys(EXT_CRESTS).forEach(k=>{ EXT_N[_norm(k)]=EXT_CRESTS[k]; });
 function evTeam(name, kind){
-  const shown=String(name||"").trim().replace(/^(نادي|منتخب)\s+/,"").trim();
-  const raw=shown.replace(/\s+(الكويتي|الاماراتي|الإماراتي|السعودي|القطري|البحريني|العماني|العراقي|الاردني|الأردني)$/,"").trim();
-  if(!raw) return null;
-  const n=_norm(raw);
-  const club=Object.keys(LOGOS).find(c=>_norm(c)===n) || null;
-  const flag=FLAG_N[n] || null;
-  const preferFlag = kind==="منتخب";
-  if(preferFlag && flag) return {t:"flag",n:raw,c:flag};
-  if(club) return {t:"club",n:club};
-  if(flag) return {t:"flag",n:raw,c:flag};
+  const shown=String(name||"").trim().replace(/^(النادي|نادي|منتخب)\s+/,"").trim();
+  if(!shown) return null;
+  const stripped=shown.replace(/\s+(ال)?[ء-ي]{2,}ي$/,"").trim();   /* «الوحدة الاماراتي» → «الوحدة» */
+  const cands=[shown]; if(stripped && stripped!==shown) cands.push(stripped);
+  for(const raw of cands){
+    const n=_norm(raw);
+    const club=Object.keys(LOGOS).find(c=>_norm(c)===n) || null;
+    const flag=FLAG_N[n] || null;
+    const ext=EXT_N[n] || null;
+    if(kind==="منتخب" && flag) return {t:"flag",n:raw,c:flag};
+    if(club) return {t:"club",n:club};
+    if(ext) return {t:"ext",n:raw,src:ext};
+    if(flag) return {t:"flag",n:raw,c:flag};
+  }
   return {t:"other",n:shown};
 }
 function evTeamHTML(x){
   const logo = x.t==="club" ? crest(x.n)
+    : x.t==="ext" ? `<div class="crest has-logo" style="background:#fff"><img src="${x.src}" alt="" decoding="async"></div>`
     : x.t==="flag" ? `<img class="ev-flag" src="https://flagcdn.com/w40/${x.c}.png" srcset="https://flagcdn.com/w80/${x.c}.png 2x" alt="" decoding="async">`
     : `<div class="crest" style="background:#3B5578">${esc(x.n.slice(0,2))}</div>`;
   return `<span class="ev-team">${logo}<b>${esc(x.n)}</b></span>`;
+}
+/* صور مصغّرة لخلية التقويم: شعار نادٍ محلي/خارجي أو علم منتخب */
+function evAvatarImg(x){
+  if(!x) return "";
+  if(x.t==="club") return LOGOS[x.n] ? `<img class="cl" src="${LOGOS[x.n]}" alt="" loading="lazy" decoding="async">` : "";
+  if(x.t==="ext")  return `<img class="cl" src="${x.src}" alt="" loading="lazy" decoding="async">`;
+  if(x.t==="flag") return `<img class="fl" src="https://flagcdn.com/w40/${x.c}.png" srcset="https://flagcdn.com/w80/${x.c}.png 2x" alt="" loading="lazy" decoding="async">`;
+  return "";
+}
+function evAvatars(e){
+  const parts=String(e.t||"").split(/\s*[-–—]\s*/).map(p=>p.trim()).filter(Boolean);
+  if(parts.length<2) return [];
+  const a=evTeam(parts[0],e.k), b=evTeam(parts[1],e.k);
+  if(!a||!b||a.t==="other"||b.t==="other") return [];
+  return [evAvatarImg(a),evAvatarImg(b)].filter(Boolean);
 }
 function evTitleHTML(e){
   const parts=String(e.t||"").split(/\s*[-–—]\s*/).map(p=>p.trim()).filter(Boolean);
@@ -5052,12 +5092,18 @@ function calendarBar(){
   const base=calMonth();
   const [Y,Mo]=base.split("-").map(Number);
   const days=new Date(Y,Mo,0).getDate();
-  const counts={}, soonDays={};
+  const counts={}, soonDays={}, dayAv={};         /* dayAv: شعارات/أعلام فرق اليوم */
   MATCHES.forEach(m=>{ if(m.date && m.date.startsWith(base)){
     counts[m.date]=(counts[m.date]||0)+1;
-    if(isUpcoming(m)) soonDays[m.date]=(soonDays[m.date]||0)+1; } });
+    if(isUpcoming(m)) soonDays[m.date]=(soonDays[m.date]||0)+1;
+    [m.home,m.away].forEach(c=>{ if(LOGOS[c]) (dayAv[m.date]=dayAv[m.date]||[]).push(`<img class="cl" src="${LOGOS[c]}" alt="" loading="lazy" decoding="async">`); }); } });
   const evDayset=new Set();                        /* أيام فيها مناسبة */
-  allEvents().forEach(e=>evDays(e).forEach(d=>{ if(d.startsWith(base)) evDayset.add(d); }));
+  allEvents().forEach(e=>{
+    const ds=evDays(e).filter(d=>d.startsWith(base)); if(!ds.length) return;
+    ds.forEach(d=>evDayset.add(d));
+    const av=evDays(e).length<=2 ? evAvatars(e) : [];   /* مناسبة ليوم أو يومين فقط تُظهر شعارات فريقيها؛ الفترات الطويلة (توقف/بطولة) لا */
+    if(av.length) ds.forEach(d=>{ (dayAv[d]=dayAv[d]||[]).push(...av); });
+  });
   const lead=new Date(Y,Mo-1,1).getDay();          /* 0 = الأحد */
   const cells=[];
   for(let i=0;i<lead;i++) cells.push('<div class="cday blank"></div>');
@@ -5066,8 +5112,11 @@ function calendarBar(){
     const n=counts[iso]||0;
     const sn=soonDays[iso]||0;
     const ev=evDayset.has(iso);
-    cells.push(`<button class="cday ${n?(sn===n?"has soon":"has"):"off"}${ev?" evd":""}" data-day="${iso}" ${n?"":"disabled"} aria-pressed="${SELDAY===iso}">
-      <div class="dn">${d}</div><div class="dd${sn?" g":""}">${n?"●".repeat(Math.min(n,3)):""}</div></button>`);
+    const av=dayAv[iso]||[], shownAv=av.slice(0,4), more=av.length-shownAv.length;
+    cells.push(`<button class="cday ${n?(sn===n?"has soon":"has"):(ev?"evonly":"off")}${ev?" evd":""}" data-day="${iso}" ${n?"":"disabled"} aria-pressed="${SELDAY===iso}">
+      <div class="dn">${d}</div>${shownAv.length
+        ? `<div class="dteams">${shownAv.join("")}${more>0?`<i>+${more}</i>`:""}</div>`
+        : `<div class="dd${sn?" g":""}">${n?"●".repeat(Math.min(n,3)):""}</div>`}</button>`);
   }
   const total=Object.values(counts).reduce((a,b)=>a+b,0);
   return `<div class="calbar">
