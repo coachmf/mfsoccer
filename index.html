@@ -8751,7 +8751,16 @@ html[data-theme="dark"] .msum span{background:#0F1E35;border-color:#213653}
 @media(prefers-reduced-motion:reduce){.mc-st.live i{animation:none}.rp,.dp,.mc{transition:none}}
 /* --- الرئيسية: أبرز اللاعبين (رادار) + حالة الفرق --- */
 .tp-row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
-@media(max-width:900px){.tp-row{display:flex;gap:10px;overflow-x:auto;scroll-snap-type:x mandatory;padding:2px 2px 8px;margin:0 -2px;scrollbar-width:none}.tp-row::-webkit-scrollbar{display:none}.tp{flex:0 0 min(86%,340px);scroll-snap-align:start}}
+/* على الشاشات الضيقة: البطاقات جنباً إلى جنب على عرض الشاشة بلا تمرير أفقي (منصور 2026-09-15) — عمودان، والبطاقة الثالثة بعرض الصف */
+@media(max-width:900px){.tp-row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  .tp:last-child:nth-child(odd){grid-column:1/-1}
+  .tp-hd{flex-direction:column;align-items:flex-start;gap:0;padding:10px 12px 2px}
+  .tp-body{grid-template-columns:1fr;justify-items:center;gap:2px;padding:0 6px}
+  .tp-id{align-items:center;text-align:center;padding:2px 4px 4px}
+  .tp-ph{width:64px;height:64px}
+  .tp-body .rad{max-width:170px}
+  .tp-stats{grid-template-columns:repeat(4,1fr)} .tp-stats span{padding:7px 2px;font-size:.58rem} .tp-stats b{font-size:.9rem}
+  .tp:last-child:nth-child(odd) .tp-body{grid-template-columns:minmax(0,1fr) 150px;justify-items:start} .tp:last-child:nth-child(odd) .tp-id{align-items:flex-start;text-align:start}}
 .tp{--ca:#1878BE;--cb:#0B1F3A;--ca-rgb:24,120,190;--ctab-fg:#fff;position:relative;border-radius:16px;overflow:hidden;cursor:pointer;
   background:linear-gradient(160deg,rgba(var(--ca-rgb),.16),var(--navy-900) 55%);border:1px solid var(--line,rgba(143,166,196,.18));box-shadow:var(--shadow,none);transition:transform .18s,border-color .18s}
 html[data-theme="dark"] .tp{background:linear-gradient(160deg,rgba(var(--ca-rgb),.22),#0F1E35 58%);border-color:#213653;box-shadow:none}
