@@ -249,7 +249,7 @@ const PLAYER_PHOTOS = {
   // التضامن (18) — بورتريهات النادي الرسمية (أرسلها منصور 2026-09-15)
   'TDM|داود الخالدي': '/assets/players/tdm/1',
   'TDM|فيصل الشطي': '/assets/players/tdm/2',
-  'TDM|حسن حسون': '/assets/players/tdm/8',   // بلا رقم في الصورة — الهوية حسب منصور
+  'TDM|أحمد رحيل': '/assets/players/tdm/5',   // بلا رقم في الصورة — الهوية حسب منصور
   'TDM|محمد عليان': '/assets/players/tdm/4',
   'TDM|فهد الرشيدي': '/assets/players/tdm/9',
   'TDM|أحمد شبيب': '/assets/players/tdm/10',
