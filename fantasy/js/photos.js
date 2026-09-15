@@ -248,7 +248,8 @@ const PLAYER_PHOTOS = {
   'JAH|عبدالرحمن الظفيري': '/assets/players/jah/88',
   // العربي (1)
   'ARB|زيد قنبر': '/assets/players/arb/98',
-  'ARB|وليد ولد الشيخ': '/assets/players/arb/walid',   // بطاقة المركز الإعلامي للنادي، بلا رقم بعد
+  'ARB|وليد ولد الشيخ': '/assets/players/arb/walid',
+  'NSR|مسفر العدواني': '/assets/players/nsr/mesfer',   // بطاقة ترحيب النادي، مهاجم بلا رقم بعد   // بطاقة المركز الإعلامي للنادي، بلا رقم بعد
   // كاظمة (6) — بورتريهات النادي الرسمية من حساب X
   'KAZ|حسين كنكوني': '/assets/players/kaz/1',
   'KAZ|خالد شامان': '/assets/players/kaz/5',

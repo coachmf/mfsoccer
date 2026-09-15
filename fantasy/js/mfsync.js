@@ -8,6 +8,7 @@
    يُدمجون في squads عند القراءة فيصلون لسحب الكشوفات كلاعبين جدد بانتظار التأكيد، و price = سعره المقترح في اللعبة. */
 const MF_SQUAD_ADD = {
   'العربي': [ {n:'وليد ولد الشيخ', p:'CAM', s:0, price:8.5} ],
+  'النصر':  [ {n:'مسفر العدواني', p:'ST', s:0} ],   /* بلا سعر مقترح: يحدّده المدير في «لاعبون جدد بانتظار التأكيد» */
 };
 const MFSYNC = {
   URL: 'https://firestore.googleapis.com/v1/projects/mfsoccer-c7ee4/databases/(default)/documents/seasons/2026-2027?key=AIzaSyD_ZzAE4HEKPIuAKCmta8tzN5KOa8IUfuo',
