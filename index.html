@@ -9299,7 +9299,7 @@ function kfaMatchesHTML(sq){
 }
 function kfaTeamPanel(sq){
   return `<div class="card pad kfa-coach">
-      ${sq.coachImg?`<div class="kfa-coach-ph"><img src="${sq.coachImg}_s.webp?v=10" alt="" loading="lazy" decoding="async"></div>`:""}
+      ${sq.coachImg?`<div class="kfa-coach-ph"><img src="${sq.coachImg}_s.webp?v=11" alt="" loading="lazy" decoding="async"></div>`:""}
       <div class="kfa-coach-ttl"><small>المدرب</small><b>${esc(sq.coach)}</b></div>
       <div class="kfa-coach-sub">${esc(sq.camp)} · ${sq.gk.length+sq.out.length} لاعباً</div>
     </div>
@@ -9433,7 +9433,7 @@ function playerCardHTML(p, c){
 function coachCardHTML(c){
   const k=(typeof CLUB_COACH!=="undefined") && CLUB_COACH[c]; if(!k) return "";
   return `<div class="pcard sq-coach" aria-label="المدرب ${esc(k.n)}">
-    <div class="ph">${k.img?`<img src="${k.img}_s.webp?v=9" alt="" loading="lazy" decoding="async" draggable="false">`
+    <div class="ph">${k.img?`<img src="${k.img}_s.webp?v=11" alt="" loading="lazy" decoding="async" draggable="false">`
                            :`<img class="noph" src="${crestSrcOf(c)}" alt="" loading="lazy" draggable="false">`}</div>
     <div class="nm">${esc(k.n)}</div>
     <div class="ps">المدرب${k.nat?` · ${esc(k.nat)}`:""}</div>
