@@ -80,7 +80,7 @@ const GATE = {
       <style>
         #gate{position:fixed;inset:0;z-index:99999;background:#0b1b2e;
           display:grid;place-items:center;padding:24px;transition:opacity .26s;
-          font-family:Almarai,system-ui,sans-serif;color:#fff}
+          font-family:Vazirmatn,system-ui,sans-serif;color:#fff}
         #gate .g-card{width:100%;max-width:340px;text-align:center}
         #gate img{height:64px;margin-bottom:22px}
         #gate h1{font-size:20px;font-weight:800;margin:0 0 6px}

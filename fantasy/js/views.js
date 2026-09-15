@@ -999,8 +999,8 @@ const VIEWS = {
       <div class="row spread" style="flex-wrap:wrap;gap:8px">
         <div><h2 style="margin:0">${esc(shownTeam)}</h2><div class="muted">${esc(shownName)}</div></div>
         <div class="row" style="gap:14px">
-          <div style="text-align:center"><b style="font-family:'Almarai';font-size:1.2rem">${total}</b><div class="tiny">مجموع النقاط</div></div>
-          <div style="text-align:center"><b style="font-family:'Almarai';font-size:1.2rem">${last? last.pts : '—'}</b><div class="tiny">${last? 'الجولة '+last.gw : 'آخر جولة'}</div></div>
+          <div style="text-align:center"><b style="font-family:'Vazirmatn';font-size:1.2rem">${total}</b><div class="tiny">مجموع النقاط</div></div>
+          <div style="text-align:center"><b style="font-family:'Vazirmatn';font-size:1.2rem">${last? last.pts : '—'}</b><div class="tiny">${last? 'الجولة '+last.gw : 'آخر جولة'}</div></div>
         </div>
       </div>
       <div class="row" style="gap:8px;margin-top:12px;padding-top:10px;border-top:1px solid var(--line);flex-wrap:wrap">

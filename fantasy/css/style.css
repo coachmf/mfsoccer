@@ -34,14 +34,14 @@
 *{box-sizing:border-box; margin:0; padding:0;}
 html{font-size:15px;}
 body{
-  font-family:'Almarai','Almarai',system-ui,sans-serif; font-weight:400;
+  font-family:'Vazirmatn','Vazirmatn',system-ui,sans-serif; font-weight:400;
   background:var(--bg); color:var(--text); direction:rtl; min-height:100vh;
   background-image:
     linear-gradient(155deg, rgba(46,176,240,.07) 0%, transparent 35%, transparent 60%, rgba(24,120,190,.10) 100%),
     radial-gradient(1200px 500px at 80% -10%, rgba(46,176,240,.12), transparent),
     radial-gradient(900px 400px at 10% 110%, rgba(24,120,190,.14), transparent);
 }
-h1,h2,h3,h4{font-family:'Almarai','Almarai',sans-serif;}
+h1,h2,h3,h4{font-family:'Vazirmatn','Vazirmatn',sans-serif;}
 button{font-family:inherit; cursor:pointer; border:none; background:none; color:inherit;}
 input,select,textarea{
   font-family:inherit; background:var(--surface2); border:1px solid var(--line); color:var(--text);
@@ -100,14 +100,14 @@ a{color:var(--blue); text-decoration:none;}
   padding:10px 18px; background:linear-gradient(180deg,var(--bg2),color-mix(in srgb,var(--bg2) 92%,transparent));
   backdrop-filter:blur(10px); border-bottom:1px solid var(--line);
 }
-#brand{display:flex;align-items:center;gap:10px;font-family:'Almarai';font-weight:700;font-size:1.12rem;cursor:pointer;}
+#brand{display:flex;align-items:center;gap:10px;font-family:'Vazirmatn';font-weight:700;font-size:1.12rem;cursor:pointer;}
 #brand .logo{width:36px;height:36px;border-radius:10px;display:grid;place-items:center;
   background:linear-gradient(135deg,#007a3d,#00c176);color:#fff;font-size:1.15rem;box-shadow:0 3px 10px rgba(0,193,118,.4);}
 #brand small{display:block;font-size:.62rem;color:var(--text2);font-weight:400;}
 #navlinks{display:flex;gap:2px;flex:1;justify-content:center;flex-wrap:wrap;}
 /* رابط الرجوع لموقع الإحصائيات — يظهر على الجوال والحاسوب */
 #toSite{display:inline-flex;align-items:center;gap:5px;flex:none;text-decoration:none;
-  padding:7px 12px;border-radius:9px;font-family:'Almarai';font-weight:700;font-size:.82rem;
+  padding:7px 12px;border-radius:9px;font-family:'Vazirmatn';font-weight:700;font-size:.82rem;
   color:var(--accent);background:color-mix(in srgb,var(--accent) 10%,transparent);
   border:1px solid color-mix(in srgb,var(--accent) 28%,transparent);transition:.15s;white-space:nowrap;}
 #toSite:hover{background:color-mix(in srgb,var(--accent) 18%,transparent);}
@@ -163,16 +163,16 @@ a{color:var(--blue); text-decoration:none;}
 #bottomnav button .ic svg{display:block;}
 .chip-card .ci{color:var(--accent); height:26px; display:grid; place-items:center;}
 .iconbtn .ic{vertical-align:middle;}
-.hh-team{ font-family:'Almarai'; font-weight:800; font-size:1.3rem; }
+.hh-team{ font-family:'Vazirmatn'; font-weight:800; font-size:1.3rem; }
 .hh-user{ color:rgba(255,255,255,.75); font-size:.85rem; margin-top:2px; }
 .hh-edit{ color:rgba(255,255,255,.7); font-size:1.3rem; padding:6px; }
 .hh-divider{ height:1px; background:rgba(255,255,255,.2); margin:13px 6%; }
 .hh-gwtitle{ font-weight:700; font-size:.95rem; color:rgba(255,255,255,.85); }
 .hh-gwlabel{ font-weight:600; font-size:.74rem; color:rgba(255,255,255,.65); letter-spacing:.2px; }
-.hh-deadline{ font-family:'Almarai'; font-weight:800; margin:4px 0 14px; font-size:1.15rem; }
+.hh-deadline{ font-family:'Vazirmatn'; font-weight:800; margin:4px 0 14px; font-size:1.15rem; }
 .hh-stats{ display:flex; justify-content:center; align-items:flex-start; gap:8%; margin-top:12px; }
 .hh-stats > div{ min-width:70px; }
-.hh-stats b{ display:block; font-family:'Almarai'; font-weight:800; font-size:1.6rem; }
+.hh-stats b{ display:block; font-family:'Vazirmatn'; font-weight:800; font-size:1.6rem; }
 .hh-stats .big{ cursor:pointer; }
 .hh-stats .big b{ font-size:3.4rem; line-height:1; }
 .hh-stats span{ color:rgba(255,255,255,.7); font-size:.78rem; font-weight:600; }
@@ -230,7 +230,7 @@ a{color:var(--blue); text-decoration:none;}
 .pill.blue{background:color-mix(in srgb,var(--blue) 16%,transparent);color:var(--blue);border-color:transparent;}
 
 .statbox{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px;}
-.statbox .v{font-size:1.5rem;font-weight:800;font-family:'Almarai';}
+.statbox .v{font-size:1.5rem;font-weight:800;font-family:'Vazirmatn';}
 .statbox .l{color:var(--text2);font-size:.78rem;margin-top:2px;}
 .statbox.hi{border-color:color-mix(in srgb,var(--accent) 50%,var(--line));}
 .statbox.hi .v{color:var(--accent);}
@@ -244,7 +244,7 @@ table.tbl{width:100%;border-collapse:collapse;font-size:.88rem;}
 [data-theme="dark"] .tbl th.th-sort.on,[data-theme="dark"] .tbl th.th-sort:hover{color:var(--accent);}
 .tbl td{padding:9px 10px;border-bottom:1px solid color-mix(in srgb,var(--line) 55%,transparent);}
 .tbl tr:hover td{background:color-mix(in srgb,var(--surface2) 70%,transparent);}
-.tbl .num{font-weight:700;font-family:'Almarai';}
+.tbl .num{font-weight:700;font-family:'Vazirmatn';}
 .scroll-x{overflow-x:auto;}
 
 .crest{width:26px;height:26px;object-fit:contain;}
@@ -260,7 +260,7 @@ table.tbl{width:100%;border-collapse:collapse;font-size:.88rem;}
 /* جدول صعوبة المباريات: كل المربعات بعرض وارتفاع واحد مهما طال اسم النادي */
 .fdr-grid td{padding:5px 3px;text-align:center;}
 .fdr-grid td:first-child{text-align:right;padding-right:10px;white-space:nowrap;}
-.ha{font-family:'Almarai',system-ui,sans-serif;font-weight:800;font-size:.9em;letter-spacing:.2px;direction:ltr;display:inline-block;opacity:.9;}
+.ha{font-family:'Vazirmatn',system-ui,sans-serif;font-weight:800;font-size:.9em;letter-spacing:.2px;direction:ltr;display:inline-block;opacity:.9;}
 .fdr-grid .fdr{display:flex;align-items:center;justify-content:center;gap:3px;width:84px;height:28px;
   padding:0 4px;box-sizing:border-box;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin:0 auto;}
 @media (max-width:400px){ .fdr-grid .fdr{width:74px;height:26px;font-size:.62rem;} }
@@ -402,7 +402,7 @@ tr:hover .btn-view{background:var(--accent);color:#fff;}
 .plist-item .info{flex:1;min-width:0;}
 .plist-item .info .n{font-weight:700;font-size:.88rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .plist-item .info .m{font-size:.72rem;color:var(--text2);}
-.plist-item .pr{font-weight:800;font-family:'Almarai';font-size:.88rem;}
+.plist-item .pr{font-weight:800;font-family:'Vazirmatn';font-size:.88rem;}
 .plist-item .tp{font-weight:800;color:var(--accent);min-width:34px;text-align:center;}
 
 /* ---------- المباريات ---------- */
@@ -410,7 +410,7 @@ tr:hover .btn-view{background:var(--accent);color:#fff;}
   background:var(--surface2);margin-bottom:8px;}
 .fx .team{flex:1;display:flex;align-items:center;gap:8px;font-weight:700;font-size:.9rem;}
 .fx .team.a{justify-content:flex-start;flex-direction:row-reverse;}
-.fx .score{min-width:74px;text-align:center;font-family:'Almarai';font-weight:800;font-size:1.05rem;
+.fx .score{min-width:74px;text-align:center;font-family:'Vazirmatn';font-weight:800;font-size:1.05rem;
   background:var(--surface);border:1px solid var(--line);border-radius:9px;padding:6px 4px;}
 .fx .score.live{border-color:var(--red);color:var(--red);animation:pulse 1.6s infinite;}
 @keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(232,67,63,.35);}50%{box-shadow:0 0 0 6px transparent;}}
@@ -472,12 +472,12 @@ tr:hover .btn-view{background:var(--accent);color:#fff;}
 .ps-photo{width:86px;height:86px;border-radius:50%;object-fit:cover;background:#eef2f7;
   border:3px solid rgba(255,255,255,.85);box-shadow:0 4px 12px rgba(0,20,40,.3);}
 .ps-pos{font-size:.74rem;font-weight:700;opacity:.85;}
-.ps-name{font-family:'Almarai';font-weight:800;font-size:1.3rem;line-height:1.3;}
+.ps-name{font-family:'Vazirmatn';font-weight:800;font-size:1.3rem;line-height:1.3;}
 .ps-club{font-size:.84rem;opacity:.92;margin-top:2px;}
 .ps-stats{display:flex;margin:0 14px 12px;background:var(--surface2);border:1px solid var(--line);border-radius:14px;padding:12px 4px;}
 .ps-stats>div{flex:1;text-align:center;border-left:1px solid var(--line);}
 .ps-stats>div:last-child{border-left:none;}
-.ps-stats b{display:block;font-family:'Almarai';font-size:1.05rem;}
+.ps-stats b{display:block;font-family:'Vazirmatn';font-size:1.05rem;}
 .ps-stats .lbl{font-size:.66rem;color:var(--text2);font-weight:700;margin-top:2px;}
 .ps-stats .rnk{font-size:.6rem;color:var(--text3);margin-top:1px;}
 .ps-two{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:0 14px 12px;}
@@ -606,7 +606,7 @@ tr:hover .btn-view{background:var(--accent);color:#fff;}
 .tf-bar-in{pointer-events:auto;display:flex;align-items:center;gap:16px;background:var(--surface);border:1px solid var(--line);
   border-radius:16px;padding:10px 16px;box-shadow:0 12px 34px rgba(13,79,146,.28);}
 .tf-bar-in>div{text-align:center;font-size:.66rem;color:var(--text3);min-width:44px;}
-.tf-bar-in b{display:block;font-family:'Almarai';font-size:1.02rem;color:var(--text);}
+.tf-bar-in b{display:block;font-family:'Vazirmatn';font-size:1.02rem;color:var(--text);}
 
 /* بانر شاشة الفريق بهوية الدوري */
 .squad-hero{
@@ -617,11 +617,11 @@ tr:hover .btn-view{background:var(--accent);color:#fff;}
 }
 .squad-hero::before{content:'';position:absolute;inset:0;pointer-events:none;
   background:linear-gradient(115deg,transparent 55%,rgba(255,255,255,.09) 56%,rgba(255,255,255,.09) 72%,transparent 73%);}
-.sh-name{font-family:'Almarai';font-weight:800;font-size:1.15rem;}
+.sh-name{font-family:'Vazirmatn';font-weight:800;font-size:1.15rem;}
 .sh-sub{font-size:.76rem;opacity:.85;margin-top:2px;}
 .sh-stats{display:flex;gap:18px;}
 .sh-stats>div{text-align:center;}
-.sh-stats b{display:block;font-family:'Almarai';font-size:1.05rem;font-weight:800;}
+.sh-stats b{display:block;font-family:'Vazirmatn';font-size:1.05rem;font-weight:800;}
 .sh-stats span{font-size:.64rem;opacity:.8;}
 /* لوحة إعلانات الدوري أعلى الملعب */
 .pitch-brand{
@@ -722,7 +722,7 @@ tr:hover .btn-view{background:var(--accent);color:#fff;}
 
 /* ============ جولة الترتيب والبساطة ============ */
 /* خط واحد، أوزان محدودة */
-body,h1,h2,h3,h4,button,input,select,textarea{font-family:'Almarai',system-ui,sans-serif; letter-spacing:0;}
+body,h1,h2,h3,h4,button,input,select,textarea{font-family:'Vazirmatn',system-ui,sans-serif; letter-spacing:0;}
 h2{font-size:1.25rem;font-weight:800;}
 h3{font-size:.98rem;font-weight:800;}
 
@@ -820,7 +820,7 @@ h3{font-size:.98rem;font-weight:800;}
 .tf-wrap{max-width:640px;margin:0 auto;}
 .tf-stats{display:flex;justify-content:center;gap:26px;margin-bottom:8px;}
 .tf-stats>div{text-align:center;font-size:.66rem;color:var(--text3);}
-.tf-stats b{display:block;font-family:'Almarai';font-size:1.05rem;color:var(--text);}
+.tf-stats b{display:block;font-family:'Vazirmatn';font-size:1.05rem;color:var(--text);}
 
 /* ---------- شاشة «إضافة لاعب» (طراز FPL) ---------- */
 body.addp-open{overflow:hidden;}
@@ -830,7 +830,7 @@ body.addp-open{overflow:hidden;}
 .addp-top h3{font-size:1.15rem;}
 .addp-top .iconbtn{width:38px;height:38px;border-radius:50%;background:var(--surface2);display:grid;place-items:center;}
 .addp-bank{background:linear-gradient(90deg,#54bdec,var(--kpl1) 60%,var(--kpl2));color:#fff;text-align:center;
-  font-weight:800;font-family:'Almarai';padding:10px;border-radius:12px;margin-bottom:10px;font-size:1rem;}
+  font-weight:800;font-family:'Vazirmatn';padding:10px;border-radius:12px;margin-bottom:10px;font-size:1rem;}
 .addp-search{display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--line);
   border-radius:14px;padding:4px 12px;margin-bottom:8px;color:var(--text3);}
 .addp-search input{background:none;border:none;padding:9px 4px;font-size:1rem;}
@@ -855,7 +855,7 @@ body.addp-open{overflow:hidden;}
 .addp-name b{font-size:.86rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .addp-name span{font-size:.7rem;color:var(--text2);}
 .addp-name span i{font-style:normal;color:var(--red);font-weight:700;}
-.addp-c{width:46px;text-align:center;font-family:'Almarai';font-weight:700;font-size:.86rem;flex:none;display:flex;flex-direction:column;}
+.addp-c{width:46px;text-align:center;font-family:'Vazirmatn';font-weight:700;font-size:.86rem;flex:none;display:flex;flex-direction:column;}
 .addp-c small{font-size:.58rem;color:var(--text3);font-weight:700;}
 @media (max-width:400px){ .addp-c{width:42px;font-size:.78rem;} .addp-filters select{padding:8px 6px;font-size:.78rem;} }
 
@@ -875,10 +875,10 @@ body.addp-open{overflow:hidden;}
 .champ-ic{width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.18);display:grid;place-items:center;color:#fdb913;flex:none;}
 .champ.mine .champ-ic{background:#fdb913;color:#3a2a00;}
 .champ-l{font-size:.68rem;font-weight:700;color:rgba(255,255,255,.75);}
-.champ-t{font-family:'Almarai';font-weight:800;font-size:1rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.champ-t{font-family:'Vazirmatn';font-weight:800;font-size:1rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .champ-n{font-size:.72rem;color:rgba(255,255,255,.8);}
 .champ-p{text-align:center;flex:none;}
-.champ-p b{display:block;font-family:'Almarai';font-size:1.5rem;line-height:1;}
+.champ-p b{display:block;font-family:'Vazirmatn';font-size:1.5rem;line-height:1;}
 .champ-p span{font-size:.62rem;color:rgba(255,255,255,.75);}
 .champ-badge{display:inline-flex;align-items:center;gap:2px;background:#fdb913;color:#3a2a00;border-radius:12px;padding:1px 7px;
   font-size:.66rem;font-weight:800;vertical-align:middle;margin-right:4px;}
@@ -915,7 +915,7 @@ tr.hl td{background:color-mix(in srgb,var(--gold) 14%,transparent);}
 .dev-card.compact{cursor:pointer;}
 .dev-ic{width:42px;height:42px;border-radius:50%;background:rgba(255,255,255,.18);display:grid;place-items:center;flex:none;}
 .dev-l{font-size:.66rem;font-weight:700;opacity:.8;}
-.dev-n{font-family:'Almarai';font-weight:800;font-size:1.05rem;}
+.dev-n{font-family:'Vazirmatn';font-weight:800;font-size:1.05rem;}
 .dev-r{font-size:.74rem;opacity:.9;}
 .dev-links{display:flex;gap:8px;flex:none;}
 .dev-links a{width:38px;height:38px;border-radius:50%;background:#fff;color:var(--kpl2);display:grid;place-items:center;transition:.15s;}
@@ -979,7 +979,7 @@ html.lang-en .ps-stats>div{border-left:none;border-right:1px solid var(--line);}
 .pts-hero::before{content:'';position:absolute;inset:0;pointer-events:none;
   background:linear-gradient(115deg,transparent 55%,rgba(255,255,255,.09) 56%,rgba(255,255,255,.09) 72%,transparent 73%);}
 .pts-hero>*{position:relative;}
-.pts-team{font-family:'Almarai';font-weight:800;font-size:1.05rem;}
+.pts-team{font-family:'Vazirmatn';font-weight:800;font-size:1.05rem;}
 .pts-nav{display:flex;align-items:center;justify-content:center;gap:10px;margin-top:6px;}
 .pts-nav button{color:#fff;width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:rgba(255,255,255,.14);transition:.15s;}
 .pts-nav button:hover{background:rgba(255,255,255,.26);}
@@ -990,7 +990,7 @@ html.lang-en .ps-stats>div{border-left:none;border-right:1px solid var(--line);}
 .pts-gw{font-weight:700;font-size:.95rem;min-width:120px;}
 .pts-stats{display:flex;justify-content:center;align-items:flex-end;gap:5%;margin-top:10px;}
 .pts-stats>div{min-width:76px;text-align:center;}
-.pts-stats b{display:block;font-family:'Almarai';font-weight:800;font-size:1.5rem;line-height:1.1;}
+.pts-stats b{display:block;font-family:'Vazirmatn';font-weight:800;font-size:1.5rem;line-height:1.1;}
 .pts-stats span{display:block;font-size:.7rem;opacity:.78;font-weight:600;margin-top:2px;}
 .pts-stats .big{background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.26);border-radius:14px;padding:8px 14px 7px;min-width:118px;}
 .pts-stats .big b{font-size:2.6rem;}
@@ -999,7 +999,7 @@ html.lang-en .ps-stats>div{border-left:none;border-right:1px solid var(--line);}
 .pts-note{margin-top:10px;font-size:.72rem;opacity:.82;line-height:1.6;}
 .pts-foot{margin-top:10px;text-align:center;color:var(--text2);line-height:1.7;}
 /* بطاقة اللاعب على ملعب النقاط: الرقم في شريط داكن كما في FPL */
-.pts-slot .pt.score{background:#12203a;color:#fff;font-family:'Almarai';font-weight:800;font-size:.82rem;padding:3px 8px;}
+.pts-slot .pt.score{background:#12203a;color:#fff;font-family:'Vazirmatn';font-weight:800;font-size:.82rem;padding:3px 8px;}
 .pts-slot .pt.score.zero{background:#5b6b8c;}
 .pts-slot .pt.score.bn{background:#8a97b0;}
 .pts-slot .pt.score.neg{background:#d92d20;}
@@ -1013,15 +1013,15 @@ html.lang-en .ps-stats>div{border-left:none;border-right:1px solid var(--line);}
 .bd-match .tm{display:inline-flex;align-items:center;gap:8px;font-size:.92rem;}
 .bd-match .tm.me{color:var(--accent);}
 .bd-match .crest{width:30px;height:30px;}
-.bd-match .sc{display:inline-flex;justify-content:center;gap:6px;font-family:'Almarai';font-size:1.25rem;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:4px 14px;min-width:74px;text-align:center;white-space:nowrap;}
+.bd-match .sc{display:inline-flex;justify-content:center;gap:6px;font-family:'Vazirmatn';font-size:1.25rem;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:4px 14px;min-width:74px;text-align:center;white-space:nowrap;}
 .bd-match .sc i{font-style:normal;}   /* نتيجة المضيف بجانب المضيف أياً كان اتجاه الصفحة */
 .bd-match .sc.tm{font-size:.7rem;font-weight:700;color:var(--text2);font-family:inherit;}
 .bd-card{margin:0 14px 12px;background:var(--surface2);border:1px solid var(--line);border-radius:14px;padding:12px 12px 4px;}
-.bd-card h4{margin:0 0 6px;font-size:1rem;font-family:'Almarai';}
+.bd-card h4{margin:0 0 6px;font-size:1rem;font-family:'Vazirmatn';}
 .bd-tbl{width:100%;border-collapse:collapse;font-size:.88rem;}
 .bd-tbl th{font-size:.68rem;color:var(--text3);font-weight:700;text-align:right;padding:6px 4px;}
 .bd-tbl td{padding:10px 4px;border-top:1px solid color-mix(in srgb,var(--line) 70%,transparent);}
-.bd-tbl th:not(:first-child),.bd-tbl td:not(:first-child){text-align:center;font-family:'Almarai';font-weight:800;width:22%;}
+.bd-tbl th:not(:first-child),.bd-tbl td:not(:first-child){text-align:center;font-family:'Vazirmatn';font-weight:800;width:22%;}
 .bd-tbl td:not(:first-child){direction:ltr;unicode-bidi:isolate;}   /* السالب «-1» لا «1-» في الاتجاه العربي */
 .bd-tbl td.neg{color:var(--red);}
 .bd-tbl tr.tot td{font-weight:800;border-top:2px solid var(--line);}

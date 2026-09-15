@@ -26,7 +26,7 @@
     if(w && w < MIN_W) return html;                 // مقاس صغير
     if(String(html).indexOf('<svg') !== 0) return html;  // صورة PNG جاهزة: لا نلمسها
     const style = (typeof kitStyleOf==='function') ? kitStyleOf(p.club, p.pos==='G') : null;
-    const txt = `<text x="50" y="${Y}" text-anchor="middle" font-family="Almarai, Tahoma, Arial, sans-serif"`
+    const txt = `<text x="50" y="${Y}" text-anchor="middle" font-family="Vazirmatn, Tahoma, Arial, sans-serif"`
       + ` font-weight="800" font-size="${SIZE}" fill="${numColor(style)}"`
       + ` stroke="rgba(0,0,0,.22)" stroke-width=".8" paint-order="stroke"`
       + ` style="letter-spacing:-1px">${p.shirt}</text>`;
