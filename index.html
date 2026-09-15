@@ -8235,7 +8235,7 @@ function wireClubTabs(){
 function clubAboutHTML(c, r, played){
   const I=CLUB_INFO[c]||{}, cc=(window.CLUB_COLORS||{})[c]||[];
   const pos = played ? standings().findIndex(x=>x.c===c)+1 : 0;
-  const stImg = I.slug ? `url('assets/stadiums/${I.slug}.jpg?v=5'),` : "";   /* v2: قصّات عريضة 2000×800 بزاوية موحّدة وفلتر موحّد */
+  const stImg = I.slug ? `url('assets/stadiums/${I.slug}.jpg?v=6'),` : "";   /* v2: قصّات عريضة 2000×800 بزاوية موحّدة وفلتر موحّد */
   const facts=[
     I.nick? ["اللقب", esc(I.nick)] : null,
     I.f   ? ["تأسس عام", String(I.f)] : null,
