@@ -3635,7 +3635,6 @@ const LOCAL_PHOTOS={
   "حسن حمدان":"assets/players/kuw/44",
   "حمود السنعوسي":"assets/players/kuw/72",
   /* النصر */
-  "يوسف محمد":"assets/players/nsr/11",
   "ناصر خضر":"assets/players/nsr/2",
   "علي عبدالله الظفيري":"assets/players/nsr/3",
   "موريبا ديارا":"assets/players/nsr/4",
@@ -3711,7 +3710,20 @@ const LOCAL_PHOTOS={
   "حمد الخالدي":"assets/players/jah/40",
   "أحمد الشمري":"assets/players/jah/77",
   "عبدالرحمن الظفيري":"assets/players/jah/88"
+};/* صورة بحسب النادي (2026-09-15): الاسم وحده لا يكفي حين يتكرر في ناديين — «يوسف محمد» قلب دفاع الشباب 4
+   وجناح النصر 11. يُبحث أولاً في الخريطة المقيّدة بالنادي، ثم في LOCAL_PHOTOS بشرط أن يكون مجلد الصورة لمجلد النادي نفسه. */
+const CLUB_DIR={"القادسية":"qad","الكويت":"kuw","النصر":"nsr","الجهراء":"jah","الساحل":"sah","الفحيحيل":"fah","السالمية":"sal","الشباب":"shb","الصليبخات":"slb"};
+const LOCAL_PHOTOS_BY_CLUB={
+  "الشباب|يوسف محمد":"assets/players/shb/4",
+  "النصر|يوسف محمد":"assets/players/nsr/11",
 };
+function photoCut(name, club){
+  const k = club ? LOCAL_PHOTOS_BY_CLUB[club+"|"+name] : null; if(k) return k;
+  const cut = LOCAL_PHOTOS[name]; if(!cut) return null;
+  const dir = club && CLUB_DIR[club];
+  return (dir && !cut.includes("/"+dir+"/")) ? null : cut;   /* صورة لاعب آخر بالاسم نفسه في نادٍ آخر */
+}
+
 function useLocalCrests(){
   LOGOS=Object.assign({},LOGOS,LOCAL_CRESTS);
   LSCALE={}; GSCALE=100; LOGOBG=true;
@@ -4215,7 +4227,7 @@ function gkKitOf(club, shirt){
    والاسم تحتها. بلا صورة: البطاقة نفسها بالرقم كبيراً. الشارات (هدف/صناعة/كرت/خروج) على أركان البطاقة كما كانت. */
 function spotHTML(p, x, y, n, kit, ev, compact){
   const nm = compact ? shortName(p.n) : p.n;
-  const cut = (typeof LOCAL_PHOTOS!=="undefined") ? LOCAL_PHOTOS[p.n] : null;
+  const cut = (typeof LOCAL_PHOTOS!=="undefined") ? photoCut(p.n, kit.club) : null;
   const num = p.s||"–";
   const k = (String(p.p||"").toUpperCase()==="GK" && kit.club) ? (gkKitOf(kit.club, p.s)||kit) : kit;
   return `<div class="pp-spot${compact?" cmp":""}" data-player="${esc(p.n)}" data-club="${esc(kit.club||"")}" style="right:${x}%;top:${y}%;max-width:${(compact?90/(n+1):96/(n+1)).toFixed(1)}%">
@@ -4889,10 +4901,10 @@ function pavStyle(name){
   const a=PAV[name]||{z:100,x:50,y:50};
   return `object-position:${a.x}% ${a.y}%;transform:scale(${(a.z/100).toFixed(2)})`;
 }
-function pav(name, size, placeholder){
+function pav(name, size, placeholder, club){
   const S=size||PAVSIZE;
   /* القصّة الرسمية الموحّدة لها الأولوية على الصورة المرفوعة من الإدارة (حتى يتوحّد الشكل) */
-  const cut = PHOTOSON ? LOCAL_PHOTOS[name] : null;
+  const cut = PHOTOSON ? photoCut(name, club) : null;
   if(cut) return `<img class="pcut" src="${cut}_f.webp?v=6" alt="${esc(name)}" loading="lazy">`;
   /* الصور المرفوعة من لوحة الإدارة (PHOTOS في السحابة) لم تعد تُعرض في الموقع — طلب منصور 2026-09-15:
      الشكل الرسمي الموحّد فقط. البيانات نفسها باقية في السحابة ولوحة الإدارة، وتُعرض في المعاينة هناك فقط. */
@@ -5438,7 +5450,7 @@ function renderClubBody(c){
       <div class="stat"><span>أهداف الرأس</span><span class="v">${s.head}</span></div>
       <div class="stat"><span>أهداف بعد الدقيقة 76</span><span class="v">${s.late}</span></div>
       <div class="stat"><span>سجّل الهدف الأول في</span><span class="v">${mw(s.scoredFirst.length)}</span></div>
-      <div class="stat"><span>الهدّاف</span><span class="v" style="display:flex;align-items:center;gap:8px">${s.top?`<span class="plk" data-player="${esc(s.top.n)}" data-club="${esc(c)}">${pav(s.top.n)} ${esc(s.top.n)}</span> (${s.top.g})`:"—"}</span></div>
+      <div class="stat"><span>الهدّاف</span><span class="v" style="display:flex;align-items:center;gap:8px">${s.top?`<span class="plk" data-player="${esc(s.top.n)}" data-club="${esc(c)}">${pav(s.top.n,0,false,c)} ${esc(s.top.n)}</span> (${s.top.g})`:"—"}</span></div>
     </div>
   </div>
 
@@ -5459,7 +5471,7 @@ function renderClubBody(c){
     if(!pp.length) return `<p class="hint">لم تُرصد تشكيلات لهذا النادي بعد.</p>`;
     return `<div class="card"><div class="twrap"><table style="min-width:420px">
       <thead><tr><th>اللاعب</th><th>الدقائق</th><th>مباريات</th><th>شباك نظيفة</th></tr></thead>
-      <tbody>${pp.map(p=>`<tr><td><div class="teamcell" data-player="${esc(p.n)}" data-club="${esc(c)}">${pav(p.n)}<b>${esc(p.n)}</b></div></td>
+      <tbody>${pp.map(p=>`<tr><td><div class="teamcell" data-player="${esc(p.n)}" data-club="${esc(c)}">${pav(p.n,0,false,c)}<b>${esc(p.n)}</b></div></td>
         <td style="color:var(--head);font-weight:700;font-variant-numeric:tabular-nums">${p.mins}′</td>
         <td style="color:var(--slate)">${p.apps}</td>
         <td style="color:${p.cs?'var(--win)':'var(--slate)'};font-weight:${p.cs?'700':'400'}">${p.cs||"—"}</td></tr>`).join("")}
@@ -5605,7 +5617,7 @@ function officialXIHTML(row, round, comp, n){
   const g=(roundGoals(round,comp).find(x=>x.id===row.goal))||null;
   const card=(t,p,v)=>p?`<div class="fx-card">
       <div class="fx-t">${t}</div>
-      <div class="fx-p" data-player="${esc(p.n)}" data-club="${esc(p.club)}">${pav(p.n)}${crest(p.club)}<b>${esc(p.n)}</b></div>
+      <div class="fx-p" data-player="${esc(p.n)}" data-club="${esc(p.club)}">${pav(p.n,0,false,p.club)}${crest(p.club)}<b>${esc(p.n)}</b></div>
       <div class="fx-v">${esc(p.club)}${v?` · ${nVotes(v)}`:""}</div></div>`:"";
   return `<div class="card pad">
     <div class="fx-hd"><span class="fx-badge">معتمدة</span>
@@ -5615,7 +5627,7 @@ function officialXIHTML(row, round, comp, n){
       ${card("أفضل لاعب", row.best, row.bestV)}
       ${card("أفضل حارس", row.gk,   row.gkV)}
       ${g?`<div class="fx-card"><div class="fx-t">هدف الجولة</div>
-        <div class="fx-p" data-player="${esc(g.p)}" data-club="${esc(g.club)}">${pav(g.p)}${crest(g.club)}<b>${esc(g.p)}</b></div>
+        <div class="fx-p" data-player="${esc(g.p)}" data-club="${esc(g.club)}">${pav(g.p,0,false,g.club)}${crest(g.club)}<b>${esc(g.p)}</b></div>
         <div class="fx-v">${g.m}' · ${esc(g.club)}${row.goalV?` · ${nVotes(row.goalV)}`:""}</div></div>`:""}
     </div></div>`;
 }
@@ -5625,7 +5637,7 @@ function liveTallyHTML(ballots, round, comp){
   const built=buildFansXI(tal, round, comp);
   const g=roundGoals(round,comp).find(x=>tal.topGoal && x.id===tal.topGoal.id);
   const card=(t,p)=>p?`<div class="fx-card"><div class="fx-t">${t}</div>
-      <div class="fx-p" data-player="${esc(p.n)}" data-club="${esc(p.club)}">${pav(p.n)}${crest(p.club)}<b>${esc(p.n)}</b></div>
+      <div class="fx-p" data-player="${esc(p.n)}" data-club="${esc(p.club)}">${pav(p.n,0,false,p.club)}${crest(p.club)}<b>${esc(p.n)}</b></div>
       <div class="fx-v">${esc(p.club)} · ${nVotes(p.v)}</div></div>`:"";
   return `<div class="card pad">
     <div class="fx-hd"><span class="fx-badge live">الفرز حتى الآن</span>
@@ -5635,7 +5647,7 @@ function liveTallyHTML(ballots, round, comp){
       ${card("أفضل لاعب", tal.topBest)}
       ${card("أفضل حارس", tal.topGk)}
       ${g?`<div class="fx-card"><div class="fx-t">هدف الجولة</div>
-        <div class="fx-p" data-player="${esc(g.p)}" data-club="${esc(g.club)}">${pav(g.p)}${crest(g.club)}<b>${esc(g.p)}</b></div>
+        <div class="fx-p" data-player="${esc(g.p)}" data-club="${esc(g.club)}">${pav(g.p,0,false,g.club)}${crest(g.club)}<b>${esc(g.p)}</b></div>
         <div class="fx-v">${g.m}' · ${esc(g.club)} · ${nVotes(tal.topGoal.v)}</div></div>`:""}
     </div></div>`;
 }
@@ -5803,7 +5815,7 @@ function votersHTML(ballots){
 function renderPlayers(){
   const S=scorers();
   const A=[...S].filter(p=>p.a>0).sort((a,b)=>b.a-a.a);
-  const row = (p,val,i) => `<tr><td><div class="teamcell" data-player="${esc(p.n)}" data-club="${esc(p.c)}"><span class="pos">${i+1}</span>${pav(p.n)}${crest(p.c)}<b>${esc(p.n)}</b></div></td>
+  const row = (p,val,i) => `<tr><td><div class="teamcell" data-player="${esc(p.n)}" data-club="${esc(p.c)}"><span class="pos">${i+1}</span>${pav(p.n,0,false,p.c)}${crest(p.c)}<b>${esc(p.n)}</b></div></td>
     <td style="color:var(--slate)">${esc(p.c)}</td><td style="color:var(--head);font-weight:700">${val}</td></tr>`;
   const disc={}; CARDS.forEach(x=>{ const k=x.p+"|"+x.club; (disc[k]??={n:x.p,c:x.club,y:0,r:0});
     if(isYellow(x.type)) disc[k].y++; if(isRed(x.type)) disc[k].r++; });
@@ -5825,7 +5837,7 @@ function renderPlayers(){
         <p class="hint">حرّاس المرمى الذين لعبوا 60 دقيقة فأكثر في مباريات لم يستقبل فيها فريقهم هدفاً.</p>
         <div class="card"><div class="twrap"><table style="min-width:420px">
           <thead><tr><th>اللاعب</th><th>النادي</th><th>شباك نظيفة</th><th>مباريات</th></tr></thead>
-          <tbody>${byCS.map((p,i)=>`<tr><td><div class="teamcell" data-player="${esc(p.n)}" data-club="${esc(p.c)}"><span class="pos">${i+1}</span>${pav(p.n)}${crest(p.c)}<b>${esc(p.n)}</b></div></td>
+          <tbody>${byCS.map((p,i)=>`<tr><td><div class="teamcell" data-player="${esc(p.n)}" data-club="${esc(p.c)}"><span class="pos">${i+1}</span>${pav(p.n,0,false,p.c)}${crest(p.c)}<b>${esc(p.n)}</b></div></td>
             <td style="color:var(--slate)">${esc(p.c)}</td>
             <td style="color:var(--win);font-weight:700">${p.cs}</td>
             <td style="color:var(--slate)">${p.apps}</td></tr>`).join("")}</tbody></table></div></div>`:'';
@@ -5833,7 +5845,7 @@ function renderPlayers(){
         <p class="hint">إجمالي دقائق كل لاعب من التشكيلات والتبديلات. اضغط رأس المباريات للترتيب الذهني.</p>
         <div class="card"><div class="twrap"><table style="min-width:440px">
           <thead><tr><th>اللاعب</th><th>النادي</th><th>الدقائق</th><th>مباريات</th><th>شباك نظيفة</th></tr></thead>
-          <tbody>${byMin.map((p,i)=>`<tr><td><div class="teamcell" data-player="${esc(p.n)}" data-club="${esc(p.c)}"><span class="pos">${i+1}</span>${pav(p.n)}${crest(p.c)}<b>${esc(p.n)}</b></div></td>
+          <tbody>${byMin.map((p,i)=>`<tr><td><div class="teamcell" data-player="${esc(p.n)}" data-club="${esc(p.c)}"><span class="pos">${i+1}</span>${pav(p.n,0,false,p.c)}${crest(p.c)}<b>${esc(p.n)}</b></div></td>
             <td style="color:var(--slate)">${esc(p.c)}</td>
             <td style="color:var(--head);font-weight:700;font-variant-numeric:tabular-nums">${p.mins}′</td>
             <td style="color:var(--slate)">${p.apps}</td>
@@ -5844,7 +5856,7 @@ function renderPlayers(){
     <h2 class="sec">الانضباط</h2>
     ${DL.length?`<div class="card"><div class="twrap"><table style="min-width:380px">
       <thead><tr><th>اللاعب</th><th>النادي</th><th>إنذار</th><th>طرد</th></tr></thead>
-      <tbody>${DL.map((p,i)=>`<tr><td><div class="teamcell" data-player="${esc(p.n)}" data-club="${esc(p.c)}"><span class="pos">${i+1}</span>${pav(p.n)}${crest(p.c)}<b>${esc(p.n)}</b></div></td>
+      <tbody>${DL.map((p,i)=>`<tr><td><div class="teamcell" data-player="${esc(p.n)}" data-club="${esc(p.c)}"><span class="pos">${i+1}</span>${pav(p.n,0,false,p.c)}${crest(p.c)}<b>${esc(p.n)}</b></div></td>
         <td style="color:var(--slate)">${esc(p.c)}</td>
         <td style="color:var(--sand);font-weight:700">${p.y}</td>
         <td style="color:var(--loss);font-weight:700">${p.r}</td></tr>`).join("")}</tbody></table></div></div>`
@@ -8108,7 +8120,7 @@ function clubAboutHTML(c, r, played){
 }
 /* ---------- قائمة الفريق ---------- */
 function playerCardHTML(p, c){
-  const cut = (PHOTOSON && typeof LOCAL_PHOTOS!=="undefined") ? LOCAL_PHOTOS[p.n] : null;
+  const cut = (PHOTOSON && typeof LOCAL_PHOTOS!=="undefined") ? photoCut(p.n, c) : null;
   return `<div class="pcard" data-player="${esc(p.n)}" data-club="${esc(c)}" role="button" tabindex="0" aria-label="${esc(p.n)}">
     <div class="ph">${cut?`<img src="${cut}_s.webp?v=6" alt="" loading="lazy" decoding="async" draggable="false">`
                          :`<img class="noph" src="${crestSrcOf(c)}" alt="" loading="lazy" draggable="false">`}</div>
@@ -8174,7 +8186,7 @@ function playerProfileData(name, club){
   return {name, club, pos, num, gk, goals, assists, ownG, y, rd, pens:pens.length, apps:pp.apps, mins:pp.mins, cs:pp.cs, conceded, log};
 }
 function playerProfileHTML(D){
-  const cut=(PHOTOSON && typeof LOCAL_PHOTOS!=="undefined") ? LOCAL_PHOTOS[D.name] : null;
+  const cut=(PHOTOSON && typeof LOCAL_PHOTOS!=="undefined") ? photoCut(D.name, D.club) : null;
   const st=(v,t,hi)=>`<div class="pstat${hi?" hi":""}"><b>${v}</b><small>${t}</small></div>`;
   const cards = D.gk
     ? [st(D.cs,"شباك نظيفة",true), st(D.conceded,"أهداف استقبلها"), st(D.apps,"مباريات"), st(D.mins+"′","دقائق اللعب"),
