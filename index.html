@@ -4236,7 +4236,7 @@ function gkKitOf(club, shirt){
 }
 /* بطاقة لاعب على الملعب (طلب منصور 2026-09-15): بطاقة بألوان النادي فيها قصّة اللاعب (إن وُجدت) ورقمه،
    والاسم تحتها. بلا صورة: البطاقة نفسها بالرقم كبيراً. الشارات (هدف/صناعة/كرت/خروج) على أركان البطاقة كما كانت. */
-function spotHTML(p, x, y, n, kit, ev, compact){
+function spotHTML(p, x, y, n, kit, ev, compact, extraNm){
   const nm = compact ? shortName(p.n) : p.n;
   const cut = (typeof LOCAL_PHOTOS!=="undefined") ? photoCut(p.n, kit.club) : null;
   const num = p.s||"–";
@@ -4245,7 +4245,7 @@ function spotHTML(p, x, y, n, kit, ev, compact){
     <span class="pp-card${cut?"":" nophoto"}" style="${dotVars(k)}">
       ${cut?`<img class="pp-img" src="${cut}_f.webp?v=6" alt="" loading="lazy" draggable="false">`:""}
       <span class="pp-num">${num}</span>
-      <span class="pp-nm">${esc(nm)}</span>${spotBadges(ev)}</span></div>`;
+      <span class="pp-nm">${esc(nm)}${extraNm||""}</span>${spotBadges(ev)}</span></div>`;
 }
 /* القميص الفاتح يحتاج حافة غامقة ليُرى على العشب، والغامق حافة فاتحة */
 function dotVars(kit){
@@ -5722,11 +5722,10 @@ function fansPitchHTML(row, tal){
   return `<div class="xi-t" style="justify-content:center"><i>${esc(row.f||"")}</i></div>
     <div class="xipitch half"><div class="xip-lines"></div>
     ${spots.map(({p,x,y,n})=>{
-      const kit=kitOf(p.club);
+      /* بطاقة بصورة اللاعب وقميص ناديه (نفس بطاقة تشكيلة النادي والمباراة) بدل الدائرة الرقمية — 2026-09-15 */
+      const kit=Object.assign(kitOf(p.club),{club:p.club});
       const v=tal ? (tal.players[p.n+"|"+p.club]||0) : 0;
-      return `<div class="pp-spot" style="right:${x}%;top:${y}%;max-width:${(96/(n+1)).toFixed(1)}%">
-        <span class="pp-dot" style="${dotVars(kit)}">${p.s||"–"}</span>
-        <span class="pp-nm">${esc(p.n)}${v?` <i class="pp-v">${v}</i>`:""}</span></div>`;
+      return spotHTML({n:p.n, s:p.s, p:p.role}, x, y, n, kit, null, false, v?` <i class="pp-v">${v}</i>`:"");
     }).join("")}</div>`;
 }
 /* ===== بطاقة التصويت =====
