@@ -3055,7 +3055,8 @@ function applyData(d, source){
                    subs:    keepField(d.subs,    ALL && ALL.subs),
                    shapes:  keepField(d.shapes,  ALL && ALL.shapes),
                    kits:    keepField(d.kits,    ALL && ALL.kits),
-                   tots:    keepField(d.tots,    ALL && ALL.tots)});
+                   tots:    keepField(d.tots,    ALL && ALL.tots),
+                   mev:     keepField(d.mev,     ALL && ALL.mev)});   /* أحداث المباراة الإضافية: فرصة خطيرة / VAR / تعليق */
   SQUADS = d.squads || SQUADS || {};   /* ملف بلا كشوفات لا يمسح الكشوفات الحالية */
   if("fantasyOpen" in (d||{})) FANTASY_OPEN = !!d.fantasyOpen;
   if(typeof paintFantasyTab==="function") paintFantasyTab();  /* التبويب يظهر فور وصول حالة الإشهار */
@@ -3085,6 +3086,7 @@ function dataObject(){
           kits:(ALL&&ALL.kits)||[],
           tots:(ALL&&ALL.tots)||[],
           events:(ALL&&ALL.events)||[],
+          mev:(ALL&&ALL.mev)||[],
           lastUpdate:LASTUPDATE, updated:new Date().toISOString(),
           fantasyOpen:FANTASY_OPEN,
           updatedBy:(FBUSER&&FBUSER.email)||""};
@@ -4215,7 +4217,7 @@ const ICO_BOOT = `<svg class="ico-boot" viewBox="0 0 24 24" width="15" height="1
 
 function newEdit(){
   return {orig:null, match:{round:"", comp:(compsPresent()[0]||"الدوري"), home:"", away:"",
-          venue:"", date:"", time:"", note:"", ref:""}, goals:[], cards:[], pens:[], lineup:[], subs:[], shapes:{}};
+          venue:"", date:"", time:"", note:"", ref:"", tv:"", status:""}, goals:[], cards:[], pens:[], lineup:[], subs:[], shapes:{}, mev:[]};
 }
 function loadEdit(m){
   const gs=(ALL.goals||[]).filter(g=>g.r===m.round && compOf(g)===compOf(m) &&
@@ -4230,7 +4232,8 @@ function loadEdit(m){
   (ALL.shapes||[]).filter(x=>x.r===m.round && compOf(x)===compOf(m) && (x.club===m.home||x.club===m.away))
     .forEach(x=>{ shp[x.club]={f:x.f||"", pos:JSON.parse(JSON.stringify(x.pos||{}))}; });
   return {orig:mkey(m), shapes:shp,
-    match:{round:m.round, comp:compOf(m), home:m.home, away:m.away, venue:m.venue||"", date:m.date||"", time:m.time||"", note:m.note||"", ref:m.ref||""},
+    match:{round:m.round, comp:compOf(m), home:m.home, away:m.away, venue:m.venue||"", date:m.date||"", time:m.time||"", note:m.note||"", ref:m.ref||"", tv:m.tv||"", status:m.status||""},
+    mev:(ALL.mev||[]).filter(x=>x.r===m.round && compOf(x)===compOf(m) && x.home===m.home && x.away===m.away).map(x=>({k:x.k, club:x.club||"", p:x.p||"", m:x.m||"", x:x.x||0, note:x.note||""})),
     lineup:lus.map(x=>({club:x.club, p:x.p})),
     subs:sbs.map(x=>({club:x.club, out:x.out||"", in:x.in||"", h:x.h||1, m:x.m||""})),
     goals:gs.map(g=>({sc:g.sc,p:g.p,a:g.a||"",m:g.m,x:g.x||0,det:g.det||"",bp:g.bp||"",zone:g.zone||"",og:g.og||""})),   /* og كان يضيع عند إعادة التحرير */
@@ -4932,6 +4935,7 @@ function removeMatchByKey(key){
   ALL.lineups = (ALL.lineups||[]).filter(x=>!mine(x));
   ALL.shapes  = (ALL.shapes ||[]).filter(x=>!mine(x));
   ALL.subs    = (ALL.subs||[]).filter(x=>!mine(x));
+  ALL.mev     = (ALL.mev||[]).filter(x=>!(x.r===old.round && compOf(x)===compOf(old) && x.home===old.home && x.away===old.away));
 }
 
 async function saveMatch(){
@@ -4945,7 +4949,7 @@ async function saveMatch(){
   if(EDIT.orig) removeMatchByKey(EDIT.orig);
   const other = t => t===m.home ? m.away : m.home;
   ALL.matches.push({n:ALL.matches.length+1, round, comp:m.comp, date:m.date, time:m.time,
-                    venue:m.venue, home:m.home, away:m.away, note:(m.note||"").trim(), ref:(m.ref||"").trim(), hg:0, ag:0});   /* ref = الحكم */
+                    venue:m.venue, home:m.home, away:m.away, note:(m.note||"").trim(), ref:(m.ref||"").trim(), tv:(m.tv||"").trim(), status:m.status||"", hg:0, ag:0});   /* ref = الحكم */
   EDIT.goals.forEach(g=>ALL.goals.push({r:round, comp:m.comp, sc:g.sc, cd:other(g.sc), p:g.p, a:g.a||"",
       m:+g.m, x:+g.x||0, cat:catOf(g.det), det:g.det, bp:g.bp||"", zone:g.zone||"",
       og: g.bp==="هدف عكسي" ? (g.og||"") : ""}));
@@ -4953,6 +4957,9 @@ async function saveMatch(){
       {r:round, comp:m.comp, club:x.club, p:x.p, m:+x.m||0, type:x.type}));
   EDIT.pens.forEach(x=>ALL.pens.push({r:round, comp:m.comp, by:x.by, vs:other(x.by), p:x.p,
       m:+x.m||0, res:x.res, place:x.place||""}));
+  ALL.mev = ALL.mev || [];
+  (EDIT.mev||[]).forEach(x=>ALL.mev.push({r:round, comp:m.comp, home:m.home, away:m.away, k:x.k, club:x.club||"", p:x.p||"",
+      m:+x.m||0, x:+x.x||0, note:(x.note||"").trim()}));
   ALL.lineups = ALL.lineups || []; ALL.subs = ALL.subs || [];
   (EDIT.lineup||[]).filter(x=>x.club && x.p).forEach(x=>
       ALL.lineups.push({r:round, comp:m.comp, club:x.club, p:x.p}));
@@ -10683,6 +10690,13 @@ function openMatchFromHash(){
 .mx-step{display:grid;grid-template-columns:44px minmax(0,1fr) 44px;gap:6px;align-items:center}
 .mx-step button{height:46px;border-radius:12px;background:var(--mx-soft)!important;border:1px solid var(--mx-ln)!important;font-size:1.3rem;font-weight:800}
 .mx-step input{text-align:center;font-family:var(--display);font-weight:800;font-size:1.25rem;padding:8px 4px}
+.mx-phase{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:6px}
+@media(max-width:620px){.mx-phase{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.mx-ph{padding:11px 4px;border-radius:12px;border:1px solid var(--mx-ln)!important;background:var(--mx-soft)!important;font-weight:800;font-size:.8rem;color:var(--slate)}
+.mx-ph.on{background:linear-gradient(135deg,#1c6fd1,#0e3f86)!important;border-color:#1c6fd1!important;color:#fff}
+.mx-sc .st.live{background:rgba(229,72,77,.18);color:#ff8a90}
+.mx-sc .st.live::before{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;background:#e5484d;margin-inline-end:5px;vertical-align:middle;animation:mxPulse 1.4s infinite}
+@keyframes mxPulse{50%{opacity:.35}}
 .mx-sug{margin-top:6px;font-size:.74rem;color:var(--slate)}
 .mx-sug button{color:var(--sky,#5FB2E8);font-weight:700;text-decoration:underline;text-underline-offset:3px}
 
@@ -10777,6 +10791,7 @@ function openMatchFromHash(){
 .mx-bar{position:sticky;bottom:var(--mx-bottom,0px);z-index:7;display:flex;gap:10px;align-items:center;margin-top:14px;padding:10px;border-radius:16px;
   background:color-mix(in srgb,var(--mx-card) 92%,transparent);border:1px solid var(--mx-ln);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);box-shadow:0 -8px 24px rgba(0,0,0,.25)}
 .mx-bar .sum{flex:1;font-size:.74rem;color:var(--slate);font-weight:700;line-height:1.4}
+@media(max-width:620px){.mx-bar .sum{display:none}.mx-bar{gap:6px;padding:8px}.mx-bar .mx-ghost{padding:10px 10px;font-size:.8rem}.mx-bar .mx-save{flex:1;justify-content:center;padding:12px 10px;font-size:.88rem}}
 .mx-save{display:inline-flex;align-items:center;gap:8px;padding:12px 20px;border-radius:12px;font-weight:800;font-size:.95rem;color:#fff!important;
   background:linear-gradient(135deg,#22b573,#128a52)!important;box-shadow:0 8px 18px rgba(18,138,82,.35)}
 .mx-save:hover{filter:brightness(1.06)}
@@ -10830,6 +10845,10 @@ html.mx-editing #waFab{display:none!important}   /* زر واتساب كان ي�
     whistle:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="14" r="5"/><path d="M13.5 11.5 21 8V5l-9.5 4.2"/></svg>',
     shield:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6l7-3z"/></svg>',
     warn:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 8v5M12 16.5v.5"/><circle cx="12" cy="12" r="9"/></svg>',
+    chance:'<svg viewBox="0 0 24 24" fill="none" stroke="#ffb547" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.2"/><circle cx="12" cy="12" r="1" fill="#ffb547"/></svg>',
+    var:'<svg viewBox="0 0 24 24" fill="none"><rect x="2.5" y="5" width="19" height="13" rx="2.5" stroke="#9fb4ff" stroke-width="2"/><text x="12" y="14.6" text-anchor="middle" font-size="7.2" font-weight="800" fill="#9fb4ff" font-family="Arial">VAR</text></svg>',
+    note:'<svg viewBox="0 0 24 24" fill="none" stroke="#8FA6C4" stroke-width="2" stroke-linejoin="round"><path d="M4 5h16v11H9l-5 4V5z"/><path d="M8 9.5h8M8 12.5h5" stroke-linecap="round"/></svg>',
+    tv:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M8 21h8M9 3l3 3 3-3"/></svg>',
     pen:'<svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9.2" fill="#fff" stroke="#0B1F3A" stroke-width="1.5"/><text x="12" y="16" text-anchor="middle" font-size="11" font-weight="800" fill="#0B1F3A" font-family="Arial">P</text></svg>'
   };
   const hexRgb=h=>{ const c=String(h||"").replace("#",""); if(c.length!==6) return "24,120,190"; return [0,2,4].map(i=>parseInt(c.slice(i,i+2),16)).join(","); };
@@ -10899,9 +10918,18 @@ html.mx-editing #waFab{display:none!important}   /* زر واتساب كان ي�
           <div><span class="mx-lbl">التاريخ</span><input type="date" data-mf="date" value="${esc(m.date)}"></div>
           <div><span class="mx-lbl">وقت الانطلاق</span><input type="time" data-mf="time" value="${esc(m.time)}"></div>
         </div></div>
+      <div class="mx-card"><h3>مرحلة المباراة<small>تظهر للجمهور كحالة المباراة</small></h3>
+        <div class="mx-phase">${PHASES.map(([k,t])=>`<button class="mx-ph${(m.status||"")===k?" on":""}" data-mstatus="${k}">${t}</button>`).join("")}</div>
+        <p class="mx-hint">«تلقائي» يحدد الحالة من موعد المباراة ونتيجتها. اختر المرحلة يدوياً أثناء النقل المباشر.</p></div>
+      <div class="mx-card"><h3>البث</h3>
+        <span class="mx-lbl">القناة الناقلة</span>
+        <div class="mx-chips">${TV_LIST.map(t=>`<button class="mx-chip${m.tv===t?" on":""}" data-mtv="${esc(t)}">${esc(t)}</button>`).join("")}</div>
+        <input data-mf="tv" value="${esc(m.tv||"")}" placeholder="أو اكتب اسم القناة" style="margin-top:10px"></div>
       <div class="mx-card"><h3>الملعب والحكم</h3>
         <div class="mx-grid">
-          <div class="mx-span"><span class="mx-lbl">الملعب</span><input data-mf="venue" value="${esc(m.venue)}" placeholder="اسم الملعب">
+          <div class="mx-span"><span class="mx-lbl">الملعب</span>
+            <div class="mx-chips" style="margin-bottom:10px">${stadiums().map(v=>`<button class="mx-chip${m.venue===v?" on":""}" data-mvenue="${esc(v)}">${esc(v)}</button>`).join("")}</div>
+            <input data-mf="venue" value="${esc(m.venue)}" placeholder="اسم الملعب">
             ${stHome&&stHome!==m.venue?`<div class="mx-sug">ملعب ${esc(m.home)}: <button data-mvenue="${esc(stHome)}">${esc(stHome)}</button></div>`:""}</div>
           <div class="mx-span"><span class="mx-lbl">حكم الساحة</span><input data-mf="ref" list="mxRefs" value="${esc(m.ref||"")}" placeholder="اسم الحكم">
             <datalist id="mxRefs">${refs.map(r=>`<option value="${esc(r)}">`).join("")}</datalist></div>
@@ -10961,6 +10989,7 @@ html.mx-editing #waFab{display:none!important}   /* زر واتساب كان ي�
     (EDIT.cards||[]).forEach((r,i)=>out.push({k:"card",i,r,t:+r.m||0}));
     (EDIT.pens||[]).forEach((r,i)=>out.push({k:"pen",i,r,t:+r.m||0}));
     (EDIT.subs||[]).forEach((r,i)=>out.push({k:"sub",i,r,t:absMinute(r.h,r.m)}));
+    (EDIT.mev||[]).forEach((r,i)=>out.push({k:r.k,i,r,t:(+r.m||0)+(+r.x||0)/100}));
     return out.sort((a,b)=>a.t-b.t);
   }
   function evRow({k,i,r}){
@@ -10971,6 +11000,7 @@ html.mx-editing #waFab{display:none!important}   /* زر واتساب كان ي�
       const t=r.type||""; ic=`<span class="ic-card ${/ثان/.test(t)?"yr":isRed(t)?"r":"y"}"></span>`; sub=t; }
     if(k==="pen"){ club=r.by; who=r.p; ic=SV.pen; mn=r.m?`${r.m}'`:"—"; sub=`ركلة جزاء · ${r.res||""}`; }
     if(k==="sub"){ club=r.club; who=r.in||"—"; ic=SV.swap; mn=r.m?`${absMinute(r.h,r.m)}'`:"—"; sub=`خرج: ${r.out||"—"}`; }
+    if(MEV[k]){ club=r.club; who=r.p||TITLE[k]; ic=SV[k]; mn=r.m?`${r.m}${+r.x?`+${r.x}`:""}'`:"—"; sub=[r.p?TITLE[k]:"", r.note||""].filter(Boolean).join(" · "); }
     return `<div class="mx-ev" style="--srgb:${rgbOf(club)}">
       <div class="mn">${esc(mn)}<small>${k==="sub"?`الشوط ${+r.h||1}`:esc(club||"")}</small></div>
       <div class="ic">${ic}</div>
@@ -10986,6 +11016,9 @@ html.mx-editing #waFab{display:none!important}   /* زر واتساب كان ي�
         <button class="mx-addb" data-mnew="card" data-mtype="طرد مباشر"><span class="ic-card r"></span>طرد</button>
         <button class="mx-addb" data-mnew="sub">${SV.swap}تبديل</button>
         <button class="mx-addb" data-mnew="pen">${SV.pen}ركلة جزاء</button>
+        <button class="mx-addb" data-mnew="chance">${SV.chance}فرصة خطيرة</button>
+        <button class="mx-addb" data-mnew="var">${SV.var}مراجعة VAR</button>
+        <button class="mx-addb" data-mnew="note">${SV.note}تعليق</button>
       </div></div>
       <div class="mx-card"><h3>مجريات المباراة<small>${items.length} حدث</small></h3>
       ${items.length?`<div class="mx-tl">${items.map(evRow).join("")}</div>`:`<div class="mx-none">لا أحداث بعد — أضف الأهداف والبطاقات والتبديلات بالأزرار أعلاه.</div>`}</div>`;
@@ -10994,11 +11027,20 @@ html.mx-editing #waFab{display:none!important}   /* زر واتساب كان ي�
   /* ===================== النافذة السفلية ===================== */
   const BLANK={goal:()=>({sc:"",p:"",a:"",m:"",x:0,det:"",bp:"",zone:"",og:""}),
                card:()=>({club:"",p:"",m:"",type:"إنذار"}), pen:()=>({by:"",p:"",m:"",res:"سجلت",place:""}),
-               sub:()=>({club:"",out:"",in:"",h:"1",m:""})};
-  const ARR={goal:"goals",card:"cards",pen:"pens",sub:"subs"};
-  const CLUBKEY={goal:"sc",card:"club",pen:"by",sub:"club"};
-  const TITLE={goal:"هدف",card:"بطاقة",pen:"ركلة جزاء",sub:"تبديل"};
+               sub:()=>({club:"",out:"",in:"",h:"1",m:""}),
+               chance:()=>({k:"chance",club:"",p:"",m:"",x:0,note:""}), var:()=>({k:"var",club:"",p:"",m:"",x:0,note:""}), note:()=>({k:"note",club:"",p:"",m:"",x:0,note:""})};
+  const MEV={chance:1,var:1,note:1};
+  const ARR={goal:"goals",card:"cards",pen:"pens",sub:"subs",chance:"mev",var:"mev",note:"mev"};
+  const CLUBKEY={goal:"sc",card:"club",pen:"by",sub:"club",chance:"club",var:"club",note:"club"};
+  const TITLE={goal:"هدف",card:"بطاقة",pen:"ركلة جزاء",sub:"تبديل",chance:"فرصة خطيرة",var:"مراجعة VAR",note:"تعليق"};
+  const PHASES=[["","تلقائي"],["pre","قبل البداية"],["h1","الشوط الأول"],["ht","استراحة"],["h2","الشوط الثاني"],["ft","انتهت"]];
+  const TV_LIST=["كويت سبورت","كويت سبورت بلس","الكويت الأولى","غير منقولة"];
+  const stadiums=()=>{ const set=new Set(); if(typeof CLUB_INFO!=="undefined") Object.values(CLUB_INFO).forEach(i=>i&&i.st&&set.add(i.st)); (ALL.matches||[]).forEach(x=>x.venue&&set.add(String(x.venue).trim())); return [...set].filter(Boolean).slice(0,16); };
+  /* اختصارات الدقائق حسب المرحلة */
+  const minChips=key=>{ const st=EDIT.match.status; const L=st==="h1"?[1,15,30,45]:st==="h2"?[46,60,75,90]:[1,15,30,45,60,75,90];
+    return `<div class="mx-chips" style="margin-top:8px">${L.map(v=>`<button class="mx-chip" data-mset="${key}" data-mval="${v}">${v}'</button>`).join("")}</div>`; };
   function openEv(k,i,preset){
+    EDIT.mev=EDIT.mev||[];
     const d=i>=0?JSON.parse(JSON.stringify(EDIT[ARR[k]][i])):Object.assign(BLANK[k](),preset||{});
     if(!d[CLUBKEY[k]]) d[CLUBKEY[k]]=sideClub(MX.tab==="lineup"?MX.side:"home")||"";
     MX.sheet={kind:"ev",k,i,d,err:""}; renderMatchAdmin();
@@ -11031,7 +11073,7 @@ html.mx-editing #waFab{display:none!important}   /* زر واتساب كان ي�
     let body=team;
     if(k==="goal"){
       body+=`<div><span class="mx-lbl">المسجّل</span>${pickGrid(club,"p",d.p)}</div>
-        <div class="mx-grid">${stepper("m",d.m,"الدقيقة",130)}${stepper("x",d.x||0,"وقت بدل ضائع +",20)}</div>
+        <div class="mx-grid">${stepper("m",d.m,"الدقيقة",130)}${stepper("x",d.x||0,"وقت بدل ضائع +",20)}</div>${minChips("m")}
         <div><span class="mx-lbl">طريقة التسجيل</span>${chips("bp",LIST.bp,d.bp)}</div>
         ${d.bp==="هدف عكسي"?`<div><span class="mx-lbl">ارتدت عن (لاعب ${esc(opp||"الخصم")})</span>${pickGrid(opp,"og",d.og)}</div>`:""}
         <div><span class="mx-lbl">صانع الهدف</span>${pickGrid(club,"a",d.a,{none:"بدون صناعة",exclude:d.p})}</div>
@@ -11051,6 +11093,12 @@ html.mx-editing #waFab{display:none!important}   /* زر واتساب كان ي�
         <div><span class="mx-lbl">النتيجة</span>${chips("res",LIST.penres,d.res,v=>v==="سجلت"?"ok":"")}</div>
         <div><span class="mx-lbl">مكان التسديد</span>${chips("place",PZONES,d.place)}</div>
         <p class="mx-hint">ركلة الجزاء المسجّلة تُضاف أيضاً كهدف من تبويب الأحداث (هدف ← تفصيل «ركلة جزاء»).</p>`;
+    }
+    if(MEV[k]){
+      if(k==="chance") body+=`<div><span class="mx-lbl">اللاعب</span>${pickGrid(club,"p",d.p)}</div>`;
+      else if(club) body+=`<div><span class="mx-lbl">اللاعب المعني (اختياري)</span>${pickGrid(club,"p",d.p,{none:"بدون لاعب"})}</div>`;
+      body+=`<div class="mx-grid">${stepper("m",d.m,"الدقيقة",130)}${stepper("x",d.x||0,"وقت بدل ضائع +",20)}</div>${minChips("m")}
+        <div><span class="mx-lbl">${k==="note"?"نص التعليق":"وصف قصير (اختياري)"}</span><input data-msf="note" value="${esc(d.note||"")}" placeholder="${k==="var"?"مثال: مراجعة ركلة جزاء — أُلغيت":k==="chance"?"مثال: تسديدة من خارج المنطقة":"مثال: بداية الشوط الثاني"}"></div>`;
     }
     if(k==="sub"){
       body+=`<div class="mx-grid">
@@ -11072,6 +11120,9 @@ html.mx-editing #waFab{display:none!important}   /* زر واتساب كان ي�
     if(k==="card"){ if(!need(d.club,"اختر الفريق")||!need(d.p,"اختر اللاعب")||!need(d.type,"اختر نوع البطاقة")) return; }
     if(k==="pen"){ if(!need(d.by,"اختر الفريق المنفّذ")||!need(d.res,"اختر نتيجة الركلة")) return; }
     if(k==="sub"){ if(!need(d.club,"اختر الفريق")||!need(d.out||d.in,"اختر اللاعب الخارج أو الداخل")) return; }
+    if(k==="chance"){ if(!need(d.club,"اختر الفريق")||!need(d.p,"اختر اللاعب")||!need(+d.m>=1,"أدخل الدقيقة")) return; }
+    if(k==="var"){ if(!need(+d.m>=1,"أدخل الدقيقة")) return; }
+    if(k==="note"){ if(!need((d.note||"").trim(),"اكتب نص التعليق")) return; }
     if(k==="goal" && d.a===d.p) d.a="";
     const arr=EDIT[ARR[k]];
     if(S.i>=0) arr[S.i]=d; else arr.push(d);
@@ -11083,7 +11134,7 @@ html.mx-editing #waFab{display:none!important}   /* زر واتساب كان ي�
     EDIT.shapes=EDIT.shapes||{};
     const m=EDIT.match, [hg,ag]=score();
     const hx=m.home?starters(m.home).length:0, ax=m.away?starters(m.away).length:0;
-    const evs=(EDIT.goals.length+EDIT.cards.length+EDIT.pens.length+EDIT.subs.length);
+    const evs=(EDIT.goals.length+EDIT.cards.length+EDIT.pens.length+EDIT.subs.length+(EDIT.mev||[]).length);
     const teamBtn=s=>{ const c=m[s]; return `<button class="mx-team" data-mpickclub="${s}">${crestOr(c)}<b>${esc(c||(s==="home"?"اختر المضيف":"اختر الضيف"))}</b><small>${s==="home"?"المضيف":"الضيف"}</small></button>`; };
     const upcoming=m.date && !EDIT.goals.length && (typeof kickoffTS==="function") && (kickoffTS({date:m.date,time:m.time})||0)>Date.now();
     box.innerHTML=`<div class="mx" style="--hrgb:${rgbOf(m.home)};--argb:${rgbOf(m.away)}">
@@ -11091,9 +11142,9 @@ html.mx-editing #waFab{display:none!important}   /* زر واتساب كان ي�
       ${FORMERR?`<div class="mx-err">${SV.warn}${esc(FORMERR)}</div>`:""}
       <div class="mx-board">
         <div class="mx-teams">${teamBtn("home")}
-          <div class="mx-sc"><div class="n">${hg}<i>:</i>${ag}</div><span class="st">${upcoming?"لم تبدأ":m.round?`الجولة ${esc(m.round)}`:"—"}</span></div>
+          <div class="mx-sc"><div class="n">${ag}<i>:</i>${hg}</div><span class="st${m.status&&m.status!=="ft"&&m.status!=="pre"?" live":""}">${m.status?(PHASES.find(p=>p[0]===m.status)||["",""])[1]:upcoming?"لم تبدأ":m.round?`الجولة ${esc(m.round)}`:"—"}</span></div>
           ${teamBtn("away")}</div>
-        <div class="mx-meta">${m.date?`<span>${SV.cal}<bdi dir="ltr">${esc(m.date)}${m.time?` · ${esc(m.time)}`:""}</bdi></span>`:""}${m.venue?`<span>${SV.pin}${esc(m.venue)}</span>`:""}${m.ref?`<span>${SV.whistle}${esc(m.ref)}</span>`:""}<span>${esc(m.comp||"")}</span></div>
+        <div class="mx-meta">${m.date?`<span>${SV.cal}<bdi dir="ltr">${esc(m.date)}${m.time?` · ${esc(m.time)}`:""}</bdi></span>`:""}${m.venue?`<span>${SV.pin}${esc(m.venue)}</span>`:""}${m.ref?`<span>${SV.whistle}${esc(m.ref)}</span>`:""}${m.tv?`<span>${SV.tv}${esc(m.tv)}</span>`:""}<span>${esc(m.comp||"")}</span></div>
       </div>
       <nav class="mx-tabs">
         <button class="mx-tab${MX.tab==="match"?" on":""}" data-mtab="match">المباراة<small>${m.round?`الجولة ${esc(m.round)}`:"البيانات"}</small></button>
@@ -11102,7 +11153,7 @@ html.mx-editing #waFab{display:none!important}   /* زر واتساب كان ي�
       </nav>
       <section>${MX.tab==="lineup"?tabLineup():MX.tab==="events"?tabEvents():tabMatch()}</section>
       <div class="mx-bar"><div class="sum">${esc(m.home||"—")} ${hg} - ${ag} ${esc(m.away||"—")}<br>${hx+ax} لاعباً أساسياً · ${evs} حدث</div>
-        <button class="mx-ghost" data-act="cancel">إلغاء</button><button class="mx-save" data-act="save">${SV.save}حفظ المباراة</button></div>
+        <button class="mx-ghost" data-act="cancel">إلغاء</button><button class="mx-ghost" data-act="savestay">حفظ ومتابعة</button><button class="mx-save" data-act="save">${SV.save}حفظ وإغلاق</button></div>
     </div>`;
     /* النافذة على مستوى body: داخل المحتوى تبقى تحت شريط التنقل السفلي مهما ارتفع z-index */
     let host=document.getElementById("mxSheetHost");
@@ -11123,13 +11174,20 @@ html.mx-editing #waFab{display:none!important}   /* زر واتساب كان ي�
     const q=(s,f)=>[box,host].forEach(r=>r&&r.querySelectorAll(s).forEach(f));
     q("[data-act]",b=>b.onclick=()=>{ const a=b.dataset.act;
       if(a==="cancel"){ if(!confirm("الخروج بدون حفظ؟ ستضيع التعديلات غير المحفوظة.")) return; MX.sheet=null; MX.sel=null; document.documentElement.classList.remove("mx-open"); EDIT=null; FORMERR=""; renderMatchAdmin(); flushRemote(); }
-      if(a==="save"){ MX.sheet=null; MX.sel=null; document.documentElement.classList.remove("mx-open"); const pre=validateEdit(); if(pre){ FORMERR=pre; MX.tab=errTab(pre); rerender(); return; } saveMatch(); }
+      if(a==="save"||a==="savestay"){ MX.sheet=null; MX.sel=null; document.documentElement.classList.remove("mx-open"); const pre=validateEdit(); if(pre){ FORMERR=pre; MX.tab=errTab(pre); rerender(); return; }
+        if(a==="save"){ saveMatch(); return; }
+        /* حفظ ومتابعة: يحفظ ثم يعيد فتح المباراة نفسها في التبويب نفسه — للإدخال المباشر أثناء المباراة */
+        const mm=EDIT.match, key={round:+mm.round, comp:mm.comp, home:mm.home, away:mm.away}, tab=MX.tab, side=MX.side;
+        saveMatch().then(()=>{ if(EDIT) return; const x=(ALL.matches||[]).find(z=>z.round===key.round && compOf(z)===key.comp && z.home===key.home && z.away===key.away);
+          if(!x) return; EDIT=loadEdit(x); MX._edit=EDIT; MX.tab=tab; MX.side=side; renderMatchAdmin(); }); }
     });
     q("[data-mtab]",b=>b.onclick=()=>{ MX.tab=b.dataset.mtab; MX.sel=null; rerender(); window.scrollTo({top:box.getBoundingClientRect().top+scrollY-80,behavior:"smooth"}); });
     q("[data-mcomp]",b=>b.onclick=()=>{ EDIT.match.comp=b.dataset.mcomp; rerender(); });
     q("[data-mf]",el=>{ el.oninput=()=>{ EDIT.match[el.dataset.mf]=el.value; }; el.onchange=()=>{ if(!EDIT) return; EDIT.match[el.dataset.mf]=el.value; if(!MX.busy && el.isConnected) rerender(); }; });
     q("[data-mround]",b=>b.onclick=()=>{ EDIT.match.round=String(Math.max(1,(+EDIT.match.round||0)+(+b.dataset.mround))); rerender(); });
     q("[data-mvenue]",b=>b.onclick=()=>{ EDIT.match.venue=b.dataset.mvenue; rerender(); });
+    q("[data-mstatus]",b=>b.onclick=()=>{ EDIT.match.status=b.dataset.mstatus; rerender(); });
+    q("[data-mtv]",b=>b.onclick=()=>{ EDIT.match.tv=(EDIT.match.tv===b.dataset.mtv?"":b.dataset.mtv); rerender(); });
     q("[data-mpickclub]",b=>b.onclick=()=>{ MX.sheet={kind:"club",side:b.dataset.mpickclub}; rerender(); });
     q("[data-mclub]",b=>b.onclick=()=>{ const s=MX.sheet.side, old=EDIT.match[s], nw=b.dataset.mclub;
       if(old&&old!==nw){ /* تبديل النادي: تشكيلته وتبديلاته ومواضعه القديمة لا تخصّ النادي الجديد */
