@@ -6497,6 +6497,7 @@ function renderAnalysis(){
 
   $("#v-analysis").innerHTML=`
     ${compChips()}
+    ${avgRatingSectionHTML()}
     <h2 class="sec">توزيع الأهداف على فترات المباراة</h2>
     <div class="card pad">${bars(per,"p",mxP,false,true)}</div>
     <p class="hint">أكثر ما يميّز هذا الموقع عن مواقع النتائج — لا أحد يوفّر هذا التفصيل للدوري الكويتي.</p>
@@ -9093,6 +9094,44 @@ html[data-theme="light"] .hm{--bg-card:#FFFFFF;--border-card:#E2E8F0;--text-prim
 <div class="pprof" id="pprof" hidden role="dialog" aria-modal="true" aria-label="ملف اللاعب"></div>
 <div class="mpage" id="mpage" hidden role="dialog" aria-modal="true" aria-label="صفحة المباراة"></div>
 <style>
+/* ===== تقييم اللاعبين ===== */
+.rtg{display:inline-grid;place-items:center;min-width:34px;height:22px;padding:0 5px;border-radius:5px;font-family:var(--display);font-weight:800;font-size:.8rem;color:#fff;font-variant-numeric:tabular-nums;flex:none}
+.rtg.big{min-width:52px;height:34px;font-size:1.15rem;border-radius:7px}
+.rtg.r8{background:#1f9ed6}.rtg.r7{background:#1fa64a}.rtg.r65{background:#79b92f}.rtg.r6{background:#d9a318}.rtg.r5{background:#e0612b}
+.rt-list{display:flex;flex-direction:column}
+.rt-row{display:flex;align-items:center;gap:10px;padding:8px 2px;border-top:1px solid var(--border-card,rgba(143,166,196,.14));cursor:pointer}
+.rt-row:first-child{border-top:0}
+.rt-i{width:18px;text-align:center;font-size:.75rem;color:var(--text-muted,var(--slate));font-weight:700}
+.rt-ph{position:relative;width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,.08);flex:none}
+.rt-ph img{width:100%;height:100%;border-radius:50%;object-fit:cover}
+.rt-ph>i{display:grid;place-items:center;width:100%;height:100%;font-style:normal;font-size:.72rem;font-weight:700;color:var(--text-muted,var(--slate))}
+.rt-ph .crest{position:absolute;bottom:-3px;left:-3px;width:17px;height:17px}
+.rt-nm{display:flex;flex-direction:column;min-width:0;flex:1}
+.rt-nm b{font-size:.84rem;font-weight:600;color:var(--text-primary,#fff);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rt-nm small{font-size:.66rem;color:var(--text-muted,var(--slate))}
+.rt-board .rt-more-hid{display:none}
+.rt-board.open .rt-more-hid{display:block}
+.rt-board>div:not(:first-child) .rt-row{border-top:1px solid var(--border-card,rgba(143,166,196,.14))}
+.rt-board>div:first-child .rt-row{border-top:0}
+.rt-morebtn{margin-top:8px}
+.rt-note{margin:8px 0 0;font-size:.66rem;color:var(--text-muted,var(--slate));line-height:1.6}
+.motm-top{display:flex;flex-direction:column;align-items:center;gap:6px;padding:14px 8px;border-radius:12px;cursor:pointer;
+  background:radial-gradient(90% 120% at 50% 0%,rgba(var(--ca-rgb),.28),transparent 70%),rgba(255,255,255,.03);border:1px solid rgba(var(--ca-rgb),.35);margin-bottom:6px}
+.motm-ph{width:74px;height:74px;border-radius:50%;overflow:hidden;background:rgba(255,255,255,.08);display:grid;place-items:center}
+.motm-ph img{width:100%;height:100%;object-fit:cover}
+.motm-top>b{font-family:var(--display);font-size:1rem;color:var(--text-primary,#fff)}
+.motm-top>small{display:flex;align-items:center;gap:6px;font-size:.72rem;color:var(--text-muted,var(--slate))}
+.motm-top>small .crest{width:18px;height:18px}
+.rt-cols{display:grid;grid-template-columns:1fr;gap:14px}
+@media(min-width:620px){.rt-cols{grid-template-columns:1fr 1fr}}
+.rt-colhd{display:flex;align-items:center;gap:8px;padding-bottom:6px;border-bottom:1px solid var(--border-card,rgba(143,166,196,.18))}
+.rt-colhd .crest{width:22px;height:22px}
+.rt-colhd b{flex:1;font-size:.86rem;color:var(--text-primary,#fff)}
+.pp-rtg{position:absolute;left:50%;bottom:-19px;transform:translateX(-50%);min-width:26px;height:16px;font-size:.62rem;border-radius:4px;box-shadow:0 1px 3px rgba(0,0,0,.4);z-index:2}
+/* ملعب صفحة المباراة: أرضية داكنة هادئة بخطوط رمادية خفيفة */
+.mp-xi .xipitch{background:#1b2027 !important;box-shadow:none !important;border:1px solid rgba(255,255,255,.08)}
+.mp-xi .xipitch::before,.mp-xi .xipitch::after{display:none !important}
+.mp-xi .xip-lines{opacity:1;filter:grayscale(1) brightness(.75)}
 /* ===== صفحة المباراة (2026-09-15) ===== */
 .mc[data-mopen]{cursor:pointer}
 .mc[data-mopen] .mc-row:hover .mc-mid{opacity:.85}
@@ -9127,7 +9166,7 @@ html.mp-open{overflow:hidden}
 .mp-scorers span[data-player]{cursor:pointer}
 .mp-scorers em{font-style:normal;color:rgba(255,255,255,.6);display:inline-block;unicode-bidi:isolate;direction:ltr}
 .mp-scorers .ball{display:grid;place-items:center;color:#4ade80}
-.mp-scorers .ball svg{width:20px;height:20px}
+.mp-scorers .ball svg{width:22px;height:22px;filter:drop-shadow(0 1px 2px rgba(0,0,0,.5))}
 .mp-compcard{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;text-align:right;color:var(--text-primary,#fff);font-size:.88rem;font-weight:600;cursor:pointer}
 .mp-compcard svg{color:var(--sky,#5FB2E8);flex:none}
 .mp-tabs{position:sticky;top:0;z-index:3;display:flex;gap:4px;overflow-x:auto;scrollbar-width:none;padding:0 8px;background:#0b1f3a;border-bottom:1px solid rgba(255,255,255,.08)}
@@ -9960,6 +9999,142 @@ document.addEventListener("DOMContentLoaded", ()=>{
     } else if(++tries<40) setTimeout(tick,300);
   }; setTimeout(tick,400);
 })();
+/* ================= تقييم اللاعبين (2026-09-15) =================
+   تقييم لكل لاعب في كل مباراة من 3 إلى 10 يُحسب فقط من إحصاءات الموقع المسجّلة من الإدارة
+   (التشكيلة والتبديلات = الدقائق، الأهداف، الصناعة، الأهداف العكسية، الإنذارات والطرد، ركلات الجزاء، النتيجة،
+   الأهداف المستقبَلة أثناء وجوده). كل قاعدة مستقلة في RATING.rules: أي إحصائية جديدة تُضاف كقاعدة واحدة
+   فتدخل تلقائياً في تقييم كل المباريات والمتوسطات. التقييم يظهر لمن لعب 10 دقائق فأكثر. */
+const RATING = {
+  base: 6.3, min: 3, max: 10, minMinutes: 10,
+  /* ctx: {m, club, name, line(G|D|M|F), mins, share, win, draw, loss, goals, penGoals, assists, ownGoals,
+          yellow, red, penMissed, conceded(أثناء وجوده), teamConceded} */
+  rules: [
+    {key:"goal",    label:"الأهداف",                 fn:c => c.goals * ({G:1.3, D:1.2, M:1.0, F:0.9}[c.line] || 1.0) + c.penGoals * 0.7},
+    {key:"assist",  label:"الصناعة",                 fn:c => c.assists * 0.6},
+    {key:"og",      label:"الأهداف العكسية",         fn:c => c.ownGoals * -0.8},
+    {key:"yellow",  label:"الإنذارات",               fn:c => c.yellow * -0.25},
+    {key:"red",     label:"الطرد",                   fn:c => c.red * -1.2},
+    {key:"penMiss", label:"ركلات الجزاء الضائعة",    fn:c => c.penMissed * -0.6},
+    {key:"result",  label:"نتيجة المباراة",          fn:c => (c.win ? 0.35 : c.loss ? -0.35 : 0) * c.share},
+    {key:"cs",      label:"الشباك النظيفة",          fn:c => (c.mins>=60 && c.conceded===0) ? ({G:0.9, D:0.5, M:0.15}[c.line] || 0) : 0},
+    {key:"against", label:"الأهداف المستقبَلة",      fn:c => c.conceded * ({G:-0.25, D:-0.15, M:-0.05}[c.line] || 0)},
+    {key:"minutes", label:"دقائق اللعب",             fn:c => c.mins>=60 ? 0.15 : 0},
+  ]
+};
+function playerLine(club, name){
+  const e=(SQUADS[club]||[]).find(x=>sqName(x)===name);
+  return POS_MAIN[String(e?sqPos(e):"").toUpperCase()] || "M";
+}
+/* سياق لاعب في مباراة من بيانات الموقع */
+function ratingCtx(m, club, name){
+  const mins=playerMatchMinutes(m, club, name);
+  if(mins<=0) return null;
+  const w=playerWindow(m, club, name) || {start:0, end:MATCH_MIN};
+  const gf = club===m.home ? +m.hg : +m.ag, ga = club===m.home ? +m.ag : +m.hg;
+  const gs=matchGoals(m);
+  const on = g => { const t=Math.min(MATCH_MIN, abs(g)); return t>=w.start && t<=w.end; };
+  const mine=gs.filter(g=>g.p===name && g.sc===club && g.bp!=="هدف عكسي");
+  const pens=(PENS||[]).filter(p=>p.r===m.round && compOf(p)===compOf(m) && p.p===name && p.by===club);
+  const cards=CARDS.filter(x=>x.r===m.round && compOf(x)===compOf(m) && x.club===club && x.p===name);
+  const red=cards.filter(x=>isRed(x.type)).length;
+  return {m, club, name, line:playerLine(club,name), mins, share:Math.min(1, mins/MATCH_MIN),
+    win:gf>ga, draw:gf===ga, loss:gf<ga,
+    goals: mine.filter(g=>g.det!=="ركلة جزاء").length,
+    penGoals: mine.filter(g=>g.det==="ركلة جزاء").length,
+    assists: gs.filter(g=>g.a===name && g.sc===club).length,
+    ownGoals: gs.filter(g=>g.p===name && g.bp==="هدف عكسي" && g.cd===club).length,
+    yellow: cards.filter(x=>isYellow(x.type) && !isRed(x.type)).length, red,
+    penMissed: pens.filter(p=>p.res && p.res!=="سجلت").length,
+    conceded: gs.filter(g=>g.cd===club && on(g)).length,
+    teamConceded: ga};
+}
+function playerRating(m, club, name){
+  const c=ratingCtx(m, club, name);
+  if(!c || c.mins<RATING.minMinutes) return null;
+  const parts=RATING.rules.map(r=>({key:r.key, label:r.label, v:+(r.fn(c)||0)}));
+  const raw=RATING.base + parts.reduce((s,p)=>s+p.v,0);
+  return {v: Math.round(Math.max(RATING.min, Math.min(RATING.max, raw))*10)/10, parts, ctx:c};
+}
+/* تقييمات فريق في مباراة، مرتبة من الأعلى */
+function matchRatings(m, club){
+  const comp=compOf(m), men=new Set(xiNames(m.round, comp, club));
+  matchSubs(m).filter(s=>s.club===club && s.in).forEach(s=>men.add(s.in));
+  return [...men].map(n=>({n, c:club, r:playerRating(m, club, n)})).filter(x=>x.r).sort((a,b)=>b.r.v-a.r.v);
+}
+/* متوسط التقييم لكل لاعب على المباريات الملعوبة */
+function averageRatings(){
+  return PASS_MEMO.get("avgRatings|"+COMP, ()=>{
+    const out={};
+    playedMatches().forEach(m=>[m.home,m.away].forEach(club=>matchRatings(m,club).forEach(x=>{
+      const k=x.n+"|"+club; const e=out[k]||(out[k]={n:x.n, c:club, apps:0, sum:0, best:0});
+      e.apps++; e.sum+=x.r.v; e.best=Math.max(e.best,x.r.v);
+    })));
+    return Object.values(out).map(e=>({...e, avg:Math.round(e.sum/e.apps*100)/100})).sort((a,b)=>b.avg-a.avg||b.apps-a.apps);
+  });
+}
+/* لون شارة التقييم على طريقة مواقع الإحصاء */
+const ratingCls = v => v>=8 ? "r8" : v>=7 ? "r7" : v>=6.5 ? "r65" : v>=6 ? "r6" : "r5";
+const ratingBadge = (v, big) => `<span class="rtg ${ratingCls(v)}${big?" big":""}">${(+v).toFixed(v>=10?0:1)}</span>`;
+
+/* ---------- واجهة التقييم ---------- */
+function ratingRowHTML(x, i){
+  const cut=photoCut(x.n, x.c);
+  return `<div class="rt-row" data-player="${esc(x.n)}" data-club="${esc(x.c)}">
+    ${i!=null?`<span class="rt-i">${i+1}</span>`:""}
+    <span class="rt-ph">${cut?`<img src="${cut}_f.webp?v=8" alt="" loading="lazy" decoding="async">`:`<i>${esc((x.n||"").split(/\s+/).slice(0,2).map(w=>w[0]||"").join(""))}</i>`}${crest(x.c)}</span>
+    <span class="rt-nm"><b>${esc(x.n)}</b><small>${esc(x.c)}${x.apps?` · ${mw(x.apps)}`:""}</small></span>
+    ${ratingBadge(x.v!=null?x.v:x.avg)}
+  </div>`;
+}
+function mpMotmHTML(m){
+  const all=[...matchRatings(m,m.home), ...matchRatings(m,m.away)].sort((a,b)=>b.r.v-a.r.v);
+  if(!all.length) return "";
+  const top=all[0], cut=photoCut(top.n, top.c);
+  return `<div class="mp-card mp-motm"><div class="mp-hd"><h3>أفضل لاعب في المباراة</h3><button type="button" class="mp-link" data-mp-tab="lineups">كل التقييمات</button></div>
+    <div class="motm-top" data-player="${esc(top.n)}" data-club="${esc(top.c)}" style="${accentVars(top.c)}">
+      <span class="motm-ph">${cut?`<img src="${cut}_f.webp?v=8" alt="" decoding="async">`:crest(top.c,true)}</span>
+      <b>${esc(top.n)}</b><small>${crest(top.c)}${esc(top.c)}</small>${ratingBadge(top.r.v,true)}
+    </div>
+    <div class="rt-list">${all.slice(1,4).map(x=>ratingRowHTML({n:x.n,c:x.c,v:x.r.v})).join("")}</div>
+    <p class="rt-note">التقييم محسوب من إحصاءات الموقع: ${RATING.rules.map(r=>r.label).join("، ")}.</p></div>`;
+}
+function mpRatingsHTML(m){
+  const H=matchRatings(m,m.home), A=matchRatings(m,m.away);
+  if(!H.length && !A.length) return "";
+  const avg=L=>L.length?(L.reduce((s,x)=>s+x.r.v,0)/L.length):0;
+  const col=(c,L)=>`<div class="rt-col"><div class="rt-colhd">${crest(c)}<b>${esc(c)}</b>${L.length?ratingBadge(Math.round(avg(L)*10)/10):""}</div>
+    ${L.map(x=>ratingRowHTML({n:x.n,c:x.c,v:x.r.v})).join("")}</div>`;
+  return `<div class="mp-card"><div class="mp-hd"><h3>تقييمات اللاعبين</h3></div><div class="rt-cols">${col(m.home,H)}${col(m.away,A)}</div></div>`;
+}
+/* شارات التقييم فوق بطاقات الملعب في صفحة المباراة */
+function mpDecoratePitch(box, m){
+  const map={};
+  [m.home,m.away].forEach(c=>matchRatings(m,c).forEach(x=>map[x.n+"|"+c]=x.r.v));
+  box.querySelectorAll(".mp-xi .pp-spot").forEach(sp=>{
+    const v=map[sp.dataset.player+"|"+sp.dataset.club]; if(v==null) return;
+    const card=sp.querySelector(".pp-card"); if(!card || card.querySelector(".rtg")) return;
+    card.insertAdjacentHTML("beforeend", ratingBadge(v).replace('class="rtg','class="rtg pp-rtg'));
+  });
+}
+/* قسم التحليل: أعلى متوسط تقييم — أول 5 ثم المزيد */
+function avgRatingSectionHTML(){
+  const L=averageRatings(); if(!L.length) return "";
+  const maxApps=Math.max(...L.map(x=>x.apps));
+  const minApps=Math.max(1, Math.ceil(maxApps*0.5));
+  const Q=L.filter(x=>x.apps>=minApps);
+  const rows=Q.map((x,i)=>`<div class="${i>=5?"rt-more-hid":""}">${ratingRowHTML(x,i)}</div>`).join("");
+  return `<h2 class="sec">أعلى متوسط تقييم</h2>
+    <p class="hint">متوسط تقييم اللاعب في مبارياته (من شارك في ${mw(minApps)} على الأقل). يُحسب من: ${RATING.rules.map(r=>r.label).join("، ")}.</p>
+    <div class="card pad rt-board">${rows}
+      ${Q.length>5?`<button type="button" class="ts-morebtn rt-morebtn" data-rt-more><span>عرض المزيد</span><small>+${Q.length-5}</small></button>`:""}</div>`;
+}
+document.addEventListener("click", e=>{
+  const b=e.target.closest("[data-rt-more]"); if(!b) return;
+  const box=b.closest(".rt-board"), open=b.classList.toggle("open");
+  box.classList.toggle("open", open);
+  b.querySelector("span").textContent = open ? "عرض أقل" : "عرض المزيد";
+});
+
 /* ================= صفحة المباراة (2026-09-15، بطلب منصور: نفس فكرة صفحة المباراة في Sofascore) =================
    كل ما فيها من بيانات الموقع نفسه فقط: المباراة، الأهداف، الإنذارات، التشكيلة والتبديلات، جدول الترتيب،
    ومباريات الفريقين في الموسم. لا أرقام من مصادر خارجية ولا إحصاءات غير موجودة في الموقع. */
@@ -9984,6 +10159,7 @@ function mpScorers(m, club){
   return matchGoals(m).filter(g=>g.sc===club).map(g=>{ const og=g.bp==="هدف عكسي";
     return `<span data-player="${esc(g.p)}" data-club="${esc(og?(g.cd||""):g.sc)}">${esc(g.p)} <em dir="ltr">${minLabel(g)}</em>${og?" <em>(ع)</em>":""}</span>`; }).join("");
 }
+const MP_BALL=`<svg class="mp-ball" viewBox="0 0 64 64" aria-hidden="true"><defs><radialGradient id="mpbg" cx="36%" cy="30%" r="75%"><stop offset="0" stop-color="#ffffff"/><stop offset=".65" stop-color="#e6ebf1"/><stop offset="1" stop-color="#9aa6b2"/></radialGradient><clipPath id="mpbc"><circle cx="32" cy="32" r="30"/></clipPath></defs><circle cx="32" cy="32" r="30" fill="url(#mpbg)"/><g clip-path="url(#mpbc)"><g fill="#1c2530"><polygon points="32.00,23.50 40.08,29.37 37.00,38.88 27.00,38.88 23.92,29.37"/><polygon points="32.00,15.00 24.39,9.47 27.30,0.53 36.70,0.53 39.61,9.47"/><polygon points="48.17,26.75 51.07,17.80 60.48,17.80 63.38,26.75 55.78,32.27"/><polygon points="41.99,45.75 51.40,45.75 54.30,54.70 46.69,60.23 39.09,54.70"/><polygon points="22.01,45.75 24.91,54.70 17.31,60.23 9.70,54.70 12.60,45.75"/><polygon points="15.83,26.75 8.22,32.27 0.62,26.75 3.52,17.80 12.93,17.80"/></g><path d="M32.00 23.50L32.00 15.00 M32.00 15.00L44.34 15.01L49.63 7.73 M40.08 29.37L48.17 26.75 M48.17 26.75L51.97 38.49L60.53 41.27 M37.00 38.88L41.99 45.75 M41.99 45.75L32.00 53.00L32.00 62.00 M27.00 38.88L22.01 45.75 M22.01 45.75L12.03 38.49L3.47 41.27 M23.92 29.37L15.83 26.75 M15.83 26.75L19.66 15.01L14.37 7.73" stroke="#39434f" stroke-width="1.1" fill="none"/></g><circle cx="32" cy="32" r="30" fill="none" stroke="#11161d" stroke-width="1.6"/></svg>`;
 function mpHeader(m){
   const soon=isUpcoming(m), live=isLive(m);
   const st = soon ? "لم تبدأ" : live ? "جارية الآن" : "انتهت";
@@ -10003,7 +10179,7 @@ function mpHeader(m){
       </div>
       ${team(m.away)}
     </div>
-    ${(hs||as)?`<div class="mp-scorers"><div class="h">${hs}</div><span class="ball">${ICO_BALL}</span><div class="a">${as}</div></div>`:""}`;
+    ${(hs||as)?`<div class="mp-scorers"><div class="h">${hs}</div><span class="ball">${MP_BALL}</span><div class="a">${as}</div></div>`:""}`;
 }
 const MP_TABS=[["details","التفاصيل"],["lineups","التشكيلة"],["squad","القائمة"],["table","الترتيب"],["matches","المباريات"]];
 function mpInfoRows(m){
@@ -10040,13 +10216,13 @@ function mpDetails(m){
                : `<div class="mp-card mp-empty">لم تُسجَّل أحداث لهذه المباراة.</div>`;
   }
   const comp=`<button type="button" class="mp-card mp-compcard" data-mp-tab="table"><span>${esc(compOf(m))} · الجولة ${m.round} · ${esc(SEASON)}</span><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg></button>`;
-  return comp + body + mpInfoRows(m) + mpMiniTable(m);
+  return comp + body + (soon?"":mpMotmHTML(m)) + mpInfoRows(m) + mpMiniTable(m);
 }
 function mpLineups(m){
   if(isUpcoming(m)) return `<div class="mp-card mp-empty">تُنشر التشكيلة بعد انطلاق المباراة.</div>`;
   const xi=matchPitchHTML(m), subs=subsHTML(m);
   if(!xi && !subs) return `<div class="mp-card mp-empty">لم تُسجَّل تشكيلة هذه المباراة بعد.</div>`;
-  return `${xi?`<div class="mp-card mp-xi">${xi}</div>`:""}${subs?`<div class="mp-card">${subs}</div>`:""}`;
+  return `${xi?`<div class="mp-card mp-xi">${xi}</div>`:""}${mpRatingsHTML(m)}${subs?`<div class="mp-card">${subs}</div>`:""}`;
 }
 /* القائمة: كشف الفريقين كما في صفحة النادي (المدرب ثم المراكز) — منفصلة عن تشكيلة المباراة */
 let MP_SQ="home";
@@ -10099,6 +10275,7 @@ function renderMatchPage(){
     <header class="mp-head">${mpHeader(m)}</header>
     <nav class="mp-tabs">${MP_TABS.map(([k,l])=>`<button type="button" data-mp-tab="${k}" aria-pressed="${MP.tab===k}">${l}</button>`).join("")}</nav>
     <div class="mp-body">${body}</div></div>`;
+  if(MP.tab==="lineups") mpDecoratePitch(box, m);
 }
 function openMatch(m, opts){
   if(typeof m==="string") m=matchByKey(m);
