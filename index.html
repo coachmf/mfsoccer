@@ -950,6 +950,21 @@ details.squadbox summary label.lb{margin:0;cursor:pointer}
 .stp button:disabled{opacity:.3;cursor:default}
 .stp .val{width:26px;text-align:center;font-family:var(--display);font-weight:700;
   font-size:1.05rem;color:#fff;font-variant-numeric:tabular-nums}
+/* بطاقات التوقعات بشعارات الأندية وبشكل بطاقات المباريات (2026-09-15) */
+.pm.pm2{display:block;padding:0;border-radius:14px;border-color:var(--line,rgba(143,166,196,.18));box-shadow:var(--shadow,none);margin-bottom:8px;overflow:hidden}
+.pm2 .pm-row{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:8px;padding:12px 12px 10px}
+.pm2 .pm-team{display:flex;flex-direction:column;align-items:center;gap:6px;min-width:0;text-align:center}
+.pm2 .pm-team .crest{width:44px;height:44px;border-radius:12px}
+.pm2 .pm-team b{font-family:var(--display);font-weight:700;font-size:.86rem;color:var(--head,#fff);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.pm2 .pm-mid{display:flex;align-items:center;gap:6px}
+.pm2 .stp.v{flex-direction:column;gap:2px;background:rgba(143,166,196,.08);border:1px solid var(--line,rgba(143,166,196,.2));border-radius:12px;padding:3px}
+.pm2 .stp.v button{width:34px;height:26px;border:0;background:transparent;color:var(--zain-text,var(--sky));font-size:1.05rem;border-radius:8px}
+.pm2 .stp.v button:hover:not(:disabled){background:rgba(143,166,196,.16)}
+.pm2 .stp.v .val{width:34px;font-size:1.35rem;line-height:1.1;color:var(--head,#fff)}
+.pm2 .dsh{font-size:1.1rem;color:var(--slate)}
+.pm2 .pm-foot{display:flex;flex-wrap:wrap;justify-content:center;gap:4px 10px;padding:6px 12px 9px;font-size:.66rem;color:var(--slate);border-top:1px solid var(--line,rgba(143,166,196,.12));background:rgba(0,0,0,.08)}
+.pm2 .pm-foot>span+span::before{content:"·";margin-inline-end:10px;opacity:.6}
+html[data-theme="light"] .pm.pm2{background:#fff} html[data-theme="light"] .pm2 .pm-foot{background:rgba(11,31,58,.03)} html[data-theme="light"] .pm2 .stp.v{background:#F7FAFD}
 .bchips{display:flex;gap:6px;margin-bottom:10px;overflow-x:auto}
 .bchips .chip{flex:none;background:none;border:1px solid rgba(143,166,196,.3);border-radius:999px;
   padding:6px 13px;font-family:var(--body);font-size:.74rem;color:var(--slate);cursor:pointer;
@@ -3823,6 +3838,7 @@ const LOCAL_PHOTOS={
   "علي علاء الدين":"assets/players/slb/93",
   /* الساحل */
   "علي جوهر":"assets/players/sah/2",
+  "فيصل عجب":"assets/players/sah/9",
   "مشعل الرشيدي":"assets/players/sah/1",
   "عمر العنزي":"assets/players/sah/4",
   "عبدالرحمن الديحاني":"assets/players/sah/5",
@@ -7688,20 +7704,26 @@ function renderPredict(){
 
       ${o.matches.map((m,i)=>{
         const k = m.home+"|"+m.away, v = picks[k] || [0,0];
-        return `<div class="pm">
-          <span class="tm">${esc(m.home)}</span>
-          <div class="stp">
-            <button data-pk="${esc(k)}" data-side="0" data-d="1" ${locked?"disabled":""}>+</button>
-            <span class="val" data-v="${esc(k)}|0">${v[0]}</span>
-            <button data-pk="${esc(k)}" data-side="0" data-d="-1" ${locked?"disabled":""}>−</button>
+        const dl=(()=>{ if(!m.date) return ""; const d=new Date(m.date+"T00:00:00"); return isNaN(d)?esc(m.date):`${AR_DOW[d.getDay()]} ${d.getDate()} ${AR_MON[d.getMonth()]}`; })();
+        return `<div class="pm pm2">
+          <div class="pm-row">
+            <div class="pm-team h">${crest(m.home)}<b>${esc(m.home)}</b></div>
+            <div class="pm-mid">
+              <div class="stp v">
+                <button data-pk="${esc(k)}" data-side="0" data-d="1" ${locked?"disabled":""} aria-label="زيادة">+</button>
+                <span class="val" data-v="${esc(k)}|0">${v[0]}</span>
+                <button data-pk="${esc(k)}" data-side="0" data-d="-1" ${locked?"disabled":""} aria-label="نقصان">−</button>
+              </div>
+              <span class="dsh">–</span>
+              <div class="stp v">
+                <button data-pk="${esc(k)}" data-side="1" data-d="1" ${locked?"disabled":""} aria-label="زيادة">+</button>
+                <span class="val" data-v="${esc(k)}|1">${v[1]}</span>
+                <button data-pk="${esc(k)}" data-side="1" data-d="-1" ${locked?"disabled":""} aria-label="نقصان">−</button>
+              </div>
+            </div>
+            <div class="pm-team a">${crest(m.away)}<b>${esc(m.away)}</b></div>
           </div>
-          <span class="dsh">−</span>
-          <div class="stp">
-            <button data-pk="${esc(k)}" data-side="1" data-d="1" ${locked?"disabled":""}>+</button>
-            <span class="val" data-v="${esc(k)}|1">${v[1]}</span>
-            <button data-pk="${esc(k)}" data-side="1" data-d="-1" ${locked?"disabled":""}>−</button>
-          </div>
-          <span class="tm a">${esc(m.away)}</span>
+          ${(dl||m.time||m.venue)?`<div class="pm-foot">${dl?`<span>${dl}</span>`:""}${m.time?`<span dir="ltr">${esc(m.time)}</span>`:""}${m.venue?`<span>${esc(m.venue)}</span>`:""}</div>`:""}
         </div>`;
       }).join("")}
 
@@ -8304,7 +8326,7 @@ const domParsed = () => new Promise(r => document.readyState!=="loading" ? r() :
     "القادسية":["#FDB913","#111111"],"الكويت":["#FFFFFF","#E31B23"],"العربي":["#007A3D","#ffffff"],
     "كاظمة":["#F68B1F","#ffffff"],"السالمية":["#3FB3E0","#ffffff"],"النصر":["#8E1B3A","#E6E6EE"],
     "الشباب":["#1F4FD1","#ffffff"],"الجهراء":["#FFFFFF","#0E3C8C"],"الفحيحيل":["#D81F26","#E9E9F0"],
-    "الساحل":["#F2D20A","#1E3F9E"],"التضامن":["#1B4FD8","#ffffff"],"الصليبخات":["#E3262B","#ffffff"]
+    "الساحل":["#F2D20A","#B89A05"],"التضامن":["#1B4FD8","#ffffff"],"الصليبخات":["#E3262B","#ffffff"]
   };
   window.CLUB_COLORS=CLUB_COLORS;
   const lum=h=>{const c=h.replace("#","");const r=parseInt(c.slice(0,2),16)/255,g=parseInt(c.slice(2,4),16)/255,b=parseInt(c.slice(4,6),16)/255;return .2126*r+.7152*g+.0722*b;};

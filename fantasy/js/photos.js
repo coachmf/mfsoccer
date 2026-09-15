@@ -37,6 +37,7 @@ const PLAYER_PHOTOS = {
   'SLB|علي علاء الدين': '/assets/players/slb/93',
   // الساحل (22)
   'SAH|علي جوهر': '/assets/players/sah/2',   // من ملصق النادي (الطقم الثاني)
+  'SAH|فيصل عجب': '/assets/players/sah/9',   // أرسل منصور هويته 2026-09-15 (IMG_3660)
   'SAH|مشعل الرشيدي': '/assets/players/sah/1',
   'SAH|عمر العنزي': '/assets/players/sah/4',
   'SAH|عبدالرحمن الديحاني': '/assets/players/sah/5',
