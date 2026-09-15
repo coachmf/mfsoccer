@@ -3067,6 +3067,10 @@ const SQUAD_ADD={
   "العربي":[{n:"وليد ولد الشيخ", p:"CAM", s:0}],
   "النصر":[{n:"مسفر العدواني", p:"ST", s:0}],
 };
+/* انتقالات قبل تعديلها من الإدارة: يُحذف اللاعب من كشف ناديه السابق ويُضاف للجديد بالرقم الجديد (مركزه يبقى). */
+const SQUAD_MOVE=[
+  {n:"بدر طارق", from:"العربي", to:"كاظمة", s:77},
+];
 function applyData(d, source){
   SEASON = d.season || SEASON;
   ALL = stampComp({matches:d.matches||[], goals:d.goals||[], pens:d.pens||[], cards:d.cards||[],
@@ -3081,6 +3085,10 @@ function applyData(d, source){
   SQUADS = d.squads || SQUADS || {};   /* ملف بلا كشوفات لا يمسح الكشوفات الحالية */
   Object.entries(SQUAD_ADD).forEach(([c,list])=>{ if(!Array.isArray(SQUADS[c])) return;
     list.forEach(x=>{ if(!SQUADS[c].some(e=>(typeof e==="string"?e:e&&e.n)===x.n)) SQUADS[c].push(Object.assign({},x)); }); });
+  SQUAD_MOVE.forEach(mv=>{ const nm=e=>typeof e==="string"?e:e&&e.n, src=SQUADS[mv.from], dst=SQUADS[mv.to];
+    if(!Array.isArray(dst) || dst.some(e=>nm(e)===mv.n)) return;
+    const i=Array.isArray(src)?src.findIndex(e=>nm(e)===mv.n):-1, old=i>=0?src.splice(i,1)[0]:{};
+    dst.push(Object.assign({p:""}, typeof old==="object"?old:{}, {n:mv.n, s:mv.s})); });
   if("fantasyOpen" in (d||{})) FANTASY_OPEN = !!d.fantasyOpen;
   if(typeof paintFantasyTab==="function") paintFantasyTab();  /* التبويب يظهر فور وصول حالة الإشهار */
   SQNUMS_FOUND = squadsExtractNums();   /* فصل الأرقام المكتوبة داخل الأسماء */
@@ -4155,6 +4163,7 @@ const LOCAL_PHOTOS={
   "بندر السلامة":"assets/players/arb/10",
   "ايوالا":"assets/players/arb/77",
   "زيد قنبر":"assets/players/arb/98",
+  "بدر طارق":"assets/players/kaz/77",
   "وليد ولد الشيخ":"assets/players/arb/walid",
   "مسفر العدواني":"assets/players/nsr/mesfer",   /* انضم للنصر 2026-09-15، مهاجم بلا رقم بعد — صورة من بطاقة ترحيب النادي */   /* انضم 2026-09-15، بلا رقم بعد — صورة من بطاقة المركز الإعلامي للنادي */
   /* كاظمة */
@@ -4357,20 +4366,6 @@ function refPool(){
 /* صور الحكام: assets/referees/<ملف>.webp (وجه مربّع). الاسم كما في REF_BOOK. */
 const REF_PHOTOS={
 /*REF_PHOTOS_START*/
-  "بيير أتشو":"01",
-  "إلفيز تاناتشيف":"02",
-  "إلغيز تانتاشيف":"02",
-  "فيردافس نورسافاروف":"04",
-  "احمد العلي":"05",
-  "عمار اشكناني":"06",
-  "عبد الله جمالي":"07",
-  "عبدالله جمالي":"07",
-  "سعود السمحان":"08",
-  "عبد الهادي العنزي":"17",
-  "طلال الشمري":"18",
-  "محمد العطار":"37",
-  "يوسف شطب":"41",
-  "هاشم الرفاعي":"42",
 /*REF_PHOTOS_END*/
 };
 function refFace(name, cls){

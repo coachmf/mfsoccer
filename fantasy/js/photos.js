@@ -260,6 +260,7 @@ const PLAYER_PHOTOS = {
   'ARB|بندر السلامة': '/assets/players/arb/10',
   'ARB|ايوالا': '/assets/players/arb/77',
   'ARB|زيد قنبر': '/assets/players/arb/98',
+  'KAZ|بدر طارق': '/assets/players/kaz/77',   // انتقل من العربي (منصور 2026-09-15)
   'ARB|وليد ولد الشيخ': '/assets/players/arb/walid',
   'NSR|مسفر العدواني': '/assets/players/nsr/mesfer',   // بطاقة ترحيب النادي، مهاجم بلا رقم بعد   // بطاقة المركز الإعلامي للنادي، بلا رقم بعد
   // كاظمة (6) — بورتريهات النادي الرسمية من حساب X
