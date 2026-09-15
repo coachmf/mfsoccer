@@ -4,7 +4,7 @@
 'use strict';
 
 /* رقم نسخة الصور: ارفعه عند إعادة توليد أي قصّة حتى لا يبقى المتصفح على النسخة القديمة */
-const PLAYER_PHOTOS_VER = '8';
+const PLAYER_PHOTOS_VER = '9';
 
 const PLAYER_PHOTOS = {
   // الصليبخات (17)
@@ -247,6 +247,18 @@ const PLAYER_PHOTOS = {
   'JAH|أحمد الشمري': '/assets/players/jah/77',
   'JAH|عبدالرحمن الظفيري': '/assets/players/jah/88',
   // العربي (1)
+  'ARB|سليمان عبدالغفور': '/assets/players/arb/22',
+  'ARB|احمد عادي': '/assets/players/arb/1',
+  'ARB|عبدالرحمن عجاج': '/assets/players/arb/35',
+  'ARB|عبدالوهاب العوضي': '/assets/players/arb/2',
+  'ARB|محمد خالد': '/assets/players/arb/4',
+  'ARB|جمعة عبود': '/assets/players/arb/5',
+  'ARB|عبدالله عمار': '/assets/players/arb/3',
+  'ARB|عزيز نصاري': '/assets/players/arb/21',
+  'ARB|علي عزيز': '/assets/players/arb/6',
+  'ARB|خالد المرشد': '/assets/players/arb/14',
+  'ARB|بندر السلامة': '/assets/players/arb/10',
+  'ARB|ايوالا': '/assets/players/arb/77',
   'ARB|زيد قنبر': '/assets/players/arb/98',
   'ARB|وليد ولد الشيخ': '/assets/players/arb/walid',
   'NSR|مسفر العدواني': '/assets/players/nsr/mesfer',   // بطاقة ترحيب النادي، مهاجم بلا رقم بعد   // بطاقة المركز الإعلامي للنادي، بلا رقم بعد
