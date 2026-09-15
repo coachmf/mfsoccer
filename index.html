@@ -167,6 +167,68 @@ tbody tr.rel{box-shadow:inset 3px 0 0 rgba(224,100,79,.7)}
 .teamcell{display:flex;align-items:center;gap:8px}
 .teamcell .pos{color:var(--slate);font-size:.72rem;width:16px;text-align:center;flex:none}
 .teamcell b{font-weight:600;white-space:nowrap}
+/* ===== الهدافون: منصّة أول ثلاثة + قائمة مرتّبة (2026-09-15) ===== */
+.ts-controls{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:0 0 12px;flex-wrap:wrap}
+.ts-toggle{display:flex;background:var(--navy-900);border:1px solid var(--line);border-radius:8px;padding:2px}
+.ts-toggle button{padding:5px 12px;font-family:var(--display);font-weight:600;font-size:.78rem;border:0;background:transparent;color:var(--slate);border-radius:6px;cursor:pointer}
+.ts-toggle button.on{background:var(--blue-bg);color:var(--head)}
+.ts-podium{display:grid;grid-template-columns:1fr 1.15fr 1fr;gap:12px;align-items:end;margin-bottom:14px}
+.ts-pod{background:var(--navy-900);border:1px solid var(--line);border-radius:14px;padding:16px 12px 14px;text-align:center;position:relative;display:flex;flex-direction:column;align-items:center;cursor:pointer;transition:transform .15s ease}
+.ts-pod:hover{transform:translateY(-2px)}
+.ts-pod:nth-child(1){order:2}.ts-pod:nth-child(2){order:1}.ts-pod:nth-child(3){order:3}
+.ts-pod.first{background:linear-gradient(180deg,var(--blue-bg),var(--navy-900))}
+.ts-pod.gold{border-color:rgba(233,185,73,.45)}
+.ts-badge{position:absolute;top:10px;right:10px;width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font-family:var(--display);font-weight:800;font-size:.85rem;font-variant-numeric:tabular-nums;background:var(--navy-800);color:var(--head);border:1px solid var(--line)}
+.ts-pod.gold .ts-badge{background:var(--sand);color:#0B1F3A;border-color:transparent}
+.ts-pod.silver .ts-badge{background:#A0B2C6;color:#0B1F3A;border-color:transparent}
+.ts-pod.bronze .ts-badge{background:#C8864B;color:#fff;border-color:transparent}
+.ts-pod-av{position:relative;width:84px;height:84px;margin:6px 0 10px}
+.ts-pod.first .ts-pod-av{width:104px;height:104px}
+.ts-pod-img{width:100%;height:100%;object-fit:contain;object-position:bottom;filter:drop-shadow(0 4px 6px rgba(0,0,0,.3))}
+.ts-pod-img.ts-crestfb{padding:14px;filter:none}
+.ts-pod-crest{position:absolute;bottom:0;left:0;width:26px;height:26px;background:#fff;border:1px solid var(--line);border-radius:50%;padding:3px;display:grid;place-items:center}
+.ts-pod-crest img{width:100%;height:100%;object-fit:contain}
+.ts-pod-info{width:100%;min-width:0}
+.ts-pod-nm{font-weight:700;font-size:.95rem;color:var(--head);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ts-pod-club{font-size:.75rem;color:var(--slate);margin:2px 0 12px}
+.ts-pod-stat{display:flex;align-items:baseline;gap:5px;background:var(--navy-800);padding:4px 12px;border-radius:8px;border:1px solid var(--line)}
+.ts-pod-stat b{font-size:1.4rem;font-weight:800;color:var(--head);font-variant-numeric:tabular-nums}
+.ts-pod.first .ts-pod-stat b{color:var(--sand);font-size:1.6rem}
+.ts-pod-stat small{font-size:.7rem;color:var(--slate)}
+.ts-list{background:var(--navy-900);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.ts-head,.ts-row{display:grid;grid-template-columns:40px 1fr 130px 64px;align-items:center;padding:10px 14px;gap:8px}
+.ts-head{background:var(--navy-800);border-bottom:1px solid var(--line);font-size:.72rem;font-weight:700;color:var(--slate);position:sticky;top:0;z-index:2}
+.ts-head span:last-child,.ts-val,.ts-head .ts-subs-h{text-align:left}
+.ts-row{position:relative;border-bottom:1px solid var(--line);cursor:pointer;transition:background .15s ease}
+.ts-row:last-child{border-bottom:0}
+.ts-row:nth-child(even){background:rgba(127,150,180,.05)}
+.ts-row:hover{background:var(--blue-bg)}
+.ts-bar{position:absolute;bottom:0;right:0;height:2px;background:var(--zain-mid);opacity:.6}
+.ts-rk{font-weight:700;font-size:.85rem;color:var(--slate);font-variant-numeric:tabular-nums}
+.ts-row.top .ts-rk{color:var(--sand)}
+.ts-pl{display:flex;align-items:center;gap:10px;min-width:0}
+.ts-av{width:38px;height:38px;border-radius:50%;background:var(--navy-800);border:1px solid var(--line);flex:none;overflow:hidden;display:grid;place-items:center}
+.ts-av img{width:100%;height:100%;object-fit:cover;object-position:top}
+.ts-av img.ts-crestfb{object-fit:contain;padding:6px;background:#fff}
+.ts-pi{display:flex;flex-direction:column;min-width:0}
+.ts-pi b{font-weight:700;font-size:.88rem;color:var(--head);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ts-pi small{font-size:.73rem;color:var(--slate)}
+.ts-subs{display:flex;gap:10px;justify-content:flex-end;font-size:.75rem;color:var(--mist);font-variant-numeric:tabular-nums}
+.ts-sub i{font-style:normal;color:var(--slate);font-size:.68rem}
+.ts-val{font-size:1.2rem;font-weight:800;color:var(--head);font-variant-numeric:tabular-nums}
+.ts-empty{padding:16px;text-align:center;color:var(--slate)}
+@media (max-width:640px){
+  .ts-podium{grid-template-columns:1fr;gap:8px}
+  .ts-pod:nth-child(n){order:0}
+  .ts-pod{flex-direction:row;justify-content:space-between;text-align:right;padding:10px 12px;gap:10px}
+  .ts-badge{position:static;flex:none}
+  .ts-pod-av,.ts-pod.first .ts-pod-av{width:52px;height:52px;margin:0;flex:none}
+  .ts-pod-info{flex:1}
+  .ts-pod-club{margin-bottom:0}
+  .ts-pod-stat{flex:none}
+  .ts-head,.ts-row{grid-template-columns:32px 1fr 54px;padding:10px 10px}
+  .ts-subs,.ts-subs-h{display:none}
+}
 .pillrow{display:flex;gap:3px;justify-content:center}
 .pl{width:19px;height:19px;border-radius:5px;display:grid;place-items:center;font-size:.62rem;font-weight:700}
 .pl.w{background:var(--win);color:#03150e}.pl.d{background:var(--draw);color:#0d1a2b}.pl.l{background:var(--loss);color:#2a0a05}
@@ -5874,24 +5936,62 @@ function votersHTML(ballots){
     <div class="card pad">${rows}</div>`;
 }
 
+/* ===== الهدافون وصنّاع الأهداف: منصّة لأول ثلاثة + قائمة مرتّبة (تصميم 2026-09-15) =====
+   الترتيب مشترك عند التساوي (1،1،1،4…)، الصورة القصّة الرسمية وإلا شعار النادي، مع المباريات والدقائق من التشكيلات. */
+let TS_MODE="g";                                     /* g = الأهداف، a = صناعة الأهداف */
+function topScorersHTML(){
+  const key=TS_MODE, label=key==="g"?"أهداف":"صناعة";
+  const PP={}; playerPlay().forEach(p=>{ PP[p.n+"|"+p.c]=p; });
+  const mins=p=>(PP[p.n+"|"+p.c]||{}).mins||0;
+  const L=scorers().filter(p=>p[key]>0)
+    .sort((a,b)=>b[key]-a[key] || (key==="g"?b.a-a.a:b.g-a.g) || mins(a)-mins(b));
+  let rk=0; L.forEach((p,i)=>{ if(i===0 || p[key]!==L[i-1][key]) rk=i+1; p.rk=rk; });
+  const max=L.length?L[0][key]:1;
+  const cut=p=>(PHOTOSON && typeof LOCAL_PHOTOS!=="undefined") ? photoCut(p.n,p.c) : null;
+  const av=(p,cls)=>{ const c=cut(p);
+    return c ? `<img class="${cls}" src="${c}_s.webp?v=6" alt="" loading="lazy" decoding="async">`
+             : (LOGOS[p.c] ? `<img class="${cls} ts-crestfb" src="${LOGOS[p.c]}" alt="" loading="lazy">` : ""); };
+  const sub=p=>{ const s=PP[p.n+"|"+p.c]; return s?`<span class="ts-sub">${s.apps} <i>مباراة</i></span><span class="ts-sub">${s.mins}′</span>`:""; };
+  const medal=r=>r===1?"gold":r===2?"silver":r===3?"bronze":"";
+  const podCard=(p,i)=>`<div class="ts-pod${i===0?" first":""} ${medal(p.rk)}" data-player="${esc(p.n)}" data-club="${esc(p.c)}" role="button" tabindex="0">
+      <span class="ts-badge">${p.rk}</span>
+      <div class="ts-pod-av">${av(p,"ts-pod-img")}${(cut(p)&&LOGOS[p.c])?`<span class="ts-pod-crest"><img src="${LOGOS[p.c]}" alt=""></span>`:""}</div>
+      <div class="ts-pod-info"><div class="ts-pod-nm">${esc(p.n)}</div><div class="ts-pod-club">${esc(p.c)}</div></div>
+      <div class="ts-pod-stat"><b>${p[key]}</b><small>${label}</small></div></div>`;
+  const podium = L.length>=3 ? `<div class="ts-podium">${L.slice(0,3).map(podCard).join("")}</div>` : "";
+  const rows=L.map(p=>`<div class="ts-row${p.rk<=3?" top":""}" data-player="${esc(p.n)}" data-club="${esc(p.c)}" role="button" tabindex="0">
+      <span class="ts-rk">${p.rk}</span>
+      <span class="ts-pl"><span class="ts-av">${av(p,"")}</span><span class="ts-pi"><b>${esc(p.n)}</b><small>${esc(p.c)}</small></span></span>
+      <span class="ts-subs">${sub(p)}</span>
+      <span class="ts-val">${p[key]}</span>
+      <i class="ts-bar" style="width:${(p[key]/max*100).toFixed(0)}%"></i></div>`).join("");
+  const cnt = L.length===1?"لاعب":L.length===2?"لاعبان":L.length<=10?"لاعبين":"لاعباً";
+  return `<div class="ts-wrap" id="tsWrap">
+    <div class="ts-controls">
+      <div class="ts-toggle"><button type="button" data-ts="g" class="${key==="g"?"on":""}">الأهداف</button><button type="button" data-ts="a" class="${key==="a"?"on":""}">صناعة الأهداف</button></div>
+      <span class="hint" style="margin:0">${L.length} ${cnt} · ${label}</span>
+    </div>
+    ${podium}
+    <div class="ts-list">
+      <div class="ts-head"><span>#</span><span>اللاعب</span><span class="ts-subs-h">مباريات · دقائق</span><span>${label}</span></div>
+      ${rows || `<div class="ts-empty">—</div>`}
+    </div></div>`;
+}
+function wireTS(box){
+  box.querySelectorAll("[data-ts]").forEach(b=>b.onclick=()=>{
+    TS_MODE=b.dataset.ts;
+    const w=box.querySelector("#tsWrap"); if(!w) return;
+    w.outerHTML=topScorersHTML(); wireTS(box);
+  });
+}
 function renderPlayers(){
-  const S=scorers();
-  const A=[...S].filter(p=>p.a>0).sort((a,b)=>b.a-a.a);
-  const row = (p,val,i) => `<tr><td><div class="teamcell" data-player="${esc(p.n)}" data-club="${esc(p.c)}"><span class="pos">${i+1}</span>${pav(p.n,0,false,p.c)}${crest(p.c)}<b>${esc(p.n)}</b></div></td>
-    <td style="color:var(--slate)">${esc(p.c)}</td><td style="color:var(--head);font-weight:700">${val}</td></tr>`;
   const disc={}; CARDS.forEach(x=>{ const k=x.p+"|"+x.club; (disc[k]??={n:x.p,c:x.club,y:0,r:0});
     if(isYellow(x.type)) disc[k].y++; if(isRed(x.type)) disc[k].r++; });
   const DL=Object.values(disc).sort((a,b)=>b.r-a.r||b.y-a.y);
   $("#v-players").innerHTML=`
     ${compChips()}
     <h2 class="sec">الهدافون</h2>
-    <div class="card"><div class="twrap"><table style="min-width:380px">
-      <thead><tr><th>اللاعب</th><th>النادي</th><th>أهداف</th></tr></thead>
-      <tbody>${S.filter(p=>p.g>0).map((p,i)=>row(p,p.g,i)).join("")}</tbody></table></div></div>
-    <h2 class="sec">صنّاع الأهداف</h2>
-    <div class="card"><div class="twrap"><table style="min-width:380px">
-      <thead><tr><th>اللاعب</th><th>النادي</th><th>صناعة</th></tr></thead>
-      <tbody>${A.length?A.map((p,i)=>row(p,p.a,i)).join(""):'<tr><td colspan="3" style="text-align:center;color:var(--slate)">—</td></tr>'}</tbody></table></div></div>
+    ${topScorersHTML()}
     ${(()=>{ const PP=playerPlay();
       const byMin=[...PP].sort((a,b)=>b.mins-a.mins);
       const byCS=PP.filter(p=>p.cs>0).sort((a,b)=>b.cs-a.cs||b.mins-a.mins);
@@ -5929,6 +6029,7 @@ function renderPlayers(){
       <span><span data-player="${esc(p.p)}" data-club="${esc(p.by)}">${esc(p.p)}</span> <span style="color:var(--slate);font-size:.75rem">· ${esc(p.by)} ضد ${esc(p.vs)}</span></span>
       <span class="v">${p.m}' ${esc(p.res)}${p.place?` · ${esc(p.place)}`:""}</span></div>`).join(""):'<span style="color:var(--slate)">—</span>'}</div>`;
   wireComp($("#v-players"));
+  wireTS($("#v-players"));
 }
 
 function renderAnalysis(){
