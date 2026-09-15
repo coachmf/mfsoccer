@@ -2215,8 +2215,8 @@ function subsHTML(m){
       <span class="gmin">${absMinute(s.h,s.m)}'</span>
       ${crest(s.club)}
       <span class="subpair">
-        ${s.in ? `<span class="subin"><i class="arw up"></i>${esc(s.in)}</span>` : ""}
-        ${s.out? `<span class="subout"><i class="arw dn"></i>${esc(s.out)}</span>` : ""}
+        ${s.in ? `<span class="subin" data-player="${esc(s.in)}" data-club="${esc(s.club)}"><i class="arw up"></i>${esc(s.in)}</span>` : ""}
+        ${s.out? `<span class="subout" data-player="${esc(s.out)}" data-club="${esc(s.club)}"><i class="arw dn"></i>${esc(s.out)}</span>` : ""}
       </span></div>`).join("")}
   </div>`;
 }
@@ -4209,7 +4209,7 @@ function spotHTML(p, x, y, n, kit, ev, compact){
   const cut = (typeof LOCAL_PHOTOS!=="undefined") ? LOCAL_PHOTOS[p.n] : null;
   const num = p.s||"–";
   const k = (String(p.p||"").toUpperCase()==="GK" && kit.club) ? (gkKitOf(kit.club, p.s)||kit) : kit;
-  return `<div class="pp-spot${compact?" cmp":""}" style="right:${x}%;top:${y}%;max-width:${(compact?90/(n+1):96/(n+1)).toFixed(1)}%">
+  return `<div class="pp-spot${compact?" cmp":""}" data-player="${esc(p.n)}" data-club="${esc(kit.club||"")}" style="right:${x}%;top:${y}%;max-width:${(compact?90/(n+1):96/(n+1)).toFixed(1)}%">
     <span class="pp-card${cut?"":" nophoto"}" style="${dotVars(k)}">
       ${cut?`<img class="pp-img" src="${cut}_f.webp?v=5" alt="" loading="lazy" draggable="false">`:""}
       <span class="pp-num">${num}</span>
@@ -5214,8 +5214,8 @@ function renderMatches(){
         const sb=e.sb;
         const sbody=`<div class="tl-ev sub${isH?" h":" a"}">
           <div class="tl-card">
-            ${sb.out?`<div class="tl-sub-out"><i></i>${esc(sb.out)}</div>`:""}
-            ${sb.in?`<div class="tl-sub-in"><i></i>${esc(sb.in)}</div>`:""}
+            ${sb.out?`<div class="tl-sub-out" data-player="${esc(sb.out)}" data-club="${esc(sb.club)}"><i></i>${esc(sb.out)}</div>`:""}
+            ${sb.in?`<div class="tl-sub-in" data-player="${esc(sb.in)}" data-club="${esc(sb.club)}"><i></i>${esc(sb.in)}</div>`:""}
           </div>
         </div>`;
         rows.push(`<div class="tl-row sub${isH?" home":" away"}">
@@ -5229,7 +5229,7 @@ function renderMatches(){
         const c=e.c, red=isRed(c.type);
         const cbody=`<div class="tl-ev card${isH?" h":" a"}">
           <div class="tl-card">
-            <div class="tl-name"><i class="cardpill ${red?"r":"y"}"></i>${esc(c.p)}</div>
+            <div class="tl-name" data-player="${esc(c.p)}" data-club="${esc(c.club)}"><i class="cardpill ${red?"r":"y"}"></i>${esc(c.p)}</div>
             <div class="tl-sub">${red?"طرد":"إنذار"}</div>
           </div></div>`;
         rows.push(`<div class="tl-row card${isH?" home":" away"}">
@@ -5244,8 +5244,8 @@ function renderMatches(){
       const og = g.bp==="هدف عكسي";
       const body=`<div class="tl-ev${isH?" h":" a"}">
           <div class="tl-card">
-            <div class="tl-name">${ICO_BALL}${esc(g.p)}${og?`<i class="tl-og">هدف عكسي</i>`:""}</div>
-            ${g.a?`<div class="tl-assist">${ICO_BOOT}${esc(g.a)}</div>`:""}
+            <div class="tl-name" data-player="${esc(g.p)}" data-club="${og?esc(g.cd||""):esc(g.sc)}">${ICO_BALL}${esc(g.p)}${og?`<i class="tl-og">هدف عكسي</i>`:""}</div>
+            ${g.a?`<div class="tl-assist" data-player="${esc(g.a)}" data-club="${esc(g.sc)}">${ICO_BOOT}${esc(g.a)}</div>`:""}
             ${g.det?`<div class="tl-det">${esc(g.det)}</div>`:""}
           </div>
           <div class="tl-score" dir="ltr">${isH?`<b>${h}</b> - ${a}`:`${h} - <b>${a}</b>`}</div>
@@ -5266,7 +5266,7 @@ function renderMatches(){
     const rows=[...mc].sort((a,b)=>(+a.m||0)-(+b.m||0)).map(c=>`<div class="cd-row">
       <span class="cd-min">${(+c.m||0)}'</span>
       ${crest(c.club)}
-      <span class="cd-name">${esc(c.p)}</span>
+      <span class="cd-name" data-player="${esc(c.p)}" data-club="${esc(c.club)}">${esc(c.p)}</span>
       <i class="cardpill ${isRed(c.type)?"r":"y"}"></i>
     </div>`).join("");
     return `<div class="cd-wrap"><div class="cd-hd">الإنذارات وحالات الطرد</div>${rows}</div>`;
@@ -5352,6 +5352,15 @@ function renderClubBody(c){
   const played=r.P;
   $("#clubBody").innerHTML=`
   ${exportBar("club",c,"بطاقة "+c)}
+  <div class="clubwrap" style="${accentVars(c)}">
+  <div class="ctabs" role="tablist" aria-label="أقسام النادي">
+    <span class="ctab-ind" aria-hidden="true"></span>
+    <button type="button" role="tab" data-ct="about">نبذة عن الفريق</button>
+    <button type="button" role="tab" data-ct="stats">الإحصائيات</button>
+    <button type="button" role="tab" data-ct="squad">قائمة الفريق</button>
+  </div>
+  <div class="ctab-panel" data-cp="about">${clubAboutHTML(c, r, played)}</div>
+  <div class="ctab-panel" data-cp="stats">
   <div class="card pad" style="display:flex;align-items:center;gap:14px">
     ${crest(c,true)}
     <div style="flex:1;min-width:0">
@@ -5377,7 +5386,7 @@ function renderClubBody(c){
       <div class="stat"><span>أهداف الرأس</span><span class="v">${s.head}</span></div>
       <div class="stat"><span>أهداف بعد الدقيقة 76</span><span class="v">${s.late}</span></div>
       <div class="stat"><span>سجّل الهدف الأول في</span><span class="v">${mw(s.scoredFirst.length)}</span></div>
-      <div class="stat"><span>الهدّاف</span><span class="v" style="display:flex;align-items:center;gap:8px">${s.top?`${pav(s.top.n)} ${esc(s.top.n)} (${s.top.g})`:"—"}</span></div>
+      <div class="stat"><span>الهدّاف</span><span class="v" style="display:flex;align-items:center;gap:8px">${s.top?`<span class="plk" data-player="${esc(s.top.n)}" data-club="${esc(c)}">${pav(s.top.n)} ${esc(s.top.n)}</span> (${s.top.g})`:"—"}</span></div>
     </div>
   </div>
 
@@ -5398,7 +5407,7 @@ function renderClubBody(c){
     if(!pp.length) return `<p class="hint">لم تُرصد تشكيلات لهذا النادي بعد.</p>`;
     return `<div class="card"><div class="twrap"><table style="min-width:420px">
       <thead><tr><th>اللاعب</th><th>الدقائق</th><th>مباريات</th><th>شباك نظيفة</th></tr></thead>
-      <tbody>${pp.map(p=>`<tr><td><div class="teamcell">${pav(p.n)}<b>${esc(p.n)}</b></div></td>
+      <tbody>${pp.map(p=>`<tr><td><div class="teamcell" data-player="${esc(p.n)}" data-club="${esc(c)}">${pav(p.n)}<b>${esc(p.n)}</b></div></td>
         <td style="color:var(--head);font-weight:700;font-variant-numeric:tabular-nums">${p.mins}′</td>
         <td style="color:var(--slate)">${p.apps}</td>
         <td style="color:${p.cs?'var(--win)':'var(--slate)'};font-weight:${p.cs?'700':'400'}">${p.cs||"—"}</td></tr>`).join("")}
@@ -5426,10 +5435,14 @@ function renderClubBody(c){
   <h2 class="sec">أهداف النادي</h2>
   <div class="card pad">${s.gf.length?s.gf.map(g=>`<div class="gline" style="padding:6px 0;border-bottom:1px dashed rgba(143,166,196,.14)">
       <span class="gmin">${minLabel(g)}</span>
-      <span style="flex:1">${esc(g.p)}${ogLabel(g)} <span style="color:var(--slate);font-size:.72rem">ضد ${esc(g.cd)}</span></span>
-      <span class="gtag">${esc(g.zone)}</span></div>`).join(""):'<span style="color:var(--slate)">لا توجد أهداف مسجّلة بعد.</span>'}</div>`;
+      <span style="flex:1"><span data-player="${esc(g.p)}" data-club="${g.bp==="هدف عكسي"?esc(g.cd):esc(c)}">${esc(g.p)}</span>${ogLabel(g)} <span style="color:var(--slate);font-size:.72rem">ضد ${esc(g.cd)}</span></span>
+      <span class="gtag">${esc(g.zone)}</span></div>`).join(""):'<span style="color:var(--slate)">لا توجد أهداف مسجّلة بعد.</span>'}</div>
+  </div>
+  <div class="ctab-panel" data-cp="squad">${clubSquadHTML(c)}</div>
+  </div>`;
   renderClubXI(c);
   renderClubHeat(c);
+  wireClubTabs();
 }
 
 /* تشكيلة النادي في جولة يختارها القارئ — تُصدَّر مع بطاقة النادي في التقرير */
@@ -5479,11 +5492,11 @@ function clubXIExtras(m, c){
   return `<div class="xi-x">
     ${ss.length?`<div class="xi-col"><div class="xi-ct">التبديلات</div>
       ${ss.map(s=>`<div class="xi-r"><span class="xi-m">${absMinute(s.h,s.m)}'</span>
-        <span class="xi-io">${s.in?`<i class="ar in"></i>${esc(s.in)}`:""}${s.out?`<i class="ar out"></i>${esc(s.out)}`:""}</span>
+        <span class="xi-io">${s.in?`<span data-player="${esc(s.in)}" data-club="${esc(c)}"><i class="ar in"></i>${esc(s.in)}</span>`:""}${s.out?`<span data-player="${esc(s.out)}" data-club="${esc(c)}"><i class="ar out"></i>${esc(s.out)}</span>`:""}</span>
       </div>`).join("")}</div>`:""}
     ${cd.length?`<div class="xi-col"><div class="xi-ct">الإنذارات</div>
       ${cd.map(x=>`<div class="xi-r"><span class="xi-m">${(+x.m||0)}'</span>
-        <span class="xi-io">${esc(x.p)}</span><i class="cardpill ${isRed(x.type)?"r":"y"}"></i>
+        <span class="xi-io" data-player="${esc(x.p)}" data-club="${esc(c)}">${esc(x.p)}</span><i class="cardpill ${isRed(x.type)?"r":"y"}"></i>
       </div>`).join("")}</div>`:""}
   </div>`;
 }
@@ -5540,7 +5553,7 @@ function officialXIHTML(row, round, comp, n){
   const g=(roundGoals(round,comp).find(x=>x.id===row.goal))||null;
   const card=(t,p,v)=>p?`<div class="fx-card">
       <div class="fx-t">${t}</div>
-      <div class="fx-p">${pav(p.n)}${crest(p.club)}<b>${esc(p.n)}</b></div>
+      <div class="fx-p" data-player="${esc(p.n)}" data-club="${esc(p.club)}">${pav(p.n)}${crest(p.club)}<b>${esc(p.n)}</b></div>
       <div class="fx-v">${esc(p.club)}${v?` · ${nVotes(v)}`:""}</div></div>`:"";
   return `<div class="card pad">
     <div class="fx-hd"><span class="fx-badge">معتمدة</span>
@@ -5550,7 +5563,7 @@ function officialXIHTML(row, round, comp, n){
       ${card("أفضل لاعب", row.best, row.bestV)}
       ${card("أفضل حارس", row.gk,   row.gkV)}
       ${g?`<div class="fx-card"><div class="fx-t">هدف الجولة</div>
-        <div class="fx-p">${pav(g.p)}${crest(g.club)}<b>${esc(g.p)}</b></div>
+        <div class="fx-p" data-player="${esc(g.p)}" data-club="${esc(g.club)}">${pav(g.p)}${crest(g.club)}<b>${esc(g.p)}</b></div>
         <div class="fx-v">${g.m}' · ${esc(g.club)}${row.goalV?` · ${nVotes(row.goalV)}`:""}</div></div>`:""}
     </div></div>`;
 }
@@ -5560,7 +5573,7 @@ function liveTallyHTML(ballots, round, comp){
   const built=buildFansXI(tal, round, comp);
   const g=roundGoals(round,comp).find(x=>tal.topGoal && x.id===tal.topGoal.id);
   const card=(t,p)=>p?`<div class="fx-card"><div class="fx-t">${t}</div>
-      <div class="fx-p">${pav(p.n)}${crest(p.club)}<b>${esc(p.n)}</b></div>
+      <div class="fx-p" data-player="${esc(p.n)}" data-club="${esc(p.club)}">${pav(p.n)}${crest(p.club)}<b>${esc(p.n)}</b></div>
       <div class="fx-v">${esc(p.club)} · ${nVotes(p.v)}</div></div>`:"";
   return `<div class="card pad">
     <div class="fx-hd"><span class="fx-badge live">الفرز حتى الآن</span>
@@ -5570,7 +5583,7 @@ function liveTallyHTML(ballots, round, comp){
       ${card("أفضل لاعب", tal.topBest)}
       ${card("أفضل حارس", tal.topGk)}
       ${g?`<div class="fx-card"><div class="fx-t">هدف الجولة</div>
-        <div class="fx-p">${pav(g.p)}${crest(g.club)}<b>${esc(g.p)}</b></div>
+        <div class="fx-p" data-player="${esc(g.p)}" data-club="${esc(g.club)}">${pav(g.p)}${crest(g.club)}<b>${esc(g.p)}</b></div>
         <div class="fx-v">${g.m}' · ${esc(g.club)} · ${nVotes(tal.topGoal.v)}</div></div>`:""}
     </div></div>`;
 }
@@ -5738,7 +5751,7 @@ function votersHTML(ballots){
 function renderPlayers(){
   const S=scorers();
   const A=[...S].filter(p=>p.a>0).sort((a,b)=>b.a-a.a);
-  const row = (p,val,i) => `<tr><td><div class="teamcell"><span class="pos">${i+1}</span>${pav(p.n)}${crest(p.c)}<b>${esc(p.n)}</b></div></td>
+  const row = (p,val,i) => `<tr><td><div class="teamcell" data-player="${esc(p.n)}" data-club="${esc(p.c)}"><span class="pos">${i+1}</span>${pav(p.n)}${crest(p.c)}<b>${esc(p.n)}</b></div></td>
     <td style="color:var(--slate)">${esc(p.c)}</td><td style="color:var(--head);font-weight:700">${val}</td></tr>`;
   const disc={}; CARDS.forEach(x=>{ const k=x.p+"|"+x.club; (disc[k]??={n:x.p,c:x.club,y:0,r:0});
     if(isYellow(x.type)) disc[k].y++; if(isRed(x.type)) disc[k].r++; });
@@ -5760,7 +5773,7 @@ function renderPlayers(){
         <p class="hint">حرّاس المرمى الذين لعبوا 60 دقيقة فأكثر في مباريات لم يستقبل فيها فريقهم هدفاً.</p>
         <div class="card"><div class="twrap"><table style="min-width:420px">
           <thead><tr><th>اللاعب</th><th>النادي</th><th>شباك نظيفة</th><th>مباريات</th></tr></thead>
-          <tbody>${byCS.map((p,i)=>`<tr><td><div class="teamcell"><span class="pos">${i+1}</span>${pav(p.n)}${crest(p.c)}<b>${esc(p.n)}</b></div></td>
+          <tbody>${byCS.map((p,i)=>`<tr><td><div class="teamcell" data-player="${esc(p.n)}" data-club="${esc(p.c)}"><span class="pos">${i+1}</span>${pav(p.n)}${crest(p.c)}<b>${esc(p.n)}</b></div></td>
             <td style="color:var(--slate)">${esc(p.c)}</td>
             <td style="color:var(--win);font-weight:700">${p.cs}</td>
             <td style="color:var(--slate)">${p.apps}</td></tr>`).join("")}</tbody></table></div></div>`:'';
@@ -5768,7 +5781,7 @@ function renderPlayers(){
         <p class="hint">إجمالي دقائق كل لاعب من التشكيلات والتبديلات. اضغط رأس المباريات للترتيب الذهني.</p>
         <div class="card"><div class="twrap"><table style="min-width:440px">
           <thead><tr><th>اللاعب</th><th>النادي</th><th>الدقائق</th><th>مباريات</th><th>شباك نظيفة</th></tr></thead>
-          <tbody>${byMin.map((p,i)=>`<tr><td><div class="teamcell"><span class="pos">${i+1}</span>${pav(p.n)}${crest(p.c)}<b>${esc(p.n)}</b></div></td>
+          <tbody>${byMin.map((p,i)=>`<tr><td><div class="teamcell" data-player="${esc(p.n)}" data-club="${esc(p.c)}"><span class="pos">${i+1}</span>${pav(p.n)}${crest(p.c)}<b>${esc(p.n)}</b></div></td>
             <td style="color:var(--slate)">${esc(p.c)}</td>
             <td style="color:var(--head);font-weight:700;font-variant-numeric:tabular-nums">${p.mins}′</td>
             <td style="color:var(--slate)">${p.apps}</td>
@@ -5779,7 +5792,7 @@ function renderPlayers(){
     <h2 class="sec">الانضباط</h2>
     ${DL.length?`<div class="card"><div class="twrap"><table style="min-width:380px">
       <thead><tr><th>اللاعب</th><th>النادي</th><th>إنذار</th><th>طرد</th></tr></thead>
-      <tbody>${DL.map((p,i)=>`<tr><td><div class="teamcell"><span class="pos">${i+1}</span>${pav(p.n)}${crest(p.c)}<b>${esc(p.n)}</b></div></td>
+      <tbody>${DL.map((p,i)=>`<tr><td><div class="teamcell" data-player="${esc(p.n)}" data-club="${esc(p.c)}"><span class="pos">${i+1}</span>${pav(p.n)}${crest(p.c)}<b>${esc(p.n)}</b></div></td>
         <td style="color:var(--slate)">${esc(p.c)}</td>
         <td style="color:var(--sand);font-weight:700">${p.y}</td>
         <td style="color:var(--loss);font-weight:700">${p.r}</td></tr>`).join("")}</tbody></table></div></div>`
@@ -5787,7 +5800,7 @@ function renderPlayers(){
 
     <h2 class="sec">ركلات الجزاء</h2>
     <div class="card pad">${PENS.length?PENS.map(p=>`<div class="stat">
-      <span>${esc(p.p)} <span style="color:var(--slate);font-size:.75rem">· ${esc(p.by)} ضد ${esc(p.vs)}</span></span>
+      <span><span data-player="${esc(p.p)}" data-club="${esc(p.by)}">${esc(p.p)}</span> <span style="color:var(--slate);font-size:.75rem">· ${esc(p.by)} ضد ${esc(p.vs)}</span></span>
       <span class="v">${p.m}' ${esc(p.res)}${p.place?` · ${esc(p.place)}`:""}</span></div>`).join(""):'<span style="color:var(--slate)">—</span>'}</div>`;
   wireComp($("#v-players"));
 }
@@ -7832,5 +7845,371 @@ const domReady = () => new Promise(r => document.readyState!=="loading" ? r() : 
   }
 })();
 </script>
+<style>/* ===== صفحة النادي: تبويبات + نبذة + قائمة الفريق، وملف اللاعب العام (2026-09-15) ===== */
+.clubwrap{--ca:#1878BE;--cb:#0B1F3A;--ca-rgb:24,120,190;--ctab-fg:#fff}
+.ctabs{position:relative;display:grid;grid-template-columns:repeat(3,1fr);margin:14px 0;padding:4px;border-radius:14px;
+  background:rgba(143,166,196,.10);border:1px solid rgba(143,166,196,.18);overflow:hidden;isolation:isolate}
+.ctabs button{position:relative;z-index:1;background:none;border:0;padding:11px 4px;font-family:var(--display);font-weight:600;
+  font-size:clamp(.72rem,3.3vw,.86rem);color:var(--slate);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border-radius:10px;
+  cursor:pointer;transition:color .22s;min-width:0}
+.ctabs button[aria-selected="true"]{color:var(--ctab-fg);font-weight:700}
+.ctabs .ctab-ind{position:absolute;top:4px;bottom:4px;right:4px;width:calc((100% - 8px)/3);border-radius:10px;
+  background:linear-gradient(135deg,var(--ca),var(--cb));box-shadow:0 4px 14px rgba(var(--ca-rgb),.35);
+  transition:transform .32s cubic-bezier(.2,.8,.2,1)}
+.ctab-panel{display:none;animation:fade .22s ease}
+.ctab-panel.on{display:block}
+@media print{.ctab-panel{display:block!important}.ctabs{display:none}}
+/* --- نبذة عن الفريق --- */
+.cabout{position:relative;overflow:hidden;border-radius:18px;border:1px solid rgba(var(--ca-rgb),.45);
+  background:linear-gradient(165deg,rgba(var(--ca-rgb),.30) 0%,var(--navy-900) 46%,var(--navy-900) 100%);box-shadow:0 10px 30px rgba(0,0,0,.18)}
+.cabout .wm{position:absolute;left:-10%;bottom:-12%;width:min(64%,360px);aspect-ratio:1;opacity:.07;pointer-events:none;
+  background:center/contain no-repeat;filter:grayscale(1)}
+[data-theme="light"] .cabout .wm{opacity:.06}
+.cabout-hero{position:relative;height:clamp(150px,40vw,270px);background:#0B1F3A center 42%/cover no-repeat}
+.cabout-hero::after{content:"";position:absolute;inset:0;background:linear-gradient(to top,var(--navy-900) 4%,rgba(var(--ca-rgb),.25) 60%,rgba(0,0,0,.05) 100%)}
+.cabout-hero .st-cap{position:absolute;right:14px;top:12px;padding:5px 10px;border-radius:999px;background:rgba(6,21,41,.55);color:#fff;
+  font-size:.7rem;backdrop-filter:blur(6px);border:1px solid rgba(255,255,255,.18)}
+.cabout-head{position:relative;display:flex;align-items:flex-end;gap:14px;padding:0 18px;margin-top:-44px}
+.cabout-head .crest.lg{width:88px;height:88px;border-radius:20px;background:#fff!important;box-shadow:0 8px 24px rgba(0,0,0,.35),0 0 0 3px rgba(var(--ca-rgb),.7)}
+.cabout-head .crest.lg img{width:100%;height:100%;object-fit:contain;padding:6px}
+.cabout-ttl{flex:1;min-width:0;padding-bottom:6px}
+.cabout-ttl h3{margin:0;font-family:var(--display);font-weight:800;font-size:clamp(1.3rem,5.5vw,1.7rem);color:var(--head,#fff);line-height:1.15}
+.cabout-ttl .sub{font-size:.78rem;color:var(--slate);margin-top:4px}
+.cabout-ttl .sub b{color:var(--ca);font-weight:700}
+.cabout-facts{position:relative;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;padding:16px 18px 6px}
+@media(min-width:720px){.cabout-facts{grid-template-columns:repeat(4,minmax(0,1fr))}}
+.cfact{padding:10px 12px;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid rgba(143,166,196,.16);
+  border-inline-start:3px solid var(--ca);min-width:0}
+[data-theme="light"] .cfact{background:#fff;border-color:var(--line);border-inline-start-color:var(--ca)}
+.cfact small{display:block;font-size:.66rem;color:var(--slate);margin-bottom:4px;letter-spacing:.01em}
+.cfact b{display:block;font-family:var(--display);font-weight:700;font-size:.92rem;line-height:1.35;color:var(--head,#fff);overflow-wrap:anywhere}
+.cfact .sw{display:inline-flex;gap:5px;vertical-align:middle;margin-inline-end:6px}
+.cfact .sw i{width:15px;height:15px;border-radius:50%;box-shadow:inset 0 0 0 1px rgba(0,0,0,.25),0 0 0 1px rgba(255,255,255,.35);display:inline-block}
+.cabout-desc{position:relative;padding:8px 18px 18px;font-size:.86rem;line-height:1.8;color:var(--mist)}
+/* --- قائمة الفريق --- */
+h2.sec.sq-grp{margin-top:18px}
+.sq-n{font-size:.7rem;font-weight:600;color:var(--slate);background:rgba(143,166,196,.14);padding:2px 8px;border-radius:999px}
+.sq-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+@media(min-width:640px){.sq-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(min-width:960px){.sq-grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}}
+@media(min-width:1180px){.sq-grid{grid-template-columns:repeat(5,minmax(0,1fr))}}
+.pcard{position:relative;overflow:hidden;border-radius:14px;border:1px solid rgba(var(--ca-rgb),.45);text-align:center;padding:0 0 10px;
+  background:linear-gradient(180deg,rgba(var(--ca-rgb),.18) 0%,rgba(255,255,255,.03) 58%,rgba(0,0,0,.14) 100%),var(--navy-900);
+  cursor:pointer;-webkit-tap-highlight-color:transparent;user-select:none;
+  transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease}
+[data-theme="light"] .pcard{background:linear-gradient(180deg,rgba(var(--ca-rgb),.14) 0%,#fff 62%),#fff;box-shadow:var(--shadow)}
+.pcard:hover{transform:translateY(-3px);box-shadow:0 12px 26px rgba(0,0,0,.30);border-color:rgba(var(--ca-rgb),.95)}
+.pcard:active{transform:scale(.97);transition-duration:.08s}
+.pcard .ph{position:relative;height:clamp(118px,34vw,168px);display:flex;align-items:flex-end;justify-content:center;overflow:hidden}
+.pcard .ph::before{content:"";position:absolute;inset:auto 0 0;height:55%;background:radial-gradient(60% 70% at 50% 100%,rgba(var(--ca-rgb),.30),transparent 70%)}
+.pcard .ph img{position:relative;height:100%;width:auto;max-width:100%;object-fit:contain;object-position:bottom center;
+  filter:drop-shadow(0 6px 8px rgba(0,0,0,.38));pointer-events:none}
+.pcard .ph img.noph{height:52%;opacity:.16;filter:grayscale(1);margin-bottom:18%}
+.pcard .no{position:absolute;top:8px;right:8px;min-width:26px;height:26px;padding:0 7px;border-radius:8px;
+  background:linear-gradient(135deg,var(--ca),var(--cb));color:var(--ctab-fg);font-family:var(--display);font-weight:800;font-size:.8rem;
+  display:grid;place-items:center;box-shadow:0 3px 8px rgba(0,0,0,.35);font-variant-numeric:tabular-nums}
+.pcard .nm{font-family:var(--display);font-weight:700;font-size:.85rem;color:var(--head,#fff);padding:8px 8px 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pcard .ps{font-size:.68rem;color:var(--slate);margin-top:2px}
+/* --- عناصر اللاعب القابلة للنقر في كل الموقع --- */
+[data-player]{cursor:pointer}
+.teamcell[data-player]:hover b,.tl-name[data-player]:hover,.tl-assist[data-player]:hover,.fx-p[data-player]:hover b,.plk:hover{text-decoration:underline;text-decoration-color:rgba(143,166,196,.6);text-underline-offset:3px}
+/* --- ملف اللاعب --- */
+html.pp-open,html.pp-open body{overflow:hidden}
+.pprof{position:fixed;inset:0;z-index:90;display:none;align-items:flex-end;justify-content:center;background:rgba(3,10,22,.72);
+  backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);--ca:#1878BE;--cb:#0B1F3A;--ca-rgb:24,120,190;--ctab-fg:#fff}
+.pprof.on{display:flex;animation:fade .2s ease}
+.pprof-sheet{position:relative;width:100%;max-width:600px;max-height:92dvh;overflow:auto;overscroll-behavior:contain;
+  border-radius:22px 22px 0 0;background:var(--navy-900);border:1px solid rgba(var(--ca-rgb),.45);border-bottom:0;
+  box-shadow:0 -12px 40px rgba(0,0,0,.5);animation:ppup .34s cubic-bezier(.2,.8,.2,1);-webkit-overflow-scrolling:touch}
+@keyframes ppup{from{transform:translateY(40px);opacity:.4}to{transform:none;opacity:1}}
+@media(min-width:720px){.pprof{align-items:center;padding:24px}.pprof-sheet{border-radius:22px;border-bottom:1px solid rgba(var(--ca-rgb),.45);max-height:88vh}}
+.pprof-hero{position:relative;overflow:hidden;min-height:262px;display:grid;grid-template-columns:minmax(0,1fr) 40%;align-items:end;
+  background:radial-gradient(120% 90% at 100% 0%,rgba(var(--ca-rgb),.62) 0%,rgba(var(--ca-rgb),.18) 45%,transparent 70%),
+             linear-gradient(180deg,rgba(var(--ca-rgb),.12),var(--navy-900) 85%)}
+.pprof-hero .wm{position:absolute;left:34%;top:-8%;width:62%;aspect-ratio:1;opacity:.07;background:center/contain no-repeat;filter:grayscale(1);pointer-events:none}
+.pprof-hero .ph{position:relative;z-index:1;grid-column:2;grid-row:1;height:236px;display:flex;align-items:flex-end;justify-content:center;pointer-events:none;padding:0 4px}
+.pprof-hero .ph img{height:100%;width:auto;max-width:100%;object-fit:contain;object-position:bottom center;filter:drop-shadow(0 10px 16px rgba(0,0,0,.45))}
+.pprof-hero .ph img.noph{height:46%;opacity:.14;filter:grayscale(1);margin-bottom:22%}
+.pprof-id{position:relative;z-index:1;grid-column:1;grid-row:1;min-width:0;padding:22px 18px 16px 4px;min-height:262px;display:flex;flex-direction:column;justify-content:flex-end;gap:6px}
+.pprof-id .club{display:flex;align-items:center;gap:8px;font-size:.8rem;color:var(--mist);font-weight:600;cursor:pointer}
+.pprof-id .club .crest{width:26px;height:26px;border-radius:7px}
+.pprof-id h3{margin:0;font-family:var(--display);font-weight:800;font-size:clamp(1.3rem,5.4vw,1.75rem);line-height:1.15;color:var(--head,#fff);overflow-wrap:anywhere}
+.pprof-id .meta{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
+.pprof-id .meta span{font-size:.72rem;padding:4px 9px;border-radius:999px;background:rgba(255,255,255,.07);border:1px solid rgba(143,166,196,.22);color:var(--mist)}
+[data-theme="light"] .pprof-id .meta span{background:#fff;border-color:var(--line2);color:var(--head)}
+.pprof-id .meta span.num{background:linear-gradient(135deg,var(--ca),var(--cb));color:var(--ctab-fg);border-color:transparent;font-family:var(--display);font-weight:800;font-size:.8rem}
+.pprof-close{position:absolute;top:10px;left:10px;z-index:2;width:34px;height:34px;border-radius:50%;border:1px solid rgba(255,255,255,.2);
+  background:rgba(6,21,41,.55);color:#fff;font-size:1.1rem;display:grid;place-items:center;cursor:pointer;backdrop-filter:blur(6px)}
+.pprof-grab{position:absolute;top:8px;left:50%;transform:translateX(-50%);width:40px;height:4px;border-radius:9px;background:rgba(255,255,255,.35);z-index:2}
+@media(min-width:720px){.pprof-grab{display:none}}
+.pprof-comp{padding:0 18px;font-size:.7rem;color:var(--slate);display:flex;align-items:center;gap:8px}
+.pprof-comp::after{content:"";flex:1;height:1px;background:rgba(143,166,196,.18)}
+.pprof-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;padding:12px 16px 6px}
+.pstat{border-radius:14px;padding:12px 6px 10px;text-align:center;background:rgba(255,255,255,.04);border:1px solid rgba(143,166,196,.16);border-top:3px solid var(--ca)}
+[data-theme="light"] .pstat{background:#fff;border-color:var(--line);border-top-color:var(--ca);box-shadow:var(--shadow)}
+.pstat b{display:block;font-family:var(--display);font-weight:800;font-size:1.45rem;line-height:1.1;color:var(--head,#fff);font-variant-numeric:tabular-nums}
+.pstat small{display:block;font-size:.66rem;color:var(--slate);margin-top:4px}
+.pstat.hi{background:linear-gradient(160deg,rgba(var(--ca-rgb),.22),rgba(255,255,255,.03))}
+.pprof-log{padding:8px 16px 22px}
+.pprof-log h4{margin:10px 0 8px;font-family:var(--display);font-weight:700;font-size:.9rem;color:var(--head,#fff);display:flex;align-items:center;gap:8px}
+.pprof-log h4::before{content:"";width:3px;height:14px;border-radius:9px;background:var(--ca)}
+.plog{display:flex;flex-direction:column;gap:6px}
+.plog-r{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:10px;padding:8px 10px;border-radius:12px;background:rgba(255,255,255,.035);border:1px solid rgba(143,166,196,.14);font-size:.78rem}
+[data-theme="light"] .plog-r{background:#fff;border-color:var(--line)}
+.plog-r .rd{font-size:.66rem;color:var(--slate);white-space:nowrap}
+.plog-r .op{display:flex;align-items:center;gap:6px;min-width:0;color:var(--head,#fff);font-weight:600}
+.plog-r .op .crest{width:22px;height:22px;border-radius:6px}
+.plog-r .op span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.plog-r .op i{font-style:normal;font-size:.64rem;color:var(--slate);font-weight:400}
+.plog-r .ev{display:flex;align-items:center;gap:5px;white-space:nowrap;direction:ltr}
+.plog-r .ev .rs{font-family:var(--display);font-weight:800;font-size:.78rem;padding:2px 7px;border-radius:7px;background:rgba(143,166,196,.16);color:var(--head,#fff)}
+.plog-r .ev .rs.w{background:rgba(53,164,124,.22);color:var(--win)}.plog-r .ev .rs.l{background:rgba(224,100,79,.2);color:var(--loss)}
+.plog-r .ev .mn{font-size:.68rem;color:var(--slate);font-variant-numeric:tabular-nums}
+.plog-r .ev .pp-b{position:static;display:inline-flex}
+.plog-r .ev .pp-b.goal em{font-style:normal;font-weight:800;color:#0B1F3A;font-size:.62rem;padding-inline-end:2px}
+.pprof-empty{padding:0 18px 22px;font-size:.8rem;color:var(--slate)}
+</style>
+<div class="pprof" id="pprof" hidden role="dialog" aria-modal="true" aria-label="ملف اللاعب"></div>
+<script>/* ===== ملف النادي (نبذة/قائمة الفريق) وملف اللاعب العام — 2026-09-15 ===== */
+/* بيانات تعريف الأندية: مرجع عام ثابت (سنة التأسيس، الملعب، المنطقة، أسماء الألوان). ما ليس هنا لا يُعرض.
+   صورة الملعب: assets/stadiums/<slug>.jpg إن وُجدت، وإلا الصورة العامة assets/hero/stadium.jpg */
+const CLUB_INFO = {
+  "القادسية": {f:1960, st:"ملعب محمد الحمد",      loc:"حولي",       col:"الأصفر والأسود",    slug:"qadsia"},
+  "الكويت":   {f:1960, st:"ملعب نادي الكويت",      loc:"كيفان",      col:"الأبيض والأحمر",    slug:"kuwait"},
+  "العربي":   {f:1960, st:"ملعب صباح السالم",      loc:"المنصورية",  col:"الأخضر والأبيض",    slug:"arabi"},
+  "كاظمة":    {f:1964, st:"ملعب الصداقة والسلام",  loc:"العديلية",   col:"البرتقالي والأبيض", slug:"kazma"},
+  "السالمية": {f:1964, st:"ملعب ثامر",             loc:"السالمية",   col:"السماوي والأبيض",   slug:"salmiya"},
+  "النصر":    {f:1965, st:"ملعب علي صباح السالم",  loc:"العارضية",   col:"العنابي والأبيض",   slug:"nasr"},
+  "الجهراء":  {f:1966, st:"ملعب مبارك العيار",     loc:"الجهراء",    col:"الأبيض والأزرق",    slug:"jahra"},
+  "الساحل":   {f:1972, st:"ملعب نادي الساحل",      loc:"أبو حليفة",  col:"الأصفر والأزرق",    slug:"sahel"},
+  "الفحيحيل": {f:1963, st:"ملعب نادي الفحيحيل",    loc:"الفحيحيل",   col:"الأحمر والأبيض",    slug:"fahaheel"},
+  "التضامن":  {f:1965, st:"ملعب نادي التضامن",     loc:"الفروانية",  col:"الأزرق والأبيض",    slug:"tadamon"},
+  "الشباب":   {f:1976, st:"ملعب نادي الشباب",      loc:"الأحمدي",    col:"الأزرق والأبيض",    slug:"shabab"},
+  "الصليبخات":{f:1972, st:"ملعب نادي الصليبخات",   loc:"الصليبخات",  col:"الأحمر والأبيض",    slug:"sulaibikhat"},
+};
+const POS_FULL = {GK:"حارس مرمى",RB:"ظهير أيمن",CB:"قلب دفاع",LB:"ظهير أيسر",RWB:"ظهير جناح أيمن",LWB:"ظهير جناح أيسر",
+  CDM:"وسط مدافع",CM:"وسط ميدان",CAM:"صانع ألعاب",RM:"جناح أيمن",LM:"جناح أيسر",RW:"جناح أيمن",LW:"جناح أيسر",ST:"مهاجم"};
+const posLabel = p => { const k=String(p||"").toUpperCase(); return POS_FULL[k] || POS_AR[POS_MAIN[k]] || ""; };
+/* لون النادي المعتمد للواجهة: نتجنب الأبيض كلون أساسي (الكويت/الجهراء) ونأخذ اللون الثاني */
+const hexRgb = h => { const c=String(h||"").replace("#",""); return c.length===6 ? [0,2,4].map(i=>parseInt(c.slice(i,i+2),16)).join(",") : "24,120,190"; };
+function clubAccent(c){
+  const cc=(window.CLUB_COLORS||{})[c] || ["#1878BE","#0B1F3A"];
+  const light=h=>lumOf(h)>.85;
+  const a = (light(cc[0]) && cc[1] && !light(cc[1])) ? cc[1] : cc[0];
+  const other = a===cc[0] ? (cc[1]||"") : cc[0];
+  const b = (other && !light(other)) ? other : darkenHex(a,.55);
+  return {a, b, rgb:hexRgb(a), fg: lumOf(a)>.62 ? "#0B1F3A" : "#FFFFFF"};
+}
+const accentVars = c => { const k=clubAccent(c); return `--ca:${k.a};--cb:${k.b};--ca-rgb:${k.rgb};--ctab-fg:${k.fg}`; };
+const crestSrcOf = c => (typeof LOCAL_CRESTS!=="undefined" && LOCAL_CRESTS[c]) || (LOGOS||{})[c] || "";
+
+/* ---------- تبويبات صفحة النادي ---------- */
+let CLUB_TAB = "about";
+function wireClubTabs(){
+  const w=$("#clubBody .clubwrap"); if(!w) return;
+  const bs=[...w.querySelectorAll(".ctabs button")], ind=w.querySelector(".ctab-ind");
+  const set=k=>{
+    if(!bs.some(b=>b.dataset.ct===k)) k="about";
+    CLUB_TAB=k; const i=bs.findIndex(b=>b.dataset.ct===k);
+    bs.forEach(b=>{ b.setAttribute("aria-selected", b.dataset.ct===k); b.tabIndex = b.dataset.ct===k ? 0 : -1; });
+    w.querySelectorAll(".ctab-panel").forEach(p=>p.classList.toggle("on", p.dataset.cp===k));
+    ind.style.transform=`translateX(${-100*i}%)`;
+  };
+  bs.forEach(b=>b.onclick=()=>set(b.dataset.ct));
+  ind.style.transition="none"; set(CLUB_TAB);
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{ ind.style.transition=""; }));
+}
+/* ---------- نبذة عن الفريق ---------- */
+function clubAboutHTML(c, r, played){
+  const I=CLUB_INFO[c]||{}, cc=(window.CLUB_COLORS||{})[c]||[];
+  const pos = played ? standings().findIndex(x=>x.c===c)+1 : 0;
+  const stImg = I.slug ? `url('assets/stadiums/${I.slug}.jpg'),` : "";
+  const facts=[
+    I.f   ? ["تأسس عام", String(I.f)] : null,
+    I.st  ? ["الملعب", esc(I.st)] : null,
+    I.cap ? ["سعة الملعب", `${I.cap.toLocaleString("en-US")} متفرج`] : null,
+    I.loc ? ["الموقع", esc(I.loc)] : null,
+    cc.length ? ["ألوان النادي", `<span class="sw">${cc.map(h=>`<i style="background:${esc(h)}"></i>`).join("")}</span>${esc(I.col||"")}`] : null,
+  ].filter(Boolean);
+  const desc = (I.f||I.st||I.loc)
+    ? `${esc(c)} نادٍ كويتي${I.loc?` من منطقة ${esc(I.loc)}`:""}${I.f?`، تأسس عام ${I.f}`:""}${I.st?`، ويخوض مبارياته على ${esc(I.st)}`:""}.`
+      + ` يشارك في ${esc(COMP||"الدوري")} موسم ${esc(SEASON)}${played?`، ولعب ${mw(r.P)} حتى الآن`:""}.`
+    : "";
+  return `<div class="cabout">
+    <div class="wm" style="background-image:url('${crestSrcOf(c)}')"></div>
+    <div class="cabout-hero" style="background-image:${stImg}url('assets/hero/stadium.jpg')">
+      ${I.st?`<span class="st-cap">${esc(I.st)}</span>`:""}
+    </div>
+    <div class="cabout-head">
+      ${crest(c,true)}
+      <div class="cabout-ttl">
+        <h3>${esc(c)}</h3>
+        <div class="sub">${played?`<b>${r.Pts} نقطة</b> · المركز ${pos} · ${mw(r.P)}`:"لم يلعب بعد"} · ${esc(SEASON)}</div>
+      </div>
+    </div>
+    ${facts.length?`<div class="cabout-facts">${facts.map(([k,v])=>`<div class="cfact"><small>${k}</small><b>${v}</b></div>`).join("")}</div>`:""}
+    ${desc?`<p class="cabout-desc">${desc}</p>`:""}
+  </div>`;
+}
+/* ---------- قائمة الفريق ---------- */
+function playerCardHTML(p, c){
+  const cut = (PHOTOSON && typeof LOCAL_PHOTOS!=="undefined") ? LOCAL_PHOTOS[p.n] : null;
+  return `<div class="pcard" data-player="${esc(p.n)}" data-club="${esc(c)}" role="button" tabindex="0" aria-label="${esc(p.n)}">
+    <div class="ph">${cut?`<img src="${cut}_s.webp?v=5" alt="" loading="lazy" decoding="async" draggable="false">`
+                         :`<img class="noph" src="${crestSrcOf(c)}" alt="" loading="lazy" draggable="false">`}</div>
+    ${p.s?`<span class="no">${p.s}</span>`:""}
+    <div class="nm">${esc(p.n)}</div>
+    <div class="ps">${esc(posLabel(p.p))||"—"}</div>
+  </div>`;
+}
+function clubSquadHTML(c){
+  const men=squadEntriesOf(c);
+  if(!men.length) return `<div class="card pad"><p class="hint" style="margin:0">لم يُرفع كشف لاعبي هذا النادي بعد.</p></div>`;
+  const groups=[["G","حراس المرمى"],["D","الدفاع"],["M","الوسط"],["F","الهجوم"],["","بدون مركز محدد"]];
+  return groups.map(([k,t])=>{
+    const L=men.filter(p=>(POS_MAIN[String(p.p||"").toUpperCase()]||"")===k);
+    if(!L.length) return "";
+    return `<h2 class="sec sq-grp">${t}<span class="sq-n">${L.length}</span></h2><div class="sq-grid">${L.map(p=>playerCardHTML(p,c)).join("")}</div>`;
+  }).join("");
+}
+
+/* ---------- ملف اللاعب العام ---------- */
+/* نافذة وجود اللاعب في المباراة (بداية/نهاية بالدقائق المطلقة) — نفس منطق playerMatchMinutes */
+function playerWindow(m, club, name){
+  const comp=compOf(m);
+  const starter=xiNames(m.round, comp, club).includes(name);
+  const subs=matchSubs(m).filter(s=>s.club===club);
+  const inSub=subs.find(s=>s.in===name), outSub=subs.find(s=>s.out===name);
+  let start; if(starter) start=0; else if(inSub) start=capMin(absMinute(inSub.h,inSub.m)); else return null;
+  const end = outSub ? capMin(absMinute(outSub.h,outSub.m)) : MATCH_MIN;
+  return {start, end};
+}
+function clubOfPlayer(name){
+  for(const c of Object.keys(SQUADS||{})) if((SQUADS[c]||[]).some(x=>sqName(x)===name)) return c;
+  const g=GOALS.find(x=>x.p===name && x.bp!=="هدف عكسي") || GOALS.find(x=>x.a===name);
+  if(g) return g.sc;
+  const cd=CARDS.find(x=>x.p===name); if(cd) return cd.club;
+  return "";
+}
+function playerProfileData(name, club){
+  const sq=(SQUADS[club]||[]).find(x=>sqName(x)===name)||null;
+  const pos=sq?sqPos(sq):"", num=sq?sqNum(sq):0, gk=String(pos).toUpperCase()==="GK";
+  const goals   = GOALS.filter(g=>g.sc===club && g.p===name && g.bp!=="هدف عكسي").length;
+  const assists = GOALS.filter(g=>g.sc===club && g.a===name).length;
+  const ownG    = GOALS.filter(g=>g.p===name && g.bp==="هدف عكسي" && g.sc!==club).length;
+  const y = CARDS.filter(x=>x.p===name && x.club===club && isYellow(x.type)).length;
+  const rd= CARDS.filter(x=>x.p===name && x.club===club && isRed(x.type)).length;
+  const pens = PENS.filter(x=>x.p===name && x.by===club);
+  const pp=(typeof playerPlay==="function" ? playerPlay() : []).find(p=>p.n===name && p.c===club) || {apps:0,mins:0,cs:0};
+  const log=[]; let conceded=0;
+  MATCHES.filter(m=>!isUpcoming(m) && (m.home===club||m.away===club))
+    .sort((a,b)=>(b.round-a.round)||String(b.date).localeCompare(String(a.date)))
+    .forEach(m=>{
+      const w=playerWindow(m,club,name); if(!w || w.end<=w.start) return;
+      const gs=matchGoals(m);
+      const g=gs.filter(x=>x.sc===club && x.p===name && x.bp!=="هدف عكسي").length;
+      const a=gs.filter(x=>x.sc===club && x.a===name).length;
+      const con=gs.filter(x=>x.sc!==club && abs(x)>=w.start && abs(x)<=w.end).length; conceded+=con;
+      const cd=CARDS.filter(x=>x.r===m.round && compOf(x)===compOf(m) && x.club===club && x.p===name);
+      const home=m.home===club, opp=home?m.away:m.home;
+      const gf=home?+m.hg:+m.ag, ga=home?+m.ag:+m.hg;
+      log.push({m,opp,home,mins:w.end-w.start,g,a,con,y:cd.some(x=>isYellow(x.type)),r:cd.some(x=>isRed(x.type)),
+                res:`${gf} - ${ga}`, k: gf>ga?"w":gf<ga?"l":"d", sub: w.start>0, off: w.end<MATCH_MIN});
+    });
+  return {name, club, pos, num, gk, goals, assists, ownG, y, rd, pens:pens.length, apps:pp.apps, mins:pp.mins, cs:pp.cs, conceded, log};
+}
+function playerProfileHTML(D){
+  const cut=(PHOTOSON && typeof LOCAL_PHOTOS!=="undefined") ? LOCAL_PHOTOS[D.name] : null;
+  const st=(v,t,hi)=>`<div class="pstat${hi?" hi":""}"><b>${v}</b><small>${t}</small></div>`;
+  const cards = D.gk
+    ? [st(D.cs,"شباك نظيفة",true), st(D.conceded,"أهداف استقبلها"), st(D.apps,"مباريات"), st(D.mins+"′","دقائق اللعب"),
+       D.goals?st(D.goals,"أهداف"):"", D.assists?st(D.assists,"صناعة"):"", st(D.y,"إنذارات"), D.rd?st(D.rd,"طرد"):""]
+    : [st(D.goals,"أهداف",true), st(D.assists,"صناعة",true), st(D.apps,"مباريات"), st(D.mins+"′","دقائق اللعب"),
+       st(D.y,"إنذارات"), D.rd?st(D.rd,"طرد"):"", D.pens?st(D.pens,"ركلات جزاء"):"", D.ownG?st(D.ownG,"أهداف عكسية"):""];
+  const played = D.apps>0 || D.goals>0 || D.assists>0 || D.y>0 || D.rd>0;
+  const badge=(n,cls,inner)=> n?`<span class="pp-b ${cls}">${inner}${n>1?`<em>${n}</em>`:""}</span>`:"";
+  const logHTML = D.log.length ? `<div class="pprof-log"><h4>مباراة بمباراة</h4><div class="plog">${D.log.map(l=>`
+    <div class="plog-r">
+      <span class="rd">ج${l.m.round}${compOf(l.m)!=="الدوري"?" · "+esc(compOf(l.m)):""}</span>
+      <span class="op">${crest(l.opp)}<span>${esc(l.opp)}<i> · ${l.home?"أرضه":"خارج أرضه"}</i></span></span>
+      <span class="ev">${badge(l.g,"goal",ICO_BALL)}${badge(l.a,"assist",ICO_BOOT)}${l.r?`<span class="pp-b card r"></span>`:l.y?`<span class="pp-b card y"></span>`:""}
+        <span class="mn">${l.mins}′${l.sub?" ↑":""}${l.off?" ↓":""}</span><span class="rs ${l.k}">${l.res}</span></span>
+    </div>`).join("")}</div></div>` : "";
+  return `<div class="pprof-sheet" style="${accentVars(D.club)}">
+    <span class="pprof-grab"></span>
+    <button type="button" class="pprof-close" aria-label="إغلاق" onclick="closePlayer()">✕</button>
+    <div class="pprof-hero">
+      <div class="wm" style="background-image:url('${crestSrcOf(D.club)}')"></div>
+      <div class="ph">${cut?`<img src="${cut}.webp?v=5" alt="" decoding="async">`:`<img class="noph" src="${crestSrcOf(D.club)}" alt="">`}</div>
+      <div class="pprof-id">
+        <div class="club" data-club-link="${esc(D.club)}">${crest(D.club)}<span>${esc(D.club)}</span></div>
+        <h3>${esc(D.name)}</h3>
+        <div class="meta">${D.num?`<span class="num">${D.num}</span>`:""}${D.pos?`<span>${esc(posLabel(D.pos))}</span>`:""}</div>
+      </div>
+    </div>
+    <div class="pprof-comp">${esc(COMP||"الدوري")} · ${esc(SEASON)}</div>
+    ${played ? `<div class="pprof-stats">${cards.filter(Boolean).join("")}</div>` : `<p class="pprof-empty">لم تُرصد مشاركة لهذا اللاعب في ${esc(COMP||"الدوري")} بعد.</p>`}
+    ${logHTML}
+  </div>`;
+}
+const playerHash = (n,c) => "#p/"+encodeURIComponent(n)+"/"+encodeURIComponent(c||"");
+function openPlayer(name, club, opts){
+  name=String(name||"").trim(); if(!name) return;
+  club=String(club||"").trim() || clubOfPlayer(name);
+  const box=$("#pprof"); if(!box) return;
+  box.innerHTML=playerProfileHTML(playerProfileData(name, club));
+  box.hidden=false; box.classList.add("on");
+  document.documentElement.classList.add("pp-open");
+  box.querySelector(".pprof-sheet").scrollTop=0;
+  if(!(opts&&opts.noHistory)){ try{ history.pushState({pp:1}, "", playerHash(name,club)); }catch(e){} }
+}
+function hidePlayerBox(){
+  const box=$("#pprof"); if(!box) return;
+  box.classList.remove("on"); box.hidden=true; box.innerHTML="";
+  document.documentElement.classList.remove("pp-open");
+}
+function closePlayer(){
+  const box=$("#pprof"); if(!box || box.hidden) return;
+  hidePlayerBox();
+  if(history.state && history.state.pp){ try{ history.back(); }catch(e){} }
+  else if(/^#p\//.test(location.hash)){ try{ history.replaceState(null,"",location.pathname+location.search); }catch(e){} }
+}
+window.openPlayer=openPlayer; window.closePlayer=closePlayer;
+window.addEventListener("popstate", ()=>{ const box=$("#pprof"); if(box && !box.hidden && !(history.state&&history.state.pp)) hidePlayerBox(); });
+/* نقرة واحدة مفوَّضة لكل الموقع: أي عنصر يحمل data-player يفتح الملف (ما عدا لوحة الإدارة) */
+document.addEventListener("click", e=>{
+  const box=$("#pprof");
+  if(box && !box.hidden && e.target===box){ closePlayer(); return; }
+  const cl=e.target.closest("[data-club-link]");
+  if(cl && box && box.contains(cl)){ const c=cl.dataset.clubLink; closePlayer(); if(typeof openClub==="function") openClub(c); return; }
+  const el=e.target.closest("[data-player]"); if(!el) return;
+  if(el.closest("#v-admin") || e.target.closest("a,button,select,input,textarea,label")) return;
+  e.preventDefault(); openPlayer(el.dataset.player, el.dataset.club||"");
+});
+document.addEventListener("keydown", e=>{
+  if(e.key==="Escape") closePlayer();
+  const a=document.activeElement;
+  if((e.key==="Enter"||e.key===" ") && a && a.matches && a.matches(".pcard[data-player]")){ e.preventDefault(); openPlayer(a.dataset.player, a.dataset.club); }
+});
+/* رابط عميق #c/النادي/التبويب: يفتح صفحة النادي على التبويب المطلوب (about | stats | squad) */
+(function(){
+  const m=/^#c\/([^/]+)\/?(about|stats|squad)?$/.exec(location.hash); if(!m) return;
+  let tries=0; const tick=()=>{
+    if(Array.isArray(CLUBS) && CLUBS.length && Object.keys(SQUADS||{}).length && typeof openClub==="function"){
+      USER_NAV=true; CLUB_TAB=m[2]||"about";
+      const c=decodeURIComponent(m[1]); if(CLUBS.includes(c)) openClub(c);
+    } else if(++tries<40) setTimeout(tick,300);
+  }; setTimeout(tick,400);
+})();
+/* رابط عميق #p/الاسم/النادي: يفتح الملف بعد وصول البيانات */
+(function(){
+  const m=/^#p\/([^/]+)\/?(.*)$/.exec(location.hash); if(!m) return;
+  let tries=0; const tick=()=>{
+    if(Array.isArray(MATCHES) && MATCHES.length && Object.keys(SQUADS||{}).length){ try{ openPlayer(decodeURIComponent(m[1]), decodeURIComponent(m[2]||""), {noHistory:true}); }catch(e){} }
+    else if(++tries<40) setTimeout(tick,300);
+  }; setTimeout(tick,400);
+})();
+</script>
+
 </body>
 </html>
