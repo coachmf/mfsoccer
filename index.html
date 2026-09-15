@@ -11187,6 +11187,7 @@ html.mx-editing #waFab{display:none!important}   /* زر واتساب كان ي�
   const ARR={goal:"goals",card:"cards",pen:"pens",sub:"subs",chance:"mev",var:"mev",note:"mev"};
   const CLUBKEY={goal:"sc",card:"club",pen:"by",sub:"club",chance:"club",var:"club",note:"club"};
   const TITLE={goal:"هدف",card:"بطاقة",pen:"ركلة جزاء",sub:"تبديل",chance:"فرصة خطيرة",var:"مراجعة VAR",note:"تعليق"};
+  const PHASE_NOTE={h1:[1,"بداية المباراة"],ht:[45,"نهاية الشوط الأول"],h2:[46,"بداية الشوط الثاني"],ft:[90,"نهاية المباراة"]};
   const PHASES=[["","تلقائي"],["pre","قبل البداية"],["h1","الشوط الأول"],["ht","استراحة"],["h2","الشوط الثاني"],["ft","انتهت"]];
   const TV_LIST=["كويت سبورت","كويت سبورت بلس","الكويت الأولى","غير منقولة"];
   const stadiums=()=>{ const set=new Set(); if(typeof CLUB_INFO!=="undefined") Object.values(CLUB_INFO).forEach(i=>i&&i.st&&set.add(i.st)); (ALL.matches||[]).forEach(x=>x.venue&&set.add(String(x.venue).trim())); return [...set].filter(Boolean).slice(0,16); };
@@ -11211,6 +11212,10 @@ html.mx-editing #waFab{display:none!important}   /* زر واتساب كان ي�
         ${face(e.n,club)}<span class="tx"><b>${esc(e.n)}</b><small>${xi.includes(e.n)?"أساسي":"احتياط"}</small></span>${e.s?`<span class="num">${e.s}</span>`:""}</button>`).join("")}</div>`;
   }
   const chips=(key,list,cur,cls)=>`<div class="mx-chips">${list.map(v=>`<button class="mx-chip${cls?" "+cls(v):""}${cur===v?" on":""}" data-mset="${key}" data-mval="${esc(v)}">${esc(v)}</button>`).join("")}</div>`;
+  const rangeHint=v=>{ const st=EDIT.match.status, m=+v||0; if(!m) return "";
+    if(st==="h1"&&m>45) return `<p class="mx-hint" style="color:#ffb547">المباراة في الشوط الأول — الدقيقة عادة بين 1 و45 (استخدم «وقت بدل ضائع» بعد 45).</p>`;
+    if(st==="h2"&&m<46) return `<p class="mx-hint" style="color:#ffb547">المباراة في الشوط الثاني — الدقيقة عادة بين 46 و90.</p>`;
+    return ""; };
   const stepper=(key,val,label,max)=>`<div><span class="mx-lbl">${label}</span><div class="mx-step"><button data-mstep="${key}" data-mby="-1" aria-label="أنقص">−</button>
     <input type="number" min="0" max="${max||130}" inputmode="numeric" data-msf="${key}" value="${esc(val)}"><button data-mstep="${key}" data-mby="1" aria-label="زد">+</button></div></div>`;
   function sheetHTML(){
@@ -11227,7 +11232,7 @@ html.mx-editing #waFab{display:none!important}   /* زر واتساب كان ي�
     let body=team;
     if(k==="goal"){
       body+=`<div><span class="mx-lbl">المسجّل</span>${pickGrid(club,"p",d.p)}</div>
-        <div class="mx-grid">${stepper("m",d.m,"الدقيقة",130)}${stepper("x",d.x||0,"وقت بدل ضائع +",20)}</div>${minChips("m")}
+        <div class="mx-grid">${stepper("m",d.m,"الدقيقة",130)}${stepper("x",d.x||0,"وقت بدل ضائع +",20)}</div>${minChips("m")}${rangeHint(d.m)}
         <div><span class="mx-lbl">طريقة التسجيل</span>${chips("bp",LIST.bp,d.bp)}</div>
         ${d.bp==="هدف عكسي"?`<div><span class="mx-lbl">ارتدت عن (لاعب ${esc(opp||"الخصم")})</span>${pickGrid(opp,"og",d.og)}</div>`:""}
         <div><span class="mx-lbl">صانع الهدف</span>${pickGrid(club,"a",d.a,{none:"بدون صناعة",exclude:d.p})}</div>
@@ -11340,7 +11345,12 @@ html.mx-editing #waFab{display:none!important}   /* زر واتساب كان ي�
     q("[data-mf]",el=>{ el.oninput=()=>{ EDIT.match[el.dataset.mf]=el.value; }; el.onchange=()=>{ if(!EDIT) return; EDIT.match[el.dataset.mf]=el.value; if(!MX.busy && el.isConnected) rerender(); }; });
     q("[data-mround]",b=>b.onclick=()=>{ EDIT.match.round=String(Math.max(1,(+EDIT.match.round||0)+(+b.dataset.mround))); rerender(); });
     q("[data-mvenue]",b=>b.onclick=()=>{ EDIT.match.venue=b.dataset.mvenue; rerender(); });
-    q("[data-mstatus]",b=>b.onclick=()=>{ EDIT.match.status=b.dataset.mstatus; rerender(); });
+    q("[data-mstatus]",b=>b.onclick=()=>{ const st=b.dataset.mstatus; EDIT.match.status=st;
+      /* تغيير المرحلة يسجّل حدثاً محايداً مرة واحدة: بداية المباراة/نهاية الشوط الأول/بداية الشوط الثاني/نهاية المباراة */
+      const auto=PHASE_NOTE[st];
+      if(auto){ EDIT.mev=EDIT.mev||[];
+        if(!EDIT.mev.some(x=>x.k==="note"&&x.note===auto[1])){ EDIT.mev.push({k:"note",club:"",p:"",m:String(auto[0]),x:0,note:auto[1]}); toast(auto[1],"ok"); } }
+      rerender(); });
     q("[data-mtv]",b=>b.onclick=()=>{ EDIT.match.tv=(EDIT.match.tv===b.dataset.mtv?"":b.dataset.mtv); rerender(); });
     q("[data-mpickclub]",b=>b.onclick=()=>{ MX.sheet={kind:"club",side:b.dataset.mpickclub}; rerender(); });
     q("[data-mclub]",b=>b.onclick=()=>{ const s=MX.sheet.side, old=EDIT.match[s], nw=b.dataset.mclub;
