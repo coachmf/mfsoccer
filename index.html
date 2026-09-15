@@ -8358,7 +8358,7 @@ const CLUB_INFO = {
   "السالمية": {f:1964, nick:"الرهيب",        st:"ستاد ثامر",             loc:"السالمية",   cap:12000, col:"السماوي والأبيض",   slug:"salmiya"},
   "النصر":    {f:1965, nick:"العنابي",       st:"ملعب علي صباح السالم",  loc:"العارضية",   cap:11000, col:"العنابي والأبيض",   slug:"nasr"},
   "الجهراء":  {f:1966, nick:"أبناء الشهداء", st:"ملعب مبارك العيار",     loc:"الجهراء",    cap:15000, col:"الأبيض والأزرق",    slug:"jahra"},
-  "الساحل":   {f:1967,                        st:"ملعب نادي الساحل",      loc:"أبو حليفة",  cap:5000,  col:"الأصفر والأزرق",    slug:"sahel"},
+  "الساحل":   {f:1967,                        st:"ملعب نادي الساحل",      loc:"أبو حليفة",  cap:5000,  col:"الأصفر والأزرق",    slug:"sahel", stPos:"center 74%"},
   "الفحيحيل": {f:1964,                        st:"ستاد نايف الدبوس",      loc:"الفحيحيل",   cap:12000, col:"الأحمر والأبيض",    slug:"fahaheel"},
   "التضامن":  {f:1965, nick:"العنيد",        st:"ملعب مساعد الشنفا",     loc:"الفروانية",  cap:14000, col:"الأزرق والأبيض",    slug:"tadamon"},
   "الشباب":   {f:1963,                        st:"ملعب الأحمدي",          loc:"الأحمدي",    cap:18000, col:"الأزرق والأبيض",    slug:"shabab"},
@@ -8415,7 +8415,7 @@ function clubAboutHTML(c, r, played){
     : "";
   return `<div class="cabout">
     <div class="wm" style="background-image:url('${crestSrcOf(c)}')"></div>
-    <div class="cabout-hero"><img class="st-img" src="${stSrc}" alt="" decoding="async" onload="this.classList.add('on')" onerror="this.onerror=null;this.src='assets/hero/stadium.jpg'">
+    <div class="cabout-hero"><img class="st-img" src="${stSrc}" alt="" style="${I.stPos?`object-position:${I.stPos}`:""}" decoding="async" onload="this.classList.add('on')" onerror="this.onerror=null;this.src='assets/hero/stadium.jpg'">
       ${I.st?`<span class="st-cap">${esc(I.st)}</span>`:""}
     </div>
     <div class="cabout-head">
