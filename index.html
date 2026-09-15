@@ -9096,6 +9096,29 @@ html[data-theme="light"] .hm{--bg-card:#FFFFFF;--border-card:#E2E8F0;--text-prim
 <div class="pprof" id="pprof" hidden role="dialog" aria-modal="true" aria-label="ملف اللاعب"></div>
 <div class="mpage" id="mpage" hidden role="dialog" aria-modal="true" aria-label="صفحة المباراة"></div>
 <style>
+/* تبويب التشكيلة: بطاقة ملعب لكل فريق */
+.mpx{padding:0;overflow:hidden}
+.mpx-hd{display:flex;align-items:center;gap:10px;padding:12px 14px}
+.mpx-hd .crest{width:30px;height:30px}
+.mpx-hd>b{font-family:var(--display);font-size:1rem;color:var(--text-primary,#fff)}
+.mpx-hd .rtg{min-width:44px}
+.mpx-form{margin-inline-start:auto;font-family:var(--display);font-weight:800;font-size:.95rem;color:var(--text-primary,#fff);direction:ltr;unicode-bidi:isolate}
+.mpx-pitch{position:relative;container-type:inline-size;max-width:480px;margin:0 auto 14px;border-radius:10px;overflow:hidden;background:radial-gradient(70% 14% at 50% 0%,rgba(95,178,232,.12),transparent 100%),linear-gradient(180deg,#12233f,var(--pitch-grass,#0f1e36) 70%);border-top:1px solid rgba(127,196,255,.10)}
+:root[data-theme="light"] .mpx-pitch{background:var(--pitch-grass,#eef1f5)}
+.mpx-lines{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.mpx-p{position:absolute;transform:translateX(50%);display:flex;flex-direction:column;align-items:center;gap:0;z-index:2;cursor:pointer}
+.mpx-card.pp-card{width:clamp(40px,13cqw,60px);border-radius:9px}
+.mpx-card.pp-card:hover{transform:none}
+.mpx-card.nophoto .pp-num{font-size:clamp(13px,4.4cqw,20px)}
+.mpx-card .pp-img{height:100%}
+.mpx-r{position:absolute;left:50%;bottom:0;transform:translate(-50%,55%);min-width:clamp(26px,8.5cqw,34px);height:clamp(15px,4.6cqw,19px);font-size:clamp(9px,2.9cqw,11.5px);border-radius:4px;box-shadow:0 1px 3px rgba(0,0,0,.45);z-index:4}
+.mpx-card .pp-b.goal{top:-5px;left:-5px;bottom:auto;right:auto}
+.mpx-card .pp-b.assist{top:-5px;right:-5px;bottom:auto;left:auto}
+.mpx-card .pp-b.goal + .pp-b.assist{bottom:auto}
+.mpx-card .pp-b.card{top:30%;left:-5px;right:auto;bottom:auto}
+.mpx-card .pp-b.off{top:30%;right:-6px;left:auto;bottom:auto}
+.mpx-nm{margin-top:clamp(12px,3.6cqw,15px);max-width:100%;padding:0 2px;font-size:clamp(10px,3.1cqw,12.5px);font-weight:600;color:var(--text-primary,#fff);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center}
+.mpx-nm em{font-style:normal;color:var(--text-muted,#8fa6c4);font-weight:600;margin-inline-end:4px}
 /* ===== تقييم اللاعبين ===== */
 .rtg{display:inline-grid;place-items:center;min-width:34px;height:22px;padding:0 5px;border-radius:5px;font-family:var(--display);font-weight:800;font-size:.8rem;color:#fff;font-variant-numeric:tabular-nums;flex:none}
 .rtg.big{min-width:52px;height:34px;font-size:1.15rem;border-radius:7px}
@@ -10264,11 +10287,54 @@ function mpPitchHTML(m){
     ${tag(m.home)}<i>${esc(H.form)}</i></div>
   </div>`;
 }
+/* تبويب التشكيلة (منصور 2026-09-15، على طريقة Sofascore Lineups): بطاقة ملعب مستقلة لكل فريق — المضيف ثم الضيف.
+   نصف ملعب: مرمى الفريق أعلى وخط المنتصف أسفل؛ الحارس ثم الدفاع… الهجوم، صفوف متساوية التباعد بلا تداخل.
+   بطاقة اللاعب نفسها (الصورة وألوان الطقم) + شارة التقييم على أسفلها + «الرقم الاسم» تحتها. */
+function mpLinesOf(S){
+  const t=mpTidyLines(S); if(t) return t;
+  const L=[...S.spots].sort((a,b)=>b.y-a.y), rows=[];          /* خطة لا تطابق العدد: تجميع حسب العمق */
+  L.forEach(sp=>{ const r=rows[rows.length-1]; if(r && Math.abs(r[r.length-1].y-sp.y)<9) r.push(sp); else rows.push([sp]); });
+  return rows.map(r=>r.sort((a,b)=>a.x-b.x));
+}
+function mpTeamXI(m, club){
+  const comp=compOf(m), S=pitchSpots(m.round, comp, club);
+  if(!S) return "";
+  const lines=mpLinesOf(S), L=lines.length;
+  const R=matchRatings(m, club), rmap={}; R.forEach(x=>rmap[x.n]=x.r.v);
+  const avg=R.length ? Math.round(R.reduce((a,x)=>a+x.r.v,0)/R.length*100)/100 : null;
+  const kit=Object.assign(kitOf(club),{club});
+  const ROW=30, TOP=5, H=L*ROW+TOP+6;                            /* وحدات cqw: ارتفاع الملعب يتبع عدد الصفوف */
+  const players=lines.map((line,li)=>line.map((sp,k)=>{
+    const n=line.length, pad = n===1 ? 50 : n===2 ? 30 : n===3 ? 19 : n===4 ? 13 : 10;
+    const x = n===1 ? 50 : pad + k*((100-2*pad)/(n-1));
+    const w = Math.min(24, 96/n);
+    const p=sp.p, cut=(typeof LOCAL_PHOTOS!=="undefined") ? photoCut(p.n, club) : null;
+    const kk=(String(p.p||"").toUpperCase()==="GK") ? (gkKitOf(club, p.s)||kit) : kit;
+    const v=rmap[p.n];
+    return `<div class="mpx-p" data-player="${esc(p.n)}" data-club="${esc(club)}" style="right:${x.toFixed(2)}%;top:${((TOP+li*ROW)/H*100).toFixed(2)}%;width:${w.toFixed(2)}%">
+      <span class="pp-card mpx-card${cut?"":" nophoto"}" style="${dotVars(kk)}">
+        ${cut?`<img class="pp-img" src="${cut}_f.webp?v=8" alt="" loading="lazy" draggable="false">`:`<span class="pp-num">${p.s||"–"}</span>`}
+        ${spotBadges(playerMatchEvents(m, club, p.n))}
+        ${v!=null?`<span class="rtg mpx-r ${ratingCls(v)}">${v.toFixed(1)}</span>`:""}
+      </span>
+      <span class="mpx-nm">${p.s?`<em>${p.s}</em>`:""}${esc(shortName(p.n))}</span>
+    </div>`;
+  }).join("")).join("");
+  const lineCol="var(--pitch-line,rgba(127,196,255,.24))";
+  const svg=`<svg class="mpx-lines" viewBox="0 0 100 ${H}" preserveAspectRatio="none" aria-hidden="true"><g fill="none" stroke="${lineCol}" stroke-width="1" vector-effect="non-scaling-stroke">
+    <rect x="2" y="2" width="96" height="${H-2}" rx="1.5" vector-effect="non-scaling-stroke"/>
+    <rect x="22" y="2" width="56" height="17" vector-effect="non-scaling-stroke"/><rect x="36" y="2" width="28" height="6.5" vector-effect="non-scaling-stroke"/>
+    <path d="M40 19a12 9 0 0 0 20 0" vector-effect="non-scaling-stroke"/><path d="M36 ${H}a14 14 0 0 1 28 0" vector-effect="non-scaling-stroke"/></g></svg>`;
+  return `<div class="mp-card mpx" style="${accentVars(club)}">
+    <div class="mpx-hd">${crest(club)}<b>${esc(club)}</b>${avg!=null?ratingBadge(avg).replace(/>([\d.]+)</, `>${avg.toFixed(2)}<`):""}<span class="mpx-form">${esc(S.form||"")}</span></div>
+    <div class="mpx-pitch" style="aspect-ratio:100/${H}">${svg}${players}</div>
+  </div>`;
+}
 function mpLineups(m){
   if(isUpcoming(m)) return `<div class="mp-card mp-empty">تُنشر التشكيلة بعد انطلاق المباراة.</div>`;
-  const xi=mpPitchHTML(m), subs=subsHTML(m);
-  if(!xi && !subs) return `<div class="mp-card mp-empty">لم تُسجَّل تشكيلة هذه المباراة بعد.</div>`;
-  return `${xi?`<div class="mp-card mp-xi">${xi}</div>`:""}${mpRatingsHTML(m)}${subs?`<div class="mp-card">${subs}</div>`:""}`;
+  const h=mpTeamXI(m, m.home), a=mpTeamXI(m, m.away), subs=subsHTML(m);
+  if(!h && !a && !subs) return `<div class="mp-card mp-empty">لم تُسجَّل تشكيلة هذه المباراة بعد.</div>`;
+  return `${h}${a}${mpRatingsHTML(m)}${subs?`<div class="mp-card">${subs}</div>`:""}`;
 }
 /* القائمة: كشف الفريقين كما في صفحة النادي (المدرب ثم المراكز) — منفصلة عن تشكيلة المباراة */
 let MP_SQ="home";
@@ -10321,7 +10387,6 @@ function renderMatchPage(){
     <header class="mp-head">${mpHeader(m)}</header>
     <nav class="mp-tabs">${MP_TABS.map(([k,l])=>`<button type="button" data-mp-tab="${k}" aria-pressed="${MP.tab===k}">${l}</button>`).join("")}</nav>
     <div class="mp-body">${body}</div></div>`;
-  if(MP.tab==="lineups") mpDecoratePitch(box, m);
 }
 function openMatch(m, opts){
   if(typeof m==="string") m=matchByKey(m);
