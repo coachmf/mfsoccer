@@ -68,6 +68,9 @@ const ROSTER = {
       byClub[cid].forEach(sp => {
         let hit = MFSYNC.resolvePlayer(sp.name, cid, null);
         if(hit && hit.club !== cid) hit = null;            /* مطابقة عبر نادٍ سابق لا تُعدّ وجوداً في الكشف الجديد */
+        const fuzzy = !!hit && MFSYNC.norm(hit.name) !== MFSYNC.norm(sp.name);
+        /* مطابقة تقريبية على لاعب اسمه الكامل موجود حرفياً في كشف الموقع نفسه = لاعب آخر (كان «يوسف نجف» يُطابق «يوسف محمد») */
+        if(fuzzy && byClub[cid].some(x => MFSYNC.norm(x.name) === MFSYNC.norm(hit.name))) hit = null;
         if(!hit){
           const mv = transferOf(sp.name, cid);
           if(mv){
@@ -81,7 +84,7 @@ const ROSTER = {
           seen.add(hit.id);
           let changed = false;
           /* الاسم لا يُعاد كتابته تلقائياً: الأهداف والبطاقات والتبديلات مفتاحها اسم اللاعب، وتغييره يُسقطها من الاحتساب. يقرّره المدير يدوياً من «اللاعبون». */
-          if(sp.shirt && hit.shirt !== sp.shirt){ hit.shirt = sp.shirt; changed = true; }
+          if(sp.shirt && hit.shirt !== sp.shirt && !fuzzy){ hit.shirt = sp.shirt; changed = true; }   /* الرقم يُحدَّث عند تطابق الاسم فقط */
           /* المركز لا يتغيّر بعد بداية الموسم (كما في فانتسي الدوري الإنجليزي): تغييره يكسر قوائم
              المشتركين (عدد المهاجمين) ونظام النقاط. يُحصى الاختلاف فقط ويقرّره المدير يدوياً من «اللاعبون». */
           if(sp.pos && hit.pos !== sp.pos){ rep.posChanged++; (rep.posDiff = rep.posDiff || []).push(`${hit.name} (${hit.pos}→${sp.pos})`); }

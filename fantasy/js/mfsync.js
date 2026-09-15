@@ -23,13 +23,19 @@ const MFSYNC = {
 
   /* هل لُعبت المباراة فعلاً؟ الموقع يخزّن 0-0 كقيمة افتراضية للمباريات القادمة،
      فلا تُعدّ نتيجةً إلا إذا مضى موعد الانطلاق (أو سُجّلت أهداف). بلا موعد: لا. */
-  isPlayed(m){
+  isPlayed(m, data){
     const has = m.hg!=null && m.ag!=null && m.hg!=='' && m.ag!=='';
     if(!has) return false;
     if((+m.hg||0)+(+m.ag||0) > 0) return true;
     if(!m.date) return false;
     const ko = kwDate(m.date+'T'+(m.time||'23:59'));      // توقيت الكويت دائماً، لا توقيت جهاز الزائر
-    return !isNaN(ko) && ko.getTime() <= Date.now();
+    if(isNaN(ko) || ko.getTime() > Date.now()) return false;
+    /* 0-0 بعد الموعد: لا تُعدّ نتيجة إلا بدليل لعب (تشكيلة مسجّلة على الموقع) — وإلا فمباراة مؤجلة/لم تُدخل بياناتها بعد */
+    if(data && Array.isArray(data.lineups)){
+      const comp = m.comp || 'الدوري';
+      return data.lineups.some(x => +x.r === +m.round && (!x.comp || x.comp === comp) && (x.club === m.home || x.club === m.away));
+    }
+    return true;
   },
 
   async fetchSeason(){
@@ -102,7 +108,9 @@ const MFSYNC = {
     if(!hit){
       // مطابقة بالاسم الجزئي الفريد: «فيتور دا سيلفا» عنده = «فيتور فييرا» عندنا
       const raw=(mfName||'').replace(/^[\s\d]+\s*-?\s*/,'');
-      const toks=raw.split(/\s+/).map(t=>this.norm(t)).filter(t=>t.length>=4 && t!=='عبدالله' && t!=='محمد');
+      /* الاسم الأول وحده لا يكفي (كان «فيصل عجب» يُطابق «فيصل المكيمي»): نطابق باسم العائلة/الأجزاء التالية فقط */
+      const parts=raw.split(/\s+/).filter(Boolean);
+      const toks=(parts.length>1?parts.slice(1):parts).map(t=>this.norm(t)).filter(t=>t.length>=4 && t!=='عبدالله' && t!=='محمد');
       for(const t of toks){
         const cands=squad.filter(p=>p.name.split(/\s+/).some(w=>this.norm(w)===t));
         if(cands.length===1){ hit=cands[0]; break; }
@@ -176,7 +184,7 @@ const MFSYNC = {
     try{ data=await this.fetchSeason(); }catch(e){ return cached; }
     const rep=this.syncFixtures(data, DB.state, {removeMissing:true});
     // النتائج والتشكيلات والتبديلات والأهداف: من الموقع مباشرة على كل جهاز — لا تنتظر المدير
-    const played=new Set((data.matches||[]).filter(m=>(!m.comp||m.comp==='الدوري') && this.isPlayed(m)).map(m=>+m.round));
+    const played=new Set((data.matches||[]).filter(m=>(!m.comp||m.comp==='الدوري') && this.isPlayed(m, data)).map(m=>+m.round));
     let ev=0;
     for(const gw of [...played].sort((a,b)=>a-b)){ const r=await this.importRound(gw,{quiet:true,data}); if(r) ev+=r.goals+r.subs+r.xi; }
     rep.events=ev; rep.rounds=played.size;
@@ -237,7 +245,7 @@ const MFSYNC = {
 
       f.h=h; f.a=a; f.venue=DB.club(h).stadium;
       if(m.date) f.date=m.date+'T'+(m.time||'18:00');
-      const played = this.isPlayed(m);
+      const played = this.isPlayed(m, data);
       if(played){ f.hs=+m.hg; f.as=+m.ag; f.status='F'; f.est=false; }
       else { f.hs=null; f.as=null; f.status='U'; f.goals=[]; f.cards=[]; f.pens=[];
              f.lineups=null; f.subs=[]; report.matches++; continue; }

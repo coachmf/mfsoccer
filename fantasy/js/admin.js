@@ -559,9 +559,20 @@ const ADMIN = {
   async confirmPending(){
     const st=DB.state; const P=Array.isArray(st.pending)?st.pending:[];
     if(!P.length) return;
+    if(typeof CLOUD==='undefined' || !CLOUD.ready){ UI.toast('السحابة غير متاحة', true); return; }
+    if(!CLOUD.admin){ UI.toast('سجّل دخول المدير في السحابة أولاً', true); return; }
+    if(!st.fromCloud){ UI.toast('قائمة اللاعبين على هذا الجهاز ليست النسخة المنشورة — أعد تحميل الصفحة ثم أكّد', true); return; }
     if(P.some(p=>!(p.price>0))){ UI.toast('حدّد سعراً لكل لاعب قبل التأكيد', true); return; }
-    P.forEach(p=>{ delete p.newAt; p.status='a'; p.startPrice=p.price; st.players.push(p); });
+    /* قد يكون اللاعب أُكّد من جهاز آخر بعد السحب: لا نكرّره، ونمنع تصادم المعرّفات مع القائمة المنشورة */
+    let maxId=st.players.reduce((m,p)=>Math.max(m, +String(p.id).replace(/\D/g,'')||0), 0);
+    let dup=0;
+    P.forEach(p=>{
+      if(st.players.some(x=>x.club===p.club && MFSYNC.norm(x.name)===MFSYNC.norm(p.name))){ dup++; return; }
+      if(st.players.some(x=>x.id===p.id)) p.id='p'+(++maxId);
+      delete p.newAt; p.status='a'; p.startPrice=p.price; st.players.push(p);
+    });
     st.pending=[]; DB.save(); APP.render();
+    if(dup) UI.toast(`${dup} لاعب كان مؤكّداً من قبل فتُجوهل`);
     UI.toast('جاري نشر اللاعبين الجدد للمشتركين…');
     const r=await CLOUD.publishGame(st);
     if(r.ok) UI.toast(`نُشر ${P.length} لاعباً جديداً للجميع`); else UI.toast(r.err||'تعذّر النشر — انشر اللعبة يدوياً', true);
