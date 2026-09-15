@@ -6538,7 +6538,9 @@ function squadRowsHTML(club){
   const dup=squadDupNums(club);
   return a.map((x,i)=>{
     const p=sqPos(x), s=sqNum(x);
+    const cut=(typeof photoCut==="function" && sqName(x)) ? photoCut(sqName(x), club) : null;
     return `<div class="sqrow ${p?"":"nopos"} pg-${posMain(x)||"x"}" data-i="${i}">
+      <span class="sqface">${cut?`<img src="${cut}_f.webp?v=8" alt="" loading="lazy" decoding="async">`:esc(String(sqName(x)||"").trim().split(/\s+/).slice(0,2).map(w=>w[0]||"").join(""))}</span>
       <input type="text" class="sqno ${dup.has(s)?"dup":""}" inputmode="numeric" maxlength="3"
         value="${s||""}" placeholder="#" title="رقم القميص">
       <input type="text" class="sqn" value="${esc(sqName(x))}" spellcheck="false" placeholder="اسم اللاعب">
@@ -6552,7 +6554,8 @@ function clubVars(c){
   const cc=(window.CLUB_COLORS||{})[c]; if(!cc) return "--cc:#0D4F92;--cc2:#7FE0FF;--cct:#fff;--ccb:transparent;--ccd:#083B70";
   const lum=h=>{const x=h.replace("#","");return (.2126*parseInt(x.slice(0,2),16)+.7152*parseInt(x.slice(2,4),16)+.0722*parseInt(x.slice(4,6),16))/255;};
   if(lum(cc[0])>.9) return `--cc:#FFFFFF;--cc2:${cc[1]};--cct:#0B1F3A;--ccb:${cc[1]};--ccd:#E6EBF2`;
-  return `--cc:${cc[0]};--cc2:${cc[1]};--cct:#fff;--ccb:transparent;--ccd:color-mix(in srgb,${cc[0]} 70%,#000)`;
+  /* لون فاتح (أصفر القادسية): النص كحلي بدل الأبيض الذي لا يُقرأ */
+  return `--cc:${cc[0]};--cc2:${cc[1]};--cct:${lum(cc[0])>.55?"#0B1F3A":"#fff"};--ccb:transparent;--ccd:color-mix(in srgb,${cc[0]} 70%,#000)`;
 }
 function squadBoxHTML(c){
   const n=(SQUADS[c]||[]).length, miss=squadMissing(c);
@@ -8465,6 +8468,15 @@ const domParsed = () => new Promise(r => document.readyState!=="loading" ? r() :
 .squadbox .sqhead .cnt{color:var(--cct,#fff);border:1px solid var(--ccb,transparent)}
 .squadbox .sqhead .cnt.miss{background:#FFF1CC;color:#7A4B00;border-color:transparent}
 .sqrow .sqno{color:var(--cct,#fff)}
+/* الكشوفات في الإدارة (2026-09-15): صورة وجه لكل لاعب، والرقم دائماً على لون النادي بلون نص مقروء
+   (في الداكن كان الرقم كحلياً على خلفية داكنة فاختفى رقم الكويت) */
+.squadbox .sqrow{grid-template-columns:40px 50px minmax(0,1fr) 104px 34px}
+.sqface{width:38px;height:38px;border-radius:50%;overflow:hidden;display:grid;place-items:center;background:var(--navy-800,#132034);
+  box-shadow:0 0 0 2px var(--cc2,#2E4A70);font-family:var(--display);font-weight:800;font-size:.7rem;color:var(--slate)}
+.sqface img{width:100%;height:100%;object-fit:cover;object-position:top center}
+html .squadbox .sqrow .sqno{background:var(--cc)!important;color:var(--cct,#fff)!important}
+html .squadbox .sqrow .sqno::placeholder{color:var(--cct,#fff);opacity:.6}
+@media(max-width:520px){ .squadbox .sqrow{grid-template-columns:38px 48px minmax(0,1fr) 32px} .squadbox .sqrow select{grid-column:1/-1} }
 .sqadd button{color:var(--cct,#fff);border:1px solid var(--ccb,transparent)}
 .mrow.adm::before{border-left:2px solid var(--hcb,transparent)}
 .mrow.adm::after{border-right:2px solid var(--acb,transparent)}
