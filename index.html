@@ -2132,6 +2132,7 @@ main{padding-bottom:48px}
 let SEASON = "2026/2027";
 const COMPS = ["الدوري","كأس الأمير","كأس سمو ولي العهد","كأس السوبر"];
 let COMP = "الدوري";
+let MXC = null;   /* بطولة خارجية مختارة في صفحة المباريات (معرّف من EXT_COMPS) أو null = المسابقة المحلية COMP */
 let CARDS = [];
 let ALL = null;
 let SQUADS = {};   /* كشوفات اللاعبين: { "النادي": ["اسم", {n:"اسم", p:"CDM", s:10}, ...] } */
@@ -2371,9 +2372,113 @@ function compChips(){
 }
 function wireComp(root){
   (root||document).querySelectorAll("[data-comp]").forEach(b=>b.onclick=()=>{
-    COMP=b.dataset.comp; SELR=null; SELDAY=null; applyComp(); paintRail(); renderAll();
+    MXC=null; COMP=b.dataset.comp; SELR=null; SELDAY=null; applyComp(); paintRail(); renderAll();
     go(document.querySelector('nav.tabs button[aria-selected="true"]').dataset.v);
   });
+}
+/* اختيار المسابقة في صفحة المباريات (2026-09-15): قائمة واحدة — محلي (الدوري والكؤوس، تبدّل COMP كالشرائح)
+   وخارجي (من EXT_COMPS: جدول ترتيب المجموعة ثم المباريات كبطاقات، دون المساس ببيانات الإحصاء). */
+function compSelect(){
+  const cnt={}; (ALL?.matches||[]).forEach(m=>{ const c=compOf(m); cnt[c]=(cnt[c]||0)+1; });
+  const ext=EXT_COMPS.map(c=>({...c, n:extEvents(c.id).filter(e=>!(e.to&&e.to!==e.d)).length}));
+  const curName = MXC ? ((EXT_COMPS.find(c=>c.id===MXC)||{}).name||"") : (COMP==="الكل"?"كل المسابقات":COMP);
+  const opt=(attr,label,n,sel)=>`<button type="button" class="rs-opt" role="option" ${attr} aria-selected="${sel}">${esc(label)}${n?`<em>${n}</em>`:""}</button>`;
+  return `<div class="rs-dd mx-comp" aria-label="المسابقة">
+    <button type="button" class="rs-btn" aria-haspopup="listbox" aria-expanded="false"><span>${esc(curName)}</span><i class="chev"></i></button>
+    <div class="rs-menu" role="listbox" hidden>
+      <div class="rs-grp">محلي</div>
+      ${COMPS.map(c=>opt(`data-comp="${esc(c)}"`,c,cnt[c]||0,!MXC&&COMP===c)).join("")}
+      ${Object.keys(cnt).length>1?opt(`data-comp="الكل"`,"كل المسابقات",0,!MXC&&COMP==="الكل"):""}
+      <div class="rs-grp">خارجي</div>
+      ${ext.map(c=>opt(`data-ext="${c.id}"`,c.name,c.n,MXC===c.id)).join("")}
+    </div></div>`;
+}
+function extTeamCell(x){
+  const logo = x.t==="club" ? crest(x.n)
+    : x.t==="ext" ? `<div class="crest has-logo" style="background:#fff"><img src="${x.src}" alt="" decoding="async"></div>`
+    : x.t==="flag" ? `<div class="crest has-logo mc-flag"><img src="https://flagcdn.com/w80/${x.c}.png" alt="" decoding="async"></div>`
+    : `<div class="crest" style="background:#3B5578">${esc(x.n.slice(0,2))}</div>`;
+  return `${logo}<b>${esc(x.n)}</b>`;
+}
+const extIsKw = x => x && (x.t==="club" || (x.t==="flag" && x.c==="kw"));
+/* جدول ترتيب مجموعة الفريق الكويتي: يُحسب من المباريات التي لها نتيجة (hg/ag) فقط؛ قبل أول مباراة الكل أصفار */
+function extTableHTML(c, evs){
+  const groups=EXT_GROUPS[c.id]||[]; if(!groups.length) return "";
+  return groups.map(g=>{
+    const rows=g.teams.map(n=>{ const x=evTeam(n,c.kind); return {x, key:_norm(x.n), P:0,W:0,D:0,L:0,GF:0,GA:0,Pts:0}; });
+    const byKey={}; rows.forEach(r=>{ byKey[r.key]=r; });
+    evs.forEach(e=>{
+      if(e.hg==null || e.ag==null || (e.to && e.to!==e.d)) return;
+      const parts=evParts(e); if(parts.length<2) return;
+      const a=evTeam(parts[0],e.k), b=evTeam(parts[1],e.k); if(!a||!b) return;
+      const ra=byKey[_norm(a.n)], rb=byKey[_norm(b.n)]; if(!ra||!rb) return;
+      const hg=+e.hg, ag=+e.ag;
+      ra.P++; rb.P++; ra.GF+=hg; ra.GA+=ag; rb.GF+=ag; rb.GA+=hg;
+      if(hg>ag){ ra.W++; rb.L++; ra.Pts+=3; } else if(hg<ag){ rb.W++; ra.L++; rb.Pts+=3; } else { ra.D++; rb.D++; ra.Pts++; rb.Pts++; }
+    });
+    rows.sort((p,q)=>q.Pts-p.Pts||((q.GF-q.GA)-(p.GF-p.GA))||q.GF-p.GF||p.x.n.localeCompare(q.x.n,"ar"));
+    return `<section class="hm-std xt">
+      <h2 class="sec">جدول الترتيب<span class="sq-n">${esc(g.name)}</span></h2>
+      <div class="hm-card hm-tblwrap"><table class="hm-tbl">
+        <thead><tr><th class="c">#</th><th class="club">الفريق</th><th>ل</th><th>ف</th><th>ت</th><th>خ</th><th>+/-</th><th class="pts">ن</th></tr></thead>
+        <tbody>${rows.map((r,i)=>`<tr class="${extIsKw(r.x)?"kw":""}">
+          <td class="c">${i+1}</td>
+          <td class="club"><span>${extTeamCell(r.x)}</span></td>
+          <td>${r.P}</td><td>${r.W}</td><td>${r.D}</td><td>${r.L}</td><td dir="ltr">${(r.GF-r.GA)>0?"+":""}${r.GF-r.GA}</td>
+          <td class="pts">${r.Pts}</td></tr>`).join("")}</tbody>
+      </table></div>
+    </section>`;
+  }).join("");
+}
+function renderExtMatches(){
+  const c=EXT_COMPS.find(x=>x.id===MXC); if(!c){ MXC=null; renderMatches(); return; }
+  const evs=extEvents(c.id);
+  const t=new Date(); const todayIso=`${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,"0")}-${String(t.getDate()).padStart(2,"0")}`;
+  const dayLabel=iso=>{ const d=new Date(iso+"T00:00:00"); if(isNaN(d)) return esc(iso); return `${AR_DOW[d.getDay()]} ${d.getDate()} ${AR_MON[d.getMonth()]}`; };
+  let lastDay=null, soon=0, done=0;
+  const cards=evs.map(e=>{
+    const parts=evParts(e);
+    const span=!!(e.to && e.to!==e.d);
+    const a=parts.length>=2?evTeam(parts[0],e.k):null, b=parts.length>=2?evTeam(parts[1],e.k):null;
+    const isMatch=!span && a && b && (a.t!=="other"||b.t!=="other") && !/نصف|نهائي|ربع|مباريات/.test(parts[0]);
+    const played = e.hg!=null && e.ag!=null;
+    const up = !played && e.d>=todayIso;
+    const dayHead=e.d!==lastDay?`<div class="mc-day"><span>${span?esc(evRange(e)):dayLabel(e.d)}</span></div>`:""; lastDay=e.d;
+    if(!isMatch) return `${dayHead}<article class="mc soon"><div class="mc-stage">${esc(span?e.t:(parts.slice(0,-1).join(" - ")||e.t))}${e.n?`<em>${esc(e.n)}</em>`:""}</div></article>`;
+    if(up) soon++; else done++;
+    const st=up?'<span class="mc-st soon">لم تبدأ</span>':'<span class="mc-st done">انتهت</span>';
+    const mid = played ? `<span class="mc-score" dir="ltr">${+e.hg} - ${+e.ag}</span>` : `<span class="mc-time" dir="ltr">${e.time?esc(e.time):"—"}</span>`;
+    return `${dayHead}<article class="mc${up?" soon":" done"}">
+      <div class="mc-row">
+        <div class="mc-team h">${extTeamCell(a)}</div>
+        <div class="mc-mid">${mid}${st}</div>
+        <div class="mc-team a">${extTeamCell(b)}</div>
+      </div>
+      <div class="mc-foot"><span>${esc(c.name)}</span>${e.n?`<span>${esc(e.n)}</span>`:""}${(played&&e.time)?`<span class="mc-date" dir="ltr">${esc(e.time)}</span>`:""}${e.venue?`<span>${esc(e.venue)}</span>`:""}</div>
+    </article>`;
+  }).join("");
+  $("#v-matches").innerHTML=`
+    <div class="mx-head"><h2 class="mx-title">المباريات</h2>${compSelect()}</div>
+    ${extTableHTML(c, evs)}
+    <h2 class="sec xt-mx">المباريات<span class="sq-n">${esc(c.name)}</span></h2>
+    ${(soon+done)?`<div class="msum"><span><b>${done}</b>أُقيمت</span><span><b>${soon}</b>لم تبدأ</span></div>`:""}
+    <div class="mx-list">${cards||'<div class="mx-empty">لا توجد مباريات مضافة لهذه البطولة بعد.</div>'}</div>`;
+  const V=$("#v-matches"); wireComp(V); wireDropdowns(V);
+}
+/* القوائم المنسدلة (الجولة/المسابقة): فتح وإغلاق وخارج النقر وEscape */
+function wireDropdowns(V){
+  V.querySelectorAll(".rs-dd").forEach(dd=>{
+    const rsBtn=dd.querySelector(".rs-btn"), rsMenu=dd.querySelector(".rs-menu"); if(!rsBtn||!rsMenu) return;
+    const close=()=>{ rsMenu.hidden=true; rsBtn.setAttribute("aria-expanded","false"); document.removeEventListener("click",onDoc,true); };
+    const onDoc=e=>{ if(!rsBtn.contains(e.target) && !rsMenu.contains(e.target)) close(); };
+    rsBtn.onclick=()=>{
+      const open=rsMenu.hidden; rsMenu.hidden=!open; rsBtn.setAttribute("aria-expanded",String(open));
+      if(open){ document.addEventListener("click",onDoc,true);
+        const cur=rsMenu.querySelector('[aria-selected="true"]'); if(cur) cur.scrollIntoView({block:"nearest"}); }
+    };
+    rsMenu.addEventListener("keydown",e=>{ if(e.key==="Escape"){ close(); rsBtn.focus(); } });
+  });
+  V.querySelectorAll("[data-ext]").forEach(b=>b.onclick=()=>{ MXC=b.dataset.ext; SELDAY=null; renderMatches(); });
 }
 /* حالة المباراة تُشتق من التاريخ والوقت — لا تُكتب يدوياً */
 /* توحيد صيغة الوقت: أرقام عربية، و«م/مساءً/PM» تُحوّل لنظام ٢٤ ساعة */
@@ -5102,7 +5207,62 @@ function calMonth(){
    مناسبة واحدة: {d:"من", to:"إلى"(اختياري), t:"العنوان", k:"النوع", n:"تفصيل"}
    تُعرض في الرزنامة وتحتها، فيرى الجمهور سبب توقف الدوري. */
 const EV_KINDS = ["منتخب", "بطولة خارجية", "توقف الدوري", "مناسبة"];
-function allEvents(){ return (ALL && ALL.events) || []; }
+/* البطولات الخارجية في صفحة المباريات (2026-09-15): تُقرأ من «المناسبات» بعنوانها «أ - ب - البطولة» */
+const EXT_COMPS=[
+  {id:"gulf27", name:"خليجي 27",                 kind:"منتخب",        re:/خليجي|كاس الخليج|كأس الخليج/, not:/الأندية|الاندية|أبطال الخليج|ابطال الخليج/},
+  {id:"gcl",    name:"دوري أبطال الخليج للأندية", kind:"بطولة خارجية", re:/الخليج للأندية|الخليج للاندية|أبطال الخليج|ابطال الخليج/},
+  {id:"acl2",   name:"دوري أبطال آسيا 2",         kind:"بطولة خارجية", re:/اسيا 2|آسيا 2|اسيا تو|آسيا تو/},
+  {id:"acc",    name:"دوري التحدي الآسيوي",       kind:"بطولة خارجية", re:/التحدي/}
+];
+function extCompOf(e){ const t=String(e&&e.t||""); const c=EXT_COMPS.find(c=>c.re.test(t) && !(c.not&&c.not.test(t))); return c?c.id:null; }
+/* مجموعات الفرق الكويتية في كل بطولة — لجدول الترتيب. النتائج تُقرأ من hg/ag في المباراة (مناسبة أو ثابتة) متى توفرت. */
+const EXT_GROUPS={
+  gulf27:[{name:"مجموعة الأزرق", teams:["الكويت","السعودية","العراق","عمان"]}],
+  gcl:   [{name:"مجموعة كاظمة", teams:["كاظمة","الاتفاق السعودي","عجمان الاماراتي","أربيل العراقي"]}],
+  acl2:  [{name:"مجموعة الكويت", teams:["الكويت","الوحدة الاماراتي","الخالدية البحريني","ناساف الاوزبكي"]}],
+  acc:   [{name:"المجموعة C · القادسية", teams:["القادسية","فورتيس البنغالي","ريغار تاداز الطاجيكي","غوا الهندي"]},
+          {name:"مجموعة العربي", teams:["العربي","حمص الفداء السوري","استقلول الطاجيكي","النجمة اللبناني"]}]
+};
+/* مباريات ثابتة من الملصقات الرسمية للأندية (تحمل الملعب والوقت وترتيب المضيف) — تُدمج مع مناسبات الإدارة،
+   والنسخة السحابية تُسقط إذا تطابق اليوم والبطولة والفريقان (فلا تتكرر). النتيجة: hg/ag عند توفرها. */
+const EXT_FIXTURES=[
+  /* كاظمة — دوري أبطال الخليج للأندية 2026-27 (المركز الإعلامي لنادي كاظمة) */
+  {d:"2026-10-14",t:"الاتفاق السعودي - كاظمة - دوري أبطال الخليج للأندية",k:"بطولة خارجية",time:"21:00",venue:"ملعب نادي الاتفاق",n:"الجولة 1"},
+  {d:"2026-10-27",t:"كاظمة - عجمان الاماراتي - دوري أبطال الخليج للأندية",k:"بطولة خارجية",time:"17:00",venue:"استاد الصداقة والسلام",n:"الجولة 2"},
+  {d:"2026-11-04",t:"أربيل العراقي - كاظمة - دوري أبطال الخليج للأندية",k:"بطولة خارجية",time:"20:00",venue:"استاد فرانسو حريري",n:"الجولة 3"},
+  {d:"2026-11-25",t:"كاظمة - أربيل العراقي - دوري أبطال الخليج للأندية",k:"بطولة خارجية",time:"17:00",venue:"استاد الصداقة والسلام",n:"الجولة 4"},
+  {d:"2026-12-08",t:"كاظمة - الاتفاق السعودي - دوري أبطال الخليج للأندية",k:"بطولة خارجية",time:"17:00",venue:"استاد الصداقة والسلام",n:"الجولة 5"},
+  {d:"2027-02-17",t:"عجمان الاماراتي - كاظمة - دوري أبطال الخليج للأندية",k:"بطولة خارجية",time:"22:30",venue:"استاد راشد بن سعيد",n:"الجولة 6"},
+  /* نادي الكويت — دوري أبطال آسيا 2، دور المجموعات (المركز الإعلامي لنادي الكويت) */
+  {d:"2026-09-16",t:"الوحدة الاماراتي - الكويت - اسيا 2",k:"بطولة خارجية",time:"",venue:"استاد آل نهيان، أبوظبي",n:"الجولة 1"},
+  {d:"2026-10-14",t:"الكويت - الخالدية البحريني - اسيا 2",k:"بطولة خارجية",time:"",venue:"استاد جابر المبارك الصباح",n:"الجولة 2"},
+  {d:"2026-10-28",t:"ناساف الاوزبكي - الكويت - اسيا 2",k:"بطولة خارجية",time:"",venue:"الاستاد المركزي، قرشي",n:"الجولة 3"},
+  {d:"2026-11-04",t:"الكويت - ناساف الاوزبكي - اسيا 2",k:"بطولة خارجية",time:"",venue:"استاد جابر المبارك الصباح",n:"الجولة 4"},
+  {d:"2026-11-25",t:"الكويت - الوحدة الاماراتي - اسيا 2",k:"بطولة خارجية",time:"",venue:"استاد جابر المبارك الصباح",n:"الجولة 5"},
+  {d:"2026-12-09",t:"الخالدية البحريني - الكويت - اسيا 2",k:"بطولة خارجية",time:"",venue:"استاد البحرين الوطني، الرفاع",n:"الجولة 6"},
+  /* القادسية — دوري التحدي الآسيوي، المجموعة C (المركز الإعلامي لنادي القادسية) */
+  {d:"2026-10-17",t:"فورتيس البنغالي - القادسية - التحدي الاسيوي",k:"بطولة خارجية",time:"",venue:"",n:"الجولة 1"},
+  {d:"2026-10-20",t:"ريغار تاداز الطاجيكي - القادسية - التحدي الاسيوي",k:"بطولة خارجية",time:"",venue:"",n:"الجولة 2"},
+  {d:"2026-10-23",t:"غوا الهندي - القادسية - التحدي الاسيوي",k:"بطولة خارجية",time:"",venue:"",n:"الجولة 3"},
+  /* العربي — دوري التحدي الآسيوي (المركز الإعلامي للنادي العربي؛ كل المباريات على ملعب حصار المركزي في طاجيكستان، بتوقيت الكويت) */
+  {d:"2026-10-17",t:"العربي - حمص الفداء السوري - التحدي الاسيوي",k:"بطولة خارجية",time:"14:00",venue:"ملعب حصار المركزي، طاجيكستان",n:"الجولة 1"},
+  {d:"2026-10-20",t:"العربي - استقلول الطاجيكي - التحدي الاسيوي",k:"بطولة خارجية",time:"17:00",venue:"ملعب حصار المركزي، طاجيكستان",n:"الجولة 2"},
+  {d:"2026-10-23",t:"العربي - النجمة اللبناني - التحدي الاسيوي",k:"بطولة خارجية",time:"14:00",venue:"ملعب حصار المركزي، طاجيكستان",n:"الجولة 3"}
+];
+function evParts(e){ return String(e&&e.t||"").split(/\s*[-–—]\s*/).map(p=>p.trim()).filter(Boolean); }
+function evTeamsKey(e){
+  const parts=evParts(e); if(parts.length<2) return "";
+  const xs=[evTeam(parts[0],e.k),evTeam(parts[1],e.k)].filter(Boolean);
+  const local=xs.filter(x=>x.t==="club").map(x=>_norm(x.n)).sort();   /* يكفي النادي المحلي: تهجئة الخصم تختلف بين الإدارة والملصق */
+  return (local.length?local:xs.map(x=>_norm(x.n)).sort()).join("|");
+}
+function allEvents(){
+  const cloud=(ALL && ALL.events) || [];
+  const key=e=>e.d+"|"+extCompOf(e)+"|"+evTeamsKey(e);
+  const fixed=new Set(EXT_FIXTURES.map(key));
+  return [...cloud.filter(e=>!(extCompOf(e) && fixed.has(key(e)))), ...EXT_FIXTURES];
+}
+function extEvents(id){ return allEvents().filter(e=>extCompOf(e)===id).sort((a,b)=>String(a.d).localeCompare(String(b.d))||String(a.time||"").localeCompare(String(b.time||""))); }
 function evDays(e){                                  /* أيام المناسبة من d إلى to */
   const out=[]; if(!e || !e.d) return out;
   const a=new Date(e.d+"T12:00:00"), b=new Date((e.to||e.d)+"T12:00:00");
@@ -5141,7 +5301,9 @@ const EXT_CRESTS={
   "فورتيس":"assets/crests/ext/fortis_ban.png","ريغار":"assets/crests/ext/regar_tjk.png","ريجار":"assets/crests/ext/regar_tjk.png",
   "استقلول":"assets/crests/ext/istiklol_tjk.png","استقلال":"assets/crests/ext/istiklol_tjk.png",
   "غوا":"assets/crests/ext/goa_ind.png","جوا":"assets/crests/ext/goa_ind.png","النجمة":"assets/crests/ext/nejmeh_lbn.png",
-  "حمص الفداء":"assets/crests/ext/homs_syr.png","حمص الفدا":"assets/crests/ext/homs_syr.png","الفداء":"assets/crests/ext/homs_syr.png","الوثبة":"assets/crests/ext/homs_syr.png"
+  "حمص الفداء":"assets/crests/ext/homs_syr.png","حمص الفدا":"assets/crests/ext/homs_syr.png","الفداء":"assets/crests/ext/homs_syr.png","الوثبة":"assets/crests/ext/homs_syr.png",
+  "ريغار تاداز":"assets/crests/ext/regar_tjk.png","ريجار تاداز":"assets/crests/ext/regar_tjk.png",
+  "الاتفاق":"assets/crests/ext/ettifaq_ksa.png","عجمان":"assets/crests/ext/ajman_uae.png","أربيل":"assets/crests/ext/erbil_irq.png","اربيل":"assets/crests/ext/erbil_irq.png"
 };
 const EXT_N={}; Object.keys(EXT_CRESTS).forEach(k=>{ EXT_N[_norm(k)]=EXT_CRESTS[k]; });
 function evTeam(name, kind){
@@ -5418,6 +5580,7 @@ function renderHomeLegacy(){
 }
 
 function renderMatches(){
+  if(MXC){ renderExtMatches(); return; }
   if(SELR_AUTO && SELR===null && !SELDAY){ const cr=currentRound(); if(cr!==null && MATCHES.some(m=>m.round===cr)) SELR=cr; }
   let list = MATCHES.slice();
   if(SELDAY) list = list.filter(m=>m.date===SELDAY);
@@ -5553,7 +5716,7 @@ function renderMatches(){
   }).join("");
 
   $("#v-matches").innerHTML = `
-    <div class="mx-head"><h2 class="mx-title">المباريات</h2>${compChips()}</div>
+    <div class="mx-head"><h2 class="mx-title">المباريات</h2>${compSelect()}</div>
     ${calendarBar()}
     ${roundStrip()}
     ${roundSummary(list)}
@@ -5573,17 +5736,7 @@ function renderMatches(){
   wireComp(V);
   V.querySelectorAll("[data-round]").forEach(b=>b.onclick=()=>{
     SELR_AUTO=false; SELR = b.dataset.round==="all" ? null : +b.dataset.round; SELDAY=null; renderMatches(); });
-  const rsBtn=V.querySelector("#rsBtn"), rsMenu=V.querySelector("#rsMenu");
-  if(rsBtn && rsMenu){
-    const close=()=>{ rsMenu.hidden=true; rsBtn.setAttribute("aria-expanded","false"); document.removeEventListener("click",onDoc,true); };
-    const onDoc=e=>{ if(!rsBtn.contains(e.target) && !rsMenu.contains(e.target)) close(); };
-    rsBtn.onclick=()=>{
-      const open=rsMenu.hidden; rsMenu.hidden=!open; rsBtn.setAttribute("aria-expanded",String(open));
-      if(open){ document.addEventListener("click",onDoc,true);
-        const cur=rsMenu.querySelector('[aria-selected="true"]'); if(cur) cur.scrollIntoView({block:"nearest"}); }
-    };
-    rsMenu.addEventListener("keydown",e=>{ if(e.key==="Escape"){ close(); rsBtn.focus(); } });
-  }
+  wireDropdowns(V);
   V.querySelectorAll("[data-rstep]").forEach(b=>b.onclick=()=>{
     const rounds=[...new Set(MATCHES.map(m=>m.round))].sort((a,b)=>a-b);
     const base=SELR===null?currentRound():SELR;
@@ -8388,6 +8541,18 @@ html[data-theme="dark"] .rs-btn,html[data-theme="dark"] .rs-nav,html[data-theme=
 .mx-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin:2px 0 12px}
 .mx-title{margin:0;font-family:var(--display);font-weight:800;font-size:1.25rem;color:var(--head,#fff)}
 .mx-head .segbar{margin:0}
+.mx-comp .rs-btn{min-width:210px}
+.mx-comp .rs-menu{min-width:240px;max-height:360px;inset-inline-start:auto;inset-inline-end:0}   /* القائمة على يسار الصفحة: تُفتح نحو الداخل لا خارج الحافة */
+.rs-grp{padding:8px 10px 3px;font-size:.62rem;font-weight:800;color:var(--slate);letter-spacing:.02em}
+.rs-opt+.rs-grp{border-top:1px solid var(--line,rgba(143,166,196,.16));margin-top:4px}
+.mc-stage{display:flex;align-items:center;gap:10px;padding:12px 14px;font-family:var(--display);font-weight:700;font-size:.85rem;color:var(--head,#fff)}
+.mc-stage em{font-style:normal;font-size:.66rem;font-weight:600;color:var(--slate)}
+.mc-team .crest.mc-flag,.hm-tbl .crest.mc-flag{background:#fff}
+.mc-team .crest.mc-flag img,.hm-tbl .crest.mc-flag img{object-fit:cover;border-radius:6px}
+.hm-std.xt{margin:0 0 16px}
+.hm-tbl tr.kw td{background:rgba(46,176,240,.08)}
+.hm-tbl tr.kw td.club b{color:var(--zain-text,var(--sky))}
+.sec.xt-mx{margin:4px 0 10px}
 .dstrip{border-radius:16px;background:var(--navy-900);border:1px solid var(--line,rgba(143,166,196,.18));padding:10px 12px 8px;margin-bottom:12px;box-shadow:var(--shadow,none)}
 html[data-theme="dark"] .dstrip{background:#0F1E35;border-color:#213653;box-shadow:none}
 .ds-head{display:flex;align-items:center;gap:10px;margin-bottom:8px}
@@ -9136,6 +9301,7 @@ const I18N_EXTRA = {
   // منتخبات وبطولات تظهر في الأجندة (أسماء من بيانات الإدارة)
   'السعودية':'Saudi Arabia', 'العراق':'Iraq', 'عمان':'Oman', 'قطر':'Qatar', 'البحرين':'Bahrain', 'الإمارات':'UAE', 'اليمن':'Yemen', 'الوحدة':'Al-Wahda',
   'خليجي 27 ( السعودية)':'Gulf Cup 27 (Saudi Arabia)', 'خليجي 27':'Gulf Cup 27', 'كاس الخليج - السعودية':'Gulf Cup – Saudi Arabia', 'كأس الخليج':'Gulf Cup', 'اسيا 2':'AFC Champions League Two', 'آسيا 2':'AFC Champions League Two', 'منتخب':'National team', 'بطولة خارجية':'External competition',
+  'دوري أبطال الخليج للأندية':'Gulf Club Champions League', 'دوري أبطال آسيا 2':'AFC Champions League Two', 'دوري التحدي الآسيوي':'AFC Challenge League', 'محلي':'Domestic', 'خارجي':'International', 'كل المسابقات':'All competitions', 'أُقيمت':'Played', 'مجموعة الأزرق':'Kuwait’s group', 'مجموعة كاظمة':'Kazma’s group', 'مجموعة الكويت':'Kuwait SC’s group', 'المجموعة C · القادسية':'Group C · Qadsia', 'مجموعة العربي':'Al-Arabi’s group', 'الفريق':'Team',
 };
 document.addEventListener("DOMContentLoaded", ()=>{
   /* I18N معرَّف بـconst فليس خاصية على window */
