@@ -3283,7 +3283,7 @@ function refsAdminHTML(){
       <div class="refcounts">${counts}</div>
       <input id="refFilter" class="refin" placeholder="بحث في القائمة" autocomplete="off" style="margin:4px 0 10px">
       <div class="reflist">${REFDRAFT.map((r,i)=>`<div class="refrow" data-refrow="${i}" data-refname="${esc(r.name)}">
-          <b>${esc(r.name)}</b>
+          ${refFace(r.name)}<b>${esc(r.name)}</b>
           <div class="refcats">${REF_CATS.map(([c])=>box(c,r.roles.includes(c),`data-refi="${i}" data-refc="${c}"`)).join("")}</div>
           <button class="dl" type="button" data-refdel="${i}" title="حذف من القائمة">حذف</button>
         </div>`).join("")}</div>
@@ -4341,6 +4341,16 @@ function refPool(){
   const out=new Map([...map].map(([n,set])=>[n,{name:n,roles:[...set],saved:false}]));
   (ALL&&ALL.refpool||[]).forEach(r=>{ const n=String(r.name||"").trim(); if(n) out.set(n,{name:n,roles:(r.roles||[]).filter(c=>REF_CATS.some(([k])=>k===c)),saved:true}); });
   return [...out.values()].sort((a,b)=>a.name.localeCompare(b.name,"ar"));
+}
+/* صور الحكام: assets/referees/<ملف>.webp (وجه مربّع). الاسم كما في REF_BOOK. */
+const REF_PHOTOS={
+/*REF_PHOTOS_START*/
+/*REF_PHOTOS_END*/
+};
+function refFace(name, cls){
+  const f=REF_PHOTOS[String(name||"").trim()];
+  return f ? `<img class="ref-face${cls?" "+cls:""}" src="assets/referees/${f}.webp?v=1" alt="" loading="lazy">`
+           : `<span class="ref-face ref-face-ph${cls?" "+cls:""}" aria-hidden="true"></span>`;
 }
 function crewOf(m){ const b=REF_BOOK[`${m.round}|${m.home}|${m.away}`]||{}, saved=m.refs||{}, refs={};
   REF_ROLES.forEach(([k])=>{ const v=saved[k]||b[k]; if(v) refs[k]=v; });
@@ -9451,6 +9461,20 @@ html.mp-open{overflow:hidden}
 .mp-link{font-size:.74rem;font-weight:700;color:var(--sky,#5FB2E8);background:none;border:0}
 .mp-empty{color:var(--text-muted,var(--slate));font-size:.84rem;text-align:center;padding:18px 8px}
 .mp-card.mp-empty{padding:26px 12px}
+.ref-face{width:34px;height:34px;border-radius:50%;object-fit:cover;flex:0 0 auto;display:inline-block;
+  background:var(--navy-800,#0f1b2d) radial-gradient(circle at 50% 38%,rgba(143,166,196,.35) 0 22%,transparent 23%),
+  var(--navy-800,#0f1b2d);border:1px solid var(--border-card,rgba(143,166,196,.2))}
+.ref-face-ph{background:radial-gradient(circle at 50% 36%,rgba(143,166,196,.32) 0 19%,transparent 20%),radial-gradient(ellipse at 50% 100%,rgba(143,166,196,.32) 0 38%,transparent 39%),var(--navy-800,#0f1b2d)}
+.ref-face.lg{width:64px;height:64px}
+.ref-face.sm{width:18px;height:18px;border:0}
+.mp-crew .crew-main{display:flex;align-items:center;gap:12px;padding:4px 2px 12px;border-bottom:1px solid var(--border-card,rgba(143,166,196,.14))}
+.mp-crew small{display:block;font-size:.7rem;color:var(--text-muted,var(--slate))}
+.mp-crew b{display:block;color:var(--text-primary,#fff);font-weight:700;font-size:.86rem;line-height:1.35}
+.mp-crew .crew-main b{font-size:1rem}
+.mp-crew .crew-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px 14px;padding-top:12px}
+.mp-crew .crew-p{display:flex;align-items:center;gap:10px;min-width:0}
+.mp-crew .crew-p.none b{color:var(--text-muted,var(--slate));font-weight:500}
+.refrow .ref-face{width:30px;height:30px}
 .mp-irow{display:flex;justify-content:space-between;gap:12px;padding:9px 2px;border-bottom:1px solid var(--border-card,rgba(143,166,196,.14));font-size:.82rem}
 .mp-irow:last-of-type{border-bottom:0}
 .mp-irow span{color:var(--text-muted,var(--slate))}
@@ -9465,6 +9489,9 @@ html.mp-open{overflow:hidden}
 .mp-tbl .pts{font-weight:800}
 .mp-tbl tr{cursor:pointer}
 @media(max-width:480px){.mp-tbl .frm{display:none}}
+/* جدول الترتيب المصغّر لا يرث قيود الجداول العامة (min-width:520px وخلفية رأس الجدول) */
+.mp-sheet table.mp-tbl{min-width:0}
+.mp-sheet .mp-tbl thead th{background:none;color:var(--text-muted,var(--slate));font-family:inherit;border-radius:0;padding:4px 4px 8px}
 .mp-std .hm-std{margin:0}
 .mp-std tr[data-mp-hl]{background:rgba(95,178,232,.14)}
 .mp-std tr[data-mp-hl] td{font-weight:700}
@@ -9491,7 +9518,9 @@ html.mp-open{overflow:hidden}
 .mp-mrow .r.w{background:var(--win,#35a47c)}
 .mp-mrow .r.d{background:var(--draw,#8a97a8)}
 .mp-mrow .r.l{background:var(--loss,#d9534f)}
-[data-theme="light"] .mp-sheet{background:#f3f6fa}
+[data-theme="light"] .mp-sheet{background:#f3f6fa;--text-primary:#0B1F3A;--text-muted:#5B6B80;--border-card:#E2E8F0;--bg-card:#FFFFFF}
+/* الوضع الفاتح: رأس الصفحة يبقى داكناً بنصّه الأبيض؛ ما تحته يأخذ ألوان النص الداكنة */
+[data-theme="light"] .mp-head{--text-primary:#fff;--text-muted:rgba(255,255,255,.7)}
 [data-theme="light"] .mp-seg button[aria-pressed="true"]{background:#0b1f3a;color:#fff}
 .mp-seg.two{grid-template-columns:1fr 1fr}
 .mp-seg.two button{display:flex;align-items:center;justify-content:center;gap:8px}
@@ -10502,11 +10531,15 @@ function mpInfoRows(m){
   if(m.date) rows.push(["التاريخ", `${mpDateLabel(m)}${m.time?` · <span dir="ltr">${esc(m.time)}</span>`:""}`]);
   if(m.venue) rows.push(["الملعب", esc(m.venue)]);
   const crew=crewOf(m), refs=crew.refs;
-  if(crew.ref) rows.push(["حكم الساحة", esc(crew.ref)]);
-  (typeof REF_ROLES!=="undefined" ? REF_ROLES : []).forEach(([k,label])=>{ if(refs[k]) rows.push([label, esc(refs[k])]); });
   if(m.tv) rows.push(["القناة الناقلة", esc(m.tv)]);
+  const people=[]; if(crew.ref) people.push(["حكم الساحة", crew.ref]);
+  REF_ROLES.forEach(([k,label])=>{ if(refs[k]) people.push([label, refs[k]]); });
+  const none=v=>v==="لا يوجد";
+  const crewCard = people.length ? `<div class="mp-card mp-crew"><div class="mp-hd"><h3>طاقم التحكيم</h3></div>
+    ${crew.ref?`<div class="crew-main">${refFace(crew.ref,"lg")}<div><small>حكم الساحة</small><b>${esc(crew.ref)}</b></div></div>`:""}
+    <div class="crew-grid">${people.slice(crew.ref?1:0).map(([l,n])=>`<div class="crew-p${none(n)?" none":""}">${none(n)?`<span class="ref-face ref-face-ph" aria-hidden="true"></span>`:refFace(n)}<div><small>${l}</small><b>${esc(n)}</b></div></div>`).join("")}</div></div>` : "";
   return `<div class="mp-card mp-info">${rows.map(([k,v])=>`<div class="mp-irow"><span>${k}</span><b>${v}</b></div>`).join("")}
-    ${m.note?`<div class="mp-note">${esc(m.note)}</div>`:""}</div>`;
+    ${m.note?`<div class="mp-note">${esc(m.note)}</div>`:""}</div>${crewCard}`;
 }
 function mpMiniTable(m){
   if(compOf(m)!=="الدوري" || !playedMatches().length) return "";
@@ -11446,7 +11479,7 @@ html.mx-editing #waFab{display:none!important}   /* زر واتساب كان ي�
         <div class="mx-teams">${teamBtn("home")}
           <div class="mx-sc"><div class="n">${ag}<i>:</i>${hg}</div><span class="st${m.status&&m.status!=="ft"&&m.status!=="pre"?" live":""}">${m.status?(PHASES.find(p=>p[0]===m.status)||["",""])[1]:upcoming?"لم تبدأ":m.round?`الجولة ${esc(m.round)}`:"—"}</span></div>
           ${teamBtn("away")}</div>
-        <div class="mx-meta">${m.date?`<span>${SV.cal}<bdi dir="ltr">${esc(m.date)}${m.time?` · ${esc(m.time)}`:""}</bdi></span>`:""}${m.venue?`<span>${SV.pin}${esc(m.venue)}</span>`:""}${m.ref?`<span>${SV.whistle}${esc(m.ref)}</span>`:""}${m.tv?`<span>${SV.tv}${esc(m.tv)}</span>`:""}<span>${esc(m.comp||"")}</span></div>
+        <div class="mx-meta">${m.date?`<span>${SV.cal}<bdi dir="ltr">${esc(m.date)}${m.time?` · ${esc(m.time)}`:""}</bdi></span>`:""}${m.venue?`<span>${SV.pin}${esc(m.venue)}</span>`:""}${m.ref?`<span>${REF_PHOTOS[m.ref]?refFace(m.ref,"sm"):SV.whistle}${esc(m.ref)}</span>`:""}${m.tv?`<span>${SV.tv}${esc(m.tv)}</span>`:""}<span>${esc(m.comp||"")}</span></div>
       </div>
       <nav class="mx-tabs">
         <button class="mx-tab${MX.tab==="match"?" on":""}" data-mtab="match">المباراة<small>${m.round?`الجولة ${esc(m.round)}`:"البيانات"}</small></button>
