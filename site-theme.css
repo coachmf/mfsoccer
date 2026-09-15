@@ -240,7 +240,7 @@ html[dir="ltr"] .hero-tools{right:auto;left:20px}
 @media print{.hero-tools{display:none!important}}
 
 /* ---------- الاتجاه الإنجليزي (dir=ltr) ---------- */
-html[dir="ltr"] body{font-family:'Readex Pro','IBM Plex Sans Arabic',system-ui,sans-serif}
+html[dir="ltr"] body{font-family:'Vazirmatn',system-ui,sans-serif}
 html[dir="ltr"] .hero-sub{right:auto;left:20px}
 html[dir="ltr"] .hero-sub button{clip-path:polygon(0 0,calc(100% - 9px) 0,100% 100%,0 100%);padding:11px 26px 11px 22px}
 html[dir="ltr"] .hero-sub button:first-child{clip-path:polygon(0 0,calc(100% - 9px) 0,100% 100%,0 100%)}

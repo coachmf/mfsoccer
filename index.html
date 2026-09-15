@@ -54,18 +54,18 @@ THEME.apply(THEME.get());
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <!-- الخطوط لا تحجب أول رسم: تُحمَّل كـprint ثم تُفعَّل، والنص يظهر بخط النظام حتى وصولها -->
-<link href="https://fonts.googleapis.com/css2?family=Readex+Pro:wght@400;600;700&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
-<noscript><link href="https://fonts.googleapis.com/css2?family=Readex+Pro:wght@400;600;700&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&display=swap" rel="stylesheet"></noscript>
+<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+<noscript><link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"></noscript>
 
 
-<!-- v3:fonts --><link href="https://fonts.googleapis.com/css2?family=Alexandria:wght@500;600;700;800;900&display=swap" rel="stylesheet" media="print" onload="this.media='all'"><noscript><link href="https://fonts.googleapis.com/css2?family=Alexandria:wght@500;600;700;800;900&display=swap" rel="stylesheet"></noscript><!-- /v3:fonts -->
+<!-- v3:fonts — الخط الموحد Vazirmatn محمّل أعلاه -->
 <style>
 :root{
   --ink:#061529; --navy-900:#0A2242; --navy-800:#0E2B52; --navy-600:#17417A;
   --sky:#5FB2E8; --sky-soft:#A9D8F5; --mist:#EDF3FA; --slate:#8FA6C4;
   --win:#35A47C; --draw:#8FA6C4; --loss:#E0644F; --sand:#E9B949;
-  --display:'Readex Pro',system-ui,sans-serif;
-  --body:'IBM Plex Sans Arabic',system-ui,sans-serif;
+  --display:'Vazirmatn',system-ui,sans-serif;
+  --body:'Vazirmatn',system-ui,sans-serif;
   --r:12px; --nav-h:64px;
 }
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
@@ -1133,7 +1133,7 @@ table.lb td.rk{color:var(--slate)} table.lb td.rk.top{color:var(--sand)} table.l
 
 
 /* ===== v3 official ===== */
-:root{--display:'Alexandria','Readex Pro',system-ui,sans-serif;--ice:#7FE0FF;--navy:#0B1F3A}
+:root{--display:'Vazirmatn',system-ui,sans-serif;--ice:#7FE0FF;--navy:#0B1F3A}
 body{background:
   radial-gradient(70% 40% at 50% 0%,rgba(46,176,240,.10),transparent 70%),
   repeating-linear-gradient(135deg,rgba(13,79,146,.035) 0 1px,transparent 1px 16px),
@@ -4820,7 +4820,7 @@ async function exportImage(mode, club){
   const S=1080, c=document.createElement("canvas"); c.width=S; c.height=S;
   const x=c.getContext("2d");
   try{ await document.fonts.ready; }catch(e){}
-  const F=(w,sz)=>`${w} ${sz}px "IBM Plex Sans Arabic", system-ui, sans-serif`;
+  const F=(w,sz)=>`${w} ${sz}px "Vazirmatn", system-ui, sans-serif`;
 
   const bg=x.createLinearGradient(0,0,S,S);
   bg.addColorStop(0,"#0E2B52"); bg.addColorStop(.55,"#0A2242"); bg.addColorStop(1,"#061529");
