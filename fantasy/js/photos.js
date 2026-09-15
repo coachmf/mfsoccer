@@ -4,7 +4,7 @@
 'use strict';
 
 /* رقم نسخة الصور: ارفعه عند إعادة توليد أي قصّة حتى لا يبقى المتصفح على النسخة القديمة */
-const PLAYER_PHOTOS_VER = '10';
+const PLAYER_PHOTOS_VER = '11';
 
 const PLAYER_PHOTOS = {
   // الصليبخات (17)
@@ -259,6 +259,11 @@ const PLAYER_PHOTOS = {
   'ARB|يوسف ماجد': '/assets/players/arb/19',
   'ARB|ايوالا': '/assets/players/arb/77',
   'ARB|زيد قنبر': '/assets/players/arb/98',
+  'ARB|طلال القيسي': '/assets/players/arb/11',
+  'ARB|يوسف الخبيزي': '/assets/players/arb/13',
+  'ARB|احمد عادي': '/assets/players/arb/26',
+  'ARB|علي عبدالرسول': '/assets/players/arb/16',
+  'ARB|علي الدوخي': '/assets/players/arb/9',
   'KAZ|بدر طارق': '/assets/players/kaz/77',   // انتقل من العربي (منصور 2026-09-15)
   'ARB|وليد ولد الشيخ': '/assets/players/arb/walid',
   'NSR|مسفر العدواني': '/assets/players/nsr/mesfer',   // بطاقة ترحيب النادي، مهاجم بلا رقم بعد   // بطاقة المركز الإعلامي للنادي، بلا رقم بعد

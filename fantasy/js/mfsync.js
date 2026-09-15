@@ -7,10 +7,14 @@
 /* لاعبون انضموا للكشف قبل إدخالهم في كشوفات الموقع (نفس SQUAD_ADD في index.html للموقع).
    يُدمجون في squads عند القراءة فيصلون لسحب الكشوفات كلاعبين جدد بانتظار التأكيد، و price = سعره المقترح في اللعبة. */
 const MF_SQUAD_ADD = {
-  'العربي': [ {n:'وليد ولد الشيخ', p:'CAM', s:0, price:8.5} ],
+  'العربي': [ {n:'وليد ولد الشيخ', p:'CAM', s:0, price:8.5}, {n:'علي عبدالرسول', p:'LB', s:16}, {n:'علي الدوخي', p:'ST', s:9} ],
   'النصر':  [ {n:'مسفر العدواني', p:'ST', s:0} ],   /* بلا سعر مقترح: يحدّده المدير في «لاعبون جدد بانتظار التأكيد» */
 };
 /* انتقالات (نفس SQUAD_MOVE في index.html): تُطبّق على squads عند القراءة، فيلتقطها سحب الكشوفات كانتقال ويبقى السعر. */
+/* تصحيح رقم القميص (نفس SQUAD_NUM في index.html) */
+const MF_SQUAD_NUM = [
+  {c:'العربي', n:'احمد عادي', s:26},
+];
 const MF_SQUAD_MOVE = [
   {n:'بدر طارق', from:'العربي', to:'كاظمة', s:77},
 ];
@@ -55,6 +59,9 @@ const MFSYNC = {
         if(!Array.isArray(d.squads[c])) continue;
         MF_SQUAD_ADD[c].forEach(x=>{ if(!d.squads[c].some(e=>this.norm(typeof e==='string'?e:(e&&e.n))===this.norm(x.n))) d.squads[c].push({n:x.n, p:x.p, s:x.s}); });
       }
+      MF_SQUAD_NUM.forEach(x=>{ const l=d.squads[x.c]; if(!Array.isArray(l)) return;
+        const i=l.findIndex(e=>this.norm(typeof e==='string'?e:(e&&e.n))===this.norm(x.n)); if(i<0) return;
+        l[i]=Object.assign({}, typeof l[i]==='object'?l[i]:{n:l[i]}, {s:x.s}); });
       MF_SQUAD_MOVE.forEach(mv=>{ const nm=e=>this.norm(typeof e==='string'?e:(e&&e.n)), src=d.squads[mv.from], dst=d.squads[mv.to];
         if(!Array.isArray(dst) || dst.some(e=>nm(e)===this.norm(mv.n))) return;
         const i=Array.isArray(src)?src.findIndex(e=>nm(e)===this.norm(mv.n)):-1, old=i>=0?src.splice(i,1)[0]:{};
