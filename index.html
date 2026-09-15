@@ -4233,7 +4233,7 @@ const REF_BOOK={
   "2|كاظمة|الساحل":{"ref":"علي عباس","ar1":"طلال الشمري","ar2":"موسى الخياط","fourth":"عبد العزيز الشطي","var":"مصطفى الشطي","avar":"علي الصيرفي"},
   "2|التضامن|السالمية":{"ref":"احمد العلي","ar1":"علي عوض","ar2":"علي كرم","fourth":"محمد منوه","var":"سعود السمحان","avar":"داود العبد الله"},
   "3|القادسية|النصر":{"ref":"عبد الله جمالي","ar1":"سعود الشمالي","ar2":"علي جراق","fourth":"ياسين حسن يوسف","var":"عبد الله عرب","avar":"علي الحداد"},
-  "3|العربي|الصليبخات":{"ref":"داود العبد الله","ar1":"عبد الرحمن الكندري","ar2":"مساعد الشمري","fourth":"عبد العزيز الشطي","var":"يوسف نصار","avar":"علي الصيرفي"},
+  "3|العربي|الصليبخات":{"ref":"داود العبد الله","ar1":"عبد الرحمن الكندري","ar2":"مساعد الشمري","fourth":"عبد العزيز الشطي","var":"لا يوجد","avar":"لا يوجد"},
   "3|الكويت|الجهراء":{"ref":"مصطفى الشطي","ar1":"طلال الشمري","ar2":"علي عوض","fourth":"عيسى المتروك","var":"علي عباس","avar":"علي جراق"},
   "3|الفحيحيل|التضامن":{"ref":"عبد الله الكندري","ar1":"عبد الهادي العنزي","ar2":"موسى الخياط","fourth":"عايد الشمري","var":"سعود السمحان","avar":"احمد عباس"},
   "3|السالمية|الساحل":{"ref":"سعود السمحان","ar1":"عبد الرحمن الكندري","ar2":"علي كرم","fourth":"عباس حسين","var":"يوسف شطب","avar":"علي عوض"},
@@ -11091,7 +11091,7 @@ html.mx-editing #waFab{display:none!important}   /* زر واتساب كان ي�
 
   /* ===================== التبويبات ===================== */
   function tabMatch(){
-    const m=EDIT.match, refs=[...new Set([...(ALL.matches||[]).flatMap(x=>[x.ref, ...Object.values(x.refs||{})]), ...Object.values(REF_BOOK).flatMap(Object.values)].filter(Boolean))].sort((a,b)=>a.localeCompare(b,"ar"));
+    const m=EDIT.match, refs=[...new Set([...(ALL.matches||[]).flatMap(x=>[x.ref, ...Object.values(x.refs||{})]), ...Object.values(REF_BOOK).flatMap(Object.values)].filter(v=>v&&v!=="لا يوجد"))].sort((a,b)=>a.localeCompare(b,"ar"));
     const stHome=m.home&&typeof CLUB_INFO!=="undefined"&&CLUB_INFO[m.home]?CLUB_INFO[m.home].st:"";
     return `<div class="mx-card"><h3>المسابقة والجولة</h3>
         <div class="mx-chips">${COMPS.map(c=>`<button class="mx-chip${m.comp===c?" on":""}" data-mcomp="${esc(c)}">${esc(c)}</button>`).join("")}</div>
