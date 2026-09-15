@@ -5753,6 +5753,75 @@ function renderHomeLegacy(){
   if(nb) nb.onclick=()=>{ SELR=null; SELDAY=null; go("matches"); };
 }
 
+/* v15: FotMob-style split timeline — home goals on the right, away on the left, minute badge on the centre line */
+function goalsTimeline(m,gs,mc){
+  mc = mc || [];
+  const subs=(typeof matchSubs==="function")?matchSubs(m):[];
+  if(!gs.length && !subs.length && !mc.length) return "";
+  const ORD={g:0,c:1,s:2};
+  const ev=[...gs.map(g=>({t:"g",m:+g.m||0,x:+g.x||0,g})),
+            ...subs.map(sb=>({t:"s",m:absMinute(sb.h,sb.m),x:0,sb,half:+sb.h||1})),
+            ...mc.map(c=>({t:"c",m:+c.m||0,x:0,c}))]
+    .sort((a,b)=>(a.m-b.m)||(a.x-b.x)||(ORD[a.t]-ORD[b.t]));
+  let h=0,a=0; const rows=[]; let htDone=false;
+  ev.forEach(e=>{
+    const club = e.t==="g" ? e.g.sc : e.t==="c" ? e.c.club : e.sb.club;
+    const isH = club===m.home;
+    const afterHT = e.t==="g" ? (e.m>45 && !(e.m===45 && e.x))
+                  : e.t==="c" ? (e.m>45)
+                  : (e.half>=2);
+    if(!htDone && afterHT){ htDone=true; rows.push(`<div class="tl-mark"><span>الشوط الأول <b dir="ltr">${h} - ${a}</b></span></div>`); }
+    if(e.t==="s"){
+      const sb=e.sb;
+      const sbody=`<div class="tl-ev sub${isH?" h":" a"}">
+        <div class="tl-card">
+          ${sb.out?`<div class="tl-sub-out" data-player="${esc(sb.out)}" data-club="${esc(sb.club)}"><i></i>${esc(sb.out)}</div>`:""}
+          ${sb.in?`<div class="tl-sub-in" data-player="${esc(sb.in)}" data-club="${esc(sb.club)}"><i></i>${esc(sb.in)}</div>`:""}
+        </div>
+      </div>`;
+      rows.push(`<div class="tl-row sub${isH?" home":" away"}">
+        <div class="tl-side r">${isH?sbody:""}</div>
+        <div class="tl-min sub"><span>${e.m}'</span></div>
+        <div class="tl-side l">${isH?"":sbody}</div>
+      </div>`);
+      return;
+    }
+    if(e.t==="c"){
+      const c=e.c, red=isRed(c.type);
+      const cbody=`<div class="tl-ev card${isH?" h":" a"}">
+        <div class="tl-card">
+          <div class="tl-name" data-player="${esc(c.p)}" data-club="${esc(c.club)}"><i class="cardpill ${red?"r":"y"}"></i>${esc(c.p)}</div>
+          <div class="tl-sub">${red?"طرد":"إنذار"}</div>
+        </div></div>`;
+      rows.push(`<div class="tl-row card${isH?" home":" away"}">
+        <div class="tl-side r">${isH?cbody:""}</div>
+        <div class="tl-min card"><span>${e.m}'</span></div>
+        <div class="tl-side l">${isH?"":cbody}</div>
+      </div>`);
+      return;
+    }
+    const g=e.g;
+    if(isH) h++; else a++;
+    const og = g.bp==="هدف عكسي";
+    const body=`<div class="tl-ev${isH?" h":" a"}">
+        <div class="tl-card">
+          <div class="tl-name" data-player="${esc(g.p)}" data-club="${og?esc(g.cd||""):esc(g.sc)}">${ICO_BALL}${esc(g.p)}${og?`<i class="tl-og">هدف عكسي</i>`:""}</div>
+          ${g.a?`<div class="tl-assist" data-player="${esc(g.a)}" data-club="${esc(g.sc)}">${ICO_BOOT}${esc(g.a)}</div>`:""}
+          ${g.det?`<div class="tl-det">${esc(g.det)}</div>`:""}
+        </div>
+        <div class="tl-score" dir="ltr">${isH?`<b>${h}</b> - ${a}`:`${h} - <b>${a}</b>`}</div>
+      </div>`;
+    rows.push(`<div class="tl-row${isH?" home":" away"}">
+      <div class="tl-side r">${isH?body:""}</div>
+      <div class="tl-min"><span>${minLabel(g)}</span></div>
+      <div class="tl-side l">${isH?"":body}</div>
+    </div>`);
+  });
+  if(!htDone) rows.push(`<div class="tl-mark"><span>الشوط الأول <b dir="ltr">${h} - ${a}</b></span></div>`);
+  rows.push(`<div class="tl-mark end"><span>النهاية <b dir="ltr">${m.hg??h} - ${m.ag??a}</b></span></div>`);
+  return `<div class="tl"><div class="tl-head"><span>${esc(m.home)}</span><span>${esc(m.away)}</span></div>${rows.join("")}</div>`;
+}
+
 function renderMatches(){
   if(MXC){ renderExtMatches(); return; }
   if(SELR_AUTO && SELR===null && !SELDAY){ const cr=currentRound(); if(cr!==null && MATCHES.some(m=>m.round===cr)) SELR=cr; }
@@ -5766,74 +5835,6 @@ function renderMatches(){
     return (b.round-a.round) || String(b.date).localeCompare(String(a.date));
   });
 
-  /* v15: FotMob-style split timeline — home goals on the right, away on the left, minute badge on the centre line */
-  function goalsTimeline(m,gs,mc){
-    mc = mc || [];
-    const subs=(typeof matchSubs==="function")?matchSubs(m):[];
-    if(!gs.length && !subs.length && !mc.length) return "";
-    const ORD={g:0,c:1,s:2};
-    const ev=[...gs.map(g=>({t:"g",m:+g.m||0,x:+g.x||0,g})),
-              ...subs.map(sb=>({t:"s",m:absMinute(sb.h,sb.m),x:0,sb,half:+sb.h||1})),
-              ...mc.map(c=>({t:"c",m:+c.m||0,x:0,c}))]
-      .sort((a,b)=>(a.m-b.m)||(a.x-b.x)||(ORD[a.t]-ORD[b.t]));
-    let h=0,a=0; const rows=[]; let htDone=false;
-    ev.forEach(e=>{
-      const club = e.t==="g" ? e.g.sc : e.t==="c" ? e.c.club : e.sb.club;
-      const isH = club===m.home;
-      const afterHT = e.t==="g" ? (e.m>45 && !(e.m===45 && e.x))
-                    : e.t==="c" ? (e.m>45)
-                    : (e.half>=2);
-      if(!htDone && afterHT){ htDone=true; rows.push(`<div class="tl-mark"><span>الشوط الأول <b dir="ltr">${h} - ${a}</b></span></div>`); }
-      if(e.t==="s"){
-        const sb=e.sb;
-        const sbody=`<div class="tl-ev sub${isH?" h":" a"}">
-          <div class="tl-card">
-            ${sb.out?`<div class="tl-sub-out" data-player="${esc(sb.out)}" data-club="${esc(sb.club)}"><i></i>${esc(sb.out)}</div>`:""}
-            ${sb.in?`<div class="tl-sub-in" data-player="${esc(sb.in)}" data-club="${esc(sb.club)}"><i></i>${esc(sb.in)}</div>`:""}
-          </div>
-        </div>`;
-        rows.push(`<div class="tl-row sub${isH?" home":" away"}">
-          <div class="tl-side r">${isH?sbody:""}</div>
-          <div class="tl-min sub"><span>${e.m}'</span></div>
-          <div class="tl-side l">${isH?"":sbody}</div>
-        </div>`);
-        return;
-      }
-      if(e.t==="c"){
-        const c=e.c, red=isRed(c.type);
-        const cbody=`<div class="tl-ev card${isH?" h":" a"}">
-          <div class="tl-card">
-            <div class="tl-name" data-player="${esc(c.p)}" data-club="${esc(c.club)}"><i class="cardpill ${red?"r":"y"}"></i>${esc(c.p)}</div>
-            <div class="tl-sub">${red?"طرد":"إنذار"}</div>
-          </div></div>`;
-        rows.push(`<div class="tl-row card${isH?" home":" away"}">
-          <div class="tl-side r">${isH?cbody:""}</div>
-          <div class="tl-min card"><span>${e.m}'</span></div>
-          <div class="tl-side l">${isH?"":cbody}</div>
-        </div>`);
-        return;
-      }
-      const g=e.g;
-      if(isH) h++; else a++;
-      const og = g.bp==="هدف عكسي";
-      const body=`<div class="tl-ev${isH?" h":" a"}">
-          <div class="tl-card">
-            <div class="tl-name" data-player="${esc(g.p)}" data-club="${og?esc(g.cd||""):esc(g.sc)}">${ICO_BALL}${esc(g.p)}${og?`<i class="tl-og">هدف عكسي</i>`:""}</div>
-            ${g.a?`<div class="tl-assist" data-player="${esc(g.a)}" data-club="${esc(g.sc)}">${ICO_BOOT}${esc(g.a)}</div>`:""}
-            ${g.det?`<div class="tl-det">${esc(g.det)}</div>`:""}
-          </div>
-          <div class="tl-score" dir="ltr">${isH?`<b>${h}</b> - ${a}`:`${h} - <b>${a}</b>`}</div>
-        </div>`;
-      rows.push(`<div class="tl-row${isH?" home":" away"}">
-        <div class="tl-side r">${isH?body:""}</div>
-        <div class="tl-min"><span>${minLabel(g)}</span></div>
-        <div class="tl-side l">${isH?"":body}</div>
-      </div>`);
-    });
-    if(!htDone) rows.push(`<div class="tl-mark"><span>الشوط الأول <b dir="ltr">${h} - ${a}</b></span></div>`);
-    rows.push(`<div class="tl-mark end"><span>النهاية <b dir="ltr">${m.hg??h} - ${m.ag??a}</b></span></div>`);
-    return `<div class="tl"><div class="tl-head"><span>${esc(m.home)}</span><span>${esc(m.away)}</span></div>${rows.join("")}</div>`;
-  }
   /* الإنذارات وحالات الطرد مرتبة بالدقيقة */
   function cardsList(mc){
     if(!mc.length) return "";
@@ -5868,7 +5869,7 @@ function renderMatches(){
     const st = soon ? '<span class="mc-st soon">لم تبدأ</span>' : live ? '<span class="mc-st live"><i></i>جارية الآن</span>' : '<span class="mc-st done">انتهت</span>';
     const dayHead = m.date!==lastDay ? `<div class="mc-day"><span>${dayLabel(m.date)}</span></div>` : "";
     lastDay=m.date;
-    return `${dayHead}<article class="mc${soon?" soon":live?" live":" done"}">
+    return `${dayHead}<article class="mc${soon?" soon":live?" live":" done"}" data-mopen="${matchKey(m)}">
       <div class="mc-row">
         <div class="mc-team h">${crest(m.home)}<b>${esc(m.home)}</b></div>
         <div class="mc-mid">
@@ -8313,7 +8314,7 @@ const domParsed = () => new Promise(r => document.readyState!=="loading" ? r() :
         let ms=[], lb="";
         if(played.length){ const r=Math.max(...played.map(m=>+m.round||0)); ms=played.filter(m=>(+m.round||0)===r); lb=`نتائج الجولة ${r}`; }
         const next=soon.length? soon.filter(m=>(+m.round||0)===Math.min(...soon.map(m=>+m.round||0))).slice(0,6):[];
-        const chip=(m,isSoon)=>`<button type="button" class="rx${isSoon?' soon':''}" onclick="go('matches')">
+        const chip=(m,isSoon)=>`<button type="button" class="rx${isSoon?' soon':''}" onclick="openMatch('${matchKey(m).replace(/'/g,"%27")}')">
             <img src="${crestImg(m.home)}" alt=""><b>${esc(m.home)}</b>
             <span class="sc">${isSoon?((m.date?m.date.slice(5).replace("-","/"):"")+(m.time?" "+m.time:"")||"—"):(m.hg+" - "+m.ag)}</span>
             <b>${esc(m.away)}</b><img src="${crestImg(m.away)}" alt=""></button>`;
@@ -9090,6 +9091,99 @@ html[data-theme="light"] .hm{--bg-card:#FFFFFF;--border-card:#E2E8F0;--text-prim
 }
 </style>
 <div class="pprof" id="pprof" hidden role="dialog" aria-modal="true" aria-label="ملف اللاعب"></div>
+<div class="mpage" id="mpage" hidden role="dialog" aria-modal="true" aria-label="صفحة المباراة"></div>
+<style>
+/* ===== صفحة المباراة (2026-09-15) ===== */
+.mc[data-mopen]{cursor:pointer}
+.mc[data-mopen] .mc-row:hover .mc-mid{opacity:.85}
+html.mp-open{overflow:hidden}
+.mpage{position:fixed;inset:0;z-index:85;display:none;justify-content:center;background:rgba(3,10,22,.72)}
+.mpage.on{display:flex;animation:fade .18s ease}
+.mp-sheet{position:relative;width:100%;max-width:760px;height:100%;overflow:auto;overscroll-behavior:contain;
+  background:var(--bg,#0a1628);-webkit-overflow-scrolling:touch}
+.mp-head{position:relative;padding-top:env(safe-area-inset-top);
+  background:linear-gradient(135deg,color-mix(in srgb,var(--hc) 38%,#0b1f3a) 0%,#0b1f3a 50%,color-mix(in srgb,var(--ac) 38%,#0b1f3a) 100%);
+  border-bottom:1px solid rgba(255,255,255,.08);color:#fff}
+.mp-top{display:flex;align-items:center;gap:10px;padding:10px 12px 0}
+.mp-back{width:38px;height:38px;border-radius:12px;display:grid;place-items:center;color:#fff;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14)}
+.mp-comp{font-size:.74rem;color:rgba(255,255,255,.72);font-weight:600}
+.mp-score{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:start;gap:8px;padding:10px 12px 12px}
+.mp-team{display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center;cursor:pointer;min-width:0}
+.mp-team .crest{width:50px;height:50px}
+.mp-team>b{font-family:var(--display);font-size:.95rem;font-weight:700;line-height:1.2}
+.mp-scr{display:flex;flex-direction:column;gap:2px;margin-top:2px}
+.mp-scr span{font-size:.68rem;color:rgba(255,255,255,.78);cursor:pointer}
+.mp-scr em{font-style:normal;color:rgba(255,255,255,.55)}
+.mp-mid{display:flex;flex-direction:column;align-items:center;gap:4px;padding-top:10px;min-width:92px}
+.mp-res{display:flex;align-items:center;gap:10px;font-family:var(--display);font-weight:800;font-size:2.1rem;line-height:1;font-variant-numeric:tabular-nums}
+.mp-res i{font-style:normal;opacity:.6;font-size:1.6rem}
+.mp-time{font-family:var(--display);font-weight:800;font-size:1.6rem;line-height:1}
+.mp-day{font-size:.72rem;color:rgba(255,255,255,.75)}
+.mp-st{font-size:.66rem;font-weight:700;padding:3px 9px;border-radius:99px;background:rgba(255,255,255,.1);color:rgba(255,255,255,.85);display:inline-flex;align-items:center;gap:5px}
+.mp-st.live{background:rgba(229,57,53,.2);color:#ff8a80}
+.mp-st.live i{width:6px;height:6px;border-radius:50%;background:#ff5252;animation:pulse 1.4s infinite}
+.mp-tabs{position:sticky;top:0;z-index:3;display:flex;gap:4px;overflow-x:auto;scrollbar-width:none;padding:0 8px;background:#0b1f3a;border-bottom:1px solid rgba(255,255,255,.08)}
+.mp-tabs::-webkit-scrollbar{display:none}
+.mp-tabs button{flex:1 0 auto;padding:11px 14px 10px;font-size:.84rem;font-weight:700;color:rgba(255,255,255,.62);background:none;border:0;border-bottom:3px solid transparent;white-space:nowrap}
+.mp-tabs button[aria-pressed="true"]{color:#fff;border-bottom-color:var(--sky,#5FB2E8)}
+.mp-body{padding:12px 12px calc(28px + env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:12px}
+.mp-card{background:var(--bg-card,var(--navy-900));border:1px solid var(--border-card,rgba(143,166,196,.18));border-radius:var(--r-card,14px);padding:12px}
+.mp-hd{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px}
+.mp-hd h3{margin:0;font-family:var(--display);font-size:.95rem;font-weight:700;color:var(--text-primary,#fff)}
+.mp-sub{font-size:.7rem;color:var(--text-muted,var(--slate))}
+.mp-link{font-size:.74rem;font-weight:700;color:var(--sky,#5FB2E8);background:none;border:0}
+.mp-empty{color:var(--text-muted,var(--slate));font-size:.84rem;text-align:center;padding:18px 8px}
+.mp-card.mp-empty{padding:26px 12px}
+.mp-irow{display:flex;justify-content:space-between;gap:12px;padding:9px 2px;border-bottom:1px solid var(--border-card,rgba(143,166,196,.14));font-size:.82rem}
+.mp-irow:last-of-type{border-bottom:0}
+.mp-irow span{color:var(--text-muted,var(--slate))}
+.mp-irow b{color:var(--text-primary,#fff);font-weight:600;text-align:left}
+.mp-note{margin-top:8px;font-size:.78rem;color:var(--text-muted,var(--slate))}
+.mp-tbl{width:100%;border-collapse:collapse;font-size:.8rem}
+.mp-tbl th{font-size:.66rem;font-weight:600;color:var(--text-muted,var(--slate));padding:4px 4px 8px;text-align:center}
+.mp-tbl td{padding:8px 4px;text-align:center;border-top:1px solid var(--border-card,rgba(143,166,196,.14));color:var(--text-primary,#fff);font-variant-numeric:tabular-nums}
+.mp-tbl .club{text-align:right}
+.mp-tbl .club span{display:flex;align-items:center;gap:8px}
+.mp-tbl .club .crest{width:22px;height:22px}
+.mp-tbl .pts{font-weight:800}
+.mp-tbl tr{cursor:pointer}
+@media(max-width:480px){.mp-tbl .frm{display:none}}
+.mp-std .hm-std{margin:0}
+.mp-std tr[data-mp-hl]{background:rgba(95,178,232,.14)}
+.mp-std tr[data-mp-hl] td{font-weight:700}
+.mp-xi{padding:8px}
+.mp-xi .xi{margin:0}
+.mp-seg{display:grid;grid-template-columns:1fr 1.4fr 1fr;gap:6px;margin-bottom:10px;background:rgba(0,0,0,.18);padding:4px;border-radius:12px}
+.mp-seg button{height:38px;border-radius:9px;border:0;background:none;color:var(--text-muted,var(--slate));font-weight:700;font-size:.8rem;display:grid;place-items:center}
+.mp-seg button .crest{width:24px;height:24px}
+.mp-seg button[aria-pressed="true"]{background:var(--text-primary,#fff);color:#0b1f3a}
+.mp-mlist{display:flex;flex-direction:column}
+.mp-mgrp{font-size:.72rem;font-weight:700;color:var(--text-muted,var(--slate));margin:10px 2px 2px}
+.mp-mrow{display:grid;grid-template-columns:64px minmax(0,1fr) 28px 26px;align-items:center;gap:8px;padding:9px 2px;background:none;border:0;border-top:1px solid var(--border-card,rgba(143,166,196,.14));color:inherit;text-align:right;width:100%}
+.mp-mrow:first-child{border-top:0}
+.mp-mrow .d{display:flex;flex-direction:column;font-size:.72rem;color:var(--text-primary,#fff);font-variant-numeric:tabular-nums}
+.mp-mrow .d i{font-style:normal;font-size:.6rem;color:var(--text-muted,var(--slate))}
+.mp-mrow .t{display:flex;flex-direction:column;gap:4px;min-width:0}
+.mp-mrow .t>span{display:flex;align-items:center;gap:7px;min-width:0}
+.mp-mrow .t .crest{width:20px;height:20px;flex:none}
+.mp-mrow .t b{font-size:.8rem;font-weight:600;color:var(--text-primary,#fff);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mp-mrow .s{display:flex;flex-direction:column;gap:4px;align-items:center;font-variant-numeric:tabular-nums}
+.mp-mrow .s b{font-size:.82rem;color:var(--text-primary,#fff)}
+.mp-mrow .s em{font-style:normal;font-size:.7rem;color:var(--text-muted,var(--slate))}
+.mp-mrow .r{width:24px;height:24px;border-radius:7px;display:grid;place-items:center;font-size:.7rem;font-weight:800;color:#fff}
+.mp-mrow .r.w{background:var(--win,#35a47c)}
+.mp-mrow .r.d{background:var(--draw,#8a97a8)}
+.mp-mrow .r.l{background:var(--loss,#d9534f)}
+[data-theme="light"] .mp-sheet{background:#f3f6fa}
+[data-theme="light"] .mp-seg button[aria-pressed="true"]{background:#0b1f3a;color:#fff}
+.mp-seg.two{grid-template-columns:1fr 1fr}
+.mp-seg.two button{display:flex;align-items:center;justify-content:center;gap:8px}
+.mp-seg.two button span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mp-squad{padding:10px}
+.mp-squad .sec.sq-grp{margin-top:14px}
+@media(min-width:640px){.mp-squad .sq-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(min-width:960px){.mp-squad .sq-grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
+</style>
 <script>/* ===== ملف النادي (نبذة/قائمة الفريق) وملف اللاعب العام — 2026-09-15 ===== */
 /* بيانات تعريف الأندية: مرجع عام ثابت (سنة التأسيس، الملعب، المنطقة، أسماء الألوان). ما ليس هنا لا يُعرض.
    صورة الملعب: assets/stadiums/<slug>.jpg إن وُجدت، وإلا الصورة العامة assets/hero/stadium.jpg */
@@ -9857,6 +9951,199 @@ document.addEventListener("DOMContentLoaded", ()=>{
       const c=decodeURIComponent(m[1]); if(CLUBS.includes(c)) openClub(c);
     } else if(++tries<40) setTimeout(tick,300);
   }; setTimeout(tick,400);
+})();
+/* ================= صفحة المباراة (2026-09-15، بطلب منصور: نفس فكرة صفحة المباراة في Sofascore) =================
+   كل ما فيها من بيانات الموقع نفسه فقط: المباراة، الأهداف، الإنذارات، التشكيلة والتبديلات، جدول الترتيب،
+   ومباريات الفريقين في الموسم. لا أرقام من مصادر خارجية ولا إحصاءات غير موجودة في الموقع. */
+const matchKey = m => [compOf(m), m.round, m.home, m.away].map(v=>encodeURIComponent(String(v))).join("/");
+function matchByKey(k){
+  const [c,r,h,a]=String(k||"").split("/").map(v=>decodeURIComponent(v));
+  return MATCHES.find(m=>compOf(m)===c && String(m.round)===r && m.home===h && m.away===a) || null;
+}
+let MP={m:null, tab:"details"};
+function mpDateLabel(m){
+  if(!m.date) return "";
+  const d=new Date(m.date+"T00:00:00"); if(isNaN(d)) return esc(m.date);
+  return `${AR_DOW[d.getDay()]} ${d.getDate()} ${AR_MON[d.getMonth()]}`;
+}
+function mpResult(m, club){           /* فوز/تعادل/خسارة من زاوية النادي */
+  if(isUpcoming(m)) return "";
+  const f = club===m.home ? m.hg : m.ag, a = club===m.home ? m.ag : m.hg;
+  return f>a ? "w" : f<a ? "l" : "d";
+}
+const MP_RES = {w:"ف", d:"ت", l:"خ"};
+function mpScorers(m, club){
+  const gs=matchGoals(m).filter(g=>g.sc===club);
+  if(!gs.length) return "";
+  return `<div class="mp-scr">${gs.map(g=>`<span data-player="${esc(g.p)}" data-club="${esc(g.bp==="هدف عكسي"?(g.cd||""):g.sc)}">${esc(g.p)} <em dir="ltr">${minLabel(g)}</em>${g.bp==="هدف عكسي"?" (ع)":""}</span>`).join("")}</div>`;
+}
+function mpHeader(m){
+  const soon=isUpcoming(m), live=isLive(m);
+  const st = soon ? "لم تبدأ" : live ? "جارية الآن" : "انتهت";
+  const side=(c,cls)=>`<div class="mp-team ${cls}" data-club-open="${esc(c)}">${crest(c,true)}<b>${esc(c)}</b>${soon?"":mpScorers(m,c)}</div>`;
+  return `<div class="mp-top">
+      <button type="button" class="mp-back" data-mp-close aria-label="رجوع"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button>
+      <span class="mp-comp">${esc(compOf(m))} · الجولة ${m.round}</span>
+    </div>
+    <div class="mp-score">
+      ${side(m.home,"h")}
+      <div class="mp-mid">
+        ${soon ? `<span class="mp-time" dir="ltr">${m.time?esc(m.time):"—"}</span><span class="mp-day">${mpDateLabel(m)}</span>`
+               : `<span class="mp-res"><b>${m.hg}</b><i>-</i><b>${m.ag}</b></span>`}
+        <span class="mp-st${live?" live":soon?" soon":""}">${live?"<i></i>":""}${st}</span>
+      </div>
+      ${side(m.away,"a")}
+    </div>`;
+}
+const MP_TABS=[["details","التفاصيل"],["lineups","التشكيلة"],["squad","القائمة"],["table","الترتيب"],["matches","المباريات"]];
+function mpInfoRows(m){
+  const rows=[];
+  rows.push(["المسابقة", `${esc(compOf(m))} · ${esc(SEASON)}`]);
+  rows.push(["الجولة", String(m.round)]);
+  if(m.date) rows.push(["التاريخ", `${mpDateLabel(m)}${m.time?` · <span dir="ltr">${esc(m.time)}</span>`:""}`]);
+  if(m.venue) rows.push(["الملعب", esc(m.venue)]);
+  return `<div class="mp-card mp-info">${rows.map(([k,v])=>`<div class="mp-irow"><span>${k}</span><b>${v}</b></div>`).join("")}
+    ${m.note?`<div class="mp-note">${esc(m.note)}</div>`:""}</div>`;
+}
+function mpMiniTable(m){
+  if(compOf(m)!=="الدوري" || !playedMatches().length) return "";
+  const T=standings();
+  const rows=[m.home,m.away].map(c=>({r:T.find(x=>x.c===c), i:T.findIndex(x=>x.c===c)})).filter(x=>x.r).sort((a,b)=>a.i-b.i);
+  if(!rows.length) return "";
+  return `<div class="mp-card"><div class="mp-hd"><h3>الترتيب</h3><button type="button" class="mp-link" data-mp-tab="table">الجدول كاملاً</button></div>
+    <table class="mp-tbl"><thead><tr><th>#</th><th class="club">النادي</th><th>ل</th><th>+/-</th><th>ن</th><th class="frm">الفورمة</th></tr></thead>
+    <tbody>${rows.map(({r,i})=>`<tr data-club-open="${esc(r.c)}"><td>${i+1}</td><td class="club"><span>${crest(r.c)}<b>${esc(r.c)}</b></span></td>
+      <td>${r.P}</td><td dir="ltr">${r.GD>0?"+":""}${r.GD}</td><td class="pts">${r.Pts}</td><td class="frm">${formPills(r.form)}</td></tr>`).join("")}</tbody></table></div>`;
+}
+function mpH2HList(m){
+  return MATCHES.filter(x=>x!==m && ((x.home===m.home&&x.away===m.away)||(x.home===m.away&&x.away===m.home)))
+    .sort((a,b)=>(kickoffTS(b)||0)-(kickoffTS(a)||0));
+}
+function mpDetails(m){
+  const soon=isUpcoming(m);
+  let body="";
+  if(!soon){
+    const gs=matchGoals(m);
+    const mc=CARDS.filter(x=>x.r===m.round && compOf(x)===compOf(m) && (x.club===m.home||x.club===m.away));
+    const tl=goalsTimeline(m,gs,mc);
+    body += tl ? `<div class="mp-card"><div class="mp-hd"><h3>أحداث المباراة</h3></div>${tl}</div>`
+               : `<div class="mp-card mp-empty">لم تُسجَّل أحداث لهذه المباراة.</div>`;
+  }
+  return body + mpInfoRows(m) + mpMiniTable(m);
+}
+function mpLineups(m){
+  if(isUpcoming(m)) return `<div class="mp-card mp-empty">تُنشر التشكيلة بعد انطلاق المباراة.</div>`;
+  const xi=matchPitchHTML(m), subs=subsHTML(m);
+  if(!xi && !subs) return `<div class="mp-card mp-empty">لم تُسجَّل تشكيلة هذه المباراة بعد.</div>`;
+  return `${xi?`<div class="mp-card mp-xi">${xi}</div>`:""}${subs?`<div class="mp-card">${subs}</div>`:""}`;
+}
+/* القائمة: كشف الفريقين كما في صفحة النادي (المدرب ثم المراكز) — منفصلة عن تشكيلة المباراة */
+let MP_SQ="home";
+function mpSquad(m){
+  const c = MP_SQ==="away" ? m.away : m.home;
+  const seg=`<div class="mp-seg two">
+    <button type="button" data-mp-sq="home" aria-pressed="${MP_SQ!=="away"}">${crest(m.home)}<span>${esc(m.home)}</span></button>
+    <button type="button" data-mp-sq="away" aria-pressed="${MP_SQ==="away"}">${crest(m.away)}<span>${esc(m.away)}</span></button></div>`;
+  return `<div class="mp-card mp-squad" style="${accentVars(c)}">${seg}${clubSquadHTML(c)}</div>`;
+}
+function mpTable(m){
+  if(!playedMatches().length) return `<div class="mp-card mp-empty">يظهر الجدول بعد أول جولة.</div>`;
+  let html=hmStandingsHTML(standings());
+  [m.home,m.away].forEach(c=>{ html=html.replace(`data-club-open="${esc(c)}"`, `data-club-open="${esc(c)}" data-mp-hl="1"`); });
+  return `<div class="mp-std">${html}</div>`;
+}
+function mpMatchRow(x, club){
+  const soon=isUpcoming(x), r=club?mpResult(x,club):"";
+  return `<button type="button" class="mp-mrow" data-mp-open="${matchKey(x)}">
+    <span class="d">${x.date?esc(String(x.date).slice(5).split("-").reverse().join("/")):""}<i>${esc(compOf(x))} · ج${x.round}</i></span>
+    <span class="t"><span>${crest(x.home)}<b>${esc(x.home)}</b></span><span>${crest(x.away)}<b>${esc(x.away)}</b></span></span>
+    <span class="s" dir="ltr">${soon?`<em>${x.time?esc(x.time):"—"}</em>`:`<b>${x.hg}</b><b>${x.ag}</b>`}</span>
+    ${r?`<span class="r ${r}">${MP_RES[r]}</span>`:`<span class="r"></span>`}
+  </button>`;
+}
+function mpSplitList(list, club){
+  const done=list.filter(x=>!isUpcoming(x)).sort((a,b)=>(kickoffTS(b)||0)-(kickoffTS(a)||0));
+  const next=list.filter(x=>isUpcoming(x)).sort((a,b)=>(kickoffTS(a)||0)-(kickoffTS(b)||0));
+  const blk=(t,L)=>L.length?`<div class="mp-mgrp">${t}</div><div class="mp-mlist">${L.map(x=>mpMatchRow(x,club)).join("")}</div>`:"";
+  return blk("النتائج",done)+blk("القادمة",next);
+}
+let MP_MX="h2h";
+function mpMatches(m){
+  const pick = MP_MX==="h2h" ? mpH2HList(m) :
+    MATCHES.filter(x=>x!==m && (x.home===(MP_MX==="home"?m.home:m.away) || x.away===(MP_MX==="home"?m.home:m.away)))
+      .sort((a,b)=>(kickoffTS(b)||0)-(kickoffTS(a)||0));
+  const club = MP_MX==="home" ? m.home : MP_MX==="away" ? m.away : m.home;
+  const seg=`<div class="mp-seg">
+    <button type="button" data-mp-mx="home" aria-pressed="${MP_MX==="home"}">${crest(m.home)}</button>
+    <button type="button" data-mp-mx="h2h" aria-pressed="${MP_MX==="h2h"}">المواجهات</button>
+    <button type="button" data-mp-mx="away" aria-pressed="${MP_MX==="away"}">${crest(m.away)}</button></div>`;
+  return `<div class="mp-card"><div class="mp-hd"><h3>${MP_MX==="h2h"?"مواجهات الفريقين":"مباريات "+esc(club)}</h3><span class="mp-sub">${esc(SEASON)}</span></div>${seg}
+    ${pick.length?mpSplitList(pick,club)
+                 :`<div class="mp-empty">${MP_MX==="h2h"?"لا مواجهات أخرى بين الفريقين هذا الموسم.":"لا مباريات أخرى."}</div>`}</div>`;
+}
+function renderMatchPage(){
+  const box=$("#mpage"), m=MP.m; if(!box||!m) return;
+  const body = MP.tab==="lineups" ? mpLineups(m) : MP.tab==="squad" ? mpSquad(m) : MP.tab==="table" ? mpTable(m) : MP.tab==="matches" ? mpMatches(m) : mpDetails(m);
+  box.innerHTML=`<div class="mp-sheet" style="--hc:${clubAccent(m.home).a};--ac:${clubAccent(m.away).a}">
+    <header class="mp-head">${mpHeader(m)}</header>
+    <nav class="mp-tabs">${MP_TABS.map(([k,l])=>`<button type="button" data-mp-tab="${k}" aria-pressed="${MP.tab===k}">${l}</button>`).join("")}</nav>
+    <div class="mp-body">${body}</div></div>`;
+}
+function openMatch(m, opts){
+  if(typeof m==="string") m=matchByKey(m);
+  const box=$("#mpage"); if(!m||!box) return;
+  const wasOpen = !box.hidden;
+  const same = MP.m===m;
+  MP.m=m; if(!same){ MP.tab="details"; MP_MX="h2h"; MP_SQ="home"; }
+  renderMatchPage();
+  box.hidden=false; box.classList.add("on"); document.documentElement.classList.add("mp-open");
+  const sh=box.querySelector(".mp-sheet"); if(sh) sh.scrollTop=0;
+  /* مباراة داخل صفحة مباراة تستبدل الرابط بدل إضافة خطوة، فيغلق زر الرجوع الصفحة مباشرة */
+  if(!(opts&&opts.noHistory)){ try{ (wasOpen && history.state && history.state.mp ? history.replaceState : history.pushState).call(history, {mp:1}, "", "#m/"+matchKey(m)); }catch(e){} }
+}
+function hideMatchBox(){
+  const box=$("#mpage"); if(!box) return;
+  box.classList.remove("on"); box.hidden=true; box.innerHTML=""; MP.m=null;
+  document.documentElement.classList.remove("mp-open");
+}
+function closeMatch(){
+  const box=$("#mpage"); if(!box||box.hidden) return;
+  hideMatchBox();
+  if(history.state && history.state.mp){ try{ history.back(); }catch(e){} }
+  else if(/^#m\//.test(location.hash)){ try{ history.replaceState(null,"",location.pathname+location.search); }catch(e){} }
+}
+window.openMatch=openMatch; window.closeMatch=closeMatch;
+window.addEventListener("popstate", ()=>{
+  const box=$("#mpage"); if(!box) return;
+  if(/^#m\//.test(location.hash)){ const m=matchByKey(location.hash.slice(3)); if(m){ openMatch(m,{noHistory:true}); return; } }
+  if(!box.hidden) hideMatchBox();
+});
+document.addEventListener("click", e=>{
+  const box=$("#mpage");
+  if(box && !box.hidden && box.contains(e.target)){
+    if(e.target.closest("[data-player]")) return;                 /* ملف اللاعب يفتح فوقها */
+    if(e.target.closest("[data-mp-close]")){ closeMatch(); return; }
+    const t=e.target.closest("[data-mp-tab]"); if(t){ MP.tab=t.dataset.mpTab; renderMatchPage(); box.querySelector(".mp-sheet").scrollTop=0; return; }
+    const x=e.target.closest("[data-mp-mx]"); if(x){ MP_MX=x.dataset.mpMx; renderMatchPage(); return; }
+    const q=e.target.closest("[data-mp-sq]"); if(q){ MP_SQ=q.dataset.mpSq; renderMatchPage(); return; }
+    const o=e.target.closest("[data-mp-open]"); if(o){ const mm=matchByKey(o.dataset.mpOpen); if(mm){ MP.tab="details"; MP_MX="h2h"; MP.m=null; openMatch(mm); } return; }
+    if(e.target.closest("[data-club-open]")){ closeMatch(); return; }   /* فتح النادي يتولاه المستمع العام */
+    return;
+  }
+  /* بطاقة المباراة في صفحة المباريات: الضغط على البطاقة (لا على «التفاصيل» أو اسم لاعب) يفتح صفحة المباراة */
+  const card=e.target.closest("[data-mopen]");
+  if(card && !e.target.closest(".mtog,.mdet,[data-player],a,select,input")){ const mm=matchByKey(card.dataset.mopen); if(mm){ e.preventDefault(); openMatch(mm); } }
+});
+/* رابط عميق #m/… يفتح المباراة بعد وصول البيانات */
+function openMatchFromHash(){
+  if(!/^#m\//.test(location.hash) || !Array.isArray(MATCHES) || !MATCHES.length) return false;
+  const m=matchByKey(location.hash.slice(3)); if(!m) return false;
+  openMatch(m,{noHistory:true}); return true;
+}
+/* رابط عميق #m/المسابقة/الجولة/المضيف/الضيف: يفتح صفحة المباراة بعد وصول البيانات */
+(function(){
+  if(!/^#m\//.test(location.hash)) return;
+  let tries=0; const tick=()=>{ if(!openMatchFromHash() && ++tries<40) setTimeout(tick,300); }; setTimeout(tick,400);
 })();
 /* رابط عميق #p/الاسم/النادي: يفتح الملف بعد وصول البيانات */
 (function(){
