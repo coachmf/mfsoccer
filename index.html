@@ -8406,7 +8406,9 @@ html[data-theme="light"] .hm{--bg-card:#FFFFFF;--border-card:#E2E8F0;--text-prim
 .hm-story p b{color:var(--text-primary);font-weight:700}
 /* الجدول */
 .hm-tblwrap{overflow:auto;max-height:70vh;-webkit-overflow-scrolling:touch}
-.hm-tbl{width:100%;border-collapse:separate;border-spacing:0;font-size:14px}
+.hm-tbl{width:100%;min-width:0;border-collapse:separate;border-spacing:0;font-size:14px}
+.hm-tbl td.club{width:100%}
+.hm-tbl td.c,.hm-tbl th.c{width:28px}
 .hm-tbl th{position:sticky;top:0;z-index:2;background:var(--bg-card);color:var(--text-muted);font-weight:500;font-size:12px;padding:10px 6px;text-align:center;border-bottom:1px solid var(--border-card);white-space:nowrap}
 .hm-tbl th.club,.hm-tbl td.club{text-align:right}
 .hm-tbl td{padding:9px 6px;text-align:center;font-variant-numeric:tabular-nums;font-family:var(--f-head);font-weight:600;border-bottom:1px solid rgba(148,163,184,.12);color:var(--text-primary)}
