@@ -2115,7 +2115,7 @@ main{padding-bottom:48px}
 <!-- v3:strips -->
 <div class="strip" id="resStrip" aria-label="نتائج آخر جولة"></div>
 <!-- شريط الشعارات مرسوم في الملف نفسه: يظهر مع أول رسم ولا ينتظر البيانات ولا الجافاسكربت؛ يُعاد رسمه من CLUBS لاحقاً -->
-<div class="crestbar" id="crestBar" aria-label="الأندية"><div class="crestbar-in"><button type="button" title="القادسية" aria-label="القادسية" data-club="القادسية"><img src="assets/crests/sq/qadsia.png" alt="القادسية" width="46" height="46"></button><button type="button" title="الكويت" aria-label="الكويت" data-club="الكويت"><img src="assets/crests/sq/kuwait.png" alt="الكويت" width="46" height="46"></button><button type="button" title="العربي" aria-label="العربي" data-club="العربي"><img src="assets/crests/sq/arabi.png" alt="العربي" width="46" height="46"></button><button type="button" title="كاظمة" aria-label="كاظمة" data-club="كاظمة"><img src="assets/crests/sq/kazma.png" alt="كاظمة" width="46" height="46"></button><button type="button" title="السالمية" aria-label="السالمية" data-club="السالمية"><img src="assets/crests/sq/salmiya.png" alt="السالمية" width="46" height="46"></button><button type="button" title="النصر" aria-label="النصر" data-club="النصر"><img src="assets/crests/sq/nasr.png" alt="النصر" width="46" height="46"></button><button type="button" title="الجهراء" aria-label="الجهراء" data-club="الجهراء"><img src="assets/crests/sq/jahra.png" alt="الجهراء" width="46" height="46"></button><button type="button" title="الساحل" aria-label="الساحل" data-club="الساحل"><img src="assets/crests/sq/sahel.png" alt="الساحل" width="46" height="46"></button><button type="button" title="الفحيحيل" aria-label="الفحيحيل" data-club="الفحيحيل"><img src="assets/crests/sq/fahaheel.png" alt="الفحيحيل" width="46" height="46"></button><button type="button" title="التضامن" aria-label="التضامن" data-club="التضامن"><img src="assets/crests/sq/tadamon.png" alt="التضامن" width="46" height="46"></button><button type="button" title="الشباب" aria-label="الشباب" data-club="الشباب"><img src="assets/crests/sq/shabab.png" alt="الشباب" width="46" height="46"></button><button type="button" title="الصليبخات" aria-label="الصليبخات" data-club="الصليبخات"><img src="assets/crests/sq/sulaibikhat.png" alt="الصليبخات" width="46" height="46"></button></div></div>
+<div class="crestbar" id="crestBar" aria-label="الأندية"><div class="crestbar-in"><button type="button" title="القادسية" aria-label="القادسية" data-club="القادسية"><img src="assets/crests/sq/qadsia.png" alt="القادسية" width="46" height="46"></button><button type="button" title="الكويت" aria-label="الكويت" data-club="الكويت"><img src="assets/crests/sq/kuwait.png" alt="الكويت" width="46" height="46"></button><button type="button" title="العربي" aria-label="العربي" data-club="العربي"><img src="assets/crests/sq/arabi.png" alt="العربي" width="46" height="46"></button><button type="button" title="كاظمة" aria-label="كاظمة" data-club="كاظمة"><img src="assets/crests/sq/kazma.png" alt="كاظمة" width="46" height="46"></button><button type="button" title="السالمية" aria-label="السالمية" data-club="السالمية"><img src="assets/crests/sq/salmiya.png" alt="السالمية" width="46" height="46"></button><button type="button" title="النصر" aria-label="النصر" data-club="النصر"><img src="assets/crests/sq/nasr.png" alt="النصر" width="46" height="46"></button><button type="button" title="الجهراء" aria-label="الجهراء" data-club="الجهراء"><img src="assets/crests/sq/jahra.png" alt="الجهراء" width="46" height="46"></button><button type="button" title="الساحل" aria-label="الساحل" data-club="الساحل"><img src="assets/crests/sq/sahel.png" alt="الساحل" width="46" height="46"></button><button type="button" title="الفحيحيل" aria-label="الفحيحيل" data-club="الفحيحيل"><img src="assets/crests/sq/fahaheel.png" alt="الفحيحيل" width="46" height="46"></button><button type="button" title="التضامن" aria-label="التضامن" data-club="التضامن"><img src="assets/crests/sq/tadamon.png" alt="التضامن" width="46" height="46"></button><button type="button" title="الشباب" aria-label="الشباب" data-club="الشباب"><img src="assets/crests/sq/shabab.png" alt="الشباب" width="46" height="46"></button><button type="button" title="الصليبخات" aria-label="الصليبخات" data-club="الصليبخات"><img src="assets/crests/sq/sulaibikhat.png" alt="الصليبخات" width="46" height="46"></button><button type="button" class="kfa-btn" title="الاتحاد الكويتي لكرة القدم" aria-label="الاتحاد الكويتي لكرة القدم" data-club="الاتحاد الكويتي"><img src="assets/kfa/logo.png" alt="الاتحاد الكويتي" width="46" height="46"></button></div></div>
 <!-- /v3:strips -->
 
 
@@ -2463,13 +2463,11 @@ function extTableHTML(c, evs){
     </section></div>`;
   }).join("");
 }
-function renderExtMatches(){
-  const c=EXT_COMPS.find(x=>x.id===MXC); if(!c){ MXC=null; renderMatches(); return; }
-  const evs=extEvents(c.id);
+function extCardsHTML(evs, compName){
   const t=new Date(); const todayIso=`${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,"0")}-${String(t.getDate()).padStart(2,"0")}`;
   const dayLabel=iso=>{ const d=new Date(iso+"T00:00:00"); if(isNaN(d)) return esc(iso); return `${AR_DOW[d.getDay()]} ${d.getDate()} ${AR_MON[d.getMonth()]}`; };
   let lastDay=null, soon=0, done=0;
-  const cards=evs.map(e=>{
+  const html=evs.map(e=>{
     const parts=evParts(e);
     const span=!!(e.to && e.to!==e.d);
     const a=parts.length>=2?evTeam(parts[0],e.k):null, b=parts.length>=2?evTeam(parts[1],e.k):null;
@@ -2487,9 +2485,15 @@ function renderExtMatches(){
         <div class="mc-mid">${mid}${st}</div>
         <div class="mc-team a">${extTeamCell(b)}</div>
       </div>
-      <div class="mc-foot"><span>${esc(c.name)}</span>${e.n?`<span>${esc(e.n)}</span>`:""}${(played&&e.time)?`<span class="mc-date" dir="ltr">${esc(e.time)}</span>`:""}${e.venue?`<span>${esc(e.venue)}</span>`:""}</div>
+      <div class="mc-foot"><span>${esc(compName)}</span>${e.n?`<span>${esc(e.n)}</span>`:""}${(played&&e.time)?`<span class="mc-date" dir="ltr">${esc(e.time)}</span>`:""}${e.venue?`<span>${esc(e.venue)}</span>`:""}</div>
     </article>`;
   }).join("");
+  return {html, soon, done};
+}
+function renderExtMatches(){
+  const c=EXT_COMPS.find(x=>x.id===MXC); if(!c){ MXC=null; renderMatches(); return; }
+  const evs=extEvents(c.id);
+  const r=extCardsHTML(evs, c.name); const cards=r.html, soon=r.soon, done=r.done;
   $("#v-matches").innerHTML=`
     <div class="mx-head"><h2 class="mx-title">المباريات</h2>${compSelect()}</div>
     ${extTableHTML(c, evs)}
@@ -5289,12 +5293,14 @@ const EXT_COMPS=[
   {id:"gulf27", name:"خليجي 27",                 kind:"منتخب",        re:/خليجي|كاس الخليج|كأس الخليج/, not:/الأندية|الاندية|أبطال الخليج|ابطال الخليج/},
   {id:"gcl",    name:"دوري أبطال الخليج للأندية", kind:"بطولة خارجية", re:/الخليج للأندية|الخليج للاندية|أبطال الخليج|ابطال الخليج/},
   {id:"acl2",   name:"دوري أبطال آسيا 2",         kind:"بطولة خارجية", re:/اسيا 2|آسيا 2|اسيا تو|آسيا تو/},
-  {id:"acc",    name:"دوري التحدي الآسيوي",       kind:"بطولة خارجية", re:/التحدي/}
+  {id:"acc",    name:"دوري التحدي الآسيوي",       kind:"بطولة خارجية", re:/التحدي/},
+  {id:"asiad",  name:"الألعاب الآسيوية 2026",       kind:"منتخب",        re:/آسيوية|اسيوية|ناغويا|آسياد|اسياد/}
 ];
 function extCompOf(e){ const t=String(e&&e.t||""); const c=EXT_COMPS.find(c=>c.re.test(t) && !(c.not&&c.not.test(t))); return c?c.id:null; }
 /* مجموعات الفرق الكويتية في كل بطولة — لجدول الترتيب. النتائج تُقرأ من hg/ag في المباراة (مناسبة أو ثابتة) متى توفرت. */
 const EXT_GROUPS={
-  gulf27:[{name:"مجموعة الأزرق", teams:["الكويت","السعودية","العراق","عمان"]}],
+  gulf27:[{name:"المجموعة A", teams:["الكويت","السعودية","العراق","عمان"]}],
+  asiad: [{name:"المجموعة C · الأولمبي", teams:["الكويت","اوزبكستان","فيتنام","الفلبين"]}],
   gcl:   [{name:"مجموعة كاظمة", teams:["كاظمة","الاتفاق السعودي","عجمان الاماراتي","أربيل العراقي"]}],
   acl2:  [{name:"مجموعة الكويت", teams:["الكويت","الوحدة الاماراتي","الخالدية البحريني","ناساف الاوزبكي"]}],
   acc:   [{name:"المجموعة C · القادسية", teams:["القادسية","فورتيس البنغالي","ريغار تاداز الطاجيكي","غوا الهندي"]},
@@ -5303,6 +5309,14 @@ const EXT_GROUPS={
 /* مباريات ثابتة من الملصقات الرسمية للأندية (تحمل الملعب والوقت وترتيب المضيف) — تُدمج مع مناسبات الإدارة،
    والنسخة السحابية تُسقط إذا تطابق اليوم والبطولة والفريقان (فلا تتكرر). النتيجة: hg/ag عند توفرها. */
 const EXT_FIXTURES=[
+  /* الأزرق — خليجي 27، جدة (المجموعة A) — التوقيت بتوقيت الكويت/السعودية */
+  {d:"2026-09-23",t:"السعودية - الكويت - خليجي 27",k:"منتخب",time:"21:00",venue:"مدينة الملك عبدالله الرياضية، جدة",n:"الجولة 1 · الافتتاح"},
+  {d:"2026-09-26",t:"الكويت - العراق - خليجي 27",k:"منتخب",time:"18:55",venue:"استاد الأمير عبدالله الفيصل، جدة",n:"الجولة 2"},
+  {d:"2026-09-29",t:"عمان - الكويت - خليجي 27",k:"منتخب",time:"20:30",venue:"استاد الأمير عبدالله الفيصل، جدة",n:"الجولة 3"},
+  /* المنتخب الأولمبي — الألعاب الآسيوية آيتشي–ناغويا 2026، المجموعة C (التوقيت بتوقيت اليابان) */
+  {d:"2026-09-15",t:"فيتنام - الكويت - الألعاب الآسيوية 2026",k:"منتخب",time:"19:00",venue:"استاد ميناتو، ناغويا",n:"الجولة 1",hg:1,ag:1},
+  {d:"2026-09-18",t:"الكويت - اوزبكستان - الألعاب الآسيوية 2026",k:"منتخب",time:"19:00",venue:"استاد ميناتو، ناغويا",n:"الجولة 2"},
+  {d:"2026-09-22",t:"الفلبين - الكويت - الألعاب الآسيوية 2026",k:"منتخب",time:"14:00",venue:"استاد ميناتو، ناغويا",n:"الجولة 3"},
   /* كاظمة — دوري أبطال الخليج للأندية 2026-27 (المركز الإعلامي لنادي كاظمة) */
   {d:"2026-10-14",t:"الاتفاق السعودي - كاظمة - دوري أبطال الخليج للأندية",k:"بطولة خارجية",time:"21:00",venue:"ملعب نادي الاتفاق",n:"الجولة 1"},
   {d:"2026-10-27",t:"كاظمة - عجمان الاماراتي - دوري أبطال الخليج للأندية",k:"بطولة خارجية",time:"17:00",venue:"استاد الصداقة والسلام",n:"الجولة 2"},
@@ -5840,12 +5854,13 @@ function renderClubs(){
   const sel = $("#clubSel")?.value || CLUBS[1];
   $("#v-clubs").innerHTML = `
     <label class="lb">اختر النادي</label>
-    <select id="clubSel">${CLUBS.map(c=>`<option ${c===sel?"selected":""}>${esc(c)}</option>`).join("")}</select>
+    <select id="clubSel">${CLUBS.map(c=>`<option ${c===sel?"selected":""}>${esc(c)}</option>`).join("")}<option value="${KFA_KEY}" ${sel===KFA_KEY?"selected":""}>${esc(KFA_INFO.name)}</option></select>
     <div id="clubBody" style="margin-top:16px"></div>`;
   $("#clubSel").onchange = e => { CLUB_TAB="about"; renderClubBody(e.target.value); };   /* كل نادٍ يُفتح على النبذة أولاً (منصور 2026-09-15) */
   renderClubBody(sel);
 }
 function renderClubBody(c){
+  if(c===KFA_KEY){ renderKFABody(); return; }   /* صفحة الاتحاد الكويتي (ليست نادياً) */
   const s=clubStats(c), r=s.row;
   const mx=Math.max(1,...s.timing.map(t=>Math.max(t.f,t.a)));
   const played=r.P;
@@ -8043,7 +8058,8 @@ const domReady = () => new Promise(r => document.readyState!=="loading" ? r() : 
     e.preventDefault(); openClub(b.dataset.club);
   }, true);
   function crestButtons(){
-    return (CLUBS||[]).map(c=>`<button type="button" title="${esc(c)}" aria-label="${esc(c)}" data-club="${esc(c)}"><img src="${crestImg(c)}" alt="${esc(c)}"></button>`).join("");
+    return (CLUBS||[]).map(c=>`<button type="button" title="${esc(c)}" aria-label="${esc(c)}" data-club="${esc(c)}"><img src="${crestImg(c)}" alt="${esc(c)}"></button>`).join("")
+      + `<button type="button" class="kfa-btn" title="${KFA_INFO.name}" aria-label="${KFA_INFO.name}" data-club="${KFA_KEY}"><img src="${KFA_INFO.img.logo}" alt="${KFA_KEY}"></button>`;   /* الاتحاد بعد الأندية */
   }
   function paintStrips(){
     try{
@@ -8619,6 +8635,44 @@ html[data-theme="dark"] .rs-btn,html[data-theme="dark"] .rs-nav,html[data-theme=
 .mx-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin:2px 0 12px}
 .mx-title{margin:0;font-family:var(--display);font-weight:800;font-size:1.25rem;color:var(--head,#fff)}
 .mx-head .segbar{margin:0}
+/* صفحة الاتحاد الكويتي */
+.crestbar .kfa-btn{margin-inline-start:10px;position:relative}
+.crestbar .kfa-btn::before{content:"";position:absolute;inset-inline-start:-6px;top:20%;height:60%;width:1px;background:rgba(255,255,255,.25)}
+.kfa-pc .ps{display:flex;flex-direction:column;align-items:center;gap:3px}
+.kfa-pc .ps .kfa-club{display:inline-flex;align-items:center;gap:4px;font-size:.62rem;color:var(--slate)}
+.kfa-pc .ps .kfa-club .crest{width:16px;height:16px;border-radius:4px}
+.kfa-pc .ps .kfa-club i{font-style:normal}
+.kfa-pc .ps em{font-style:normal}
+.kfa-coach{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:6px}
+.kfa-coach-ttl{display:flex;flex-direction:column;gap:2px}
+.kfa-coach-ttl small{font-size:.66rem;color:var(--slate)}
+.kfa-coach-ttl b{font-family:var(--display);font-size:1.05rem;color:var(--head,#fff)}
+.kfa-coach-sub{font-size:.74rem;color:var(--slate)}
+.kfa-pres{display:flex;align-items:center;gap:16px}
+.kfa-pres-img{width:96px;height:96px;border-radius:18px;object-fit:cover;object-position:top;flex:none;box-shadow:0 6px 18px rgba(0,0,0,.25)}
+.kfa-pres-txt{display:flex;flex-direction:column;gap:4px}
+.kfa-pres-txt b{font-family:var(--display);font-size:1.05rem;color:var(--head,#fff)}
+.kfa-pres-txt small{font-size:.74rem;color:var(--slate)}
+.kfa-hon{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px}
+.kfa-hon-it{display:flex;flex-direction:column;gap:4px}
+.kfa-hon-it b{font-family:var(--display);color:var(--head,#fff);font-size:.92rem}
+.kfa-hon-it small{font-size:.72rem;color:var(--slate);line-height:1.6}
+.kfa-pres-txt p{margin:6px 0 0;font-size:.78rem;line-height:1.7;color:var(--slate)}
+.kfa-board{margin-top:8px}
+.kfa-board-hd{font-size:.78rem;color:var(--slate);margin-bottom:10px}
+.kfa-board-hd b{color:var(--head,#fff)}
+.kfa-board-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:8px}
+.kfa-board-it{display:flex;flex-direction:column;gap:2px;padding:8px 10px;border-radius:10px;background:rgba(143,166,196,.08);border:1px solid var(--line,rgba(143,166,196,.16))}
+.kfa-board-it small{font-size:.64rem;color:var(--slate)}
+.kfa-board-it b{font-family:var(--display);font-size:.86rem;color:var(--head,#fff)}
+.kfa-links{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.kfa-links .hchip b{font-weight:700}
+.kfa-hq{position:relative;overflow:hidden}
+.kfa-hq img{width:100%;height:clamp(160px,36vw,300px);object-fit:cover;display:block}
+.kfa-hq .st-cap{position:absolute;right:14px;bottom:12px;padding:5px 10px;border-radius:999px;background:rgba(6,21,41,.72);color:#fff;font-size:.72rem}
+.kfa-rec .kfa-av{width:34px;height:34px;border-radius:10px;object-fit:cover;object-position:top;flex:none;background:#fff}
+.kfa-rec .kfa-av.ph{display:inline-block;background:rgba(143,166,196,.18)}
+.kfa-rec td.kfa-span{font-size:.72rem;color:var(--slate);font-family:var(--f-body)}
 .mx-comp .rs-btn{min-width:210px}
 .mx-comp .rs-menu{min-width:240px;max-height:360px;inset-inline-start:auto;inset-inline-end:0}   /* القائمة على يسار الصفحة: تُفتح نحو الداخل لا خارج الحافة */
 .rs-grp{padding:8px 10px 3px;font-size:.62rem;font-weight:800;color:var(--slate);letter-spacing:.02em}
@@ -8902,6 +8956,163 @@ function clubAccent(c){
 const accentVars = c => { const k=clubAccent(c); return `--ca:${k.a};--cb:${k.b};--ca-rgb:${k.rgb};--ctab-fg:${k.fg}`; };
 const crestSrcOf = c => (typeof LOCAL_CRESTS!=="undefined" && LOCAL_CRESTS[c]) || (LOGOS||{})[c] || "";
 
+/* ================= الاتحاد الكويتي لكرة القدم (2026-09-15) =================
+   صفحة بجانب الأندية بثلاثة تبويبات. الحقائق في KFA_INFO (مصادرها في AlArabiTest/kfa/facts.md)، القوائم من ملصقات
+   الاتحاد الرسمية (معسكر الدوحة سبتمبر 2026 / الألعاب الآسيوية ناغويا 2026)، والأرقام التاريخية في KFA_RECORDS. */
+const KFA_KEY="الاتحاد الكويتي";
+const KFA_INFO={
+  /* المصادر: kuwait-fa.org، inside.fifa.com، الجريدة 20/5/2026، كونا 6/11/2024، ويكيبيديا — التفاصيل في AlArabiTest/kfa/facts.md */
+  name:"الاتحاد الكويتي لكرة القدم", en:"Kuwait Football Association", short:"الأزرق",
+  f:1952, fifa:1962, afc:1964, uafa:1974, waff:2010, agcff:2016,
+  hq:"العديلية — قطعة 4، شارع سامي أحمد المنيس", hqCity:"مدينة الكويت", pobox:"ص.ب 2029 الصفاة 13021",
+  pres:"الشيخ أحمد اليوسف الصباح", presSince:"6 نوفمبر 2024", presTerm:"2026–2030 (بالتزكية، 20 مايو 2026)", presPrev:"2004–2007، 2017–2018، 2018–2022",
+  presBio:"من مواليد 6 أكتوبر 1962، عضو مجلس إدارة الاتحاد منذ 1986 وأمين الصندوق عام 1989، ورئيس للاتحاد في أربع فترات. زُكّي رئيساً في 6 نوفمبر 2024 لاستكمال دورة 2022–2026 ثم جُدد له لدورة 2026–2030.",
+  gs:"د. صالح ناصر المجروب",
+  board:[["نائب الرئيس للشؤون الفنية","أيمن الحسيني"],["نائب الرئيس للشؤون المالية والإدارية","ديين الديين"],["عضو","د. أحمد عجب"],["عضو","ناصر العدواني"],["عضو","د. عادل العدواني"],["عضو","دلال يوسف المضف"]],
+  st:"استاد جابر الأحمد الدولي", stLoc:"العارضية، محافظة الفروانية", cap:60000, stOpened:"18 ديسمبر 2015", stOwner:"الاتحاد الكويتي لكرة القدم", st2:"استاد علي صباح السالم (11,000)",
+  coach:"هيليو سوزا", coachNat:"البرتغال", coachSince:"31 يوليو 2025", coachOly:"ديفيد دونيغا", coachOlyNat:"إسبانيا", coachOlySince:"30 مايو 2026",
+  kit:"أديداس (منذ 2023)", sponsor:"زين", site:"https://kuwait-fa.org", social:[["X","@KuwaitFA"],["إنستغرام","@Kuwaitfootball"],["يوتيوب","KuwaitFA"]],
+  rank:133, rankDate:"20 يوليو 2026", rankBest:24,
+  img:{logo:"assets/kfa/logo.png", stadium:"assets/kfa/stadium.jpg", pres:"assets/kfa/president.jpg", hq:"assets/kfa/hq.jpg"},
+  honours:[
+    {t:"كأس آسيا 1980", d:"البطل — النهائي 3–0 على كوريا الجنوبية في استاد صباح السالم (30 سبتمبر 1980)"},
+    {t:"كأس الخليج العربي — 10 ألقاب", d:"1970، 1972، 1974، 1976، 1982، 1986، 1990، 1996، 1998، 2010 — الأكثر تتويجاً في تاريخ البطولة"},
+    {t:"كأس العالم 1982", d:"المشاركة الوحيدة (إسبانيا): 1–1 تشيكوسلوفاكيا، 1–4 فرنسا، 0–1 إنجلترا — بقيادة كارلوس ألبرتو باريرا"},
+    {t:"الألعاب الأولمبية موسكو 1980", d:"ربع النهائي — تصدّر مجموعته دون هزيمة ثم خسر 1–2 أمام الاتحاد السوفيتي"},
+    {t:"بطولة غرب آسيا 2010", d:"البطل — النهائي 2–1 على إيران في الأردن (3 أكتوبر 2010)"},
+    {t:"الألعاب الآسيوية", d:"فضية 1982 (نيودلهي) و1998 (بانكوك)، برونزية 1986 (سيول) و1994 (هيروشيما)"},
+    {t:"كأس العرب", d:"المركز الثالث 1964 و1992 و1998"}
+  ],
+  about:"تأسس الاتحاد الكويتي لكرة القدم عام 1952 باسم «الاتحاد الكويتي للألعاب الرياضية» وحمل اسمه الحالي عام 1957، وانضم إلى الفيفا عام 1962 وإلى الاتحاد الآسيوي عام 1964، وهو عضو في الاتحاد العربي منذ 1974 واتحاد غرب آسيا منذ 2010 وعضو مؤسس في اتحاد كأس الخليج العربي عام 2016. يدير الاتحاد المنتخبات الوطنية والمسابقات المحلية (الدوري الممتاز، الدرجة الأولى، كأس الأمير، كأس ولي العهد، كأس الاتحاد)، ومقره في العديلية، ويملك استاد جابر الأحمد الدولي أكبر ملاعب الكويت. يُلقّب المنتخب الأول بـ«الأزرق»، وهو بطل آسيا 1980 وصاحب الرقم القياسي في ألقاب كأس الخليج بعشرة ألقاب."
+};
+const KFA_SQUADS={
+  first:{title:"الفريق الأول", coach:"هيليو سوزا", camp:"قائمة الأزرق — معسكر الدوحة، سبتمبر 2026", comp:"gulf27", compName:"خليجي 27",
+    gk:["خالد الرشيدي","سعود الحوشان","عبدالرحمن الفضلي","راكان السعيد"],
+    out:["محسن فلاح","معاذ الظفيري","راشد الدوسري","عبدالوهاب العوضي","عبدالعزيز مهران","يوسف الحقان","خالد صباح","فهد الهاجري",
+         "مهدي دشتي","ناصر فالح","عبدالله القرزعي","عذبي شهاب","أحمد الظفيري","جاسم المطر","خالد المرشد","رضا هاني",
+         "يوسف ناصر","شبيب الخالدي","عبدالله العوضي","مبارك الفنيني","محمد دحام","يوسف ماجد","عيد الرشيدي"]},
+  olympic:{title:"المنتخب الأولمبي", coach:"ديفيد دونيغا", camp:"قائمة المنتخب الأولمبي — دورة الألعاب الآسيوية العشرين، ناغويا 2026", comp:"asiad", compName:"الألعاب الآسيوية 2026",
+    gk:["ضاري المسري","عبدالرحمن عجاج","عبدالرضا شهاب"],
+    out:["بندر السلامة","جاسم العنزي","علي حسن","منتصر العبدالسلام","أحمد بودي","بندر البرازي","حمود السنعوسي",
+         "معاذ الاصيمع","طلال القيسي","صالح المحطب","عبدالله فارس","عمر المطر","عبدالله الغنيمان","جاسم شموه",
+         "محمد الشريفي","ناصر خضر","فواز المبيليش","محمد الصريعي","أحمد خورشيد","عيد العازمي"]}
+};
+const KFA_RECORDS={scorers:[], caps:[]};   /* {n, g, caps, span, img} */
+/* مطابقة اسم من ملصق الاتحاد بكشوف الأندية في الموقع (تجاهل الهمزات/التاء المربوطة) → النادي والمركز والرقم والصورة */
+function kfaFind(name){
+  const n=_norm(name);
+  for(const c of Object.keys(SQUADS||{})){
+    const x=(SQUADS[c]||[]).find(x=>_norm(sqName(x))===n);
+    if(x) return {club:c, pos:sqPos(x), num:sqNum(x), site:sqName(x)};
+  }
+  return null;
+}
+function kfaPlayerCard(name, gk){
+  const f=kfaFind(name);
+  const cut=(f && PHOTOSON && typeof LOCAL_PHOTOS!=="undefined") ? photoCut(f.site, f.club) : null;
+  const pos=gk?"حارس مرمى":(f?posLabel(f.pos):"");
+  return `<div class="pcard kfa-pc" ${f?`data-player="${esc(f.site)}" data-club="${esc(f.club)}" role="button" tabindex="0"`:""} aria-label="${esc(name)}">
+    <div class="ph">${cut?`<img src="${cut}_s.webp?v=6" alt="" loading="lazy" decoding="async" draggable="false">`
+                       :`<img class="noph" src="${KFA_INFO.img.logo}" alt="" loading="lazy" draggable="false">`}</div>
+    ${f&&f.num?`<span class="no">${f.num}</span>`:""}
+    <div class="nm">${esc(name)}</div>
+    <div class="ps">${f?`<span class="kfa-club">${crest(f.club)}<i>${esc(f.club)}</i></span>`:""}${pos?`<em>${esc(pos)}</em>`:""}</div>
+  </div>`;
+}
+function kfaSquadHTML(sq){
+  const out=sq.out.map(n=>({n, f:kfaFind(n)}));
+  const grp=k=>out.filter(o=>(o.f?POS_MAIN[String(o.f.pos||"").toUpperCase()]:"")===k);
+  const rest=out.filter(o=>!o.f||!POS_MAIN[String(o.f.pos||"").toUpperCase()]);
+  const blocks=[["حراس المرمى",sq.gk.map(n=>kfaPlayerCard(n,true))],
+                ["الدفاع",grp("D").map(o=>kfaPlayerCard(o.n))],["الوسط",grp("M").map(o=>kfaPlayerCard(o.n))],["الهجوم",grp("F").map(o=>kfaPlayerCard(o.n))],
+                ["لاعبون",rest.map(o=>kfaPlayerCard(o.n))]].filter(([,L])=>L.length);
+  return blocks.map(([t,L])=>`<h2 class="sec sq-grp">${t}<span class="sq-n">${L.length}</span></h2><div class="sq-grid">${L.join("")}</div>`).join("");
+}
+function kfaRecordsHTML(list, kind){
+  if(!list.length) return "";
+  const goals=kind==="g";
+  return `<div class="hm xt-hm"><div class="hm-card hm-tblwrap"><table class="hm-tbl kfa-rec">
+    <thead><tr><th class="c">#</th><th class="club">اللاعب</th><th>${goals?"أهداف":"مباريات"}</th><th>${goals?"مباريات":"أهداف"}</th><th class="frm">الفترة</th></tr></thead>
+    <tbody>${list.map((r,i)=>`<tr class="${i<3?"champ":""}">
+      <td class="c">${i+1}</td>
+      <td class="club"><span>${r.img?`<img class="kfa-av" src="${r.img}" alt="" loading="lazy" decoding="async">`:`<span class="kfa-av ph"></span>`}<b>${esc(r.n)}</b></span></td>
+      <td class="pts">${goals?r.g:r.caps}</td><td>${goals?r.caps:r.g}</td><td class="frm kfa-span" dir="ltr">${esc(r.span||"")}</td></tr>`).join("")}</tbody>
+  </table></div></div>`;
+}
+function kfaMatchesHTML(sq){
+  const evs=extEvents(sq.comp);
+  const r=extCardsHTML(evs, sq.compName);
+  return `<h2 class="sec">المباريات<span class="sq-n">${esc(sq.compName)}</span></h2>
+    ${(r.soon+r.done)?`<div class="msum"><span><b>${r.done}</b>أُقيمت</span><span><b>${r.soon}</b>لم تبدأ</span></div>`:""}
+    <div class="mx-list">${r.html||'<div class="mx-empty">لم تُضف مباريات بعد.</div>'}</div>`;
+}
+function kfaTeamPanel(sq){
+  return `<div class="card pad kfa-coach">
+      <div class="kfa-coach-ttl"><small>المدرب</small><b>${esc(sq.coach)}</b></div>
+      <div class="kfa-coach-sub">${esc(sq.camp)} · ${sq.gk.length+sq.out.length} لاعباً</div>
+    </div>
+    ${kfaMatchesHTML(sq)}
+    ${kfaSquadHTML(sq)}`;
+}
+function kfaAboutHTML(){
+  const I=KFA_INFO;
+  const facts=[
+    ["تأسس عام", String(I.f)], ["الانضمام إلى الفيفا", String(I.fifa)], ["الاتحاد الآسيوي", String(I.afc)],
+    I.hq?["المقر", esc(I.hq)]:null, I.pres?["رئيس الاتحاد", esc(I.pres)+(I.presSince?` <small>(منذ ${esc(I.presSince)})</small>`:"")]:null,
+    ["ملعب المنتخب", esc(I.st)], ["سعة الملعب", `${I.cap.toLocaleString("en-US")} متفرج`], I.stLoc?["الموقع", esc(I.stLoc)]:null,
+    ["مدرب الفريق الأول", esc(I.coach)+(I.coachNat?` <small>(${esc(I.coachNat)})</small>`:"")], ["مدرب الأولمبي", esc(I.coachOly)+(I.coachOlyNat?` <small>(${esc(I.coachOlyNat)})</small>`:"")],
+    I.rank?["تصنيف الفيفا", `${I.rank}${I.rankDate?` <small>(${esc(I.rankDate)})</small>`:""}`]:null,
+    ["الطقم", esc(I.kit)], ["الراعي الرسمي", esc(I.sponsor)]
+  ].filter(Boolean);
+  return `<div class="cabout kfa-about">
+    <div class="wm" style="background-image:url('${I.img.logo}')"></div>
+    <div class="cabout-hero"><img class="st-img" src="${I.img.stadium}" alt="" decoding="async" onload="this.classList.add('on')" onerror="this.onerror=null;this.src='assets/hero/stadium.jpg'">
+      <span class="st-cap">${esc(I.st)}</span></div>
+    <div class="cabout-head">
+      <div class="crest lg has-logo"><img src="${I.img.logo}" alt=""></div>
+      <div class="cabout-ttl"><h3>${esc(I.name)}</h3><div class="sub">${esc(I.en)} · تأسس ${I.f}</div></div>
+    </div>
+    <div class="cabout-facts">${facts.map(([k,v])=>`<div class="cfact"><small>${k}</small><b>${v}</b></div>`).join("")}</div>
+    ${I.about?`<p class="cabout-desc">${esc(I.about)}</p>`:""}
+  </div>
+  ${I.pres?`<h2 class="sec">رئيس الاتحاد</h2>
+  <div class="card pad kfa-pres">
+    <img class="kfa-pres-img" src="${I.img.pres}" alt="${esc(I.pres)}" loading="lazy" onerror="this.remove()">
+    <div class="kfa-pres-txt"><b>${esc(I.pres)}</b>
+      ${I.presSince?`<small>رئيس الاتحاد منذ ${esc(I.presSince)}${I.presTerm?` · الدورة ${esc(I.presTerm)}`:""}</small>`:""}
+      ${I.presPrev?`<small>فترات سابقة: ${esc(I.presPrev)}</small>`:""}
+      ${I.presBio?`<p>${esc(I.presBio)}</p>`:""}</div>
+  </div>
+  ${(I.board&&I.board.length)?`<div class="card pad kfa-board"><div class="kfa-board-hd">مجلس الإدارة ${I.presTerm?esc(I.presTerm.split(" ")[0]):""}${I.gs?` · الأمين العام: <b>${esc(I.gs)}</b>`:""}</div>
+    <div class="kfa-board-grid">${I.board.map(([r,n])=>`<div class="kfa-board-it"><small>${esc(r)}</small><b>${esc(n)}</b></div>`).join("")}</div></div>`:""}`:""}
+  ${I.honours.length?`<h2 class="sec">الإنجازات<span class="sq-n">${I.honours.length}</span></h2>
+  <div class="kfa-hon">${I.honours.map(h=>`<div class="card pad kfa-hon-it"><b>${esc(h.t)}</b><small>${esc(h.d)}</small></div>`).join("")}</div>`:""}
+  <h2 class="sec">مقر الاتحاد</h2>
+  <div class="card kfa-hq"><img src="${I.img.hq}" alt="" loading="lazy" onerror="this.parentElement.remove()"><span class="st-cap">${esc(I.hq)}${I.hqCity?` · ${esc(I.hqCity)}`:""}</span></div>
+  <div class="kfa-links">${I.site?`<a class="hchip" href="${I.site}" target="_blank" rel="noopener">الموقع الرسمي</a>`:""}${(I.social||[]).map(([k,v])=>`<span class="hchip">${esc(k)} <b>${esc(v)}</b></span>`).join("")}</div>`;
+}
+function renderKFABody(){
+  const R=KFA_RECORDS;
+  $("#clubBody").innerHTML=`
+  <div class="clubwrap kfa" style="--ca:#1B4FD8;--cb:#0B1F3A;--ca-rgb:27,79,216;--ctab-fg:#fff">
+  <div class="ctabs" role="tablist" aria-label="أقسام الاتحاد">
+    <span class="ctab-ind" aria-hidden="true"></span>
+    <button type="button" role="tab" data-ct="about">نبذة عن الاتحاد</button>
+    <button type="button" role="tab" data-ct="first">الفريق الأول</button>
+    <button type="button" role="tab" data-ct="olympic">المنتخب الأولمبي</button>
+  </div>
+  <div class="ctab-panel" data-cp="about">${kfaAboutHTML()}</div>
+  <div class="ctab-panel" data-cp="first">
+    ${kfaTeamPanel(KFA_SQUADS.first)}
+    ${R.scorers.length?`<h2 class="sec">الهدافون التاريخيون<span class="sq-n">${R.scorers.length}</span></h2>${kfaRecordsHTML(R.scorers,"g")}`:""}
+    ${R.caps.length?`<h2 class="sec">الأكثر مشاركة<span class="sq-n">${R.caps.length}</span></h2>${kfaRecordsHTML(R.caps,"c")}`:""}
+  </div>
+  <div class="ctab-panel" data-cp="olympic">${kfaTeamPanel(KFA_SQUADS.olympic)}</div>
+  </div>`;
+  if(!["about","first","olympic"].includes(CLUB_TAB)) CLUB_TAB="about";
+  wireClubTabs();
+  wireDropdowns($("#clubBody"));
+}
 /* ---------- تبويبات صفحة النادي ---------- */
 let CLUB_TAB = "about";
 function wireClubTabs(){
