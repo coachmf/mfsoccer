@@ -16,6 +16,21 @@ const ROSTER = {
           RW:'F', ST:'F', LW:'F',
           G:'G', D:'D', M:'M', F:'F' },
 
+  /* السعر المقترح للاعب من MF_SQUAD_ADD، وإلا 4.5 */
+  addPrice(name, cid){
+    if(typeof MF_SQUAD_ADD==='undefined') return 4.5;
+    for(const c in MF_SQUAD_ADD){ if(MFSYNC.clubId(c)!==cid) continue;
+      const x=MF_SQUAD_ADD[c].find(e=>MFSYNC.norm(e.n)===MFSYNC.norm(name)); if(x && x.price) return x.price; }
+    return 4.5;
+  },
+  /* لاعب مضاف في MF_SQUAD_ADD وليس في اللعبة ولا بانتظار التأكيد → سحب فوري بدل انتظار 12 ساعة */
+  addMissing(){
+    if(typeof MF_SQUAD_ADD==='undefined') return false;
+    const st=DB.state, all=[...(st.players||[]), ...(st.pending||[])];
+    return Object.keys(MF_SQUAD_ADD).some(c=>{ const cid=MFSYNC.clubId(c);
+      return cid && MF_SQUAD_ADD[c].some(x=>!all.some(p=>p.club===cid && MFSYNC.norm(p.name)===MFSYNC.norm(x.n))); });
+  },
+
   name(x){ return (typeof x === 'string' ? x : (x && x.n) || '').trim(); },
   pos(x){ return this.MAIN[(typeof x === 'string' ? '' : (x && x.p) || '')] || ''; },
   num(x){ return (typeof x === 'string' ? 0 : +(x && x.s) || 0); },
@@ -94,7 +109,7 @@ const ROSTER = {
           /* لاعب جديد: يدخل قسم «لاعبون جدد بانتظار التأكيد» في لوحة الإدارة، ويُنشر للمشتركين بعد تحديد سعره والضغط على تأكيد */
           st.pending.push({
             id: 'p' + (++maxId), club: cid, pos: sp.pos || 'M', name: sp.name,
-            price: 4.5, startPrice: 4.5, shirt: sp.shirt || 0,
+            price: this.addPrice(sp.name, cid), startPrice: this.addPrice(sp.name, cid), shirt: sp.shirt || 0,
             status: 'a', news: '', photo: '', newAt: Date.now()
           });
           rep.added++;
@@ -140,7 +155,7 @@ const ROSTER = {
   auto(){
     let last = 0;
     try{ last = +localStorage.getItem(this.KEY) || 0; }catch(e){}
-    if(Date.now() - last < this.AUTO_HOURS * 3600e3) return;
+    if(Date.now() - last < this.AUTO_HOURS * 3600e3 && !this.addMissing()) return;
     setTimeout(() => this.sync({ quiet:true, removals:false }), 2500);
   },
 
