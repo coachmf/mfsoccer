@@ -8091,7 +8091,7 @@ const CLUB_INFO = {
   /* مصادر التحقق (2026-09-15): ويكيبيديا العربية والإنجليزية لكل نادٍ. nick = اللقب، cap = سعة الملعب. الأندية بلا لقب متداول تُترك بلا nick. */
   "القادسية": {f:1960, nick:"الملكي",        st:"ستاد محمد الحمد",       loc:"حولي",       cap:22000, col:"الأصفر والأسود",    slug:"qadsia"},
   "الكويت":   {f:1960, nick:"العميد",        st:"ملعب نادي الكويت",      loc:"كيفان",      cap:12350, col:"الأبيض والأحمر",    slug:"kuwait"},
-  "العربي":   {f:1960, nick:"الأخضر",        st:"ستاد صباح السالم",      loc:"المنصورية",  cap:26000, col:"الأخضر والأبيض",    slug:"arabi"},
+  "العربي":   {f:1960, nick:"الزعيم",        st:"ستاد صباح السالم",      loc:"المنصورية",  cap:26000, col:"الأخضر والأبيض",    slug:"arabi"},
   "كاظمة":    {f:1964, nick:"السفير",        st:"ستاد الصداقة والسلام",  loc:"العديلية",   cap:21500, col:"البرتقالي والأبيض", slug:"kazma"},
   "السالمية": {f:1964, nick:"الرهيب",        st:"ستاد ثامر",             loc:"السالمية",   cap:12000, col:"السماوي والأبيض",   slug:"salmiya"},
   "النصر":    {f:1965, nick:"العنابي",       st:"ملعب علي صباح السالم",  loc:"العارضية",   cap:11000, col:"العنابي والأبيض",   slug:"nasr"},
@@ -8138,7 +8138,7 @@ function wireClubTabs(){
 function clubAboutHTML(c, r, played){
   const I=CLUB_INFO[c]||{}, cc=(window.CLUB_COLORS||{})[c]||[];
   const pos = played ? standings().findIndex(x=>x.c===c)+1 : 0;
-  const stImg = I.slug ? `url('assets/stadiums/${I.slug}.jpg?v=2'),` : "";   /* v2: قصّات عريضة 2000×800 بزاوية موحّدة وفلتر موحّد */
+  const stImg = I.slug ? `url('assets/stadiums/${I.slug}.jpg?v=3'),` : "";   /* v2: قصّات عريضة 2000×800 بزاوية موحّدة وفلتر موحّد */
   const facts=[
     I.nick? ["اللقب", esc(I.nick)] : null,
     I.f   ? ["تأسس عام", String(I.f)] : null,
