@@ -10496,7 +10496,7 @@ function mpTeamSection(m){
       <span class="mpt-nm"><b>${numOf(x.in)?`<em>${numOf(x.in)}</em>`:""}${esc(x.in||"—")}</b>
         <small><i class="mpt-in"></i><span dir="ltr">${absMinute(x.h,x.m)}'</span><span class="mpt-out">خروج: ${esc(x.out||"—")}</span></small></span>
       ${R[x.in]!=null?ratingBadge(R[x.in]):""}</div>`).join("")}` : "";
-  const played=new Set([...xiNames(m.round, comp, club), ...subs.map(x=>x.in).filter(Boolean)]);
+  const played=new Set([...xiNames(m.round, comp, club), ...subs.flatMap(x=>[x.in, x.out]).filter(Boolean)]);   /* الخارج أيضاً: حتى لو سُجّل خطأً خارج التشكيلة */
   const bench=sq.filter(x=>!played.has(x.n));
   const benchBlock = bench.length ? `<div class="mpt-hd">الاحتياط<span class="sq-n">${bench.length}</span></div><div class="mpt-bench">${bench.map(x=>`<div class="mpt-b" data-player="${esc(x.n)}" data-club="${esc(club)}">
       ${mpFacePh(x.n, club)}<span>${x.s?`<em>${x.s}</em>`:""}${esc(shortName(x.n))}</span></div>`).join("")}</div>` : "";
