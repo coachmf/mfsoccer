@@ -4,7 +4,7 @@
 'use strict';
 
 /* رقم نسخة الصور: ارفعه عند إعادة توليد أي قصّة حتى لا يبقى المتصفح على النسخة القديمة */
-const PLAYER_PHOTOS_VER = '7';
+const PLAYER_PHOTOS_VER = '8';
 
 const PLAYER_PHOTOS = {
   // الصليبخات (17)
