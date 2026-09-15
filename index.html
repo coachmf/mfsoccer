@@ -5875,6 +5875,7 @@ function renderMatches(){
         <div class="mc-mid">
           ${soon ? `<span class="mc-time" dir="ltr">${m.time?esc(m.time):"—"}</span>` : `<span class="mc-score" dir="ltr">${m.hg} - ${m.ag}</span>`}
           ${st}
+          <span class="mc-go" aria-hidden="true"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg></span>
         </div>
         <div class="mc-team a">${crest(m.away)}<b>${esc(m.away)}</b></div>
       </div>
@@ -5886,7 +5887,6 @@ function renderMatches(){
         ${(y||r)?`<span class="mc-cards">${y?`<b><i class="cardpill y"></i>${y}</b>`:""}${r?`<b><i class="cardpill r"></i>${r}</b>`:""}</span>`:""}
       </div>
       ${m.note?`<div class="mc-note">${esc(m.note)}</div>`:""}
-      ${detailsBlock(m, gs, mc, soon)}
     </article>`;
   }).join("");
 
@@ -8733,6 +8733,8 @@ html[data-theme="dark"] .mc{background:#0F1E35;border-color:#213653;box-shadow:n
   padding:3px 12px;border-radius:9px;background:rgba(143,166,196,.12)}
 html[data-theme="dark"] .mc-score{background:#182C48}
 .mc-time{font-family:var(--display);font-weight:700;font-size:.95rem;color:var(--head,#fff);font-variant-numeric:tabular-nums;padding:3px 12px;border-radius:9px;border:1px dashed var(--line2,rgba(143,166,196,.35))}
+.mc-go{display:grid;place-items:center;width:22px;height:22px;border-radius:50%;margin-top:2px;color:var(--sky,#5FB2E8);background:rgba(95,178,232,.14);transition:transform .15s}
+.mc[data-mopen]:hover .mc-go{transform:translateX(-3px)}
 .mc-st{font-size:.62rem;font-weight:600;color:var(--slate);letter-spacing:.01em;display:inline-flex;align-items:center;gap:4px}
 .mc-st.live{color:var(--win)}
 .mc-st.live i{width:6px;height:6px;border-radius:50%;background:var(--win);animation:mcpulse 1.2s ease-in-out infinite}
