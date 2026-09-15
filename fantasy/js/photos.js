@@ -264,6 +264,10 @@ const PLAYER_PHOTOS = {
   'ARB|احمد عادي': '/assets/players/arb/26',
   'ARB|علي عبدالرسول': '/assets/players/arb/16',
   'ARB|علي الدوخي': '/assets/players/arb/9',
+  'ARB|شيلدون': '/assets/players/arb/23',
+  'ARB|خادم رسول': '/assets/players/arb/95',
+  'ARB|بندر السلامة': '/assets/players/arb/10',
+  'ARB|علي خلف': '/assets/players/arb/17',
   'KAZ|بدر طارق': '/assets/players/kaz/77',   // انتقل من العربي (منصور 2026-09-15)
   'ARB|وليد ولد الشيخ': '/assets/players/arb/walid',
   'NSR|مسفر العدواني': '/assets/players/nsr/mesfer',   // بطاقة ترحيب النادي، مهاجم بلا رقم بعد   // بطاقة المركز الإعلامي للنادي، بلا رقم بعد
