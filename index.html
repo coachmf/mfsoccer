@@ -1324,7 +1324,11 @@ body{background:
 /* ---- crest bar ---- */
 .crestbar{background:#fff;border-bottom:1px solid var(--line);box-shadow:0 2px 8px rgba(11,31,58,.05)}
 .crestbar:empty{display:none}
-.crestbar-in{max-width:1180px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:4px;padding:6px 20px;overflow-x:auto;scrollbar-width:none}
+.crestbar-in{max-width:1180px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:4px;padding:6px 20px 2px;flex-wrap:wrap;overflow:visible}   /* كل الأندية على الشاشة بلا تمرير (منصور 2026-09-15) */
+.crestbar-nt{max-width:1180px;margin:0 auto;display:flex;justify-content:center;padding:0 20px 6px;border-top:1px solid rgba(143,166,196,.18)}
+.crestbar-nt button{width:52px;height:52px;display:grid;place-items:center;border-radius:8px;transition:transform .15s,background .15s;margin-top:4px}
+.crestbar-nt button img{width:44px;height:44px;object-fit:contain;filter:drop-shadow(0 1px 1px rgba(0,0,0,.15))}
+.crestbar-nt button:hover{transform:translateY(-3px);background:var(--blue-bg)}
 .crestbar-in::-webkit-scrollbar{display:none}
 .crestbar button{flex:none;width:52px;height:52px;display:grid;place-items:center;border-radius:8px;transition:transform .15s,background .15s}
 .crestbar button img{width:46px;height:46px;object-fit:contain;filter:drop-shadow(0 1px 1px rgba(0,0,0,.15))}
@@ -1423,8 +1427,9 @@ main{padding-bottom:48px}
   .hero-word small{font-size:.7rem;margin-top:5px}
   .hero-sub button{padding:9px 16px 9px 20px;font-size:.78rem}
   .strip-in{padding:0 12px;height:44px}
-  .crestbar-in{justify-content:flex-start;padding:6px 10px}
-  .crestbar button{width:46px;height:46px} .crestbar button img{width:40px;height:40px}
+  .crestbar-in{justify-content:center;gap:0;padding:6px 6px 2px}
+  .crestbar-in button{flex:0 0 calc(100%/6);width:auto;height:50px}   /* صفّان من ستة أندية على الهاتف */
+  .crestbar button img{width:40px;height:40px}
   .kpi .v{font-size:1.9rem}
   h2.sec{font-size:1.15rem}
   .lfoot{padding:46px 16px calc(24px + var(--nav-h))}
@@ -2115,7 +2120,7 @@ main{padding-bottom:48px}
 <!-- v3:strips -->
 <div class="strip" id="resStrip" aria-label="نتائج آخر جولة"></div>
 <!-- شريط الشعارات مرسوم في الملف نفسه: يظهر مع أول رسم ولا ينتظر البيانات ولا الجافاسكربت؛ يُعاد رسمه من CLUBS لاحقاً -->
-<div class="crestbar" id="crestBar" aria-label="الأندية"><div class="crestbar-in"><button type="button" title="القادسية" aria-label="القادسية" data-club="القادسية"><img src="assets/crests/sq/qadsia.png" alt="القادسية" width="46" height="46"></button><button type="button" title="الكويت" aria-label="الكويت" data-club="الكويت"><img src="assets/crests/sq/kuwait.png" alt="الكويت" width="46" height="46"></button><button type="button" title="العربي" aria-label="العربي" data-club="العربي"><img src="assets/crests/sq/arabi.png" alt="العربي" width="46" height="46"></button><button type="button" title="كاظمة" aria-label="كاظمة" data-club="كاظمة"><img src="assets/crests/sq/kazma.png" alt="كاظمة" width="46" height="46"></button><button type="button" title="السالمية" aria-label="السالمية" data-club="السالمية"><img src="assets/crests/sq/salmiya.png" alt="السالمية" width="46" height="46"></button><button type="button" title="النصر" aria-label="النصر" data-club="النصر"><img src="assets/crests/sq/nasr.png" alt="النصر" width="46" height="46"></button><button type="button" title="الجهراء" aria-label="الجهراء" data-club="الجهراء"><img src="assets/crests/sq/jahra.png" alt="الجهراء" width="46" height="46"></button><button type="button" title="الساحل" aria-label="الساحل" data-club="الساحل"><img src="assets/crests/sq/sahel.png" alt="الساحل" width="46" height="46"></button><button type="button" title="الفحيحيل" aria-label="الفحيحيل" data-club="الفحيحيل"><img src="assets/crests/sq/fahaheel.png" alt="الفحيحيل" width="46" height="46"></button><button type="button" title="التضامن" aria-label="التضامن" data-club="التضامن"><img src="assets/crests/sq/tadamon.png" alt="التضامن" width="46" height="46"></button><button type="button" title="الشباب" aria-label="الشباب" data-club="الشباب"><img src="assets/crests/sq/shabab.png" alt="الشباب" width="46" height="46"></button><button type="button" title="الصليبخات" aria-label="الصليبخات" data-club="الصليبخات"><img src="assets/crests/sq/sulaibikhat.png" alt="الصليبخات" width="46" height="46"></button><button type="button" class="kfa-btn" title="الاتحاد الكويتي لكرة القدم" aria-label="الاتحاد الكويتي لكرة القدم" data-club="الاتحاد الكويتي"><img src="assets/kfa/logo.png" alt="الاتحاد الكويتي" width="46" height="46"></button></div></div>
+<div class="crestbar" id="crestBar" aria-label="الأندية"><div class="crestbar-in"><button type="button" title="القادسية" aria-label="القادسية" data-club="القادسية"><img src="assets/crests/sq/qadsia.png" alt="القادسية" width="46" height="46"></button><button type="button" title="الكويت" aria-label="الكويت" data-club="الكويت"><img src="assets/crests/sq/kuwait.png" alt="الكويت" width="46" height="46"></button><button type="button" title="العربي" aria-label="العربي" data-club="العربي"><img src="assets/crests/sq/arabi.png" alt="العربي" width="46" height="46"></button><button type="button" title="كاظمة" aria-label="كاظمة" data-club="كاظمة"><img src="assets/crests/sq/kazma.png" alt="كاظمة" width="46" height="46"></button><button type="button" title="السالمية" aria-label="السالمية" data-club="السالمية"><img src="assets/crests/sq/salmiya.png" alt="السالمية" width="46" height="46"></button><button type="button" title="النصر" aria-label="النصر" data-club="النصر"><img src="assets/crests/sq/nasr.png" alt="النصر" width="46" height="46"></button><button type="button" title="الجهراء" aria-label="الجهراء" data-club="الجهراء"><img src="assets/crests/sq/jahra.png" alt="الجهراء" width="46" height="46"></button><button type="button" title="الساحل" aria-label="الساحل" data-club="الساحل"><img src="assets/crests/sq/sahel.png" alt="الساحل" width="46" height="46"></button><button type="button" title="الفحيحيل" aria-label="الفحيحيل" data-club="الفحيحيل"><img src="assets/crests/sq/fahaheel.png" alt="الفحيحيل" width="46" height="46"></button><button type="button" title="التضامن" aria-label="التضامن" data-club="التضامن"><img src="assets/crests/sq/tadamon.png" alt="التضامن" width="46" height="46"></button><button type="button" title="الشباب" aria-label="الشباب" data-club="الشباب"><img src="assets/crests/sq/shabab.png" alt="الشباب" width="46" height="46"></button><button type="button" title="الصليبخات" aria-label="الصليبخات" data-club="الصليبخات"><img src="assets/crests/sq/sulaibikhat.png" alt="الصليبخات" width="46" height="46"></button></div><div class="crestbar-nt"><button type="button" class="kfa-btn" title="الاتحاد الكويتي لكرة القدم" aria-label="الاتحاد الكويتي لكرة القدم" data-club="الاتحاد الكويتي"><img src="assets/kfa/logo.png" alt="الاتحاد الكويتي" width="46" height="46"></button></div></div>
 <!-- /v3:strips -->
 
 
@@ -8058,13 +8063,12 @@ const domReady = () => new Promise(r => document.readyState!=="loading" ? r() : 
     e.preventDefault(); openClub(b.dataset.club);
   }, true);
   function crestButtons(){
-    return (CLUBS||[]).map(c=>`<button type="button" title="${esc(c)}" aria-label="${esc(c)}" data-club="${esc(c)}"><img src="${crestImg(c)}" alt="${esc(c)}"></button>`).join("")
-      + `<button type="button" class="kfa-btn" title="${KFA_INFO.name}" aria-label="${KFA_INFO.name}" data-club="${KFA_KEY}"><img src="${KFA_INFO.img.logo}" alt="${KFA_KEY}"></button>`;   /* الاتحاد بعد الأندية */
+    return (CLUBS||[]).map(c=>`<button type="button" title="${esc(c)}" aria-label="${esc(c)}" data-club="${esc(c)}"><img src="${crestImg(c)}" alt="${esc(c)}"></button>`).join("");
   }
   function paintStrips(){
     try{
       const cb=document.querySelector("#crestBar");
-      if(cb && Array.isArray(CLUBS) && CLUBS.length) cb.innerHTML=`<div class="crestbar-in">${crestButtons()}</div>`;
+      if(cb && Array.isArray(CLUBS) && CLUBS.length) cb.innerHTML=`<div class="crestbar-in">${crestButtons()}</div><div class="crestbar-nt"><button type="button" class="kfa-btn" title="${KFA_INFO.name}" aria-label="${KFA_INFO.name}" data-club="${KFA_KEY}"><img src="${KFA_INFO.img.logo}" alt="${KFA_KEY}"></button></div>`;   /* شعار الاتحاد في صف مستقل تحت الأندية */
       const fc=document.querySelector("#footCrests"); if(fc && Array.isArray(CLUBS)) fc.innerHTML=crestButtons();
       const fb=document.querySelector("#footBottom");
       if(fb) fb.innerHTML=`<img src="${BRAND}" alt="${esc(OWNER)}">
@@ -8636,8 +8640,7 @@ html[data-theme="dark"] .rs-btn,html[data-theme="dark"] .rs-nav,html[data-theme=
 .mx-title{margin:0;font-family:var(--display);font-weight:800;font-size:1.25rem;color:var(--head,#fff)}
 .mx-head .segbar{margin:0}
 /* صفحة الاتحاد الكويتي */
-.crestbar .kfa-btn{margin-inline-start:10px;position:relative}
-.crestbar .kfa-btn::before{content:"";position:absolute;inset-inline-start:-6px;top:20%;height:60%;width:1px;background:rgba(255,255,255,.25)}
+.crestbar .kfa-btn{position:relative}
 .kfa-pc .ps{display:flex;flex-direction:column;align-items:center;gap:3px}
 .kfa-pc .ps .kfa-club{display:inline-flex;align-items:center;gap:4px;font-size:.62rem;color:var(--slate)}
 .kfa-pc .ps .kfa-club .crest{width:16px;height:16px;border-radius:4px}
@@ -9115,7 +9118,7 @@ function kfaAboutHTML(){
     ["ملعب المنتخب", esc(I.st)], ["سعة الملعب", `${I.cap.toLocaleString("en-US")} متفرج`], I.stLoc?["الموقع", esc(I.stLoc)]:null,
     ["مدرب الفريق الأول", esc(I.coach)+(I.coachNat?` <small>(${esc(I.coachNat)})</small>`:"")], ["مدرب الأولمبي", esc(I.coachOly)+(I.coachOlyNat?` <small>(${esc(I.coachOlyNat)})</small>`:"")],
     I.rank?["تصنيف الفيفا", `${I.rank}${I.rankDate?` <small>(${esc(I.rankDate)})</small>`:""}`]:null,
-    ["الطقم", esc(I.kit)], ["الراعي الرسمي", esc(I.sponsor)]
+    ["الطقم", esc(I.kit)]
   ].filter(Boolean);
   return `<div class="cabout kfa-about">
     <div class="wm" style="background-image:url('${I.img.logo}')"></div>
