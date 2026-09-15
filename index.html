@@ -5283,6 +5283,9 @@ function renderHome(){
     </tbody></table></div></div>
   <p class="hint">${mw(played)} أُقيمت${soon?` · ${soon} لم تبدأ بعد ولا تُحتسب في الجدول`:""} · الترتيب بالنقاط ثم فارق الأهداف ثم الأهداف المسجلة.</p>
 
+  ${topPlayersHTML()}
+  ${teamFormHTML(T)}
+
   <h2 class="sec">أرقام لافتة</h2>
   <div class="card pad">${hs.map(h=>`<div class="head-story">
       <div class="num">${esc(h.v)}</div>
@@ -8178,6 +8181,46 @@ html[data-theme="dark"] .msum span{background:#0F1E35;border-color:#213653}
 .mx-list>.mc-day:first-child{margin-top:2px}
 .mx-empty{padding:28px 14px;text-align:center;color:var(--slate);font-size:.85rem;border:1px dashed var(--line,rgba(143,166,196,.25));border-radius:14px}
 @media(prefers-reduced-motion:reduce){.mc-st.live i{animation:none}.rp,.dp,.mc{transition:none}}
+/* --- الرئيسية: أبرز اللاعبين (رادار) + حالة الفرق --- */
+.tp-row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+@media(max-width:900px){.tp-row{display:flex;gap:10px;overflow-x:auto;scroll-snap-type:x mandatory;padding:2px 2px 8px;margin:0 -2px;scrollbar-width:none}.tp-row::-webkit-scrollbar{display:none}.tp{flex:0 0 min(86%,340px);scroll-snap-align:start}}
+.tp{--ca:#1878BE;--cb:#0B1F3A;--ca-rgb:24,120,190;--ctab-fg:#fff;position:relative;border-radius:16px;overflow:hidden;cursor:pointer;
+  background:linear-gradient(160deg,rgba(var(--ca-rgb),.16),var(--navy-900) 55%);border:1px solid var(--line,rgba(143,166,196,.18));box-shadow:var(--shadow,none);transition:transform .18s,border-color .18s}
+html[data-theme="dark"] .tp{background:linear-gradient(160deg,rgba(var(--ca-rgb),.22),#0F1E35 58%);border-color:#213653;box-shadow:none}
+.tp:hover{transform:translateY(-2px);border-color:rgba(var(--ca-rgb),.7)}
+.tp-hd{display:flex;align-items:baseline;justify-content:space-between;gap:8px;padding:12px 14px 4px}
+.tp-t{font-family:var(--display);font-weight:800;font-size:1rem;color:var(--head,#fff)}
+.tp-sub{font-size:.64rem;color:var(--slate);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.tp-body{display:grid;grid-template-columns:minmax(0,1fr) 150px;align-items:center;gap:6px;padding:0 10px 0 4px}
+.tp-id{display:flex;flex-direction:column;align-items:flex-start;gap:4px;min-width:0;padding:4px 4px 8px}
+.tp-ph{width:74px;height:74px;border-radius:50%;overflow:hidden;background:radial-gradient(circle at 50% 30%,rgba(var(--ca-rgb),.55),rgba(var(--ca-rgb),.15));box-shadow:0 0 0 2px rgba(var(--ca-rgb),.8),0 6px 14px rgba(0,0,0,.3);margin-bottom:4px;display:grid;place-items:center}
+.tp-ph img{width:100%;height:100%;object-fit:cover;object-position:top center}
+.tp-ph .pavph{width:100%;height:100%;border-radius:50%;font-size:1.2rem;display:grid;place-items:center;color:var(--head,#fff)}
+.tp-id b{font-family:var(--display);font-weight:800;font-size:1.02rem;color:var(--head,#fff);line-height:1.2;overflow-wrap:anywhere}
+.tp-club{display:inline-flex;align-items:center;gap:5px;font-size:.7rem;color:var(--slate)}
+.tp-club .crest{width:18px;height:18px;border-radius:5px}
+.tp-pos{font-size:.64rem;padding:2px 8px;border-radius:999px;background:rgba(143,166,196,.12);color:var(--mist);border:1px solid var(--line,rgba(143,166,196,.2))}
+.rad{width:100%;height:auto;display:block}
+.rad .rg{fill:none;stroke:rgba(143,166,196,.28);stroke-width:1}
+.rad .rp{fill-opacity:.32;stroke-width:1.8;stroke-linejoin:round}
+.rad text{font-family:var(--body);font-size:9.5px;fill:var(--slate)}
+html[data-theme="dark"] .rad text{fill:#B3C4D9}
+.tp-stats{display:grid;grid-template-columns:repeat(4,1fr);border-top:1px solid var(--line,rgba(143,166,196,.14));background:rgba(0,0,0,.08)}
+html[data-theme="light"] .tp-stats{background:rgba(11,31,58,.03)}
+.tp-stats span{display:flex;flex-direction:column;align-items:center;gap:1px;padding:9px 4px;font-size:.62rem;color:var(--slate)}
+.tp-stats span+span{border-inline-start:1px solid var(--line,rgba(143,166,196,.12))}
+.tp-stats b{font-family:var(--display);font-weight:800;font-size:1rem;color:var(--head,#fff);font-variant-numeric:tabular-nums}
+.tf{padding:4px 12px}
+.tf-r{display:grid;grid-template-columns:22px minmax(0,1fr) auto auto;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--line,rgba(143,166,196,.12));cursor:pointer}
+.tf-r:last-child{border-bottom:0}
+.tf-pos{font-size:.66rem;color:var(--slate);text-align:center;font-variant-numeric:tabular-nums}
+.tf-club{display:flex;align-items:center;gap:8px;min-width:0}
+.tf-club b{font-family:var(--display);font-weight:700;font-size:.88rem;color:var(--head,#fff);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tf-club .crest{width:26px;height:26px;border-radius:7px}
+.tf-pts{font-family:var(--display);font-weight:800;font-size:.84rem;color:var(--head,#fff);font-variant-numeric:tabular-nums;white-space:nowrap}
+.tf-pts i{font-style:normal;font-weight:400;font-size:.6rem;color:var(--slate)}
+.tf .pillrow{display:flex;gap:4px;direction:ltr}
+.tf .pl{width:22px;height:22px;border-radius:7px;display:grid;place-items:center;font-size:.66rem;font-weight:800}
 </style>
 <div class="pprof" id="pprof" hidden role="dialog" aria-modal="true" aria-label="ملف اللاعب"></div>
 <script>/* ===== ملف النادي (نبذة/قائمة الفريق) وملف اللاعب العام — 2026-09-15 ===== */
@@ -8402,6 +8445,87 @@ document.addEventListener("keydown", e=>{
   if(e.key==="Escape") closePlayer();
   const a=document.activeElement;
   if((e.key==="Enter"||e.key===" ") && a && a.matches && a.matches(".pcard[data-player]")){ e.preventDefault(); openPlayer(a.dataset.player, a.dataset.club); }
+});
+
+/* ===== أبرز اللاعبين (رادار) + حالة الفرق — على الرئيسية، أرقام الموسم كاملاً (2026-09-15) ===== */
+function seasonPlayerStats(){
+  const pp=(typeof playerPlay==="function")?playerPlay():[];
+  const map={};
+  const get=(n,c)=>map[n+"|"+c] || (map[n+"|"+c]={n,c,g:0,a:0,apps:0,mins:0,y:0,r:0,cs:0});
+  GOALS.forEach(g=>{ if(g.bp!=="هدف عكسي") get(g.p,g.sc).g++; if(g.a) get(g.a,g.sc).a++; });
+  pp.forEach(x=>{ const e=get(x.n,x.c); e.apps=x.apps; e.mins=x.mins; e.cs=x.cs; });
+  CARDS.forEach(x=>{ const e=get(x.p,x.club); if(isYellow(x.type)) e.y++; if(isRed(x.type)) e.r++; });
+  return Object.values(map);
+}
+/* رادار SVG بستة محاور، القيم منسوبة إلى أعلى قيمة في الدوري (0..1) */
+function radarSVG(vals, labels, color){
+  const N=vals.length, cx=110, cy=100, R=64;
+  const pt=(i,r)=>{ const a=-Math.PI/2 + i*2*Math.PI/N; return [cx+r*Math.cos(a), cy+r*Math.sin(a)]; };
+  const ring=k=>"M"+Array.from({length:N},(_,i)=>pt(i,R*k).map(v=>v.toFixed(1)).join(",")).join("L")+"Z";
+  const poly="M"+vals.map((v,i)=>pt(i,R*Math.max(.06,Math.min(1,v))).map(x=>x.toFixed(1)).join(",")).join("L")+"Z";
+  const lab=labels.map((t,i)=>{ const [x,y]=pt(i,R+16); const anc = Math.abs(x-cx)<6 ? "middle" : (x<cx ? "end" : "start"); return `<text x="${x.toFixed(1)}" y="${(y+4).toFixed(1)}" text-anchor="${anc}">${t}</text>`; }).join("");
+  return `<svg class="rad" viewBox="0 0 220 200" aria-hidden="true">
+    ${[.33,.66,1].map(k=>`<path class="rg" d="${ring(k)}"/>`).join("")}
+    ${Array.from({length:N},(_,i)=>{ const [x,y]=pt(i,R); return `<line class="rg" x1="${cx}" y1="${cy}" x2="${x.toFixed(1)}" y2="${y.toFixed(1)}"/>`; }).join("")}
+    <path class="rp" d="${poly}" style="fill:${color};stroke:${color}"/>
+    ${vals.map((v,i)=>{ const [x,y]=pt(i,R*Math.max(.06,Math.min(1,v))); return `<circle class="rd" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="2.6" style="fill:${color}"/>`; }).join("")}
+    ${lab}</svg>`;
+}
+function topPlayersHTML(){
+  const all=seasonPlayerStats().filter(p=>p.apps>0 || p.g>0 || p.a>0);
+  if(!all.length) return "";
+  const mx={g:Math.max(1,...all.map(p=>p.g)), a:Math.max(1,...all.map(p=>p.a)), ga:Math.max(1,...all.map(p=>p.g+p.a)),
+            mins:Math.max(1,...all.map(p=>p.mins)), apps:Math.max(1,...all.map(p=>p.apps)), cards:Math.max(1,...all.map(p=>p.y+2*p.r))};
+  const byKey=(k)=>[...all].sort((x,y)=>k(y)-k(x)||(y.mins-x.mins))[0];
+  const picks=[
+    {t:"الهدّاف",        sub:"أكثر اللاعبين تسجيلاً",           p:byKey(p=>p.g)},
+    {t:"صانع الألعاب",   sub:"أكثر اللاعبين صناعةً للأهداف",    p:byKey(p=>p.a)},
+    {t:"الأكثر مساهمة",  sub:"أهداف + صناعة لكل 90 دقيقة",     p:[...all].filter(p=>p.mins>=120).sort((x,y)=>((y.g+y.a)/y.mins)-((x.g+x.a)/x.mins)||(y.g+y.a)-(x.g+x.a))[0]},
+  ].filter(x=>x.p);
+  /* لا يتكرر اللاعب نفسه في بطاقتين */
+  const seen=new Set(); const uniq=picks.filter(x=>{ const k=x.p.n+"|"+x.p.c; if(seen.has(k)) return false; seen.add(k); return true; });
+  const card=({t,sub,p})=>{
+    const disc=1-Math.min(1,(p.y+2*p.r)/mx.cards);
+    const vals=[p.g/mx.g, p.a/mx.a, p.apps/mx.apps, p.mins/mx.mins, disc, (p.g+p.a)/mx.ga];
+    const labels=["أهداف","صناعة","مشاركات","دقائق","انضباط","مساهمة"];
+    const k=clubAccent(p.c); const cut=photoCut(p.n,p.c);
+    const sq=(SQUADS[p.c]||[]).find(x=>sqName(x)===p.n); const num=sq?sqNum(sq):0, pos=sq?posLabel(sqPos(sq)):"";
+    return `<article class="tp" style="${accentVars(p.c)}" data-player="${esc(p.n)}" data-club="${esc(p.c)}" role="button" tabindex="0">
+      <div class="tp-hd"><span class="tp-t">${t}</span><span class="tp-sub">${sub}</span></div>
+      <div class="tp-body">
+        <div class="tp-id">
+          <div class="tp-ph">${cut?`<img src="${cut}_f.webp?v=6" alt="" loading="lazy" decoding="async">`:`<span class="pavph">${esc((p.n||"").split(/\s+/).slice(0,2).map(w=>w[0]||"").join(""))}</span>`}</div>
+          <b>${esc(p.n)}</b>
+          <span class="tp-club">${crest(p.c)}${esc(p.c)}${num?` · ${num}`:""}</span>
+          ${pos?`<span class="tp-pos">${esc(pos)}</span>`:""}
+        </div>
+        ${radarSVG(vals, labels, k.a)}
+      </div>
+      <div class="tp-stats">
+        <span><b>${p.g}</b>أهداف</span><span><b>${p.a}</b>صناعة</span><span><b>${p.apps}</b>مباريات</span><span><b>${p.mins}</b>دقيقة</span>
+      </div>
+    </article>`;
+  };
+  return `<h2 class="sec">أبرز اللاعبين<span class="sq-n">الموسم كاملاً</span></h2>
+    <div class="tp-row">${uniq.map(card).join("")}</div>`;
+}
+function teamFormHTML(T){
+  if(!T || !T.length) return "";
+  const rows=[...T].filter(r=>r.P>0);
+  if(!rows.length) return "";
+  return `<h2 class="sec">حالة الفرق<span class="sq-n">آخر 5 مباريات</span></h2>
+    <div class="card tf">
+      ${rows.map((r,i)=>`<div class="tf-r" data-club-open="${esc(r.c)}">
+        <span class="tf-pos">${i+1}</span>
+        <span class="tf-club">${crest(r.c)}<b>${esc(r.c)}</b></span>
+        <span class="tf-pts">${r.Pts} <i>نقطة</i></span>
+        ${formPills(r.form)}
+      </div>`).join("")}
+    </div>`;
+}
+document.addEventListener("click", e=>{
+  const el=e.target.closest("[data-club-open]"); if(!el) return;
+  if(typeof openClub==="function") openClub(el.dataset.clubOpen);
 });
 /* رابط عميق #c/النادي/التبويب: يفتح صفحة النادي على التبويب المطلوب (about | stats | squad) */
 (function(){
