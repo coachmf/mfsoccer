@@ -8097,7 +8097,8 @@ const domReady = () => new Promise(r => document.readyState!=="loading" ? r() : 
             <img src="${crestImg(m.home)}" alt=""><b>${esc(m.home)}</b>
             <span class="sc">${isSoon?((m.date?m.date.slice(5).replace("-","/"):"")+(m.time?" "+m.time:"")||"—"):(m.hg+" - "+m.ag)}</span>
             <b>${esc(m.away)}</b><img src="${crestImg(m.away)}" alt=""></button>`;
-        const html=ms.map(m=>chip(m,false)).join("")+(next.length?`<span class="strip-lb">القادم</span>`+next.map(m=>chip(m,true)).join(""):"");
+        /* الشريط لنتائج آخر جولة فقط — بلا «القادم» (منصور 2026-09-15). القادم يظهر فقط قبل أن تُلعب أي مباراة. */
+        const html=ms.length? ms.map(m=>chip(m,false)).join("") : next.map(m=>chip(m,true)).join("");
         st.innerHTML = html ? `<div class="strip-in"><span class="strip-lb">${lb||"المباريات"}</span>
           <div class="strip-sc"><div class="strip-track">${html}</div></div></div>` : "";
         if(html) startTicker(st);
