@@ -1617,6 +1617,35 @@ main{padding-bottom:48px}
   .card:has(.pitchwrap) .pitch{transform:rotateX(26deg)}
   .card:has(.timing) .timing{height:130px}
 }
+/* --- الخريطة الحرارية v2: بقع حرارة + علامات أرقام + شريط أرقام + جدول المناطق (2026-09-15) --- */
+.card:has(.pitchwrap) .pitch.heat2{transform:rotateX(28deg);
+  background:
+    repeating-linear-gradient(180deg,rgba(255,255,255,.06) 0 8.33%,transparent 8.33% 16.66%),
+    radial-gradient(120% 80% at 50% 10%,#3DA866,#237F49 60%,#1A6A3B)}
+.pitch.heat2 .zn{fill:transparent!important;stroke:none!important;filter:none!important}
+.pitch.heat2 .ln{stroke:rgba(255,255,255,.9)}
+.pitch.heat2 .hpin rect{fill:#0B1F3A;stroke:rgba(255,255,255,.85);stroke-width:.35}
+.pitch.heat2 .hpin path{fill:#0B1F3A}
+.card:has(.pitchwrap) .pitch.heat2 .hpin text{fill:#fff;stroke:none;font-size:3.6px;font-weight:800;font-family:var(--display)}
+.card:has(.pitchwrap) .hlegend .sc.heat2{background:linear-gradient(270deg,#FFF08A,#FFD23A,#FF8A1E,#E4241B)}
+.hstats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:18px 0 14px;position:relative;z-index:1}
+.hstats>div{background:rgba(0,0,0,.28);border:1px solid rgba(127,224,255,.18);border-radius:10px;padding:9px 6px;text-align:center}
+.hstats b{display:block;font-family:var(--display);font-weight:800;font-size:1.25rem;color:#fff;font-variant-numeric:tabular-nums;line-height:1.2}
+.hstats span{font-size:.64rem;color:#BFD8EE}
+.ztab{border:1px solid rgba(233,185,73,.35);border-radius:10px;overflow:hidden;position:relative;z-index:1;background:rgba(0,0,0,.22)}
+.ztab-hd{background:linear-gradient(90deg,#E9B949,#C9962B);color:#1B1405;font-family:var(--display);font-weight:800;font-size:.8rem;padding:8px 12px}
+.ztab-grid{display:grid;grid-template-columns:1fr 1fr;column-gap:1px;background:rgba(255,255,255,.08)}
+.ztab-r{display:grid;grid-template-columns:22px 1fr auto 30px;align-items:center;gap:8px;padding:8px 12px;background:#0C2445;border-bottom:1px solid rgba(255,255,255,.07)}
+.ztab-r i{font-style:normal;width:20px;height:20px;border-radius:50%;display:grid;place-items:center;font-family:var(--display);font-weight:800;font-size:.62rem;color:#1B1405;background:#E9B949}
+.ztab-r span{font-size:.74rem;color:#EAF4FF;min-width:0}
+.ztab-r em{font-style:normal;font-size:.66rem;color:#8FB3D4;font-variant-numeric:tabular-nums}
+.ztab-r b{font-family:var(--display);font-weight:800;font-size:.95rem;color:#fff;text-align:center;font-variant-numeric:tabular-nums}
+.ztab-empty{padding:12px;color:#BFD8EE;font-size:.8rem}
+@media(max-width:640px){
+  .hstats{grid-template-columns:repeat(2,1fr)}
+  .ztab-grid{grid-template-columns:1fr}
+  .card:has(.pitchwrap) .pitch.heat2{transform:rotateX(22deg)}
+}
 /* ===== /v5 charts3d ===== */
 
 
@@ -2680,35 +2709,77 @@ function heatColor(t){
   const r=Math.round(95+(233-95)*t), g=Math.round(178+(185-178)*t), b=Math.round(232+(73-232)*t);
   return `rgba(${r},${g},${b},${(0.22+0.62*t).toFixed(2)})`;
 }
+/* الخريطة الحرارية v2 (منصور 2026-09-15): بقع حرارة حقيقية (أصفر ← برتقالي ← أحمر) فوق الملعب،
+   وعلامة داكنة برقم الأهداف في مركز كل منطقة، ثم شريط أرقام وجدول تفاصيل المناطق. */
+let HEAT_UID=0;
 function heatSVG(list){
   const counts={}; ZONES.forEach(z=>counts[z.k]=0);
   list.forEach(g=>{ if(counts[g.zone]!==undefined) counts[g.zone]++; });
   const mx=Math.max(1,...Object.values(counts));
-  const cell=z=>{
-    const n=counts[z.k], t=n/mx, f=heatColor(t);
-    const cx = z.lx ?? (z.t==="c"? z.cx : z.x+z.w/2);
-    const cy = z.ly ?? (z.t==="c"? z.cy : z.y+z.h/2);
-    const shape = z.t==="c"
-      ? `<circle class="zn" cx="${z.cx}" cy="${z.cy}" r="${z.r}" fill="${f}"><title>${z.k}: ${n}</title></circle>`
-      : `<rect class="zn" x="${z.x}" y="${z.y}" width="${z.w}" height="${z.h}" fill="${f}"><title>${z.k}: ${n}</title></rect>`;
-    return shape + (n>0?`<text x="${cx}" y="${cy}">${n}</text>`:"");
+  const u="hm"+(++HEAT_UID);
+  const ctr=z=>[z.lx ?? (z.t==="c"? z.cx : z.x+z.w/2), z.ly ?? (z.t==="c"? z.cy : z.y+z.h/2)];
+  const blob=z=>{
+    const n=counts[z.k]; if(!n) return "";
+    const t=n/mx, [cx,cy]=ctr(z);
+    const base=z.t==="c"? 11 : Math.min(19, Math.min(z.w,z.h)/2*1.5);
+    const rx=base*(0.9+0.8*t), ry=rx*0.8;
+    const grad=t>0.66?"h":t>0.33?"w":"c";
+    return `<ellipse cx="${cx}" cy="${cy}" rx="${rx.toFixed(1)}" ry="${ry.toFixed(1)}" fill="url(#${u}${grad})" opacity="${(0.7+0.3*t).toFixed(2)}"/>`;
   };
-  return `<div class="pitchwrap"><svg class="pitch" viewBox="-2 -4 104 108" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="خريطة أماكن التسجيل">
-    ${ZONES.filter(z=>z.t==="r").map(cell).join("")}
+  const hit=z=>{
+    const n=counts[z.k];
+    return z.t==="c"
+      ? `<circle class="zn" cx="${z.cx}" cy="${z.cy}" r="${z.r}"><title>${z.k}: ${n}</title></circle>`
+      : `<rect class="zn" x="${z.x}" y="${z.y}" width="${z.w}" height="${z.h}"><title>${z.k}: ${n}</title></rect>`;
+  };
+  const pin=z=>{
+    const n=counts[z.k]; if(!n) return "";
+    const [cx,cy]=ctr(z), w=n>=10?7.4:5.4;
+    return `<g class="hpin"><rect x="${(cx-w/2).toFixed(2)}" y="${cy-3.3}" width="${w}" height="5.4" rx="1.2"/>
+      <path d="M ${cx-1.1} ${cy+2.1} L ${cx} ${cy+3.5} L ${cx+1.1} ${cy+2.1} Z"/><text x="${cx}" y="${cy-0.55}">${n}</text></g>`;
+  };
+  const stops=(a,b,c)=>`<stop offset="0" stop-color="${a}" stop-opacity="1"/><stop offset=".38" stop-color="${b}" stop-opacity=".92"/><stop offset=".72" stop-color="${c}" stop-opacity=".5"/><stop offset="1" stop-color="${c}" stop-opacity="0"/>`;
+  return `<div class="pitchwrap"><svg class="pitch heat2" viewBox="-2 -4 104 108" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="خريطة أماكن التسجيل">
+    <defs>
+      <radialGradient id="${u}h">${stops("#E4241B","#FF8A1E","#FFD23A")}</radialGradient>
+      <radialGradient id="${u}w">${stops("#FF7A1E","#FFB42E","#FFE15A")}</radialGradient>
+      <radialGradient id="${u}c">${stops("#FFC93A","#FFE06A","#FFF08A")}</radialGradient>
+      <clipPath id="${u}k"><rect x="0" y="2" width="100" height="98"/></clipPath>
+      <filter id="${u}f" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="2.2"/></filter>
+    </defs>
+    <g clip-path="url(#${u}k)"><g filter="url(#${u}f)">${ZONES.map(blob).join("")}</g></g>
     <rect class="ln" x="0" y="2" width="100" height="98"/>
     <rect class="ln" x="21" y="2" width="58" height="32"/>
     <rect class="ln" x="36" y="2" width="28" height="12"/>
     <path class="ln" d="M 34.5 34 A 17 17 0 0 0 65.5 34"/>
     <line class="ln" x1="0" y1="64" x2="100" y2="64" stroke-dasharray="2 2"/>
     <line class="goal" x1="44" y1="2" x2="56" y2="2"/>
-    <circle cx="50" cy="24" r="0.9" fill="rgba(143,166,196,.7)"/>
-    ${ZONES.filter(z=>z.t==="c").map(cell).join("")}
+    <circle cx="50" cy="24" r="0.9" fill="rgba(255,255,255,.85)"/>
+    ${ZONES.map(hit).join("")}
+    ${ZONES.map(pin).join("")}
     <text class="sm" x="50" y="-1">المرمى</text>
     <text class="sm" x="9" y="50">يسار</text>
     <text class="sm" x="91" y="50">يمين</text>
     <text class="sm" x="50" y="95">مسافة بعيدة</text>
   </svg></div>
-  <div class="hlegend"><span>أقل</span><span class="sc"></span><span>أكثر</span></div>`;
+  <div class="hlegend"><span>أقل</span><span class="sc heat2"></span><span>أكثر</span></div>`;
+}
+/* شريط الأرقام تحت الملعب */
+function heatStats(list){
+  const n=list.length;
+  const inBox=list.filter(g=>/^(منطقة المرمى|داخل منطقة الجزاء|علامة الجزاء)/.test(g.zone||"")).length;
+  const head=list.filter(g=>g.bp==="الرأس").length;
+  const setp=list.filter(g=>g.cat==="كرات ثابتة").length;
+  const cell=(v,l)=>`<div><b>${v}</b><span>${l}</span></div>`;
+  return `<div class="hstats">${cell(n,"هدفاً")}${cell(head,"بالرأس")}${cell(pct(setp,n)+"%","من كرات ثابتة")}${cell(pct(inBox,n)+"%","من داخل منطقة الجزاء")}</div>`;
+}
+/* جدول تفاصيل مناطق التسجيل */
+function zoneTable(list){
+  const c={}; list.forEach(g=>{ if(g.zone) c[g.zone]=(c[g.zone]||0)+1; });
+  const rows=Object.entries(c).sort((a,b)=>b[1]-a[1]);
+  if(!rows.length) return '<div class="ztab"><div class="ztab-empty">لا توجد أهداف ضمن هذا التصنيف.</div></div>';
+  return `<div class="ztab"><div class="ztab-hd">تفاصيل مناطق التسجيل</div><div class="ztab-grid">${rows.map(([k,n],i)=>`<div class="ztab-r">
+      <i>${i+1}</i><span>${esc(k)}</span><em>${pct(n,list.length)}%</em><b>${n}</b></div>`).join("")}</div></div>`;
 }
 function zoneList(list){
   const c={}; list.forEach(g=>c[g.zone]=(c[g.zone]||0)+1);
@@ -2729,7 +2800,8 @@ function renderLeagueHeat(){
   $("#heatLeague").innerHTML = `
     <div class="segbar">${CATS.map(c=>`<button class="seg" data-c="${c}" aria-pressed="${c===HM_LEAGUE}">${c}</button>`).join("")}</div>
     ${heatSVG(list)}
-    <div class="zlist">${zoneList(list)}</div>
+    ${heatStats(list)}
+    ${zoneTable(list)}
     <p class="hint" style="margin-top:10px">${list.length} هدفاً معروضاً · الاتجاه من أسفل إلى أعلى نحو المرمى · اليسار واليمين من زاوية المهاجم.</p>`;
   $("#heatLeague").querySelectorAll(".seg").forEach(b=>b.onclick=()=>{HM_LEAGUE=b.dataset.c;renderLeagueHeat();});
 }
@@ -2745,7 +2817,8 @@ function renderClubHeat(club){
       ${CATS.map(c=>`<button class="seg" data-c="${c}" aria-pressed="${c===HM_CLUB.cat}">${c}</button>`).join("")}
     </div>
     ${heatSVG(list)}
-    <div class="zlist">${zoneList(list)}</div>`;
+    ${heatStats(list)}
+    ${zoneTable(list)}`;
   $("#heatClub").querySelectorAll("[data-s]").forEach(b=>b.onclick=()=>{HM_CLUB.side=b.dataset.s;renderClubHeat(club);});
   $("#heatClub").querySelectorAll("[data-c]").forEach(b=>b.onclick=()=>{HM_CLUB.cat=b.dataset.c;renderClubHeat(club);});
 }
