@@ -4968,6 +4968,7 @@ function goalMap(list){
 
 /* ================= الرزنامة وشريط الجولات ================= */
 let SELR=null, SELDAY=null, CALM=null;
+let SELR_AUTO=true;   /* صفحة المباريات تفتح على الجولة الحالية حتى يختار القارئ جولة بنفسه (2026-09-15) */
 const AR_DOW=["أحد","إثنين","ثلاثاء","أربعاء","خميس","جمعة","سبت"];  /* getDay(): 0=الأحد */
 const AR_MON=["يناير","فبراير","مارس","أبريل","مايو","يونيو","يوليو","أغسطس","سبتمبر","أكتوبر","نوفمبر","ديسمبر"];
 
@@ -5088,77 +5089,76 @@ function eventsBlock(base){
         ${e.n?`<em class="ev-n">${esc(e.n)}</em>`:""}</span>
     </div>`).join("")}</div>`;
 }
+/* شريط الأيام (2026-09-15): بدل شبكة الشهر الكبيرة — حبوب أيام أفقية صغيرة، اليوم الذي فيه مباريات مضيء،
+   والمناسبات (منتخب/بطولات خارجية) في قائمة قابلة للطي تحته. سمات data-day/data-cal نفسها فتبقى المعالجات كما هي. */
 function calendarBar(){
   const base=calMonth();
   const [Y,Mo]=base.split("-").map(Number);
   const days=new Date(Y,Mo,0).getDate();
-  const counts={}, soonDays={}, dayAv={};         /* dayAv: شعارات/أعلام فرق اليوم */
+  const counts={}, soonDays={};
   MATCHES.forEach(m=>{ if(m.date && m.date.startsWith(base)){
     counts[m.date]=(counts[m.date]||0)+1;
-    if(isUpcoming(m)) soonDays[m.date]=(soonDays[m.date]||0)+1;
-    [m.home,m.away].forEach(c=>{ if(LOGOS[c]) (dayAv[m.date]=dayAv[m.date]||[]).push(`<img class="cl" src="${LOGOS[c]}" alt="" loading="lazy" decoding="async">`); }); } });
-  const evDayset=new Set();                        /* أيام فيها مناسبة */
-  allEvents().forEach(e=>{
-    const ds=evDays(e).filter(d=>d.startsWith(base)); if(!ds.length) return;
-    ds.forEach(d=>evDayset.add(d));
-    const av=evDays(e).length<=2 ? evAvatars(e) : [];   /* مناسبة ليوم أو يومين فقط تُظهر شعارات فريقيها؛ الفترات الطويلة (توقف/بطولة) لا */
-    if(av.length) ds.forEach(d=>{ (dayAv[d]=dayAv[d]||[]).push(...av); });
-  });
-  const lead=new Date(Y,Mo-1,1).getDay();          /* 0 = الأحد */
+    if(isUpcoming(m)) soonDays[m.date]=(soonDays[m.date]||0)+1; } });
+  const evDayset=new Set();
+  const evs=allEvents().filter(e=>evDays(e).some(d=>d.startsWith(base)));
+  evs.forEach(e=>evDays(e).forEach(d=>{ if(d.startsWith(base)) evDayset.add(d); }));
+  const todayIso=(()=>{ const t=new Date(); return `${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,"0")}-${String(t.getDate()).padStart(2,"0")}`; })();
   const cells=[];
-  for(let i=0;i<lead;i++) cells.push('<div class="cday blank"></div>');
   for(let d=1; d<=days; d++){
     const iso=`${Y}-${String(Mo).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
-    const n=counts[iso]||0;
-    const sn=soonDays[iso]||0;
-    const ev=evDayset.has(iso);
-    const av=dayAv[iso]||[], shownAv=av.slice(0,4), more=av.length-shownAv.length;
-    cells.push(`<button class="cday ${n?(sn===n?"has soon":"has"):(ev?"evonly":"off")}${ev?" evd":""}" data-day="${iso}" ${n?"":"disabled"} aria-pressed="${SELDAY===iso}">
-      <div class="dn">${d}</div>${shownAv.length
-        ? `<div class="dteams">${shownAv.join("")}${more>0?`<i>+${more}</i>`:""}</div>`
-        : `<div class="dd${sn?" g":""}">${n?"●".repeat(Math.min(n,3)):""}</div>`}</button>`);
+    const n=counts[iso]||0, sn=soonDays[iso]||0, ev=evDayset.has(iso);
+    const dow=AR_DOW[new Date(Y,Mo-1,d).getDay()];
+    const dws=["أحد","اثنين","ثلاثاء","أربعاء","خميس","جمعة","سبت"][new Date(Y,Mo-1,d).getDay()];
+    cells.push(`<button type="button" class="dp${n?" has":""}${sn?" soon":""}${ev?" evd":""}${iso===todayIso?" today":""}" data-day="${iso}" ${n?"":"disabled"} aria-pressed="${SELDAY===iso}" aria-label="${dow} ${d}${n?` · ${mw(n)}`:""}">
+      <span class="dw">${dws}</span><span class="dn">${d}</span><span class="dd">${n?"●".repeat(Math.min(n,3)):""}</span></button>`);
   }
   const total=Object.values(counts).reduce((a,b)=>a+b,0);
-  return `<div class="calbar">
-    <div class="calhead"><b>${AR_MON[Mo-1]} ${Y}</b>
-      <div class="calnav">
-        <button data-cal="1" title="الشهر التالي">›</button>
-        <button data-cal="-1" title="الشهر السابق">‹</button>
-        ${SELDAY?`<button data-cal="0" style="width:auto;padding:0 10px;font-size:.7rem">إلغاء التحديد</button>`:""}
-      </div></div>
-    <div class="caldow">${AR_DOW.map(d=>`<span>${d}</span>`).join("")}</div>
-    <div class="caldays">${cells.join("")}</div>
-    <p class="hint" style="margin:8px 0 0">${total?`${mw(total)} في هذا الشهر — اضغط أي يوم مضيء لعرض مبارياته.${Object.keys(soonDays).length?" الأيام الذهبية مبارياتها لم تبدأ بعد.":""}`:"لا مباريات في هذا الشهر."}${evDayset.size?" الأيام ذات الخط الذهبي فيها مناسبة.":""}</p>
-    ${eventsBlock(base)}
+  return `<div class="dstrip">
+    <div class="ds-head">
+      <b>${AR_MON[Mo-1]} ${Y}</b>
+      <span class="ds-n">${total?mw(total):"لا مباريات"}</span>
+      <div class="ds-nav">
+        ${SELDAY?`<button type="button" data-cal="0" class="ds-clear">إلغاء اليوم</button>`:""}
+        <button type="button" data-cal="-1" aria-label="الشهر السابق"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button>
+        <button type="button" data-cal="1" aria-label="الشهر التالي"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg></button>
+      </div>
+    </div>
+    <div class="ds-days">${cells.join("")}</div>
+    ${evs.length?`<details class="ds-ev"><summary>مناسبات الشهر<span class="ds-evn">${evs.length}</span><i class="chev"></i></summary>${eventsBlock(base)}</details>`:""}
   </div>`;
 }
 
+/* الجولة الحالية: جولة أقرب مباراة قادمة، وإلا آخر جولة لُعبت */
+function currentRound(){
+  const up=MATCHES.filter(isUpcoming).sort((a,b)=>(kickoffTS(a)||9e15)-(kickoffTS(b)||9e15));
+  if(up.length) return up[0].round;
+  const done=MATCHES.filter(m=>!isUpcoming(m));
+  return done.length ? Math.max(...done.map(m=>m.round)) : null;
+}
+/* فلتر الجولات: حبوب أفقية صغيرة (الكل + أرقام الجولات) بدل الشريط القديم */
 function roundStrip(){
   const rounds=[...new Set(MATCHES.map(m=>m.round))].sort((a,b)=>a-b);
   if(!rounds.length) return "";
-  return `<div class="roundstrip">
-    <button class="rchip" data-round="all" aria-pressed="${SELR===null}"><div class="rn">الكل</div><div class="rs">${MATCHES.length} مباراة</div></button>
-    ${rounds.map(r=>{
-      const ms=MATCHES.filter(m=>m.round===r);
-      const gl=ms.reduce((a,m)=>a+m.hg+m.ag,0);
-      return `<button class="rchip" data-round="${r}" aria-pressed="${SELR===r}">
-        <div class="rn">${r}</div><div class="rs">${gl} هدف</div></button>`;
-    }).join("")}</div>`;
+  return `<div class="rpills" role="tablist" aria-label="الجولة">
+    <span class="rp-lab">الجولة</span>
+    <button type="button" class="rp" data-round="all" aria-pressed="${SELR===null}">الكل</button>
+    ${rounds.map(r=>`<button type="button" class="rp" data-round="${r}" aria-pressed="${SELR===r}">${r}</button>`).join("")}
+  </div>`;
 }
 
 function roundSummary(list){
   const soon=list.filter(isUpcoming).length;
   const done=list.filter(m=>!isUpcoming(m));
   const goals=done.reduce((a,m)=>a+m.hg+m.ag,0);
-  const keys=new Set(list.map(m=>m.round+"|"+m.home+"|"+m.away));
   const inScope=x=>list.some(m=>m.round===x.r&&(m.home===x.club||m.away===x.club));
   const yc=CARDS.filter(x=>isYellow(x.type)&&inScope(x)).length;
   const rc=CARDS.filter(x=>isRed(x.type)&&inScope(x)).length;
-  return `<div class="rsum">
-    <div><div class="n">${done.length}</div><div class="l">أُقيمت</div></div>
-    <div><div class="n" style="${soon?"color:var(--sand)":""}">${soon}</div><div class="l">لم تبدأ</div></div>
-    <div><div class="n">${goals}</div><div class="l">أهداف</div></div>
-    <div><div class="n">${yc+rc}</div><div class="l">بطاقات</div></div>
+  if(!list.length) return "";
+  return `<div class="msum">
+    <span><b>${done.length}</b>أُقيمت</span>
+    <span><b>${soon}</b>لم تبدأ</span>
+    <span><b>${goals}</b>${goals===1?"هدف":"أهداف"}</span>
+    <span><b>${yc+rc}</b>بطاقات</span>
   </div>`;
 }
 
@@ -5294,6 +5294,7 @@ function renderHome(){
 }
 
 function renderMatches(){
+  if(SELR_AUTO && SELR===null && !SELDAY){ const cr=currentRound(); if(cr!==null && MATCHES.some(m=>m.round===cr)) SELR=cr; }
   let list = MATCHES.slice();
   if(SELDAY) list = list.filter(m=>m.date===SELDAY);
   else if(SELR!==null) list = list.filter(m=>m.round===SELR);
@@ -5396,37 +5397,46 @@ function renderMatches(){
       <div class="mdet" hidden>${xi}${tl}</div>`;
   }
 
+  const dayLabel=iso=>{ const d=new Date(iso+"T00:00:00"); if(isNaN(d)) return esc(iso); return `${AR_DOW[d.getDay()]} ${d.getDate()} ${AR_MON[d.getMonth()]}`; };
+  let lastDay=null;
   const matchCards = list.map(m=>{
     const gs=matchGoals(m);
     const mc=CARDS.filter(x=>x.r===m.round && (x.club===m.home||x.club===m.away));
     const y=mc.filter(x=>isYellow(x.type)).length, r=mc.filter(x=>isRed(x.type)).length;
     const soon=isUpcoming(m), live=isLive(m);
-    return `<div class="match${soon?" soon":""}">
-      <div class="mhead">
-        <div class="mside">${crest(m.home)}<b>${esc(m.home)}</b></div>
-        <div class="score${soon?" soon":""}">${soon ? (m.time?esc(m.time):"—") : `${m.hg} - ${m.ag}`}</div>
-        <div class="mside away">${crest(m.away)}<b>${esc(m.away)}</b></div>
+    const st = soon ? '<span class="mc-st soon">لم تبدأ</span>' : live ? '<span class="mc-st live"><i></i>جارية الآن</span>' : '<span class="mc-st done">انتهت</span>';
+    const dayHead = m.date!==lastDay ? `<div class="mc-day"><span>${dayLabel(m.date)}</span></div>` : "";
+    lastDay=m.date;
+    return `${dayHead}<article class="mc${soon?" soon":live?" live":" done"}">
+      <div class="mc-row">
+        <div class="mc-team h">${crest(m.home)}<b>${esc(m.home)}</b></div>
+        <div class="mc-mid">
+          ${soon ? `<span class="mc-time" dir="ltr">${m.time?esc(m.time):"—"}</span>` : `<span class="mc-score" dir="ltr">${m.hg} - ${m.ag}</span>`}
+          ${st}
+        </div>
+        <div class="mc-team a">${crest(m.away)}<b>${esc(m.away)}</b></div>
       </div>
-      <div class="mmeta">
-        ${soon?'<span class="mstat soon">لم تبدأ</span>':live?'<span class="mstat live">جارية الآن</span>':""}
-        <span class="mdate">${esc(m.date)}${m.time?`<em>${esc(m.time)}</em>`:""}</span>
-        <span class="mround">الجولة ${m.round}</span>
-        ${m.venue?`<span class="mvenue">${esc(m.venue)}</span>`:""}
-        ${COMP==="الكل"?`<span class="mcomp">${esc(compOf(m))}</span>`:""}
-        ${soon?"":`<span class="mgoals">${gw(gs.length)}</span>`}
-        ${(y||r)?`<span class="mcards">${y?`<b><i class="cardpill y"></i>${y}</b>`:""}${r?`<b><i class="cardpill r"></i>${r}</b>`:""}</span>`:""}
+      <div class="mc-foot">
+        ${(!soon && m.time)?`<span class="mc-date" dir="ltr">${esc(m.time)}</span>`:""}
+        <span>الجولة ${m.round}</span>
+        ${m.venue?`<span>${esc(m.venue)}</span>`:""}
+        ${COMP==="الكل"?`<span>${esc(compOf(m))}</span>`:""}
+        ${(y||r)?`<span class="mc-cards">${y?`<b><i class="cardpill y"></i>${y}</b>`:""}${r?`<b><i class="cardpill r"></i>${r}</b>`:""}</span>`:""}
       </div>
-      ${m.note?`<div class="mnote">${esc(m.note)}</div>`:""}
+      ${m.note?`<div class="mc-note">${esc(m.note)}</div>`:""}
       ${detailsBlock(m, gs, mc, soon)}
-    </div>`;
+    </article>`;
   }).join("");
 
   $("#v-matches").innerHTML = `
-    ${compChips()}
+    <div class="mx-head"><h2 class="mx-title">المباريات</h2>${compChips()}</div>
     ${calendarBar()}
     ${roundStrip()}
     ${roundSummary(list)}
-    ${list.length?matchCards:'<div class="card pad" style="text-align:center;color:var(--slate)">لا توجد مباريات ضمن هذا التحديد.</div>'}`;
+    <div class="mx-list">${list.length?matchCards:'<div class="mx-empty">لا توجد مباريات ضمن هذا التحديد.</div>'}</div>`;
+  /* الحبّة النشطة (الجولة/اليوم) تُجلب إلى مجال الرؤية بلا تحريك الصفحة */
+  $("#v-matches").querySelectorAll('.rp[aria-pressed="true"], .dp[aria-pressed="true"], .dp.today').forEach(el=>{
+    try{ el.scrollIntoView({block:"nearest", inline:"center"}); }catch(e){} });
 
   const V=$("#v-matches");
   /* فتح التفاصيل وطيّها — مباراة واحدة مفتوحة تكفي، فلا تطول الصفحة */
@@ -5438,7 +5448,7 @@ function renderMatches(){
   });
   wireComp(V);
   V.querySelectorAll("[data-round]").forEach(b=>b.onclick=()=>{
-    SELR = b.dataset.round==="all" ? null : +b.dataset.round; SELDAY=null; renderMatches(); });
+    SELR_AUTO=false; SELR = b.dataset.round==="all" ? null : +b.dataset.round; SELDAY=null; renderMatches(); });
   V.querySelectorAll("[data-day]").forEach(b=>b.onclick=()=>{
     SELDAY = SELDAY===b.dataset.day ? null : b.dataset.day; renderMatches(); });
   V.querySelectorAll("[data-cal]").forEach(b=>b.onclick=()=>{
@@ -8082,6 +8092,91 @@ html.pp-open,html.pp-open body{overflow:hidden}
 .plog-r .ev .pp-b{position:static;display:inline-flex}
 .plog-r .ev .pp-b.goal em{font-style:normal;font-weight:800;color:#0B1F3A;font-size:.62rem;padding-inline-end:2px}
 .pprof-empty{padding:0 18px 22px;font-size:.8rem;color:var(--slate)}
+/* ===== صفحة المباريات: فلتر جولات صغير + كروت مباريات هادئة (2026-09-15) ===== */
+.rpills{display:flex;align-items:center;gap:6px;overflow-x:auto;padding:2px 0 10px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.rpills::-webkit-scrollbar{display:none}
+.rpills,.ds-days{mask-image:linear-gradient(to right,transparent,#000 14px,#000 calc(100% - 14px),transparent);-webkit-mask-image:linear-gradient(to right,transparent,#000 14px,#000 calc(100% - 14px),transparent);padding-inline:2px}
+.rp-lab{flex:none;font-size:.72rem;color:var(--slate);margin-inline-end:4px}
+.rp{flex:none;min-width:38px;height:32px;padding:0 12px;border-radius:999px;border:1px solid var(--line,rgba(143,166,196,.28));
+  background:var(--navy-900);color:var(--slate);font-family:var(--display);font-weight:700;font-size:.8rem;font-variant-numeric:tabular-nums;
+  cursor:pointer;transition:background .15s,color .15s,border-color .15s;clip-path:none}
+.rp[aria-pressed="true"]{background:var(--zain-deep,#0D4F92);border-color:var(--zain-deep,#0D4F92);color:#fff;box-shadow:0 4px 12px rgba(13,79,146,.28)}
+html[data-theme="dark"] .rp{background:#0D1C30;border-color:#23395C;color:#B3C4D9}
+html[data-theme="dark"] .rp[aria-pressed="true"]{background:#1878BE;border-color:#1878BE;color:#fff}
+.mc{position:relative;margin-bottom:8px;border-radius:14px;background:var(--navy-900);border:1px solid var(--line,rgba(143,166,196,.18));overflow:hidden;box-shadow:var(--shadow,none)}
+html[data-theme="dark"] .mc{background:#0F1E35;border-color:#213653;box-shadow:none}
+.mc-row{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:8px;padding:12px 12px 8px}
+.mc-team{display:flex;align-items:center;gap:8px;min-width:0}
+.mc-team.a{flex-direction:row-reverse;text-align:left}
+.mc-team .crest{width:32px;height:32px;border-radius:9px;flex:none}
+.mc-team b{font-family:var(--display);font-weight:700;font-size:.88rem;color:var(--head,#fff);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.mc-mid{display:flex;flex-direction:column;align-items:center;gap:4px;min-width:74px}
+.mc-score{font-family:var(--display);font-weight:800;font-size:1.05rem;letter-spacing:.02em;color:var(--head,#fff);font-variant-numeric:tabular-nums;
+  padding:3px 12px;border-radius:9px;background:rgba(143,166,196,.12)}
+html[data-theme="dark"] .mc-score{background:#182C48}
+.mc-time{font-family:var(--display);font-weight:700;font-size:.95rem;color:var(--head,#fff);font-variant-numeric:tabular-nums;padding:3px 12px;border-radius:9px;border:1px dashed var(--line2,rgba(143,166,196,.35))}
+.mc-st{font-size:.62rem;font-weight:600;color:var(--slate);letter-spacing:.01em;display:inline-flex;align-items:center;gap:4px}
+.mc-st.live{color:var(--win)}
+.mc-st.live i{width:6px;height:6px;border-radius:50%;background:var(--win);animation:mcpulse 1.2s ease-in-out infinite}
+@keyframes mcpulse{0%,100%{opacity:1}50%{opacity:.35}}
+.mc-foot{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;padding:0 12px 10px;font-size:.68rem;color:var(--slate)}
+.mc-foot>span+span::before{content:"·";margin-inline-end:10px;opacity:.6}
+.mc-foot .mc-date{font-variant-numeric:tabular-nums;unicode-bidi:isolate}
+.mc-cards{display:inline-flex;gap:8px}
+.mc-cards b{display:inline-flex;align-items:center;gap:4px;font-weight:700;color:var(--head,#fff)}
+.mc-cards .cardpill{width:8px;height:11px;border-radius:2px;display:inline-block}
+.mc-cards .cardpill.y{background:#F5C400}.mc-cards .cardpill.r{background:#E23B3B}
+.mc-note{margin:0 12px 10px;padding:6px 10px;border-radius:8px;font-size:.72rem;line-height:1.6;color:var(--slate);background:rgba(143,166,196,.08);border:1px solid var(--line,rgba(143,166,196,.16))}
+.mc-note::before{content:"ملاحظة: ";font-weight:700;color:var(--head,#fff)}
+html[data-theme="dark"] .mc-note{background:#0B1729;border-color:#1D3150}
+.mc .mtog{border-top:1px solid var(--line,rgba(143,166,196,.14));font-size:.74rem;padding:8px}
+.mc .mdet{padding:0 10px 12px}
+@media(min-width:900px){.mc-row{padding:14px 16px 10px}.mc-team .crest{width:36px;height:36px}.mc-team b{font-size:.95rem}.mc-foot{padding:0 16px 12px;font-size:.72rem}}
+/* --- مركز المباريات: رأس + شريط الأيام + الملخص + تجميع الكروت بالأيام --- */
+.mx-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin:2px 0 12px}
+.mx-title{margin:0;font-family:var(--display);font-weight:800;font-size:1.25rem;color:var(--head,#fff)}
+.mx-head .segbar{margin:0}
+.dstrip{border-radius:16px;background:var(--navy-900);border:1px solid var(--line,rgba(143,166,196,.18));padding:10px 12px 8px;margin-bottom:12px;box-shadow:var(--shadow,none)}
+html[data-theme="dark"] .dstrip{background:#0F1E35;border-color:#213653;box-shadow:none}
+.ds-head{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.ds-head b{font-family:var(--display);font-weight:800;font-size:.95rem;color:var(--head,#fff)}
+.ds-n{font-size:.7rem;color:var(--slate);flex:1}
+.ds-nav{display:flex;gap:4px;align-items:center}
+.ds-nav button{width:30px;height:30px;border-radius:9px;border:1px solid var(--line,rgba(143,166,196,.25));background:transparent;color:var(--head,#fff);display:grid;place-items:center;cursor:pointer;padding:0;transition:background .15s}
+.ds-nav button:hover{background:rgba(143,166,196,.12)}
+.ds-nav .ds-clear{width:auto;padding:0 10px;font-size:.68rem;font-weight:700;color:var(--zain-text,var(--sky));border-color:transparent}
+.ds-days{display:flex;gap:4px;overflow-x:auto;padding:2px 0 4px;scrollbar-width:none;-webkit-overflow-scrolling:touch;scroll-snap-type:x proximity}
+.ds-days::-webkit-scrollbar{display:none}
+.dp{flex:none;width:42px;height:56px;border-radius:12px;border:1px solid transparent;background:transparent;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;
+  color:var(--slate);cursor:default;padding:0;scroll-snap-align:center;transition:background .15s,border-color .15s,color .15s;clip-path:none}
+.dp .dw{font-size:.52rem;letter-spacing:0;opacity:.8;white-space:nowrap}
+.dp .dn{font-family:var(--display);font-weight:700;font-size:.92rem;line-height:1.1;font-variant-numeric:tabular-nums}
+.dp .dd{font-size:.42rem;line-height:1;letter-spacing:.1em;height:6px;color:var(--zain-text,var(--sky))}
+.dp.has{color:var(--head,#fff);cursor:pointer;border-color:var(--line,rgba(143,166,196,.22));background:rgba(143,166,196,.06)}
+.dp.has.soon .dd{color:var(--sand)}
+.dp.evd .dw{text-decoration:underline;text-decoration-color:var(--sand);text-underline-offset:2px}
+.dp.today{box-shadow:inset 0 0 0 1px var(--zain-text,var(--sky))}
+.dp:disabled{opacity:.45}
+.dp.has:hover{background:rgba(143,166,196,.14)}
+.dp[aria-pressed="true"]{background:var(--zain-deep,#0D4F92);border-color:var(--zain-deep,#0D4F92);color:#fff;box-shadow:0 4px 12px rgba(13,79,146,.28)}
+.dp[aria-pressed="true"] .dd{color:#fff}
+html[data-theme="dark"] .dp[aria-pressed="true"]{background:#1878BE;border-color:#1878BE}
+.ds-ev{margin-top:6px;border-top:1px solid var(--line,rgba(143,166,196,.14));padding-top:4px}
+.ds-ev summary{list-style:none;display:flex;align-items:center;gap:8px;padding:8px 2px;font-size:.78rem;font-weight:700;color:var(--head,#fff);cursor:pointer}
+.ds-ev summary::-webkit-details-marker{display:none}
+.ds-evn{font-size:.66rem;font-weight:700;color:var(--slate);background:rgba(143,166,196,.14);padding:1px 8px;border-radius:999px}
+.ds-ev summary .chev{margin-inline-start:auto;width:0;height:0;border-inline:4.5px solid transparent;border-top:5px solid currentColor;transition:transform .2s}
+.ds-ev[open] summary .chev{transform:rotate(180deg)}
+.ds-ev .evlist{margin-top:2px;margin-bottom:6px}
+.msum{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 12px}
+.msum span{display:inline-flex;align-items:center;gap:6px;font-size:.7rem;color:var(--slate);padding:5px 10px;border-radius:999px;border:1px solid var(--line,rgba(143,166,196,.18));background:var(--navy-900)}
+.msum span b{font-family:var(--display);font-weight:800;font-size:.85rem;color:var(--head,#fff);font-variant-numeric:tabular-nums}
+html[data-theme="dark"] .msum span{background:#0F1E35;border-color:#213653}
+.mc-day{display:flex;align-items:center;gap:10px;margin:14px 2px 8px;font-size:.72rem;font-weight:700;color:var(--slate)}
+.mc-day::after{content:"";flex:1;height:1px;background:var(--line,rgba(143,166,196,.16))}
+.mx-list>.mc-day:first-child{margin-top:2px}
+.mx-empty{padding:28px 14px;text-align:center;color:var(--slate);font-size:.85rem;border:1px dashed var(--line,rgba(143,166,196,.25));border-radius:14px}
+@media(prefers-reduced-motion:reduce){.mc-st.live i{animation:none}.rp,.dp,.mc{transition:none}}
 </style>
 <div class="pprof" id="pprof" hidden role="dialog" aria-modal="true" aria-label="ملف اللاعب"></div>
 <script>/* ===== ملف النادي (نبذة/قائمة الفريق) وملف اللاعب العام — 2026-09-15 ===== */
