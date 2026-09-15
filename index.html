@@ -5327,7 +5327,7 @@ function nextMatchCard(){
 }
 
 /* الرئيسية: النسخة الجديدة (renderHomeV2 في الكتلة الأخيرة) وإلا القديمة */
-function renderHome(){ return (typeof renderHomeV2==="function") ? renderHomeV2() : renderHomeLegacy(); }
+function renderHome(){ return renderHomeLegacy(); }   /* التصميم الأصلي مع ثلاث قطع جديدة فقط: المؤشرات، الجدول، بطاقات الرادار (منصور 2026-09-15). renderHomeV2 كاملة موجودة للرجوع إليها */
 function renderHomeLegacy(){
   const T=standings(), tg=GOALS.length, played=playedMatches().length, soon=MATCHES.length-played;
   const hs=headlines();
@@ -5347,23 +5347,10 @@ function renderHomeLegacy(){
   ${liveCard()}
   ${nextMatchCard()}
   ${exportBar("league",null,"ملخص "+(COMP==="الكل"?"المسابقات":COMP))}
-  <div class="kpis">
-    <div class="kpi"><div class="k">إجمالي الأهداف</div><div class="v">${tg}</div><div class="d">${mw(played)} أُقيمت${soon?` · ${soon} قادمة`:""}</div></div>
-    <div class="kpi"><div class="k">معدل أهداف المباراة</div><div class="v">${played?(tg/played).toFixed(2):"—"}</div><div class="d">هدف لكل مباراة</div></div>
-    <div class="kpi"><div class="k">الكرات الثابتة</div><div class="v">${pct(GOALS.filter(g=>g.cat==="كرات ثابتة").length,tg)}%</div><div class="d">من أهداف الدوري</div></div>
-    <div class="kpi"><div class="k">المتصدر</div><div class="v" style="font-size:1.05rem;line-height:2.1">${esc(T[0].c)}</div><div class="d">${T[0].Pts} نقطة</div></div>
-  </div>
+  <div class="hm">${hmKpiHTML()}</div>
 
   ${COMP==="الدوري"?"":`<div class="note" style="margin-bottom:14px"><b>تنبيه:</b> جدول الترتيب يُحتسب بنظام الدوري. في مسابقات الكؤوس اعتبره ترتيباً بالنقاط لا جدولاً رسمياً.</div>`}
-  <h2 class="sec">جدول الترتيب</h2>
-  <div class="card"><div class="twrap"><table>
-    <thead><tr><th>النادي</th><th>لعب</th><th>ف</th><th>ت</th><th>خ</th><th>له</th><th>عليه</th><th>±</th><th>نقاط</th><th>الفورمة</th></tr></thead>
-    <tbody>${T.map((r,i)=>`<tr class="${i===0?'top':i>=CLUBS.length-2?'rel':''}">
-      <td><div class="teamcell"><span class="pos">${i+1}</span>${crest(r.c)}<b>${esc(r.c)}</b></div></td>
-      <td>${r.P}</td><td>${r.W}</td><td>${r.D}</td><td>${r.L}</td>
-      <td>${r.GF}</td><td>${r.GA}</td><td>${r.GD>0?"+":""}${r.GD}</td>
-      <td style="color:var(--head);font-weight:700">${r.Pts}</td><td>${formPills(r.form)}</td></tr>`).join("")}
-    </tbody></table></div></div>
+  <div class="hm">${hmStandingsHTML(T)}</div>
   <p class="hint">${mw(played)} أُقيمت${soon?` · ${soon} لم تبدأ بعد ولا تُحتسب في الجدول`:""} · الترتيب بالنقاط ثم فارق الأهداف ثم الأهداف المسجلة.</p>
 
   ${topPlayersHTML()}
