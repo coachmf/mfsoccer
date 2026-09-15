@@ -5371,10 +5371,10 @@ function renderHomeLegacy(){
   <div class="hm">${hmKpiHTML()}</div>
 
   ${COMP==="الدوري"?"":`<div class="note" style="margin-bottom:14px"><b>تنبيه:</b> جدول الترتيب يُحتسب بنظام الدوري. في مسابقات الكؤوس اعتبره ترتيباً بالنقاط لا جدولاً رسمياً.</div>`}
+  ${topPlayersHTML()}
   <div class="hm">${hmStandingsHTML(T)}</div>
   <p class="hint">${mw(played)} أُقيمت${soon?` · ${soon} لم تبدأ بعد ولا تُحتسب في الجدول`:""} · الترتيب بالنقاط ثم فارق الأهداف ثم الأهداف المسجلة.</p>
 
-  ${topPlayersHTML()}
 
   <h2 class="sec">أرقام لافتة</h2>
   <div class="card pad">${hs.map(h=>`<div class="head-story">
@@ -8179,7 +8179,7 @@ const domReady = () => new Promise(r => document.readyState!=="loading" ? r() : 
   font-size:clamp(.72rem,3.3vw,.86rem);color:var(--slate);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border-radius:10px;
   cursor:pointer;transition:color .22s;min-width:0}
 .ctabs button[aria-selected="true"]{color:var(--ctab-fg);font-weight:700}
-.ctabs .ctab-ind{position:absolute;top:4px;bottom:4px;right:4px;width:calc((100% - 8px)/3);border-radius:10px;
+.ctabs .ctab-ind{position:absolute;top:4px;bottom:4px;inset-inline-start:4px;width:calc((100% - 8px)/3);border-radius:10px;
   background:linear-gradient(135deg,var(--ca),var(--cb));box-shadow:0 4px 14px rgba(var(--ca-rgb),.35);
   transition:transform .32s cubic-bezier(.2,.8,.2,1)}
 .ctab-panel{display:none;animation:fade .22s ease}
@@ -8450,6 +8450,16 @@ html[data-theme="light"] .tp-stats{background:rgba(11,31,58,.03)}
 #v-home .head-story .num{font-family:'Changa',var(--display),system-ui,sans-serif;font-weight:700;font-size:1.6rem;color:var(--head,#fff);font-variant-numeric:tabular-nums;line-height:1.1}
 html[data-theme="light"] #v-home .head-story .num{color:#0B1F3A}
 #v-home .head-story .tx b{font-family:'Tajawal',var(--body),system-ui,sans-serif;font-weight:700}
+/* بطاقة المباراة القادمة: أصغر وأقل ارتفاعاً (منصور 2026-09-15) — الشعار والاسم في صف واحد */
+#v-home .nextm-body{padding:10px 16px 10px;gap:12px}
+#v-home .nextm-team{flex-direction:row;gap:10px;justify-content:center;align-items:center}
+#v-home .nextm .crest.lg{width:72px;height:72px}
+#v-home .nextm-team b{font-family:'Changa',var(--display),system-ui,sans-serif;font-size:1.12rem;font-weight:700;letter-spacing:.01em;padding:4px 12px;margin:0;border:1px solid rgba(255,255,255,.22);border-radius:10px;background:rgba(6,21,41,.62);box-shadow:0 2px 8px rgba(0,0,0,.35);text-shadow:none;position:static;transform:none;color:#fff}
+#v-home .nextm-mid{gap:2px}
+#v-home .nextm-time{font-size:1.15rem}
+#v-home .nextm-top{padding:8px 14px 6px}
+#v-home .nextm-foot{padding:6px 14px}
+@media(max-width:640px){#v-home .nextm-team{flex-direction:column;gap:6px}#v-home .nextm .crest.lg{width:64px;height:64px}#v-home .nextm-team b{font-size:.95rem;padding:3px 10px}}
 /* ===== الرئيسية v2 — رموز المواصفة ===== */
 .hm{--bg-card:#1E293B;--border-card:#334155;--text-primary:#E2E8F0;--text-muted:#94A3B8;--gold:#E9B949;--skyc:#5FB2E8;
   --win-c:#10B981;--draw-c:#6B7280;--loss-c:#EF4444;--champ:rgba(251,191,36,.10);--relc:rgba(248,113,113,.12);
@@ -8460,6 +8470,17 @@ html[data-theme="light"] .hm{--bg-card:#FFFFFF;--border-card:#E2E8F0;--text-prim
 .hm .exportbar{margin:0}
 .hm-card{background:var(--bg-card);border:1px solid var(--border-card);border-radius:var(--r-card)}
 .hm-sec-hd{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin:4px 2px 8px}
+.hm .sec{margin-top:26px}
+.hm-std{margin-top:4px}
+/* بطاقة MF أعلى الرئيسية: صف واحد مضغوط (منصور 2026-09-15) */
+#v-home .brandcard{padding:8px 14px;gap:12px;align-items:center;margin-bottom:12px}
+#v-home .brandcard img{height:30px}
+#v-home .brandcard .bt{display:flex;align-items:center;gap:12px;flex-wrap:wrap;min-width:0}
+#v-home .brandcard .bt b{font-size:.9rem;display:inline-flex;align-items:baseline;gap:8px;white-space:nowrap}
+#v-home .brandcard .bt b::after{display:inline;margin:0;font-size:.68rem}
+#v-home .brandcard .handles{margin:0;margin-inline-start:auto}
+#v-home .brandcard .hchip{font-size:.68rem;padding:3px 9px 3px 7px}
+@media(max-width:640px){#v-home .brandcard{padding:8px 12px}#v-home .brandcard .bt{gap:4px 8px}#v-home .brandcard .handles{margin-inline-start:0}}
 .hm-sec-hd h2{margin:0;font-family:var(--f-head);font-weight:700;font-size:20px;line-height:1.2;color:var(--text-primary)}
 .hm-muted{font-size:12px;color:var(--text-muted);line-height:1.4}
 .hm-link{background:none;border:0;color:var(--skyc);font-family:var(--f-body);font-weight:700;font-size:13px;cursor:pointer;padding:6px 4px;min-height:32px}
@@ -8615,7 +8636,8 @@ function wireClubTabs(){
     CLUB_TAB=k; const i=bs.findIndex(b=>b.dataset.ct===k);
     bs.forEach(b=>{ b.setAttribute("aria-selected", b.dataset.ct===k); b.tabIndex = b.dataset.ct===k ? 0 : -1; });
     w.querySelectorAll(".ctab-panel").forEach(p=>p.classList.toggle("on", p.dataset.cp===k));
-    ind.style.transform=`translateX(${-100*i}%)`;
+    const rtl=getComputedStyle(w).direction!=="ltr";
+    ind.style.transform=`translateX(${(rtl?-100:100)*i}%)`;
   };
   bs.forEach(b=>b.onclick=()=>set(b.dataset.ct));
   ind.style.transition="none"; set(CLUB_TAB);
@@ -8635,8 +8657,7 @@ function clubAboutHTML(c, r, played){
     cc.length ? ["ألوان النادي", `<span class="sw">${cc.map(h=>`<i style="background:${esc(h)}"></i>`).join("")}</span>${esc(I.col||"")}`] : null,
   ].filter(Boolean);
   const desc = (I.f||I.st||I.loc)
-    ? `${esc(c)}${I.nick?` «${esc(I.nick)}»`:""} نادٍ كويتي${I.loc?` من منطقة ${esc(I.loc)}`:""}${I.f?`، تأسس عام ${I.f}`:""}${I.st?`، ويخوض مبارياته على ${esc(I.st)}${I.cap?` الذي يتسع لنحو ${I.cap.toLocaleString("en-US")} متفرج`:""}`:""}.`
-      + ` يشارك في ${esc(COMP||"الدوري")} موسم ${esc(SEASON)}${played?`، ولعب ${mw(r.P)} حتى الآن`:""}.`
+    ? `${esc(c)}${I.nick?` «${esc(I.nick)}»`:""} نادٍ كويتي${I.loc?` من منطقة ${esc(I.loc)}`:""}${I.f?`، تأسس عام ${I.f}`:""}${I.st?`، ويخوض مبارياته على ${esc(I.st)}${I.cap?` الذي يتسع لنحو ${I.cap.toLocaleString("en-US")} متفرج`:""}`:""}.`   /* جملة «يشارك في الدوري موسم … ولعب n مباريات» حُذفت بطلب منصور 2026-09-15 */
     : "";
   return `<div class="cabout">
     <div class="wm" style="background-image:url('${crestSrcOf(c)}')"></div>
@@ -8941,7 +8962,6 @@ function hmKpiHTML(){
   ].filter(Boolean);
   const hs=headlines().slice(0,2);
   return `<section class="hm-kpi">
-    <div class="hm-sec-hd"><h2>أرقام لافتة</h2><span class="hm-muted">${mw(played)} أُقيمت</span></div>
     <div class="hm-tiles">${tiles.map(t=>`<div class="hm-tile"${t.player?` data-player="${esc(t.player.n)}" data-club="${esc(t.player.c)}" role="button" tabindex="0"`:""}>
       <b>${t.v}</b><span>${esc(t.l)}</span>${t.sub?`<em>${esc(t.sub)}</em>`:""}</div>`).join("")}</div>
     <div class="hm-story">${hs.map(h=>`<p><b>${esc(h.t)}</b> ${esc(h.d)}</p>`).join("")}</div>
@@ -8950,16 +8970,16 @@ function hmKpiHTML(){
 function hmStandingsHTML(T){
   const n=T.length;
   return `<section class="hm-std">
-    <div class="hm-sec-hd"><h2>جدول الترتيب</h2><span class="hm-muted">${esc(COMP||"الدوري")} · ${esc(SEASON)}</span></div>
+    <h2 class="sec">جدول الترتيب<span class="sq-n">${esc(COMP||"الدوري")} · ${esc(SEASON)}</span></h2>
     <div class="hm-card hm-tblwrap"><table class="hm-tbl">
       <thead><tr><th class="c">#</th><th class="club">النادي</th><th>ل</th><th>ف</th><th>ت</th><th>خ</th><th>+/-</th><th class="pts">ن</th><th class="frm">الفورمة</th></tr></thead>
-      <tbody>${T.map((r,i)=>`<tr class="${i<6?"champ":""}${i>=n-2?" rel":""}" data-club-open="${esc(r.c)}">
+      <tbody>${T.map((r,i)=>`<tr class="${i<4?"champ":""}${i>=n-2?" rel":""}" data-club-open="${esc(r.c)}">
         <td class="c">${i+1}</td>
         <td class="club"><span>${crest(r.c)}<b>${esc(r.c)}</b></span></td>
         <td>${r.P}</td><td>${r.W}</td><td>${r.D}</td><td>${r.L}</td><td dir="ltr">${r.GD>0?"+":""}${r.GD}</td>
         <td class="pts">${r.Pts}</td><td class="frm">${formPills(r.form)}</td></tr>`).join("")}</tbody>
     </table></div>
-    <div class="hm-legend"><span><i class="champ"></i>المراكز 1–6</span><span><i class="rel"></i>الهبوط (المركزان الأخيران)</span></div>
+    <div class="hm-legend"><span><i class="champ"></i>المراكز 1–4</span><span><i class="rel"></i>الهبوط (المركزان الأخيران)</span></div>
   </section>`;
 }
 function hmTopScorersHTML(){
@@ -9031,6 +9051,67 @@ document.addEventListener("click", e=>{
   const g=e.target.closest("[data-go-view]"); if(!g) return;
   const v=g.dataset.goView; if(v==="fantasy"){ location.href=FANTASY_URL; return; }
   if(typeof go==="function"){ USER_NAV=true; go(v); }
+});
+
+/* ===== الإنجليزية: قاموس المكوّنات الجديدة (تبويبات النادي، ملف اللاعب، المباريات، الرئيسية) =====
+   يُدمج في I18N.DICT قبل I18N.init() — site-i18n.js مؤجّل (defer) فيُنفَّذ قبل DOMContentLoaded، ومستمعنا سُجّل قبله. */
+const I18N_EXTRA = {
+  // تبويبات النادي والنبذة
+  'نبذة عن الفريق':'Club profile', 'الإحصائيات':'Statistics', 'قائمة الفريق':'Squad', 'أقسام النادي':'Club sections',
+  'اللقب':'Nickname', 'تأسس عام':'Founded', 'الملعب':'Stadium', 'سعة الملعب':'Capacity', '⟨x⟩ متفرج':'⟨x⟩ seats',
+  'الموقع':'Location', 'ألوان النادي':'Club colours',
+  'الملكي':'The Royals', 'العميد':'The Dean', 'الأخضر':'The Greens', 'السفير':'The Ambassador', 'الرهيب':'The Fearsome',
+  'العنابي':'The Maroons', 'أبناء الشهداء':'Sons of the Martyrs', 'العنيد':'The Stubborn',
+  'ستاد محمد الحمد':'Mohammed Al-Hamad Stadium', 'ملعب نادي الكويت':'Kuwait SC Stadium', 'ستاد صباح السالم':'Sabah Al-Salem Stadium',
+  'ستاد الصداقة والسلام':'Al-Sadaqua Walsalam Stadium', 'ستاد ثامر':'Thamir Stadium', 'ملعب علي صباح السالم':'Ali Sabah Al-Salem Stadium',
+  'ملعب مبارك العيار':'Mubarak Al-Ayyar Stadium', 'ملعب نادي الساحل':'Al-Sahel SC Stadium', 'ستاد نايف الدبوس':'Nayef Al-Dabbous Stadium',
+  'ملعب مساعد الشنفا':'Musaed Al-Shanfa Stadium', 'ملعب الأحمدي':'Al-Ahmadi Stadium', 'ستاد الصليبخات':'Sulaibikhat Stadium',
+  'حولي':'Hawalli', 'كيفان':'Kaifan', 'المنصورية':'Mansouriya', 'العديلية':'Adailiya', 'العارضية':'Ardiya', 'أبو حليفة':'Abu Halifa',
+  'الفروانية':'Farwaniya', 'الأحمدي':'Ahmadi',
+  'الأصفر والأسود':'Yellow & black', 'الأبيض والأحمر':'White & red', 'الأخضر والأبيض':'Green & white', 'البرتقالي والأبيض':'Orange & white',
+  'السماوي والأبيض':'Sky blue & white', 'العنابي والأبيض':'Maroon & white', 'الأبيض والأزرق':'White & blue', 'الأصفر والأزرق':'Yellow & blue',
+  'الأحمر والأبيض':'Red & white', 'الأزرق والأبيض':'Blue & white',
+  '⟨x⟩ «⟨x⟩» نادٍ كويتي من منطقة ⟨x⟩، تأسس عام ⟨x⟩، ويخوض مبارياته على ⟨x⟩ الذي يتسع لنحو ⟨x⟩ متفرج.':
+    '⟨x⟩ “⟨x⟩” is a Kuwaiti club from ⟨x⟩, founded in ⟨x⟩, playing its home matches at ⟨x⟩ (capacity about ⟨x⟩).',
+  '⟨x⟩ نادٍ كويتي من منطقة ⟨x⟩، تأسس عام ⟨x⟩، ويخوض مبارياته على ⟨x⟩ الذي يتسع لنحو ⟨x⟩ متفرج.':
+    '⟨x⟩ is a Kuwaiti club from ⟨x⟩, founded in ⟨x⟩, playing its home matches at ⟨x⟩ (capacity about ⟨x⟩).',
+  '⟨x⟩ «⟨x⟩» نادٍ كويتي من منطقة ⟨x⟩، تأسس عام ⟨x⟩، ويخوض مبارياته على ⟨x⟩ الذي يتسع لنحو ⟨x⟩ متفرج. يشارك في ⟨x⟩ موسم ⟨x⟩.':
+    '⟨x⟩ “⟨x⟩” is a Kuwaiti club from ⟨x⟩, founded in ⟨x⟩, playing its home matches at ⟨x⟩ (capacity about ⟨x⟩). It competes in the ⟨x⟩, ⟨x⟩ season.',
+  '⟨x⟩ نادٍ كويتي من منطقة ⟨x⟩، تأسس عام ⟨x⟩، ويخوض مبارياته على ⟨x⟩ الذي يتسع لنحو ⟨x⟩ متفرج. يشارك في ⟨x⟩ موسم ⟨x⟩.':
+    '⟨x⟩ is a Kuwaiti club from ⟨x⟩, founded in ⟨x⟩, playing its home matches at ⟨x⟩ (capacity about ⟨x⟩). It competes in the ⟨x⟩, ⟨x⟩ season.',
+  '· المركز ⟨x⟩ · ⟨x⟩ · ⟨x⟩':'· position ⟨x⟩ · ⟨x⟩ · ⟨x⟩', '⟨x⟩ نقطة':'⟨x⟩ pts', 'لم يلعب بعد · ⟨x⟩':'Not played yet · ⟨x⟩',
+  // قائمة الفريق والمراكز
+  'حراس المرمى':'Goalkeepers', 'الدفاع':'Defenders', 'الوسط':'Midfielders', 'الهجوم':'Forwards', 'بدون مركز محدد':'Unassigned',
+  'حارس مرمى':'Goalkeeper', 'ظهير أيمن':'Right-back', 'قلب دفاع':'Centre-back', 'ظهير أيسر':'Left-back', 'ظهير جناح أيمن':'Right wing-back',
+  'ظهير جناح أيسر':'Left wing-back', 'وسط مدافع':'Defensive midfielder', 'وسط ميدان':'Central midfielder', 'صانع ألعاب':'Attacking midfielder',
+  'جناح أيمن':'Right winger', 'جناح أيسر':'Left winger', 'مهاجم':'Forward',
+  'لم يُرفع كشف لاعبي هذا النادي بعد.':'No squad list has been uploaded for this club yet.',
+  // ملف اللاعب
+  'ملف اللاعب':'Player profile', 'إغلاق':'Close', 'مباراة بمباراة':'Match by match', 'دقائق اللعب':'Minutes played', 'شباك نظيفة':'Clean sheets',
+  'أهداف استقبلها':'Goals conceded', 'إنذارات':'Yellow cards', 'طرد':'Red cards', 'ركلات جزاء':'Penalties', 'أهداف عكسية':'Own goals',
+  'أرضه':'Home', 'خارج أرضه':'Away', '· أرضه':'· Home', '· خارج أرضه':'· Away', 'ج⟨x⟩':'R⟨x⟩',
+  'لم تُرصد مشاركة لهذا اللاعب في ⟨x⟩ بعد.':'No appearances recorded for this player in the ⟨x⟩ yet.',
+  // المباريات
+  'الجولة':'Round', 'مناسبات الشهر':'Events this month', 'إلغاء اليوم':'Clear day', 'لا مباريات':'No matches', 'أُقيمت':'Played',
+  'بطاقات':'Cards', 'هدف':'Goal', 'انتهت':'FT', 'جارية الآن':'Live', 'لا توجد مباريات ضمن هذا التحديد.':'No matches in this selection.',
+  'الشهر السابق':'Previous month', 'الشهر التالي':'Next month', 'اثنين':'Mon', 'التقويم':'Calendar', 'العدّ التنازلي':'Countdown',
+  // الرئيسية
+  'هدف / مباراة':'Goals / match', 'المتصدر':'Leader', 'كرات ثابتة':'Set pieces', 'بطاقة':'Cards', 'الفورمة':'Form',
+  'ل':'P', 'ف':'W', 'ت':'D', 'خ':'L', 'ن':'Pts', 'المراكز 1–4':'Positions 1–4', 'الهبوط (المركزان الأخيران)':'Relegation (bottom two)',
+  'أبرز اللاعبين':'Top players', 'الموسم كاملاً':'Full season', 'صانع الألعاب':'Playmaker', 'الأكثر مساهمة':'Most involved',
+  'أكثر اللاعبين تسجيلاً':'Most goals', 'أكثر اللاعبين صناعةً للأهداف':'Most assists', 'أهداف + صناعة لكل 90 دقيقة':'Goals + assists per 90 minutes',
+  'مشاركات':'Apps', 'انضباط':'Discipline', 'مساهمة':'Involvement', 'دقيقة':'Minutes', 'دقائق':'Minutes', 'مباريات':'Matches', 'أهداف':'Goals', 'صناعة':'Assists',
+  'حالة الفرق':'Team form', 'آخر 5 مباريات':'Last 5 matches', 'الهدافون':'Top scorers', 'الكل':'All', 'القادم في الأجندة':'Coming up',
+  'الجمهور':'Fans', 'تشكيلة الجمهور':'Fans’ XI', 'التوقعات':'Predictions', 'صوّت بتشكيلتك':'Vote your XI', 'المباراة القادمة':'Next match',
+  'أيام':'Days', 'ساعات':'Hours', 'لم يحدد بعد':'TBC',
+  // منتخبات وبطولات تظهر في الأجندة (أسماء من بيانات الإدارة)
+  'السعودية':'Saudi Arabia', 'العراق':'Iraq', 'عمان':'Oman', 'قطر':'Qatar', 'البحرين':'Bahrain', 'الإمارات':'UAE', 'اليمن':'Yemen', 'الوحدة':'Al-Wahda',
+  'خليجي 27 ( السعودية)':'Gulf Cup 27 (Saudi Arabia)', 'خليجي 27':'Gulf Cup 27', 'كاس الخليج - السعودية':'Gulf Cup – Saudi Arabia', 'كأس الخليج':'Gulf Cup', 'اسيا 2':'AFC Champions League Two', 'آسيا 2':'AFC Champions League Two', 'منتخب':'National team', 'بطولة خارجية':'External competition',
+};
+document.addEventListener("DOMContentLoaded", ()=>{
+  /* I18N معرَّف بـconst فليس خاصية على window */
+  if(typeof I18N!=="undefined" && I18N.DICT){ for(const k in I18N_EXTRA){ if(I18N.DICT[k]==null) I18N.DICT[k]=I18N_EXTRA[k]; } I18N._cmp=null; I18N._keysSorted=null;
+    if(I18N.isEn && I18N.isEn() && I18N.apply){ try{ I18N.apply(document.body); }catch(e){} } }
 });
 /* رابط عميق #c/النادي/التبويب: يفتح صفحة النادي على التبويب المطلوب (about | stats | squad) */
 (function(){
