@@ -578,8 +578,10 @@ details.squadbox summary label.lb{margin:0;cursor:pointer}
   font-size:clamp(9px,2.9cqw,12px);border-width:1.25px}
 .xipitch.full .pp-nm{font-size:clamp(7.5px,2.5cqw,10.5px);gap:1px}
 .xipitch.full .pp-b .ico-ball,.xipitch.full .pp-b .ico-boot{width:clamp(7px,2.2cqw,10px);height:clamp(7px,2.2cqw,10px)}
-.xipitch.full .pp-b.goal{top:-5px;left:-5px}
+/* الهدف والصناعة في الزاوية السفلى اليمنى مثل بطاقة الفريق الواحد؛ top/left:auto ضروري وإلا امتدّت الشارة على البطاقة كلها (خطأ 2026-09-15) */
+.xipitch.full .pp-b.goal{top:auto;left:auto;bottom:-5px;right:-5px}
 .xipitch.full .pp-b.assist{bottom:-5px;right:-5px}
+.xipitch.full .pp-b.goal + .pp-b.assist{bottom:calc(-5px + 1.5em)}
 .xipitch.full .pp-b.card{width:clamp(6px,1.7cqw,8px);height:clamp(8px,2.4cqw,10px)}
 .xipitch.full .pp-b.off{width:clamp(9px,2.5cqw,12px);height:clamp(9px,2.5cqw,12px)}
 .pp-spot.cmp{gap:1px}
