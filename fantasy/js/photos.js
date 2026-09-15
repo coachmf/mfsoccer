@@ -257,7 +257,7 @@ const PLAYER_PHOTOS = {
   'ARB|عزيز نصاري': '/assets/players/arb/21',
   'ARB|علي عزيز': '/assets/players/arb/6',
   'ARB|خالد المرشد': '/assets/players/arb/14',
-  'ARB|بندر السلامة': '/assets/players/arb/10',
+  'ARB|يوسف ماجد': '/assets/players/arb/19',
   'ARB|ايوالا': '/assets/players/arb/77',
   'ARB|زيد قنبر': '/assets/players/arb/98',
   'KAZ|بدر طارق': '/assets/players/kaz/77',   // انتقل من العربي (منصور 2026-09-15)
