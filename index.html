@@ -9101,30 +9101,38 @@ html.mp-open{overflow:hidden}
 .mpage.on{display:flex;animation:fade .18s ease}
 .mp-sheet{position:relative;width:100%;max-width:760px;height:100%;overflow:auto;overscroll-behavior:contain;
   background:var(--bg,#0a1628);-webkit-overflow-scrolling:touch}
-.mp-head{position:relative;padding-top:env(safe-area-inset-top);
-  background:linear-gradient(135deg,color-mix(in srgb,var(--hc) 38%,#0b1f3a) 0%,#0b1f3a 50%,color-mix(in srgb,var(--ac) 38%,#0b1f3a) 100%);
-  border-bottom:1px solid rgba(255,255,255,.08);color:#fff}
-.mp-top{display:flex;align-items:center;gap:10px;padding:10px 12px 0}
-.mp-back{width:38px;height:38px;border-radius:12px;display:grid;place-items:center;color:#fff;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14)}
-.mp-comp{font-size:.74rem;color:rgba(255,255,255,.72);font-weight:600}
-.mp-score{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:start;gap:8px;padding:10px 12px 12px}
-.mp-team{display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center;cursor:pointer;min-width:0}
-.mp-team .crest{width:50px;height:50px}
-.mp-team>b{font-family:var(--display);font-size:.95rem;font-weight:700;line-height:1.2}
-.mp-scr{display:flex;flex-direction:column;gap:2px;margin-top:2px}
-.mp-scr span{font-size:.68rem;color:rgba(255,255,255,.78);cursor:pointer}
-.mp-scr em{font-style:normal;color:rgba(255,255,255,.55)}
-.mp-mid{display:flex;flex-direction:column;align-items:center;gap:4px;padding-top:10px;min-width:92px}
-.mp-res{display:flex;align-items:center;gap:10px;font-family:var(--display);font-weight:800;font-size:2.1rem;line-height:1;font-variant-numeric:tabular-nums}
-.mp-res i{font-style:normal;opacity:.6;font-size:1.6rem}
-.mp-time{font-family:var(--display);font-weight:800;font-size:1.6rem;line-height:1}
-.mp-day{font-size:.72rem;color:rgba(255,255,255,.75)}
-.mp-st{font-size:.66rem;font-weight:700;padding:3px 9px;border-radius:99px;background:rgba(255,255,255,.1);color:rgba(255,255,255,.85);display:inline-flex;align-items:center;gap:5px}
-.mp-st.live{background:rgba(229,57,53,.2);color:#ff8a80}
-.mp-st.live i{width:6px;height:6px;border-radius:50%;background:#ff5252;animation:pulse 1.4s infinite}
+.mp-head{position:relative;overflow:hidden;padding:env(safe-area-inset-top) 0 6px;color:#fff;background:#0a1626}
+.mp-head::before,.mp-head::after{content:"";position:absolute;top:-30%;width:75%;height:130%;pointer-events:none;filter:blur(8px)}
+.mp-head::before{right:-22%;background:radial-gradient(closest-side,color-mix(in srgb,var(--hc) 55%,transparent),transparent)}
+.mp-head::after{left:-22%;background:radial-gradient(closest-side,color-mix(in srgb,var(--ac) 55%,transparent),transparent)}
+.mp-head>*{position:relative;z-index:1}
+.mp-top{display:flex;align-items:center;padding:12px 14px 0}
+.mp-back{width:40px;height:40px;display:grid;place-items:center;color:#fff;background:none;border:0}
+.mp-when{width:max-content;max-width:90%;margin:4px auto 0;padding:6px 14px;border-radius:99px;background:rgba(255,255,255,.1);font-size:.8rem;font-weight:600;color:rgba(255,255,255,.9)}
+.mp-score{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:8px;padding:16px 14px 6px}
+.mp-team{display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center;cursor:pointer;min-width:0}
+.mp-team .crest{width:62px;height:62px}
+.mp-team>b{font-family:var(--display);font-size:1rem;font-weight:700;line-height:1.2}
+.mp-mid{display:flex;flex-direction:column;align-items:center;gap:6px;min-width:110px}
+.mp-res{display:flex;align-items:center;gap:12px;font-family:var(--display);font-weight:800;font-size:2.5rem;line-height:1;font-variant-numeric:tabular-nums}
+.mp-res i{font-style:normal;opacity:.55;font-size:1.8rem}
+.mp-time{font-family:var(--display);font-weight:800;font-size:1.9rem;line-height:1}
+.mp-st{font-size:.9rem;font-weight:600;color:rgba(255,255,255,.88);display:inline-flex;align-items:center;gap:6px}
+.mp-st.live{color:#ff8a80}
+.mp-st.live i{width:7px;height:7px;border-radius:50%;background:#ff5252;animation:pulse 1.4s infinite}
+.mp-scorers{display:grid;grid-template-columns:minmax(0,1fr) 28px minmax(0,1fr);gap:10px;align-items:start;padding:10px 14px 8px}
+.mp-scorers .h,.mp-scorers .a{display:flex;flex-direction:column;gap:5px;font-size:.8rem;color:rgba(255,255,255,.78)}
+.mp-scorers .h{text-align:left;align-items:flex-end}
+.mp-scorers .a{text-align:right;align-items:flex-start}
+.mp-scorers span[data-player]{cursor:pointer}
+.mp-scorers em{font-style:normal;color:rgba(255,255,255,.6);display:inline-block;unicode-bidi:isolate;direction:ltr}
+.mp-scorers .ball{display:grid;place-items:center;color:#4ade80}
+.mp-scorers .ball svg{width:20px;height:20px}
+.mp-compcard{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;text-align:right;color:var(--text-primary,#fff);font-size:.88rem;font-weight:600;cursor:pointer}
+.mp-compcard svg{color:var(--sky,#5FB2E8);flex:none}
 .mp-tabs{position:sticky;top:0;z-index:3;display:flex;gap:4px;overflow-x:auto;scrollbar-width:none;padding:0 8px;background:#0b1f3a;border-bottom:1px solid rgba(255,255,255,.08)}
 .mp-tabs::-webkit-scrollbar{display:none}
-.mp-tabs button{flex:1 0 auto;padding:11px 14px 10px;font-size:.84rem;font-weight:700;color:rgba(255,255,255,.62);background:none;border:0;border-bottom:3px solid transparent;white-space:nowrap}
+.mp-tabs button{flex:1 0 auto;padding:13px 12px 11px;font-size:.9rem;font-weight:700;color:rgba(255,255,255,.62);background:none;border:0;border-bottom:3px solid transparent;white-space:nowrap}
 .mp-tabs button[aria-pressed="true"]{color:#fff;border-bottom-color:var(--sky,#5FB2E8)}
 .mp-body{padding:12px 12px calc(28px + env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:12px}
 .mp-card{background:var(--bg-card,var(--navy-900));border:1px solid var(--border-card,rgba(143,166,196,.18));border-radius:var(--r-card,14px);padding:12px}
@@ -9973,27 +9981,29 @@ function mpResult(m, club){           /* فوز/تعادل/خسارة من زا�
 }
 const MP_RES = {w:"ف", d:"ت", l:"خ"};
 function mpScorers(m, club){
-  const gs=matchGoals(m).filter(g=>g.sc===club);
-  if(!gs.length) return "";
-  return `<div class="mp-scr">${gs.map(g=>`<span data-player="${esc(g.p)}" data-club="${esc(g.bp==="هدف عكسي"?(g.cd||""):g.sc)}">${esc(g.p)} <em dir="ltr">${minLabel(g)}</em>${g.bp==="هدف عكسي"?" (ع)":""}</span>`).join("")}</div>`;
+  return matchGoals(m).filter(g=>g.sc===club).map(g=>{ const og=g.bp==="هدف عكسي";
+    return `<span data-player="${esc(g.p)}" data-club="${esc(og?(g.cd||""):g.sc)}">${esc(g.p)} <em dir="ltr">${minLabel(g)}</em>${og?" <em>(ع)</em>":""}</span>`; }).join("");
 }
 function mpHeader(m){
   const soon=isUpcoming(m), live=isLive(m);
   const st = soon ? "لم تبدأ" : live ? "جارية الآن" : "انتهت";
-  const side=(c,cls)=>`<div class="mp-team ${cls}" data-club-open="${esc(c)}">${crest(c,true)}<b>${esc(c)}</b>${soon?"":mpScorers(m,c)}</div>`;
+  const when=[mpDateLabel(m), m.time?`<span dir="ltr">${esc(m.time)}</span>`:""].filter(Boolean).join(" · ");
+  const team=c=>`<div class="mp-team" data-club-open="${esc(c)}">${crest(c,true)}<b>${esc(c)}</b></div>`;
+  const hs=soon?"":mpScorers(m,m.home), as=soon?"":mpScorers(m,m.away);
   return `<div class="mp-top">
-      <button type="button" class="mp-back" data-mp-close aria-label="رجوع"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button>
-      <span class="mp-comp">${esc(compOf(m))} · الجولة ${m.round}</span>
+      <button type="button" class="mp-back" data-mp-close aria-label="رجوع"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
     </div>
+    ${when?`<div class="mp-when">${when}</div>`:""}
     <div class="mp-score">
-      ${side(m.home,"h")}
+      ${team(m.home)}
       <div class="mp-mid">
-        ${soon ? `<span class="mp-time" dir="ltr">${m.time?esc(m.time):"—"}</span><span class="mp-day">${mpDateLabel(m)}</span>`
+        ${soon ? `<span class="mp-time">${m.time?`<span dir="ltr">${esc(m.time)}</span>`:"—"}</span>`
                : `<span class="mp-res"><b>${m.hg}</b><i>-</i><b>${m.ag}</b></span>`}
         <span class="mp-st${live?" live":soon?" soon":""}">${live?"<i></i>":""}${st}</span>
       </div>
-      ${side(m.away,"a")}
-    </div>`;
+      ${team(m.away)}
+    </div>
+    ${(hs||as)?`<div class="mp-scorers"><div class="h">${hs}</div><span class="ball">${ICO_BALL}</span><div class="a">${as}</div></div>`:""}`;
 }
 const MP_TABS=[["details","التفاصيل"],["lineups","التشكيلة"],["squad","القائمة"],["table","الترتيب"],["matches","المباريات"]];
 function mpInfoRows(m){
@@ -10029,7 +10039,8 @@ function mpDetails(m){
     body += tl ? `<div class="mp-card"><div class="mp-hd"><h3>أحداث المباراة</h3></div>${tl}</div>`
                : `<div class="mp-card mp-empty">لم تُسجَّل أحداث لهذه المباراة.</div>`;
   }
-  return body + mpInfoRows(m) + mpMiniTable(m);
+  const comp=`<button type="button" class="mp-card mp-compcard" data-mp-tab="table"><span>${esc(compOf(m))} · الجولة ${m.round} · ${esc(SEASON)}</span><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg></button>`;
+  return comp + body + mpInfoRows(m) + mpMiniTable(m);
 }
 function mpLineups(m){
   if(isUpcoming(m)) return `<div class="mp-card mp-empty">تُنشر التشكيلة بعد انطلاق المباراة.</div>`;
