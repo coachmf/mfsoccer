@@ -515,22 +515,18 @@ const ADMIN = {
     let list=st.players.filter(p=>p.status!=='u');
     if(f.club) list=list.filter(p=>p.club===f.club);
     if(f.search) list=list.filter(p=>p.name.includes(f.search));
-    const fresh=st.players.filter(p=>p.status!=='u' && p.newAt).length;   /* الجدد من سحب الكشوفات ولم يُحدَّد سعرهم بعد */
-    if(f.onlyNew) list=list.filter(p=>p.newAt);
-    list=[...list].sort((a,b)=>(b.newAt||0)-(a.newAt||0));                 /* الجدد أولاً */
-    return `<div class="card"><h3>إدارة اللاعبين (${list.length})</h3>
+    return this.sec_pending() + `<div class="card"><h3>إدارة اللاعبين (${list.length})</h3>
       <div class="row" style="gap:6px;margin-bottom:10px;flex-wrap:wrap">
         <select style="width:auto" onchange="VIEWS.ui.filters.club=this.value;APP.render()">
           <option value="">كل الأندية</option>${st.clubs.map(c=>`<option value="${c.id}" ${f.club===c.id?'selected':''}>${c.name}</option>`).join('')}</select>
         <input style="width:150px" placeholder="بحث" value="${esc(f.search)}" onchange="VIEWS.ui.filters.search=this.value;APP.render()">
         <button class="btn sm" onclick="ADMIN.playerModal()">+ لاعب جديد</button>
-        ${fresh?`<button class="btn sm ${f.onlyNew?'':'sec'}" onclick="VIEWS.ui.filters.onlyNew=!VIEWS.ui.filters.onlyNew;APP.render()">الجدد بلا سعر (${fresh})</button>`:''}
       </div>
       <div class="scroll-x"><table class="tbl"><tr><th>اللاعب</th><th>مركز</th><th>سعر</th><th>حالة</th><th>نقاط</th><th></th></tr>
       ${list.slice(0,80).map(p=>`<tr>
         <td><div class="row">${UI.playerAvatar(p,26)} <div><b>${esc(p.name)}</b>${p.newAt?' <span class="pill new">جديد</span>':''}<div class="tiny">${DB.club(p.club).short}</div></div></div></td>
         <td><select style="width:auto;padding:4px" onchange="ADMIN.setPos('${p.id}',this)">${['G','D','M','F'].map(x=>`<option value="${x}" ${p.pos===x?'selected':''}>${POS_AR[x]}</option>`).join('')}</select></td>
-        <td><input type="number" step="0.1" value="${p.price}" style="width:70px;padding:4px" onchange="const q=DB.player('${p.id}');q.price=+this.value;q.startPrice=q.price;delete q.newAt;DB.save();APP.render()"></td>
+        <td><input type="number" step="0.1" value="${p.price}" style="width:70px;padding:4px" onchange="DB.player('${p.id}').price=+this.value;DB.save()"></td>
         <td><select style="width:auto;padding:4px" onchange="DB.player('${p.id}').status=this.value;DB.save();if(this.value!=='a')ADMIN.injuryNotify('${p.id}')">
           <option value="a" ${p.status==='a'?'selected':''}>متاح</option><option value="i" ${p.status==='i'?'selected':''}>مصاب</option>
           <option value="s" ${p.status==='s'?'selected':''}>موقوف</option><option value="n" ${(p.status==='n'||p.status==='d')?'selected':''}>غير متوفر</option></select></td>
@@ -540,6 +536,35 @@ const ADMIN = {
           <button class="btn sm sec" title="تعديل نقاط جولة يدوياً" onclick="ADMIN.pointsFix('${p.id}')"></button>
         </div></td></tr>`).join('')}
       </table></div></div>`;
+  },
+  /* ---------- لاعبون جدد بانتظار التأكيد (المدير فقط) ----------
+     يأتون من سحب الكشوفات ويبقون هنا حتى يحدّد المدير أسعارهم ويضغط «تأكيد ونشر»؛ عندها ينتقلون إلى قائمة اللاعبين ويُنشرون للمشتركين. */
+  sec_pending(){
+    const st=DB.state; const P=Array.isArray(st.pending)?st.pending:[];
+    if(!P.length) return '';
+    return `<div class="card pend">
+      <h3 class="row spread" style="flex-wrap:wrap;gap:8px">لاعبون جدد بانتظار التأكيد <span class="pill new">${P.length}</span>
+        <button class="btn sm" onclick="ADMIN.confirmPending()">تأكيد ونشر للجميع</button></h3>
+      <div class="tiny" style="margin-bottom:8px">ما يشوفهم المشتركون قبل ما تحدّد أسعارهم وتضغط تأكيد. «تجاهل» يحذف اللاعب من القائمة (يرجع مع السحب القادم لو ظل في كشف الموقع).</div>
+      <div class="scroll-x"><table class="tbl"><tr><th>اللاعب</th><th>مركز</th><th>سعر</th><th></th></tr>
+      ${P.map(p=>`<tr>
+        <td><div class="row">${UI.playerAvatar(p,26)} <div><b>${esc(p.name)}</b><div class="tiny">${DB.club(p.club).short}${p.shirt?` · ${p.shirt}`:''}</div></div></div></td>
+        <td><select style="width:auto;padding:4px" onchange="ADMIN.pendingSet('${p.id}','pos',this.value)">${['G','D','M','F'].map(x=>`<option value="${x}" ${p.pos===x?'selected':''}>${POS_AR[x]}</option>`).join('')}</select></td>
+        <td><input type="number" step="0.1" value="${p.price}" style="width:70px;padding:4px" onchange="ADMIN.pendingSet('${p.id}','price',+this.value)"></td>
+        <td><button class="btn sm sec" onclick="ADMIN.pendingDrop('${p.id}')">تجاهل</button></td></tr>`).join('')}
+      </table></div></div>`;
+  },
+  pendingSet(pid,k,v){ const p=(DB.state.pending||[]).find(x=>x.id===pid); if(!p) return; p[k]=v; if(k==='price') p.startPrice=v; DB.save(); },
+  pendingDrop(pid){ const st=DB.state; st.pending=(st.pending||[]).filter(x=>x.id!==pid); DB.save(); APP.render(); },
+  async confirmPending(){
+    const st=DB.state; const P=Array.isArray(st.pending)?st.pending:[];
+    if(!P.length) return;
+    if(P.some(p=>!(p.price>0))){ UI.toast('حدّد سعراً لكل لاعب قبل التأكيد', true); return; }
+    P.forEach(p=>{ delete p.newAt; p.status='a'; p.startPrice=p.price; st.players.push(p); });
+    st.pending=[]; DB.save(); APP.render();
+    UI.toast('جاري نشر اللاعبين الجدد للمشتركين…');
+    const r=await CLOUD.publishGame(st);
+    if(r.ok) UI.toast(`نُشر ${P.length} لاعباً جديداً للجميع`); else UI.toast(r.err||'تعذّر النشر — انشر اللعبة يدوياً', true);
   },
   injuryNotify(pid){
     const p=DB.player(pid); const st=DB.state;

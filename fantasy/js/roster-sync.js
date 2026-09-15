@@ -58,7 +58,9 @@ const ROSTER = {
       const cands = st.players.filter(p => p.club !== cid && MFSYNC.norm(p.name) === nm && byClub[p.club] && !stillListed(p));
       return cands.find(p => p.status !== 'u') || cands[0] || null;
     };
-    let maxId = st.players.reduce((m,p)=>Math.max(m, +String(p.id).replace(/\D/g,'')||0), 0);
+    st.pending = Array.isArray(st.pending) ? st.pending : [];   /* لاعبون جدد بانتظار تأكيد المدير — لا يصلون للمشتركين قبل «تأكيد ونشر» */
+    let maxId = [...st.players, ...st.pending].reduce((m,p)=>Math.max(m, +String(p.id).replace(/\D/g,'')||0), 0);
+    const inPending = (name, cid) => st.pending.some(p => p.club === cid && MFSYNC.norm(p.name) === MFSYNC.norm(name));
 
     for(const cid in byClub){
       const seen = new Set();
@@ -85,14 +87,13 @@ const ROSTER = {
           if(sp.pos && hit.pos !== sp.pos){ rep.posChanged++; (rep.posDiff = rep.posDiff || []).push(`${hit.name} (${hit.pos}→${sp.pos})`); }
           if(hit.status === 'u'){ hit.status = 'a'; changed = true; }   /* رجع للكشف */
           if(changed) rep.updated++;
-        } else {
-          st.players.push({
+        } else if(!inPending(sp.name, cid)){
+          /* لاعب جديد: يدخل قسم «لاعبون جدد بانتظار التأكيد» في لوحة الإدارة، ويُنشر للمشتركين بعد تحديد سعره والضغط على تأكيد */
+          st.pending.push({
             id: 'p' + (++maxId), club: cid, pos: sp.pos || 'M', name: sp.name,
             price: 4.5, startPrice: 4.5, shirt: sp.shirt || 0,
-            status: 'a', news: '', photo: '',
-            newAt: Date.now()   /* علامة «جديد» للمدير في جدول الأسعار حتى يحدّد سعره (لا تظهر للمشتركين) */
+            status: 'a', news: '', photo: '', newAt: Date.now()
           });
-          seen.add('p' + maxId);
           rep.added++;
         }
       });
@@ -109,7 +110,7 @@ const ROSTER = {
     if(typeof APP !== 'undefined' && APP.render) APP.render();
 
     if(quiet){
-      if(rep.added || rep.updated || rep.moved) UI.toast(`حُدّثت الكشوفات: ${rep.added} جديد · ${rep.updated} معدّل${rep.moved?` · ${rep.moved} انتقل`:''}`);
+      if(rep.added || rep.updated || rep.moved) UI.toast(`حُدّثت الكشوفات: ${rep.added} جديد بانتظار تأكيدك · ${rep.updated} معدّل${rep.moved?` · ${rep.moved} انتقل`:''}`);
     } else {
       this.report(rep, data.lastUpdate || '');
     }
@@ -121,7 +122,7 @@ const ROSTER = {
     UI.modal(`<h3>سحب الكشوفات من mfsoccer</h3>
       <div class="tiny" style="margin-bottom:8px">آخر تحديث للموقع: ${upd || '—'} · ${r.clubs} نادياً</div>
       <div class="muted" style="line-height:2">
-        ${r.added} لاعب جديد · ${r.updated} محدّث · ${r.moved||0} انتقل لنادٍ آخر · ${r.hidden} أُخفي · ${r.posChanged} مركزه مختلف عن الموقع (لم يُغيَّر)
+        ${r.added} لاعب جديد (بانتظار التأكيد في قسم «لاعبون جدد») · ${r.updated} محدّث · ${r.moved||0} انتقل لنادٍ آخر · ${r.hidden} أُخفي · ${r.posChanged} مركزه مختلف عن الموقع (لم يُغيَّر)
       </div>
       ${(r.movedList||[]).length ? `<div class="tiny" style="margin-top:8px">انتقالات (نفس اللاعب، نقاطه ومالكوه كما هم): ${r.movedList.join('، ')}</div>` : ''}
       <div class="tiny" style="margin-top:8px">إجمالي اللاعبين الفعّالين الآن: ${active}</div>
