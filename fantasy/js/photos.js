@@ -60,6 +60,8 @@ const PLAYER_PHOTOS = {
   'SAH|راشد بن علي': '/assets/players/sah/77',
   'SAH|غازي العتيبي': '/assets/players/sah/87',
   // الشباب (16)
+  'SHB|منير السبيعي': '/assets/players/shb/5',   // مطابقة وجه مع ملصقات النادي
+  'SHB|عبدالرحمن رفاعي': '/assets/players/shb/6',
   'SHB|جاسم العوضي': '/assets/players/shb/35',
   'SHB|احمد الرياحي': '/assets/players/shb/9',   // غير موجود في الكشف بعد — يظهر عند إضافته
   'SHB|أحمد الرياحي': '/assets/players/shb/9',
