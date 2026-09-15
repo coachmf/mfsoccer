@@ -2405,7 +2405,7 @@ const extIsKw = x => x && (x.t==="club" || (x.t==="flag" && x.c==="kw"));
 function extTableHTML(c, evs){
   const groups=EXT_GROUPS[c.id]||[]; if(!groups.length) return "";
   return groups.map(g=>{
-    const rows=g.teams.map(n=>{ const x=evTeam(n,c.kind); return {x, key:_norm(x.n), P:0,W:0,D:0,L:0,GF:0,GA:0,Pts:0}; });
+    const rows=g.teams.map(n=>{ const x=evTeam(n,c.kind); return {x, key:_norm(x.n), P:0,W:0,D:0,L:0,GF:0,GA:0,Pts:0,form:[]}; });
     const byKey={}; rows.forEach(r=>{ byKey[r.key]=r; });
     evs.forEach(e=>{
       if(e.hg==null || e.ag==null || (e.to && e.to!==e.d)) return;
@@ -2414,20 +2414,24 @@ function extTableHTML(c, evs){
       const ra=byKey[_norm(a.n)], rb=byKey[_norm(b.n)]; if(!ra||!rb) return;
       const hg=+e.hg, ag=+e.ag;
       ra.P++; rb.P++; ra.GF+=hg; ra.GA+=ag; rb.GF+=ag; rb.GA+=hg;
-      if(hg>ag){ ra.W++; rb.L++; ra.Pts+=3; } else if(hg<ag){ rb.W++; ra.L++; rb.Pts+=3; } else { ra.D++; rb.D++; ra.Pts++; rb.Pts++; }
+      if(hg>ag){ ra.W++; rb.L++; ra.Pts+=3; ra.form.push("w"); rb.form.push("l"); }
+      else if(hg<ag){ rb.W++; ra.L++; rb.Pts+=3; ra.form.push("l"); rb.form.push("w"); }
+      else { ra.D++; rb.D++; ra.Pts++; rb.Pts++; ra.form.push("d"); rb.form.push("d"); }
     });
     rows.sort((p,q)=>q.Pts-p.Pts||((q.GF-q.GA)-(p.GF-p.GA))||q.GF-p.GF||p.x.n.localeCompare(q.x.n,"ar"));
-    return `<section class="hm-std xt">
+    /* نفس جدول الرئيسية (hm-tbl داخل .hm لترث الخطوط والألوان)؛ الأول والثاني بالأصفر (التأهل) */
+    return `<div class="hm xt-hm"><section class="hm-std xt">
       <h2 class="sec">جدول الترتيب<span class="sq-n">${esc(g.name)}</span></h2>
       <div class="hm-card hm-tblwrap"><table class="hm-tbl">
-        <thead><tr><th class="c">#</th><th class="club">الفريق</th><th>ل</th><th>ف</th><th>ت</th><th>خ</th><th>+/-</th><th class="pts">ن</th></tr></thead>
-        <tbody>${rows.map((r,i)=>`<tr class="${extIsKw(r.x)?"kw":""}">
+        <thead><tr><th class="c">#</th><th class="club">الفريق</th><th>ل</th><th>ف</th><th>ت</th><th>خ</th><th>+/-</th><th class="pts">ن</th><th class="frm">الفورمة</th></tr></thead>
+        <tbody>${rows.map((r,i)=>`<tr class="${i<2?"champ":""}${extIsKw(r.x)?" kw":""}">
           <td class="c">${i+1}</td>
           <td class="club"><span>${extTeamCell(r.x)}</span></td>
           <td>${r.P}</td><td>${r.W}</td><td>${r.D}</td><td>${r.L}</td><td dir="ltr">${(r.GF-r.GA)>0?"+":""}${r.GF-r.GA}</td>
-          <td class="pts">${r.Pts}</td></tr>`).join("")}</tbody>
+          <td class="pts">${r.Pts}</td><td class="frm">${formPills(r.form)}</td></tr>`).join("")}</tbody>
       </table></div>
-    </section>`;
+      <div class="hm-legend"><span><i class="champ"></i>المركزان 1–2</span></div>
+    </section></div>`;
   }).join("");
 }
 function renderExtMatches(){
@@ -8548,7 +8552,12 @@ html[data-theme="dark"] .rs-btn,html[data-theme="dark"] .rs-nav,html[data-theme=
 .mc-stage{display:flex;align-items:center;gap:10px;padding:12px 14px;font-family:var(--display);font-weight:700;font-size:.85rem;color:var(--head,#fff)}
 .mc-stage em{font-style:normal;font-size:.66rem;font-weight:600;color:var(--slate)}
 .mc-team .ev-flag.mc-flag,.hm-tbl .ev-flag.mc-flag{width:33px;height:22px;border-radius:5px;object-fit:fill;flex:none}
-.hm-std.xt{margin:0 0 16px}
+.hm.xt-hm{margin:0 0 18px}
+.hm.xt-hm .sec{margin-top:4px}
+.hm-std.xt{margin:0}
+.xt-hm .hm-tbl tr.champ td{background:rgba(251,191,36,.22)}   /* الأصفر أوضح من جدول الرئيسية بطلب منصور */
+.xt-hm .hm-tbl tr.champ td.c{color:#E9B949;font-weight:800}
+html[data-theme="light"] .xt-hm .hm-tbl tr.champ td{background:rgba(251,191,36,.30)}
 .hm-tbl tr.kw td{background:rgba(46,176,240,.08)}
 .hm-tbl tr.kw td.club b{color:var(--zain-text,var(--sky))}
 .sec.xt-mx{margin:4px 0 10px}
