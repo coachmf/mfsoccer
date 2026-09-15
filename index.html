@@ -10367,7 +10367,9 @@ function mpInfoRows(m){
   rows.push(["الجولة", String(m.round)]);
   if(m.date) rows.push(["التاريخ", `${mpDateLabel(m)}${m.time?` · <span dir="ltr">${esc(m.time)}</span>`:""}`]);
   if(m.venue) rows.push(["الملعب", esc(m.venue)]);
-  if(m.ref) rows.push(["الحكم", esc(m.ref)]);
+  if(m.ref) rows.push(["حكم الساحة", esc(m.ref)]);
+  const refs=m.refs||{};
+  (typeof REF_ROLES!=="undefined" ? REF_ROLES : []).forEach(([k,label])=>{ if(refs[k]) rows.push([label, esc(refs[k])]); });
   if(m.tv) rows.push(["القناة الناقلة", esc(m.tv)]);
   return `<div class="mp-card mp-info">${rows.map(([k,v])=>`<div class="mp-irow"><span>${k}</span><b>${v}</b></div>`).join("")}
     ${m.note?`<div class="mp-note">${esc(m.note)}</div>`:""}</div>`;
