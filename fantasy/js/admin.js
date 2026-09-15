@@ -515,18 +515,22 @@ const ADMIN = {
     let list=st.players.filter(p=>p.status!=='u');
     if(f.club) list=list.filter(p=>p.club===f.club);
     if(f.search) list=list.filter(p=>p.name.includes(f.search));
+    const fresh=st.players.filter(p=>p.status!=='u' && p.newAt).length;   /* الجدد من سحب الكشوفات ولم يُحدَّد سعرهم بعد */
+    if(f.onlyNew) list=list.filter(p=>p.newAt);
+    list=[...list].sort((a,b)=>(b.newAt||0)-(a.newAt||0));                 /* الجدد أولاً */
     return `<div class="card"><h3>إدارة اللاعبين (${list.length})</h3>
       <div class="row" style="gap:6px;margin-bottom:10px;flex-wrap:wrap">
         <select style="width:auto" onchange="VIEWS.ui.filters.club=this.value;APP.render()">
           <option value="">كل الأندية</option>${st.clubs.map(c=>`<option value="${c.id}" ${f.club===c.id?'selected':''}>${c.name}</option>`).join('')}</select>
         <input style="width:150px" placeholder="بحث" value="${esc(f.search)}" onchange="VIEWS.ui.filters.search=this.value;APP.render()">
         <button class="btn sm" onclick="ADMIN.playerModal()">+ لاعب جديد</button>
+        ${fresh?`<button class="btn sm ${f.onlyNew?'':'sec'}" onclick="VIEWS.ui.filters.onlyNew=!VIEWS.ui.filters.onlyNew;APP.render()">الجدد بلا سعر (${fresh})</button>`:''}
       </div>
       <div class="scroll-x"><table class="tbl"><tr><th>اللاعب</th><th>مركز</th><th>سعر</th><th>حالة</th><th>نقاط</th><th></th></tr>
       ${list.slice(0,80).map(p=>`<tr>
-        <td><div class="row">${UI.playerAvatar(p,26)} <div><b>${esc(p.name)}</b><div class="tiny">${DB.club(p.club).short}</div></div></div></td>
+        <td><div class="row">${UI.playerAvatar(p,26)} <div><b>${esc(p.name)}</b>${p.newAt?' <span class="pill new">جديد</span>':''}<div class="tiny">${DB.club(p.club).short}</div></div></div></td>
         <td><select style="width:auto;padding:4px" onchange="ADMIN.setPos('${p.id}',this)">${['G','D','M','F'].map(x=>`<option value="${x}" ${p.pos===x?'selected':''}>${POS_AR[x]}</option>`).join('')}</select></td>
-        <td><input type="number" step="0.1" value="${p.price}" style="width:70px;padding:4px" onchange="DB.player('${p.id}').price=+this.value;DB.save()"></td>
+        <td><input type="number" step="0.1" value="${p.price}" style="width:70px;padding:4px" onchange="const q=DB.player('${p.id}');q.price=+this.value;q.startPrice=q.price;delete q.newAt;DB.save();APP.render()"></td>
         <td><select style="width:auto;padding:4px" onchange="DB.player('${p.id}').status=this.value;DB.save();if(this.value!=='a')ADMIN.injuryNotify('${p.id}')">
           <option value="a" ${p.status==='a'?'selected':''}>متاح</option><option value="i" ${p.status==='i'?'selected':''}>مصاب</option>
           <option value="s" ${p.status==='s'?'selected':''}>موقوف</option><option value="n" ${(p.status==='n'||p.status==='d')?'selected':''}>غير متوفر</option></select></td>

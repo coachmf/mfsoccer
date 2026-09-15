@@ -89,7 +89,8 @@ const ROSTER = {
           st.players.push({
             id: 'p' + (++maxId), club: cid, pos: sp.pos || 'M', name: sp.name,
             price: 4.5, startPrice: 4.5, shirt: sp.shirt || 0,
-            status: 'a', news: '', photo: ''
+            status: 'a', news: '', photo: '',
+            newAt: Date.now()   /* علامة «جديد» للمدير في جدول الأسعار حتى يحدّد سعره (لا تظهر للمشتركين) */
           });
           seen.add('p' + maxId);
           rep.added++;
