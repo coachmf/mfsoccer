@@ -795,7 +795,9 @@ details.squadbox summary label.lb{margin:0;cursor:pointer}
 .fx-t{font-size:.7rem;color:var(--slate);font-weight:700;margin-bottom:6px}
 .fx-p{display:flex;align-items:center;gap:6px;min-width:0}
 .fx-p img,.fx-p svg{width:22px;height:22px;flex:0 0 auto}
-.fx-p b{color:var(--head);font-size:.85rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* الاسم كاملاً على سطرين عند الحاجة بدل «عبدالر...» (منصور 2026-09-15)، والشعار أصغر ليترك مساحة للاسم */
+.fx-p b{color:var(--head);font-size:.85rem;line-height:1.3;white-space:normal;overflow-wrap:anywhere;min-width:0;flex:1 1 auto}
+.fx-p .crest{width:26px!important;height:26px!important;flex:0 0 auto}
 .fx-v{font-size:.7rem;color:var(--slate);margin-top:4px}
 .pp-v{font-style:normal;background:rgba(11,31,58,.55);border-radius:5px;padding:0 4px;
   font-size:.85em;font-weight:800}
@@ -8650,12 +8652,15 @@ h2.sec.sq-grp{margin-top:22px}
 /* صف الحراس = شبكة الحراس (عمود أقل) + عمود المدرب بعرض بطاقة واحدة، بينهما فراغ واسع وخط فاصل */
 .sq-gkrow{--cols:2;--gap:10px;--sep:34px;display:grid;column-gap:var(--sep);align-items:start;
   grid-template-columns:minmax(0,1fr) calc((100% - var(--sep) - (var(--cols) - 1) * var(--gap)) / var(--cols))}
-/* الجوال: الحراس بعمودين كالمعتاد، والمدرب في سطر مستقل أقصى اليسار بعرض بطاقة يفصله خط أفقي */
+/* الجوال: المدرب قسم مستقل بعنوانه «المدرب» تحت الحراس (منصور 2026-09-15: كان يبدو جزءاً من الحراس) —
+   على الشاشات الأعرض يبقى عموداً أقصى يسار صف الحراس وكلمة «المدرب» في طرف عنوان الحراس */
+.sq-coach-h{display:none}
 @media(max-width:639px){
   .sq-gkrow{display:block}
-  .sq-gkrow .sq-coachcol{width:calc((100% - var(--gap)) / 2);margin-inline-start:auto;margin-top:26px}
-  .sq-gkrow .sq-coachcol::before{top:-14px;bottom:auto;inset-inline-start:auto;inset-inline-end:0;width:calc(200% + var(--gap));height:1px;
-    background:linear-gradient(90deg,rgba(143,166,196,.5),rgba(143,166,196,.08))}
+  .sq-coach-lb{display:none}
+  .sq-gkrow .sq-coachcol::before{display:none}
+  .sq-coach-h{display:flex}
+  .sq-gkrow .sq-coachcol .sq-coach{width:calc((100% - var(--gap)) / 2);margin-inline-start:auto}
 }
 @media(min-width:640px){.sq-gkrow{--cols:3;--sep:44px}.sq-gkrow>.sq-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(min-width:960px){.sq-gkrow{--cols:4;--gap:12px;--sep:56px}.sq-gkrow>.sq-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
@@ -9450,7 +9455,7 @@ function clubSquadHTML(c){
     const withCoach = k==="G" && coach;
     const cards=`<div class="sq-grid">${L.map(p=>playerCardHTML(p,c)).join("")}</div>`;
     return `<h2 class="sec sq-grp">${t}<span class="sq-n">${L.length}</span>${withCoach?`<span class="sq-coach-lb">المدرب</span>`:""}</h2>
-      ${withCoach?`<div class="sq-gkrow">${cards}<div class="sq-coachcol">${coach}</div></div>`:cards}`;
+      ${withCoach?`<div class="sq-gkrow">${cards}<div class="sq-coachcol"><h2 class="sec sq-grp sq-coach-h">المدرب</h2>${coach}</div></div>`:cards}`;
   }).join("");
 }
 
