@@ -9574,17 +9574,17 @@ html.mp-open{overflow:hidden}
    صورة الملعب: assets/stadiums/<slug>.jpg إن وُجدت، وإلا الصورة العامة assets/hero/stadium.jpg */
 const CLUB_INFO = {
   /* مصادر التحقق (2026-09-15): ويكيبيديا العربية والإنجليزية لكل نادٍ. nick = اللقب، cap = سعة الملعب. الأندية بلا لقب متداول تُترك بلا nick. */
-  "القادسية": {f:1960, nick:"الملكي",        st:"ستاد محمد الحمد",       loc:"حولي",       cap:22000, col:"الأصفر والأسود",    slug:"qadsia", kit:"QAD", pres:"الشيخ مشعل طلال الفهد"},
+  "القادسية": {f:1960, nick:"الملكي",        st:"ستاد محمد الحمد",       loc:"حولي",       cap:22000, col:"الأصفر والأسود",    slug:"qadsia", kit:"QAD", pres:"الشيخ مشعل طلال الفهد", presImg:"qadsia"},
   "الكويت":   {f:1960, nick:"العميد",        st:"ملعب نادي الكويت",      loc:"كيفان",      cap:12350, col:"الأبيض والأحمر",    slug:"kuwait", kit:"KUW", pres:"خالد علي الغانم", presImg:"kuwait"},
   "العربي":   {f:1960, nick:"الزعيم",        st:"ستاد صباح السالم",      loc:"المنصورية",  cap:26000, col:"الأخضر والأبيض",    slug:"arabi", kit:"ARB", pres:"عبدالعزيز أحمد عاشور", presImg:"arabi"},
   "كاظمة":    {f:1964, nick:"السفير",        st:"ستاد الصداقة والسلام",  loc:"العديلية",   cap:21500, col:"البرتقالي والأبيض", slug:"kazma", kit:"KAZ", pres:"أسعد أحمد البنوان", presImg:"kazma"},
   "السالمية": {f:1964, nick:"الرهيب",        st:"ستاد ثامر",             loc:"السالمية",   cap:12000, col:"السماوي والأبيض",   slug:"salmiya", kit:"SAL", pres:"الشيخ تركي أحمد اليوسف الصباح", presImg:"salmiya"},
   "النصر":    {f:1965, nick:"العنابي",       st:"ملعب علي صباح السالم",  loc:"العارضية",   cap:11000, col:"العنابي والأبيض",   slug:"nasr", kit:"NSR", pres:"خالد شريدة المطيري", presImg:"nasr"},
   "الجهراء":  {f:1966, nick:"أبناء الشهداء", st:"ملعب مبارك العيار",     loc:"الجهراء",    cap:15000, col:"الأبيض والأزرق",    slug:"jahra", kit:"JAH", pres:"يوسف كريم العنزي", presImg:"jahra"},
-  "الساحل":   {f:1967,                        st:"ملعب نادي الساحل",      loc:"أبو حليفة",  cap:5000,  col:"الأصفر والأزرق",    slug:"sahel", stPos:"center 74%", kit:"SAH", pres:"خالد خليفة العازمي"},
+  "الساحل":   {f:1967,                        st:"ملعب نادي الساحل",      loc:"أبو حليفة",  cap:5000,  col:"الأصفر والأزرق",    slug:"sahel", stPos:"center 74%", kit:"SAH", pres:"خالد خليفة العازمي", presImg:"sahel"},
   "الفحيحيل": {f:1964,                        st:"ستاد نايف الدبوس",      loc:"الفحيحيل",   cap:12000, col:"الأحمر والأبيض",    slug:"fahaheel", kit:"FAH", pres:"حمد الدبوس", presImg:"fahaheel"},
   "التضامن":  {f:1965, nick:"العنيد",        st:"ملعب مساعد الشنفا",     loc:"الفروانية",  cap:14000, col:"الأزرق والأبيض",    slug:"tadamon", kit:"TDM", pres:"مبارك محمد النزال", presImg:"tadamon"},
-  "الشباب":   {f:1963,                        st:"ملعب الأحمدي",          loc:"الأحمدي",    cap:18000, col:"الأزرق والأبيض",    slug:"shabab", kit:"SHB", pres:"د. مناحي فلاح العازمي"},
+  "الشباب":   {f:1963,                        st:"ملعب الأحمدي",          loc:"الأحمدي",    cap:18000, col:"الأزرق والأبيض",    slug:"shabab", kit:"SHB", pres:"د. مناحي فلاح العازمي", presImg:"shabab"},
   "الصليبخات":{f:1972,                        st:"ستاد الصليبخات",        loc:"الصليبخات",  cap:15000, col:"الأحمر والأبيض",    slug:"sulaibikhat", kit:"SLB", pres:"سعد عناد", presImg:"sulaibikhat"},
 };
 const POS_FULL = {GK:"حارس مرمى",RB:"ظهير أيمن",CB:"قلب دفاع",LB:"ظهير أيسر",RWB:"ظهير جناح أيمن",LWB:"ظهير جناح أيسر",
@@ -9860,7 +9860,7 @@ function clubAboutHTML(c, r, played){
     <div class="wm" style="background-image:url('${crestSrcOf(c)}')"></div>
     <div class="cabout-hero"><img class="st-img" src="${stSrc}" alt="" style="${I.stPos?`object-position:${I.stPos}`:""}" decoding="async" onload="this.classList.add('on')" onerror="this.onerror=null;this.src='assets/hero/stadium.jpg'">
       ${I.st?`<span class="st-cap">${esc(I.st)}</span>`:""}
-      ${I.kit?`<div class="cabout-kits">${[[I.kit,"الطقم الأساسي"],[I.kit==="ARB"?"":`${I.kit}_gk`,"طقم الحارس"]].filter(x=>x[0]).map(([f,l])=>`<figure class="ckit"><img src="fantasy/assets/kits/${f}.webp?v=1" alt="${l}" loading="lazy" decoding="async" onerror="this.parentElement.remove()"><figcaption>${l}</figcaption></figure>`).join("")}</div>`:""}
+      ${I.kit?`<div class="cabout-kits">${[[I.kit,"الطقم الأساسي"],[`${I.kit}_gk`,"طقم الحارس"]].filter(x=>x[0]).map(([f,l])=>`<figure class="ckit"><img src="fantasy/assets/kits/${f}.webp?v=2" alt="${l}" loading="lazy" decoding="async" onerror="this.parentElement.remove()"><figcaption>${l}</figcaption></figure>`).join("")}</div>`:""}
     </div>
     <div class="cabout-head">
       ${crest(c,true)}
