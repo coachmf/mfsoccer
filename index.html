@@ -2546,6 +2546,16 @@ function extTableHTML(c, evs){
     </section></div>`;
   }).join("");
 }
+/* هدافو مباراة خارجية — نصّ للعرض فقط (منصور 2026-09-16): لا روابط ولا ربط بملفات اللاعبين،
+   ولا يقرؤه أي حساب إحصائي (الهدافون، الفانتسي، ملف اللاعب). الحقل: scorers:[{side:"h"|"a", name:"", min:"80"}].
+   يُعرض فقط إذا اكتمل هدافو الفريقين (عدد أهداف كل جهة = نتيجتها)، وإلا تبقى النتيجة وحدها. */
+function extScorersHTML(e){
+  const L=Array.isArray(e&&e.scorers)?e.scorers:[]; if(!L.length || e.hg==null || e.ag==null) return "";
+  const h=L.filter(x=>x&&x.side==="h"), a=L.filter(x=>x&&x.side==="a");
+  if(h.length!==+e.hg || a.length!==+e.ag || h.length+a.length!==L.length) return "";
+  const col=xs=>xs.map(x=>`<span>${esc(x.name||"")}${x.min?` <i dir="ltr">${esc(String(x.min))}′</i>`:""}</span>`).join("");
+  return `<div class="mc-sc" aria-label="الهدافون"><div class="h">${col(h)}</div><div class="a">${col(a)}</div></div>`;
+}
 function extCardsHTML(evs, compName){
   const t=new Date(); const todayIso=`${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,"0")}-${String(t.getDate()).padStart(2,"0")}`;
   const dayLabel=iso=>{ const d=new Date(iso+"T00:00:00"); if(isNaN(d)) return esc(iso); return `${AR_DOW[d.getDay()]} ${d.getDate()} ${AR_MON[d.getMonth()]}`; };
@@ -2568,6 +2578,7 @@ function extCardsHTML(evs, compName){
         <div class="mc-mid">${mid}${st}</div>
         <div class="mc-team a">${extTeamCell(b)}</div>
       </div>
+      ${extScorersHTML(e)}
       <div class="mc-foot"><span>${esc(compName)}</span>${e.n?`<span>${esc(e.n)}</span>`:""}${(played&&e.time)?`<span class="mc-date" dir="ltr">${esc(e.time)}</span>`:""}${e.venue?`<span>${esc(e.venue)}</span>`:""}</div>
     </article>`;
   }).join("");
@@ -9115,6 +9126,9 @@ html[data-theme="dark"] .mc-score{background:#182C48}
 .mc-st.live{color:var(--win)}
 .mc-st.live i{width:6px;height:6px;border-radius:50%;background:var(--win);animation:mcpulse 1.2s ease-in-out infinite}
 @keyframes mcpulse{0%,100%{opacity:1}50%{opacity:.35}}
+.mc-sc{display:grid;grid-template-columns:1fr 1fr;gap:4px 16px;padding:0 12px 8px;font-size:.7rem;color:var(--slate)}   /* هدافو البطولات الخارجية: نص فقط */
+.mc-sc>div{display:flex;flex-direction:column;gap:2px;min-width:0}.mc-sc .a{text-align:end}
+.mc-sc span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.mc-sc i{font-style:normal;font-variant-numeric:tabular-nums;opacity:.8}
 .mc-foot{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;padding:0 12px 10px;font-size:.68rem;color:var(--slate)}
 .mc-foot>span+span::before{content:"·";margin-inline-end:10px;opacity:.6}
 .mc-foot .mc-date{font-variant-numeric:tabular-nums;unicode-bidi:isolate}
