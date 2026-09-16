@@ -12840,5 +12840,192 @@ html.mx-editing #waFab{display:none!important}   /* زر واتساب كان ي�
 })();
 </script>
 
+<!-- home-motion: حركات الصفحة الرئيسية فقط (منصور 2026-09-17، تجربة محلية) — لا تغيّر أي بيانات أو وظيفة -->
+<style id="home-motion-css">
+:root{--mv-ease:cubic-bezier(.22,1,.36,1);--mv-ease-io:cubic-bezier(.65,0,.35,1);--mv-spring:cubic-bezier(.34,1.56,.64,1)}
+
+/* ——— الظهور عند التمرير (يُفعَّل بالسكربت فقط؛ بدون سكربت تبقى الصفحة كما هي) ——— */
+#v-home .mv{opacity:0;transform:translate3d(0,18px,0)}
+#v-home .mv.mv-fade{transform:none}
+#v-home .mv.mv-pop{transform:translate3d(0,10px,0) scale(.97)}
+#v-home .mv.in{opacity:1;transform:none;transition:opacity .6s var(--mv-ease),transform .7s var(--mv-ease);transition-delay:var(--d,0ms)}
+#v-home .mv-done{transition:none!important}
+
+/* عناوين الأقسام: الخط تحت العنوان يُرسم */
+#v-home h2.sec.mv::after{transform:scaleX(0);transform-origin:right center}
+#v-home h2.sec.mv.in::after{transform:scaleX(1);transition:transform .8s var(--mv-ease) calc(var(--d,0ms) + 150ms)}
+
+/* الرادار في بطاقات أبرز اللاعبين: الشكل يتمدد من المركز */
+#v-home .tp.mv .rad .rp{transform:scale(.2);opacity:0;transform-box:fill-box;transform-origin:center}
+#v-home .tp.mv.in .rad .rp{transform:none;opacity:1;transition:transform .9s var(--mv-ease) calc(var(--d,0ms) + 180ms),opacity .5s ease calc(var(--d,0ms) + 180ms)}
+
+/* الصور تتلاشى عند التحميل */
+#v-home img.mv-img{opacity:0;transition:opacity .45s ease}
+#v-home img.mv-img.ok{opacity:1}
+
+/* ——— تفاعلات اللمس والمرور (أجهزة المؤشر فقط) ——— */
+@media (hover:hover) and (pointer:fine){
+  #v-home .hm-tile,#v-home .tp,#v-home .nextm,#v-home .hm-card,#v-home .card.pad,#v-home .brandcard,#v-home .livewrap .liverow{
+    transition:transform .35s var(--mv-ease),box-shadow .35s var(--mv-ease),border-color .25s ease,background-color .25s ease}
+  #v-home .hm-tile:hover{transform:translate3d(0,-3px,0);box-shadow:0 12px 26px -12px rgba(0,0,0,.55)}
+  #v-home .tp:hover{transform:translate3d(0,-4px,0);box-shadow:0 18px 36px -16px rgba(0,0,0,.6)}
+  #v-home .tp .tp-body img{transition:transform .5s var(--mv-ease)}
+  #v-home .tp:hover .tp-body img{transform:scale(1.05)}
+  #v-home .nextm:hover{transform:translate3d(0,-3px,0)}
+  #v-home .nextm .crest,#v-home .nextm img{transition:transform .5s var(--mv-spring)}
+  #v-home .nextm:hover .nextm-team:first-child img,#v-home .nextm:hover .nextm-team:first-child .crest{transform:translate3d(0,-2px,0) scale(1.06) rotate(-3deg)}
+  #v-home .nextm:hover .nextm-team:last-child img,#v-home .nextm:hover .nextm-team:last-child .crest{transform:translate3d(0,-2px,0) scale(1.06) rotate(3deg)}
+  #v-home .head-story{transition:transform .3s var(--mv-ease),background-color .25s ease}
+  #v-home .head-story:hover{transform:translate3d(-4px,0,0);background-color:rgba(143,166,196,.06)}
+  #v-home .head-story .num{transition:transform .35s var(--mv-spring)}
+  #v-home .head-story:hover .num{transform:scale(1.08)}
+  #v-home .hm-tbl tbody tr td{transition:background-color .2s ease,filter .2s ease}
+  #v-home .hm-tbl tbody tr .crest{transition:transform .35s var(--mv-spring)}
+  #v-home .hm-tbl tbody tr:hover .crest{transform:scale(1.14)}
+  #v-home .hchip{transition:transform .25s var(--mv-ease),box-shadow .25s ease,background-color .2s ease}
+  #v-home .hchip:hover{transform:translate3d(0,-2px,0);box-shadow:0 8px 16px -8px rgba(0,0,0,.5)}
+  #v-home .btn,#v-home .seg,#v-home .ts-morebtn{transition:transform .25s var(--mv-ease),filter .2s ease,box-shadow .25s ease,background-color .2s ease,color .2s ease}
+  #v-home .btn:hover,#v-home .ts-morebtn:hover{transform:translate3d(0,-2px,0);filter:brightness(1.08)}
+  #v-home .seg:hover{transform:translate3d(0,-1px,0)}
+  /* الشريط العلوي وشعارات الأندية ولسان التنقل — فقط والرئيسية مفتوحة */
+  body:has(#v-home.on) .crestbar button img{transition:transform .35s var(--mv-spring),filter .25s ease}
+  body:has(#v-home.on) .crestbar button:hover img{transform:translate3d(0,-3px,0) scale(1.12);filter:drop-shadow(0 6px 8px rgba(0,0,0,.35))}
+  body:has(#v-home.on) nav.tabs button{transition:color .2s ease,background-color .2s ease,border-color .25s ease,transform .25s var(--mv-ease)}
+  body:has(#v-home.on) nav.tabs button:hover{transform:translate3d(0,-1px,0)}
+  body:has(#v-home.on) .hero-players img{transition:transform .6s var(--mv-ease),filter .4s ease}
+  body:has(#v-home.on) .hero-players img:hover{transform:translate3d(0,-6px,0) scale(1.03)}
+}
+/* الضغط (كل الأجهزة) */
+#v-home .btn:active,#v-home .seg:active,#v-home .hchip:active,#v-home .ts-morebtn:active{transform:scale(.97);transition-duration:.08s}
+#v-home .hm-tile[role=button]:active,#v-home .tp:active,#v-home .nextm:active,#v-home .liverow:active{transform:scale(.985);transition:transform .1s ease}
+body:has(#v-home.on) .crestbar button:active img,body:has(#v-home.on) nav.tabs button:active{transform:scale(.94);transition:transform .08s ease}
+
+/* ——— أول تحميل والرئيسية مفتوحة: الهيدر وشعارات الأندية ——— */
+html.mv-boot body:has(#v-home.on) .hero-brand{animation:mvIn .8s var(--mv-ease) both .05s}
+html.mv-boot body:has(#v-home.on) .hero-players img{animation:mvRise .9s var(--mv-ease) both}
+html.mv-boot body:has(#v-home.on) .hero-players img:nth-child(1){animation-delay:.10s}
+html.mv-boot body:has(#v-home.on) .hero-players img:nth-child(2){animation-delay:.16s}
+html.mv-boot body:has(#v-home.on) .hero-players img:nth-child(3){animation-delay:.22s}
+html.mv-boot body:has(#v-home.on) .hero-players img:nth-child(4){animation-delay:.28s}
+html.mv-boot body:has(#v-home.on) .hero-players img:nth-child(5){animation-delay:.34s}
+html.mv-boot body:has(#v-home.on) .crestbar-in button,html.mv-boot body:has(#v-home.on) .crestbar-nt button{animation:mvPop .55s var(--mv-ease) both;animation-delay:calc(.25s + var(--ci,0) * 35ms)}
+html.mv-boot body:has(#v-home.on) #resStrip{animation:mvFade .7s ease both .2s}
+@keyframes mvIn{from{opacity:0;transform:translate3d(0,12px,0)}to{opacity:1;transform:none}}
+@keyframes mvRise{from{opacity:0;transform:translate3d(0,28px,0) scale(.96)}to{opacity:1;transform:none}}
+@keyframes mvPop{from{opacity:0;transform:translate3d(0,8px,0) scale(.82)}to{opacity:1;transform:none}}
+@keyframes mvFade{from{opacity:0}to{opacity:1}}
+
+/* نقطة «جارية الآن» تنبض أنعم */
+#v-home .live-dot{animation-timing-function:var(--mv-ease-io)}
+
+/* ——— تقليل الحركة + الطباعة ——— */
+@media (prefers-reduced-motion:reduce){
+  #v-home .mv,#v-home .mv.in,#v-home img.mv-img{opacity:1!important;transform:none!important;transition:none!important}
+  #v-home .tp.mv .rad .rp,#v-home h2.sec.mv::after{transform:none!important;opacity:1!important;transition:none!important}
+  html.mv-boot body .hero-brand,html.mv-boot body .hero-players img,html.mv-boot body .crestbar button,html.mv-boot body #resStrip{animation:none!important}
+  #v-home *,body:has(#v-home.on) .crestbar *,body:has(#v-home.on) nav.tabs *{transition-duration:.01ms!important}
+}
+@media print{#v-home .mv,#v-home img.mv-img{opacity:1!important;transform:none!important}#v-home .tp.mv .rad .rp,#v-home h2.sec.mv::after{opacity:1!important;transform:none!important}}
+</style>
+<script id="home-motion-js">
+/* حركات الرئيسية: ظهور الأقسام عند التمرير مع تدرّج، عدّاد لأرقام بطاقات المؤشرات، تلاشي الصور.
+   لا يغيّر النصوص النهائية ولا البيانات: العدّاد يعيد النص الأصلي حرفياً في النهاية.
+   إعادة رسم الرئيسية (تحديث البيانات) لا تعيد الحركة لما ظهر؛ الرجوع للرئيسية من تبويب آخر يعيدها. */
+(function(){
+  var home=document.getElementById('v-home'); if(!home) return;
+  var RM=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)');
+  var reduced=function(){ return !!(RM&&RM.matches); };
+  if(!reduced()){ document.documentElement.classList.add('mv-boot'); setTimeout(function(){ document.documentElement.classList.remove('mv-boot'); }, 2600); }
+  /* ترقيم شعارات الأندية لتدرّج ظهورها */
+  var cb=document.getElementById('crestBar');
+  if(cb) [].forEach.call(cb.querySelectorAll('button'), function(b,i){ b.style.setProperty('--ci', i); });
+
+  var seen=false;         /* هل عُرضت حركة الدخول في هذه الزيارة للرئيسية */
+  var io=('IntersectionObserver' in window) ? new IntersectionObserver(function(es){
+    es.forEach(function(e){ if(!e.isIntersecting) return; io.unobserve(e.target); reveal(e.target); });
+  }, {rootMargin:'0px 0px -2% 0px', threshold:0.01}) : null;
+
+  var GROUPS=[   /* [حاوية, عناصر داخلية تتدرّج, فرق التأخير, نوع] */
+    ['.hm-kpi', '.hm-tiles > .hm-tile, .hm-story > p', 55, 'mv-pop'],
+    ['.tp-row', ':scope > .tp', 70, 'mv-pop'],
+    ['.hm-std', '.hm-tbl tbody tr', 28, ''],
+    ['.card.pad', ':scope > .head-story', 45, ''],
+    ['.brandcard', '.handles > a', 60, 'mv-pop'],
+    ['.exportbar', ':scope > .btn', 70, ''],
+    ['.livewrap', '.liverow', 60, '']
+  ];
+  function isNum(t){ return /^\s*\d+(\.\d+)?%?\s*$/.test(t); }
+  function countUp(el){
+    if(el.dataset.mvCount) return; el.dataset.mvCount='1';
+    if(el.childNodes.length!==1 || el.firstChild.nodeType!==3) return;
+    var txt=el.textContent, m=txt.match(/^(\s*)(\d+(?:\.(\d+))?)(%?)(\s*)$/); if(!m) return;
+    var target=parseFloat(m[2]), dec=m[3]?m[3].length:0; if(!(target>0)) return;
+    var t0=null, dur=Math.min(1100, 520+target*6);
+    el.style.fontVariantNumeric='tabular-nums';
+    function step(ts){ if(t0===null) t0=ts; var k=Math.min(1,(ts-t0)/dur), e=1-Math.pow(1-k,3);
+      if(!el.isConnected) return;
+      el.textContent = k<1 ? m[1]+(target*e).toFixed(dec)+m[4]+m[5] : txt;
+      if(k<1) requestAnimationFrame(step); }
+    requestAnimationFrame(step);
+  }
+  function reveal(el){
+    el.classList.add('in');
+    var kids=el._mvKids||[];
+    kids.forEach(function(k){ k.classList.add('in'); });
+    if(el.matches('.hm-kpi')) [].forEach.call(el.querySelectorAll('.hm-tile > b'), function(b,i){ setTimeout(function(){ countUp(b); }, 120+i*55); });
+    /* بعد انتهاء الحركة نزيل أثرها حتى لا تتعارض مع تحويلات المرور */
+    setTimeout(function(){ [el].concat(kids).forEach(function(n){ n.classList.add('mv-done'); n.classList.remove('mv','in','mv-pop','mv-fade'); n.style.removeProperty('--d'); }); }, 1500+kids.length*60);
+  }
+  function prepImages(root){
+    [].forEach.call(root.querySelectorAll('img'), function(img){
+      if(img.dataset.mvImg) return; img.dataset.mvImg='1';
+      if(img.complete && img.naturalWidth) return;
+      img.classList.add('mv-img');
+      var done=function(){ img.classList.add('ok'); };
+      img.addEventListener('load', done, {once:true}); img.addEventListener('error', done, {once:true});
+      setTimeout(done, 2500);   /* أمان: لا تبقى صورة مخفية */
+    });
+  }
+  function prep(){
+    if(!home.classList.contains('on') || home.querySelector('.hm-skel')) return;
+    prepImages(home);
+    if(reduced() || !io) return;
+    var vh=window.innerHeight||800, blockIdx=0;
+    [].forEach.call(home.children, function(el){
+      if(el.dataset.mv) return; el.dataset.mv='1';
+      var r=el.getBoundingClientRect();
+      /* إعادة رسم أثناء نفس الزيارة: ما هو ظاهر أو فوق الشاشة لا يتحرك من جديد */
+      if(seen && r.top < vh) return;
+      var host=el.matches('.hm') ? (el.firstElementChild||el) : el;
+      var g=null; GROUPS.forEach(function(G){ if(!g && host.matches(G[0])) g=G; });
+      var inView=r.top < vh;
+      var baseDelay = inView ? Math.min(blockIdx++,6)*70 : 0;
+      var target=el;
+      target.classList.add('mv');
+      if(g){
+        target.classList.add('mv-fade');
+        var kids=[].slice.call(host.querySelectorAll(g[1])).slice(0,14);
+        kids.forEach(function(k,i){ k.classList.add('mv'); if(g[3]) k.classList.add(g[3]); k.style.setProperty('--d', (baseDelay+80+i*g[2])+'ms'); });
+        target._mvKids=kids;
+      }
+      if(host.matches('.tp-row')) [].forEach.call(host.querySelectorAll('.tp'), function(t){ t.classList.add('mv'); });
+      target.style.setProperty('--d', baseDelay+'ms');
+      io.observe(target);
+    });
+    seen=true;
+  }
+  var t=null;
+  new MutationObserver(function(){ clearTimeout(t); t=setTimeout(prep, 16); }).observe(home, {childList:true});
+  /* الرجوع للرئيسية من تبويب آخر يعيد حركة الدخول */
+  new MutationObserver(function(){
+    if(home.classList.contains('on')){ if(!home._mvWasOn){ home._mvWasOn=true; seen=false; [].forEach.call(home.children, function(el){ delete el.dataset.mv; }); prep(); } }
+    else home._mvWasOn=false;
+  }).observe(home, {attributes:true, attributeFilter:['class']});
+  home._mvWasOn=home.classList.contains('on');
+  addEventListener('beforeprint', function(){ [].forEach.call(home.querySelectorAll('.mv'), function(n){ n.classList.add('in'); }); });
+  if(document.readyState!=='loading') prep(); else document.addEventListener('DOMContentLoaded', prep);
+})();
+</script>
+<!-- /home-motion -->
 </body>
 </html>
