@@ -6288,7 +6288,7 @@ function renderMatches(){
         <div class="mc-mid">
           ${soon ? `<span class="mc-time" dir="ltr">${m.time?esc(m.time):"—"}</span>` : `<span class="mc-score" dir="ltr">${m.ag} - ${m.hg}</span>`   /* الصف RTL: المستضيف يميناً، فرقمه يمين العلامة (منصور 2026-09-16) */}
           ${st}
-          <span class="mc-go" aria-hidden="true"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg></span>
+          <span class="mc-go"><em>التفاصيل</em><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg></span>
         </div>
         <div class="mc-team a">${crest(m.away)}<b>${esc(m.away)}</b></div>
       </div>
@@ -9194,7 +9194,8 @@ html[data-theme="dark"] .mc{background:#0F1E35;border-color:#213653;box-shadow:n
   padding:3px 12px;border-radius:9px;background:rgba(143,166,196,.12)}
 html[data-theme="dark"] .mc-score{background:#182C48}
 .mc-time{font-family:var(--display);font-weight:700;font-size:.95rem;color:var(--head,#fff);font-variant-numeric:tabular-nums;padding:3px 12px;border-radius:9px;border:1px dashed var(--line2,rgba(143,166,196,.35))}
-.mc-go{display:grid;place-items:center;width:22px;height:22px;border-radius:50%;margin-top:2px;color:var(--sky,#5FB2E8);background:rgba(95,178,232,.14);transition:transform .15s}
+.mc-go{display:inline-flex;align-items:center;gap:3px;height:22px;padding:0 6px 0 9px;border-radius:999px;margin-top:3px;color:var(--sky,#5FB2E8);background:rgba(95,178,232,.14);transition:transform .15s;white-space:nowrap}
+.mc-go em{font-style:normal;font-size:.66rem;font-weight:700}   /* منصور 2026-09-16: «التفاصيل» حتى يعرف الزائر أن البطاقة تُفتح */
 .mc[data-mopen]:hover .mc-go{transform:translateX(-3px)}
 .mc-st{font-size:.62rem;font-weight:600;color:var(--slate);letter-spacing:.01em;display:inline-flex;align-items:center;gap:4px}
 .mc-st.live{color:var(--win)}
@@ -9605,6 +9606,26 @@ html[data-theme="light"] .hm{--bg-card:#FFFFFF;--border-card:#E2E8F0;--text-prim
 .mpx-card .pp-b.off{top:30%;right:-6px;left:auto;bottom:auto}
 .mpx-nm{margin-top:clamp(12px,3.6cqw,15px);max-width:100%;padding:0 2px;font-size:clamp(10px,3.1cqw,12.5px);font-weight:600;color:var(--text-primary,#fff);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center}
 .mpx-nm em{font-style:normal;color:var(--text-muted,#8fa6c4);font-weight:600;margin-inline-end:4px}
+/* ===== تبويب التشكيلة (2026-09-16، ملاحظات منصور): مربع أصغر وصورة اللاعب أكبر تخرج من أعلاه، التقييم صغير أسفل اليسار،
+   وشارات الأحداث أوضح: كرة/حذاء في دوائر بيضاء بظل، كرت بإطار أبيض مائل، خروج بدائرة حمراء ===== */
+.mpx-card.pp-card{width:clamp(34px,10.5cqw,48px);aspect-ratio:1/1;border-radius:9px;margin-top:clamp(10px,3cqw,14px)}
+.mpx-card .pp-img.mpx-face{top:0;bottom:0;height:100%;width:100%;object-fit:cover;object-position:center top;border-radius:8px}   /* قصّة الوجه _f: وجه اللاعب يملأ المربع */
+.mpx-card .rtg.mpx-r{left:-8px;right:auto;bottom:-6px;transform:none;min-width:clamp(19px,6cqw,24px);height:clamp(12px,3.6cqw,14px);
+  font-size:clamp(7.5px,2.3cqw,9px);border-radius:4px;padding:0 3px;border:1px solid rgba(255,255,255,.85)}
+.mpx-nm{margin-top:clamp(7px,2.2cqw,9px)}
+.mpx-card .pp-b{box-shadow:0 1px 4px rgba(0,0,0,.55)}
+.mpx-card .pp-b.goal,.mpx-card .pp-b.assist{width:clamp(13px,4cqw,17px);height:clamp(13px,4cqw,17px);padding:0;border-radius:50%;
+  background:#fff;border:1px solid rgba(11,31,58,.18)}
+.mpx-card .pp-b.goal .ico-ball,.mpx-card .pp-b.assist .ico-boot{width:82%;height:82%}
+.mpx-card .pp-b.goal{top:-7px;left:-7px}
+.mpx-card .pp-b.goal em{position:absolute;top:-5px;right:-6px;min-width:11px;height:11px;border-radius:6px;background:#0B1F3A;color:#fff;
+  font-size:7.5px;line-height:11px;text-align:center;padding:0 2px}
+.mpx-card .pp-b.assist{top:-7px;right:-7px;left:auto;bottom:auto}
+.mpx-card .pp-b.goal + .pp-b.assist{top:-7px;bottom:auto}
+.mpx-card .pp-b.card{top:50%;margin-top:-6px;left:auto;right:-6px;bottom:auto;width:clamp(8px,2.5cqw,10px);height:clamp(11px,3.4cqw,14px);
+  border-radius:2px;border:1px solid #fff;transform:rotate(10deg)}
+.mpx-card .pp-b.off{top:auto;bottom:-6px;right:-7px;left:auto;width:clamp(13px,4cqw,16px);height:clamp(13px,4cqw,16px);border:1px solid #fff}
+.mpx-card .natf{top:50%;bottom:auto;left:-10px;right:auto;transform:translateY(-50%);width:clamp(14px,4.4cqw,18px)}
 /* أفضل لاعب بعمودين + متوسط الفريق + قسم الفريق تحت التشكيلة */
 .rtg.tavg{min-width:44px}
 .motm2{position:relative;display:grid;grid-template-columns:1fr 1fr;border:1px solid rgba(127,196,255,.16);border-radius:12px;overflow:hidden;
@@ -11310,7 +11331,7 @@ function mpTeamXI(m, club){
     const v=rmap[p.n];
     return `<div class="mpx-p" data-player="${esc(p.n)}" data-club="${esc(club)}" style="right:${x.toFixed(2)}%;top:${((TOP+li*ROW)/H*100).toFixed(2)}%;width:${w.toFixed(2)}%">
       <span class="pp-card mpx-card${cut?"":" nophoto"}" style="${dotVars(kk)}">
-        ${cut?`<img class="pp-img mpx-stand" src="${cut}_s.webp?v=21" alt="" loading="lazy" draggable="false">`:`<span class="pp-num">${p.s||"–"}</span>`}
+        ${cut?`<img class="pp-img mpx-stand mpx-face" src="${cut}_f.webp?v=21" alt="" loading="lazy" draggable="false">`:`<span class="pp-num">${p.s||"–"}</span>`}
         ${spotBadges(playerMatchEvents(m, club, p.n))}${natFlag(p.n, club)}
         ${v!=null?`<span class="rtg mpx-r ${ratingCls(v)}">${v.toFixed(1)}</span>`:""}
       </span>
@@ -11347,7 +11368,7 @@ function mpBothXI(m){
       const v=rmap[p.n];
       return `<div class="mpx-p" data-player="${esc(p.n)}" data-club="${esc(club)}" style="right:${x.toFixed(2)}%;top:${(topOf(li)/H*100).toFixed(2)}%;width:${w.toFixed(2)}%">
       <span class="pp-card mpx-card${cut?"":" nophoto"}" style="${dotVars(kk)}">
-        ${cut?`<img class="pp-img mpx-stand" src="${cut}_s.webp?v=21" alt="" loading="lazy" draggable="false">`:`<span class="pp-num">${p.s||"–"}</span>`}
+        ${cut?`<img class="pp-img mpx-stand mpx-face" src="${cut}_f.webp?v=21" alt="" loading="lazy" draggable="false">`:`<span class="pp-num">${p.s||"–"}</span>`}
         ${spotBadges(playerMatchEvents(m, club, p.n))}${natFlag(p.n, club)}
         ${v!=null?`<span class="rtg mpx-r ${ratingCls(v)}">${v.toFixed(1)}</span>`:""}
       </span>
