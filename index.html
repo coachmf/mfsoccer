@@ -4578,7 +4578,7 @@ const REF_ROLE_ICO={
   avar:`<svg viewBox="0 0 32 32" aria-hidden="true"><path d="M8.5 13a7.5 7.5 0 0 1 15 0" fill="none" stroke="#FFD34D" stroke-width="2"/><rect x="5.6" y="11.6" width="4.4" height="7.2" rx="2" fill="#FFD34D"/><rect x="22" y="11.6" width="4.4" height="7.2" rx="2" fill="#FFD34D"/><path d="M24.2 18.8c0 4-3 6-7 6.2" fill="none" stroke="#FFD34D" stroke-width="1.6"/><rect x="14.4" y="23.6" width="3.4" height="2.6" rx="1" fill="#FFD34D"/><text x="16" y="17.4" text-anchor="middle" font-family="Arial,sans-serif" font-weight="900" font-size="5.6" fill="#5FB2E8">A</text></svg>`
 };
 const refRoleIco=(k,cls)=>`<span class="ref-role${cls?" "+cls:""}">${REF_ROLE_ICO[k==="ar1"||k==="ar2"?"ar":k]||REF_ROLE_ICO.ref}</span>`;
-/* قميص الحكم الأصفر الافتراضي من الخلف واسمه مطبوع عليه */
+/* قميص الحكم الأصفر الافتراضي (بلا كتابة — منصور 2026-09-16) */
 function refShirtSVG(name){
   const nm=esc(String(name||"").trim()); const w=Math.min(56, Math.max(20, nm.length*6.4));
   return `<svg class="ref-shirt" viewBox="0 0 120 124" role="img" aria-label="قميص الحكم ${nm}">
@@ -4586,8 +4586,6 @@ function refShirtSVG(name){
     <path d="M42 8c4 6 10 9 18 9s14-3 18-9l6 2.3C80 18 71 23 60 23s-20-5-24-12.7z" fill="#151515"/>
     <path d="M104 18l14 30-19 9-1.6-2.2 17.3-8.3L101.8 17zM16 18 2 48l19 9 1.6-2.2L5.3 46.5 18.2 17z" fill="#151515"/>
     <path d="M27 49v66a4 4 0 0 0 4 4h58a4 4 0 0 0 4-4V49" fill="none" stroke="rgba(0,0,0,.07)" stroke-width="3"/>
-    <text x="60" y="50" text-anchor="middle" font-family="Changa,Tajawal,sans-serif" font-weight="800" font-size="12" fill="#151515" textLength="${w}" lengthAdjust="spacingAndGlyphs">${nm}</text>
-    <text x="60" y="64" text-anchor="middle" font-family="Arial,sans-serif" font-weight="800" font-size="6.4" letter-spacing="1.4" fill="#151515">REFEREE</text>
   </svg>`;
 }
 function refFace(name, cls){
