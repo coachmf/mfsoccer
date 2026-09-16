@@ -9,6 +9,13 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700;800&display=swap">
+<!-- اللغة تُقرأ من نفس مفتاح الموقع mf_lang قبل الرسم فلا ترتدّ الصفحة (منصور 2026-09-16) -->
+<script>
+(function(){var l='ar';try{var q=new URLSearchParams(location.search).get('lang');
+  if(q==='en'||q==='ar'){localStorage.setItem('mf_lang',q);l=q;}
+  else l=localStorage.getItem('mf_lang')==='en'?'en':'ar';}catch(e){}
+  var d=document.documentElement; d.lang=l; d.dir=(l==='en'?'ltr':'rtl');})();
+</script>
 <style>
   :root{
     --navy:#061529; --navy2:#0B2242; --card:#0E2B52; --ink:#EAF2FB; --muted:#93A7C0;
@@ -24,13 +31,16 @@
   header img{width:38px;height:38px}
   header .t{font-family:var(--display);font-weight:800;font-size:1.05rem}
   header .t small{display:block;color:var(--muted);font-weight:400;font-size:.72rem;font-family:var(--body)}
+  header .lang{margin-inline-start:auto;background:none;border:1px solid var(--line);color:var(--muted);
+    font-family:var(--display);font-weight:600;font-size:.78rem;border-radius:9px;padding:6px 12px;cursor:pointer}
+  header .lang:hover{color:var(--ink);border-color:var(--sky)}
   h1{font-family:var(--display);font-weight:800;font-size:clamp(1.5rem,5vw,2rem);margin:0 0 6px;
     letter-spacing:-.01em}
   .updated{color:var(--muted);font-size:.8rem;margin:0 0 30px}
   h2{font-family:var(--display);font-weight:600;font-size:1.12rem;margin:34px 0 12px;
     padding-inline-start:12px;border-inline-start:3px solid var(--sky)}
   p{margin:0 0 14px}
-  ul{margin:0 0 14px;padding-inline-start:22px}
+  ul,ol{margin:0 0 14px;padding-inline-start:22px}
   li{margin-bottom:8px}
   b{color:#fff}
   a{color:var(--sky)}
@@ -38,15 +48,20 @@
   .box.good{border-inline-start:3px solid #35A47C}
   .foot{margin-top:44px;padding-top:20px;border-top:1px solid var(--line);color:var(--muted);font-size:.82rem}
   .foot a{color:var(--sky)}
+  /* نسخة واحدة تظهر حسب لغة الصفحة */
+  html[lang="en"] [data-lang="ar"]{display:none}
+  html[lang="ar"] [data-lang="en"]{display:none}
 </style>
 </head>
 <body>
 <div class="wrap">
   <header>
     <img src="/favicon.svg" alt="">
-    <div class="t">mfsoccer<small>إحصائيات الدوري الكويتي الممتاز</small></div>
+    <div class="t">mfsoccer<small data-lang="ar">إحصائيات الدوري الكويتي الممتاز</small><small data-lang="en">Kuwait Premier League Statistics</small></div>
+    <button type="button" class="lang" id="langBtn"></button>
   </header>
 
+  <div data-lang="ar">
   <h1>سياسة الخصوصية</h1>
   <p class="updated" dir="rtl">آخر تحديث: 10 سبتمبر 2026</p>
 
@@ -135,6 +150,118 @@
     <p style="margin:0">© 2026 mfsoccer — إحصائيات الدوري الكويتي الممتاز ·
        <a href="/terms.html">شروط الاستخدام</a> · <a href="/">العودة للموقع</a></p>
   </div>
+  </div>
+
+  <div data-lang="en">
+  <h1>Privacy policy</h1>
+  <p class="updated" dir="ltr">Last updated: 10 September 2026</p>
+
+  <p>This policy explains how <b>mfsoccer.com</b> and its app handle your data.
+     The site publishes Kuwait Premier League statistics — match, goal and player
+     numbers and the league table — and lets registered members predict round
+     results, play the fantasy game and vote for the fans’ XI.</p>
+
+  <div class="box good">
+    <p style="margin:0"><b>In short:</b> we show no ads, we do not track you, and we do not
+    sell your data to anyone. Browsing the site needs no account, and an account is optional —
+    only for taking part in predictions, fantasy or voting.</p>
+  </div>
+
+  <h2>1. The data we collect</h2>
+  <p><b>Browsing only (no account):</b> we collect no personal data. We keep an anonymous
+     daily visit counter (a total figure only, with no identifier for you).</p>
+  <p><b>When you create a member account</b> — for predictions, fantasy or voting:</p>
+  <ul>
+    <li>The <b>display name</b> you choose (shown in the standings and in voter lists).</li>
+    <li>Your <b>email address</b>, whether you sign up with it or through a Google account —
+        used only to create your account and sign you in; it is never shown to other users.</li>
+    <li><b>Your choices in the game:</b> your predictions, your fantasy team and your fans’ XI
+        votes — used to show your results and your ranking.</li>
+  </ul>
+  <p>We never ask for or store payment details, card numbers, locations or contacts.
+     The site and the app are completely free.</p>
+
+  <h2>2. How we use the data</h2>
+  <ul>
+    <li>To create your account, sign you in and keep it across your devices.</li>
+    <li>To show your predictions, your points and your place among members.</li>
+    <li>To show your display name in the standings and the voter list — this is public
+        information that other members can see.</li>
+    <li>We do not use your data for advertising and we do not send you marketing messages.</li>
+  </ul>
+
+  <h2>3. Where the data is stored</h2>
+  <p>Data is stored with <b>Google Firebase</b> (authentication and the Firestore database),
+     a secure Google infrastructure. Its handling of your data is also governed by
+     <a href="https://firebase.google.com/support/privacy" target="_blank" rel="noopener">Google’s privacy policy</a>.
+     The site is hosted by <b>Netlify</b>. Your data is not sent to any other third party.</p>
+
+  <h2 id="delete-en">4. Your rights and deleting your account</h2>
+  <ul>
+    <li>You can change your display name at any time from inside your account.</li>
+    <li><b>You can permanently delete your account and all your data from inside the app itself</b>:
+        Profile → “Delete my account permanently”. This irreversibly erases your account, your
+        fantasy team with its points and history, your predictions, your fans’ XI votes, your
+        support messages and any private leagues you created. If you prefer, message us and
+        we will do it for you.</li>
+  </ul>
+
+  <p><b>Steps to delete your account in the “Kuwait Premier League” (mfsoccer) app:</b></p>
+  <ol>
+    <li>Open the app and sign in to your account.</li>
+    <li>Choose <b>“My Account”</b> from the bottom bar.</li>
+    <li>Tap <b>“Delete my account permanently”</b> at the bottom of the page.</li>
+    <li>Type the word <b>حذف</b> (delete) to confirm, then confirm.</li>
+  </ol>
+  <p><b>Data deleted immediately and irreversibly:</b> your sign-in account (email and name),
+     your fantasy team with its points, history and transfers, your predictions, your fans’ XI
+     votes, your support messages, any private leagues you created and your membership of
+     leagues you joined. <b>We keep no data after deletion</b> — no retention period and no
+     delayed copy. If you cannot sign in, message us at
+     <a href="mailto:coachmf.kw@gmail.com" dir="ltr">coachmf.kw@gmail.com</a>
+     and we will carry out the deletion within 7 days.</p>
+  <p>You can also simply stop using the account at any time — browsing stays available
+     without one.</p>
+
+  <h2>5. Children</h2>
+  <p>The site is suitable for all ages and does not knowingly collect data from children
+     under thirteen. If you have an account for a child and want it deleted, message us.</p>
+
+  <h2>6. Changes to this policy</h2>
+  <p>We may update this policy from time to time, and we put the last-updated date at the
+     top of the page. Continuing to use the service after an update means you accept the
+     updated version.</p>
+
+  <h2>7. Contact us</h2>
+  <p>For any privacy question, or to request that your account be deleted:</p>
+  <ul>
+    <li>Email: <a href="mailto:coachmf.kw@gmail.com" dir="ltr">coachmf.kw@gmail.com</a></li>
+    <li>X: <a href="https://x.com/coach_mf" target="_blank" rel="noopener" dir="ltr">@coach_mf</a></li>
+    <li>Instagram: <a href="https://instagram.com/coachmf" target="_blank" rel="noopener" dir="ltr">@coachmf</a></li>
+  </ul>
+
+  <div class="foot">
+    <p style="margin:0">© 2026 mfsoccer — Kuwait Premier League Statistics ·
+       <a href="/terms.html">Terms of use</a> · <a href="/">Back to the site</a></p>
+  </div>
+  </div>
 </div>
+<script>
+(function(){
+  var d=document.documentElement, b=document.getElementById('langBtn');
+  function paint(){
+    var en=d.lang==='en';
+    document.title = en ? 'Privacy policy — mfsoccer' : 'سياسة الخصوصية — mfsoccer';
+    b.textContent = en ? 'ع' : 'EN';
+    b.title = b.ariaLabel = en ? 'العربية' : 'English';
+  }
+  b.addEventListener('click', function(){
+    var l = d.lang==='en' ? 'ar' : 'en';
+    try{ localStorage.setItem('mf_lang', l); }catch(e){}
+    d.lang=l; d.dir=(l==='en'?'ltr':'rtl'); paint();
+  });
+  paint();
+})();
+</script>
 </body>
 </html>
