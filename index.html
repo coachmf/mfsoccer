@@ -2121,7 +2121,7 @@ main{padding-bottom:48px}
 <!-- اللغة الإنجليزية والوضع الداكن -->
 <link rel="stylesheet" href="site-theme.css?v=5">
 <script src="fantasy/js/i18n-more.js?v=11" defer></script>
-<script src="site-i18n.js?v=12" defer></script>
+<script src="site-i18n.js?v=13" defer></script>
 </head>
 <body>
 <!-- navicons:sprite — أيقونات شريط التنقل في الهاتف (خط 1.75 بلون النص الحالي) -->
@@ -2448,11 +2448,15 @@ function crest(club, big){
 }
 const compOf = x => x.comp || "الدوري";
 function stampComp(d){
+  /* المسابقة المسجّلة مع الهدف/الركلة لها الأولوية؛ البحث عن المباراة للسجلات القديمة بلا comp فقط.
+     (كان البحث يطغى عليها: هدف «كأس الأمير ج1 العربي × الكويت» يُنسب لمباراة الدوري ج1 بين الفريقين نفسيهما) */
   (d.goals||[]).forEach(g=>{
+    if(g.comp) return;
     const m=(d.matches||[]).find(m=>m.round===g.r && ((m.home===g.sc&&m.away===g.cd)||(m.home===g.cd&&m.away===g.sc)));
     g.comp = m ? compOf(m) : compOf(g);
   });
   (d.pens||[]).forEach(x=>{
+    if(x.comp) return;
     const m=(d.matches||[]).find(m=>m.round===x.r && ((m.home===x.by&&m.away===x.vs)||(m.home===x.vs&&m.away===x.by)));
     x.comp = m ? compOf(m) : compOf(x);
   });
@@ -2473,12 +2477,24 @@ function compsPresent(){
   const set=new Set((ALL?.matches||[]).map(compOf));
   return COMPS.filter(c=>set.has(c));
 }
-function compChips(){
+/* «الكل» = إجمالي البطولات المحلية: الدوري + كأس الأمير + كأس سمو ولي العهد + كأس السوبر (ALL لا يحوي البطولات الخارجية؛ تلك في EXT_FIXTURES).
+   لا يُخزَّن أي مجموع: applyComp يرشّح المصفوفات الأصلية، وكل إحصاء يُحسب منها لحظة العرض. */
+const COMP_TOTAL_LABEL = "إجمالي البطولات المحلية";
+const compLabel = c => c==="الكل" ? COMP_TOTAL_LABEL : c;
+/* يشغّل fn على مسابقة أخرى مؤقتاً (نفس الدوال والمصفوفات المرشّحة) ثم يعيد الحالة كما كانت — لملف اللاعب */
+function withComp(comp, fn){
+  const saved={COMP, MATCHES, GOALS, PENS, CARDS};
+  try{ COMP=comp; applyComp(); return fn(); }
+  finally{ ({COMP, MATCHES, GOALS, PENS, CARDS}=saved); }
+}
+/* شرائح المسابقة: always=true في صفحات الإحصاء (اللاعبون/التحليل) فتظهر الكؤوس حتى قبل أول مباراة (قائمة فارغة لا خطأ)؛
+   في الرئيسية تبقى كما كانت (تظهر فقط عند وجود أكثر من مسابقة) */
+function compChips(always){
   const have=compsPresent();
-  if(have.length<2) return "";
+  if(!always && have.length<2) return "";
   return `<div class="segbar compbar">
-    ${have.map(c=>`<button class="seg" data-comp="${esc(c)}" aria-pressed="${c===COMP}">${esc(c)}</button>`).join("")}
-    <button class="seg" data-comp="الكل" aria-pressed="${COMP==="الكل"}">كل المسابقات</button></div>`;
+    <button class="seg" data-comp="الكل" aria-pressed="${COMP==="الكل"}">${COMP_TOTAL_LABEL}</button>
+    ${COMPS.map(c=>`<button class="seg" data-comp="${esc(c)}" aria-pressed="${c===COMP}">${esc(c)}</button>`).join("")}</div>`;
 }
 function wireComp(root){
   (root||document).querySelectorAll("[data-comp]").forEach(b=>b.onclick=()=>{
@@ -2491,7 +2507,7 @@ function wireComp(root){
 function compSelect(){
   const cnt={}; (ALL?.matches||[]).forEach(m=>{ const c=compOf(m); cnt[c]=(cnt[c]||0)+1; });
   const ext=EXT_COMPS.map(c=>({...c, n:extEvents(c.id).filter(e=>!(e.to&&e.to!==e.d)).length}));
-  const curName = MXC==="upcoming" ? "المباريات القادمة" : MXC ? ((EXT_COMPS.find(c=>c.id===MXC)||{}).name||"") : (COMP==="الكل"?"كل المسابقات":COMP);
+  const curName = MXC==="upcoming" ? "المباريات القادمة" : MXC ? ((EXT_COMPS.find(c=>c.id===MXC)||{}).name||"") : compLabel(COMP);
   const opt=(attr,label,n,sel)=>`<button type="button" class="rs-opt" role="option" ${attr} aria-selected="${sel}">${esc(label)}${n?`<em>${n}</em>`:""}</button>`;
   return `<div class="rs-dd mx-comp" aria-label="المسابقة">
     <button type="button" class="rs-btn" aria-haspopup="listbox" aria-expanded="false"><span>${esc(curName)}</span><i class="chev"></i></button>
@@ -2499,7 +2515,7 @@ function compSelect(){
       ${opt(`data-ext="upcoming"`,"المباريات القادمة",upcomingItems().length,MXC==="upcoming")}
       <div class="rs-grp">محلي</div>
       ${COMPS.map(c=>opt(`data-comp="${esc(c)}"`,c,cnt[c]||0,!MXC&&COMP===c)).join("")}
-      ${Object.keys(cnt).length>1?opt(`data-comp="الكل"`,"كل المسابقات",0,!MXC&&COMP==="الكل"):""}
+      ${opt(`data-comp="الكل"`,COMP_TOTAL_LABEL,(ALL?.matches||[]).length,!MXC&&COMP==="الكل")}
       <div class="rs-grp">خارجي</div>
       ${ext.map(c=>opt(`data-ext="${c.id}"`,c.name,c.n,MXC===c.id)).join("")}
     </div></div>`;
@@ -3172,8 +3188,7 @@ function applyData(d, source){
   if(typeof paintFantasyTab==="function") paintFantasyTab();  /* التبويب يظهر فور وصول حالة الإشهار */
   SQNUMS_FOUND = squadsExtractNums();   /* فصل الأرقام المكتوبة داخل الأسماء */
   CLUBS = d.clubs;
-  const have = compsPresent();
-  if(!have.includes(COMP)) COMP = have[0] || "الدوري";
+  if(COMP!=="الكل" && !COMPS.includes(COMP)) COMP = "الدوري";   /* مسابقة فارغة أو «الإجمالي» تبقى مختارة عند وصول تحديث */
   SELR=null; SELDAY=null; CALM=null;
   applyComp();
   DATA_UPDATED = d.updated || new Date().toISOString();
@@ -5327,7 +5342,7 @@ async function saveMatch(){
   ALL.matches.sort((a,b)=>(a.round-b.round)||String(a.date).localeCompare(String(b.date)));
   ALL.matches.forEach((mm,i)=>mm.n=i+1);
   stampComp(ALL);
-  const have=compsPresent(); if(!have.includes(COMP)) COMP=have[0]||"الدوري";
+  if(COMP!=="الكل" && !COMPS.includes(COMP)) COMP="الدوري";
   applyComp(); DATA_SOURCE="إدخال يدوي في الموقع"; DATA_UPDATED=new Date().toISOString();
   DATA_BY=(FBUSER&&FBUSER.email)||"";
   EDIT=null; FORMERR="";
@@ -6733,12 +6748,12 @@ function votersHTML(ballots){
 
 /* ===== الهدافون وصنّاع الأهداف: منصّة لأول ثلاثة + قائمة مرتّبة (تصميم 2026-09-15) =====
    الترتيب مشترك عند التساوي (1،1،1،4…)، الصورة القصّة الرسمية وإلا شعار النادي، مع المباريات والدقائق من التشكيلات. */
-let TS_MODE="g";                                     /* g = الأهداف، a = صناعة الأهداف */
+let TS_MODE="g";                                     /* g = الأهداف، a = صناعة الأهداف، c = المساهمات (أهداف + صناعة) */
 function topScorersHTML(){
-  const key=TS_MODE, label=key==="g"?"أهداف":"صناعة";
+  const key=TS_MODE==="c"?"ga":TS_MODE, label=key==="g"?"أهداف":key==="a"?"صناعة":"مساهمات";   /* ga = أهداف + صناعة (c اسم حقل النادي) */
   const PP={}; playerPlay().forEach(p=>{ PP[p.n+"|"+p.c]=p; });
   const mins=p=>(PP[p.n+"|"+p.c]||{}).mins||0;
-  const L=scorers().filter(p=>p[key]>0)
+  const L=scorers().map(p=>({...p, ga:p.g+p.a})).filter(p=>p[key]>0)
     .sort((a,b)=>b[key]-a[key] || (key==="g"?b.a-a.a:b.g-a.g) || mins(a)-mins(b));
   L.forEach((p,i)=>{ p.rk=i+1; });   /* ترقيم تسلسلي 1،2،3… حتى عند التساوي (منصور 2026-09-15) */
   const max=L.length?L[0][key]:1;
@@ -6766,7 +6781,7 @@ function topScorersHTML(){
   const list = tsMore(rows, L.length, "ts-"+key);
   return `<div class="ts-wrap" id="tsWrap">
     <div class="ts-controls">
-      <div class="ts-toggle"><button type="button" data-ts="g" class="${key==="g"?"on":""}">الأهداف</button><button type="button" data-ts="a" class="${key==="a"?"on":""}">صناعة الأهداف</button></div>
+      <div class="ts-toggle"><button type="button" data-ts="g" class="${key==="g"?"on":""}">الأهداف</button><button type="button" data-ts="a" class="${key==="a"?"on":""}">صناعة الأهداف</button><button type="button" data-ts="c" class="${key==="ga"?"on":""}">المساهمون</button></div>
       <span class="hint" style="margin:0">${L.length} ${cnt} · ${label}</span>
     </div>
     ${podium}
@@ -6811,7 +6826,7 @@ function renderPlayers(){
     if(isYellow(x.type)) disc[k].y++; if(isRed(x.type)) disc[k].r++; });
   const DL=Object.values(disc).sort((a,b)=>b.r-a.r||b.y-a.y);
   $("#v-players").innerHTML=`
-    ${compChips()}
+    ${compChips(true)}
     <h2 class="sec">المساهمون</h2>
     ${topScorersHTML()}
     ${(()=>{ const PP=playerPlay();
@@ -6832,7 +6847,7 @@ function renderPlayers(){
         <div class="ts-wrap"><div class="ts-list">
           <div class="ts-head"><span>#</span><span>الحارس</span><span class="ts-subs-h">مباريات · دقائق</span><span>شباك نظيفة</span></div>
           ${tsMore(csRows, byCS.length, "cs")}
-        </div></div>`:'';
+        </div></div>`:`<h2 class="sec">الشباك النظيفة (الحرّاس)</h2><div class="card pad" style="color:var(--slate);font-size:.85rem">لا توجد شباك نظيفة مسجّلة في ${esc(compLabel(COMP))} بعد.</div>`;
       const mn = byMin.length? `<h2 class="sec">دقائق اللعب</h2>
         <p class="hint">إجمالي دقائق كل لاعب من التشكيلات والتبديلات. اضغط رأس المباريات للترتيب الذهني.</p>
         <div class="card"><div class="twrap"><table style="min-width:440px">
@@ -6841,7 +6856,7 @@ function renderPlayers(){
             <td style="color:var(--slate)">${esc(p.c)}</td>
             <td style="color:var(--head);font-weight:700;font-variant-numeric:tabular-nums">${p.mins}′</td>
             <td style="color:var(--slate)">${p.apps}</td>
-            <td style="color:var(--slate)">${p.cs||"—"}</td></tr>`).join(""), byMin.length, "min"); return t.rows+`</tbody></table></div>${t.btn}</div>`; })()}`:'';
+            <td style="color:var(--slate)">${p.cs||"—"}</td></tr>`).join(""), byMin.length, "min"); return t.rows+`</tbody></table></div>${t.btn}</div>`; })()}`:`<h2 class="sec">دقائق اللعب</h2><div class="card pad" style="color:var(--slate);font-size:.85rem">لا توجد مباريات مُقامة في ${esc(compLabel(COMP))} بعد.</div>`;
       return cs+mn;
     })()}
 
@@ -6881,7 +6896,7 @@ function renderAnalysis(){
       <span class="n">${x.n}</span></div>`).join("")}</div>`;
 
   $("#v-analysis").innerHTML=`
-    ${compChips()}
+    ${compChips(true)}
     ${avgRatingSectionHTML()}
     <h2 class="sec">توزيع الأهداف على فترات المباراة</h2>
     <div class="card pad">${bars(per,"p",mxP,false,true)}</div>
@@ -9105,6 +9120,7 @@ html.pp-open,html.pp-open body{overflow:hidden}
   background:rgba(6,21,41,.55);color:#fff;font-size:1.1rem;display:grid;place-items:center;cursor:pointer;backdrop-filter:blur(6px)}
 .pprof-grab{position:absolute;top:8px;left:50%;transform:translateX(-50%);width:40px;height:4px;border-radius:9px;background:rgba(255,255,255,.35);z-index:2}
 @media(min-width:720px){.pprof-grab{display:none}}
+.pprof-cbar{padding:12px 18px 0;margin:0;border-bottom:0}.pprof-cbar .seg{font-size:.72rem;padding:6px 10px}
 .pprof-comp{padding:0 18px;font-size:.7rem;color:var(--slate);display:flex;align-items:center;gap:8px}
 .pprof-comp::after{content:"";flex:1;height:1px;background:rgba(143,166,196,.18)}
 .pprof-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;padding:12px 16px 6px}
@@ -10182,7 +10198,9 @@ function playerProfileData(name, club){
                 res:`${gf} - ${ga}`, k: gf>ga?"w":gf<ga?"l":"d", sub: w.start>0, off: w.end<MATCH_MIN});
     });
   });
-  log.sort((a,b)=>(b.m.round-a.m.round)||String(b.m.date).localeCompare(String(a.m.date)));
+  /* في الإجمالي تختلط جولات المسابقات (ج1 كأس بعد ج3 دوري)، فالترتيب بالتاريخ؛ داخل مسابقة واحدة كما كان */
+  log.sort((a,b)=>(COMP==="الكل" && a.m.date && b.m.date && a.m.date!==b.m.date) ? String(b.m.date).localeCompare(String(a.m.date))
+    : (b.m.round-a.m.round)||String(b.m.date).localeCompare(String(a.m.date)));
   return {name, club, former, pos, num, gk, goals, assists, ownG, y, rd, pens, apps:pp.apps, mins:pp.mins, cs:pp.cs, conceded, log};
 }
 function playerProfileHTML(D){
@@ -10214,18 +10232,26 @@ function playerProfileHTML(D){
         <div class="meta">${D.num?`<span class="num">${D.num}</span>`:""}${D.pos?`<span>${esc(posLabel(D.pos))}</span>`:""}</div>
       </div>
     </div>
-    <div class="pprof-comp">${esc(COMP||"الدوري")} · ${esc(SEASON)}</div>
+    <div class="segbar compbar pprof-cbar" role="tablist" aria-label="المسابقة">
+      ${["الكل",...COMPS].map(c=>`<button type="button" class="seg" role="tab" data-pcomp="${esc(c)}" aria-pressed="${c===COMP}">${esc(compLabel(c))}</button>`).join("")}</div>
+    <div class="pprof-comp">${esc(compLabel(COMP||"الدوري"))} · ${esc(SEASON)}</div>
     ${D.former&&D.former.length?`<p class="pprof-prev">شارك هذا الموسم أيضاً مع ${D.former.map(c=>esc(c)).join(" و")}</p>`:""}
-    ${played ? `<div class="pprof-stats">${cards.filter(Boolean).join("")}</div>` : `<p class="pprof-empty">لم تُرصد مشاركة لهذا اللاعب في ${esc(COMP||"الدوري")} بعد.</p>`}
+    ${played ? `<div class="pprof-stats">${cards.filter(Boolean).join("")}</div>` : `<p class="pprof-empty">لم تُرصد مشاركة لهذا اللاعب في ${esc(compLabel(COMP||"الدوري"))} بعد.</p>`}
     ${logHTML}
   </div>`;
 }
 const playerHash = (n,c) => "#p/"+encodeURIComponent(n)+"/"+encodeURIComponent(c||"");
+let PROF_COMP=null;   /* مسابقة ملف اللاعب: تبدأ بمسابقة الصفحة، وتتبدّل داخل الملف وحده */
 function openPlayer(name, club, opts){
   name=String(name||"").trim(); if(!name) return;
   club=String(club||"").trim() || clubOfPlayer(name);
   const box=$("#pprof"); if(!box) return;
-  box.innerHTML=playerProfileHTML(playerProfileData(name, club));
+  if(!(opts&&opts.keepComp)) PROF_COMP=COMP;
+  box.innerHTML=withComp(PROF_COMP, ()=>playerProfileHTML(playerProfileData(name, club)));
+  box.querySelectorAll("[data-pcomp]").forEach(b=>b.onclick=()=>{
+    PROF_COMP=b.dataset.pcomp; const sh=box.querySelector(".pprof-sheet"), top=sh?sh.scrollTop:0;
+    openPlayer(name, club, {noHistory:true, keepComp:true});
+    const sh2=box.querySelector(".pprof-sheet"); if(sh2) sh2.scrollTop=top; });
   box.hidden=false; box.classList.add("on");
   document.documentElement.classList.add("pp-open");
   box.querySelector(".pprof-sheet").scrollTop=0;
@@ -10319,7 +10345,7 @@ function topPlayersHTML(){
       </div>
     </article>`;
   };
-  return `<h2 class="sec">أبرز اللاعبين<span class="sq-n">${COMP==="الكل"?"كل المسابقات":esc(COMP)}</span></h2>
+  return `<h2 class="sec">أبرز اللاعبين<span class="sq-n">${esc(compLabel(COMP))}</span></h2>
     <div class="tp-row">${uniq.map(card).join("")}</div>`;
 }
 function teamFormHTML(T){
