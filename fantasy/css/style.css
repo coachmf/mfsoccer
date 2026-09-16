@@ -1074,3 +1074,11 @@ html.lang-en .pp-actions{justify-content:flex-start;}
   .bench-strip .pslot{width:66px}
   .bench-strip .pslot .pk .kit{width:54px}
 }
+
+/* شارة الكابتن ونائبه (منصور 2026-09-16): تصميم حديث خارج القميص عند زاويته العليا لا فوقه */
+.pslot .badge{top:-6px!important;right:-8px!important;left:auto;width:22px!important;height:22px!important;border-radius:50%;
+  display:grid;place-items:center;font-size:.64rem!important;font-weight:900;letter-spacing:0;line-height:1;
+  background:linear-gradient(145deg,#1f3b66,#0b1f3a)!important;color:#FFD34D!important;
+  border:2px solid #fff!important;box-shadow:0 3px 8px rgba(0,20,40,.35)!important;z-index:4}
+.pslot .badge.v{background:linear-gradient(145deg,#eef3fa,#c9d6e8)!important;color:#0b1f3a!important}
+@media (max-width:860px){ .pslot .badge{top:-7px!important;right:-9px!important;width:20px!important;height:20px!important;font-size:.58rem!important} }
