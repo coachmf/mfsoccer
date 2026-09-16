@@ -6292,7 +6292,6 @@ function renderMatches(){
 
   $("#v-matches").innerHTML = `
     <div class="mx-head"><h2 class="mx-title">المباريات</h2>${compSelect()}</div>
-    ${calendarBar()}
     ${roundStrip()}
     ${roundSummary(list)}
     <div class="mx-list">${list.length?matchCards:'<div class="mx-empty">لا توجد مباريات ضمن هذا التحديد.</div>'}</div>`;
