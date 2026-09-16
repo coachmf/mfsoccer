@@ -131,7 +131,7 @@ const NAMES_EN = {
   'فهد السلامه':'Fahad Al-Salama', 'تركي المطيري':'Turki Al-Mutairi', 'أحمد الشمري':'Ahmad Al-Shammari', 'كيريست افالانا':'Kirist Avalana',
   // الفحيحيل
   'علي فاضل':'Ali Fadhel', 'احمد دشتي':'Ahmad Dashti', 'حسين دشتي':'Hussain Dashti', 'فهد سياف':'Fahad Sayyaf', 'مشعل رومي':'Meshal Roumi',
-  'محمد نعيم':'Mohammad Naeem', 'احمد النصر':'Ahmad Al-Nasr', 'كارلوس':'Carlos', 'جاسم كرم':'Jassim Karam', 'عبدالعزيز ناجي':'Abdulaziz Naji',
+  'محمد نعيم':'Mohammad Naeem', 'احمد النصر':'Ahmad Al-Nasr', 'كارلوس':'Carlos', 'جاسم كرم':'Jassim Karam', 'فهد الشلال':'Fahad Al-Shallal', 'عبدالعزيز ناجي':'Abdulaziz Naji',
   'محمد الفارسي':'Mohammad Al-Farsi', 'هاشم عدنان':'Hashem Adnan', 'حمد الطويل':'Hamad Al-Tawil', 'عمر المطر':'Omar Al-Matar', 'سلمان البوص':'Salman Al-Bous',
   'شريدة الشريدة':'Shuraida Al-Shuraida', 'جاتوش بانوم':'Gatoch Panom', 'رانجا شيفافيرو':'Ranga Chivaviro', 'الفين فورتيس':'Alvin Fortes',
   'همام صبحي':'Humam Sobhi', 'فيتور دا سيلفا':'Vitor Da Silva', 'خالد سليمان الشمري':'Khalid Sulaiman Al-Shammari',

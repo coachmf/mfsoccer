@@ -4,7 +4,7 @@
 'use strict';
 
 /* رقم نسخة الصور: ارفعه عند إعادة توليد أي قصّة حتى لا يبقى المتصفح على النسخة القديمة */
-const PLAYER_PHOTOS_VER = '22';
+const PLAYER_PHOTOS_VER = '23';
 
 const PLAYER_PHOTOS = {
   // الصليبخات (17)
@@ -115,6 +115,7 @@ const PLAYER_PHOTOS = {
   'FAH|جاتوش بانوم': '/assets/players/fah/25',
   'FAH|احمد دشتي': '/assets/players/fah/26',
   'FAH|جاسم كرم': '/assets/players/fah/45',
+  'FAH|فهد الشلال': '/assets/players/fah/19',
   'FAH|عبدالعزيز ناجي': '/assets/players/fah/60',
   'FAH|محمد الفارسي': '/assets/players/fah/70',
   'FAH|خالد سليمان الشمري': '/assets/players/fah/77',
@@ -242,7 +243,7 @@ const PLAYER_PHOTOS = {
   'JAH|جاسم العنزي': '/assets/players/jah/4',
   'JAH|عادل جاسم الشمري': '/assets/players/jah/8',
   'JAH|عبدالعزيز رسام': '/assets/players/jah/2',
-  'JAH|مشاري البارود': '/assets/players/jah/3',
+  'JAH|مشاري البارود': '/assets/players/jah/mishari',   // منصور 2026-09-17: صورة الجلسة C3
   'JAH|منصور بندر': '/assets/players/jah/5',
   'JAH|بشار عبدالله': '/assets/players/jah/6',
   'JAH|يوسف عايض الرشيدي': '/assets/players/jah/7',
