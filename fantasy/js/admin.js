@@ -540,7 +540,14 @@ const ADMIN = {
   /* ---------- لاعبون جدد بانتظار التأكيد (المدير فقط) ----------
      يأتون من سحب الكشوفات ويبقون هنا حتى يحدّد المدير أسعارهم ويضغط «تأكيد ونشر»؛ عندها ينتقلون إلى قائمة اللاعبين ويُنشرون للمشتركين. */
   sec_pending(){
-    const st=DB.state; const P=Array.isArray(st.pending)?st.pending:[];
+    const st=DB.state;
+    /* تنظيف: لاعب «بانتظار التأكيد» صار موجوداً في القائمة المنشورة (أُكّد من جهاز آخر أو نُشر مع اللعبة) — القائمة محلية على الجهاز فكانت تبقى قديمة (منصور 2026-09-17) */
+    if(Array.isArray(st.pending) && st.pending.length && st.fromCloud){
+      const has=p=>(st.players||[]).some(x=>x.club===p.club && MFSYNC.norm(x.name)===MFSYNC.norm(p.name));
+      const before=st.pending.length; st.pending=st.pending.filter(p=>!has(p));
+      if(st.pending.length!==before) DB.save();
+    }
+    const P=Array.isArray(st.pending)?st.pending:[];
     if(!P.length) return '';
     return `<div class="card pend">
       <h3 class="row spread" style="flex-wrap:wrap;gap:8px">لاعبون جدد بانتظار التأكيد <span class="pill new">${P.length}</span>
