@@ -10,7 +10,9 @@
 
 const I18N = {
   KEY: 'kwf_lang',
-  lang(){ try{ return localStorage.getItem(this.KEY)==='en' ? 'en' : 'ar'; }catch(e){ return 'ar'; } },
+  lang(){ try{ const q=new URLSearchParams(location.search).get('lang');   /* ?lang=en مثل الموقع (منصور 2026-09-16) */
+      if(q==='en'||q==='ar'){ localStorage.setItem(this.KEY,q); return q; }
+      return localStorage.getItem(this.KEY)==='en' ? 'en' : 'ar'; }catch(e){ return 'ar'; } },
   isEn(){ return this.lang()==='en'; },
   locale(){ return this.isEn() ? 'en-GB' : 'ar-KW'; },
 
@@ -73,6 +75,7 @@ const I18N = {
     'دخول':'Log in', 'حساب جديد':'Sign up', 'نسيت كلمة المرور':'Forgot password', 'البريد الإلكتروني':'Email', 'كلمة المرور':'Password',
     'الدخول عبر Google':'Continue with Google', 'أو':'or', 'اسم المستخدم':'Username', 'اسم الفريق':'Team name', 'إنشاء الحساب':'Create account',
     'إرسال رابط الاستعادة':'Send reset link', 'فانتسي الدوري الكويتي':'Kuwait League Fantasy',
+    'فانتسي الدوري الكويتي — الدوري الكويتي الممتاز 2026/27':'Kuwait League Fantasy — Kuwait Premier League 2026/27',
     'الدوري الكويتي الممتاز 2026/27 — كوّن فريقك ونافس أصحابك':'Kuwait Premier League 2026/27 — build your team and compete with friends',
     'جارٍ الاتصال…':'Connecting…', 'جارٍ تحميل فريقك…':'Loading your team…', 'جارٍ الدخول…':'Signing in…', 'جارٍ فتح Google…':'Opening Google…',
     'خروج':'Log out', 'تسجيل الخروج':'Log out', 'الملف الشخصي':'Profile', 'حفظ':'Save',
@@ -187,7 +190,14 @@ const I18N = {
         const v=el.getAttribute(a); if(v && AR.test(v)){ const en=this.tr(v.trim()); if(en!=null){ el._i18nAttr=el._i18nAttr||{}; if(el._i18nAttr[a]==null) el._i18nAttr[a]=v; el.setAttribute(a, en); } }
       }
     });
-    if(root.nodeType===1 && root.hasAttribute && root.hasAttribute('placeholder')){ const v=root.getAttribute('placeholder'); const en=this.tr((v||'').trim()); if(en!=null){ root._i18nAttr=root._i18nAttr||{}; if(root._i18nAttr.placeholder==null) root._i18nAttr.placeholder=v; root.setAttribute('placeholder', en); } }
+    /* العنصر الجذر نفسه: كانت تُترجم سماته الفرعية فقط، فبقيت تلميحات أزرار الترويسة عربية (منصور 2026-09-16) */
+    if(root.nodeType===1 && root.getAttribute){
+      for(const a of ['placeholder','title','aria-label']){
+        const v=root.getAttribute(a); if(!v || !AR.test(v)) continue;
+        const en=this.tr(v.trim()); if(en==null) continue;
+        root._i18nAttr=root._i18nAttr||{}; if(root._i18nAttr[a]==null) root._i18nAttr[a]=v; root.setAttribute(a,en);
+      }
+    }
   },
 
   /* الرجوع للعربية: العناصر الثابتة في الصفحة (الترويسة وغيرها) لا تُعاد كتابتها عند الرسم،
@@ -210,9 +220,11 @@ const I18N = {
       for(const m of muts){
         if(m.type==='childList') m.addedNodes.forEach(nd=>{ if(nd.nodeType===1) this.apply(nd); else if(nd.nodeType===3 && /[؀-ۿ]/.test(nd.nodeValue)){ const en=this.tr(nd.nodeValue.trim()); if(en!=null && en!==nd.nodeValue.trim()){ if(nd._i18nAr==null) nd._i18nAr=nd.nodeValue; nd.nodeValue=nd.nodeValue.replace(nd.nodeValue.trim(), en); } } });
         else if(m.type==='characterData' && /[؀-ۿ]/.test(m.target.nodeValue)){ const en=this.tr(m.target.nodeValue.trim()); if(en!=null && en!==m.target.nodeValue.trim()){ if(m.target._i18nAr==null) m.target._i18nAr=m.target.nodeValue; m.target.nodeValue=m.target.nodeValue.replace(m.target.nodeValue.trim(), en); } }
+        else if(m.type==='attributes'){ const a=m.attributeName, el=m.target; const v=el.getAttribute && el.getAttribute(a);
+          if(v && /[؀-ۿ]/.test(v)){ const en=this.tr(v.trim()); if(en!=null && en!==v){ el._i18nAttr=el._i18nAttr||{}; if(el._i18nAttr[a]==null) el._i18nAttr[a]=v; el.setAttribute(a,en); } } }
       }
     });
-    this._obs.observe(document.body, {childList:true, subtree:true, characterData:true});
+    this._obs.observe(document.body,{childList:true,subtree:true,characterData:true,attributes:true,attributeFilter:['title','placeholder','aria-label']});
   },
 
   setLang(l){
@@ -230,10 +242,17 @@ const I18N = {
     document.documentElement.setAttribute('lang', en?'en':'ar');
     document.documentElement.classList.toggle('lang-en', en);
   },
+  _docTitle(){ const t=this.tr(String(document.title||'').trim()); if(t && t!==document.title){ if(this._title==null) this._title=document.title; document.title=t; } },
   init(){
     this.applyDir();
     this.watch();
-    if(this.isEn()) this.apply(document.body);
+    if(this.isEn()){
+      this.apply(document.body);
+      /* الترويسة تُبنى بعد التهيئة، فنُعيد الترجمة مرتين بعد استقرار الرسم (منصور 2026-09-16) */
+      setTimeout(()=>{ if(this.isEn()){ this.apply(document.body); this._docTitle(); } }, 900);
+      setTimeout(()=>{ if(this.isEn()){ this.apply(document.body); this._docTitle(); } }, 2600);
+      this._docTitle();
+    }
   },
 };
 

@@ -7,6 +7,73 @@
 'use strict';
 
 const NAMES_EN = {
+  /* الحكام (منصور 2026-09-16) */
+  'داود العبد الله':'Dawoud Al-Abdullah',
+  'عبد الرحمن الكندري':'Abdulrahman Al-Kandari',
+  'مساعد الشمري':'Musaed Al-Shammari',
+  'عبد العزيز الشطي':'Abdulaziz Al-Shatti',
+  'عبد الله جمالي':'Abdullah Jamali',
+  'سعود الشمالي':'Saud Al-Shamali',
+  'علي جراق':'Ali Jarrag',
+  'ياسين حسن يوسف':'Yassin Hassan Yousef',
+  'عبد الله عرب':'Abdullah Arab',
+  'علي الحداد':'Ali Al-Haddad',
+  'بيير أتشو':'Pierre Atcho',
+  'احمد العلي':'Ahmad Al-Ali',
+  'عمار اشكناني':'Ammar Ashkanani',
+  'سعود السمحان':'Saud Al-Samhan',
+  'عبد الهادي العنزي':'Abdulhadi Al-Enezi',
+  'طلال الشمري':'Talal Al-Shammari',
+  'محمد العطار':'Mohammad Al-Attar',
+  'يوسف شطب':'Yousef Shatab',
+  'هاشم الرفاعي':'Hashem Al-Rifai',
+  'عبد الله الكندري':'Abdullah Al-Kandari',
+  'حسين جمال':'Hussain Jamal',
+  'داود العبدالله':'Dawoud Al-Abdullah',
+  'يوسف نصار':'Yousef Nassar',
+  'علي الصيرفي':'Ali Al-Sairafi',
+
+  /* لاعبون ومدربون ورؤساء أندية (منصور 2026-09-16) */
+  'أبوبكر دومبيا':'Aboubacar Doumbia',
+  'خالد محمد':'Khaled Mohammad',
+  'ياسين الخنيسي':'Yassine Khenissi',
+  'محمد صفر':'Mohammad Safar',
+  'فيصل عجب':'Faisal Ajab',
+  'عبدالعزيز كميل':'Abdulaziz Kameel',
+  'ضاري العتيبي':'Dari Al-Otaibi',
+  'محمد غانم':'Mohammad Ghanem',
+  'فيكتور فيليب':'Victor Philip',
+  'احمد الرياحي':'Ahmad Al-Riahi',
+  'يوسف نجف':'Yousef Najaf',
+  'حسين الحربي':'Hussain Al-Harbi',
+  'علي عبدالرسول':'Ali Abdulrasool',
+  'علي الدوخي':'Ali Al-Dokhi',
+  'عبدالوهاب الشلال':'Abdulwahab Al-Shallal',
+  'محمد إبراهيم':'Mohammad Ibrahim',
+  'فراس الخطيب':'Firas Al-Khatib',
+  'غوران سابليتش':'Goran Sablic',
+  'دراغان تاديتش':'Dragan Tadic',
+  'علي عاشور':'Ali Ashour',
+  'ظاهر العدواني':'Dhaher Al-Adwani',
+  'أحمد عبدالكريم':'Ahmad Abdulkarim',
+  'علي عبدالرضا':'Ali Abdulridha',
+  'مارتن سيفيلا':'Martin Sevela',
+  'إيغور ريميتش':'Igor Remic',
+  'واغنر أندرادي':'Wagner Andrade',
+  'أنطونيو ميراندا':'Antonio Miranda',
+  'الشيخ مشعل طلال الفهد':'Sheikh Mishal Talal Al-Fahad',
+  'خالد علي الغانم':'Khaled Ali Al-Ghanim',
+  'عبدالعزيز أحمد عاشور':'Abdulaziz Ahmad Ashour',
+  'أسعد أحمد البنوان':'Asaad Ahmad Al-Banwan',
+  'الشيخ تركي أحمد اليوسف الصباح':'Sheikh Turki Ahmad Al-Yousef Al-Sabah',
+  'خالد شريدة المطيري':'Khaled Shuraida Al-Mutairi',
+  'يوسف كريم العنزي':'Yousef Karim Al-Enezi',
+  'خالد خليفة العازمي':'Khaled Khalifa Al-Azmi',
+  'حمد الدبوس':'Hamad Al-Dabbous',
+  'مبارك محمد النزال':'Mubarak Mohammad Al-Nazzal',
+  'د. مناحي فلاح العازمي':'Dr. Manahi Falah Al-Azmi',
+  'سعد عناد':'Saad Anad',
+
   // القادسية
   'سعود الجناعي':'Saud Al-Jenaei', 'حميد القلاف':'Hamid Al-Qallaf', 'محمد الكندري':'Mohammad Al-Kandari', 'احمد اليحيى':'Ahmad Al-Yahya',
   'معاذ الظفيري':'Muath Al-Dhafiri', 'راشد الدوسري':'Rashed Al-Dosari', 'خالد صباح':'Khalid Sabah', 'بدر جمال':'Bader Jamal',
@@ -280,3 +347,17 @@ const RX_MORE = [
   I18N.RX = RX_MORE.concat(I18N.RX);
   I18N._keysSorted = null;
 })();
+
+/* أسماء العائلة على بطاقات الملعب: تُشتق من NAMES_EN تلقائياً، وتُهمل إن تكرّرت لأكثر من لاعب
+   بإنجليزية مختلفة (منصور 2026-09-16) */
+(function(){
+  const seen = {};
+  for(const ar in NAMES_EN){
+    const a = String(ar).trim().split(/\s+/), e = String(NAMES_EN[ar]).trim().split(/\s+/);
+    if(a.length < 2 || e.length < 2) continue;
+    const k = a[a.length-1], v = e[e.length-1];
+    if(seen[k] === undefined) seen[k] = v; else if(seen[k] !== v) seen[k] = null;
+  }
+  for(const k in seen){ if(seen[k] && NAMES_EN[k] == null) NAMES_EN[k] = seen[k]; }
+})();
+

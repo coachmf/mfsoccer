@@ -193,8 +193,11 @@ const I18N = {
     for(const k in this.DICT){
       if(!k.includes('⟨x⟩')) continue;
       const parts = k.split('⟨x⟩');
-      const rx = new RegExp('^' + parts.map(esc).join('(.+?)') + '$');
-      const loose = new RegExp('(?<![\u0600-\u06FF])' + parts.map(esc).join('(.+?)') + '(?![\u0600-\u06FF])');
+      const nVar = parts.length - 1;
+      const glued = nVar === 1 && /[^\s]⟨x⟩$/.test(k) && k.replace('⟨x⟩','').trim().length <= 4;
+      const cap = glued ? '([0-9٠-٩,٬]+)' : '(.+?)';   /* نمط قصير مثل ج⟨x⟩ يقبل أرقاماً فقط */
+      const rx = new RegExp('^' + parts.map(esc).join(cap) + '$');
+      const loose = new RegExp('(?<![\u0621-\u064A\u0671-\u06D3])' + parts.map(esc).join(cap) + '(?![\u0621-\u064A\u0671-\u06D3])');
       list.push([rx, this.DICT[k], parts.length - 1, k.length, loose]);
     }
     list.sort((a, b) => b[3] - a[3]);
@@ -217,8 +220,8 @@ const I18N = {
   keys(){
     if(!this._keysSorted){
       const esc = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      this._keysSorted = Object.keys(this.DICT).filter(k => k.length > 3 && !k.includes('⟨x⟩')).sort((a, b) => b.length - a.length)
-        .map(k => [k, new RegExp('(?<![\\u0600-\\u06FF])' + esc(k) + '(?![\\u0600-\\u06FF])', 'g'), this.DICT[k]]);
+      this._keysSorted = Object.keys(this.DICT).filter(k => k.length > 2 && !k.includes('⟨x⟩'))   /* سبت/أحد/ج14 */.sort((a, b) => b.length - a.length)
+        .map(k => [k, new RegExp('(?<![\\u0621-\\u064A\\u0671-\\u06D3])' + esc(k) + '(?![\\u0621-\\u064A\\u0671-\\u06D3])', 'g'), this.DICT[k]]);
     }
     return this._keysSorted;
   },
@@ -233,6 +236,9 @@ const I18N = {
   },
   _node(node){
     const t = node.nodeValue; if(!t || !/[؀-ۿ]/.test(t)) return;
+    /* أسماء المشتركين وتعليقاتهم تبقى كما كتبها صاحبها (منصور 2026-09-16) */
+    const par = node.parentElement;
+    if(par && par.closest && par.closest('[data-raw],.vt-row,.fan-name,.cmt')) return;
     const m = t.match(/^(\s*)([\s\S]*?)(\s*)$/); const key = m[2].replace(/\s+/g, ' '); if(!key) return;
     let en = this.tr(key);
     if(en == null){
@@ -243,6 +249,7 @@ const I18N = {
       for(const [k, rx, e] of this.keys()){ if(out.includes(k)){ const o2 = out.replace(rx, e); if(o2 !== out){ out = o2; changed = true; } } }
       if(!changed) return; en = out;
     }
+    en = String(en).replace(/،/g, ',').replace(/؛/g, ';');   /* الفاصلة العربية داخل نص مترجم */
     if(en === key) return;
     if(node._i18nAr == null) node._i18nAr = t;
     /* خيارات القوائم المنسدلة: الموقع يقرأ قيمة الخيار من نصه، فنثبّت القيمة العربية قبل الترجمة */
@@ -267,7 +274,12 @@ const I18N = {
     els.forEach(el => {
       for(const a of ATTRS){
         const v = el.getAttribute && el.getAttribute(a); if(!v || !/[؀-ۿ]/.test(v)) continue;
-        const en = this.tr(v.trim().replace(/\s+/g, ' ')); if(en == null) continue;
+        /* السمات كانت تُترجم بالمطابقة التامة فقط، فبقيت عبارات مثل «جمعة 4 · مباراتين»
+           و«القدم اليمنى: 34» عربية أو نصفها إنجليزي (منصور 2026-09-16) */
+        const raw = v.trim().replace(/\s+/g, ' ');
+        let en = this.tr(raw);
+        if(en == null){ const part = this.trIn(raw); en = (part !== raw) ? part : null; }
+        if(en == null) continue;
         el._i18nAttr = el._i18nAttr || {}; if(el._i18nAttr[a] == null) el._i18nAttr[a] = v; el.setAttribute(a, en);
       }
     });
@@ -400,7 +412,7 @@ const DICT_ADMIN = {
   'الخارج والداخل والشوط والدقيقة. منها تُحسب دقائق كل لاعب، وعليها تُبنى نقاط المشاركة والشباك النظيفة في الفانتسي.':'Player off, player on, half and minute. Each player\'s minutes are computed from these, and fantasy appearance and clean-sheet points are built on them.',
   '· الدقيقة ⟨x⟩':'· minute ⟨x⟩', '+ إضافة تبديل':'+ Add substitution', 'الأهداف (⟨x⟩)':'Goals (⟨x⟩)', 'الفريق المسجل':'Scoring team', 'اللاعب المسجل':'Scorer', 'صانع الهدف':'Assist', 'إضافي':'Extra', 'تفصيل طريقة التسجيل':'How it was scored',
   'ارتدت عن (لاعب الفريق الخصم)':'Deflected off (opposition player)', '+ إضافة هدف':'+ Add goal', 'الإنذارات (⟨x⟩)':'Cards (⟨x⟩)', 'إنذار ثانٍ = طرد':'Second yellow = red', '+ إضافة بطاقة':'+ Add card', 'ركلات الجزاء (⟨x⟩)':'Penalties (⟨x⟩)',
-  'ركلة ⟨x⟩':'Penalty ⟨x⟩', 'الفريق المنفّذ':'Taking team', 'اللاعب المنفّذ':'Taker', 'النتيجة':'Outcome', '+ إضافة ركلة جزاء':'+ Add penalty', 'حفظ المباراة':'Save match', 'إلغاء':'Cancel',
+  'الفريق المنفّذ':'Taking team', 'اللاعب المنفّذ':'Taker', 'النتيجة':'Outcome', '+ إضافة ركلة جزاء':'+ Add penalty', 'حفظ المباراة':'Save match', 'إلغاء':'Cancel',
   'النتيجة تُحتسب تلقائياً من الأهداف — لا تُكتب. والقوائم هنا مطابقة لقوائم ملف الإكسل.':'The score is computed automatically from the goals — it is not typed. The lists here match the Excel file lists.',
   'أدخل رقم الجولة.':'Enter the round number.', 'اختر الفريق المضيف والفريق الضيف.':'Choose the home and away teams.', 'لا يمكن أن يواجه النادي نفسه.':'A club cannot play itself.', 'أدخل تاريخ المباراة.':'Enter the match date.',
   'هذه المباراة مسجّلة مسبقاً في هذه الجولة والمسابقة.':'This match is already recorded in this round and competition.', 'الهدف ⟨x⟩: اختر الفريق المسجل.':'Goal ⟨x⟩: choose the scoring team.', 'الهدف ⟨x⟩: اكتب اسم اللاعب.':'Goal ⟨x⟩: enter the player name.',

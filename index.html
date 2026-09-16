@@ -2114,8 +2114,8 @@ main{padding-bottom:48px}
 </style>
 <!-- اللغة الإنجليزية والوضع الداكن -->
 <link rel="stylesheet" href="site-theme.css?v=5">
-<script src="fantasy/js/i18n-more.js?v=9" defer></script>
-<script src="site-i18n.js?v=4" defer></script>
+<script src="fantasy/js/i18n-more.js?v=11" defer></script>
+<script src="site-i18n.js?v=11" defer></script>
 </head>
 <body>
 <!-- navicons:sprite — أيقونات شريط التنقل في الهاتف (خط 1.75 بلون النص الحالي) -->
@@ -9961,7 +9961,6 @@ function clubAboutHTML(c, r, played){
   const pos = played ? standings().findIndex(x=>x.c===c)+1 : 0;
   const stSrc = I.slug ? `assets/stadiums/${I.slug}.jpg?v=7` : "assets/hero/stadium.jpg";   /* صورة الملعب تُحمَّل كعنصر img يظهر بعد اكتمال تحميله — لا طبقة احتياطية تُظهر ملعباً آخر أثناء التحميل */
   const facts=[
-    I.nick? ["اللقب", esc(I.nick)] : null,
     I.f   ? ["تأسس عام", String(I.f)] : null,
     I.st  ? ["الملعب", esc(I.st)] : null,
     I.cap ? ["سعة الملعب", `${I.cap.toLocaleString("en-US")} متفرج`] : null,
@@ -9969,7 +9968,7 @@ function clubAboutHTML(c, r, played){
     cc.length ? ["ألوان النادي", `<span class="sw">${cc.map(h=>`<i style="background:${esc(h)}"></i>`).join("")}</span>${esc(I.col||"")}`] : null,
   ].filter(Boolean);
   const desc = (I.f||I.st||I.loc)
-    ? `${esc(c)}${I.nick?` «${esc(I.nick)}»`:""} نادٍ كويتي${I.loc?` من منطقة ${esc(I.loc)}`:""}${I.f?`، تأسس عام ${I.f}`:""}${I.st?`، ويخوض مبارياته على ${esc(I.st)}${I.cap?` الذي يتسع لنحو ${I.cap.toLocaleString("en-US")} متفرج`:""}`:""}.`   /* جملة «يشارك في الدوري موسم … ولعب n مباريات» حُذفت بطلب منصور 2026-09-15 */
+    ? `${esc(c)} نادٍ كويتي${I.loc?` من منطقة ${esc(I.loc)}`:""}${I.f?`، تأسس عام ${I.f}`:""}${I.st?`، ويخوض مبارياته على ${esc(I.st)}${I.cap?` الذي يتسع لنحو ${I.cap.toLocaleString("en-US")} متفرج`:""}`:""}.`   /* جملة «يشارك في الدوري موسم … ولعب n مباريات» حُذفت بطلب منصور 2026-09-15 */
     : "";
   return `<div class="cabout">
     <div class="wm" style="background-image:url('${crestSrcOf(c)}')"></div>
@@ -10394,6 +10393,173 @@ document.addEventListener("click", e=>{
 /* ===== الإنجليزية: قاموس المكوّنات الجديدة (تبويبات النادي، ملف اللاعب، المباريات، الرئيسية) =====
    يُدمج في I18N.DICT قبل I18N.init() — site-i18n.js مؤجّل (defer) فيُنفَّذ قبل DOMContentLoaded، ومستمعنا سُجّل قبله. */
 const I18N_EXTRA = {
+  /* عناصر معادلة التقييم (منصور 2026-09-16) */
+  'الأهداف':'Goals',
+  'الصناعة':'Assists',
+  'الأهداف العكسية':'Own goals',
+  'الإنذارات':'Yellow cards',
+  'الطرد':'Red cards',
+  'ركلات الجزاء الضائعة':'Missed penalties',
+  'نتيجة المباراة':'Match result',
+  'الشباك النظيفة':'Clean sheets',
+  'الأهداف المستقبَلة':'Goals conceded',
+  'دقائق اللعب':'Minutes played',
+
+  'متوسط تقييم اللاعب في مبارياته (من شارك في ⟨x⟩ على الأقل). يُحسب من: ⟨x⟩.':"A player's average rating across his matches (minimum ⟨x⟩ played). Calculated from: ⟨x⟩.",
+  'تقييم mfsoccer محسوب من إحصاءات الموقع: ⟨x⟩.':'The mfsoccer rating is calculated from the site stats: ⟨x⟩.',
+  'من كرات ثابتة':'From set pieces',
+  'من لعب مفتوح':'From open play',
+  'إحصاءات الموقع':'site stats',
+  'الموقع':'the site',
+
+  /* أرقام ركلات الترجيح بدل النمط العام الذي كان يبتلع «ركلة حرة» */
+  'ركلة 1':'Penalty 1', 'ركلة 2':'Penalty 2', 'ركلة 3':'Penalty 3', 'ركلة 4':'Penalty 4', 'ركلة 5':'Penalty 5', 'ركلة 6':'Penalty 6', 'ركلة 7':'Penalty 7', 'ركلة 8':'Penalty 8', 'ركلة 9':'Penalty 9', 'ركلة 10':'Penalty 10', 'ركلة 11':'Penalty 11', 'ركلة 12':'Penalty 12',
+
+  /* بقايا الفحص: المواجهات والتقييم والأشهر (منصور 2026-09-16) */
+  '⟨x⟩ ضد ⟨x⟩':'⟨x⟩ v ⟨x⟩',
+  '⟨x⟩ متفرج':'⟨x⟩ spectators',
+  'مواجهات الفريقين':'Head to head',
+  'المواجهات':'H2H',
+  'القادمة':'Upcoming',
+  'مبارياته':'his matches',
+  'نتيجة المباراة':'match result',
+  'محسوب من إحصاءات':'is calculated from the stats of',
+  'من تصويت':'from the vote for',
+  'للجولة':'for round',
+  'من شارك في':'who played at least',
+  'يُحسب من':'calculated from',
+  'يناير':'January',
+  'فبراير':'February',
+  'مارس':'March',
+  'أبريل':'April',
+  'مايو':'May',
+  'يونيو':'June',
+  'يوليو':'July',
+  'أغسطس':'August',
+  'سبتمبر':'September',
+  'أكتوبر':'October',
+  'نوفمبر':'November',
+  'ديسمبر':'December',
+
+  /* صفحة المباراة وطاقم التحكيم والملاعب (منصور 2026-09-16) */
+  'التشكيلة':'Line-ups',
+  'القائمة':'Squad',
+  'الترتيب':'Table',
+  'أحداث المباراة':'Match events',
+  'الجدول كاملاً':'Full table',
+  'رجوع':'Back',
+  'طاقم التحكيم':'Match officials',
+  'حكم الساحة':'Referee',
+  'المساعد الأول':'Assistant 1',
+  'المساعد الثاني':'Assistant 2',
+  'الحكم الرابع':'Fourth official',
+  'حكم الفيديو (VAR)':'VAR',
+  'مساعد حكم الفيديو (AVAR)':'AVAR',
+  'لا يوجد':'None',
+  'تقييم mfsoccer':'mfsoccer rating',
+  'اختيار الجمهور':'Fan pick',
+  'متوسط تقييم الفريقين':'Team average ratings',
+  'أفضل لاعب في المباراة':'Player of the match',
+  'معلومات المباراة':'Match info',
+  'المواجهات المباشرة':'Head to head',
+  'آخر المباريات':'Recent matches',
+  'الملعب':'Stadium',
+  'القناة الناقلة':'TV channel',
+  'الحكم':'Referee',
+  'الحضور':'Attendance',
+  'المدرب':'Coach',
+  'التبديلات':'Substitutions',
+  'الاحتياط':'Bench',
+  'ملف اللاعب':'Player profile',
+  'الجولة':'Round',
+  'انتهت':'FT',
+  'لم تبدأ':'Not started',
+  'جارية':'Live',
+  'الشوط الأول':'First half',
+  'الشوط الثاني':'Second half',
+  'ستاد صباح السالم':'Sabah Al-Salem Stadium',
+  'ملعب محمد الحمد':'Mohammad Al-Hamad Stadium',
+  'محمد الحمد':'Mohammad Al-Hamad',
+  'ستاد محمد الحمد':'Mohammad Al-Hamad Stadium',
+  'ملعب نادي الكويت':'Kuwait SC Stadium',
+  'ستاد الصداقة والسلام':'Friendship and Peace Stadium',
+  'ستاد ثامر':'Thamer Stadium',
+  'ملعب علي صباح السالم':'Ali Sabah Al-Salem Stadium',
+  'ملعب مبارك العيار':'Mubarak Al-Ayyar Stadium',
+  'ملعب نادي الساحل':'Al-Sahel Club Stadium',
+  'ستاد نايف الدبوس':'Nayef Al-Dabbous Stadium',
+  'ملعب مساعد الشنفا':'Musaed Al-Shanfa Stadium',
+  'ملعب الأحمدي':'Al-Ahmadi Stadium',
+  'ستاد الصليبخات':'Sulaibikhat Stadium',
+  'ستاد جابر الأحمد الدولي':'Jaber Al-Ahmad International Stadium',
+  'العربية':'Arabic',
+  'ع':'AR',
+  'ملف ⟨x⟩':'⟨x⟩ profile',
+  'أفضل لاعب في ⟨x⟩':'Player of the match in ⟨x⟩',
+
+  /* نواقص الترجمة من فحص الوضع الإنجليزي (منصور 2026-09-16) */
+  'الجولة السابقة':'Previous round',
+  'الجولة التالية':'Next round',
+  'الجولة ⟨x⟩ · الافتتاح':'Round ⟨x⟩ · opening',
+  'الافتتاح':'Opening',
+  'الحالية':'current',
+  'الجولة ⟨x⟩ · الحالية':'Round ⟨x⟩ · current',
+  'الطقم الأساسي':'Home kit',
+  'طقم الحارس':'Goalkeeper kit',
+  'رئيس مجلس الإدارة':'Club president',
+  'صفحة المباراة':'Match page',
+  'الاتحاد الكويتي لكرة القدم':'Kuwait Football Association',
+  'الاتحاد الكويتي':'Kuwait FA',
+  'العربية':'Arabic',
+  'عرض المزيد':'Show more',
+  'عرض أقل':'Show less',
+  'الحارس':'Goalkeeper',
+  'أعلى متوسط تقييم':'Best average rating',
+  'تفاصيل مناطق التسجيل':'Scoring zone detail',
+  'بالرأس':'Headers',
+  'من داخل منطقة الجزاء':'From inside the box',
+  'من خارج منطقة الجزاء':'From outside the box',
+  'مباراة':'match',
+  'مباريات':'matches',
+  'عرضية من اللعب المفتوح':'Cross from open play',
+  'تمريرة بينية':'Through ball',
+  'ركلة جزاء':'Penalty',
+  'خطأ دفاعي / استخلاص ضغط':'Defensive error / press turnover',
+  'بناء من الخلف':'Build-up from the back',
+  'تسديدة من خارج المنطقة':'Shot from outside the box',
+  'متابعة كرة مرتدة':'Rebound follow-up',
+  'كرات ثابتة':'Set pieces',
+  'لعب مفتوح':'Open play',
+  'ركلة حرة مباشرة':'Direct free kick',
+  'ركنية':'Corner',
+  'ارتداد سريع':'Fast break',
+  'منطقة المرمى - وسط':'Six-yard box - centre',
+  'منطقة المرمى - يسار':'Six-yard box - left',
+  'منطقة المرمى - يمين':'Six-yard box - right',
+  'داخل منطقة الجزاء - وسط':'Inside the box - centre',
+  'داخل منطقة الجزاء - يسار':'Inside the box - left',
+  'داخل منطقة الجزاء - يمين':'Inside the box - right',
+  'علامة الجزاء':'Penalty spot',
+  'خارج منطقة الجزاء':'Outside the box',
+  'القدم اليمنى':'Right foot',
+  'القدم اليسرى':'Left foot',
+  'الرأس':'Head',
+  'سوريا':'Syria',
+  'الكويت':'Kuwait',
+  'كرواتيا':'Croatia',
+  'البحرين':'Bahrain',
+  'سلوفاكيا':'Slovakia',
+  'البوسنة':'Bosnia',
+  'البرازيل':'Brazil',
+  'البرتغال':'Portugal',
+  'الألعاب الآسيوية 2026':'2026 Asian Games',
+  'فيتنام':'Vietnam',
+  'اوزبكستان':'Uzbekistan',
+  'الفلبين':'Philippines',
+  'المدرب ⟨x⟩':'Coach ⟨x⟩',
+  '⟨x⟩ لاعباً · ⟨x⟩':'⟨x⟩ players · ⟨x⟩',
+  'متوسط تقييم ⟨x⟩ في ⟨x⟩':'Average rating of ⟨x⟩ in ⟨x⟩',
+
   // تبويبات النادي والنبذة
   'نبذة عن الفريق':'Club profile', 'الإحصائيات':'Statistics', 'قائمة الفريق':'Squad', 'أقسام النادي':'Club sections',
   'اللقب':'Nickname', 'تأسس عام':'Founded', 'الملعب':'Stadium', 'سعة الملعب':'Capacity', '⟨x⟩ متفرج':'⟨x⟩ seats',
@@ -10427,7 +10593,9 @@ const I18N_EXTRA = {
   // ملف اللاعب
   'ملف اللاعب':'Player profile', 'إغلاق':'Close', 'مباراة بمباراة':'Match by match', 'دقائق اللعب':'Minutes played', 'شباك نظيفة':'Clean sheets',
   'أهداف استقبلها':'Goals conceded', 'إنذارات':'Yellow cards', 'طرد':'Red cards', 'ركلات جزاء':'Penalties', 'أهداف عكسية':'Own goals',
-  'أرضه':'Home', 'خارج أرضه':'Away', '· أرضه':'· Home', '· خارج أرضه':'· Away', 'ج⟨x⟩':'R⟨x⟩',
+  'أرضه':'Home', 'خارج أرضه':'Away', '· أرضه':'· Home', '· خارج أرضه':'· Away',
+  /* اختصار الجولة بالأرقام فقط — النمط العام 'ج⟨x⟩' كان يبتلع أول حرف من «جمعة» (منصور 2026-09-16) */
+  'ج1':'R1', 'ج2':'R2', 'ج3':'R3', 'ج4':'R4', 'ج5':'R5', 'ج6':'R6', 'ج7':'R7', 'ج8':'R8', 'ج9':'R9', 'ج10':'R10', 'ج11':'R11', 'ج12':'R12', 'ج13':'R13', 'ج14':'R14', 'ج15':'R15', 'ج16':'R16', 'ج17':'R17', 'ج18':'R18', 'ج19':'R19', 'ج20':'R20', 'ج21':'R21', 'ج22':'R22',
   'لم تُرصد مشاركة لهذا اللاعب في ⟨x⟩ بعد.':'No appearances recorded for this player in the ⟨x⟩ yet.',
   // المباريات
   'الجولة':'Round', 'مناسبات الشهر':'Events this month', 'إلغاء اليوم':'Clear day', 'لا مباريات':'No matches', 'أُقيمت':'Played',
