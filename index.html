@@ -2300,6 +2300,10 @@ let LIST = {
 };
 const SETPIECE = /ركنية|ركلة حرة|رمية تماس|ركلة جزاء/;
 /* الإنذار الثاني إنذارٌ في عمود الإنذارات وطردٌ في عمود الطرد — كما تحتسبه الاتحادات */
+/* الهدف العكسي: g.p صاحب التسديدة من الفريق المستفيد (sc)، وg.og هو من سجّل
+   في مرماه ويُحتسب عليه الهدف — وهو من الفريق المستقبِل (cd). الفانتسي يقرأ og
+   نفسه، فتوحّدت القراءة بين الموقع واللعبة (منصور 2026-09-16) */
+const isOG = g => !!g && g.bp==="هدف عكسي";
 /* وسم الهدف العكسي: اسم المدافع الذي ارتدت عنه الكرة */
 const ogLabel = g => (g && g.bp==="هدف عكسي")
   ? ` <span style="color:var(--loss);font-size:.72rem">هدف عكسي${g.og?" · ارتدت عن "+esc(g.og):""}</span>`
@@ -2664,7 +2668,7 @@ function standings(){
 function scorers(){
   const p={};
   GOALS.forEach(g=>{ if(g.bp==="هدف عكسي") return; const k=g.p+"|"+g.sc; (p[k]??={n:g.p,c:g.sc,g:0,a:0}).g++; });   /* الهدف العكسي ليس للمسجّل — نفس تعريف ملف اللاعب */
-  GOALS.forEach(g=>{ if(!g.a) return; const k=g.a+"|"+g.sc; (p[k]??={n:g.a,c:g.sc,g:0,a:0}).a++; });
+  GOALS.forEach(g=>{ if(!g.a || isOG(g)) return; const k=g.a+"|"+g.sc; (p[k]??={n:g.a,c:g.sc,g:0,a:0}).a++; });
   return Object.values(p).sort((a,b)=>b.g-a.g||b.a-a.a);
 }
 function firstGoals(){
@@ -4869,7 +4873,7 @@ function playerMatchEvents(m, club, name){
   const comp = compOf(m);
   const gs = matchGoals(m).filter(g=>g.sc===club);
   const goals   = gs.filter(g=>g.p===name && g.bp!=="هدف عكسي").length;
-  const assists = gs.filter(g=>g.a===name).length;
+  const assists = gs.filter(g=>g.a===name && !isOG(g)).length;
   const cds = CARDS.filter(x=>x.r===m.round && compOf(x)===comp && x.club===club && x.p===name);
   const off = (typeof matchSubs==="function") && matchSubs(m).some(s=>s.club===club && s.out===name);
   return {goals, assists, off, red:cds.some(c=>isRed(c.type)), yellow:cds.some(c=>isYellow(c.type))};
@@ -6118,11 +6122,12 @@ function goalsTimeline(m,gs,mc){
     }
     const g=e.g;
     if(isH) h++; else a++;
-    const og = g.bp==="هدف عكسي";
+    const og = isOG(g);
     const body=`<div class="tl-ev${isH?" h":" a"}">
         <div class="tl-card">
-          <div class="tl-name" data-player="${esc(g.p)}" data-club="${og?esc(g.cd||""):esc(g.sc)}">${ICO_BALL}${esc(g.p)}${og?`<i class="tl-og">هدف عكسي</i>`:""}</div>
-          ${g.a?`<div class="tl-assist" data-player="${esc(g.a)}" data-club="${esc(g.sc)}">${ICO_BOOT}${esc(g.a)}</div>`:""}
+          <div class="tl-name" data-player="${esc(g.p)}" data-club="${esc(g.sc)}">${ICO_BALL}${esc(g.p)}${og?`<i class="tl-og">هدف عكسي</i>`:""}</div>
+          ${og ? (g.og?`<div class="tl-assist" data-player="${esc(g.og)}" data-club="${esc(g.cd||"")}">${ICO_BOOT}ارتدت عن ${esc(g.og)}</div>`:"")
+               : (g.a?`<div class="tl-assist" data-player="${esc(g.a)}" data-club="${esc(g.sc)}">${ICO_BOOT}${esc(g.a)}</div>`:"")}
           ${g.det?`<div class="tl-det">${esc(g.det)}</div>`:""}
         </div>
         <div class="tl-score" dir="ltr">${isH?`<b>${h}</b> - ${a}`:`${h} - <b>${a}</b>`}</div>
@@ -6350,7 +6355,7 @@ function renderClubBody(c){
   <h2 class="sec">أهداف النادي</h2>
   <div class="card pad">${s.gf.length?s.gf.map(g=>`<div class="gline" style="padding:6px 0;border-bottom:1px dashed rgba(143,166,196,.14)">
       <span class="gmin">${minLabel(g)}</span>
-      <span style="flex:1"><span data-player="${esc(g.p)}" data-club="${g.bp==="هدف عكسي"?esc(g.cd):esc(c)}">${esc(g.p)}</span>${ogLabel(g)} <span style="color:var(--slate);font-size:.72rem">ضد ${esc(g.cd)}</span></span>
+      <span style="flex:1"><span data-player="${esc(g.p)}" data-club="${esc(c)}">${esc(g.p)}</span>${ogLabel(g)} <span style="color:var(--slate);font-size:.72rem">ضد ${esc(g.cd)}</span></span>
       <span class="gtag">${esc(g.zone)}</span></div>`).join(""):'<span style="color:var(--slate)">لا توجد أهداف مسجّلة بعد.</span>'}</div>
   </div>
   <div class="ctab-panel" data-cp="squad">${clubSquadHTML(c)}</div>
@@ -10085,8 +10090,8 @@ function playerProfileData(name, club){
   const former=playerFormerClubs(name, club, PP), clubs=[club, ...former];
   const sum=f=>clubs.reduce((t,c)=>t+f(c),0);
   const goals   = sum(c=>GOALS.filter(g=>g.sc===c && g.p===name && g.bp!=="هدف عكسي").length);
-  const assists = sum(c=>GOALS.filter(g=>g.sc===c && g.a===name).length);
-  const ownG    = GOALS.filter(g=>g.p===name && g.bp==="هدف عكسي" && !clubs.includes(g.sc)).length;
+  const assists = sum(c=>GOALS.filter(g=>g.sc===c && g.a===name && !isOG(g)).length);
+  const ownG    = GOALS.filter(g=>isOG(g) && g.og===name && clubs.includes(g.cd)).length;
   const y = sum(c=>CARDS.filter(x=>x.p===name && x.club===c && isYellow(x.type)).length);
   const rd= sum(c=>CARDS.filter(x=>x.p===name && x.club===c && isRed(x.type)).length);
   const pens = sum(c=>PENS.filter(x=>x.p===name && x.by===c).length);
@@ -10097,7 +10102,7 @@ function playerProfileData(name, club){
       const w=playerWindow(m,cl,name); if(!w || w.end<=w.start) return;
       const gs=matchGoals(m);
       const g=gs.filter(x=>x.sc===cl && x.p===name && x.bp!=="هدف عكسي").length;
-      const a=gs.filter(x=>x.sc===cl && x.a===name).length;
+      const a=gs.filter(x=>x.sc===cl && x.a===name && !isOG(x)).length;
       const con=gs.filter(x=>x.sc!==cl && abs(x)>=w.start && (w.end>=MATCH_MIN || abs(x)<=w.end)).length; conceded+=con;   /* ما لم يُستبدل، أهداف 90+ عليه أيضاً */
       const cd=CARDS.filter(x=>x.r===m.round && compOf(x)===compOf(m) && x.club===cl && x.p===name);
       const home=m.home===cl, opp=home?m.away:m.home;
@@ -10189,7 +10194,7 @@ function seasonPlayerStats(){
   const pp=(typeof playerPlay==="function")?playerPlay():[];
   const map={};
   const get=(n,c)=>map[n+"|"+c] || (map[n+"|"+c]={n,c,g:0,a:0,apps:0,mins:0,y:0,r:0,cs:0});
-  GOALS.forEach(g=>{ if(g.bp!=="هدف عكسي") get(g.p,g.sc).g++; if(g.a) get(g.a,g.sc).a++; });
+  GOALS.forEach(g=>{ if(!isOG(g)){ get(g.p,g.sc).g++; if(g.a) get(g.a,g.sc).a++; } });
   pp.forEach(x=>{ const e=get(x.n,x.c); e.apps=x.apps; e.mins=x.mins; e.cs=x.cs; });
   CARDS.forEach(x=>{ const e=get(x.p,x.club); if(isYellow(x.type)) e.y++; if(isRed(x.type)) e.r++; });
   return Object.values(map);
@@ -10782,6 +10787,8 @@ const I18N_EXTRA = {
   "عبد الله جمالي":"Abdullah Jamali",
   /* نص تحميل مؤقت */
   "جارٍ تحميل الأصوات…":"Loading votes…",
+  /* وسم الهدف العكسي */
+  "ارتدت عن ⟨x⟩":"Deflected off ⟨x⟩",
   'الفريق الأول':'First team', 'المنتخب الأولمبي':'Olympic team', 'نبذة عن الاتحاد':'About the FA', 'الهدافون التاريخيون':'All-time top scorers', 'الأكثر مشاركة':'Most capped',
   'دوري أبطال الخليج للأندية':'Gulf Club Champions League', 'دوري أبطال آسيا 2':'AFC Champions League Two', 'دوري التحدي الآسيوي':'AFC Challenge League', 'محلي':'Domestic', 'خارجي':'International', 'كل المسابقات':'All competitions', 'أُقيمت':'Played', 'مجموعة الأزرق':'Kuwait’s group', 'مجموعة كاظمة':'Kazma’s group', 'مجموعة الكويت':'Kuwait SC’s group', 'المجموعة C · القادسية':'Group C · Qadsia', 'مجموعة العربي':'Al-Arabi’s group', 'الفريق':'Team',
 };
@@ -10842,8 +10849,8 @@ function ratingCtx(m, club, name){
     win:gf>ga, draw:gf===ga, loss:gf<ga,
     goals: mine.filter(g=>g.det!=="ركلة جزاء").length,
     penGoals: mine.filter(g=>g.det==="ركلة جزاء").length,
-    assists: gs.filter(g=>g.a===name && g.sc===club).length,
-    ownGoals: gs.filter(g=>g.p===name && g.bp==="هدف عكسي" && g.cd===club).length,
+    assists: gs.filter(g=>g.a===name && g.sc===club && !isOG(g)).length,
+    ownGoals: gs.filter(g=>isOG(g) && g.og===name && g.cd===club).length,
     yellow: cards.filter(x=>isYellow(x.type) && !isRed(x.type)).length, red,
     penMissed: pens.filter(p=>p.res && p.res!=="سجلت").length,
     conceded: gs.filter(g=>g.cd===club && on(g)).length,
@@ -10998,8 +11005,10 @@ function mpResult(m, club){           /* فوز/تعادل/خسارة من زا�
 }
 const MP_RES = {w:"ف", d:"ت", l:"خ"};
 function mpScorers(m, club){
-  return matchGoals(m).filter(g=>g.sc===club).map(g=>{ const og=g.bp==="هدف عكسي";
-    return `<span data-player="${esc(g.p)}" data-club="${esc(og?(g.cd||""):g.sc)}">${esc(g.p)} <em dir="ltr">${minLabel(g)}</em>${og?" <em>(ع)</em>":""}</span>`; }).join("");
+  return matchGoals(m).filter(g=>g.sc===club).map(g=>{ const og=isOG(g);
+    /* العكسي يُنسب لمن سجّله في مرماه، وهو من الفريق المستقبِل (منصور 2026-09-16) */
+    const nm = og ? (g.og || g.p) : g.p, cl = og ? (g.cd || "") : g.sc;
+    return `<span data-player="${esc(nm)}" data-club="${esc(cl)}">${esc(nm)} <em dir="ltr">${minLabel(g)}</em>${og?" <em>(ع)</em>":""}</span>`; }).join("");
 }
 const MP_BALL=`<svg class="mp-ball" viewBox="0 0 64 64" aria-hidden="true"><defs><radialGradient id="mpbg" cx="36%" cy="30%" r="75%"><stop offset="0" stop-color="#ffffff"/><stop offset=".65" stop-color="#e6ebf1"/><stop offset="1" stop-color="#9aa6b2"/></radialGradient><clipPath id="mpbc"><circle cx="32" cy="32" r="30"/></clipPath></defs><circle cx="32" cy="32" r="30" fill="url(#mpbg)"/><g clip-path="url(#mpbc)"><g fill="#1c2530"><polygon points="32.00,23.50 40.08,29.37 37.00,38.88 27.00,38.88 23.92,29.37"/><polygon points="32.00,15.00 24.39,9.47 27.30,0.53 36.70,0.53 39.61,9.47"/><polygon points="48.17,26.75 51.07,17.80 60.48,17.80 63.38,26.75 55.78,32.27"/><polygon points="41.99,45.75 51.40,45.75 54.30,54.70 46.69,60.23 39.09,54.70"/><polygon points="22.01,45.75 24.91,54.70 17.31,60.23 9.70,54.70 12.60,45.75"/><polygon points="15.83,26.75 8.22,32.27 0.62,26.75 3.52,17.80 12.93,17.80"/></g><path d="M32.00 23.50L32.00 15.00 M32.00 15.00L44.34 15.01L49.63 7.73 M40.08 29.37L48.17 26.75 M48.17 26.75L51.97 38.49L60.53 41.27 M37.00 38.88L41.99 45.75 M41.99 45.75L32.00 53.00L32.00 62.00 M27.00 38.88L22.01 45.75 M22.01 45.75L12.03 38.49L3.47 41.27 M23.92 29.37L15.83 26.75 M15.83 26.75L19.66 15.01L14.37 7.73" stroke="#39434f" stroke-width="1.1" fill="none"/></g><circle cx="32" cy="32" r="30" fill="none" stroke="#11161d" stroke-width="1.6"/></svg>`;
 function mpHeader(m){
@@ -11355,7 +11364,7 @@ function openMatchFromHash(){
     (A.lineups||[]).forEach(x=>add(x.p,x.club));
     (A.cards||CARDS||[]).forEach(x=>add(x.p,x.club));
     /* الأبرز أولاً عند التساوي: أهداف + صناعة */
-    (A.goals||GOALS||[]).forEach(g=>{ const o=map.get(g.p+"|"+g.sc); if(o) o.score+=3; const a=map.get(g.a+"|"+g.sc); if(a) a.score+=2; });
+    (A.goals||GOALS||[]).forEach(g=>{ if(isOG(g)) return; const o=map.get(g.p+"|"+g.sc); if(o) o.score+=3; const a=map.get(g.a+"|"+g.sc); if(a) a.score+=2; });
     idxKey=key; return idx=[...map.values()];
   }
   function search(q){
