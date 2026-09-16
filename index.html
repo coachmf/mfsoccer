@@ -6318,6 +6318,8 @@ function renderMatches(){
         ${m.venue?`<span>${esc(m.venue)}</span>`:""}
         ${COMP==="الكل"?`<span>${esc(compOf(m))}</span>`:""}
         ${(y||r)?`<span class="mc-cards">${y?`<b><i class="cardpill y"></i>${y}</b>`:""}${r?`<b><i class="cardpill r"></i>${r}</b>`:""}</span>`:""}
+        ${(()=>{ const cw=crewOf(m), v=cw.refs.var; return (cw.ref?`<span class="mc-ref">${refRoleIco("ref","sm")}${esc(cw.ref)}</span>`:"")
+          + (v && v!=="لا يوجد" ?`<span class="mc-ref">${refRoleIco("var","sm")}${esc(v)}</span>`:""); /* حكم الساحة وحكم الفيديو بأيقوناتهم (منصور 2026-09-16) */ })()}
       </div>
       ${m.note?`<div class="mc-note">${esc(m.note)}</div>`:""}
     </article>`;
@@ -9226,6 +9228,8 @@ html[data-theme="dark"] .mc-score{background:#182C48}
 .mc-sc span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.mc-sc i{font-style:normal;font-variant-numeric:tabular-nums;opacity:.8}
 .mc-foot{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;padding:0 12px 10px;font-size:.68rem;color:var(--slate)}
 .mc-foot>span+span::before{content:"·";margin-inline-end:10px;opacity:.6}
+.mc-foot .mc-ref{display:inline-flex;align-items:center;gap:0;white-space:nowrap}
+.mc-foot .mc-ref .ref-role.sm{width:15px;height:15px;margin-inline-end:4px;vertical-align:0}
 .mc-foot .mc-date{font-variant-numeric:tabular-nums;unicode-bidi:isolate}
 .mc-cards{display:inline-flex;gap:8px}
 .mc-cards b{display:inline-flex;align-items:center;gap:4px;font-weight:700;color:var(--head,#fff)}
