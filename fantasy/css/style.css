@@ -1131,3 +1131,11 @@ html.lang-en .pp-actions{justify-content:flex-start;}
   .bench-strip .pslot{width:66px}
   .bench-strip .pslot .pk .kit.kit-img,.bench-strip .pslot .pk .kit{width:56px!important;height:56px!important;margin:0 0 -6px!important}
 }
+
+/* منصور 2026-09-16 (5): شارتا C/V لا تلمسان القميص — القميص أصغر قليلاً ومنخفض داخل المربع، والشارة في الزاوية الفارغة أعلاه */
+.pslot .pk .kit.kit-img,.pslot .pk .kit{width:70px!important;height:70px!important;margin:0 0 -10px!important}
+.pslot .badge,.pslot .badge.v{top:3px!important;right:3px!important}
+@media (max-width:860px){
+  .pslot .pk .kit.kit-img,.pslot .pk .kit{width:52px!important;height:52px!important;margin:0 0 -8px!important}
+  .pslot .badge,.pslot .badge.v{top:2px!important;right:2px!important;width:14px!important;height:14px!important;font-size:.48rem!important;border-width:1px!important}
+}
