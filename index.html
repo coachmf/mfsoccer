@@ -2180,6 +2180,52 @@ html[data-theme="light"] .an-card{box-shadow:0 1px 3px rgba(11,31,58,.06)}
 .an-tiles .txt b{font-size:.9rem}
 .an-tiles span{font-size:.66rem;color:var(--an-mut)}
 .an-pens .goalwrap{max-width:420px;margin:0 auto}
+/* الخريطة الحرارية v3 */
+.an #heatLeague .segbar{display:flex;justify-content:center;gap:4px;border-bottom:1px solid var(--an-line);margin:-4px -16px 14px;padding:0 12px}
+.an #heatLeague .segbar .seg{background:none!important;border:0!important;border-radius:0;color:var(--an-mut)!important;padding:10px 14px;position:relative;font-weight:600;box-shadow:none}
+.an #heatLeague .segbar .seg[aria-pressed="true"]{color:var(--an-txt)!important}
+.an #heatLeague .segbar .seg[aria-pressed="true"]::after{content:"";position:absolute;inset-inline:10px;bottom:-1px;height:3px;border-radius:3px 3px 0 0;background:var(--an-acc)}
+.ah-wrap{max-width:440px;margin:4px auto 0}
+.ah{width:100%;height:auto;display:block;overflow:visible}
+.ah-grass{fill:#1E4D31}
+.ah-ln rect,.ah-ln path{fill:none;stroke:rgba(255,255,255,.72);stroke-width:.55}
+.ah-ln .dash{stroke:rgba(255,255,255,.35);stroke-width:.4;stroke-dasharray:1.6 1.4}
+.ah-goal{fill:rgba(255,255,255,.12);stroke:rgba(255,255,255,.85);stroke-width:.5}
+.ahb .dot{fill:rgba(8,21,39,.82);stroke:rgba(127,224,255,.85);stroke-width:.55}
+.ahb text{font-family:var(--body);font-weight:800;font-size:4.2px;fill:#fff;text-anchor:middle;dominant-baseline:central}
+.ahb.nil .dot{fill:rgba(8,21,39,.5);stroke:rgba(143,166,196,.45)}
+.ahb.nil text{fill:rgba(220,230,245,.6)}
+.ahb.top .dot{fill:#0B3A66;stroke:#7FE0FF;stroke-width:.8}
+.ahb.top text{font-size:5.2px}
+.ahb.top .ring{fill:none;stroke:rgba(127,224,255,.55);stroke-width:.5;stroke-dasharray:1 .8}
+.ah-sm{font-family:var(--body);font-size:3.1px;fill:rgba(235,244,255,.85);text-anchor:middle;dominant-baseline:central}
+.ah-sm.out{fill:var(--an-mut)}
+.ah-legend{direction:ltr;display:flex;align-items:center;justify-content:center;gap:10px;margin:10px 0 2px;font-size:.7rem;color:var(--an-mut)}
+.ah-legend i{width:150px;height:8px;border-radius:6px;background:linear-gradient(90deg,#0D3A8C,#12B8F2,#2FD9E0,#F9E64A,#FF9A1F,#E8331C)}
+.ah-list{margin-top:14px;border:1px solid var(--an-line);border-radius:14px;overflow:hidden}
+.ah-list-hd{padding:9px 12px;background:var(--an-track);color:var(--an-txt);font-weight:700;font-size:.8rem}
+.ah-list .an-rows{padding:0 12px}
+@media(min-width:900px){.an-duo .ah-list .an-rows.two{grid-template-columns:1fr}}
+.ah-list .an-row.nil{opacity:.55}
+
+.an{--an-cell0:rgba(143,166,196,.08)}
+html[data-theme="light"] .an{--an-cell0:rgba(100,116,139,.08)}
+.an-goal{max-width:440px;margin:4px auto 0}
+.an-goal svg{width:100%;height:auto;display:block;overflow:visible}
+.an-goal .gband{stroke:rgba(143,166,196,.28);stroke-width:.5;stroke-dasharray:2 1.5}
+.an-goal .gnet line{stroke:rgba(255,255,255,.07);stroke-width:.35}
+html[data-theme="light"] .an-goal .gnet line{stroke:rgba(11,31,58,.07)}
+.an-goal .gc{stroke:none}
+.an-goal .ggrid line{stroke:rgba(255,255,255,.22);stroke-width:.5}
+html[data-theme="light"] .an-goal .ggrid line{stroke:rgba(11,31,58,.18)}
+.an-goal .gpost{fill:none;stroke:#fff;stroke-width:2.4;stroke-linejoin:round;filter:drop-shadow(0 0 3px rgba(255,255,255,.35))}
+html[data-theme="light"] .an-goal .gpost{stroke:#0B1F3A;filter:none}
+.an-goal .gline{stroke:var(--an-mut);stroke-width:.8;opacity:.6}
+.an-goal .gn{font-family:var(--body);font-weight:800;font-size:9px;fill:#fff;text-anchor:middle;dominant-baseline:central;paint-order:stroke;stroke:rgba(6,21,41,.55);stroke-width:1.6}
+.an-goal .gn.sm{font-size:6px}
+html[data-theme="light"] .an-goal .gn{fill:#0B1F3A;stroke:rgba(255,255,255,.7)}
+.an-goal .glab{font-family:var(--body);font-size:4.2px;font-weight:600;fill:var(--an-mut);text-anchor:middle;dominant-baseline:central}
+
 .an-fg{display:flex;align-items:center;gap:18px}
 .an-donut{width:150px;height:150px;flex:none}
 .an-dc{font-size:24px;font-weight:800;fill:var(--an-txt);text-anchor:middle}
@@ -3058,14 +3104,76 @@ function zoneList(list){
 const CATS=["الكل","لعب مفتوح","كرات ثابتة"];
 function filterCat(list,cat){ return cat==="الكل"?list:list.filter(g=>g.cat===cat); }
 
+/* الخريطة الحرارية للتحليل v3 (منصور 2026-09-17، تصميم Gemini): حرارة متصلة أزرق←سماوي←أصفر←برتقالي←أحمر
+   تُلوَّن بمرشّح SVG من شدة البقع، وشارة عدد لكل منطقة (الصفر باهت) وتمييز المنطقة الأعلى. */
+let AN_HEAT_UID=0;
+function anHeatSVG(list){
+  const counts={}; ZONES.forEach(z=>counts[z.k]=0);
+  list.forEach(g=>{ if(counts[g.zone]!==undefined) counts[g.zone]++; });
+  const mx=Math.max(1,...Object.values(counts)), u="ah"+(++AN_HEAT_UID);
+  const ctr=z=>[z.lx ?? (z.t==="c"? z.cx : z.x+z.w/2), z.ly ?? (z.t==="c"? z.cy : z.y+z.h/2)];
+  const blob=z=>{ const n=counts[z.k]; if(!n) return ""; const k=n/mx, [cx,cy]=ctr(z);
+    const r=(z.t==="c"?10:Math.min(18,Math.max(10,Math.min(z.w,z.h)*.6)))*(0.9+0.5*k);
+    return `<circle cx="${cx}" cy="${cy}" r="${r.toFixed(1)}" fill="url(#${u}g)" opacity="${(0.22+0.78*k).toFixed(2)}"/>`; };
+  const badge=z=>{ const n=counts[z.k], [cx,cy]=ctr(z), top=n===mx&&n>0, R=top?5.4:(n>=10?4.6:4);
+    return `<g class="ahb${n?"":" nil"}${top?" top":""}"><title>${esc(z.k)}: ${n}</title>
+      ${top?`<circle class="ring" cx="${cx}" cy="${cy}" r="${R+2.4}"/>`:""}
+      <circle class="dot" cx="${cx}" cy="${cy}" r="${R}"/><text x="${cx}" y="${cy}">${n}</text></g>`; };
+  const stripes=[...Array(10)].map((_,i)=>i%2?`<rect x="0" y="${2+i*9.8}" width="100" height="9.8" fill="rgba(255,255,255,.035)"/>`:"").join("");
+  return `<div class="ah-wrap"><svg class="ah" viewBox="-3 -6 106 112" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="خريطة أماكن التسجيل">
+    <defs>
+      <radialGradient id="${u}g"><stop offset="0" stop-color="#fff" stop-opacity="1"/><stop offset=".55" stop-color="#fff" stop-opacity=".7"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>
+      <filter id="${u}f" x="-20%" y="-20%" width="140%" height="140%" color-interpolation-filters="sRGB">
+        <feGaussianBlur stdDeviation="2.4"/>
+        <feColorMatrix type="matrix" values="0 0 0 1.1 0  0 0 0 1.1 0  0 0 0 1.1 0  0 0 0 1.1 0"/>
+        <feComponentTransfer>
+          <feFuncR type="table" tableValues="0.05 0.05 0.18 0.98 1 1 0.92"/>
+          <feFuncG type="table" tableValues="0.2 0.45 0.85 0.9 0.62 0.3 0.12"/>
+          <feFuncB type="table" tableValues="0.55 0.95 0.95 0.25 0.1 0.08 0.1"/>
+          <feFuncA type="table" tableValues="0 0.45 0.62 0.74 0.82 0.88 0.92"/>
+        </feComponentTransfer>
+      </filter>
+      <clipPath id="${u}c"><rect x="0" y="2" width="100" height="98" rx="1"/></clipPath>
+    </defs>
+    <rect class="ah-grass" x="0" y="2" width="100" height="98" rx="1"/>
+    <g clip-path="url(#${u}c)">${stripes}<g filter="url(#${u}f)">${ZONES.map(blob).join("")}</g></g>
+    <g class="ah-ln">
+      <rect x="0" y="2" width="100" height="98" rx="1"/>
+      <rect x="21" y="2" width="58" height="32"/>
+      <rect x="36" y="2" width="28" height="12"/>
+      <path d="M 34.5 34 A 17 17 0 0 0 65.5 34"/>
+      <path d="M 36 100 A 14 14 0 0 1 64 100"/>
+      <path d="M 0 5 A 3 3 0 0 0 3 2 M 97 2 A 3 3 0 0 0 100 5"/>
+      <line class="dash" x1="0" y1="64" x2="100" y2="64"/>
+    </g>
+    <circle cx="50" cy="24" r=".8" fill="rgba(255,255,255,.9)"/>
+    <rect class="ah-goal" x="43" y="-1.2" width="14" height="3.2" rx=".6"/>
+    ${ZONES.map(badge).join("")}
+    <text class="ah-sm out" x="50" y="-3.6">المرمى</text>
+    <text class="ah-sm" x="6" y="49">يسار</text>
+    <text class="ah-sm" x="94" y="49">يمين</text>
+    <text class="ah-sm" x="50" y="68.5">مسافة بعيدة</text>
+  </svg></div>
+  <div class="ah-legend"><span>أقل</span><i></i><span>أكثر</span></div>`;
+}
+function anZoneRows(list){
+  const c={}; list.forEach(g=>{ if(g.zone) c[g.zone]=(c[g.zone]||0)+1; });
+  ZONES.forEach(z=>{ if(c[z.k]===undefined) c[z.k]=0; });
+  const rows=Object.entries(c).sort((a,b)=>b[1]-a[1]), tot=list.length||1, mx=Math.max(1,...rows.map(r=>r[1]));
+  if(!list.length) return '<div class="ztab-empty" style="padding:14px;text-align:center;color:var(--an-mut)">لا توجد أهداف ضمن هذا التصنيف.</div>';
+  return `<div class="ah-list"><div class="ah-list-hd">تفاصيل مناطق التسجيل</div><div class="an-rows two">${rows.map(([k,n],i)=>`<div class="an-row${i===0&&n?" top":""}${n?"":" nil"}">
+    <span class="rk">${i+1}</span><span class="dot" style="background:${n?`hsl(${Math.round(210-200*n/mx)} 85% 55%)`:"var(--an-track)"}"></span>
+    <span class="lb">${esc(k)}</span><span class="mb"><i style="width:${(n/mx*100).toFixed(1)}%"></i></span>
+    <span class="pc">${pct(n,tot)}%</span><b>${n}</b></div>`).join("")}</div></div>`;
+}
 let HM_LEAGUE="الكل";
 function renderLeagueHeat(){
   const list=filterCat(GOALS,HM_LEAGUE);
   $("#heatLeague").innerHTML = `
     <div class="segbar">${CATS.map(c=>`<button class="seg" data-c="${c}" aria-pressed="${c===HM_LEAGUE}">${c}</button>`).join("")}</div>
     ${heatStats(list)}
-    ${heatSVG(list)}
-    ${zoneTable(list)}
+    ${anHeatSVG(list)}
+    ${anZoneRows(list)}
     <p class="hint" style="margin-top:10px">${list.length} هدفاً معروضاً · الاتجاه من أسفل إلى أعلى نحو المرمى · اليسار واليمين من زاوية المهاجم.</p>`;
   $("#heatLeague").querySelectorAll(".seg").forEach(b=>b.onclick=()=>{HM_LEAGUE=b.dataset.c;renderLeagueHeat();});
 }
@@ -7193,13 +7301,39 @@ function anPeriods(){
     <div class="an-chart"><div class="half">${per.slice(0,4).map(col).join("")}</div><div class="ht"><span>بين الشوطين</span></div><div class="half">${per.slice(4).map(col).join("")}</div></div>
   </div>`;
 }
+/* خريطة مرمى الجزاءات للتحليل (منصور 2026-09-17): «خارج المرمى» شريط يحيط بالقائم والعارضة بدل صندوق تحت المرمى */
+function anGoalSVG(list){
+  const c={}; PZONES.forEach(z=>c[z]=0); list.forEach(x=>{ if(c[x.place]!==undefined) c[x.place]++; });
+  const mx=Math.max(1,...Object.values(c));
+  const fill=n=>{ if(!n) return "var(--an-cell0)"; const t=n/mx;
+    return `rgba(${Math.round(46+(233-46)*t)},${Math.round(176+(185-176)*t)},${Math.round(240+(73-240)*t)},${(0.30+0.6*t).toFixed(2)})`; };
+  const X0=26, Y0=20, CW=30, CH=26, GY=Y0+2*CH;            /* المرمى: 90×52 */
+  const cells=[["يسار أعلى",0,0],["وسط أعلى",1,0],["يمين أعلى",2,0],["يسار أسفل",0,1],["وسط أسفل",1,1],["يمين أسفل",2,1]];
+  const out=c["خارج المرمى"]||0;
+  const cellSVG=([z,i,j])=>{ const x=X0+i*CW, y=Y0+j*CH, n=c[z];
+    return `<rect class="gc" x="${x}" y="${y}" width="${CW}" height="${CH}" fill="${fill(n)}"><title>${z}: ${n}</title></rect>`
+      + (n?`<text class="gn" x="${x+CW/2}" y="${y+CH/2}">${n}</text>`:""); };
+  const net=[]; for(let x=X0+5;x<X0+3*CW;x+=5) net.push(`<line x1="${x}" y1="${Y0}" x2="${x}" y2="${GY}"/>`); for(let y=Y0+5;y<GY;y+=5) net.push(`<line x1="${X0}" y1="${y}" x2="${X0+3*CW}" y2="${y}"/>`);
+  /* الشريط الخارجي: مستطيل كبير ناقص المرمى (evenodd) */
+  const O={x:6,y:4,w:130,h:GY-4};
+  const band=`M${O.x} ${GY} V${O.y} H${O.x+O.w} V${GY} Z M${X0} ${GY} V${Y0} H${X0+3*CW} V${GY} Z`;
+  return `<div class="an-goal"><svg viewBox="0 0 142 ${GY+12}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="خريطة مرمى ركلات الجزاء">
+    <path class="gband" d="${band}" fill-rule="evenodd" fill="${out?fill(out):"var(--an-cell0)"}"><title>خارج المرمى: ${out}</title></path>
+    <g class="gnet">${net.join("")}</g>
+    ${cells.map(cellSVG).join("")}
+    <g class="ggrid"><line x1="${X0+CW}" y1="${Y0}" x2="${X0+CW}" y2="${GY}"/><line x1="${X0+2*CW}" y1="${Y0}" x2="${X0+2*CW}" y2="${GY}"/><line x1="${X0}" y1="${Y0+CH}" x2="${X0+3*CW}" y2="${Y0+CH}"/></g>
+    <path class="gpost" d="M${X0} ${GY} V${Y0} H${X0+3*CW} V${GY}"/>
+    <line class="gline" x1="0" y1="${GY}" x2="142" y2="${GY}"/>
+    <text class="glab" x="71" y="${(O.y+Y0)/2}">خارج إطار المرمى${out?` · ${out}`:""}</text>
+  </svg></div>`;
+}
 function anPens(){
   const L=PENS, has=L.some(x=>x.place);
   const scored=L.filter(x=>/سجل/.test(x.res||"")).length;
   const c={}; PZONES.forEach(z=>c[z]=0); L.forEach(x=>{ if(c[x.place]!==undefined) c[x.place]++; });
   const common=has?Object.entries(c).sort((a,b)=>b[1]-a[1])[0][0]:"—";
   return `<div class="an-card an-pens">
-    ${goalMap(L,true)}
+    ${anGoalSVG(L)}
     <div class="an-tiles t3">
       <div><b>${L.length}</b><span>مجموع الركلات</span></div>
       <div><b>${scored}</b><span>سُجّلت${L.length?` · ${pct(scored,L.length)}%`:""}</span></div>
