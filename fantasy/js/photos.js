@@ -4,7 +4,7 @@
 'use strict';
 
 /* رقم نسخة الصور: ارفعه عند إعادة توليد أي قصّة حتى لا يبقى المتصفح على النسخة القديمة */
-const PLAYER_PHOTOS_VER = '16';
+const PLAYER_PHOTOS_VER = '17';
 
 const PLAYER_PHOTOS = {
   // الصليبخات (17)
@@ -21,6 +21,12 @@ const PLAYER_PHOTOS = {
   'SLB|صالح خميس': '/assets/players/slb/2',
   'SLB|علي الموسوي': '/assets/players/slb/4',
   'SLB|خالد الشهري': '/assets/players/slb/7',
+  'SLB|محمد الرويعي': '/assets/players/slb/15',
+  'TDM|أبوبكر دوما': '/assets/players/tdm/77',
+  'TDM|وليد سعد': '/assets/players/tdm/3',
+  'TDM|أبوبكر دومبيا': '/assets/players/tdm/77',
+  'NSR|خالد محمد': '/assets/players/nsr/15',
+  'NSR|محمد خالد': '/assets/players/nsr/15',
   'SLB|نواف الشيباني': '/assets/players/slb/8',
   'SLB|عبدالمحسن الصليلي': '/assets/players/slb/10',
   'SLB|أحمد الفهد': '/assets/players/slb/13',
