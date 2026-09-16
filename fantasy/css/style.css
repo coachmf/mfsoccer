@@ -1055,3 +1055,22 @@ html.lang-en .ps-stats>div{border-left:none;border-right:1px solid var(--line);}
 /* أزرار ملف اللاعب: صف مستقل أسفل البطاقة، محاذاة لليسار (بعيداً عن القصّة التي تقف يميناً) */
 .pp-actions{width:100%;display:flex;gap:8px;justify-content:flex-end;margin-top:6px;}
 html.lang-en .pp-actions{justify-content:flex-start;}
+
+/* ===== بطاقة الملعب (منصور 2026-09-16): بلا اسم النادي فوق القميص، قميص أكبر وواضح، وأسفله يدخل تحت لوحة الاسم فلا يبدو معلّقاً ===== */
+.pslot .club-tag{display:none!important}
+.pslot{position:relative}
+.pslot .pk{height:auto;position:relative;z-index:1;margin-bottom:-12px;line-height:0}
+.pslot .pk .kit{width:74px;height:auto;filter:drop-shadow(0 4px 7px rgba(0,25,10,.35))}
+.pslot .nm,.pslot .pt{position:relative;z-index:2}
+.pslot .nm{box-shadow:0 -2px 6px rgba(0,25,10,.18)}
+.pslot .badge{top:2px;right:2px;z-index:3}
+.pslot .stflag{top:0;z-index:3}
+.bench-strip .pslot .pk .kit{width:62px}
+@media (max-width:860px){
+  .pslot{width:70px}
+  .pslot .pk{margin-bottom:-10px}
+  .pslot .pk .kit{width:62px;height:auto}
+  .pslot .badge{top:0;right:0}
+  .bench-strip .pslot{width:66px}
+  .bench-strip .pslot .pk .kit{width:54px}
+}
