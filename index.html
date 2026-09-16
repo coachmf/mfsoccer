@@ -1051,7 +1051,7 @@ table.lb td.pt{font-family:var(--display);font-weight:700;color:var(--sky);
 .printonly{display:none}
 @media print{
   @page{size:A4;margin:12mm}
-  html,body{background:#061529!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;padding:0}
+  html,body{background:#fff!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;padding:0}   /* الطباعة بالوضع الفاتح دائماً (منصور 2026-09-16) */
   .topbar,nav.tabs,.exportbar,.segbar,.iconbtn,.sitefoot,.wafab{display:none!important}
   .printonly{display:flex!important;align-items:center;gap:14px;border-bottom:2px solid #E9B949;
     padding-bottom:10px;margin-bottom:16px}
@@ -2549,7 +2549,7 @@ function extCardsHTML(evs, compName){
     if(!isMatch) return `${dayHead}<article class="mc soon"><div class="mc-stage">${esc(span?e.t:(parts.slice(0,-1).join(" - ")||e.t))}${e.n?`<em>${esc(e.n)}</em>`:""}</div></article>`;
     if(up) soon++; else done++;
     const st=up?'<span class="mc-st soon">لم تبدأ</span>':'<span class="mc-st done">انتهت</span>';
-    const mid = played ? `<span class="mc-score" dir="ltr">${+e.hg} - ${+e.ag}</span>` : `<span class="mc-time" dir="ltr">${e.time?esc(e.time):"—"}</span>`;
+    const mid = played ? `<span class="mc-score" dir="ltr">${+e.ag} - ${+e.hg}</span>` : `<span class="mc-time" dir="ltr">${e.time?esc(e.time):"—"}</span>`;
     return `${dayHead}<article class="mc${up?" soon":" done"}">
       <div class="mc-row">
         <div class="mc-team h">${extTeamCell(a)}</div>
@@ -4435,7 +4435,9 @@ const mkey=m=>`${m.round}|${compOf(m)}|${m.home}|${m.away}`;
    وبدقيقة أكبر تُقرأ كما هي. فيصح الإدخالان: «الشوط 2 الدقيقة 15» و«الشوط 2 الدقيقة 60». */
 function absMinute(h, m){
   const mm = +m || 0;
-  if(+h === 2 && mm <= 45) return 45 + mm;
+  /* «بين الشوطين» يُدخل كالشوط الثاني د45، وكان يُحسب 90 فيظهر اللاعب وكأنه أكمل المباراة (منصور 2026-09-16) */
+  if(+h === 2 && mm === 45) return 45;
+  if(+h === 2 && mm < 45) return 45 + mm;
   return mm;
 }
 /* أيقونات تفاصيل المباراة: كرة للهدف، حذاء للصناعة — كحلية بهوية الموقع */
@@ -5555,6 +5557,13 @@ async function exportImage(mode, club){
 }
 
 function exportPDF(title){
+  /* الطباعة تتم بالوضع الفاتح: بالوضع الداكن كان النص أبيض على ورق أبيض فتخرج الصفحات فارغة */
+  const prevTheme = (typeof THEME!=="undefined" && THEME.get) ? THEME.get() : null;
+  if(prevTheme && prevTheme!=="light" && THEME.apply){
+    THEME.apply("light");
+    const back = ()=>{ THEME.apply(prevTheme); window.removeEventListener("afterprint", back); };
+    window.addEventListener("afterprint", back);
+  }
   $("#printHead").innerHTML =
     `<img src="${BRAND}" alt="${esc(OWNER)}">
      <div style="flex:1">
@@ -5563,7 +5572,7 @@ function exportPDF(title){
      </div>
      <div style="text-align:left;font-size:.7rem;color:#E9B949;direction:ltr">${esc(HANDLES)}<br>
        <span style="color:#8FA6C4">© ${esc(OWNER)}</span></div>`;
-  window.print();
+  setTimeout(()=>window.print(), 350);   /* مهلة حتى تُطبَّق ألوان الوضع الفاتح قبل الطباعة */
 }
 
 function exportBar(mode, club, title){
@@ -6180,7 +6189,7 @@ function renderMatches(){
       <div class="mc-row">
         <div class="mc-team h">${crest(m.home)}<b>${esc(m.home)}</b></div>
         <div class="mc-mid">
-          ${soon ? `<span class="mc-time" dir="ltr">${m.time?esc(m.time):"—"}</span>` : `<span class="mc-score" dir="ltr">${m.hg} - ${m.ag}</span>`}
+          ${soon ? `<span class="mc-time" dir="ltr">${m.time?esc(m.time):"—"}</span>` : `<span class="mc-score" dir="ltr">${m.ag} - ${m.hg}</span>`   /* الصف RTL: المستضيف يميناً، فرقمه يمين العلامة (منصور 2026-09-16) */}
           ${st}
           <span class="mc-go" aria-hidden="true"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg></span>
         </div>
@@ -10953,7 +10962,9 @@ function mpLinesOf(S){
 function mpTeamXI(m, club){
   const comp=compOf(m), S=pitchSpots(m.round, comp, club);
   if(!S) return "";
-  const lines=mpLinesOf(S), L=lines.length;
+  /* نصف الملعب يُرسم والحارس أعلاه (الفريق يهاجم للأسفل)، فتنعكس الجهتان في نظر المشاهد:
+     يُعكس ترتيب كل خط ليقع الظهير الأيمن والجناح الأيمن على يسار الصورة (منصور 2026-09-16) */
+  const lines=mpLinesOf(S).map(l=>l.slice().reverse()), L=lines.length;
   const R=matchRatings(m, club), rmap={}; R.forEach(x=>rmap[x.n]=x.r.v);
   const avg=R.length ? Math.round(R.reduce((a,x)=>a+x.r.v,0)/R.length*100)/100 : null;
   const kit=Object.assign(kitOf(club),{club});
