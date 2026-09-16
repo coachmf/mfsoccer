@@ -9380,23 +9380,24 @@ html[data-theme="light"] .tp-stats{background:rgba(11,31,58,.03)}
 .tp-body{grid-template-columns:minmax(0,1fr) 128px}
 .tp-ph{width:60px;height:60px}
 .tp-id b{font-size:.95rem}
-/* الهاتف: شريط أفقي يُسحب بالإصبع — بطاقة مدمجة (صورة + اسم + 4 أرقام) بلا رادار، فالقسم كله بارتفاع بطاقة واحدة (منصور 2026-09-16) */
+/* الهاتف (منصور 2026-09-16): كل البطاقات ظاهرة بلا تمرير — شبكة عمودين ببطاقات مدمجة: العنوان، الصورة والاسم بجانب رادار صغير، والأرقام تحت */
 @media(max-width:900px){
-  .tp-row{display:flex;gap:8px;overflow-x:auto;scroll-snap-type:x mandatory;padding-bottom:4px;margin-inline:-2px;scrollbar-width:none}
-  .tp-row::-webkit-scrollbar{display:none}
-  .tp{flex:0 0 78%;scroll-snap-align:start;border-radius:14px}
+  .tp-row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
+  .tp{border-radius:12px}
   .tp:hover{transform:none}
-  .tp-hd{flex-direction:row;align-items:baseline;gap:6px;padding:8px 10px 0}
-  .tp-t{font-size:.8rem} .tp-sub{font-size:.58rem}
-  .tp-body{display:block;padding:0 6px}
-  .tp-body .rad{display:none}
-  .tp-id{display:grid;grid-template-columns:40px minmax(0,1fr);column-gap:8px;row-gap:1px;align-items:center;justify-items:start;text-align:start;padding:4px 4px 6px}
-  .tp-ph{width:40px;height:40px;margin:0;grid-column:1;grid-row:1/span 2;box-shadow:0 0 0 2px rgba(var(--ca-rgb),.8)}
-  .tp-id b,.tp-id .tp-club{grid-column:2}
-  .tp-id b{font-size:.82rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
-  .tp-club{font-size:.62rem} .tp-club .crest{width:14px;height:14px}
+  .tp:last-child:nth-child(odd){grid-column:1/-1}
+  .tp-hd{padding:6px 8px 0}
+  .tp-t{font-size:.74rem} .tp-sub{display:none}
+  .tp-body{grid-template-columns:minmax(0,1fr) 74px;align-items:center;gap:0;padding:0 2px 0 4px}
+  .tp-body .rad{display:block;width:74px;max-width:74px;height:auto}
+  .tp-body .rad text{display:none}
+  .tp-id{display:flex;flex-direction:column;align-items:flex-start;gap:1px;text-align:start;padding:2px 2px 4px;min-width:0}
+  .tp-ph{width:34px;height:34px;margin:0 0 2px;box-shadow:0 0 0 1.5px rgba(var(--ca-rgb),.8)}
+  .tp-id b{font-size:.72rem;line-height:1.15;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  .tp-club{font-size:.56rem;gap:3px} .tp-club .crest{width:12px;height:12px;border-radius:3px}
   .tp-id .tp-pos{display:none}
-  .tp-stats span{padding:4px 2px;font-size:.52rem} .tp-stats b{font-size:.78rem}}
+  .tp:last-child:nth-child(odd) .tp-body{grid-template-columns:minmax(0,1fr) 90px} .tp:last-child:nth-child(odd) .tp-body .rad{width:90px;max-width:90px}
+  .tp-stats span{padding:3px 1px;font-size:.48rem;gap:0} .tp-stats b{font-size:.74rem}}
 .tf{padding:4px 12px}
 .tf-r{display:grid;grid-template-columns:22px minmax(0,1fr) auto auto;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--line,rgba(143,166,196,.12));cursor:pointer}
 .tf-r:last-child{border-bottom:0}
