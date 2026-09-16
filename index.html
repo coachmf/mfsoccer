@@ -4771,16 +4771,29 @@ function shapeMen(club){
     .forEach(x=>{ if(!seen[x.p]){ seen[x.p]=1; ns.push(x.p); } });
   return shapeMenFrom(ns, club);    /* الملعب كما يراه الجمهور: بلا تكرار */
 }
+/* منصور 2026-09-16: لا تُعرض 4-2-4 أبداً — تُعامل كـ4-4-2 (الجناحان في خط الوسط)، سواء استُنتجت أو حُفظت من الإدارة */
+const normForm=f=>String(f||"")==="4-2-4" ? "4-4-2" : f;
 function autoForm(men){
   const c={D:0,M:0,F:0};
   men.forEach(p=>{ if(c[p.line]!==undefined) c[p.line]++; });
   const parts=[c.D,c.M,c.F].filter(n=>n);
-  return FORMATIONS.includes(parts.join("-")) ? parts.join("-") : (parts.join("-")||"4-4-2");
+  return normForm(FORMATIONS.includes(parts.join("-")) ? parts.join("-") : (parts.join("-")||"4-4-2"));
 }
 function autoFormation(club){ return autoForm(shapeMen(club)); }
 /* توزيع اللاعبين على صفوف الخطة */
 function shapeSlots(men, form){
+  form=normForm(form);
   const rows=String(form).split("-").map(Number).filter(n=>n>0);
+  /* خطة بثلاثة خطوط لا تطابق مراكز الكشف (مثل مهاجمين أربعة في 4-4-2): الجناح (يمين/يسار) ينزل للوسط بقدر النقص */
+  if(rows.length===3){
+    const cnt=l=>men.filter(p=>p.line===l).length;
+    let needM=rows[1]-cnt("M"), extraF=cnt("F")-rows[2];
+    if(needM>0 && extraF>0){
+      men=men.map(p=>({...p}));
+      men.filter(p=>p.line==="F" && shSide(p.role)!==1).forEach(p=>{ if(needM>0 && extraF>0){ p.line="M"; needM--; extraF--; } });
+      men.filter(p=>p.line==="F").forEach(p=>{ if(needM>0 && extraF>0){ p.line="M"; needM--; extraF--; } });
+    }
+  }
   const gk=men.filter(p=>p.line==="G").slice(0,1);
   const rest=men.filter(p=>p.line!=="G").slice()
     .sort((a,b)=>(SH_ORDER[a.line]-SH_ORDER[b.line])||(shSide(a.role)-shSide(b.role)));
@@ -4802,7 +4815,7 @@ function drawShape(club){
   const box=document.querySelector(`[data-pitchfor="${cssq(club)}"]`);
   if(!box) return;
   const st=EDIT.shapes[club]=EDIT.shapes[club]||{f:"",pos:{}};
-  const form=st.f||autoFormation(club);
+  const form=normForm(st.f||autoFormation(club));
   const kit=kitOf(club);
   box.innerHTML=`<div class="xip-lines"></div>`;
   shapeSlots(shapeMen(club),form).forEach(({p,x,y,n})=>{
@@ -4933,8 +4946,8 @@ function pitchSpots(round, comp, club){
   if(names.length<7) return null;               /* تشكيلة ناقصة: لا نرسم نصفها */
   const men=shapeMenFrom(names, club);
   const row=shapeRowOf(round, comp, club);
-  const form=(row&&row.f) || autoForm(men);
-  const pos =(row&&row.pos) || {};
+  const form=normForm((row&&row.f) || autoForm(men));
+  const pos =(row&&row.f==="4-2-4") ? {} : ((row&&row.pos) || {});   /* مواضع مسحوبة على خطة 4-2-4 لا تناسب 4-4-2 */
   const spots=shapeSlots(men, form).map(({p,x,y,n})=>{
     const ov=pos[p.n];
     return {p, x: ov?ov.x:x, y: ov?ov.y:y, n};
@@ -5783,7 +5796,7 @@ const EXT_FIXTURES=[
   {d:"2026-12-08",t:"كاظمة - الاتفاق السعودي - دوري أبطال الخليج للأندية",k:"بطولة خارجية",time:"17:00",venue:"استاد الصداقة والسلام",n:"الجولة 5"},
   {d:"2027-02-17",t:"عجمان الاماراتي - كاظمة - دوري أبطال الخليج للأندية",k:"بطولة خارجية",time:"22:30",venue:"استاد راشد بن سعيد",n:"الجولة 6"},
   /* نادي الكويت — دوري أبطال آسيا 2، دور المجموعات (المركز الإعلامي لنادي الكويت) */
-  {d:"2026-09-16",t:"الوحدة الاماراتي - الكويت - اسيا 2",k:"بطولة خارجية",time:"",venue:"استاد آل نهيان، أبوظبي",n:"الجولة 1"},
+  {d:"2026-09-16",t:"الوحدة الاماراتي - الكويت - اسيا 2",k:"بطولة خارجية",time:"19:00",venue:"استاد آل نهيان، أبوظبي",n:"الجولة 1"},
   {d:"2026-10-14",t:"الكويت - الخالدية البحريني - اسيا 2",k:"بطولة خارجية",time:"",venue:"استاد جابر المبارك الصباح",n:"الجولة 2"},
   {d:"2026-10-28",t:"ناساف الاوزبكي - الكويت - اسيا 2",k:"بطولة خارجية",time:"",venue:"الاستاد المركزي، قرشي",n:"الجولة 3"},
   {d:"2026-11-04",t:"الكويت - ناساف الاوزبكي - اسيا 2",k:"بطولة خارجية",time:"",venue:"استاد جابر المبارك الصباح",n:"الجولة 4"},
@@ -6593,7 +6606,7 @@ function fansPitchHTML(row, tal){
   });
   if(men.length<7) return "";
   const spots=shapeSlots(men, row.f||autoForm(men));
-  return `<div class="xi-t" style="justify-content:center"><i>${esc(row.f||"")}</i></div>
+  return `<div class="xi-t" style="justify-content:center"><i>${esc(normForm(row.f||""))}</i></div>
     <div class="xipitch half"><div class="xip-lines"></div>
     ${spots.map(({p,x,y,n})=>{
       /* بطاقة بصورة اللاعب وقميص ناديه (نفس بطاقة تشكيلة النادي والمباراة) بدل الدائرة الرقمية — 2026-09-15 */
@@ -9566,6 +9579,7 @@ html[data-theme="light"] .hm{--bg-card:#FFFFFF;--border-card:#E2E8F0;--text-prim
 <style>
 /* تبويب التشكيلة: بطاقة ملعب لكل فريق */
 .mpx{padding:0;overflow:hidden}
+.mpx-both .mpx-pitch{margin-bottom:0}
 .mpx-hd{display:flex;align-items:center;gap:10px;padding:12px 14px}
 .mpx-hd .crest{width:30px;height:30px}
 .mpx-hd>b{font-family:var(--display);font-size:1rem;color:var(--text-primary,#fff)}
@@ -11309,6 +11323,49 @@ function mpTeamXI(m, club){
     <div class="mpx-pitch" style="aspect-ratio:100/${H}">${svg}${players}</div>
   </div>`;
 }
+/* ملعب واحد للفريقين (منصور 2026-09-16): المضيف مرماه أعلى ويهاجم للأسفل، والضيف مرماه أسفل ويهاجم للأعلى — نفس بطاقة اللاعب والتقييم */
+function mpBothXI(m){
+  const comp=compOf(m), SH=pitchSpots(m.round, comp, m.home), SA=pitchSpots(m.round, comp, m.away);
+  if(!SH || !SA) return "";
+  const ROW=30, EDGE=5;
+  /* المضيف يهاجم للأسفل فتنعكس جهتاه في نظر المشاهد (كما في mpTeamXI)؛ الضيف يهاجم للأعلى فيبقى كما هو */
+  const LH=mpLinesOf(SH).map(l=>l.slice().reverse()), LA=mpLinesOf(SA);
+  const H=18+(LH.length+LA.length)*ROW;
+  const side=(club, lines, topOf)=>{
+    const R=matchRatings(m, club), rmap={}; R.forEach(x=>rmap[x.n]=x.r.v);
+    const kit=Object.assign(kitOf(club),{club});
+    return lines.map((line,li)=>line.map((sp,k)=>{
+      const n=line.length, pad = n===1 ? 50 : n===2 ? 30 : n===3 ? 19 : n===4 ? 13 : 10;
+      const x = n===1 ? 50 : pad + k*((100-2*pad)/(n-1));
+      const w = Math.min(24, 96/n);
+      const p=sp.p, cut=(typeof LOCAL_PHOTOS!=="undefined") ? photoCut(p.n, club) : null;
+      const kk=(String(p.p||"").toUpperCase()==="GK") ? (gkKitOf(club, p.s)||kit) : kit;
+      const v=rmap[p.n];
+      return `<div class="mpx-p" data-player="${esc(p.n)}" data-club="${esc(club)}" style="right:${x.toFixed(2)}%;top:${(topOf(li)/H*100).toFixed(2)}%;width:${w.toFixed(2)}%">
+      <span class="pp-card mpx-card${cut?"":" nophoto"}" style="${dotVars(kk)}">
+        ${cut?`<img class="pp-img mpx-stand" src="${cut}_s.webp?v=19" alt="" loading="lazy" draggable="false">`:`<span class="pp-num">${p.s||"–"}</span>`}
+        ${spotBadges(playerMatchEvents(m, club, p.n))}${natFlag(p.n, club)}
+        ${v!=null?`<span class="rtg mpx-r ${ratingCls(v)}">${v.toFixed(1)}</span>`:""}
+      </span>
+      <span class="mpx-nm">${p.s?`<em>${p.s}</em>`:""}${esc(shortName(p.n))}</span>
+    </div>`;
+    }).join("")).join("");
+  };
+  const players = side(m.home, LH, li=>EDGE+li*ROW) + side(m.away, LA, li=>H-EDGE-ROW-li*ROW);
+  const avgOf=c=>{ const R=matchRatings(m,c); return R.length ? Math.round(R.reduce((a,x)=>a+x.r.v,0)/R.length*100)/100 : null; };
+  const lineCol="var(--pitch-line,rgba(127,196,255,.24))", V='vector-effect="non-scaling-stroke"';
+  const svg=`<svg class="mpx-lines" viewBox="0 0 100 ${H}" preserveAspectRatio="none" aria-hidden="true"><g fill="none" stroke="${lineCol}" stroke-width="1" ${V}>
+    <rect x="2" y="2" width="96" height="${H-4}" rx="1.5" ${V}/>
+    <rect x="22" y="2" width="56" height="17" ${V}/><rect x="36" y="2" width="28" height="6.5" ${V}/><path d="M40 19a12 9 0 0 0 20 0" ${V}/>
+    <rect x="22" y="${H-19}" width="56" height="17" ${V}/><rect x="36" y="${H-8.5}" width="28" height="6.5" ${V}/><path d="M40 ${H-19}a12 9 0 0 1 20 0" ${V}/>
+    <line x1="2" y1="${H/2}" x2="98" y2="${H/2}" ${V}/><ellipse cx="50" cy="${H/2}" rx="13" ry="13" ${V}/></g></svg>`;
+  const hd=(c,S)=>`<div class="mpx-hd">${crest(c)}<b>${esc(c)}</b>${tavgHTML(avgOf(c))}<span class="mpx-form">${esc(S.form||"")}</span></div>`;
+  return `<div class="mp-card mpx mpx-both" style="${accentVars(m.home)}">
+    ${hd(m.home, SH)}
+    <div class="mpx-pitch" style="aspect-ratio:100/${H}">${svg}${players}</div>
+    ${hd(m.away, SA)}
+  </div>`;
+}
 /* تحت الملعبين: مبدّل الفريقين ← المدرب ← التبديلات ← الاحتياط (منصور 2026-09-15) */
 let MP_LT="home";
 function mpFacePh(n, c){
@@ -11340,7 +11397,8 @@ function mpLineups(m){
   if(isUpcoming(m)) return `<div class="mp-card mp-empty">تُنشر التشكيلة بعد انطلاق المباراة.</div>`;
   const h=mpTeamXI(m, m.home), a=mpTeamXI(m, m.away);
   if(!h && !a && !matchSubs(m).length) return `<div class="mp-card mp-empty">لم تُسجَّل تشكيلة هذه المباراة بعد.</div>`;
-  return `${h}${a}${mpTeamSection(m)}`;
+  const both=mpBothXI(m);   /* الفريقان على ملعب واحد؛ إن نقصت تشكيلة أحدهما يبقى الملعب المنفصل للآخر */
+  return `${both || (h+a)}${mpTeamSection(m)}`;
 }
 /* القائمة: كشف الفريقين كما في صفحة النادي (المدرب ثم المراكز) — منفصلة عن تشكيلة المباراة */
 let MP_SQ="home";
@@ -11877,7 +11935,7 @@ html.mx-editing #waFab{display:none!important}   /* زر واتساب كان ي�
   function slotsFor(club){
     const st=(EDIT.shapes||{})[club]||{f:"",pos:{}};
     const men=shapeMenFrom(starters(club), club);
-    const form=st.f||autoForm(men);
+    const form=normForm(st.f||autoForm(men));
     return {form, spots:shapeSlots(men, form).map(({p,x,y,n})=>{ const ov=(st.pos||{})[p.n]; return {p, x:ov?ov.x:x, y:ov?ov.y:y, n}; })};
   }
   function pitchHTML(club){
