@@ -1082,3 +1082,14 @@ html.lang-en .pp-actions{justify-content:flex-start;}
   border:2px solid #fff!important;box-shadow:0 3px 8px rgba(0,20,40,.35)!important;z-index:4}
 .pslot .badge.v{background:linear-gradient(145deg,#eef3fa,#c9d6e8)!important;color:#0b1f3a!important}
 @media (max-width:860px){ .pslot .badge{top:-7px!important;right:-9px!important;width:20px!important;height:20px!important;font-size:.58rem!important} }
+
+/* منصور 2026-09-16 (2): قمصان أكبر، والشارتان بلون واحد أبيض صغيرتان داخل حدود البطاقة (كانت V تُقص عند حافة الملعب) */
+.pslot .pk .kit{width:88px}
+.pslot .badge,.pslot .badge.v{top:-3px!important;right:1px!important;width:17px!important;height:17px!important;font-size:.56rem!important;
+  background:#fff!important;color:#0b1f3a!important;border:1.5px solid rgba(11,31,58,.18)!important;box-shadow:0 2px 5px rgba(0,20,40,.28)!important}
+@media (max-width:860px){
+  .pslot .pk .kit{width:72px}
+  .pslot .pk{margin-bottom:-12px}
+  .pslot .badge,.pslot .badge.v{top:-4px!important;right:0!important;width:16px!important;height:16px!important;font-size:.52rem!important}
+  .bench-strip .pslot .pk .kit{width:60px}
+}
