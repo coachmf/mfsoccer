@@ -10019,8 +10019,12 @@ function coachCardHTML(c){
     <div class="ps">المدرب</div>
   </div>`;
 }
+/* لاعبون لا يظهرون في القائمة المعروضة فقط — يبقون في النظام فلا تتأثر الفانتسي
+   ولا بيانات المباريات (منصور 2026-09-16) */
+const SQUAD_HIDE=[{c:"الكويت", n:"فينيسيوس"}];
+const isHidden=(club,name)=>SQUAD_HIDE.some(h=>h.c===club && _natKey(h.c,h.n)===_natKey(club,name));
 function clubSquadHTML(c){
-  const men=squadEntriesOf(c);
+  const men=squadEntriesOf(c).filter(x=>!isHidden(c, x.n));
   if(!men.length) return `<div class="card pad"><p class="hint" style="margin:0">لم يُرفع كشف لاعبي هذا النادي بعد.</p></div>`;
   const groups=[["G","حراس المرمى"],["D","الدفاع"],["M","الوسط"],["F","الهجوم"],["","بدون مركز محدد"]];
   const coach=coachCardHTML(c);
