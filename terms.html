@@ -9,6 +9,13 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700;800&display=swap">
+<!-- اللغة تُقرأ من نفس مفتاح الموقع mf_lang قبل الرسم فلا ترتدّ الصفحة (منصور 2026-09-16) -->
+<script>
+(function(){var l='ar';try{var q=new URLSearchParams(location.search).get('lang');
+  if(q==='en'||q==='ar'){localStorage.setItem('mf_lang',q);l=q;}
+  else l=localStorage.getItem('mf_lang')==='en'?'en':'ar';}catch(e){}
+  var d=document.documentElement; d.lang=l; d.dir=(l==='en'?'ltr':'rtl');})();
+</script>
 <style>
   :root{
     --navy:#061529; --navy2:#0B2242; --card:#0E2B52; --ink:#EAF2FB; --muted:#93A7C0;
@@ -24,13 +31,16 @@
   header img{width:38px;height:38px}
   header .t{font-family:var(--display);font-weight:800;font-size:1.05rem}
   header .t small{display:block;color:var(--muted);font-weight:400;font-size:.72rem;font-family:var(--body)}
+  header .lang{margin-inline-start:auto;background:none;border:1px solid var(--line);color:var(--muted);
+    font-family:var(--display);font-weight:600;font-size:.78rem;border-radius:9px;padding:6px 12px;cursor:pointer}
+  header .lang:hover{color:var(--ink);border-color:var(--sky)}
   h1{font-family:var(--display);font-weight:800;font-size:clamp(1.5rem,5vw,2rem);margin:0 0 6px;
     letter-spacing:-.01em}
   .updated{color:var(--muted);font-size:.8rem;margin:0 0 30px}
   h2{font-family:var(--display);font-weight:600;font-size:1.12rem;margin:34px 0 12px;
     padding-inline-start:12px;border-inline-start:3px solid var(--sky)}
   p{margin:0 0 14px}
-  ul{margin:0 0 14px;padding-inline-start:22px}
+  ul,ol{margin:0 0 14px;padding-inline-start:22px}
   li{margin-bottom:8px}
   b{color:#fff}
   a{color:var(--sky)}
@@ -38,15 +48,20 @@
   .box.good{border-inline-start:3px solid #35A47C}
   .foot{margin-top:44px;padding-top:20px;border-top:1px solid var(--line);color:var(--muted);font-size:.82rem}
   .foot a{color:var(--sky)}
+  /* نسخة واحدة تظهر حسب لغة الصفحة */
+  html[lang="en"] [data-lang="ar"]{display:none}
+  html[lang="ar"] [data-lang="en"]{display:none}
 </style>
 </head>
 <body>
 <div class="wrap">
   <header>
     <img src="/favicon.svg" alt="">
-    <div class="t">mfsoccer<small>إحصائيات الدوري الكويتي الممتاز</small></div>
+    <div class="t">mfsoccer<small data-lang="ar">إحصائيات الدوري الكويتي الممتاز</small><small data-lang="en">Kuwait Premier League Statistics</small></div>
+    <button type="button" class="lang" id="langBtn"></button>
   </header>
 
+  <div data-lang="ar">
   <h1>شروط الاستخدام</h1>
   <p class="updated" dir="rtl">آخر تحديث: 10 سبتمبر 2026</p>
 
@@ -117,6 +132,102 @@
     <p style="margin:0">© 2026 mfsoccer — إحصائيات الدوري الكويتي الممتاز ·
        <a href="/privacy.html">سياسة الخصوصية</a> · <a href="/">العودة للموقع</a></p>
   </div>
+  </div>
+
+  <div data-lang="en">
+  <h1>Terms of use</h1>
+  <p class="updated" dir="ltr">Last updated: 10 September 2026</p>
+
+  <p>By using <b>mfsoccer.com</b> or its app you agree to these terms.
+     If you do not agree to them, do not use the service.</p>
+
+  <div class="box good">
+    <p style="margin:0"><b>In short:</b> the service is completely free, with no ads and no cash
+    prizes. Browsing needs no account, and an account is optional — only for playing, predicting
+    or voting.</p>
+  </div>
+
+  <h2>1. The service</h2>
+  <p>mfsoccer publishes Kuwait Premier League statistics and lets members play a fantasy game,
+     predict round results and vote for the fans’ XI. The service is for entertainment only:
+     <b>there is no betting, no payment and no cash prize of any kind.</b></p>
+
+  <h2>2. Your account</h2>
+  <ul>
+    <li>You are responsible for the accuracy of your details and for keeping your password safe.</li>
+    <li>One account per person. Creating multiple accounts to manipulate the standings will get
+        them deleted.</li>
+    <li>You can delete your account and all your data at any time from inside the app:
+        <b>Profile → Delete my account permanently</b>.</li>
+  </ul>
+
+  <h2>3. Content you write</h2>
+  <p>Your username, team name and private-league name are visible to other members.
+     The following is strictly prohibited:</p>
+  <ul>
+    <li>Obscene, abusive or sexual language.</li>
+    <li>Insulting a person, club, tribe, religion or nationality, and incitement or bullying.</li>
+    <li>Impersonating someone else or claiming an official capacity.</li>
+    <li>Advertising, promotional links and repeated messages.</li>
+  </ul>
+  <p>We apply an automatic filter to names and we review reports. We may change any offending
+     name or delete the account without prior notice.</p>
+
+  <h2>4. Reporting and blocking</h2>
+  <p>Next to every member in the standings there is a <b>“Report”</b> button — use it for any
+     offending name or behaviour, and we deal with the report within 24 hours. You can also
+     <b>block</b> any member, and their name will disappear for you from every standings list.</p>
+
+  <h2>5. Fair use</h2>
+  <p>You may not attempt to hack or disrupt the service, scrape its data automatically in bulk,
+     or exploit a vulnerability to gain points or privileges. Breaching this means your account
+     is suspended.</p>
+
+  <h2>6. Intellectual property</h2>
+  <p>Club names, crests and sponsor marks belong to their owners and are shown for
+     identification and sports-statistics purposes. mfsoccer is an independent site, not
+     affiliated with the football association or with any club or sponsor.</p>
+
+  <h2>7. Limits of liability</h2>
+  <p>We do our best to keep the statistics accurate, but they may contain errors or lag behind
+     the official source. The service is provided “as is” without warranties, and we accept no
+     responsibility for any decision taken on the basis of it. We may suspend or change the
+     service at any time.</p>
+
+  <h2>8. Changes to these terms</h2>
+  <p>We may update these terms, and we put the last-updated date at the top of the page.
+     Continuing to use the service after an update means you accept the updated version.</p>
+
+  <h2>9. Contact us</h2>
+  <p>For any question or report:</p>
+  <ul>
+    <li>Email: <a href="mailto:coachmf.kw@gmail.com" dir="ltr">coachmf.kw@gmail.com</a></li>
+    <li>X: <a href="https://x.com/coach_mf" target="_blank" rel="noopener" dir="ltr">@coach_mf</a></li>
+    <li>Instagram: <a href="https://instagram.com/coachmf" target="_blank" rel="noopener" dir="ltr">@coachmf</a></li>
+  </ul>
+
+  <div class="foot">
+    <p style="margin:0">© 2026 mfsoccer — Kuwait Premier League Statistics ·
+       <a href="/privacy.html">Privacy policy</a> · <a href="/">Back to the site</a></p>
+  </div>
+  </div>
 </div>
+<script>
+(function(){
+  var d=document.documentElement, b=document.getElementById('langBtn');
+  function paint(){
+    var en=d.lang==='en';
+    document.title = en ? 'Terms of use — mfsoccer' : 'شروط الاستخدام — mfsoccer';
+    b.textContent = en ? 'ع' : 'EN';
+    b.title = b.ariaLabel = en ? 'العربية' : 'English';
+  }
+  b.addEventListener('click', function(){
+    var l = d.lang==='en' ? 'ar' : 'en';
+    try{ localStorage.setItem('mf_lang', l); }catch(e){}
+    d.lang=l; d.dir=(l==='en'?'ltr':'rtl'); paint();
+  });
+  paint();
+})();
+</script>
 </body>
 </html>

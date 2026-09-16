@@ -175,9 +175,9 @@ h2.sec::before{content:"";width:3px;height:16px;background:var(--sky);border-rad
 table{width:100%;border-collapse:collapse;font-size:.85rem;min-width:520px}
 thead th{background:var(--navy-800);color:var(--sky-soft);font-weight:600;font-size:.68rem;
   letter-spacing:.04em;padding:10px 6px;text-align:center;position:sticky;top:0}
-thead th:first-child{text-align:right;padding-right:12px}
+thead th:first-child{text-align:start;padding-inline-start:12px}
 tbody td{padding:9px 6px;text-align:center;border-bottom:1px solid rgba(143,166,196,.12);font-variant-numeric:tabular-nums}
-tbody td:first-child{text-align:right;padding-right:12px}
+tbody td:first-child{text-align:start;padding-inline-start:12px}
 tbody tr:nth-child(even){background:rgba(14,43,82,.4)}
 tbody tr.top{box-shadow:inset 3px 0 0 var(--sky)}
 tbody tr.rel{box-shadow:inset 3px 0 0 rgba(224,100,79,.7)}
@@ -994,7 +994,7 @@ html[data-theme="light"] .pm.pm2{background:#fff} html[data-theme="light"] .pm2 
   white-space:nowrap;transition:background .15s,color .15s}
 .bchips .chip.on{background:var(--sky);border-color:var(--sky);color:#04101f;font-weight:600}
 table.lb{width:100%;border-collapse:collapse;font-size:.82rem}
-table.lb th,table.lb td{padding:9px 11px;text-align:right;border-bottom:1px solid rgba(143,166,196,.13)}
+table.lb th,table.lb td{padding:9px 11px;text-align:start;border-bottom:1px solid rgba(143,166,196,.13)}
 table.lb th{font-family:var(--display);font-weight:600;font-size:.7rem;color:var(--slate);
   background:rgba(14,43,82,.5)}
 table.lb tr:last-child td{border-bottom:0}
@@ -9058,9 +9058,13 @@ html.pp-open,html.pp-open body{overflow:hidden}
 .plog-r .ev{display:flex;align-items:center;gap:5px;white-space:nowrap;direction:ltr}
 .plog-r .ev .rs{font-family:var(--display);font-weight:800;font-size:.78rem;padding:2px 7px;border-radius:7px;background:rgba(143,166,196,.16);color:var(--head,#fff)}
 .plog-r .ev .rs.w{background:rgba(53,164,124,.22);color:var(--win)}.plog-r .ev .rs.l{background:rgba(224,100,79,.2);color:var(--loss)}
-.plog-r .ev .mn{font-size:.68rem;color:var(--slate);font-variant-numeric:tabular-nums}
+.plog-r .ev .mn{font-size:.68rem;color:var(--slate);font-variant-numeric:tabular-nums;direction:ltr}
+/* دقيقة الدخول والخروج بجانب دقائق اللعب — كان السهم بلا رقم فيُقرأ الرقم خطأ على أنه دقيقة التبديل (منصور 2026-09-16) */
+.plog-r .ev .mn i{font-style:normal;margin-inline-start:4px;opacity:.72}
 .plog-r .ev .pp-b{position:static;display:inline-flex}
 .plog-r .ev .pp-b.goal em{font-style:normal;font-weight:800;color:#0B1F3A;font-size:.62rem;padding-inline-end:2px}
+.pprof-prev{padding:6px 18px 0;margin:0;font-size:.7rem;color:var(--slate)}
+.plog-r .op i.wth{opacity:.85}
 .pprof-empty{padding:0 18px 22px;font-size:.8rem;color:var(--slate)}
 /* ===== صفحة المباريات: فلتر جولات صغير + كروت مباريات هادئة (2026-09-15) ===== */
 .rpills{display:flex;align-items:center;gap:6px;overflow-x:auto;padding:2px 0 10px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
@@ -9377,12 +9381,14 @@ html[data-theme="light"] .hm{--bg-card:#FFFFFF;--border-card:#E2E8F0;--text-prim
 .hm-story p{margin:0;font-size:13px;line-height:1.5;color:var(--text-muted)}
 .hm-story p b{color:var(--text-primary);font-weight:700}
 /* الجدول */
-.hm-tblwrap{overflow:auto;max-height:70vh;-webkit-overflow-scrolling:touch}
+/* بلا سقف ارتفاع: كان 70vh يقصّ الجدول ببضع بكسلات فيظهر شريط تمرير داخلي
+   يدفع صاحب المركز الأول تحت رأس الجدول اللاصق (منصور 2026-09-16) */
+.hm-tblwrap{overflow:auto;max-height:none;-webkit-overflow-scrolling:touch}
 .hm-tbl{width:100%;min-width:0;border-collapse:separate;border-spacing:0;font-size:14px}
 .hm-tbl td.club{width:100%}
 .hm-tbl td.c,.hm-tbl th.c{width:28px}
 .hm-tbl th{position:sticky;top:0;z-index:2;background:var(--bg-card);color:var(--text-muted);font-weight:500;font-size:12px;padding:10px 6px;text-align:center;border-bottom:1px solid var(--border-card);white-space:nowrap}
-.hm-tbl th.club,.hm-tbl td.club{text-align:right}
+.hm-tbl th.club,.hm-tbl td.club{text-align:start}   /* منطقي لا ثابت: في الإنجليزية (LTR) كان اسم النادي يندفع لأقصى اليمين (منصور 2026-09-16) */
 .hm-tbl td{padding:9px 6px;text-align:center;font-variant-numeric:tabular-nums;font-family:var(--f-head);font-weight:600;border-bottom:1px solid rgba(148,163,184,.12);color:var(--text-primary)}
 .hm-tbl td.club{font-family:var(--f-body);font-weight:700}
 .hm-tbl td.club span{display:inline-flex;align-items:center;gap:8px;max-width:100%}
@@ -9647,7 +9653,7 @@ html.mp-open{overflow:hidden}
 .mp-tbl{width:100%;border-collapse:collapse;font-size:.8rem}
 .mp-tbl th{font-size:.66rem;font-weight:600;color:var(--text-muted,var(--slate));padding:4px 4px 8px;text-align:center}
 .mp-tbl td{padding:8px 4px;text-align:center;border-top:1px solid var(--border-card,rgba(143,166,196,.14));color:var(--text-primary,#fff);font-variant-numeric:tabular-nums}
-.mp-tbl .club{text-align:right}
+.mp-tbl .club{text-align:start}
 .mp-tbl .club span{display:flex;align-items:center;gap:8px}
 .mp-tbl .club .crest{width:22px;height:22px}
 .mp-tbl .pts{font-weight:800}
@@ -10066,32 +10072,42 @@ function clubOfPlayer(name){
   const cd=CARDS.find(x=>x.p===name); if(cd) return cd.club;
   return "";
 }
+/* أندية سابقة لعب لها اللاعب هذا الموسم: بعد انتقاله تبقى مبارياته معها في ملفه.
+   نضمّ النادي السابق فقط إن لم يعد اسمه في كشفه، حتى لا يندمج لاعبان يتشابه اسمهما (منصور 2026-09-16) */
+function playerFormerClubs(name, club, pp){
+  const L=pp||(typeof playerPlay==="function" ? playerPlay() : []);
+  return [...new Set(L.filter(p=>p.n===name && p.c!==club && !(SQUADS[p.c]||[]).some(x=>sqName(x)===name)).map(p=>p.c))];
+}
 function playerProfileData(name, club){
   const sq=(SQUADS[club]||[]).find(x=>sqName(x)===name)||null;
   const pos=sq?sqPos(sq):"", num=sq?sqNum(sq):0, gk=String(pos).toUpperCase()==="GK";
-  const goals   = GOALS.filter(g=>g.sc===club && g.p===name && g.bp!=="هدف عكسي").length;
-  const assists = GOALS.filter(g=>g.sc===club && g.a===name).length;
-  const ownG    = GOALS.filter(g=>g.p===name && g.bp==="هدف عكسي" && g.sc!==club).length;
-  const y = CARDS.filter(x=>x.p===name && x.club===club && isYellow(x.type)).length;
-  const rd= CARDS.filter(x=>x.p===name && x.club===club && isRed(x.type)).length;
-  const pens = PENS.filter(x=>x.p===name && x.by===club);
-  const pp=(typeof playerPlay==="function" ? playerPlay() : []).find(p=>p.n===name && p.c===club) || {apps:0,mins:0,cs:0};
+  const PP=(typeof playerPlay==="function" ? playerPlay() : []);
+  const former=playerFormerClubs(name, club, PP), clubs=[club, ...former];
+  const sum=f=>clubs.reduce((t,c)=>t+f(c),0);
+  const goals   = sum(c=>GOALS.filter(g=>g.sc===c && g.p===name && g.bp!=="هدف عكسي").length);
+  const assists = sum(c=>GOALS.filter(g=>g.sc===c && g.a===name).length);
+  const ownG    = GOALS.filter(g=>g.p===name && g.bp==="هدف عكسي" && !clubs.includes(g.sc)).length;
+  const y = sum(c=>CARDS.filter(x=>x.p===name && x.club===c && isYellow(x.type)).length);
+  const rd= sum(c=>CARDS.filter(x=>x.p===name && x.club===c && isRed(x.type)).length);
+  const pens = sum(c=>PENS.filter(x=>x.p===name && x.by===c).length);
+  const pp=clubs.reduce((t,c)=>{ const e=PP.find(x=>x.n===name && x.c===c); return e?{apps:t.apps+e.apps, mins:t.mins+e.mins, cs:t.cs+e.cs}:t; }, {apps:0,mins:0,cs:0});
   const log=[]; let conceded=0;
-  MATCHES.filter(m=>!isUpcoming(m) && (m.home===club||m.away===club))
-    .sort((a,b)=>(b.round-a.round)||String(b.date).localeCompare(String(a.date)))
-    .forEach(m=>{
-      const w=playerWindow(m,club,name); if(!w || w.end<=w.start) return;
+  clubs.forEach(cl=>{
+    MATCHES.filter(m=>!isUpcoming(m) && (m.home===cl||m.away===cl)).forEach(m=>{
+      const w=playerWindow(m,cl,name); if(!w || w.end<=w.start) return;
       const gs=matchGoals(m);
-      const g=gs.filter(x=>x.sc===club && x.p===name && x.bp!=="هدف عكسي").length;
-      const a=gs.filter(x=>x.sc===club && x.a===name).length;
-      const con=gs.filter(x=>x.sc!==club && abs(x)>=w.start && (w.end>=MATCH_MIN || abs(x)<=w.end)).length; conceded+=con;   /* ما لم يُستبدل، أهداف 90+ عليه أيضاً */
-      const cd=CARDS.filter(x=>x.r===m.round && compOf(x)===compOf(m) && x.club===club && x.p===name);
-      const home=m.home===club, opp=home?m.away:m.home;
+      const g=gs.filter(x=>x.sc===cl && x.p===name && x.bp!=="هدف عكسي").length;
+      const a=gs.filter(x=>x.sc===cl && x.a===name).length;
+      const con=gs.filter(x=>x.sc!==cl && abs(x)>=w.start && (w.end>=MATCH_MIN || abs(x)<=w.end)).length; conceded+=con;   /* ما لم يُستبدل، أهداف 90+ عليه أيضاً */
+      const cd=CARDS.filter(x=>x.r===m.round && compOf(x)===compOf(m) && x.club===cl && x.p===name);
+      const home=m.home===cl, opp=home?m.away:m.home;
       const gf=home?+m.hg:+m.ag, ga=home?+m.ag:+m.hg;
-      log.push({m,opp,home,mins:w.end-w.start,g,a,con,y:cd.some(x=>isYellow(x.type)),r:cd.some(x=>isRed(x.type)),
+      log.push({m,opp,home,wc:cl,mins:w.end-w.start,on:w.start,offAt:w.end,g,a,con,y:cd.some(x=>isYellow(x.type)),r:cd.some(x=>isRed(x.type)),
                 res:`${gf} - ${ga}`, k: gf>ga?"w":gf<ga?"l":"d", sub: w.start>0, off: w.end<MATCH_MIN});
     });
-  return {name, club, pos, num, gk, goals, assists, ownG, y, rd, pens:pens.length, apps:pp.apps, mins:pp.mins, cs:pp.cs, conceded, log};
+  });
+  log.sort((a,b)=>(b.m.round-a.m.round)||String(b.m.date).localeCompare(String(a.m.date)));
+  return {name, club, former, pos, num, gk, goals, assists, ownG, y, rd, pens, apps:pp.apps, mins:pp.mins, cs:pp.cs, conceded, log};
 }
 function playerProfileHTML(D){
   const cut=(PHOTOSON && typeof LOCAL_PHOTOS!=="undefined") ? photoCut(D.name, D.club) : null;
@@ -10106,9 +10122,9 @@ function playerProfileHTML(D){
   const logHTML = D.log.length ? `<div class="pprof-log"><h4>مباراة بمباراة</h4><div class="plog">${D.log.map(l=>`
     <div class="plog-r">
       <span class="rd">ج${l.m.round}${compOf(l.m)!=="الدوري"?" · "+esc(compOf(l.m)):""}</span>
-      <span class="op">${crest(l.opp)}<span>${esc(l.opp)}<i> · ${l.home?"أرضه":"خارج أرضه"}</i></span></span>
+      <span class="op">${crest(l.opp)}<span>${esc(l.opp)}<i> · ${l.home?"أرضه":"خارج أرضه"}</i>${l.wc&&l.wc!==D.club?`<i class="wth"> · مع ${esc(l.wc)}</i>`:""}</span></span>
       <span class="ev">${badge(l.g,"goal",ICO_BALL)}${badge(l.a,"assist",ICO_BOOT)}${l.r?`<span class="pp-b card r"></span>`:l.y?`<span class="pp-b card y"></span>`:""}
-        <span class="mn">${l.mins}′${l.sub?" ↑":""}${l.off?" ↓":""}</span><span class="rs ${l.k}">${l.res}</span></span>
+        <span class="mn">${l.mins}′${l.sub?`<i>↑${l.on}′</i>`:""}${l.off?`<i>↓${l.offAt}′</i>`:""}</span><span class="rs ${l.k}">${l.res}</span></span>
     </div>`).join("")}</div></div>` : "";
   return `<div class="pprof-sheet" style="${accentVars(D.club)}">
     <span class="pprof-grab"></span>
@@ -10123,6 +10139,7 @@ function playerProfileHTML(D){
       </div>
     </div>
     <div class="pprof-comp">${esc(COMP||"الدوري")} · ${esc(SEASON)}</div>
+    ${D.former&&D.former.length?`<p class="pprof-prev">شارك هذا الموسم أيضاً مع ${D.former.map(c=>esc(c)).join(" و")}</p>`:""}
     ${played ? `<div class="pprof-stats">${cards.filter(Boolean).join("")}</div>` : `<p class="pprof-empty">لم تُرصد مشاركة لهذا اللاعب في ${esc(COMP||"الدوري")} بعد.</p>`}
     ${logHTML}
   </div>`;
@@ -10611,6 +10628,7 @@ const I18N_EXTRA = {
   /* اختصار الجولة بالأرقام فقط — النمط العام 'ج⟨x⟩' كان يبتلع أول حرف من «جمعة» (منصور 2026-09-16) */
   'ج1':'R1', 'ج2':'R2', 'ج3':'R3', 'ج4':'R4', 'ج5':'R5', 'ج6':'R6', 'ج7':'R7', 'ج8':'R8', 'ج9':'R9', 'ج10':'R10', 'ج11':'R11', 'ج12':'R12', 'ج13':'R13', 'ج14':'R14', 'ج15':'R15', 'ج16':'R16', 'ج17':'R17', 'ج18':'R18', 'ج19':'R19', 'ج20':'R20', 'ج21':'R21', 'ج22':'R22',
   'لم تُرصد مشاركة لهذا اللاعب في ⟨x⟩ بعد.':'No appearances recorded for this player in the ⟨x⟩ yet.',
+  '· مع ⟨x⟩':'· with ⟨x⟩', 'شارك هذا الموسم أيضاً مع ⟨x⟩':'Also played for ⟨x⟩ this season',
   // المباريات
   'الجولة':'Round', 'مناسبات الشهر':'Events this month', 'إلغاء اليوم':'Clear day', 'لا مباريات':'No matches', 'أُقيمت':'Played',
   'بطاقات':'Cards', 'هدف':'Goal', 'انتهت':'FT', 'جارية الآن':'Live', 'لا توجد مباريات ضمن هذا التحديد.':'No matches in this selection.',
@@ -10627,6 +10645,143 @@ const I18N_EXTRA = {
   // منتخبات وبطولات تظهر في الأجندة (أسماء من بيانات الإدارة)
   'السعودية':'Saudi Arabia', 'العراق':'Iraq', 'عمان':'Oman', 'قطر':'Qatar', 'البحرين':'Bahrain', 'الإمارات':'UAE', 'اليمن':'Yemen', 'الوحدة':'Al-Wahda',
   'خليجي 27 ( السعودية)':'Gulf Cup 27 (Saudi Arabia)', 'خليجي 27':'Gulf Cup 27', 'كاس الخليج - السعودية':'Gulf Cup – Saudi Arabia', 'كأس الخليج':'Gulf Cup', 'اسيا 2':'AFC Champions League Two', 'آسيا 2':'AFC Champions League Two', 'منتخب':'National team', 'بطولة خارجية':'External competition',
+  /* صفحة الاتحاد الكويتي — نصوص كاملة حتى لا تُترجم كلمة كلمة (منصور 2026-09-16) */
+  "الانضمام إلى الفيفا":"Joined FIFA",
+  "الاتحاد الآسيوي":"AFC",
+  "المقر":"Headquarters",
+  "رئيس الاتحاد":"FA President",
+  "ملعب المنتخب":"National stadium",
+  "مدرب الفريق الأول":"First-team coach",
+  "مدرب الأولمبي":"Olympic coach",
+  "تصنيف الفيفا":"FIFA ranking",
+  "الطقم":"Kit",
+  "مقر الاتحاد":"FA headquarters",
+  "الإنجازات":"Honours",
+  "محطات في تاريخ الأزرق":"Milestones in Al-Azraq’s history",
+  "الموقع الرسمي":"Official website",
+  "إنستغرام":"Instagram",
+  "يوتيوب":"YouTube",
+  "أقسام الاتحاد":"FA sections",
+  "القائمة":"Squad",
+  "الفترة":"Span",
+  "لاعبون":"Players",
+  "لم تُضف مباريات بعد.":"No matches added yet.",
+  "الألعاب الآسيوية 2026":"Asian Games 2026",
+  "⟨x⟩ · تأسس ⟨x⟩":"⟨x⟩ · founded ⟨x⟩",
+  "(منذ ⟨x⟩)":"(since ⟨x⟩)",
+  "الاتحاد الكويتي لكرة القدم":"Kuwait Football Association",
+  "الاتحاد الكويتي":"Kuwait FA",
+  "استاد جابر الأحمد الدولي":"Jaber Al-Ahmad International Stadium",
+  "استاد علي صباح السالم (11,000)":"Ali Sabah Al-Salem Stadium (11,000)",
+  "العديلية — قطعة 4، شارع سامي أحمد المنيس":"Adailiya — Block 4, Sami Ahmad Al-Munayes Street",
+  "العديلية — قطعة 4، شارع سامي أحمد المنيس · مدينة الكويت":"Adailiya — Block 4, Sami Ahmad Al-Munayes Street · Kuwait City",
+  "مدينة الكويت":"Kuwait City",
+  "العارضية، محافظة الفروانية":"Ardiya, Farwaniya Governorate",
+  "الشيخ أحمد اليوسف الصباح":"Sheikh Ahmad Al-Yousef Al-Sabah",
+  "هيليو سوزا":"Helio Sousa",
+  "ديفيد دونيغا":"David Doniga",
+  "البرتغال":"Portugal",
+  "إسبانيا":"Spain",
+  "أديداس (منذ 2023)":"Adidas (since 2023)",
+  "الأزرق":"Al-Azraq",
+  "تأسس الاتحاد الكويتي لكرة القدم عام 1952 باسم «الاتحاد الكويتي للألعاب الرياضية» وحمل اسمه الحالي عام 1957، وانضم إلى الفيفا عام 1962 وإلى الاتحاد الآسيوي عام 1964، وهو عضو في الاتحاد العربي منذ 1974 واتحاد غرب آسيا منذ 2010 وعضو مؤسس في اتحاد كأس الخليج العربي عام 2016. يدير الاتحاد المنتخبات الوطنية والمسابقات المحلية (الدوري الممتاز، الدرجة الأولى، كأس الأمير، كأس ولي العهد، كأس الاتحاد)، ومقره في العديلية، ويملك استاد جابر الأحمد الدولي أكبر ملاعب الكويت. يُلقّب المنتخب الأول بـ«الأزرق»، وهو بطل آسيا 1980 وصاحب الرقم القياسي في ألقاب كأس الخليج بعشرة ألقاب.":"The Kuwait Football Association was founded in 1952 as the Kuwait Sports Games Association and took its present name in 1957. It joined FIFA in 1962 and the AFC in 1964, has been a member of the Arab Football Association since 1974 and of the West Asian Football Federation since 2010, and was a founding member of the Arabian Gulf Cup Federation in 2016. The FA runs the national teams and the domestic competitions (the Premier League, the First Division, the Emir Cup, the Crown Prince Cup and the Federation Cup), is based in Adailiya, and owns Jaber Al-Ahmad International Stadium, the largest ground in Kuwait. The senior side is nicknamed Al-Azraq (“The Blue”); it was Asian champion in 1980 and holds the record for Gulf Cup titles with ten.",
+  "رئيس الاتحاد منذ ⟨x⟩ · الدورة ⟨x⟩":"FA President since ⟨x⟩ · term ⟨x⟩",
+  "2026–2030 (بالتزكية، 20 مايو 2026)":"2026–2030 (unopposed, 20 May 2026)",
+  "فترات سابقة: ⟨x⟩":"Previous terms: ⟨x⟩",
+  "من مواليد 6 أكتوبر 1962، عضو مجلس إدارة الاتحاد منذ 1986 وأمين الصندوق عام 1989، ورئيس للاتحاد في أربع فترات. زُكّي رئيساً في 6 نوفمبر 2024 لاستكمال دورة 2022–2026 ثم جُدد له لدورة 2026–2030.":"Born 6 October 1962, an FA board member since 1986 and its treasurer in 1989, and president across four spells. He was elected unopposed on 6 November 2024 to complete the 2022–2026 term, then renewed for the 2026–2030 term.",
+  "مجلس الإدارة ⟨x⟩ · الأمين العام:":"Board ⟨x⟩ · General Secretary:",
+  "د. صالح ناصر المجروب":"Dr Saleh Nasser Al-Majroub",
+  "نائب الرئيس للشؤون الفنية":"Vice-President, Technical Affairs",
+  "نائب الرئيس للشؤون المالية والإدارية":"Vice-President, Finance and Administration",
+  "عضو":"Member",
+  "أيمن الحسيني":"Ayman Al-Husseini",
+  "ديين الديين":"Deyain Al-Deyain",
+  "د. أحمد عجب":"Dr Ahmad Ajab",
+  "ناصر العدواني":"Nasser Al-Adwani",
+  "د. عادل العدواني":"Dr Adel Al-Adwani",
+  "دلال يوسف المضف":"Dalal Yousef Al-Mudhaf",
+  "كأس آسيا 1980":"1980 AFC Asian Cup",
+  "البطل — النهائي 3–0 على كوريا الجنوبية في استاد صباح السالم (30 سبتمبر 1980)":"Champions — a 3–0 final win over South Korea at Sabah Al-Salem Stadium (30 September 1980)",
+  "كأس الخليج العربي — 10 ألقاب":"Arabian Gulf Cup — 10 titles",
+  "1970، 1972، 1974، 1976، 1982، 1986، 1990، 1996، 1998، 2010 — الأكثر تتويجاً في تاريخ البطولة":"1970, 1972, 1974, 1976, 1982, 1986, 1990, 1996, 1998, 2010 — the most decorated side in the tournament’s history",
+  "كأس العالم 1982":"1982 World Cup",
+  "المشاركة الوحيدة (إسبانيا): 1–1 تشيكوسلوفاكيا، 1–4 فرنسا، 0–1 إنجلترا — بقيادة كارلوس ألبرتو باريرا":"The only appearance (Spain): 1–1 v Czechoslovakia, 1–4 v France, 0–1 v England — under Carlos Alberto Parreira",
+  "الألعاب الأولمبية موسكو 1980":"Moscow 1980 Olympic Games",
+  "ربع النهائي — تصدّر مجموعته دون هزيمة ثم خسر 1–2 أمام الاتحاد السوفيتي":"Quarter-finals — topped the group unbeaten, then lost 1–2 to the Soviet Union",
+  "بطولة غرب آسيا 2010":"2010 WAFF Championship",
+  "البطل — النهائي 2–1 على إيران في الأردن (3 أكتوبر 2010)":"Champions — a 2–1 final win over Iran in Jordan (3 October 2010)",
+  "الألعاب الآسيوية":"Asian Games",
+  "فضية 1982 (نيودلهي) و1998 (بانكوك)، برونزية 1986 (سيول) و1994 (هيروشيما)":"Silver in 1982 (New Delhi) and 1998 (Bangkok); bronze in 1986 (Seoul) and 1994 (Hiroshima)",
+  "كأس العرب":"Arab Cup",
+  "المركز الثالث 1964 و1992 و1998":"Third place in 1964, 1992 and 1998",
+  "أول مباراة دولية: ليبيا 2–2 الكويت في الدار البيضاء ضمن دورة الألعاب العربية":"First international: Libya 2–2 Kuwait in Casablanca at the Arab Games",
+  "أول لقب في كأس الخليج العربي (البحرين) — بداية سلسلة الألقاب العشرة":"A first Arabian Gulf Cup title (Bahrain) — the start of a run of ten",
+  "وصيف كأس آسيا في طهران بعد الفوز على العراق 3–2 في نصف النهائي":"Asian Cup runners-up in Tehran after beating Iraq 3–2 in the semi-final",
+  "أولمبياد موسكو: الكويت 3–1 نيجيريا بثلاثية فيصل الدخيل، ثم ربع النهائي أمام الاتحاد السوفيتي":"Moscow Olympics: Kuwait 3–1 Nigeria with a Faisal Al-Dakhil hat-trick, then the quarter-final against the Soviet Union",
+  "بطل آسيا: الكويت 3–0 كوريا الجنوبية في نهائي كأس آسيا على استاد صباح السالم (الحوطي، الدخيل هدفان)":"Asian champions: Kuwait 3–0 South Korea in the Asian Cup final at Sabah Al-Salem Stadium (Al-Houti, Al-Dakhil two)",
+  "كأس العالم في إسبانيا: تعادل 1–1 مع تشيكوسلوفاكيا بهدف فيصل الدخيل — أول منتخب عربي آسيوي في النهائيات":"World Cup in Spain: a 1–1 draw with Czechoslovakia through Faisal Al-Dakhil — the first Asian Arab team at the finals",
+  "لقب كأس الخليج العاشرة على أرض الكويت بقيادة لويس فيليبي سكولاري":"The title at the tenth Gulf Cup, on home soil in Kuwait, under Luiz Felipe Scolari",
+  "أعلى تصنيف في تاريخ الأزرق: المركز 24 عالمياً":"Al-Azraq’s highest ever ranking: 24th in the world",
+  "أكبر فوز: الكويت 20–0 بوتان في تصفيات كأس آسيا، 8 أهداف لبشار عبدالله":"Biggest win: Kuwait 20–0 Bhutan in Asian Cup qualifying, with 8 goals for Bashar Abdullah",
+  "بطل غرب آسيا بالفوز 2–1 على إيران في الأردن، وفي العام نفسه اللقب الخليجي العاشر في اليمن":"West Asian champions after beating Iran 2–1 in Jordan, and a tenth Gulf Cup title in Yemen the same year",
+  "افتتاح استاد جابر الأحمد الدولي (60,000 متفرج) — البيت الجديد للأزرق":"Jaber Al-Ahmad International Stadium opens (60,000 capacity) — Al-Azraq’s new home",
+  "بدر المطوع يصبح الأكثر مشاركة في تاريخ الكرة الدولية للرجال بمباراته 185 أمام البحرين":"Bader Al-Mutawa becomes the most-capped men’s international of all time with his 185th cap against Bahrain",
+  "قائمة الأزرق — معسكر الدوحة، سبتمبر 2026":"Al-Azraq squad — Doha camp, September 2026",
+  "قائمة المنتخب الأولمبي — دورة الألعاب الآسيوية العشرين، ناغويا 2026":"Olympic squad — 20th Asian Games, Nagoya 2026",
+  "⟨x⟩ · ⟨x⟩ لاعباً":"⟨x⟩ · ⟨x⟩ players",
+  "غير مؤكد (RSSSF: 39 في 85)":"Unverified (RSSSF: 39 in 85)",
+  "غير مؤكد (ويكيبيديا: 16)":"Unverified (Wikipedia: 16)",
+  "أول لاعب في العالم يبلغ 200 مباراة دولية":"First player in the world to reach 200 international caps",
+  "الحارس الأكثر مشاركة":"Most-capped goalkeeper",
+  "2009–الآن":"2009–present",
+  /* منتخبات الاتحاد: ملاعب وأسماء تاريخية */
+  "مدينة الملك عبدالله الرياضية، جدة":"King Abdullah Sports City, Jeddah",
+  "استاد الأمير عبدالله الفيصل، جدة":"Prince Abdullah Al-Faisal Stadium, Jeddah",
+  "استاد ميناتو، ناغويا":"Minato Stadium, Nagoya",
+  "مباريات نصف النهائي":"Semi-final matches",
+  "نصف النهائي":"Semi-final",
+  "نهائي خليجي 27":"Gulf Cup 27 final",
+  "جاسم الهويدي":"Jasem Al-Huwaidi",
+  "فيصل الدخيل":"Faisal Al-Dakhil",
+  "جاسم يعقوب":"Jasem Yaqoub",
+  "فرج لهيب":"Faraj Laheeb",
+  "يوسف السويد":"Yousef Al-Suwayed",
+  "مساعد ندا":"Musaed Neda",
+  "وائل سليمان":"Wael Sulaiman",
+  "نواف الخالدي":"Nawaf Al-Khaldi",
+  "جراح العتيقي":"Jarah Al-Ateeqi",
+  "نهير الشمري":"Nohayer Al-Shammari",
+  "جمال مبارك":"Jamal Mubarak",
+  /* صفحة المباراة: ملاعب وحكام ونصوص */
+  "لا أصوات لأفضل لاعب من هذه المباراة بعد":"No player-of-the-match votes for this match yet",
+  "المباراة غير منقولة":"Match not televised",
+  "(ع)":"(OG)",
+  "الصداقة والسلام":"Friendship and Peace",
+  "علي صباح السالم":"Ali Sabah Al-Salem",
+  "صباح السالم":"Sabah Al-Salem",
+  "عبدالله الخليفة الصباح":"Abdullah Al-Khalifa Al-Sabah",
+  "ثامر":"Thamer",
+  "نايف الدبوس":"Nayef Al-Debous",
+  "عباس حسين":"Abbas Hussein",
+  "سعود الرشيدي":"Saud Al-Rashidi",
+  "علي عوض":"Ali Awadh",
+  "ماريا ريفت":"Maria Rift",
+  "موسى الخياط":"Mousa Al-Khayat",
+  "مشاري الفوزان":"Mishari Al-Fawzan",
+  "احمد عباس":"Ahmad Abbas",
+  "أحمد عباس":"Ahmad Abbas",
+  "ظافر العجمي":"Dhafer Al-Ajmi",
+  "عايد الشمري":"Ayed Al-Shammari",
+  "علي عباس":"Ali Abbas",
+  "عبد الله الفيلكاوي":"Abdullah Al-Failakawi",
+  "إلغيز تانتاشيف":"Ilgiz Tantashev",
+  "فيردافس نورسافاروف":"Ferdavs Nursafarov",
+  "عيسى المتروك":"Issa Al-Matrouk",
+  "محمد منوه":"Mohammed Manwah",
+  "سعود الشطي":"Saud Al-Shatti",
+  "عبد الله جمالي":"Abdullah Jamali",
+  /* نص تحميل مؤقت */
+  "جارٍ تحميل الأصوات…":"Loading votes…",
   'الفريق الأول':'First team', 'المنتخب الأولمبي':'Olympic team', 'نبذة عن الاتحاد':'About the FA', 'الهدافون التاريخيون':'All-time top scorers', 'الأكثر مشاركة':'Most capped',
   'دوري أبطال الخليج للأندية':'Gulf Club Champions League', 'دوري أبطال آسيا 2':'AFC Champions League Two', 'دوري التحدي الآسيوي':'AFC Challenge League', 'محلي':'Domestic', 'خارجي':'International', 'كل المسابقات':'All competitions', 'أُقيمت':'Played', 'مجموعة الأزرق':'Kuwait’s group', 'مجموعة كاظمة':'Kazma’s group', 'مجموعة الكويت':'Kuwait SC’s group', 'المجموعة C · القادسية':'Group C · Qadsia', 'مجموعة العربي':'Al-Arabi’s group', 'الفريق':'Team',
 };
