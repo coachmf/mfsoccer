@@ -2121,7 +2121,7 @@ main{padding-bottom:48px}
 <!-- اللغة الإنجليزية والوضع الداكن -->
 <link rel="stylesheet" href="site-theme.css?v=5">
 <script src="fantasy/js/i18n-more.js?v=11" defer></script>
-<script src="site-i18n.js?v=13" defer></script>
+<script src="site-i18n.js?v=14" defer></script>
 </head>
 <body>
 <!-- navicons:sprite — أيقونات شريط التنقل في الهاتف (خط 1.75 بلون النص الحالي) -->
@@ -10310,6 +10310,19 @@ function radarSVG(vals, labels, color){
     ${vals.map((v,i)=>{ const [x,y]=pt(i,R*Math.max(.06,Math.min(1,v))); return `<circle class="rd" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="2.6" style="fill:${color}"/>`; }).join("")}
     ${lab}</svg>`;
 }
+/* شباك نظيفة لكل لاعب (أي مركز): 60 دقيقة فأكثر في مباراة لم يستقبل فيها فريقه — نفس قاعدة الحرّاس في playerPlay، للمدافعين في «أبرز اللاعبين» */
+function teamCleanSheets(){
+  const out={};
+  MATCHES.filter(m=>!isUpcoming(m)).forEach(m=>{
+    const comp=compOf(m);
+    [m.home, m.away].forEach(club=>{
+      if((club===m.home ? +m.ag : +m.hg)!==0) return;
+      const men=new Set(xiNames(m.round, comp, club)); matchSubs(m).filter(s=>s.club===club && s.in).forEach(s=>men.add(s.in));
+      men.forEach(n=>{ if(playerMatchMinutes(m, club, n)>=60) out[n+"|"+club]=(out[n+"|"+club]||0)+1; });
+    });
+  });
+  return out;
+}
 function topPlayersHTML(){
   const all=seasonPlayerStats().filter(p=>p.apps>0 || p.g>0 || p.a>0);
   if(!all.length) return "";
@@ -10320,13 +10333,32 @@ function topPlayersHTML(){
     {t:"الهدّاف",        sub:"أكثر اللاعبين تسجيلاً",           p:byKey(p=>p.g)},
     {t:"صانع الألعاب",   sub:"أكثر اللاعبين صناعةً للأهداف",    p:byKey(p=>p.a)},
     {t:"الأكثر مساهمة",  sub:"أهداف + صناعة لكل 90 دقيقة",     p:[...all].filter(p=>p.mins>=120).sort((x,y)=>((y.g+y.a)/y.mins)-((x.g+x.a)/x.mins)||(y.g+y.a)-(x.g+x.a))[0]},
-  ].filter(x=>x.p);
+  ];
+  /* بطاقات المراكز الدفاعية (منصور 2026-09-16): المركز من كشف النادي؛ الترتيب بالشباك النظيفة ثم المساهمة ثم الدقائق */
+  const TCS=teamCleanSheets(); all.forEach(p=>{ p.dcs=TCS[p.n+"|"+p.c]||0; });
+  const posOf=p=>{ const e=(SQUADS[p.c]||[]).find(x=>sqName(x)===p.n); return e?String(sqPos(e)).toUpperCase():""; };
+  const best=(codes,key)=>[...all].filter(p=>codes.includes(posOf(p)) && p.mins>0).sort(key)[0];
+  const defSort=(x,y)=>(y.dcs-x.dcs)||((y.g+y.a)-(x.g+x.a))||(y.mins-x.mins);
+  picks.push(
+    {t:"قلب الدفاع", sub:"أكثر قلوب الدفاع شباكاً نظيفة", role:"def", p:best(["CB"], defSort)},
+    {t:"الظهير",     sub:"الأظهرة: شباك نظيفة ومساهمة",   role:"def", p:best(["RB","LB","RWB","LWB"], defSort)},
+    {t:"الحارس",     sub:"أكثر الحرّاس شباكاً نظيفة",       role:"gk",  p:best(["GK"], (x,y)=>(y.cs-x.cs)||(y.mins-x.mins))}
+  );
+  const shown=picks.filter(x=>x.p);
   /* لا يتكرر اللاعب نفسه في بطاقتين */
-  const seen=new Set(); const uniq=picks.filter(x=>{ const k=x.p.n+"|"+x.p.c; if(seen.has(k)) return false; seen.add(k); return true; });
-  const card=({t,sub,p})=>{
+  const seen=new Set(); const uniq=shown.filter(x=>{ const k=x.p.n+"|"+x.p.c; if(seen.has(k)) return false; seen.add(k); return true; });
+  const mxCS=Math.max(1,...all.map(p=>p.dcs)), mxGK=Math.max(1,...all.map(p=>p.cs));
+  const card=({t,sub,p,role})=>{
     const disc=1-Math.min(1,(p.y+2*p.r)/mx.cards);
-    const vals=[p.g/mx.g, p.a/mx.a, p.apps/mx.apps, p.mins/mx.mins, disc, (p.g+p.a)/mx.ga];
-    const labels=["أهداف","صناعة","مشاركات","دقائق","انضباط","مساهمة"];
+    const vals = role==="gk"  ? [p.cs/mxGK, p.apps/mx.apps, p.mins/mx.mins, disc]
+               : role==="def" ? [p.dcs/mxCS, p.g/mx.g, p.a/mx.a, p.apps/mx.apps, p.mins/mx.mins, disc]
+               : [p.g/mx.g, p.a/mx.a, p.apps/mx.apps, p.mins/mx.mins, disc, (p.g+p.a)/mx.ga];
+    const labels = role==="gk"  ? ["شباك نظيفة","مشاركات","دقائق","انضباط"]
+                 : role==="def" ? ["شباك نظيفة","أهداف","صناعة","مشاركات","دقائق","انضباط"]
+                 : ["أهداف","صناعة","مشاركات","دقائق","انضباط","مساهمة"];
+    const statsRow = role==="gk" ? `<span><b>${p.cs}</b>شباك نظيفة</span><span><b>${p.apps}</b>مباريات</span><span><b>${p.mins}</b>دقيقة</span><span><b>${p.y+p.r}</b>بطاقات</span>`
+                   : role==="def" ? `<span><b>${p.dcs}</b>شباك نظيفة</span><span><b>${p.g}</b>أهداف</span><span><b>${p.a}</b>صناعة</span><span><b>${p.mins}</b>دقيقة</span>`
+                   : `<span><b>${p.g}</b>أهداف</span><span><b>${p.a}</b>صناعة</span><span><b>${p.apps}</b>مباريات</span><span><b>${p.mins}</b>دقيقة</span>`;
     const k=clubAccent(p.c); const cut=photoCut(p.n,p.c);
     const sq=(SQUADS[p.c]||[]).find(x=>sqName(x)===p.n); const num=sq?sqNum(sq):0, pos=sq?posLabel(sqPos(sq)):"";
     return `<article class="tp" style="${accentVars(p.c)}" data-player="${esc(p.n)}" data-club="${esc(p.c)}" role="button" tabindex="0">
@@ -10340,9 +10372,7 @@ function topPlayersHTML(){
         </div>
         ${radarSVG(vals, labels, k.a)}
       </div>
-      <div class="tp-stats">
-        <span><b>${p.g}</b>أهداف</span><span><b>${p.a}</b>صناعة</span><span><b>${p.apps}</b>مباريات</span><span><b>${p.mins}</b>دقيقة</span>
-      </div>
+      <div class="tp-stats">${statsRow}</div>
     </article>`;
   };
   return `<h2 class="sec">أبرز اللاعبين<span class="sq-n">${esc(compLabel(COMP))}</span></h2>
