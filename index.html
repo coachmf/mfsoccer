@@ -9365,6 +9365,11 @@ html[data-theme="dark"] .tp{background:linear-gradient(160deg,rgba(var(--ca-rgb)
 .tp-club .crest{width:18px;height:18px;border-radius:5px}
 .tp-pos{font-size:.64rem;padding:2px 8px;border-radius:999px;background:rgba(143,166,196,.12);color:var(--mist);border:1px solid var(--line,rgba(143,166,196,.2))}
 .rad{width:100%;height:auto;display:block}
+/* أسماء محاور الرادار في شارات خارج الرسم على الكمبيوتر والهاتف (منصور 2026-09-16) */
+.tp-body .rad-full{display:none}
+.rad-mini .rl rect{fill:rgba(143,166,196,.10);stroke:rgba(var(--ca-rgb),.55);stroke-width:1}
+.rad-mini .rl text{font-size:13.5px;font-weight:700;fill:#DCE6F2}
+html[data-theme="light"] .rad-mini .rl text{fill:#0B1F3A}
 .rad .rg{fill:none;stroke:rgba(143,166,196,.28);stroke-width:1}
 .rad .rp{fill-opacity:.32;stroke-width:1.8;stroke-linejoin:round}
 .rad text{font-family:var(--body);font-size:9.5px;fill:var(--slate)}
@@ -9377,7 +9382,7 @@ html[data-theme="light"] .tp-stats{background:rgba(11,31,58,.03)}
 /* قواعد الجوال بعد القواعد العامة — كانت قبلها فتغلبها القواعد العامة (نفس الأولوية، الأخير يفوز) فتنقصّ الصورة والاسم */
 /* على الشاشات الضيقة: البطاقات جنباً إلى جنب على عرض الشاشة بلا تمرير أفقي (منصور 2026-09-15) — عمودان، والبطاقة الثالثة بعرض الصف */
 /* منصور 2026-09-16: البطاقات أصغر وبالعرض — على الهاتف بطاقة بعرض الشاشة: الهوية يمين والرادار يسار والأرقام تحت */
-.tp-body{grid-template-columns:minmax(0,1fr) 128px}
+.tp-body{grid-template-columns:minmax(0,1fr) 176px}
 .tp-ph{width:60px;height:60px}
 .tp-id b{font-size:.95rem}
 /* الهاتف (منصور 2026-09-16): كل البطاقات ظاهرة بلا تمرير — شبكة عمودين ببطاقات مدمجة: العنوان، الصورة والاسم بجانب رادار صغير، والأرقام تحت */
@@ -9388,15 +9393,16 @@ html[data-theme="light"] .tp-stats{background:rgba(11,31,58,.03)}
   .tp:last-child:nth-child(odd){grid-column:1/-1}
   .tp-hd{padding:6px 8px 0}
   .tp-t{font-size:.74rem} .tp-sub{display:none}
-  .tp-body{grid-template-columns:minmax(0,1fr) 74px;align-items:center;gap:0;padding:0 2px 0 4px}
-  .tp-body .rad{display:block;width:74px;max-width:74px;height:auto}
-  .tp-body .rad text{display:none}
-  .tp-id{display:flex;flex-direction:column;align-items:flex-start;gap:1px;text-align:start;padding:2px 2px 4px;min-width:0}
-  .tp-ph{width:34px;height:34px;margin:0 0 2px;box-shadow:0 0 0 1.5px rgba(var(--ca-rgb),.8)}
-  .tp-id b{font-size:.72rem;line-height:1.15;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  .tp-body{display:block;padding:0 4px}
+  /* الرادار بأسماء محاوره (منصور): أعرض، والخط مكبَّر داخل الرسم ليُقرأ على الهاتف */
+  .tp-body .rad-mini{display:block;width:100%;max-width:168px;height:auto;margin:2px auto 0}
+  .tp-id{display:grid;grid-template-columns:34px minmax(0,1fr);column-gap:6px;row-gap:0;align-items:center;justify-items:start;text-align:start;padding:3px 2px 0;min-width:0}
+  .tp-ph{width:34px;height:34px;margin:0;grid-column:1;grid-row:1/span 2;box-shadow:0 0 0 1.5px rgba(var(--ca-rgb),.8)}
+  .tp-id b,.tp-id .tp-club{grid-column:2;max-width:100%}
+  .tp-id b{font-size:.72rem;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .tp-club{font-size:.56rem;gap:3px} .tp-club .crest{width:12px;height:12px;border-radius:3px}
   .tp-id .tp-pos{display:none}
-  .tp:last-child:nth-child(odd) .tp-body{grid-template-columns:minmax(0,1fr) 90px} .tp:last-child:nth-child(odd) .tp-body .rad{width:90px;max-width:90px}
+  .tp:last-child:nth-child(odd) .tp-body{display:grid;grid-template-columns:minmax(0,1fr) 170px;align-items:center}
   .tp-stats span{padding:3px 1px;font-size:.48rem;gap:0} .tp-stats b{font-size:.74rem}}
 .tf{padding:4px 12px}
 .tf-r{display:grid;grid-template-columns:22px minmax(0,1fr) auto auto;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--line,rgba(143,166,196,.12));cursor:pointer}
@@ -10310,13 +10316,18 @@ function seasonPlayerStats(){
   return Object.values(map);
 }
 /* رادار SVG بستة محاور، القيم منسوبة إلى أعلى قيمة في الدوري (0..1) */
-function radarSVG(vals, labels, color){
-  const N=vals.length, cx=110, cy=100, R=64;
+function radarSVG(vals, labels, color, mini){
+  /* mini = نسخة الهاتف: رسم أصغر، وأسماء المحاور في شارات دائرية خارج الحلقات لا تتداخل مع الرسم */
+  const N=vals.length, cx=mini?130:110, cy=mini?116:100, R=mini?54:64;
   const pt=(i,r)=>{ const a=-Math.PI/2 + i*2*Math.PI/N; return [cx+r*Math.cos(a), cy+r*Math.sin(a)]; };
   const ring=k=>"M"+Array.from({length:N},(_,i)=>pt(i,R*k).map(v=>v.toFixed(1)).join(",")).join("L")+"Z";
   const poly="M"+vals.map((v,i)=>pt(i,R*Math.max(.06,Math.min(1,v))).map(x=>x.toFixed(1)).join(",")).join("L")+"Z";
-  const lab=labels.map((t,i)=>{ const [x,y]=pt(i,R+16); const anc = Math.abs(x-cx)<6 ? "middle" : (x<cx ? "end" : "start"); return `<text x="${x.toFixed(1)}" y="${(y+4).toFixed(1)}" text-anchor="${anc}">${t}</text>`; }).join("");
-  return `<svg class="rad" viewBox="0 0 220 200" aria-hidden="true">
+  const lab = mini
+    ? labels.map((t,i)=>{ let [x,y]=pt(i,R+27); const w=String(t).length*8.6+16, h=22;
+        x=Math.max(w/2+1, Math.min(260-w/2-1, x)); y=Math.max(h/2+1, Math.min(232-h/2-1, y));
+        return `<g class="rl"><rect x="${(x-w/2).toFixed(1)}" y="${(y-h/2).toFixed(1)}" width="${w.toFixed(1)}" height="${h}" rx="11"/><text x="${x.toFixed(1)}" y="${(y+5).toFixed(1)}" text-anchor="middle">${t}</text></g>`; }).join("")
+    : labels.map((t,i)=>{ const [x,y]=pt(i,R+16); const anc = Math.abs(x-cx)<6 ? "middle" : (x<cx ? "end" : "start"); return `<text x="${x.toFixed(1)}" y="${(y+4).toFixed(1)}" text-anchor="${anc}">${t}</text>`; }).join("");
+  return `<svg class="rad${mini?" rad-mini":" rad-full"}" viewBox="${mini?"0 0 260 232":"0 0 220 200"}" direction="ltr" aria-hidden="true">
     ${[.33,.66,1].map(k=>`<path class="rg" d="${ring(k)}"/>`).join("")}
     ${Array.from({length:N},(_,i)=>{ const [x,y]=pt(i,R); return `<line class="rg" x1="${cx}" y1="${cy}" x2="${x.toFixed(1)}" y2="${y.toFixed(1)}"/>`; }).join("")}
     <path class="rp" d="${poly}" style="fill:${color};stroke:${color}"/>
@@ -10383,7 +10394,7 @@ function topPlayersHTML(){
           <span class="tp-club">${crest(p.c)}${esc(p.c)}${num?` · ${num}`:""}</span>
           ${pos?`<span class="tp-pos">${esc(pos)}</span>`:""}
         </div>
-        ${radarSVG(vals, labels, k.a)}
+        ${radarSVG(vals, labels, k.a)}${radarSVG(vals, labels, k.a, true)}
       </div>
       <div class="tp-stats">${statsRow}</div>
     </article>`;
