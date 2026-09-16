@@ -1103,3 +1103,31 @@ html.lang-en .pp-actions{justify-content:flex-start;}
   .pslot .pk .kit.kit-img{width:76px!important;height:76px!important;margin:-6px -6px 0}
   .bench-strip .pslot .pk .kit.kit-img{width:74px!important;height:74px!important;margin:-6px -8px 0}
 }
+
+/* ===== منصور 2026-09-16 (4): «عفسة ومتداخلين» — بطاقة مرتبة على طراز FPL: مربع خفيف يحتضن القميص، ولوحة الاسم والمباراة
+   بعرض المربع تحته مباشرة، ومسافات ثابتة بين البطاقات والصفوف فلا شيء يتداخل ===== */
+.pitch{justify-content:space-evenly}
+.pitch-row{gap:6px}
+.pslot{width:84px;display:flex;flex-direction:column;align-items:stretch}
+.pslot .pk{height:74px!important;margin:0!important;display:flex;align-items:flex-end;justify-content:center;overflow:hidden;
+  background:linear-gradient(180deg,rgba(0,60,20,.30),rgba(0,60,20,.14));border-radius:8px 8px 0 0;line-height:0}
+.pslot .pk .kit.kit-img,.pslot .pk .kit{width:78px!important;height:78px!important;margin:0 0 -8px!important;max-width:none;
+  filter:drop-shadow(0 3px 5px rgba(0,25,10,.35)) saturate(1.06)}
+.pslot .nm{width:100%;max-width:none!important;min-width:0!important;border-radius:0!important;padding:3px 4px!important;
+  box-shadow:none!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center;box-sizing:border-box}
+.pslot .pt{width:100%;max-width:none!important;min-width:0!important;border-radius:0 0 8px 8px!important;padding:2px 4px!important;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center;box-sizing:border-box}
+.pslot .badge,.pslot .badge.v{top:4px!important;right:4px!important}
+.pslot .stflag{top:3px!important;left:4px!important}
+@media (max-width:860px){
+  .pitch{min-height:600px}
+  .pitch-row{gap:5px}
+  .pslot{width:66px}
+  .pslot .pk{height:56px!important}
+  .pslot .pk .kit.kit-img,.pslot .pk .kit{width:60px!important;height:60px!important;margin:0 0 -6px!important}
+  .pslot .nm{font-size:.62rem!important;padding:2px 3px!important}
+  .pslot .pt{font-size:.52rem!important;padding:2px 3px!important}
+  .pslot .badge,.pslot .badge.v{top:3px!important;right:3px!important;width:15px!important;height:15px!important;font-size:.5rem!important}
+  .bench-strip .pslot{width:66px}
+  .bench-strip .pslot .pk .kit.kit-img,.bench-strip .pslot .pk .kit{width:56px!important;height:56px!important;margin:0 0 -6px!important}
+}
