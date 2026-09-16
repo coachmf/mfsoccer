@@ -1072,7 +1072,7 @@ table.lb td.pt{font-family:var(--display);font-weight:700;color:var(--sky);
   .printonly{display:flex!important;align-items:center;gap:14px;border-bottom:2px solid #E9B949;
     padding-bottom:10px;margin-bottom:16px}
   .printonly img{height:46px}
-  .match,.kpi{break-inside:avoid;page-break-inside:avoid}
+  .match,.kpi,.pcard,.mc,.pstat,.plog-r,.tp{break-inside:avoid;page-break-inside:avoid}
   .card{break-inside:auto;page-break-inside:auto}   /* بطاقة أطول من الورقة كان منع كسرها يولّد صفحات فارغة */
   main{max-width:none}
   .twrap{overflow:visible}
@@ -5634,61 +5634,120 @@ function cardData(mode, club){
   ]};
 }
 
+/* صورة التصدير بتصميم الموقع الحالي (منصور 2026-09-17): 1080×1350، خلفية داكنة بلون النادي، الشعار، بطاقات أرقام،
+   الفورمة بنقاط ملوّنة، الهدّاف بصورته، وللملخص أعلى 5 بالترتيب. كانت بطاقة ذهبية قديمة ورقم الجولة يُحسب من المباريات القادمة */
 async function exportImage(mode, club){
-  const S=1080, c=document.createElement("canvas"); c.width=S; c.height=S;
+  const W=1080, H=1350, c=document.createElement("canvas"); c.width=W; c.height=H;
   const x=c.getContext("2d");
   try{ await document.fonts.ready; }catch(e){}
   const F=(w,sz)=>`${w} ${sz}px "Vazirmatn", system-ui, sans-serif`;
+  const load=src=>new Promise(res=>{ if(!src) return res(null); const i=new Image(); i.onload=()=>res(i); i.onerror=()=>res(null); i.src=src; });
+  const rgba=(rgb,a)=>`rgba(${rgb},${a})`;
+  const played=playedMatches(), round=played.length?Math.max(...played.map(m=>m.round)):0;
+  const T=standings();
+  const acc = mode==="club" ? clubAccent(club) : {a:"#1878BE", b:"#0B1F3A", rgb:"24,120,190"};
 
-  const bg=x.createLinearGradient(0,0,S,S);
-  bg.addColorStop(0,"#0E2B52"); bg.addColorStop(.55,"#0A2242"); bg.addColorStop(1,"#061529");
-  x.fillStyle=bg; x.fillRect(0,0,S,S);
-  const glow=x.createRadialGradient(S*.85,S*.08,20,S*.85,S*.08,S*.7);
-  glow.addColorStop(0,"rgba(95,178,232,.20)"); glow.addColorStop(1,"rgba(95,178,232,0)");
-  x.fillStyle=glow; x.fillRect(0,0,S,S);
+  /* الخلفية */
+  x.fillStyle="#081527"; x.fillRect(0,0,W,H);
+  let g=x.createRadialGradient(W*.82,120,10,W*.82,120,W*.95); g.addColorStop(0,rgba(acc.rgb,.42)); g.addColorStop(1,rgba(acc.rgb,0));
+  x.fillStyle=g; x.fillRect(0,0,W,H);
+  g=x.createLinearGradient(0,H*.55,0,H); g.addColorStop(0,"rgba(8,21,39,0)"); g.addColorStop(1,"rgba(4,12,24,.9)");
+  x.fillStyle=g; x.fillRect(0,0,W,H);
 
-  x.direction="rtl"; x.textAlign="right";
-  const D=cardData(mode,club);
+  x.direction="rtl"; x.textAlign="right"; x.textBaseline="alphabetic";
+  const M=64;
 
-  /* الشعار أعلى اليسار */
-  const img=new Image();
-  await new Promise(res=>{ img.onload=res; img.onerror=res; img.src=BRAND; });
-  if(img.width){ const lw=190, lh=lw*img.height/img.width; x.globalAlpha=1; x.drawImage(img,72,64,lw,lh); }
+  /* الرأس: الشعار + العنوان */
+  const crestImg = await load(mode==="club" ? crestSrcOf(club) : "assets/hero/kpl-light.png");
+  const cs=168;
+  if(crestImg){ const sw = mode==="club" ? crestImg.width : crestImg.height, sh=crestImg.height;   /* للملخص: كرة شعار الدوري فقط من يسار الشعار العريض */
+    const r=Math.min(cs/sw, cs/sh), w=sw*r, h=sh*r;
+    x.save(); x.shadowColor="rgba(0,0,0,.45)"; x.shadowBlur=24; x.drawImage(crestImg, 0, 0, sw, sh, W-M-cs+(cs-w)/2, 72+(cs-h)/2, w, h); x.restore(); }
+  const tx=W-M-cs-34;
+  x.fillStyle="#FFFFFF"; x.font=F(800,76); x.fillText(mode==="club"?club:"ملخص الدوري", tx, 158);
+  x.fillStyle="#B3C4D9"; x.font=F(500,30); x.fillText(`الدوري الكويتي الممتاز · الجولة ${round} · ${SEASON}`, tx, 212);
+  x.fillStyle=acc.a; rr(x, tx-120, 238, 120, 7, 4); x.fill();
 
-  /* العنوان */
-  x.fillStyle="#5FB2E8"; x.font=F(600,30); x.fillText(D.sub, S-72, 106);
-  x.fillStyle="#FFFFFF"; x.font=F(700,64); x.fillText(D.title, S-72, 178);
-
-  /* شريط الدقائق */
-  const rw=(S-144)/16;
-  PERIODS.forEach((pp,i)=>{ const n=GOALS.filter(g=>period(g)===pp).length;
-    x.fillStyle = n>2?"#E9B949" : n>0?"#5FB2E8" : "rgba(143,166,196,.25)";
-    rr(x,72+i*2*rw,214,rw*2-8,7,4); x.fill(); });
-
-  /* لوحة الأرقام */
-  const py=268, ph=S-py-190;
-  x.fillStyle="rgba(14,43,82,.72)"; rr(x,72,py,S-144,ph,26); x.fill();
-  x.strokeStyle="rgba(143,166,196,.28)"; x.lineWidth=2; x.stroke();
-
-  const n=D.rows.length, step=ph/n;
-  D.rows.forEach((row,i)=>{
-    const y=py+step*(i+.5);
-    x.fillStyle="#A9D8F5"; x.font=F(500,30); x.fillText(row[0], S-112, y-4);
-    x.textAlign="left";
-    x.fillStyle="#FFFFFF"; x.font=F(700,42); x.fillText(row[1], 112, y+4);
+  /* بطاقة رقم */
+  const tile=(X,Y,w,h,val,label,opt={})=>{
+    x.fillStyle="#0F1E35"; rr(x,X,Y,w,h,26); x.fill();
+    x.strokeStyle="#213653"; x.lineWidth=2; x.stroke();
+    x.save(); rr(x,X,Y,w,h,26); x.clip(); x.fillStyle=opt.hi?acc.a:"rgba(143,166,196,.35)"; x.fillRect(X,Y,w,6); x.restore();
+    x.textAlign="center";
+    if(opt.draw) opt.draw(X+w/2, Y+h*.52);
+    else { x.fillStyle="#FFFFFF"; x.font=F(800,opt.sz||64); x.fillText(val, X+w/2, Y+h*.56); }
+    x.fillStyle="#B3C4D9"; x.font=F(500,28); x.fillText(label, X+w/2, Y+h-30);
     x.textAlign="right";
-    if(i<n-1){ x.strokeStyle="rgba(143,166,196,.16)"; x.lineWidth=1;
-      x.beginPath(); x.moveTo(112,py+step*(i+1)); x.lineTo(S-112,py+step*(i+1)); x.stroke(); }
-  });
+  };
+  const formDots=(cx,cy,form)=>{
+    const f=form.slice(-5), r=22, gp=14, tw=f.length*(r*2)+Math.max(0,f.length-1)*gp; let px=cx+tw/2-r;   /* الأحدث يميناً */
+    const col={w:"#16A34A",d:"#64748B",l:"#DC2626"}, lab={w:"ف",d:"ت",l:"خ"};
+    [...f].reverse().forEach(k=>{ x.fillStyle=col[k]; x.beginPath(); x.arc(px,cy-12,r,0,Math.PI*2); x.fill();
+      x.fillStyle="#fff"; x.font=F(800,24); x.textAlign="center"; x.fillText(lab[k],px,cy-3); px-=r*2+gp; });
+    if(!f.length){ x.fillStyle="#fff"; x.font=F(800,56); x.textAlign="center"; x.fillText("—",cx,cy); }
+  };
+  /* صف الهدّاف بصورته */
+  const scorerRow=async(Y,top,title)=>{
+    const h=170; x.fillStyle="#0F1E35"; rr(x,M,Y,W-2*M,h,26); x.fill(); x.strokeStyle="#213653"; x.lineWidth=2; x.stroke();
+    x.save(); rr(x,M,Y,W-2*M,h,26); x.clip(); x.fillStyle=acc.a; x.fillRect(W-M-6,Y,6,h); x.restore();
+    const cut = top && (typeof photoCut==="function") ? photoCut(top.n, top.c) : null;
+    const ph = await load(cut ? cut+"_f.webp?v=22" : crestSrcOf(top?top.c:""));
+    const R=62, pcx=W-M-40-R, pcy=Y+h/2;
+    x.save(); x.beginPath(); x.arc(pcx,pcy,R,0,Math.PI*2); x.fillStyle=rgba(acc.rgb,.25); x.fill(); x.clip();
+    if(ph){ const r=Math.max(2*R/ph.width, 2*R/ph.height)*(cut?1:.8), w=ph.width*r, hh=ph.height*r; x.drawImage(ph, pcx-w/2, cut?pcy-R:pcy-hh/2, w, hh); }
+    x.restore();
+    x.fillStyle="#B3C4D9"; x.font=F(500,28); x.fillText(title, pcx-R-30, Y+64);
+    x.fillStyle="#FFFFFF"; x.font=F(800,46); x.fillText(top?top.n:"—", pcx-R-30, Y+124);
+    if(top){ x.textAlign="left"; x.fillStyle="#FFFFFF"; x.font=F(800,78); x.fillText(String(top.g), M+44, Y+112);
+      x.fillStyle="#B3C4D9"; x.font=F(500,26); x.fillText("أهداف", M+44, Y+148); x.textAlign="right"; }
+  };
 
-  /* التذييل: الحقوق */
-  x.fillStyle="#8FA6C4"; x.font=F(400,26);
-  x.fillText("المصدر: رصد يدوي ✅ · " + LASTUPDATE, S-72, S-96);
+  const gx=M, gw=W-2*M, gap=22;
+  if(mode==="club"){
+    const st=clubStats(club), r=st.row||{}, pos=T.findIndex(q=>q.c===club)+1;
+    const w3=(gw-2*gap)/3, y1=300, h1=220;
+    tile(W-M-w3, y1, w3, h1, String(pos||"—"), "المركز", {hi:true, sz:90});
+    tile(W-M-2*w3-gap, y1, w3, h1, String(r.Pts??0), "النقاط", {hi:true, sz:90});
+    tile(gx, y1, w3, h1, "", "آخر النتائج", {draw:(cx,cy)=>formDots(cx,cy,r.form||[])});
+    const y2=y1+h1+gap, w2=(gw-gap)/2, h2=190;
+    tile(W-M-w2, y2, w2, h2, `${r.GF??0} - ${r.GA??0}`, "سجّل / استقبل");
+    tile(gx, y2, w2, h2, `${r.W??0} - ${r.D??0} - ${r.L??0}`, "فوز / تعادل / خسارة");
+    const y3=y2+h2+gap;
+    tile(W-M-w2, y3, w2, h2, r.GF?`${pct(st.sp,r.GF)}%`:"—", "نصيب الكرات الثابتة");
+    tile(gx, y3, w2, h2, String(r.cs??0), "شباك نظيفة");
+    await scorerRow(y3+h2+gap, st.top, "هدّاف الفريق");
+  } else {
+    const tg=GOALS.length, pl=played.length, top=scorers()[0];
+    const w3=(gw-2*gap)/3, y1=300, h1=200;
+    tile(W-M-w3, y1, w3, h1, String(tg), "إجمالي الأهداف", {hi:true, sz:80});
+    tile(W-M-2*w3-gap, y1, w3, h1, pl?(tg/pl).toFixed(2):"—", "معدل المباراة", {hi:true, sz:80});
+    tile(gx, y1, w3, h1, String(pl), "مباراة ملعوبة", {hi:true, sz:80});
+    /* أعلى 5 بالترتيب */
+    const ty=y1+h1+gap, rh=74, th=5*rh+70;
+    x.fillStyle="#0F1E35"; rr(x,gx,ty,gw,th,26); x.fill(); x.strokeStyle="#213653"; x.lineWidth=2; x.stroke();
+    x.fillStyle="#B3C4D9"; x.font=F(600,26); x.fillText("الترتيب", W-M-36, ty+48);
+    x.textAlign="left"; x.fillText("نقاط", gx+36, ty+48); x.fillText("لعب", gx+160, ty+48); x.textAlign="right";
+    const crests=await Promise.all(T.slice(0,5).map(q=>load(crestSrcOf(q.c))));
+    T.slice(0,5).forEach((q,i)=>{ const yy=ty+70+i*rh;
+      if(i){ x.strokeStyle="rgba(143,166,196,.14)"; x.lineWidth=1; x.beginPath(); x.moveTo(gx+30,yy); x.lineTo(W-M-30,yy); x.stroke(); }
+      if(i===0){ x.fillStyle=rgba(acc.rgb,.16); rr(x,gx+12,yy+6,gw-24,rh-12,16); x.fill(); }
+      x.fillStyle="#FFFFFF"; x.font=F(800,32); x.textAlign="center"; x.fillText(String(i+1), W-M-50, yy+rh/2+12);
+      const ci=crests[i]; if(ci){ const s=46, r=Math.min(s/ci.width,s/ci.height); x.drawImage(ci, W-M-130+(s-ci.width*r)/2, yy+(rh-ci.height*r)/2, ci.width*r, ci.height*r); }
+      x.textAlign="right"; x.fillStyle="#FFFFFF"; x.font=F(700,34); x.fillText(q.c, W-M-156, yy+rh/2+12);
+      x.textAlign="left"; x.font=F(800,34); x.fillText(String(q.Pts), gx+44, yy+rh/2+12);
+      x.fillStyle="#B3C4D9"; x.font=F(600,30); x.fillText(String(q.P), gx+166, yy+rh/2+11); x.textAlign="right"; });
+    await scorerRow(ty+th+gap, top, "هدّاف الدوري");
+  }
+
+  /* التذييل */
+  const brand=await load(BRAND);
+  x.strokeStyle="rgba(143,166,196,.16)"; x.lineWidth=1; x.beginPath(); x.moveTo(M,H-150); x.lineTo(W-M,H-150); x.stroke();
+  if(brand){ const bh=64, bw=brand.width*bh/brand.height; x.drawImage(brand, W-M-bw, H-118, bw, bh); }
   x.textAlign="left"; x.direction="ltr";
-  x.fillStyle="#E9B949"; x.font=F(600,30); x.fillText(HANDLES, 72, S-96);
-  x.fillStyle="rgba(143,166,196,.75)"; x.font=F(400,24); x.fillText("© "+OWNER, 72, S-56);
+  x.fillStyle="#FFFFFF"; x.font=F(700,34); x.fillText("mfsoccer.com", M, H-86);
+  x.fillStyle="#B3C4D9"; x.font=F(500,26); x.fillText(HANDLES, M, H-46);
 
-  const name = (mode==="club" ? club : "ملخص-الدوري") + "-الجولة-" + Math.max(...MATCHES.map(m=>m.round)) + ".png";
+  const name = (mode==="club" ? club : "ملخص-الدوري") + "-الجولة-" + round + ".png";
   c.toBlob(b=>{ const u=URL.createObjectURL(b); const a=document.createElement("a");
     a.href=u; a.download=name; document.body.appendChild(a); a.click(); a.remove();
     setTimeout(()=>URL.revokeObjectURL(u),4000); }, "image/png");
@@ -5704,7 +5763,14 @@ function exportPDF(title){
      </div>
      <div style="text-align:left;font-size:.7rem;color:#E9B949;direction:ltr">${esc(HANDLES)}<br>
        <span style="color:#8FA6C4">© ${esc(OWNER)}</span></div>`;
-  setTimeout(()=>window.print(), 350);   /* مهلة حتى تُطبَّق ألوان الوضع الفاتح قبل الطباعة */
+  /* الصور الكسولة (loading=lazy) تحت الشاشة لا تُحمَّل قبل الطباعة فتخرج خانات صور اللاعبين فارغة:
+     نحمّلها كلها وننتظرها (حتى 6 ثوانٍ) ثم نطبع (منصور 2026-09-17) */
+  const imgs=[...document.querySelectorAll("main img, #pprof img, #mpage img")];
+  imgs.forEach(i=>{ if(i.loading==="lazy") i.loading="eager"; });
+  const wait=i=>(i.complete&&i.naturalWidth) ? Promise.resolve() : (i.decode ? i.decode().catch(()=>{}) : new Promise(r=>{ i.onload=i.onerror=r; }));
+  if(typeof toast==="function") toast("تجهيز التقرير…");
+  Promise.race([Promise.all(imgs.map(wait)), new Promise(r=>setTimeout(r,6000))])
+    .then(()=>setTimeout(()=>window.print(), 150));
 }
 
 function exportBar(mode, club, title){
