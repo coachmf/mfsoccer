@@ -9376,15 +9376,20 @@ html[data-theme="light"] .tp-stats{background:rgba(11,31,58,.03)}
 .tp-stats b{font-family:var(--display);font-weight:800;font-size:1rem;color:var(--head,#fff);font-variant-numeric:tabular-nums}
 /* قواعد الجوال بعد القواعد العامة — كانت قبلها فتغلبها القواعد العامة (نفس الأولوية، الأخير يفوز) فتنقصّ الصورة والاسم */
 /* على الشاشات الضيقة: البطاقات جنباً إلى جنب على عرض الشاشة بلا تمرير أفقي (منصور 2026-09-15) — عمودان، والبطاقة الثالثة بعرض الصف */
-@media(max-width:900px){.tp-row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
-  .tp:last-child:nth-child(odd){grid-column:1/-1}
-  .tp-hd{flex-direction:column;align-items:flex-start;gap:0;padding:10px 12px 2px}
-  .tp-body{grid-template-columns:1fr;justify-items:center;gap:2px;padding:0 6px}
-  .tp-id{align-items:center;text-align:center;padding:2px 4px 4px}
-  .tp-ph{width:64px;height:64px}
-  .tp-body .rad{max-width:170px}
-  .tp-stats{grid-template-columns:repeat(4,1fr)} .tp-stats span{padding:7px 2px;font-size:.58rem} .tp-stats b{font-size:.9rem}
-  .tp:last-child:nth-child(odd) .tp-body{grid-template-columns:minmax(0,1fr) 150px;justify-items:start} .tp:last-child:nth-child(odd) .tp-id{align-items:flex-start;text-align:start}}
+/* منصور 2026-09-16: البطاقات أصغر وبالعرض — على الهاتف بطاقة بعرض الشاشة: الهوية يمين والرادار يسار والأرقام تحت */
+.tp-body{grid-template-columns:minmax(0,1fr) 128px}
+.tp-ph{width:60px;height:60px}
+.tp-id b{font-size:.95rem}
+@media(max-width:900px){.tp-row{display:grid;grid-template-columns:minmax(0,1fr);gap:8px}
+  .tp-hd{flex-direction:row;align-items:baseline;gap:8px;padding:9px 12px 0}
+  .tp-t{font-size:.9rem}
+  .tp-body{grid-template-columns:minmax(0,1fr) 112px;align-items:center;gap:4px;padding:0 8px 0 4px}
+  .tp-id{display:grid;grid-template-columns:52px minmax(0,1fr);column-gap:10px;row-gap:3px;align-items:center;justify-items:start;text-align:start;padding:4px 4px 6px}
+  .tp-ph{width:52px;height:52px;margin:0;grid-column:1;grid-row:1/span 3}
+  .tp-id b,.tp-id .tp-club,.tp-id .tp-pos{grid-column:2}
+  .tp-id b{font-size:.9rem}
+  .tp-body .rad{max-width:112px}
+  .tp-stats span{padding:5px 2px;font-size:.56rem} .tp-stats b{font-size:.85rem}}
 .tf{padding:4px 12px}
 .tf-r{display:grid;grid-template-columns:22px minmax(0,1fr) auto auto;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--line,rgba(143,166,196,.12));cursor:pointer}
 .tf-r:last-child{border-bottom:0}
