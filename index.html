@@ -9841,8 +9841,13 @@ html.mp-open{overflow:hidden}
 .mp-crew small{display:block;font-size:.7rem;color:var(--text-muted,var(--slate))}
 .mp-crew b{display:block;color:var(--text-primary,#fff);font-weight:700;font-size:.86rem;line-height:1.35}
 .mp-crew .crew-main b{font-size:1rem}
-.mp-crew .crew-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px 14px;padding-top:12px}
-.mp-crew .crew-p{display:flex;align-items:center;gap:10px;min-width:0}
+.mp-crew .crew-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 10px;padding-top:2px}
+.mp-crew .crew-p{display:flex;align-items:center;gap:8px;min-width:0}
+.mp-crew .crew-p>div{min-width:0}
+.mp-crew .crew-p .ref-role{width:30px;height:30px}
+.mp-crew .crew-p small{font-size:.62rem;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mp-crew .crew-p b{font-size:.78rem;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+@media (min-width:700px){.mp-crew .crew-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
 .mp-crew .crew-p.none b{color:var(--text-muted,var(--slate));font-weight:500}
 .refrow .ref-face{width:30px;height:30px}
 .mp-irow{display:flex;justify-content:space-between;gap:12px;padding:9px 2px;border-bottom:1px solid var(--border-card,rgba(143,166,196,.14));font-size:.82rem}
@@ -11287,8 +11292,7 @@ function mpInfoRows(m){
   REF_ROLES.forEach(([k,label])=>{ if(refs[k]) people.push([label, refs[k], k]); });
   const none=v=>v==="لا يوجد";
   const crewCard = people.length ? `<div class="mp-card mp-crew"><div class="mp-hd"><h3>طاقم التحكيم</h3></div>
-    ${crew.ref?`<div class="crew-main"><div class="crew-shirt">${refShirtSVG(crew.ref)}</div><div><small>${refRoleIco("ref","sm")}حكم الساحة</small><b>${esc(crew.ref)}</b></div></div>`:""}
-    <div class="crew-grid">${people.slice(crew.ref?1:0).map(([l,n,k])=>`<div class="crew-p${none(n)?" none":""}">${refRoleIco(k)}<div><small>${l}</small><b>${esc(n)}</b></div></div>`).join("")}</div></div>` : "";
+    <div class="crew-grid">${people.map(([l,n,k])=>`<div class="crew-p${none(n)?" none":""}">${refRoleIco(k)}<div><small>${l}</small><b>${esc(n)}</b></div></div>`).join("")}</div></div>` : "";
   return `<div class="mp-card mp-info">${rows.map(([k,v])=>`<div class="mp-irow"><span>${k}</span><b>${v}</b></div>`).join("")}
     ${m.note?`<div class="mp-note">${esc(m.note)}</div>`:""}</div>${crewCard}`;
 }
