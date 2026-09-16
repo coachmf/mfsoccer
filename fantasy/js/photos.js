@@ -4,7 +4,7 @@
 'use strict';
 
 /* رقم نسخة الصور: ارفعه عند إعادة توليد أي قصّة حتى لا يبقى المتصفح على النسخة القديمة */
-const PLAYER_PHOTOS_VER = '21';
+const PLAYER_PHOTOS_VER = '22';
 
 const PLAYER_PHOTOS = {
   // الصليبخات (17)
@@ -198,6 +198,10 @@ const PLAYER_PHOTOS = {
   'NSR|عيد طلال رقبة': '/assets/players/nsr/40',
   'NSR|محمد حمد': '/assets/players/nsr/77',
   'NSR|حازم الحاج حسن': '/assets/players/nsr/99',
+  'NSR|ابراهيم الظفيري': '/assets/players/nsr/25',
+  'NSR|احمد الرشيدي': '/assets/players/nsr/14',
+  'NSR|محمد عجاج': '/assets/players/nsr/1',
+  'NSR|مزيد نواف': '/assets/players/nsr/88',
   // القادسية (27)
   'QAD|عبدالوهاب الشلال': '/assets/players/qad/29',   // انضم للكشف 2026-09-15 (Qadsia Club2558)
   'QAD|احمد اليحيى': '/assets/players/qad/2',
@@ -277,6 +281,11 @@ const PLAYER_PHOTOS = {
   'ARB|علي خلف': '/assets/players/arb/17',
   'KAZ|بدر طارق': '/assets/players/kaz/77',   // انتقل من العربي (منصور 2026-09-15)
   'ARB|وليد ولد الشيخ': '/assets/players/arb/walid',
+  'ARB|عمر العازمي': '/assets/players/arb/27',
+  'ARB|حسين كنكوني': '/assets/players/arb/1',
+  'ARB|حسين العريان': '/assets/players/arb/99',
+  'ARB|عايد ماجد': '/assets/players/arb/90',
+  'ARB|يوسف صباح': '/assets/players/arb/70',
   'NSR|مسفر العدواني': '/assets/players/nsr/mesfer',   // بطاقة ترحيب النادي، مهاجم بلا رقم بعد   // بطاقة المركز الإعلامي للنادي، بلا رقم بعد
   // كاظمة (6) — بورتريهات النادي الرسمية من حساب X
   'KAZ|حسين كنكوني': '/assets/players/kaz/1',
