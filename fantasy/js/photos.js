@@ -287,7 +287,7 @@ const PLAYER_PHOTOS = {
   'ARB|حسين العريان': '/assets/players/arb/99',
   'ARB|عايد ماجد': '/assets/players/arb/90',
   'ARB|يوسف صباح': '/assets/players/arb/70',
-  'ARB|حمد حربي': '/assets/players/arb/12',
+  'ARB|حمد الحربي': '/assets/players/arb/12',
   'NSR|مسفر العدواني': '/assets/players/nsr/mesfer',   // بطاقة ترحيب النادي، مهاجم بلا رقم بعد   // بطاقة المركز الإعلامي للنادي، بلا رقم بعد
   // كاظمة (6) — بورتريهات النادي الرسمية من حساب X
   'KAZ|حسين كنكوني': '/assets/players/kaz/1',
