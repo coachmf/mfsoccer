@@ -2520,7 +2520,7 @@ function extTableHTML(c, evs){
     const rows=g.teams.map(n=>{ const x=evTeam(n,c.kind); return {x, key:_norm(x.n), P:0,W:0,D:0,L:0,GF:0,GA:0,Pts:0,form:[]}; });
     const byKey={}; rows.forEach(r=>{ byKey[r.key]=r; });
     evs.forEach(e=>{
-      if(e.hg==null || e.ag==null || (e.to && e.to!==e.d)) return;
+      if(e.hg==null || e.ag==null || e.live || (e.to && e.to!==e.d)) return;   /* المباراة الجارية لا تدخل الجدول حتى تنتهي */
       const parts=evParts(e); if(parts.length<2) return;
       const a=evTeam(parts[0],e.k), b=evTeam(parts[1],e.k); if(!a||!b) return;
       const ra=byKey[_norm(a.n)], rb=byKey[_norm(b.n)]; if(!ra||!rb) return;
@@ -2570,7 +2570,8 @@ function extCardsHTML(evs, compName){
     const dayHead=e.d!==lastDay?`<div class="mc-day"><span>${span?esc(evRange(e)):dayLabel(e.d)}</span></div>`:""; lastDay=e.d;
     if(!isMatch) return `${dayHead}<article class="mc soon"><div class="mc-stage">${esc(span?e.t:(parts.slice(0,-1).join(" - ")||e.t))}${e.n?`<em>${esc(e.n)}</em>`:""}</div></article>`;
     if(up) soon++; else done++;
-    const st=up?'<span class="mc-st soon">لم تبدأ</span>':'<span class="mc-st done">انتهت</span>';
+    /* live:true = مباراة جارية تُحدَّث نتيجتها أثناء اللعب (المتابعة المباشرة من SofaScore) — تُزال عند صافرة النهاية */
+    const st=(played&&e.live)?'<span class="mc-st live"><i></i>جارية الآن</span>':up?'<span class="mc-st soon">لم تبدأ</span>':'<span class="mc-st done">انتهت</span>';
     const mid = played ? `<span class="mc-score" dir="ltr">${+e.ag} - ${+e.hg}</span>` : `<span class="mc-time" dir="ltr">${e.time?esc(e.time):"—"}</span>`;
     return `${dayHead}<article class="mc${up?" soon":" done"}">
       <div class="mc-row">
