@@ -1093,3 +1093,13 @@ html.lang-en .pp-actions{justify-content:flex-start;}
   .pslot .badge,.pslot .badge.v{top:-4px!important;right:0!important;width:16px!important;height:16px!important;font-size:.52rem!important}
   .bench-strip .pslot .pk .kit{width:60px}
 }
+
+/* منصور 2026-09-16 (3): وضوح القمصان — الصورة كانت تُرسم 54px بسبب العرض المكتوب داخل الوسم (يتقدّم على CSS)، فالتكبير لم يطبَّق.
+   الآن: حجم فعلي أكبر بـ!important، وهوامش الصورة الشفافة (≈12%) تُعوَّض بهامش سالب فيبقى عرض البطاقة كما هو */
+.pslot .pk{overflow:visible}
+.pslot .pk .kit.kit-img{width:96px!important;height:96px!important;max-width:none;margin:-8px -10px 0;object-fit:contain;
+  image-rendering:auto;filter:drop-shadow(0 5px 8px rgba(0,25,10,.35)) saturate(1.08) contrast(1.04)}
+@media (max-width:860px){
+  .pslot .pk .kit.kit-img{width:76px!important;height:76px!important;margin:-6px -6px 0}
+  .bench-strip .pslot .pk .kit.kit-img{width:74px!important;height:74px!important;margin:-6px -8px 0}
+}

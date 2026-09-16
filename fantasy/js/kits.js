@@ -91,11 +91,15 @@ UI.kitShirt=function(clubId, isGK, w){
   </svg>`;
 };
 
+/* تحميل كل صور الأطقم وفكّ ترميزها مرة واحدة عند الإقلاع — إعادة رسم الملعب تجدها جاهزة في الذاكرة */
+UI.preloadKits=function(){ if(this._kitsPre || typeof KIT_IMG==='undefined') return; this._kitsPre=[];
+  Object.values(KIT_IMG).forEach(k=>[k.out,k.gk].forEach(f=>{ if(!f) return; const im=new Image(); im.decoding='async'; im.src='assets/kits/'+f; if(im.decode) im.decode().catch(()=>{}); this._kitsPre.push(im); })); };
+try{ UI.preloadKits(); }catch(e){}
 UI.kitImg=function(clubId,isGK,w){
   w=w||56;
   const k=KIT_IMG[clubId];
   const f= k? (isGK? k.gk : k.out) : null;
-  if(f) return `<img class="kit kit-img" src="assets/kits/${f}" alt="" style="width:${w}px;height:${Math.round(w*1.02)}px" loading="lazy">`;
+  if(f) return `<img class="kit kit-img" src="assets/kits/${f}" alt="" style="width:${w}px;height:${Math.round(w*1.02)}px" decoding="sync">`;   /* بلا lazy: القمصان محمّلة مسبقاً فلا تومض عند إعادة الرسم */
   return this.kitShirt(clubId,isGK,w);
 };
 /* بطاقة اللاعب على الملعب: القميص بدل الصورة (الصورة تبقى في البطاقة والبروفايل) */

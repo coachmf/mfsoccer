@@ -277,6 +277,9 @@ const APP = {
     /* الحركة عند تغيّر الصفحة فقط، لا عند كل إعادة رسم (تحديث/مزامنة) */
     const anim = this._shownRoute !== this.route;
     this._shownRoute = this.route;
+    /* إعادة الرسم بمحتوى مطابق (الجلسة المخزّنة ثم وصول السحابة ثم الفريق) لا تستبدل الصفحة — كانت القمصان ترمش 3 مرات عند الفتح (منصور 2026-09-16) */
+    if(!anim && html===this._lastHtml && main.firstElementChild){ this.renderBottomNav(); return; }
+    this._lastHtml = html;
     main.innerHTML=`<div class="view${anim?' anim':''}">${html}</div>`;
     this.renderBottomNav();
   },
