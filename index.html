@@ -2121,7 +2121,7 @@ main{padding-bottom:48px}
 <!-- اللغة الإنجليزية والوضع الداكن -->
 <link rel="stylesheet" href="site-theme.css?v=5">
 <script src="fantasy/js/i18n-more.js?v=11" defer></script>
-<script src="site-i18n.js?v=13" defer></script>
+<script src="site-i18n.js?v=14" defer></script>
 </head>
 <body>
 <!-- navicons:sprite — أيقونات شريط التنقل في الهاتف (خط 1.75 بلون النص الحالي) -->
@@ -4771,16 +4771,29 @@ function shapeMen(club){
     .forEach(x=>{ if(!seen[x.p]){ seen[x.p]=1; ns.push(x.p); } });
   return shapeMenFrom(ns, club);    /* الملعب كما يراه الجمهور: بلا تكرار */
 }
+/* منصور 2026-09-16: لا تُعرض 4-2-4 أبداً — تُعامل كـ4-4-2 (الجناحان في خط الوسط)، سواء استُنتجت أو حُفظت من الإدارة */
+const normForm=f=>String(f||"")==="4-2-4" ? "4-4-2" : f;
 function autoForm(men){
   const c={D:0,M:0,F:0};
   men.forEach(p=>{ if(c[p.line]!==undefined) c[p.line]++; });
   const parts=[c.D,c.M,c.F].filter(n=>n);
-  return FORMATIONS.includes(parts.join("-")) ? parts.join("-") : (parts.join("-")||"4-4-2");
+  return normForm(FORMATIONS.includes(parts.join("-")) ? parts.join("-") : (parts.join("-")||"4-4-2"));
 }
 function autoFormation(club){ return autoForm(shapeMen(club)); }
 /* توزيع اللاعبين على صفوف الخطة */
 function shapeSlots(men, form){
+  form=normForm(form);
   const rows=String(form).split("-").map(Number).filter(n=>n>0);
+  /* خطة بثلاثة خطوط لا تطابق مراكز الكشف (مثل مهاجمين أربعة في 4-4-2): الجناح (يمين/يسار) ينزل للوسط بقدر النقص */
+  if(rows.length===3){
+    const cnt=l=>men.filter(p=>p.line===l).length;
+    let needM=rows[1]-cnt("M"), extraF=cnt("F")-rows[2];
+    if(needM>0 && extraF>0){
+      men=men.map(p=>({...p}));
+      men.filter(p=>p.line==="F" && shSide(p.role)!==1).forEach(p=>{ if(needM>0 && extraF>0){ p.line="M"; needM--; extraF--; } });
+      men.filter(p=>p.line==="F").forEach(p=>{ if(needM>0 && extraF>0){ p.line="M"; needM--; extraF--; } });
+    }
+  }
   const gk=men.filter(p=>p.line==="G").slice(0,1);
   const rest=men.filter(p=>p.line!=="G").slice()
     .sort((a,b)=>(SH_ORDER[a.line]-SH_ORDER[b.line])||(shSide(a.role)-shSide(b.role)));
@@ -4802,7 +4815,7 @@ function drawShape(club){
   const box=document.querySelector(`[data-pitchfor="${cssq(club)}"]`);
   if(!box) return;
   const st=EDIT.shapes[club]=EDIT.shapes[club]||{f:"",pos:{}};
-  const form=st.f||autoFormation(club);
+  const form=normForm(st.f||autoFormation(club));
   const kit=kitOf(club);
   box.innerHTML=`<div class="xip-lines"></div>`;
   shapeSlots(shapeMen(club),form).forEach(({p,x,y,n})=>{
@@ -4933,8 +4946,8 @@ function pitchSpots(round, comp, club){
   if(names.length<7) return null;               /* تشكيلة ناقصة: لا نرسم نصفها */
   const men=shapeMenFrom(names, club);
   const row=shapeRowOf(round, comp, club);
-  const form=(row&&row.f) || autoForm(men);
-  const pos =(row&&row.pos) || {};
+  const form=normForm((row&&row.f) || autoForm(men));
+  const pos =(row&&row.f==="4-2-4") ? {} : ((row&&row.pos) || {});   /* مواضع مسحوبة على خطة 4-2-4 لا تناسب 4-4-2 */
   const spots=shapeSlots(men, form).map(({p,x,y,n})=>{
     const ov=pos[p.n];
     return {p, x: ov?ov.x:x, y: ov?ov.y:y, n};
@@ -4990,7 +5003,7 @@ function spotHTML(p, x, y, n, kit, ev, compact, extraNm){
   const k = (String(p.p||"").toUpperCase()==="GK" && kit.club) ? (gkKitOf(kit.club, p.s)||kit) : kit;
   return `<div class="pp-spot${compact?" cmp":""}" data-player="${esc(p.n)}" data-club="${esc(kit.club||"")}" style="right:${x}%;top:${y}%;max-width:${(compact?90/(n+1):96/(n+1)).toFixed(1)}%">
     <span class="pp-card${cut?"":" nophoto"}" style="${dotVars(k)}">
-      ${cut?`<img class="pp-img" src="${cut}_f.webp?v=17" alt="" loading="lazy" draggable="false">`:""}
+      ${cut?`<img class="pp-img" src="${cut}_f.webp?v=20" alt="" loading="lazy" draggable="false">`:""}
       <span class="pp-num">${num}</span>
       <span class="pp-nm">${esc(nm)}${extraNm||""}</span>${spotBadges(ev)}${natFlag(p.n, kit.club)}</span></div>`;
 }
@@ -5668,7 +5681,7 @@ function pav(name, size, placeholder, club){
   const S=size||PAVSIZE;
   /* القصّة الرسمية الموحّدة لها الأولوية على الصورة المرفوعة من الإدارة (حتى يتوحّد الشكل) */
   const cut = PHOTOSON ? photoCut(name, club) : null;
-  if(cut) return `<img class="pcut" src="${cut}_f.webp?v=17" alt="${esc(name)}" loading="lazy">`;
+  if(cut) return `<img class="pcut" src="${cut}_f.webp?v=20" alt="${esc(name)}" loading="lazy">`;
   /* الصور المرفوعة من لوحة الإدارة (PHOTOS في السحابة) لم تعد تُعرض في الموقع — طلب منصور 2026-09-15:
      الشكل الرسمي الموحّد فقط. البيانات نفسها باقية في السحابة ولوحة الإدارة، وتُعرض في المعاينة هناك فقط. */
   const src = (PHOTOSON && placeholder) ? PHOTOS[name] : null;
@@ -5783,7 +5796,7 @@ const EXT_FIXTURES=[
   {d:"2026-12-08",t:"كاظمة - الاتفاق السعودي - دوري أبطال الخليج للأندية",k:"بطولة خارجية",time:"17:00",venue:"استاد الصداقة والسلام",n:"الجولة 5"},
   {d:"2027-02-17",t:"عجمان الاماراتي - كاظمة - دوري أبطال الخليج للأندية",k:"بطولة خارجية",time:"22:30",venue:"استاد راشد بن سعيد",n:"الجولة 6"},
   /* نادي الكويت — دوري أبطال آسيا 2، دور المجموعات (المركز الإعلامي لنادي الكويت) */
-  {d:"2026-09-16",t:"الوحدة الاماراتي - الكويت - اسيا 2",k:"بطولة خارجية",time:"",venue:"استاد آل نهيان، أبوظبي",n:"الجولة 1"},
+  {d:"2026-09-16",t:"الوحدة الاماراتي - الكويت - اسيا 2",k:"بطولة خارجية",time:"19:00",venue:"استاد آل نهيان، أبوظبي",n:"الجولة 1"},
   {d:"2026-10-14",t:"الكويت - الخالدية البحريني - اسيا 2",k:"بطولة خارجية",time:"",venue:"استاد جابر المبارك الصباح",n:"الجولة 2"},
   {d:"2026-10-28",t:"ناساف الاوزبكي - الكويت - اسيا 2",k:"بطولة خارجية",time:"",venue:"الاستاد المركزي، قرشي",n:"الجولة 3"},
   {d:"2026-11-04",t:"الكويت - ناساف الاوزبكي - اسيا 2",k:"بطولة خارجية",time:"",venue:"استاد جابر المبارك الصباح",n:"الجولة 4"},
@@ -6292,7 +6305,6 @@ function renderMatches(){
 
   $("#v-matches").innerHTML = `
     <div class="mx-head"><h2 class="mx-title">المباريات</h2>${compSelect()}</div>
-    ${calendarBar()}
     ${roundStrip()}
     ${roundSummary(list)}
     <div class="mx-list">${list.length?matchCards:'<div class="mx-empty">لا توجد مباريات ضمن هذا التحديد.</div>'}</div>`;
@@ -6594,7 +6606,7 @@ function fansPitchHTML(row, tal){
   });
   if(men.length<7) return "";
   const spots=shapeSlots(men, row.f||autoForm(men));
-  return `<div class="xi-t" style="justify-content:center"><i>${esc(row.f||"")}</i></div>
+  return `<div class="xi-t" style="justify-content:center"><i>${esc(normForm(row.f||""))}</i></div>
     <div class="xipitch half"><div class="xip-lines"></div>
     ${spots.map(({p,x,y,n})=>{
       /* بطاقة بصورة اللاعب وقميص ناديه (نفس بطاقة تشكيلة النادي والمباراة) بدل الدائرة الرقمية — 2026-09-15 */
@@ -6760,7 +6772,7 @@ function topScorersHTML(){
   const cut=p=>(PHOTOSON && typeof LOCAL_PHOTOS!=="undefined") ? photoCut(p.n,p.c) : null;
   /* المنصّة: القصّة الكبيرة (800×1000) لأنها تُعرض كبيرة؛ القوائم: قصّة الوجه _f نفسها المستخدمة في كل قوائم الموقع */
   const av=(p,cls,big)=>{ const c=cut(p);
-    return c ? `<img class="${cls}" src="${c}${big?"":"_f"}.webp?v=17" alt="" loading="lazy" decoding="async">`
+    return c ? `<img class="${cls}" src="${c}${big?"":"_f"}.webp?v=20" alt="" loading="lazy" decoding="async">`
              : (LOGOS[p.c] ? `<img class="${cls} ts-crestfb" src="${LOGOS[p.c]}" alt="" loading="lazy">` : ""); };
   const sub=p=>{ const s=PP[p.n+"|"+p.c]; return s?`<span class="ts-sub">${s.apps} <i>مباراة</i></span><span class="ts-sub">${s.mins}′</span>`:""; };
   const medal=r=>r===1?"gold":r===2?"silver":r===3?"bronze":"";
@@ -6833,7 +6845,7 @@ function renderPlayers(){
       const byMin=[...PP].sort((a,b)=>b.mins-a.mins);
       const byCS=PP.filter(p=>p.cs>0).sort((a,b)=>b.cs-a.cs||b.mins-a.mins);
       const gkAv=p=>{ const c=(PHOTOSON && typeof LOCAL_PHOTOS!=="undefined") ? photoCut(p.n,p.c) : null;
-        return c ? `<img src="${c}_f.webp?v=17" alt="" loading="lazy" decoding="async">` : (LOGOS[p.c]?`<img class="ts-crestfb" src="${LOGOS[p.c]}" alt="" loading="lazy">`:""); };
+        return c ? `<img src="${c}_f.webp?v=20" alt="" loading="lazy" decoding="async">` : (LOGOS[p.c]?`<img class="ts-crestfb" src="${LOGOS[p.c]}" alt="" loading="lazy">`:""); };
       const csMax = byCS.length ? byCS[0].cs : 1;
       const csRows = byCS.map((p,i)=>{ const csRk=i+1;
         return `<div class="ts-row${csRk<=3?" top":""}" data-player="${esc(p.n)}" data-club="${esc(p.c)}" role="button" tabindex="0">
@@ -6940,7 +6952,7 @@ function squadRowsHTML(club){
     const p=sqPos(x), s=sqNum(x);
     const cut=(typeof photoCut==="function" && sqName(x)) ? photoCut(sqName(x), club) : null;
     return `<div class="sqrow ${p?"":"nopos"} pg-${posMain(x)||"x"}" data-i="${i}">
-      <span class="sqface">${cut?`<img src="${cut}_f.webp?v=17" alt="" loading="lazy" decoding="async">`:esc(String(sqName(x)||"").trim().split(/\s+/).slice(0,2).map(w=>w[0]||"").join(""))}</span>
+      <span class="sqface">${cut?`<img src="${cut}_f.webp?v=20" alt="" loading="lazy" decoding="async">`:esc(String(sqName(x)||"").trim().split(/\s+/).slice(0,2).map(w=>w[0]||"").join(""))}</span>
       <input type="text" class="sqno ${dup.has(s)?"dup":""}" inputmode="numeric" maxlength="3"
         value="${s||""}" placeholder="#" title="رقم القميص">
       <input type="text" class="sqn" value="${esc(sqName(x))}" spellcheck="false" placeholder="اسم اللاعب">
@@ -9365,6 +9377,11 @@ html[data-theme="dark"] .tp{background:linear-gradient(160deg,rgba(var(--ca-rgb)
 .tp-club .crest{width:18px;height:18px;border-radius:5px}
 .tp-pos{font-size:.64rem;padding:2px 8px;border-radius:999px;background:rgba(143,166,196,.12);color:var(--mist);border:1px solid var(--line,rgba(143,166,196,.2))}
 .rad{width:100%;height:auto;display:block}
+/* أسماء محاور الرادار في شارات خارج الرسم على الكمبيوتر والهاتف (منصور 2026-09-16) */
+.tp-body .rad-full{display:none}
+.rad-mini .rl rect{fill:rgba(143,166,196,.10);stroke:rgba(var(--ca-rgb),.55);stroke-width:1}
+.rad-mini .rl text{font-size:13.5px;font-weight:700;fill:#DCE6F2}
+html[data-theme="light"] .rad-mini .rl text{fill:#0B1F3A}
 .rad .rg{fill:none;stroke:rgba(143,166,196,.28);stroke-width:1}
 .rad .rp{fill-opacity:.32;stroke-width:1.8;stroke-linejoin:round}
 .rad text{font-family:var(--body);font-size:9.5px;fill:var(--slate)}
@@ -9376,15 +9393,29 @@ html[data-theme="light"] .tp-stats{background:rgba(11,31,58,.03)}
 .tp-stats b{font-family:var(--display);font-weight:800;font-size:1rem;color:var(--head,#fff);font-variant-numeric:tabular-nums}
 /* قواعد الجوال بعد القواعد العامة — كانت قبلها فتغلبها القواعد العامة (نفس الأولوية، الأخير يفوز) فتنقصّ الصورة والاسم */
 /* على الشاشات الضيقة: البطاقات جنباً إلى جنب على عرض الشاشة بلا تمرير أفقي (منصور 2026-09-15) — عمودان، والبطاقة الثالثة بعرض الصف */
-@media(max-width:900px){.tp-row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+/* منصور 2026-09-16: البطاقات أصغر وبالعرض — على الهاتف بطاقة بعرض الشاشة: الهوية يمين والرادار يسار والأرقام تحت */
+.tp-body{grid-template-columns:minmax(0,1fr) 176px}
+.tp-ph{width:60px;height:60px}
+.tp-id b{font-size:.95rem}
+/* الهاتف (منصور 2026-09-16): كل البطاقات ظاهرة بلا تمرير — شبكة عمودين ببطاقات مدمجة: العنوان، الصورة والاسم بجانب رادار صغير، والأرقام تحت */
+@media(max-width:900px){
+  .tp-row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
+  .tp{border-radius:12px}
+  .tp:hover{transform:none}
   .tp:last-child:nth-child(odd){grid-column:1/-1}
-  .tp-hd{flex-direction:column;align-items:flex-start;gap:0;padding:10px 12px 2px}
-  .tp-body{grid-template-columns:1fr;justify-items:center;gap:2px;padding:0 6px}
-  .tp-id{align-items:center;text-align:center;padding:2px 4px 4px}
-  .tp-ph{width:64px;height:64px}
-  .tp-body .rad{max-width:170px}
-  .tp-stats{grid-template-columns:repeat(4,1fr)} .tp-stats span{padding:7px 2px;font-size:.58rem} .tp-stats b{font-size:.9rem}
-  .tp:last-child:nth-child(odd) .tp-body{grid-template-columns:minmax(0,1fr) 150px;justify-items:start} .tp:last-child:nth-child(odd) .tp-id{align-items:flex-start;text-align:start}}
+  .tp-hd{padding:6px 8px 0}
+  .tp-t{font-size:.74rem} .tp-sub{display:none}
+  .tp-body{display:block;padding:0 4px}
+  /* الرادار بأسماء محاوره (منصور): أعرض، والخط مكبَّر داخل الرسم ليُقرأ على الهاتف */
+  .tp-body .rad-mini{display:block;width:100%;max-width:168px;height:auto;margin:2px auto 0}
+  .tp-id{display:grid;grid-template-columns:34px minmax(0,1fr);column-gap:6px;row-gap:0;align-items:center;justify-items:start;text-align:start;padding:3px 2px 0;min-width:0}
+  .tp-ph{width:34px;height:34px;margin:0;grid-column:1;grid-row:1/span 2;box-shadow:0 0 0 1.5px rgba(var(--ca-rgb),.8)}
+  .tp-id b,.tp-id .tp-club{grid-column:2;max-width:100%}
+  .tp-id b{font-size:.72rem;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .tp-club{font-size:.56rem;gap:3px} .tp-club .crest{width:12px;height:12px;border-radius:3px}
+  .tp-id .tp-pos{display:none}
+  .tp:last-child:nth-child(odd) .tp-body{display:grid;grid-template-columns:minmax(0,1fr) 170px;align-items:center}
+  .tp-stats span{padding:3px 1px;font-size:.48rem;gap:0} .tp-stats b{font-size:.74rem}}
 .tf{padding:4px 12px}
 .tf-r{display:grid;grid-template-columns:22px minmax(0,1fr) auto auto;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--line,rgba(143,166,196,.12));cursor:pointer}
 .tf-r:last-child{border-bottom:0}
@@ -9548,6 +9579,7 @@ html[data-theme="light"] .hm{--bg-card:#FFFFFF;--border-card:#E2E8F0;--text-prim
 <style>
 /* تبويب التشكيلة: بطاقة ملعب لكل فريق */
 .mpx{padding:0;overflow:hidden}
+.mpx-both .mpx-pitch{margin-bottom:0}
 .mpx-hd{display:flex;align-items:center;gap:10px;padding:12px 14px}
 .mpx-hd .crest{width:30px;height:30px}
 .mpx-hd>b{font-family:var(--display);font-size:1rem;color:var(--text-primary,#fff)}
@@ -9940,7 +9972,7 @@ function kfaPlayerCard(name, gk){
   const cut=(f && PHOTOSON && typeof LOCAL_PHOTOS!=="undefined") ? photoCut(f.site, f.club) : null;
   const pos=gk?"حارس مرمى":(f?posLabel(f.pos):"");
   return `<div class="pcard kfa-pc" ${f?`data-player="${esc(f.site)}" data-club="${esc(f.club)}" role="button" tabindex="0"`:""} aria-label="${esc(name)}">
-    <div class="ph">${cut?`<img src="${cut}_s.webp?v=17" alt="" loading="lazy" decoding="async" draggable="false">`
+    <div class="ph">${cut?`<img src="${cut}_s.webp?v=20" alt="" loading="lazy" decoding="async" draggable="false">`
                        :`<img class="noph" src="${KFA_INFO.img.logo}" alt="" loading="lazy" draggable="false">`}</div>
     ${f&&f.num?`<span class="no">${f.num}</span>`:""}
     <div class="nm">${esc(name)}</div>
@@ -9964,7 +9996,7 @@ function kfaRecordsHTML(list, kind){
     <tbody>${list.map((r,i)=>`<tr class="${i<3?"champ":""}">
       <td class="c">${i+1}</td>
       <td class="club"><span>${(()=>{ const f=r.site?kfaFind(r.site):null; const cut=(f&&PHOTOSON&&typeof LOCAL_PHOTOS!=="undefined")?photoCut(f.site,f.club):null;
-          return cut?`<img class="kfa-av" src="${cut}_f.webp?v=17" alt="" loading="lazy" decoding="async">` : r.img?`<img class="kfa-av" src="${r.img}" alt="" loading="lazy" decoding="async">`:`<span class="kfa-av ph"></span>`; })()}<b>${esc(r.n)}</b>${r.note?`<small class="kfa-note">${esc(r.note)}</small>`:""}</span></td>
+          return cut?`<img class="kfa-av" src="${cut}_f.webp?v=20" alt="" loading="lazy" decoding="async">` : r.img?`<img class="kfa-av" src="${r.img}" alt="" loading="lazy" decoding="async">`:`<span class="kfa-av ph"></span>`; })()}<b>${esc(r.n)}</b>${r.note?`<small class="kfa-note">${esc(r.note)}</small>`:""}</span></td>
       <td class="pts">${goals?r.g:r.caps}</td><td>${goals?r.caps:r.g}</td><td class="frm kfa-span" dir="ltr">${esc(r.span||"")}</td></tr>`).join("")}</tbody>
   </table></div></div>`;
 }
@@ -9977,7 +10009,7 @@ function kfaMatchesHTML(sq){
 }
 function kfaTeamPanel(sq){
   return `<div class="card pad kfa-coach">
-      ${sq.coachImg?`<div class="kfa-coach-ph"><img src="${sq.coachImg}_s.webp?v=17" alt="" loading="lazy" decoding="async"></div>`:""}
+      ${sq.coachImg?`<div class="kfa-coach-ph"><img src="${sq.coachImg}_s.webp?v=20" alt="" loading="lazy" decoding="async"></div>`:""}
       <div class="kfa-coach-ttl"><small>المدرب</small><b>${esc(sq.coach)}</b></div>
       <div class="kfa-coach-sub">${esc(sq.camp)} · ${sq.gk.length+sq.out.length} لاعباً</div>
     </div>
@@ -10103,7 +10135,7 @@ function clubAboutHTML(c, r, played){
 function playerCardHTML(p, c){
   const cut = (PHOTOSON && typeof LOCAL_PHOTOS!=="undefined") ? photoCut(p.n, c) : null;
   return `<div class="pcard" data-player="${esc(p.n)}" data-club="${esc(c)}" role="button" tabindex="0" aria-label="${esc(p.n)}">
-    <div class="ph">${cut?`<img src="${cut}_s.webp?v=17" alt="" loading="lazy" decoding="async" draggable="false">`
+    <div class="ph">${cut?`<img src="${cut}_s.webp?v=20" alt="" loading="lazy" decoding="async" draggable="false">`
                          :`<img class="noph" src="${crestSrcOf(c)}" alt="" loading="lazy" draggable="false">`}</div>
     ${p.s?`<span class="no">${p.s}</span>`:""}${natFlag(p.n, c)}
     <div class="nm">${esc(p.n)}</div>
@@ -10120,7 +10152,7 @@ function coachFlag(nat, cls){ if(!nat) return "";
 function coachCardHTML(c){
   const k=(typeof CLUB_COACH!=="undefined") && CLUB_COACH[c]; if(!k) return "";
   return `<div class="pcard sq-coach" aria-label="المدرب ${esc(k.n)}">
-    <div class="ph">${k.img?`<img src="${k.img}_s.webp?v=17" alt="" loading="lazy" decoding="async" draggable="false">`
+    <div class="ph">${k.img?`<img src="${k.img}_s.webp?v=20" alt="" loading="lazy" decoding="async" draggable="false">`
                            :`<img class="noph" src="${crestSrcOf(c)}" alt="" loading="lazy" draggable="false">`}</div>
     ${coachFlag(k.nat)}
     <div class="nm">${esc(k.n)}</div>
@@ -10225,7 +10257,7 @@ function playerProfileHTML(D){
     <button type="button" class="pprof-close" aria-label="إغلاق" onclick="closePlayer()">✕</button>
     <div class="pprof-hero">
       <div class="wm" style="background-image:url('${crestSrcOf(D.club)}')"></div>
-      <div class="ph">${cut?`<img src="${cut}.webp?v=17" alt="" decoding="async">`:`<img class="noph" src="${crestSrcOf(D.club)}" alt="">`}${natFlag(D.name, D.club, "pprof-flag")}</div>
+      <div class="ph">${cut?`<img src="${cut}.webp?v=20" alt="" decoding="async">`:`<img class="noph" src="${crestSrcOf(D.club)}" alt="">`}${natFlag(D.name, D.club, "pprof-flag")}</div>
       <div class="pprof-id">
         ${D.club?`<div class="club" data-club-link="${esc(D.club)}">${crest(D.club)}<span>${esc(D.club)}</span></div>`:""}
         <h3>${esc(D.name)}</h3>
@@ -10297,18 +10329,36 @@ function seasonPlayerStats(){
   return Object.values(map);
 }
 /* رادار SVG بستة محاور، القيم منسوبة إلى أعلى قيمة في الدوري (0..1) */
-function radarSVG(vals, labels, color){
-  const N=vals.length, cx=110, cy=100, R=64;
+function radarSVG(vals, labels, color, mini){
+  /* mini = نسخة الهاتف: رسم أصغر، وأسماء المحاور في شارات دائرية خارج الحلقات لا تتداخل مع الرسم */
+  const N=vals.length, cx=mini?130:110, cy=mini?116:100, R=mini?54:64;
   const pt=(i,r)=>{ const a=-Math.PI/2 + i*2*Math.PI/N; return [cx+r*Math.cos(a), cy+r*Math.sin(a)]; };
   const ring=k=>"M"+Array.from({length:N},(_,i)=>pt(i,R*k).map(v=>v.toFixed(1)).join(",")).join("L")+"Z";
   const poly="M"+vals.map((v,i)=>pt(i,R*Math.max(.06,Math.min(1,v))).map(x=>x.toFixed(1)).join(",")).join("L")+"Z";
-  const lab=labels.map((t,i)=>{ const [x,y]=pt(i,R+16); const anc = Math.abs(x-cx)<6 ? "middle" : (x<cx ? "end" : "start"); return `<text x="${x.toFixed(1)}" y="${(y+4).toFixed(1)}" text-anchor="${anc}">${t}</text>`; }).join("");
-  return `<svg class="rad" viewBox="0 0 220 200" aria-hidden="true">
+  const lab = mini
+    ? labels.map((t,i)=>{ let [x,y]=pt(i,R+27); const w=String(t).length*8.6+16, h=22;
+        x=Math.max(w/2+1, Math.min(260-w/2-1, x)); y=Math.max(h/2+1, Math.min(232-h/2-1, y));
+        return `<g class="rl"><rect x="${(x-w/2).toFixed(1)}" y="${(y-h/2).toFixed(1)}" width="${w.toFixed(1)}" height="${h}" rx="11"/><text x="${x.toFixed(1)}" y="${(y+5).toFixed(1)}" text-anchor="middle">${t}</text></g>`; }).join("")
+    : labels.map((t,i)=>{ const [x,y]=pt(i,R+16); const anc = Math.abs(x-cx)<6 ? "middle" : (x<cx ? "end" : "start"); return `<text x="${x.toFixed(1)}" y="${(y+4).toFixed(1)}" text-anchor="${anc}">${t}</text>`; }).join("");
+  return `<svg class="rad${mini?" rad-mini":" rad-full"}" viewBox="${mini?"0 0 260 232":"0 0 220 200"}" direction="ltr" aria-hidden="true">
     ${[.33,.66,1].map(k=>`<path class="rg" d="${ring(k)}"/>`).join("")}
     ${Array.from({length:N},(_,i)=>{ const [x,y]=pt(i,R); return `<line class="rg" x1="${cx}" y1="${cy}" x2="${x.toFixed(1)}" y2="${y.toFixed(1)}"/>`; }).join("")}
     <path class="rp" d="${poly}" style="fill:${color};stroke:${color}"/>
     ${vals.map((v,i)=>{ const [x,y]=pt(i,R*Math.max(.06,Math.min(1,v))); return `<circle class="rd" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="2.6" style="fill:${color}"/>`; }).join("")}
     ${lab}</svg>`;
+}
+/* شباك نظيفة لكل لاعب (أي مركز): 60 دقيقة فأكثر في مباراة لم يستقبل فيها فريقه — نفس قاعدة الحرّاس في playerPlay، للمدافعين في «أبرز اللاعبين» */
+function teamCleanSheets(){
+  const out={};
+  MATCHES.filter(m=>!isUpcoming(m)).forEach(m=>{
+    const comp=compOf(m);
+    [m.home, m.away].forEach(club=>{
+      if((club===m.home ? +m.ag : +m.hg)!==0) return;
+      const men=new Set(xiNames(m.round, comp, club)); matchSubs(m).filter(s=>s.club===club && s.in).forEach(s=>men.add(s.in));
+      men.forEach(n=>{ if(playerMatchMinutes(m, club, n)>=60) out[n+"|"+club]=(out[n+"|"+club]||0)+1; });
+    });
+  });
+  return out;
 }
 function topPlayersHTML(){
   const all=seasonPlayerStats().filter(p=>p.apps>0 || p.g>0 || p.a>0);
@@ -10320,29 +10370,46 @@ function topPlayersHTML(){
     {t:"الهدّاف",        sub:"أكثر اللاعبين تسجيلاً",           p:byKey(p=>p.g)},
     {t:"صانع الألعاب",   sub:"أكثر اللاعبين صناعةً للأهداف",    p:byKey(p=>p.a)},
     {t:"الأكثر مساهمة",  sub:"أهداف + صناعة لكل 90 دقيقة",     p:[...all].filter(p=>p.mins>=120).sort((x,y)=>((y.g+y.a)/y.mins)-((x.g+x.a)/x.mins)||(y.g+y.a)-(x.g+x.a))[0]},
-  ].filter(x=>x.p);
+  ];
+  /* بطاقات المراكز الدفاعية (منصور 2026-09-16): المركز من كشف النادي؛ الترتيب بالشباك النظيفة ثم المساهمة ثم الدقائق */
+  const TCS=teamCleanSheets(); all.forEach(p=>{ p.dcs=TCS[p.n+"|"+p.c]||0; });
+  const posOf=p=>{ const e=(SQUADS[p.c]||[]).find(x=>sqName(x)===p.n); return e?String(sqPos(e)).toUpperCase():""; };
+  const best=(codes,key)=>[...all].filter(p=>codes.includes(posOf(p)) && p.mins>0).sort(key)[0];
+  const defSort=(x,y)=>(y.dcs-x.dcs)||((y.g+y.a)-(x.g+x.a))||(y.mins-x.mins);
+  picks.push(
+    {t:"قلب الدفاع", sub:"أكثر قلوب الدفاع شباكاً نظيفة", role:"def", p:best(["CB"], defSort)},
+    {t:"الظهير",     sub:"الأظهرة: شباك نظيفة ومساهمة",   role:"def", p:best(["RB","LB","RWB","LWB"], defSort)},
+    {t:"الحارس",     sub:"أكثر الحرّاس شباكاً نظيفة",       role:"gk",  p:best(["GK"], (x,y)=>(y.cs-x.cs)||(y.mins-x.mins))}
+  );
+  const shown=picks.filter(x=>x.p);
   /* لا يتكرر اللاعب نفسه في بطاقتين */
-  const seen=new Set(); const uniq=picks.filter(x=>{ const k=x.p.n+"|"+x.p.c; if(seen.has(k)) return false; seen.add(k); return true; });
-  const card=({t,sub,p})=>{
+  const seen=new Set(); const uniq=shown.filter(x=>{ const k=x.p.n+"|"+x.p.c; if(seen.has(k)) return false; seen.add(k); return true; });
+  const mxCS=Math.max(1,...all.map(p=>p.dcs)), mxGK=Math.max(1,...all.map(p=>p.cs));
+  const card=({t,sub,p,role})=>{
     const disc=1-Math.min(1,(p.y+2*p.r)/mx.cards);
-    const vals=[p.g/mx.g, p.a/mx.a, p.apps/mx.apps, p.mins/mx.mins, disc, (p.g+p.a)/mx.ga];
-    const labels=["أهداف","صناعة","مشاركات","دقائق","انضباط","مساهمة"];
+    const vals = role==="gk"  ? [p.cs/mxGK, p.apps/mx.apps, p.mins/mx.mins, disc]
+               : role==="def" ? [p.dcs/mxCS, p.g/mx.g, p.a/mx.a, p.apps/mx.apps, p.mins/mx.mins, disc]
+               : [p.g/mx.g, p.a/mx.a, p.apps/mx.apps, p.mins/mx.mins, disc, (p.g+p.a)/mx.ga];
+    const labels = role==="gk"  ? ["شباك نظيفة","مشاركات","دقائق","انضباط"]
+                 : role==="def" ? ["شباك نظيفة","أهداف","صناعة","مشاركات","دقائق","انضباط"]
+                 : ["أهداف","صناعة","مشاركات","دقائق","انضباط","مساهمة"];
+    const statsRow = role==="gk" ? `<span><b>${p.cs}</b>شباك نظيفة</span><span><b>${p.apps}</b>مباريات</span><span><b>${p.mins}</b>دقيقة</span><span><b>${p.y+p.r}</b>بطاقات</span>`
+                   : role==="def" ? `<span><b>${p.dcs}</b>شباك نظيفة</span><span><b>${p.g}</b>أهداف</span><span><b>${p.a}</b>صناعة</span><span><b>${p.mins}</b>دقيقة</span>`
+                   : `<span><b>${p.g}</b>أهداف</span><span><b>${p.a}</b>صناعة</span><span><b>${p.apps}</b>مباريات</span><span><b>${p.mins}</b>دقيقة</span>`;
     const k=clubAccent(p.c); const cut=photoCut(p.n,p.c);
     const sq=(SQUADS[p.c]||[]).find(x=>sqName(x)===p.n); const num=sq?sqNum(sq):0, pos=sq?posLabel(sqPos(sq)):"";
     return `<article class="tp" style="${accentVars(p.c)}" data-player="${esc(p.n)}" data-club="${esc(p.c)}" role="button" tabindex="0">
       <div class="tp-hd"><span class="tp-t">${t}</span><span class="tp-sub">${sub}</span></div>
       <div class="tp-body">
         <div class="tp-id">
-          <div class="tp-ph">${cut?`<img src="${cut}_f.webp?v=17" alt="" loading="lazy" decoding="async">`:`<span class="pavph">${esc((p.n||"").split(/\s+/).slice(0,2).map(w=>w[0]||"").join(""))}</span>`}</div>
+          <div class="tp-ph">${cut?`<img src="${cut}_f.webp?v=20" alt="" loading="lazy" decoding="async">`:`<span class="pavph">${esc((p.n||"").split(/\s+/).slice(0,2).map(w=>w[0]||"").join(""))}</span>`}</div>
           <b>${esc(p.n)}</b>
           <span class="tp-club">${crest(p.c)}${esc(p.c)}${num?` · ${num}`:""}</span>
           ${pos?`<span class="tp-pos">${esc(pos)}</span>`:""}
         </div>
-        ${radarSVG(vals, labels, k.a)}
+        ${radarSVG(vals, labels, k.a)}${radarSVG(vals, labels, k.a, true)}
       </div>
-      <div class="tp-stats">
-        <span><b>${p.g}</b>أهداف</span><span><b>${p.a}</b>صناعة</span><span><b>${p.apps}</b>مباريات</span><span><b>${p.mins}</b>دقيقة</span>
-      </div>
+      <div class="tp-stats">${statsRow}</div>
     </article>`;
   };
   return `<h2 class="sec">أبرز اللاعبين<span class="sq-n">${esc(compLabel(COMP))}</span></h2>
@@ -10457,7 +10524,7 @@ function hmTopScorersHTML(){
   return `<section class="hm-ts">
     <div class="hm-sec-hd"><h2>الهدافون</h2><button type="button" class="hm-link" data-go-view="players">الكل</button></div>
     <div class="hm-ts-row">${L.map(p=>{ const cut=photoCut(p.n,p.c); return `<button type="button" class="hm-tsc" data-player="${esc(p.n)}" data-club="${esc(p.c)}" style="${accentVars(p.c)}">
-      <span class="ph">${cut?`<img src="${cut}_f.webp?v=17" alt="" loading="lazy" decoding="async">`:`<i>${esc((p.n||"").split(/\s+/).slice(0,2).map(w=>w[0]||"").join(""))}</i>`}${crest(p.c)}</span>
+      <span class="ph">${cut?`<img src="${cut}_f.webp?v=20" alt="" loading="lazy" decoding="async">`:`<i>${esc((p.n||"").split(/\s+/).slice(0,2).map(w=>w[0]||"").join(""))}</i>`}${crest(p.c)}</span>
       <b>${p.g}</b><span class="nm">${esc(p.n)}</span></button>`; }).join("")}</div>
   </section>`;
 }
@@ -10986,7 +11053,7 @@ function ratingRowHTML(x, i){
   const cut=photoCut(x.n, x.c);
   return `<div class="rt-row" data-player="${esc(x.n)}" data-club="${esc(x.c)}">
     ${i!=null?`<span class="rt-i">${i+1}</span>`:""}
-    <span class="rt-ph">${cut?`<img src="${cut}_f.webp?v=17" alt="" loading="lazy" decoding="async">`:`<i>${esc((x.n||"").split(/\s+/).slice(0,2).map(w=>w[0]||"").join(""))}</i>`}${crest(x.c)}</span>
+    <span class="rt-ph">${cut?`<img src="${cut}_f.webp?v=20" alt="" loading="lazy" decoding="async">`:`<i>${esc((x.n||"").split(/\s+/).slice(0,2).map(w=>w[0]||"").join(""))}</i>`}${crest(x.c)}</span>
     <span class="rt-nm"><b>${esc(x.n)}</b><small>${esc(x.c)}${x.apps?` · ${mw(x.apps)}`:""}</small></span>
     ${ratingBadge(x.v!=null?x.v:x.avg)}
   </div>`;
@@ -11016,7 +11083,7 @@ function mpFanPick(m){
 function motmPlayerHTML(n, c, extra){
   const cut=photoCut(n, c);
   return `<div class="motm-p" data-player="${esc(n)}" data-club="${esc(c)}">
-    <span class="motm-ph" style="${accentVars(c)}">${cut?`<img src="${cut}_f.webp?v=17" alt="" decoding="async">`:crest(c,true)}</span>
+    <span class="motm-ph" style="${accentVars(c)}">${cut?`<img src="${cut}_f.webp?v=20" alt="" decoding="async">`:crest(c,true)}</span>
     <b>${esc(n)}</b><small>${crest(c)}${esc(c)}</small>${extra}</div>`;
 }
 function mpMotmHTML(m){
@@ -11028,7 +11095,7 @@ function mpMotmHTML(m){
     : `<div class="motm-empty">لا أصوات لأفضل لاعب من هذه المباراة بعد</div>`;
   const fanRows = fan.list.slice(f0?1:0, (f0?1:0)+3).map(x=>{ const cut=photoCut(x.n,x.c);
     return `<div class="rt-row" data-player="${esc(x.n)}" data-club="${esc(x.c)}">
-      <span class="rt-ph">${cut?`<img src="${cut}_f.webp?v=17" alt="" loading="lazy">`:`<i></i>`}${crest(x.c)}</span>
+      <span class="rt-ph">${cut?`<img src="${cut}_f.webp?v=20" alt="" loading="lazy">`:`<i></i>`}${crest(x.c)}</span>
       <span class="rt-nm"><b>${esc(x.n)}</b><small>${nVotes(x.v)}</small></span><span class="fanpct">${x.pct}%</span></div>`; }).join("");
   const hA=teamAvgRating(m,m.home), aA=teamAvgRating(m,m.away);
   return `<div class="mp-card mp-motm"><div class="mp-hd"><h3>أفضل لاعب في المباراة</h3></div>
@@ -11239,7 +11306,7 @@ function mpTeamXI(m, club){
     const v=rmap[p.n];
     return `<div class="mpx-p" data-player="${esc(p.n)}" data-club="${esc(club)}" style="right:${x.toFixed(2)}%;top:${((TOP+li*ROW)/H*100).toFixed(2)}%;width:${w.toFixed(2)}%">
       <span class="pp-card mpx-card${cut?"":" nophoto"}" style="${dotVars(kk)}">
-        ${cut?`<img class="pp-img mpx-stand" src="${cut}_s.webp?v=17" alt="" loading="lazy" draggable="false">`:`<span class="pp-num">${p.s||"–"}</span>`}
+        ${cut?`<img class="pp-img mpx-stand" src="${cut}_s.webp?v=20" alt="" loading="lazy" draggable="false">`:`<span class="pp-num">${p.s||"–"}</span>`}
         ${spotBadges(playerMatchEvents(m, club, p.n))}${natFlag(p.n, club)}
         ${v!=null?`<span class="rtg mpx-r ${ratingCls(v)}">${v.toFixed(1)}</span>`:""}
       </span>
@@ -11256,11 +11323,54 @@ function mpTeamXI(m, club){
     <div class="mpx-pitch" style="aspect-ratio:100/${H}">${svg}${players}</div>
   </div>`;
 }
+/* ملعب واحد للفريقين (منصور 2026-09-16): المضيف مرماه أعلى ويهاجم للأسفل، والضيف مرماه أسفل ويهاجم للأعلى — نفس بطاقة اللاعب والتقييم */
+function mpBothXI(m){
+  const comp=compOf(m), SH=pitchSpots(m.round, comp, m.home), SA=pitchSpots(m.round, comp, m.away);
+  if(!SH || !SA) return "";
+  const ROW=30, EDGE=5;
+  /* المضيف يهاجم للأسفل فتنعكس جهتاه في نظر المشاهد (كما في mpTeamXI)؛ الضيف يهاجم للأعلى فيبقى كما هو */
+  const LH=mpLinesOf(SH).map(l=>l.slice().reverse()), LA=mpLinesOf(SA);
+  const H=18+(LH.length+LA.length)*ROW;
+  const side=(club, lines, topOf)=>{
+    const R=matchRatings(m, club), rmap={}; R.forEach(x=>rmap[x.n]=x.r.v);
+    const kit=Object.assign(kitOf(club),{club});
+    return lines.map((line,li)=>line.map((sp,k)=>{
+      const n=line.length, pad = n===1 ? 50 : n===2 ? 30 : n===3 ? 19 : n===4 ? 13 : 10;
+      const x = n===1 ? 50 : pad + k*((100-2*pad)/(n-1));
+      const w = Math.min(24, 96/n);
+      const p=sp.p, cut=(typeof LOCAL_PHOTOS!=="undefined") ? photoCut(p.n, club) : null;
+      const kk=(String(p.p||"").toUpperCase()==="GK") ? (gkKitOf(club, p.s)||kit) : kit;
+      const v=rmap[p.n];
+      return `<div class="mpx-p" data-player="${esc(p.n)}" data-club="${esc(club)}" style="right:${x.toFixed(2)}%;top:${(topOf(li)/H*100).toFixed(2)}%;width:${w.toFixed(2)}%">
+      <span class="pp-card mpx-card${cut?"":" nophoto"}" style="${dotVars(kk)}">
+        ${cut?`<img class="pp-img mpx-stand" src="${cut}_s.webp?v=20" alt="" loading="lazy" draggable="false">`:`<span class="pp-num">${p.s||"–"}</span>`}
+        ${spotBadges(playerMatchEvents(m, club, p.n))}${natFlag(p.n, club)}
+        ${v!=null?`<span class="rtg mpx-r ${ratingCls(v)}">${v.toFixed(1)}</span>`:""}
+      </span>
+      <span class="mpx-nm">${p.s?`<em>${p.s}</em>`:""}${esc(shortName(p.n))}</span>
+    </div>`;
+    }).join("")).join("");
+  };
+  const players = side(m.home, LH, li=>EDGE+li*ROW) + side(m.away, LA, li=>H-EDGE-ROW-li*ROW);
+  const avgOf=c=>{ const R=matchRatings(m,c); return R.length ? Math.round(R.reduce((a,x)=>a+x.r.v,0)/R.length*100)/100 : null; };
+  const lineCol="var(--pitch-line,rgba(127,196,255,.24))", V='vector-effect="non-scaling-stroke"';
+  const svg=`<svg class="mpx-lines" viewBox="0 0 100 ${H}" preserveAspectRatio="none" aria-hidden="true"><g fill="none" stroke="${lineCol}" stroke-width="1" ${V}>
+    <rect x="2" y="2" width="96" height="${H-4}" rx="1.5" ${V}/>
+    <rect x="22" y="2" width="56" height="17" ${V}/><rect x="36" y="2" width="28" height="6.5" ${V}/><path d="M40 19a12 9 0 0 0 20 0" ${V}/>
+    <rect x="22" y="${H-19}" width="56" height="17" ${V}/><rect x="36" y="${H-8.5}" width="28" height="6.5" ${V}/><path d="M40 ${H-19}a12 9 0 0 1 20 0" ${V}/>
+    <line x1="2" y1="${H/2}" x2="98" y2="${H/2}" ${V}/><ellipse cx="50" cy="${H/2}" rx="13" ry="13" ${V}/></g></svg>`;
+  const hd=(c,S)=>`<div class="mpx-hd">${crest(c)}<b>${esc(c)}</b>${tavgHTML(avgOf(c))}<span class="mpx-form">${esc(S.form||"")}</span></div>`;
+  return `<div class="mp-card mpx mpx-both" style="${accentVars(m.home)}">
+    ${hd(m.home, SH)}
+    <div class="mpx-pitch" style="aspect-ratio:100/${H}">${svg}${players}</div>
+    ${hd(m.away, SA)}
+  </div>`;
+}
 /* تحت الملعبين: مبدّل الفريقين ← المدرب ← التبديلات ← الاحتياط (منصور 2026-09-15) */
 let MP_LT="home";
 function mpFacePh(n, c){
   const cut=photoCut(n, c);
-  return `<span class="mpt-ph" style="${accentVars(c)}">${cut?`<img src="${cut}_f.webp?v=17" alt="" loading="lazy" decoding="async">`:`<img class="noph" src="${crestSrcOf(c)}" alt="" loading="lazy">`}</span>`;
+  return `<span class="mpt-ph" style="${accentVars(c)}">${cut?`<img src="${cut}_f.webp?v=20" alt="" loading="lazy" decoding="async">`:`<img class="noph" src="${crestSrcOf(c)}" alt="" loading="lazy">`}</span>`;
 }
 function mpTeamSection(m){
   const club = MP_LT==="away" ? m.away : m.home, comp=compOf(m);
@@ -11269,7 +11379,7 @@ function mpTeamSection(m){
   const R={}; matchRatings(m, club).forEach(x=>R[x.n]=x.r.v);
   const coach=(typeof CLUB_COACH!=="undefined") && CLUB_COACH[club];
   const coachHTML = coach ? `<div class="mpt-hd">المدرب</div><div class="mpt-row nolink">
-      <span class="mpt-ph" style="${accentVars(club)}">${coach.img?`<img src="${coach.img}_f.webp?v=17" alt="" loading="lazy">`:`<img class="noph" src="${crestSrcOf(club)}" alt="">`}</span>
+      <span class="mpt-ph" style="${accentVars(club)}">${coach.img?`<img src="${coach.img}_f.webp?v=20" alt="" loading="lazy">`:`<img class="noph" src="${crestSrcOf(club)}" alt="">`}</span>
       <span class="mpt-nm"><b>${esc(coach.n)}</b><small>المدرب${coachFlag(coach.nat,"inl")}</small></span></div>` : "";
   const subs=matchSubs(m).filter(x=>x.club===club);
   const subsBlock = subs.length ? `<div class="mpt-hd">التبديلات<span class="sq-n">${subs.length}</span></div>${subs.map(x=>`<div class="mpt-row" data-player="${esc(x.in||"")}" data-club="${esc(club)}">
@@ -11287,7 +11397,8 @@ function mpLineups(m){
   if(isUpcoming(m)) return `<div class="mp-card mp-empty">تُنشر التشكيلة بعد انطلاق المباراة.</div>`;
   const h=mpTeamXI(m, m.home), a=mpTeamXI(m, m.away);
   if(!h && !a && !matchSubs(m).length) return `<div class="mp-card mp-empty">لم تُسجَّل تشكيلة هذه المباراة بعد.</div>`;
-  return `${h}${a}${mpTeamSection(m)}`;
+  const both=mpBothXI(m);   /* الفريقان على ملعب واحد؛ إن نقصت تشكيلة أحدهما يبقى الملعب المنفصل للآخر */
+  return `${both || (h+a)}${mpTeamSection(m)}`;
 }
 /* القائمة: كشف الفريقين كما في صفحة النادي (المدرب ثم المراكز) — منفصلة عن تشكيلة المباراة */
 let MP_SQ="home";
@@ -11516,7 +11627,7 @@ function openMatchFromHash(){
   }
   function face(p){
     const cut=(typeof photoCut==="function" && typeof LOCAL_PHOTOS!=="undefined" && (typeof PHOTOSON==="undefined" || PHOTOSON)) ? photoCut(p.n,p.c) : null;
-    return cut ? `<img src="${cut}_f.webp?v=17" alt="" loading="lazy" decoding="async">`
+    return cut ? `<img src="${cut}_f.webp?v=20" alt="" loading="lazy" decoding="async">`
                : esc(p.n.split(/\s+/).slice(0,2).map(w=>w[0]||"").join(""));
   }
   function paint(){
@@ -11792,7 +11903,7 @@ html.mx-editing #waFab{display:none!important}   /* زر واتساب كان ي�
   const rgbOf=club=>{ try{ return clubAccent(club).rgb; }catch(e){ return hexRgb(kitOf(club).bg); } };
   const initials=n=>esc(String(n||"").trim().split(/\s+/).slice(0,2).map(w=>w[0]||"").join(""));
   const face=(n,club)=>{ const cut=(typeof photoCut==="function"&&n&&club)?photoCut(n,club):null;
-    return `<span class="mx-face">${cut?`<img src="${cut}_f.webp?v=17" alt="" loading="lazy" decoding="async">`:initials(n)}</span>`; };
+    return `<span class="mx-face">${cut?`<img src="${cut}_f.webp?v=20" alt="" loading="lazy" decoding="async">`:initials(n)}</span>`; };
   const crestOr=c=>c?crest(c):`<span class="mx-crest-ph">${SV.shield}</span>`;
   const starters=club=>{ const seen={},out=[]; (EDIT.lineup||[]).forEach(x=>{ if(x.club===club&&x.p&&!seen[x.p]){ seen[x.p]=1; out.push(x.p);} }); return out; };
   const roster=club=>{
@@ -11824,7 +11935,7 @@ html.mx-editing #waFab{display:none!important}   /* زر واتساب كان ي�
   function slotsFor(club){
     const st=(EDIT.shapes||{})[club]||{f:"",pos:{}};
     const men=shapeMenFrom(starters(club), club);
-    const form=st.f||autoForm(men);
+    const form=normForm(st.f||autoForm(men));
     return {form, spots:shapeSlots(men, form).map(({p,x,y,n})=>{ const ov=(st.pos||{})[p.n]; return {p, x:ov?ov.x:x, y:ov?ov.y:y, n}; })};
   }
   function pitchHTML(club){
@@ -11835,7 +11946,7 @@ html.mx-editing #waFab{display:none!important}   /* زر واتساب كان ي�
       /* حدود المواضع تُبقي البطاقة كاملة داخل الملعب */
       const xx=Math.max(9,Math.min(91,x)), yy=Math.max(9,Math.min(92,y));
       return `<div class="mx-spot${MX.sel===p.n?" sel":""}" data-sp="${esc(p.n)}" style="right:${xx}%;top:${yy}%">
-        <span class="mx-pc" style="${dotVars(k)}">${cut?`<img src="${cut}_f.webp?v=17" alt="" draggable="false">`:`<span class="ini">${initials(p.n)}</span>`}
+        <span class="mx-pc" style="${dotVars(k)}">${cut?`<img src="${cut}_f.webp?v=20" alt="" draggable="false">`:`<span class="ini">${initials(p.n)}</span>`}
           ${p.s?`<span class="no">${p.s}</span>`:""}<span class="nm">${esc(shortName(p.n))}</span></span></div>`;
     }).join("");
     return `<div class="mx-pitch" data-mxpitch="${esc(club)}">${PITCH_SVG}${spots||`<div class="mx-empty">اختر اللاعبين الأساسيين من القائمة — ينزلون على الملعب مباشرة</div>`}</div>`;
