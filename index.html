@@ -2121,7 +2121,7 @@ main{padding-bottom:48px}
 <!-- اللغة الإنجليزية والوضع الداكن -->
 <link rel="stylesheet" href="site-theme.css?v=5">
 <script src="fantasy/js/i18n-more.js?v=11" defer></script>
-<script src="site-i18n.js?v=11" defer></script>
+<script src="site-i18n.js?v=12" defer></script>
 </head>
 <body>
 <!-- navicons:sprite — أيقونات شريط التنقل في الهاتف (خط 1.75 بلون النص الحالي) -->
@@ -2226,7 +2226,7 @@ main{padding-bottom:48px}
 let SEASON = "2026/2027";
 const COMPS = ["الدوري","كأس الأمير","كأس سمو ولي العهد","كأس السوبر"];
 let COMP = "الدوري";
-let MXC = null;   /* بطولة خارجية مختارة في صفحة المباريات (معرّف من EXT_COMPS) أو null = المسابقة المحلية COMP */
+let MXC = "upcoming";   /* صفحة المباريات: "upcoming" = المباريات القادمة من كل المسابقات (الافتراضي، منصور 2026-09-16)، أو بطولة خارجية (معرّف من EXT_COMPS)، أو null = المسابقة المحلية COMP */
 let CARDS = [];
 let ALL = null;
 let SQUADS = {};   /* كشوفات اللاعبين: { "النادي": ["اسم", {n:"اسم", p:"CDM", s:10}, ...] } */
@@ -2491,11 +2491,12 @@ function wireComp(root){
 function compSelect(){
   const cnt={}; (ALL?.matches||[]).forEach(m=>{ const c=compOf(m); cnt[c]=(cnt[c]||0)+1; });
   const ext=EXT_COMPS.map(c=>({...c, n:extEvents(c.id).filter(e=>!(e.to&&e.to!==e.d)).length}));
-  const curName = MXC ? ((EXT_COMPS.find(c=>c.id===MXC)||{}).name||"") : (COMP==="الكل"?"كل المسابقات":COMP);
+  const curName = MXC==="upcoming" ? "المباريات القادمة" : MXC ? ((EXT_COMPS.find(c=>c.id===MXC)||{}).name||"") : (COMP==="الكل"?"كل المسابقات":COMP);
   const opt=(attr,label,n,sel)=>`<button type="button" class="rs-opt" role="option" ${attr} aria-selected="${sel}">${esc(label)}${n?`<em>${n}</em>`:""}</button>`;
   return `<div class="rs-dd mx-comp" aria-label="المسابقة">
     <button type="button" class="rs-btn" aria-haspopup="listbox" aria-expanded="false"><span>${esc(curName)}</span><i class="chev"></i></button>
     <div class="rs-menu" role="listbox" hidden>
+      ${opt(`data-ext="upcoming"`,"المباريات القادمة",upcomingItems().length,MXC==="upcoming")}
       <div class="rs-grp">محلي</div>
       ${COMPS.map(c=>opt(`data-comp="${esc(c)}"`,c,cnt[c]||0,!MXC&&COMP===c)).join("")}
       ${Object.keys(cnt).length>1?opt(`data-comp="الكل"`,"كل المسابقات",0,!MXC&&COMP==="الكل"):""}
@@ -2584,6 +2585,45 @@ function extCardsHTML(evs, compName){
     </article>`;
   }).join("");
   return {html, soon, done};
+}
+/* «المباريات القادمة»: كل ما لم يُلعب بعد (أو يُلعب الآن) من الدوري والكؤوس والبطولات الخارجية، مرتبة بالموعد */
+function upcomingItems(){
+  const now=Date.now(), t=new Date(), todayIso=`${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,"0")}-${String(t.getDate()).padStart(2,"0")}`;
+  const loc=(ALL?.matches||[]).filter(m=>{ const k=kickoffTS(m); if(k===null) return false;
+      return (k>now) || (m.time && now>=k && now<k+2*3600e3 && !matchGoalsAll(m)); })
+    .map(m=>({d:m.date, time:normTime(m.time)||"", ts:kickoffTS(m), m}));
+  const ext=[];
+  EXT_COMPS.forEach(c=>extEvents(c.id).forEach(e=>{
+    if(e.to && e.to!==e.d) return;
+    const parts=evParts(e); if(parts.length<2 || /نصف|نهائي|ربع|مباريات/.test(parts[0])) return;
+    if(e.live || (e.hg==null && e.d>=todayIso)) ext.push({d:e.d, time:String(e.time||""), ts:new Date(e.d+"T"+(normTime(e.time)||"23:59")+":00").getTime(), e, c});
+  }));
+  return [...loc,...ext].sort((a,b)=>String(a.d).localeCompare(String(b.d))||((a.ts||0)-(b.ts||0)));
+}
+function matchGoalsAll(m){ return (ALL?.goals||[]).some(g=>compOf(g)===compOf(m) && +g.r===+m.round && (g.sc===m.home||g.sc===m.away)); }
+function renderUpcomingMatches(){
+  const items=upcomingItems();
+  const dayLabel=iso=>{ const d=new Date(iso+"T00:00:00"); if(isNaN(d)) return esc(iso); return `${AR_DOW[d.getDay()]} ${d.getDate()} ${AR_MON[d.getMonth()]}`; };
+  let lastDay=null;
+  const html=items.map(it=>{
+    const dayHead=it.d!==lastDay?`<div class="mc-day"><span>${dayLabel(it.d)}</span></div>`:""; lastDay=it.d;
+    if(it.e) return dayHead+extCardsHTML([it.e], it.c.name).html.replace(/^<div class="mc-day">[\s\S]*?<\/div>/,"");
+    const m=it.m, live=!(kickoffTS(m)>Date.now()), key=matchByKey(matchKey(m))?matchKey(m):"";
+    return `${dayHead}<article class="mc${live?" live":" soon"}"${key?` data-mopen="${key}"`:""}>
+      <div class="mc-row">
+        <div class="mc-team h">${crest(m.home)}<b>${esc(m.home)}</b></div>
+        <div class="mc-mid"><span class="mc-time" dir="ltr">${m.time?esc(m.time):"—"}</span>${live?'<span class="mc-st live"><i></i>جارية الآن</span>':'<span class="mc-st soon">لم تبدأ</span>'}</div>
+        <div class="mc-team a">${crest(m.away)}<b>${esc(m.away)}</b></div>
+      </div>
+      <div class="mc-foot"><span>${esc(compOf(m))}</span><span>الجولة ${m.round}</span>${m.venue?`<span>${esc(m.venue)}</span>`:""}</div>
+      ${m.note?`<div class="mc-note">${esc(m.note)}</div>`:""}
+    </article>`;
+  }).join("");
+  $("#v-matches").innerHTML=`
+    <div class="mx-head"><h2 class="mx-title">المباريات</h2>${compSelect()}</div>
+    <h2 class="sec xt-mx">المباريات القادمة<span class="sq-n">كل المسابقات</span></h2>
+    <div class="mx-list">${html||'<div class="mx-empty">لا توجد مباريات قادمة.</div>'}</div>`;
+  const V=$("#v-matches"); wireComp(V); wireDropdowns(V);
 }
 function renderExtMatches(){
   const c=EXT_COMPS.find(x=>x.id===MXC); if(!c){ MXC=null; renderMatches(); return; }
@@ -6167,6 +6207,7 @@ function goalsTimeline(m,gs,mc){
 }
 
 function renderMatches(){
+  if(MXC==="upcoming"){ renderUpcomingMatches(); return; }
   if(MXC){ renderExtMatches(); return; }
   if(SELR_AUTO && SELR===null && !SELDAY){ const cr=currentRound(); if(cr!==null && MATCHES.some(m=>m.round===cr)) SELR=cr; }
   let list = MATCHES.slice();

@@ -48,7 +48,7 @@ const I18N = {
     'افتحه من شاشتك مباشرة، ويعمل بلا إنترنت.':'Open it straight from your home screen — it works offline.', 'ثبّت التطبيق':'Install the app',
     'تثبيت':'Install', 'إغلاق':'Close', 'صدرت نسخة جديدة — أعد التحميل لتظهر':'A new version is out — reload to see it', 'نسخة جديدة جاهزة.':'New version ready.', 'تحديث':'Update',
     // المسابقات والأندية
-    'الدوري':'League', 'كأس الأمير':'Emir Cup', 'كأس السوبر':'Super Cup', 'كأس سمو ولي العهد':'Crown Prince Cup', 'كل المسابقات':'All competitions',
+    'الدوري':'League', 'كأس الأمير':'Emir Cup', 'كأس السوبر':'Super Cup', 'كأس سمو ولي العهد':'Crown Prince Cup', 'كل المسابقات':'All competitions', 'المباريات القادمة':'Upcoming matches', 'لا توجد مباريات قادمة.':'No upcoming matches.',
     'الكويت':'Kuwait', 'القادسية':'Qadsia', 'العربي':'Al-Arabi', 'كاظمة':'Kazma', 'السالمية':'Salmiya', 'النصر':'Al-Nasr', 'الشباب':'Al-Shabab',
     'الجهراء':'Al-Jahra', 'الفحيحيل':'Fahaheel', 'الساحل':'Al-Sahel', 'التضامن':'Tadamon', 'الصليبخات':'Sulaibikhat', 'الصليبيخات':'Sulaibikhat',
     'سا':'SAL', 'عر':'ARB', 'قا':'QAD', 'كا':'KAZ', 'كو':'KUW', 'نص':'NSR', 'تض':'TAD', 'جه':'JAH', 'سح':'SAH', 'شب':'SHB', 'صل':'SUL', 'فح':'FAH',
