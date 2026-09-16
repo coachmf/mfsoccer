@@ -20,7 +20,8 @@ THEME.apply(THEME.get());
 /* أي طباعة تُرسم بالوضع الفاتح: قواعد الصفحة الأساسية فاتحة والداكن طبقة فوقها،
    ومع @media print الذي يفرض ورقاً أبيض كان النص الفاتح يخرج أبيض على أبيض فتظهر الصفحات فارغة.
    beforeprint يعمل مع Ctrl+P وقائمة المتصفح وwindow.print() معاً (منصور 2026-09-16) */
-addEventListener('beforeprint',function(){ document.documentElement.setAttribute('data-theme','light'); });
+addEventListener('beforeprint',function(){ document.documentElement.setAttribute('data-theme','light');
+  document.querySelectorAll('img[loading="lazy"]').forEach(function(i){ i.loading='eager'; });   /* صور تحت الشاشة لم تُحمَّل بعد كانت تخرج فارغة */ });
 addEventListener('afterprint', function(){ THEME.apply(THEME.get()); });
 </script>
 <script>
@@ -1056,6 +1057,8 @@ table.lb td.pt{font-family:var(--display);font-weight:700;color:var(--sky);
 .printonly{display:none}
 @media print{
   @page{size:A4;margin:12mm}
+  /* اللوحات المخفية (display:none) تظهر عند الطباعة فيبدأ حركة fade من الشفافية 0 داخل نسخة الطباعة — فتخرج صفحات بيضاء. لا حركات في الطباعة (منصور 2026-09-17) */
+  *,*::before,*::after{animation:none!important;transition:none!important}
   html,body{background:#fff!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;padding:0}   /* الطباعة بالوضع الفاتح دائماً (منصور 2026-09-16) */
   .topbar,nav.tabs,.exportbar,.segbar,.iconbtn,.sitefoot,.wafab{display:none!important}
   .printonly{display:flex!important;align-items:center;gap:14px;border-bottom:2px solid #E9B949;
