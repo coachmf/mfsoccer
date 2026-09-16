@@ -10234,7 +10234,7 @@ function playerProfileHTML(D){
     </div>
     <div class="segbar compbar pprof-cbar" role="tablist" aria-label="المسابقة">
       ${["الكل",...COMPS].map(c=>`<button type="button" class="seg" role="tab" data-pcomp="${esc(c)}" aria-pressed="${c===COMP}">${esc(compLabel(c))}</button>`).join("")}</div>
-    <div class="pprof-comp">${esc(compLabel(COMP||"الدوري"))} · ${esc(SEASON)}</div>
+    <div class="pprof-comp">${esc(SEASON)}</div>   <!-- اسم المسابقة ظاهر في الشريحة المختارة فوقه (منصور 2026-09-16) -->
     ${D.former&&D.former.length?`<p class="pprof-prev">شارك هذا الموسم أيضاً مع ${D.former.map(c=>esc(c)).join(" و")}</p>`:""}
     ${played ? `<div class="pprof-stats">${cards.filter(Boolean).join("")}</div>` : `<p class="pprof-empty">لم تُرصد مشاركة لهذا اللاعب في ${esc(compLabel(COMP||"الدوري"))} بعد.</p>`}
     ${logHTML}
