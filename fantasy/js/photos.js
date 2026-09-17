@@ -285,7 +285,7 @@ const PLAYER_PHOTOS = {
   'ARB|عمر العازمي': '/assets/players/arb/27',
   'ARB|حسين كنكوني': '/assets/players/arb/1',
   'ARB|حسين العريان': '/assets/players/arb/99',
-  'ARB|عايد ماجد': '/assets/players/arb/90',
+  'ARB|عايد ماجد': '/assets/players/arb/36',
   'ARB|يوسف صباح': '/assets/players/arb/70',
   'ARB|حمد الحربي': '/assets/players/arb/12',
   'NSR|مسفر العدواني': '/assets/players/nsr/mesfer',   // بطاقة ترحيب النادي، مهاجم بلا رقم بعد   // بطاقة المركز الإعلامي للنادي، بلا رقم بعد
