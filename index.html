@@ -219,7 +219,8 @@ tbody tr.rel{box-shadow:inset 3px 0 0 rgba(224,100,79,.7)}
 .ts-pod-crest img{width:100%;height:100%;object-fit:contain}
 .ts-pod-info{width:100%;min-width:0}
 .ts-pod-nm{font-weight:700;font-size:.95rem;color:var(--head);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.ts-pod-club{font-size:.75rem;color:var(--slate);margin:2px 0 12px}
+.ts-pod-club{font-size:.75rem;color:var(--slate);margin:2px 0 4px}
+.ts-pod-min{font-size:.68rem;color:var(--slate);opacity:.85;margin:0 0 10px;font-variant-numeric:tabular-nums}
 .ts-pod-stat{display:flex;align-items:baseline;gap:5px;background:var(--navy-800);padding:4px 12px;border-radius:8px;border:1px solid var(--line)}
 .ts-pod-stat b{font-size:1.4rem;font-weight:800;color:var(--head);font-variant-numeric:tabular-nums}
 .ts-pod.first .ts-pod-stat b{color:var(--sand);font-size:1.6rem}
@@ -263,6 +264,7 @@ tbody tr.rel{box-shadow:inset 3px 0 0 rgba(224,100,79,.7)}
   .ts-pod-bg{width:64%;left:24%;top:50%;opacity:.06}
   .ts-pod-info{flex:1}
   .ts-pod-club{margin-bottom:0}
+  .ts-pod-min{margin:2px 0 0}
   .ts-pod-stat{flex:none}
   .ts-head,.ts-row{grid-template-columns:32px 1fr 54px;padding:10px 10px}
   .ts-subs,.ts-subs-h{display:none}
@@ -7267,7 +7269,8 @@ function topScorersHTML(){
       ${LOGOS[p.c]?`<img class="ts-pod-bg" src="${LOGOS[p.c]}" alt="" aria-hidden="true">`:""}
       <span class="ts-badge">${p.rk}</span>
       <div class="ts-pod-av">${av(p,"ts-pod-img",true)}</div>
-      <div class="ts-pod-info"><div class="ts-pod-nm">${esc(p.n)}</div><div class="ts-pod-club">${esc(p.c)}</div></div>
+      <div class="ts-pod-info"><div class="ts-pod-nm">${esc(p.n)}</div><div class="ts-pod-club">${esc(p.c)}</div>
+        ${mins(p)?`<div class="ts-pod-min"><bdi dir="ltr">${mins(p)}′</bdi> دقيقة</div>`:""}</div>
       <div class="ts-pod-stat"><b>${p[key]}</b><small>${label}</small></div></div>`;
   const podium = L.length>=3 ? `<div class="ts-podium">${L.slice(0,3).map(podCard).join("")}</div>` : "";
   const rows=L.map(p=>`<div class="ts-row${p.rk<=3?" top":""}" data-player="${esc(p.n)}" data-club="${esc(p.c)}" role="button" tabindex="0">
