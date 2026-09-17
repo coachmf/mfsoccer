@@ -2264,6 +2264,7 @@ html[data-theme="light"] .an-goal .gpost{stroke:#0B1F3A;filter:none}
 .an-goal .gn.sm{font-size:6px}
 html[data-theme="light"] .an-goal .gn{fill:#0B1F3A;stroke:rgba(255,255,255,.7)}
 .an-goal .glab{font-family:var(--body);font-size:4.2px;font-weight:600;fill:var(--an-mut);text-anchor:middle;dominant-baseline:central}
+.an-goal .gband+.gnet~.glab{fill:var(--an-txt)}   /* الركلات الضائعة خارج المرمى: شريط أحمر شفاف بدل لون الحرارة الأصفر (منصور 2026-09-17) */
 
 .an-fg{display:flex;align-items:center;gap:18px}
 .an-donut{width:150px;height:150px;flex:none}
@@ -7365,7 +7366,7 @@ function anGoalSVG(list){
   const O={x:6,y:4,w:130,h:GY-4};
   const band=`M${O.x} ${GY} V${O.y} H${O.x+O.w} V${GY} Z M${X0} ${GY} V${Y0} H${X0+3*CW} V${GY} Z`;
   return `<div class="an-goal"><svg viewBox="0 0 142 ${GY+12}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="خريطة مرمى ركلات الجزاء">
-    <path class="gband" d="${band}" fill-rule="evenodd" fill="${out?fill(out):"var(--an-cell0)"}"><title>خارج المرمى: ${out}</title></path>
+    <path class="gband" d="${band}" fill-rule="evenodd" fill="${out?`rgba(239,68,68,${(0.10+0.22*out/mx).toFixed(2)})`:"var(--an-cell0)"}"><title>خارج المرمى: ${out}</title></path>
     <g class="gnet">${net.join("")}</g>
     ${cells.map(cellSVG).join("")}
     <g class="ggrid"><line x1="${X0+CW}" y1="${Y0}" x2="${X0+CW}" y2="${GY}"/><line x1="${X0+2*CW}" y1="${Y0}" x2="${X0+2*CW}" y2="${GY}"/><line x1="${X0}" y1="${Y0+CH}" x2="${X0+3*CW}" y2="${Y0+CH}"/></g>
