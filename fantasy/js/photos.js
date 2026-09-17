@@ -4,7 +4,7 @@
 'use strict';
 
 /* رقم نسخة الصور: ارفعه عند إعادة توليد أي قصّة حتى لا يبقى المتصفح على النسخة القديمة */
-const PLAYER_PHOTOS_VER = '30';
+const PLAYER_PHOTOS_VER = '31';
 
 const PLAYER_PHOTOS = {
   // الصليبخات (17)
@@ -340,6 +340,7 @@ const PLAYER_PHOTOS = {
   'TDM|أحمد شبيب': '/assets/players/tdm/10',
   'TDM|حامد الرشيدي': '/assets/players/tdm/11',
   'TDM|محمد الشريفي': '/assets/players/tdm/12',
+  'TDM|ضاري المعصب': '/assets/players/tdm/21',
   'TDM|بيريرا': '/assets/players/tdm/15',
   'TDM|أحمد دالي': '/assets/players/tdm/16',
   'TDM|عبدالمحسن العجمي': '/assets/players/tdm/17',
