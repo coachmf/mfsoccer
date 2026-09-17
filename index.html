@@ -2233,6 +2233,7 @@ html[data-theme="light"] .ah{filter:drop-shadow(0 18px 18px rgba(11,31,58,.22))}
 .ah-list .an-rows{padding:0 12px}
 @media(min-width:900px){.an-duo .ah-list .an-rows.two{grid-template-columns:1fr}}
 .ah-list .an-row.nil{opacity:.55}
+.an-extra{text-align:center;margin:8px 0 0;font-size:.72rem}
 /* توقيت أهداف النادي */
 .ct-chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
 .ct-chips span{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:999px;font-size:.78rem;font-weight:600;color:#fff}
@@ -2546,6 +2547,9 @@ function upgradeSecondYellows(cards){
     });
 }
 const catOf = det => SETPIECE.test(det||"") ? "كرات ثابتة" : "لعب مفتوح";
+/* تسميات مرنة لقيم الإدارة: «رأسية» أو «بالرأس» تُحسب رأساً، وطريقة ثابتة جديدة تُحسب من اسمها حتى لو لم يُحدَّد cat */
+const isHeader = g => /رأس|راس/.test((g&&g.bp)||"");
+const isSetPiece = g => !!g && (g.cat==="كرات ثابتة" || (!g.cat && SETPIECE.test(g.det||"")) || (/ثابت/.test(g.cat||"")));
 let DATA_UPDATED = "2026-08-27T00:00:00Z";
 let DATA_BY = "";   /* بريد آخر من حفظ */
 let DATA_SOURCE  = "مضمّنة في الملف";
@@ -2966,15 +2970,15 @@ function clubStats(c){
   const row = standings().find(x=>x.c===c);
   const gf = GOALS.filter(g=>g.sc===c), ga = GOALS.filter(g=>g.cd===c);
   const timing = PERIODS.map(p=>({p,f:gf.filter(g=>period(g)===p).length,a:ga.filter(g=>period(g)===p).length}));
-  const sp = gf.filter(g=>g.cat==="كرات ثابتة").length;
+  const sp = gf.filter(g=>isSetPiece(g)).length;
   const fg = firstGoals();
   const scoredFirst = fg.filter(x=>x.first===c);
   const top = scorers().filter(p=>p.c===c)[0];
   const yc = CARDS.filter(x=>x.club===c && isYellow(x.type)).length;
   const rc = CARDS.filter(x=>x.club===c && isRed(x.type)).length;
   return {row,gf,ga,timing,sp,scoredFirst,top,yc,rc,
-    pen:gf.filter(g=>g.det==="ركلة جزاء").length,
-    head:gf.filter(g=>g.bp==="الرأس").length,
+    pen:gf.filter(g=>/جزاء/.test(g.det||"")).length,
+    head:gf.filter(g=>isHeader(g)).length,
     late:gf.filter(g=>["76-90","90+"].includes(period(g))).length};
 }
 /* ===== دقائق اللعب والشباك النظيفة =====
@@ -3073,6 +3077,44 @@ const ZONES = [
  {k:"مسافة بعيدة (+30م)",       t:"r", x:0,    y:64, w:100,  h:36},
  {k:"علامة الجزاء",             t:"c", cx:50,  cy:24, r:6}
 ];
+/* قيم الإدارة الجديدة (منصور 2026-09-17): أي منطقة تسجيل أو مكان تسديد يُضاف لاحقاً يُرسم في أقرب منطقة معروفة
+   من كلمات اسمه (يسار/وسط/يمين + منطقة المرمى/داخل/خارج المنطقة/علامة الجزاء/مسافة بعيدة)، وما لا يُفهم يُذكر تحت الرسم بدل أن يختفي. */
+const ZONE_KEYS = new Set(ZONES.map(z=>z.k));
+function zoneKeyOf(name){
+  const n=(name||"").trim(); if(!n) return null;
+  if(ZONE_KEYS.has(n)) return n;
+  if(/علامة الجزاء|نقطة الجزاء/.test(n)) return "علامة الجزاء";
+  if(/بعيد|30|منتصف الملعب|نصف الملعب/.test(n)) return "مسافة بعيدة (+30م)";
+  const side=/يسار|أيسر|يسرى/.test(n)?"يسار":/يمين|أيمن|يمنى/.test(n)?"يمين":"وسط";
+  if(/منطقة المرمى|الست|6\s*ياردات|المرمى الصغيرة/.test(n)) return "منطقة المرمى - "+side;
+  if(/خارج|حافة|قوس/.test(n)) return "خارج منطقة الجزاء - "+side;
+  if(/منطقة الجزاء|داخل/.test(n)) return "داخل منطقة الجزاء - "+side;
+  return null;
+}
+/* عدّ الأهداف لكل منطقة مرسومة + الأسماء غير المفهومة (extra) + الأسماء المدموجة في كل منطقة (alias) */
+function zoneCounts(list){
+  const counts={}, alias={}, extra={}; ZONES.forEach(z=>{ counts[z.k]=0; alias[z.k]=new Set(); });
+  list.forEach(g=>{ const z=(g.zone||"").trim(); if(!z) return; const k=zoneKeyOf(z);
+    if(k){ counts[k]++; if(k!==z) alias[k].add(z); } else extra[z]=(extra[z]||0)+1; });
+  return {counts, alias, extra};
+}
+const PZONE_SET = new Set(PZONES);
+function penPlaceOf(name){
+  const n=(name||"").trim(); if(!n) return null;
+  if(PZONE_SET.has(n)) return n;
+  if(/خارج|العارضة|عارضة|القائم|قائم|فوق المرمى|بجانب/.test(n)) return "خارج المرمى";
+  const side=/يسار|أيسر|يسرى/.test(n)?"يسار":/يمين|أيمن|يمنى/.test(n)?"يمين":/وسط|منتصف/.test(n)?"وسط":null;
+  const hi=/أعلى|اعلى|عليا|فوق/.test(n)?"أعلى":/أسفل|اسفل|سفلى|أرض|ارض|زاحفة/.test(n)?"أسفل":null;
+  if(!side && !hi) return null;
+  return (side||"وسط")+" "+(hi||"أسفل");
+}
+function penCounts(list){
+  const c={}, extra={}; PZONES.forEach(z=>c[z]=0);
+  list.forEach(x=>{ const pl=(x.place||"").trim(); if(!pl) return; const k=penPlaceOf(pl); if(k) c[k]++; else extra[pl]=(extra[pl]||0)+1; });
+  return {c, extra};
+}
+const extraNote = extra => { const e=Object.entries(extra); return e.length
+  ? `<p class="hint an-extra">غير مرسومة: ${e.map(([k,n])=>`${esc(k)} (${n})`).join(" · ")}</p>` : ""; };
 function heatColor(t){
   if(t<=0) return "rgba(143,166,196,.06)";
   const r=Math.round(95+(233-95)*t), g=Math.round(178+(185-178)*t), b=Math.round(232+(73-232)*t);
@@ -3082,8 +3124,7 @@ function heatColor(t){
    وعلامة داكنة برقم الأهداف في مركز كل منطقة، ثم شريط أرقام وجدول تفاصيل المناطق. */
 let HEAT_UID=0;
 function heatSVG(list){
-  const counts={}; ZONES.forEach(z=>counts[z.k]=0);
-  list.forEach(g=>{ if(counts[g.zone]!==undefined) counts[g.zone]++; });
+  const {counts}=zoneCounts(list);
   const mx=Math.max(1,...Object.values(counts));
   const u="hm"+(++HEAT_UID);
   const ctr=z=>[z.lx ?? (z.t==="c"? z.cx : z.x+z.w/2), z.ly ?? (z.t==="c"? z.cy : z.y+z.h/2)];
@@ -3136,9 +3177,9 @@ function heatSVG(list){
 /* شريط الأرقام تحت الملعب */
 function heatStats(list){
   const n=list.length;
-  const inBox=list.filter(g=>/^(منطقة المرمى|داخل منطقة الجزاء|علامة الجزاء)/.test(g.zone||"")).length;
-  const head=list.filter(g=>g.bp==="الرأس").length;
-  const setp=list.filter(g=>g.cat==="كرات ثابتة").length;
+  const inBox=list.filter(g=>/^(منطقة المرمى|داخل منطقة الجزاء|علامة الجزاء)/.test(zoneKeyOf(g.zone)||"")).length;
+  const head=list.filter(g=>isHeader(g)).length;
+  const setp=list.filter(g=>isSetPiece(g)).length;
   const cell=(v,l)=>`<div><b>${v}</b><span>${l}</span></div>`;
   return `<div class="hstats">${cell(n,"هدفاً")}${cell(head,"بالرأس")}${cell(pct(setp,n)+"%","من كرات ثابتة")}${cell(pct(inBox,n)+"%","من داخل منطقة الجزاء")}</div>`;
 }
@@ -3170,15 +3211,14 @@ let AN_HEAT_UID=0;
 const AN_BADGE_POS={"علامة الجزاء":[50,19],"داخل منطقة الجزاء - وسط":[50,30]};
 function anBadgePos(z){ return AN_BADGE_POS[z.k] || [z.lx ?? (z.t==="c"? z.cx : z.x+z.w/2), z.ly ?? (z.t==="c"? z.cy : z.y+z.h/2)]; }
 function anHeatSVG(list){
-  const counts={}; ZONES.forEach(z=>counts[z.k]=0);
-  list.forEach(g=>{ if(counts[g.zone]!==undefined) counts[g.zone]++; });
+  const {counts, alias, extra}=zoneCounts(list);
   const mx=Math.max(1,...Object.values(counts)), u="ah"+(++AN_HEAT_UID);
   const ctr=z=>[z.lx ?? (z.t==="c"? z.cx : z.x+z.w/2), z.ly ?? (z.t==="c"? z.cy : z.y+z.h/2)];
   const blob=z=>{ const n=counts[z.k]; if(!n) return ""; const k=n/mx, [cx,cy]=ctr(z);
     const r=(z.t==="c"?10:Math.min(18,Math.max(10,Math.min(z.w,z.h)*.6)))*(0.9+0.5*k);
     return `<circle cx="${cx}" cy="${cy}" r="${r.toFixed(1)}" fill="url(#${u}g)" opacity="${(0.22+0.78*k).toFixed(2)}"/>`; };
   const badge=z=>{ const n=counts[z.k], [cx,cy]=anBadgePos(z), top=n===mx&&n>0, R=top?5:(n>=10?4.6:4);
-    return `<g class="ahb${n?"":" nil"}${top?" top":""}"><title>${esc(z.k)}: ${n}</title>
+    const al=[...alias[z.k]]; return `<g class="ahb${n?"":" nil"}${top?" top":""}"><title>${esc(z.k)}${al.length?" + "+al.map(esc).join("، "):""}: ${n}</title>
       ${top?`<circle class="ring" cx="${cx}" cy="${cy}" r="${R+1.5}"/>`:""}
       <circle class="dot" cx="${cx}" cy="${cy}" r="${R}"/><text x="${cx}" y="${cy}">${n}</text></g>`; };
   /* عشب واقعي (منصور 2026-09-17): شرائط قصّ بدرجتين + ملمس خفيف + إضاءة من جهة المرمى */
@@ -3228,7 +3268,7 @@ function anHeatSVG(list){
     <text class="ah-sm out" x="50" y="-3.6">المرمى</text>
     <g class="ah-tag"><rect x="1.4" y="59.4" width="20" height="5.4" rx="2.7"/><text x="11.4" y="62.15">الثلث الأخير</text></g>
     <text class="ah-sm" x="50" y="68.5">مسافة بعيدة</text>
-  </svg></div><div class="ah-lanes"><div>${laneLb}</div></div>
+  </svg></div><div class="ah-lanes"><div>${laneLb}</div></div>${extraNote(extra)}
   <div class="ah-legend"><span>أقل</span><i></i><span>أكثر</span></div>`;
 }
 function anZoneRows(list){
@@ -3405,7 +3445,7 @@ function buildFromWorkbook(wb){
     const by=cellStr(r[2]), vs=cellStr(r[3]);
     if(!by || !vs) return;
     const place = cPlace>=0 ? cellStr(r[cPlace]) : "";
-    if(place && !PZONES.includes(place))
+    if(place && !penPlaceOf(place))
       warn.push(`سجل ركلات الجزاء صف ${i+5}: مكان تسديد غير معروف «${place}»`);
     pens.push({r:cellNum(r[1]), by, vs, p:cellStr(r[4]), m:cellNum(r[5]), res:cellStr(r[6]), place});
   });
@@ -6111,8 +6151,7 @@ const PZ_GEO = {
 };
 function goalMap(list, svgOnly){
   const has = list.some(x=>x.place);
-  const c={}; PZONES.forEach(z=>c[z]=0);
-  list.forEach(x=>{ if(c[x.place]!==undefined) c[x.place]++; });
+  const {c}=penCounts(list);
   const mx=Math.max(1,...Object.values(c));
   const cell=z=>{
     const g=PZ_GEO[z], n=c[z];
@@ -7387,7 +7426,7 @@ function anPeriods(){
 }
 /* خريطة مرمى الجزاءات للتحليل (منصور 2026-09-17): «خارج المرمى» شريط يحيط بالقائم والعارضة بدل صندوق تحت المرمى */
 function anGoalSVG(list){
-  const c={}; PZONES.forEach(z=>c[z]=0); list.forEach(x=>{ if(c[x.place]!==undefined) c[x.place]++; });
+  const {c}=penCounts(list);
   const mx=Math.max(1,...Object.values(c));
   const fill=n=>{ if(!n) return "var(--an-cell0)"; const t=n/mx;
     return `rgba(${Math.round(46+(233-46)*t)},${Math.round(176+(185-176)*t)},${Math.round(240+(73-240)*t)},${(0.30+0.6*t).toFixed(2)})`; };
@@ -7414,10 +7453,11 @@ function anGoalSVG(list){
 function anPens(list){
   const L=list||PENS, has=L.some(x=>x.place);
   const scored=L.filter(x=>/سجل/.test(x.res||"")).length;
-  const c={}; PZONES.forEach(z=>c[z]=0); L.forEach(x=>{ if(c[x.place]!==undefined) c[x.place]++; });
-  const common=has?Object.entries(c).sort((a,b)=>b[1]-a[1])[0][0]:"—";
+  const raw={}; L.forEach(x=>{ const pl=(x.place||"").trim(); if(pl) raw[pl]=(raw[pl]||0)+1; });
+  const common=has?Object.entries(raw).sort((a,b)=>b[1]-a[1])[0][0]:"—";
+  const {extra}=penCounts(L);
   return `<div class="an-card an-pens">
-    ${anGoalSVG(L)}
+    ${anGoalSVG(L)}${extraNote(extra)}
     <div class="an-tiles t3">
       <div><b>${L.length}</b><span>مجموع الركلات</span></div>
       <div><b>${scored}</b><span>سُجّلت${L.length?` · ${pct(scored,L.length)}%`:""}</span></div>
