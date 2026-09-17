@@ -9748,7 +9748,7 @@ html.pp-open,html.pp-open body{overflow:hidden}
 [data-theme="light"] .pstat{background:#fff;border-color:var(--line);border-top-color:var(--ca);box-shadow:var(--shadow)}
 .pstat b{display:block;font-family:var(--display);font-weight:800;font-size:1.45rem;line-height:1.1;color:var(--head,#fff);font-variant-numeric:tabular-nums}
 .pstat small{display:block;font-size:.66rem;color:var(--slate);margin-top:4px}
-.pstat.rt b{display:grid;place-items:center;height:1.6rem}
+.pstat.rt b{display:flex;justify-content:center;align-items:center;height:1.6rem}
 .pstat.rt .rtg.big{min-width:48px;height:30px;font-size:1.05rem}
 .pstat.hi{background:linear-gradient(160deg,rgba(var(--ca-rgb),.22),rgba(255,255,255,.03))}
 .pprof-log{padding:8px 16px 22px}
@@ -10902,7 +10902,7 @@ function playerProfileHTML(D){
        st(D.y,"إنذارات"), D.rd?st(D.rd,"طرد"):"", D.pens?st(D.pens,"ركلات جزاء"):"", D.ownG?st(D.ownG,"أهداف عكسية"):""];
   /* متوسط التقييم (منصور 2026-09-17) — بطاقة ضمن الأرقام، يتبع المسابقة المختارة */
   const rtAvg = (()=>{ try{ const e=averageRatings().find(x=>x.n===D.name && x.c===D.club); return e&&e.apps? e : null; }catch(err){ return null; } })();
-  if(rtAvg) cards.push(`<div class="pstat rt"><b>${ratingBadge(rtAvg.avg, true)}</b><small>متوسط التقييم · ${mw(rtAvg.apps)}</small></div>`);
+  if(rtAvg) cards.push(`<div class="pstat rt"><b>${ratingBadge(rtAvg.avg, true)}</b><small>التقييم</small></div>`);
   const played = D.apps>0 || D.goals>0 || D.assists>0 || D.y>0 || D.rd>0;
   const badge=(n,cls,inner)=> n?`<span class="pp-b ${cls}">${inner}${n>1?`<em>${n}</em>`:""}</span>`:"";
   const logHTML = D.log.length ? `<div class="pprof-log"><h4>مباراة بمباراة</h4><div class="plog">${D.log.map(l=>`
