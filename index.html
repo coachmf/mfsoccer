@@ -9897,6 +9897,22 @@ html[data-theme="dark"] .rs-btn,html[data-theme="dark"] .rs-nav,html[data-theme=
 .kfa-board-it b{font-family:var(--display);font-size:.86rem;color:var(--head,#fff)}
 .kfa-links{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
 .kfa-links .hchip b{font-weight:700}
+.chon{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px}
+.chon-it{padding:14px 14px 12px;border-top:3px solid var(--ca,#2EB0F0);display:flex;flex-direction:column;gap:8px}
+.chon-top{display:flex;align-items:center;gap:12px}
+.chon-top .n{font-family:var(--display);font-weight:800;font-size:2rem;line-height:1;color:var(--ca,#2EB0F0);font-variant-numeric:tabular-nums;min-width:44px;text-align:center}
+.chon-top .t{font-family:var(--display);font-weight:700;font-size:.92rem;color:var(--head,#fff);line-height:1.35}
+.chon-it .y{font-size:.7rem;line-height:1.7;color:var(--slate);font-variant-numeric:tabular-nums}
+.chon-intl{margin-top:10px}
+.ctl{position:relative;padding-inline-start:26px}
+.ctl::before{content:"";position:absolute;inset-inline-start:13px;top:18px;bottom:18px;width:2px;background:linear-gradient(var(--ca,#2EB0F0),rgba(143,166,196,.18))}
+.ctl-it{position:relative;display:grid;grid-template-columns:120px 1fr;gap:12px;padding:10px 0;border-bottom:1px solid var(--line,rgba(143,166,196,.14));font-size:.8rem;line-height:1.65}
+.ctl-it:last-child{border-bottom:0}
+.ctl-it::before{content:"";position:absolute;inset-inline-start:-18px;top:16px;width:10px;height:10px;border-radius:50%;background:var(--ca,#2EB0F0);box-shadow:0 0 0 3px rgba(var(--ca-rgb,46,176,240),.22)}
+.ctl-it .d{font-family:var(--display);font-weight:700;color:var(--ca,#2EB0F0);font-variant-numeric:tabular-nums}
+.ctl-it .t{color:var(--head,#fff)}
+[data-theme="light"] .ctl-it .t,[data-theme="light"] .chon-top .t{color:#0B1F3A}
+@media(max-width:600px){.ctl-it{grid-template-columns:1fr;gap:2px}.chon{grid-template-columns:1fr 1fr}.chon-top{flex-direction:column;align-items:flex-start;gap:4px}.chon-top .n{min-width:0;text-align:start;font-size:1.7rem}}
 .kfa-tl{display:flex;flex-direction:column;gap:0}
 .kfa-tl-it{display:grid;grid-template-columns:150px 1fr;gap:12px;padding:9px 0;border-bottom:1px solid var(--line,rgba(143,166,196,.14));font-size:.8rem;line-height:1.6}
 .kfa-tl-it:last-child{border-bottom:0}
@@ -10789,7 +10805,28 @@ function clubAboutHTML(c, r, played){
   ${I.pres?`<div class="card cpres">
     <span class="cpres-ph">${I.presImg?`<img src="assets/presidents/${I.presImg}_s.webp?v=1" alt="${esc(I.pres)}" loading="lazy" decoding="async">`:`<img class="noph" src="${crestSrcOf(c)}" alt="">`}</span>
     <div class="cpres-txt"><small>رئيس مجلس الإدارة</small><b>${esc(I.pres)}</b><span>${crest(c)}${esc(c)}</span></div>
-  </div>`:""}`;   /* الأطقم حول صورة الملعب ورئيس النادي تحتها (منصور 2026-09-15) */
+  </div>`:""}
+  ${clubHonoursHTML(c)}`;   /* الأطقم حول صورة الملعب ورئيس النادي تحتها (منصور 2026-09-15) */
+}
+/* ---------- إنجازات النادي ومحطاته (منصور 2026-09-17، معاينة) ----------
+   CLUB_HONOURS[c] = { titles:[{t, n, years}], intl:[{t, d}], milestones:[[date, text]] }
+   كل معلومة هنا مؤكدة من مصدرين مستقلين على الأقل؛ المصادر والمستبعد في AlArabiTest/club-honours. */
+const CLUB_HONOURS = {};
+function clubHonoursHTML(c){
+  const H=CLUB_HONOURS[c]; if(!H) return "";
+  const titles=(H.titles||[]).filter(x=>x.n>0), intl=H.intl||[], ms=H.milestones||[];
+  const total=titles.reduce((a,x)=>a+x.n,0);
+  let out="";
+  if(titles.length||intl.length){
+    out+=`<h2 class="sec">الإنجازات${total?`<span class="sq-n">${total} لقباً محلياً</span>`:""}</h2>`;
+    if(titles.length) out+=`<div class="chon">${titles.map(x=>`<div class="card chon-it">
+        <div class="chon-top"><b class="n">${x.n}</b><span class="t">${esc(x.t)}</span></div>
+        ${x.years?`<small class="y">${esc(x.years)}</small>`:""}</div>`).join("")}</div>`;
+    if(intl.length) out+=`<div class="kfa-hon chon-intl">${intl.map(h=>`<div class="card pad kfa-hon-it"><b>${esc(h.t)}</b><small>${esc(h.d)}</small></div>`).join("")}</div>`;
+  }
+  if(ms.length) out+=`<h2 class="sec">محطات في تاريخ النادي<span class="sq-n">${ms.length}</span></h2>
+    <div class="card pad ctl">${ms.map(([d,t])=>`<div class="ctl-it"><span class="d">${esc(d)}</span><span class="t">${esc(t)}</span></div>`).join("")}</div>`;
+  return out;
 }
 /* ---------- قائمة الفريق ---------- */
 function playerCardHTML(p, c){
