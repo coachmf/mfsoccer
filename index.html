@@ -5009,7 +5009,7 @@ function crewOf(m){ const b=REF_BOOK[`${m.round}|${m.home}|${m.away}`]||{}, save
   return {ref:m.ref||b.ref||"", refs}; }
 function newEdit(){
   return {orig:null, match:{round:"", comp:(compsPresent()[0]||"الدوري"), home:"", away:"",
-          venue:"", date:"", time:"", note:"", ref:"", refs:{}, tv:"", status:""}, goals:[], cards:[], pens:[], lineup:[], subs:[], shapes:{}, mev:[]};
+          venue:"", date:"", time:"", note:"", ref:"", refs:{}, tv:"", status:"", add1:"", add2:""}, goals:[], cards:[], pens:[], lineup:[], subs:[], shapes:{}, mev:[]};
 }
 function loadEdit(m){
   const gs=(ALL.goals||[]).filter(g=>g.r===m.round && compOf(g)===compOf(m) &&
@@ -5024,10 +5024,10 @@ function loadEdit(m){
   (ALL.shapes||[]).filter(x=>x.r===m.round && compOf(x)===compOf(m) && (x.club===m.home||x.club===m.away))
     .forEach(x=>{ shp[x.club]={f:x.f||"", pos:JSON.parse(JSON.stringify(x.pos||{}))}; });
   return {orig:mkey(m), shapes:shp,
-    match:{round:m.round, comp:compOf(m), home:m.home, away:m.away, venue:m.venue||"", date:m.date||"", time:m.time||"", note:m.note||"", ref:crewOf(m).ref, refs:crewOf(m).refs, tv:m.tv||"", status:m.status||""},
+    match:{round:m.round, comp:compOf(m), home:m.home, away:m.away, venue:m.venue||"", date:m.date||"", time:m.time||"", note:m.note||"", ref:crewOf(m).ref, refs:crewOf(m).refs, tv:m.tv||"", status:m.status||"", add1:(m.add1??""), add2:(m.add2??"")},
     mev:(ALL.mev||[]).filter(x=>x.r===m.round && compOf(x)===compOf(m) && x.home===m.home && x.away===m.away).map(x=>({k:x.k, club:x.club||"", p:x.p||"", m:x.m||"", x:x.x||0, note:x.note||""})),
     lineup:lus.map(x=>({club:x.club, p:x.p})),
-    subs:sbs.map(x=>({club:x.club, out:x.out||"", in:x.in||"", h:x.h||1, m:x.m||""})),
+    subs:sbs.map(x=>({club:x.club, out:x.out||"", in:x.in||"", h:x.h||1, m:x.m||"", x:x.x||0})),
     goals:gs.map(g=>({sc:g.sc,p:g.p,a:g.a||"",m:g.m,x:g.x||0,det:g.det||"",bp:g.bp||"",zone:g.zone||"",og:g.og||""})),   /* og كان يضيع عند إعادة التحرير */
     cards:cs.map(x=>({club:x.club,p:x.p,m:x.m,type:x.type})),
     pens:ps.map(x=>({by:x.by,p:x.p,m:x.m,res:x.res,place:x.place||""}))};
