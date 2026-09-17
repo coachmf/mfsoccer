@@ -4,7 +4,7 @@
 'use strict';
 
 /* رقم نسخة الصور: ارفعه عند إعادة توليد أي قصّة حتى لا يبقى المتصفح على النسخة القديمة */
-const PLAYER_PHOTOS_VER = '27';
+const PLAYER_PHOTOS_VER = '28';
 
 const PLAYER_PHOTOS = {
   // الصليبخات (17)
@@ -243,7 +243,7 @@ const PLAYER_PHOTOS = {
   'JAH|مبارك الحربي': '/assets/players/jah/1',   // جلسة النادي الرسمية (Drive) من رسم تشكيلة النادي
   'JAH|تاكامبا ناسام': '/assets/players/jah/26',   // جلسة النادي الرسمية (Drive) من رسم تشكيلة النادي
   'JAH|ماركوس راموس': '/assets/players/jah/13',   // جلسة النادي الرسمية (Drive) من رسم تشكيلة النادي
-  'JAH|تركي المطيري': '/assets/players/jah/22',   // جلسة النادي الرسمية (Drive) من صورة منصور
+  'JAH|تركي المطيري': '/assets/players/jah/turki_mid',   // جلسة النادي الرسمية (Drive) من صورة منصور
   'JAH|عبدالله الداحس': '/assets/players/jah/80',
   'JAH|جاسم العنزي': '/assets/players/jah/4',
   'JAH|عادل جاسم الشمري': '/assets/players/jah/8',
@@ -297,7 +297,6 @@ const PLAYER_PHOTOS = {
   'ARB|حسين اشكناني': '/assets/players/arb/8',
   'JAH|عبدالرحمن الاصيمع': '/assets/players/jah/usaimi',
   'JAH|عبدالعزيز المسافر': '/assets/players/jah/musafer',
-  'JAH|تركي المطيري (وسط)': '/assets/players/jah/turki_mid',
   'JAH|محمد الرشيدي': '/assets/players/jah/rashidi_gk',
   'ARB|يوسف صباح': '/assets/players/arb/70',
   'ARB|حمد الحربي': '/assets/players/arb/12',

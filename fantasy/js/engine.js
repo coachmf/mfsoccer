@@ -17,9 +17,9 @@ function esc(s){ return String(s??'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'
 const POS_AR = { G:'حارس', D:'مدافع', M:'وسط', F:'مهاجم' };
 const POS_ORDER = { G:0, D:1, M:2, F:3 };
 
-/* حالة مفروضة من الكود (منصور 2026-09-17): لاعب خرج من كشف الموقع وفي فرق مشتركين — «غير متوفر» بدل حذفه
-   حتى لا يختفي فجأة من فرقهم. p189 = تركي المطيري السعودي (الجهراء 22، 11 مالكاً وقت القرار). */
-const FORCED_STATUS = { p189: 'n' };
+/* لاعب خرج من كشف الموقع وفي فرق مشتركين (منصور 2026-09-17): يبقى «غير متوفر» بدل حذفه حتى لا يختفي فجأة من فرقهم.
+   p189 = المهاجم السعودي (11 مالكاً، لم يلعب أي مباراة): اسمه «تركي» بلا رقم ولا صورة — «تركي المطيري» صار لاعب الوسط. */
+const FORCED_STATUS = { p189: {status:'n', name:'تركي', shirt:0} };
 const DB = {
   /* رقم النسخة يُرفع عند أي تغيير جوهري في البذرة (كشف اللاعبين أو
      أسعارهم). الحالة المحفوظة تُبنى من جديد بدل أن تبقى على بيانات
@@ -38,7 +38,7 @@ const DB = {
     this.state = buildSeedState();
     this.save();
   },
-  applyForcedStatus(){ (this.state&&this.state.players||[]).forEach(p=>{ const s=FORCED_STATUS[p.id]; if(s) p.status=s; }); },
+  applyForcedStatus(){ (this.state&&this.state.players||[]).forEach(p=>{ const f=FORCED_STATUS[p.id]; if(f) Object.assign(p, f, {photo:''}); }); },
   save(){
     this.dirtyAt=Date.now();
     try{ const me=this.state.session; if(me && this.state.teams[me] && typeof TEAM!=='undefined') TEAM.normalize(this.state.teams[me], this.state); }catch(e){}

@@ -12,18 +12,19 @@ const MF_SQUAD_ADD = {
   'الفحيحيل': [ {n:'فهد الشلال', p:'LM', s:19}, {n:'احمد الشمري', p:'GK', s:22}, {n:'عبدالرحمن سالم', p:'CB', s:12} ],
   'الساحل': [ {n:'فاضل الصراف', p:'LM', s:20} ],
   'السالمية': [ {n:'فهد العميري', p:'RB', s:94}, {n:'علي دشتي', p:'CB', s:28} ],
-  'الجهراء': [ {n:'عبدالرحمن الاصيمع', p:'RM', s:10}, {n:'عبدالعزيز المسافر', p:'GK', s:0}, {n:'تركي المطيري (وسط)', p:'CM', s:22}, {n:'محمد الرشيدي', p:'GK', s:39} ],
+  'الجهراء': [ {n:'عبدالرحمن الاصيمع', p:'RM', s:10}, {n:'عبدالعزيز المسافر', p:'GK', s:0}, {n:'محمد الرشيدي', p:'GK', s:39} ],
 };
 /* انتقالات (نفس SQUAD_MOVE في index.html): تُطبّق على squads عند القراءة، فيلتقطها سحب الكشوفات كانتقال ويبقى السعر. */
 /* تصحيح رقم القميص (نفس SQUAD_NUM في index.html) */
 const MF_SQUAD_NUM = [
   {c:'العربي', n:'احمد عادي', s:26},
   {c:'العربي', n:'عايد ماجد', s:36},
+  {c:'الجهراء', n:'تركي المطيري', s:22, p:'CM'},
   {c:'الجهراء', n:'عبدالرحمن الاصيمع', s:10, p:'RM'},
 ];
-/* حذف من الكشف (نفس SQUAD_REMOVE في index.html) — مطابقة حرفية */
-const MF_SQUAD_REMOVE = [
-  {c:'الجهراء', n:'تركي المطيري'},
+/* إعادة تسمية (نفس SQUAD_RENAME في index.html) */
+const MF_SQUAD_RENAME = [
+  {c:'الجهراء', from:'تركي المطيري (وسط)', to:'تركي المطيري'},
 ];
 const MF_SQUAD_MOVE = [
   {n:'بدر طارق', from:'العربي', to:'كاظمة', s:77},
@@ -65,6 +66,9 @@ const MFSYNC = {
   async fetchSeason(){
     const d = await this.fetchSeasonRaw();
     if(d && d.squads){
+      MF_SQUAD_RENAME.forEach(r=>{ const l=d.squads[r.c]; if(!Array.isArray(l)) return; const nm=e=>String(typeof e==='string'?e:(e&&e.n)||'').trim();
+        if(!l.some(e=>nm(e)===r.from)) return;
+        d.squads[r.c]=l.filter(e=>nm(e)!==r.to).map(e=>nm(e)===r.from ? Object.assign({}, typeof e==='object'?e:{}, {n:r.to}) : e); });
       for(const c in MF_SQUAD_ADD){
         if(!Array.isArray(d.squads[c])) continue;
         MF_SQUAD_ADD[c].forEach(x=>{ if(!d.squads[c].some(e=>this.norm(typeof e==='string'?e:(e&&e.n))===this.norm(x.n))) d.squads[c].push({n:x.n, p:x.p, s:x.s}); });
@@ -72,8 +76,6 @@ const MFSYNC = {
       MF_SQUAD_NUM.forEach(x=>{ const l=d.squads[x.c]; if(!Array.isArray(l)) return;
         const i=l.findIndex(e=>this.norm(typeof e==='string'?e:(e&&e.n))===this.norm(x.n)); if(i<0) return;
         l[i]=Object.assign({}, typeof l[i]==='object'?l[i]:{n:l[i]}, {s:x.s}, x.p?{p:x.p}:{}); });
-      MF_SQUAD_REMOVE.forEach(r=>{ const l=d.squads[r.c]; if(!Array.isArray(l)) return;
-        d.squads[r.c]=l.filter(e=>String(typeof e==='string'?e:(e&&e.n)||'').trim()!==r.n); });
       MF_SQUAD_MOVE.forEach(mv=>{ const nm=e=>this.norm(typeof e==='string'?e:(e&&e.n)), src=d.squads[mv.from], dst=d.squads[mv.to];
         if(!Array.isArray(dst) || dst.some(e=>nm(e)===this.norm(mv.n))) return;
         const i=Array.isArray(src)?src.findIndex(e=>nm(e)===this.norm(mv.n)):-1, old=i>=0?src.splice(i,1)[0]:{};
@@ -145,7 +147,8 @@ const MFSYNC = {
     if(!nm) return null;
     /* اسم بتمييز بين قوسين («تركي المطيري (وسط)») = لاعب مستقل: مطابقة حرفية فقط، وإلا لورث نقاط ومالكي صاحب الاسم الأصلي */
     const exactOnly=/[()]/.test(clean);
-    const squad=[...DB.state.players.filter(p=>p.club===clubId),
+    const forced=(typeof FORCED_STATUS!=='undefined')?FORCED_STATUS:{};   /* لاعب محذوف من الكشف لا يُطابق أي اسم من الموقع */
+    const squad=[...DB.state.players.filter(p=>p.club===clubId && !forced[p.id]),
                  ...DB.state.players.filter(p=>p.club!==clubId && (p.exClubs||[]).includes(clubId))];
     let hit = squad.find(p=>this.norm(p.name)===nm);
     if(exactOnly){ if(!hit && report) report.unmatched.push(`${clean} (${DB.club(clubId).name})`); return hit||null; }
