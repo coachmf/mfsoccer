@@ -117,6 +117,8 @@ const PLAYER_PHOTOS = {
   'FAH|احمد دشتي': '/assets/players/fah/26',
   'FAH|جاسم كرم': '/assets/players/fah/45',
   'FAH|فهد الشلال': '/assets/players/fah/19',
+  'FAH|احمد الشمري': '/assets/players/fah/22',
+  'FAH|عبدالرحمن سالم': '/assets/players/fah/12',
   'FAH|عبدالعزيز ناجي': '/assets/players/fah/60',
   'FAH|محمد الفارسي': '/assets/players/fah/70',
   'FAH|خالد سليمان الشمري': '/assets/players/fah/77',

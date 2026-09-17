@@ -3497,7 +3497,7 @@ function keepField(incoming, current){
 const SQUAD_ADD={
   "العربي":[{n:"وليد ولد الشيخ", p:"CAM", s:0}, {n:"علي عبدالرسول", p:"LB", s:16}, {n:"علي الدوخي", p:"ST", s:9}, {n:"عمر العازمي", p:"CM", s:27}, {n:"حسين كنكوني", p:"GK", s:1}, {n:"حسين العريان", p:"ST", s:99}, {n:"عايد ماجد", p:"CB", s:36}, {n:"يوسف صباح", p:"CAM", s:70}, {n:"حمد الحربي", p:"CDM", s:12}, {n:"فواز الداوود", p:"CAM", s:88}, {n:"سعود العنبري", p:"ST", s:40}],
   "النصر":[{n:"مسفر العدواني", p:"ST", s:0}, {n:"ابراهيم الظفيري", p:"CM", s:25}, {n:"احمد الرشيدي", p:"CB", s:14}, {n:"محمد عجاج", p:"GK", s:1}, {n:"مزيد نواف", p:"ST", s:88}],
-  "الفحيحيل":[{n:"فهد الشلال", p:"LM", s:19}],
+  "الفحيحيل":[{n:"فهد الشلال", p:"LM", s:19}, {n:"احمد الشمري", p:"GK", s:22}, {n:"عبدالرحمن سالم", p:"CB", s:12}],
   "الساحل":[{n:"فاضل الصراف", p:"LM", s:20}],   /* منصور 2026-09-17: جناح أيسر (صورة النادي) */
 };
 /* انتقالات قبل تعديلها من الإدارة: يُحذف اللاعب من كشف ناديه السابق ويُضاف للجديد بالرقم الجديد (مركزه يبقى). */
@@ -4686,6 +4686,8 @@ const LOCAL_PHOTOS_BY_CLUB={
   "الشباب|يوسف محمد":"assets/players/shb/4",
   "الشباب|محمد حمد":"assets/players/shb/8",
   "العربي|حسين كنكوني":"assets/players/arb/1",   /* حارس العربي — غير حسين كنكوني حارس كاظمة */
+  "الفحيحيل|احمد الشمري":"assets/players/fah/22",   /* غير أحمد الشمري لاعب الجهراء 77 */
+  "الفحيحيل|عبدالرحمن سالم":"assets/players/fah/12",
 };
 /* جنسيات المحترفين (طلب محمد الفيلكاوي 2026-09-16): "النادي|الاسم" → رمز الدولة (flagcdn). الكويتي لا يُكتب هنا. */
 const PLAYER_NAT={
@@ -9824,7 +9826,7 @@ html[data-theme="dark"] .mc-note{background:#0B1729;border-color:#1D3150}
 .rs-now{height:32px;padding:0 12px;border-radius:9px;border:1px solid var(--blue-ln,rgba(143,166,196,.3));background:var(--blue-bg,rgba(143,166,196,.08));color:var(--zain-text,var(--zain-mid,#1878be));font-family:var(--display);font-size:.74rem;font-weight:700;cursor:pointer}
 html[data-theme="dark"] .rs-btn,html[data-theme="dark"] .rs-nav,html[data-theme="dark"] .rs-menu{background:#0D1C30;border-color:#23395C}
 /* --- مركز المباريات: رأس + شريط الأيام + الملخص + تجميع الكروت بالأيام --- */
-.mx-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin:2px 0 12px}
+.mx-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin:2px 0 12px;position:relative;z-index:35}
 .mx-title{margin:0;font-family:var(--display);font-weight:800;font-size:1.25rem;color:var(--head,#fff)}
 .mx-head .segbar{margin:0}
 /* صفحة الاتحاد الكويتي */
@@ -12146,7 +12148,7 @@ function openMatchFromHash(){
 </script>
 
 <style>/* ===== بحث اللاعبين أعلى قسم اللاعبين — 2026-09-15 ===== */
-.psearch{position:relative;margin:4px 0 18px;max-width:560px}
+.psearch{position:relative;z-index:45;margin:4px 0 18px;max-width:560px}
 .psearch-box{display:flex;align-items:center;gap:10px;height:48px;padding:0 14px;border-radius:14px;
   background:var(--navy-800);border:1px solid var(--line2);transition:border-color .15s,box-shadow .15s}
 .psearch-box:focus-within{border-color:var(--sky);box-shadow:0 0 0 3px rgba(95,178,232,.18)}
@@ -13315,12 +13317,11 @@ body .pprof.on .pprof-sheet,body .mpage.on .mp-sheet{animation:moSheetIn var(--m
   html[dir="ltr"] .view:not(#v-admin) h2.sec{animation-name:moWipeL}
   @keyframes moWipeL{from{clip-path:inset(0 100% 0 0);opacity:.2}to{clip-path:inset(0 0 0 0);opacity:1}}
   /* البطاقات: ترتفع وتكبر من العمق */
-  .view:not(#v-home):not(#v-admin) :is(.mc,.card,.an-card,.pcard,.ts-pod,.fx-card,.tl-card,.cfact,.exportbar,.psearch,.mx-head){
+  /* على مستوى الأقسام فقط (منصور 2026-09-17): لا حركة على كل بطاقة مباراة أو صف — أخف على الآيفون،
+     ولا على الحاويات التي فيها قوائم منسدلة (.mx-head/.psearch) حتى لا تُحبس القائمة خلف البطاقات */
+  .view:not(#v-home):not(#v-admin) :is(.card,.an-card,.pcard,.ts-pod,.fx-card,.tl-card,.cfact){
     animation:moRise linear both;animation-timeline:view();animation-range:entry 0% entry 75%}
   @keyframes moRise{from{opacity:0;transform:translate3d(0,46px,0) scale(.94)}to{opacity:1;transform:none}}
-  /* الصفوف: انزلاق جانبي خفيف */
-  .view:not(#v-home):not(#v-admin) :is(.ts-row,.rt-row,.an-row,.vt-row){animation:moSlide linear both;animation-timeline:view();animation-range:entry 0% entry 100%}
-  @keyframes moSlide{from{opacity:0;transform:translate3d(-18px,0,0)}to{opacity:1;transform:none}}
   /* أشرطة القيم تمتلئ عند ظهورها */
   .view:not(#v-admin) :is(.an-row .mb i,.ts-bar i){animation:moFill linear both;animation-timeline:view();animation-range:entry 20% cover 45%;transform-origin:right center}
   @keyframes moFill{from{transform:scale(0,1)}to{transform:none}}
@@ -13337,9 +13338,6 @@ body .pprof.on .pprof-sheet,body .mpage.on .mp-sheet{animation:moSheetIn var(--m
   .cabout-hero{overflow:hidden}
   .cabout-hero img{animation:moParallax linear both;animation-timeline:view();animation-range:cover 50% exit 100%}
   @keyframes moParallax{from{transform:none}to{transform:translate3d(0,18%,0) scale(1.12);filter:brightness(.7)}}
-  /* شريط التقدّم */
-  .mo-progress{animation:moProg linear both;animation-timeline:scroll(root block)}
-  @keyframes moProg{to{transform:scaleX(1)}}
 }
 
 /* ========== تقليل الحركة + الطباعة ========== */
@@ -13358,9 +13356,6 @@ body .pprof.on .pprof-sheet,body .mpage.on .mp-sheet{animation:moSheetIn var(--m
 (function(){
   var RM=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)');
   if(RM&&RM.matches) return;
-  if(window.CSS&&CSS.supports&&CSS.supports('animation-timeline: scroll()')){
-    var bar=document.createElement('i'); bar.className='mo-progress'; bar.setAttribute('aria-hidden','true'); document.body.appendChild(bar);
-  }
   if(!('IntersectionObserver' in window)) return;
   var SEL=['.an-kpis b','.hstats > div > b','.ct-chips b'].map(function(s){ return '.view.on:not(#v-home) '+s; }).join(', ');
   function countUp(el){
@@ -13377,7 +13372,7 @@ body .pprof.on .pprof-sheet,body .mpage.on .mp-sheet{animation:moSheetIn var(--m
   var io=new IntersectionObserver(function(es){ es.forEach(function(e){ if(e.isIntersecting){ io.unobserve(e.target); countUp(e.target); } }); }, {threshold:.6});
   var pend=null;
   function scan(){ pend=null; document.querySelectorAll(SEL).forEach(function(el){ if(!el._moObs){ el._moObs=1; io.observe(el); } }); }
-  new MutationObserver(function(){ if(!pend) pend=setTimeout(scan, 80); }).observe(document.body, {childList:true, subtree:true});
+  document.querySelectorAll('.view').forEach(function(v){ new MutationObserver(function(){ if(!pend) pend=setTimeout(scan, 80); }).observe(v, {childList:true, subtree:true}); });
   scan();
 })();
 </script>

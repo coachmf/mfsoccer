@@ -4,12 +4,6 @@
   var RM=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)');
   var reduced=function(){ return !!(RM&&RM.matches); };
 
-  if(!reduced() && window.CSS && CSS.supports && CSS.supports('animation-timeline: scroll()')){
-    var bar=document.createElement('i'); bar.className='mo-progress'; bar.setAttribute('aria-hidden','true');
-    (document.body ? Promise.resolve() : new Promise(function(r){ document.addEventListener('DOMContentLoaded', r); }))
-      .then(function(){ document.body.appendChild(bar); });
-  }
-
   /* إغلاق البطاقة السفلية بحركة: نسخة شبحية تنزل بينما تُزال الأصلية فوراً (لا تأخير على المنطق) */
   if(typeof UI!=='undefined' && UI.closeSheet){
     var _close=UI.closeSheet;
