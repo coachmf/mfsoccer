@@ -2207,6 +2207,33 @@ html[data-theme="light"] .an-card{box-shadow:0 1px 3px rgba(11,31,58,.06)}
 .ah-list .an-rows{padding:0 12px}
 @media(min-width:900px){.an-duo .ah-list .an-rows.two{grid-template-columns:1fr}}
 .ah-list .an-row.nil{opacity:.55}
+/* توقيت أهداف النادي */
+.ct-chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
+.ct-chips span{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:999px;font-size:.78rem;font-weight:600;color:#fff}
+.ct-chips b{font-size:.95rem;font-weight:800;font-variant-numeric:tabular-nums}
+.ct-chips .f{background:#1E88D6}.ct-chips .a{background:#DC3B3B}.ct-chips .d{background:var(--an-track);color:var(--an-txt)}
+.ct-chart{display:flex;align-items:stretch;gap:6px}
+.ct-half{flex:1 1 0;min-width:0;display:flex;gap:6px}
+.ct-col{flex:1 1 0;min-width:0;display:flex;flex-direction:column}
+.ct-up,.ct-dn{height:74px;display:flex;justify-content:center;position:relative}
+.ct-up{align-items:flex-end;border-bottom:1px solid var(--an-line)}
+.ct-dn{align-items:flex-start;border-top:1px solid var(--an-line)}
+.ct-bar{width:100%;max-width:54px;min-height:26px;display:flex;justify-content:center;position:relative}
+.ct-bar b{font-size:.82rem;font-weight:800;color:#fff;font-variant-numeric:tabular-nums}
+.ct-bar.f{align-items:flex-start;padding-top:4px;border-radius:9px 9px 2px 2px;background:linear-gradient(180deg,#3FB5F5,#1878BE)}
+.ct-bar.a{align-items:flex-end;padding-bottom:4px;border-radius:2px 2px 9px 9px;background:linear-gradient(0deg,#F05252,#B42323)}
+.ct-bar.top.f{box-shadow:0 0 16px rgba(46,176,240,.35)}.ct-bar.top.a{box-shadow:0 0 16px rgba(239,68,68,.3)}
+.ct-p{height:26px;display:flex;align-items:center;justify-content:center;font-size:.68rem;color:var(--an-mut);white-space:nowrap;font-variant-numeric:tabular-nums;background:var(--an-track)}
+.ct-half .ct-col:first-child .ct-p{border-start-start-radius:8px;border-end-start-radius:8px}
+.ct-half .ct-col:last-child .ct-p{border-start-end-radius:8px;border-end-end-radius:8px}
+.ct-ht{width:18px;flex:none;position:relative;display:flex;align-items:center;justify-content:center}
+.ct-ht i{position:absolute;top:0;bottom:0;left:50%;border-left:1px dashed var(--an-mut);opacity:.5}
+.ct-ht span{display:none}
+.ct-legend{display:flex;justify-content:center;gap:18px;margin-top:12px;font-size:.72rem;color:var(--an-mut)}
+.ct-legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-inline-end:6px;vertical-align:-1px}
+.ct-legend i.f{background:#1E88D6}.ct-legend i.a{background:#DC3B3B}
+@media(max-width:560px){.ct-chart,.ct-half{gap:3px}.ct-ht{width:12px}.ct-up,.ct-dn{height:58px}.ct-p{font-size:.52rem;letter-spacing:-.02em}.ct-bar{min-height:22px}.ct-bar b{font-size:.74rem}}
+
 .an #heatClub .segbar.sub{margin-top:-14px}
 .an #heatClub .segbar.sub .seg{font-size:.72rem;padding:8px 12px}
 /* الهدّاف في إحصاءات النادي: الصورة بجانب الاسم لا فوقه (منصور 2026-09-17) */
@@ -3187,6 +3214,22 @@ function renderLeagueHeat(){
 }
 
 let HM_CLUB={cat:"الكل",side:"له"};
+/* توقيت أهداف النادي (منصور 2026-09-17، تصميم Gemini): خط زمني متباعد — أهدافه فوق المحور بالأزرق، وعليه تحته بالأحمر،
+   فاصل بين الشوطين، وشرائح المجموع والفارق. نفس الأرقام السابقة (s.timing: p,f,a لكل فترة). */
+function clubTimingHTML(T){
+  const tf=T.reduce((n,x)=>n+x.f,0), ta=T.reduce((n,x)=>n+x.a,0), d=tf-ta;
+  const mx=Math.max(1,...T.map(x=>Math.max(x.f,x.a)));
+  const col=x=>`<div class="ct-col">
+      <div class="ct-up">${x.f?`<span class="ct-bar f${x.f===mx?" top":""}" style="height:${(x.f/mx*100).toFixed(1)}%"><b>${x.f}</b></span>`:""}</div>
+      <div class="ct-p"><bdi dir="ltr">${esc(x.p)}</bdi></div>
+      <div class="ct-dn">${x.a?`<span class="ct-bar a${x.a===mx?" top":""}" style="height:${(x.a/mx*100).toFixed(1)}%"><b>${x.a}</b></span>`:""}</div>
+    </div>`;
+  return `<div class="an-card ct">
+    <div class="ct-chips"><span class="f">سجّل <b>${tf}</b></span><span class="a">استقبل <b>${ta}</b></span><span class="d">الفارق <b><bdi dir="ltr">${d>0?"+":""}${d}</bdi></b></span></div>
+    <div class="ct-chart"><div class="ct-half">${T.slice(0,4).map(col).join("")}</div><div class="ct-ht"><i></i><span>بين الشوطين</span></div><div class="ct-half">${T.slice(4).map(col).join("")}</div></div>
+    <div class="ct-legend"><span><i class="f"></i>أهدافه</span><span><i class="a"></i>أهداف عليه</span></div>
+  </div>`;
+}
 function renderClubHeat(club){
   const base = HM_CLUB.side==="له" ? GOALS.filter(g=>g.sc===club) : GOALS.filter(g=>g.cd===club);
   const list = filterCat(base,HM_CLUB.cat);
@@ -6750,16 +6793,7 @@ function renderClubBody(c){
   <div class="an">${anPens(PENS.filter(x=>x.by===c))}</div>
 
   <h2 class="sec">توقيت الأهداف</h2>
-  <div class="card pad">
-    ${(()=>{
-      const T=s.timing, tf=T.reduce((n,t)=>n+t.f,0), ta=T.reduce((n,t)=>n+t.a,0);
-      const cell=(v,k)=>{ const lv=v?Math.max(1,Math.round(v/mx*4)):0; return `<div class="gh-c ${k} l${lv}${v&&v===mx?" top":""}">${v}</div>`; };
-      return `<div class="gh">
-        <div class="gh-row"><span class="gh-lab f">له</span>${T.map(t=>cell(t.f,"f")).join("")}<span class="gh-tot f">${tf}</span></div>
-        <div class="gh-row"><span class="gh-lab a">عليه</span>${T.map(t=>cell(t.a,"a")).join("")}<span class="gh-tot a">${ta}</span></div>
-        <div class="gh-row per"><span></span>${T.map(t=>`<div class="gh-p" dir="ltr">${t.p}</div>`).join("")}<span class="gh-tot lbl">المجموع</span></div>
-      </div>`; })()}
-  </div>
+  <div class="an">${clubTimingHTML(s.timing)}</div>
 
   <h2 class="sec">خريطة أماكن التسجيل</h2>
   <div class="an"><div class="an-card" id="heatClub"></div></div>
