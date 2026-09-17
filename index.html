@@ -11051,25 +11051,33 @@ function topPlayersHTML(){
   if(!all.length) return "";
   const mx={g:Math.max(1,...all.map(p=>p.g)), a:Math.max(1,...all.map(p=>p.a)), ga:Math.max(1,...all.map(p=>p.g+p.a)),
             mins:Math.max(1,...all.map(p=>p.mins)), apps:Math.max(1,...all.map(p=>p.apps)), cards:Math.max(1,...all.map(p=>p.y+2*p.r))};
-  const byKey=(k)=>[...all].sort((x,y)=>k(y)-k(x)||(y.mins-x.mins))[0];
+  /* الترتيب نفسه المستعمل في جدول الهدافين: المعيار، ثم المعيار المقابل،
+     ثم الأقل دقائق. كان هنا «الأكثر دقائق» فيظهر على الرئيسية هدّاف
+     يخالف صدارة الجدول عند تساوي الأهداف (منصور 2026-09-17). */
+  const rank=(k,k2)=>[...all].sort((x,y)=> k(y)-k(x) || (k2? k2(y)-k2(x) : 0) || (x.mins-y.mins));
   const picks=[
-    {t:"الهدّاف",        sub:"أكثر اللاعبين تسجيلاً",           p:byKey(p=>p.g)},
-    {t:"صانع الألعاب",   sub:"أكثر اللاعبين صناعةً للأهداف",    p:byKey(p=>p.a)},
-    {t:"الأكثر مساهمة",  sub:"أهداف + صناعة لكل 90 دقيقة",     p:[...all].filter(p=>p.mins>=120).sort((x,y)=>((y.g+y.a)/y.mins)-((x.g+x.a)/x.mins)||(y.g+y.a)-(x.g+x.a))[0]},
+    {t:"الهدّاف",        sub:"أكثر اللاعبين تسجيلاً",           L:rank(p=>p.g, p=>p.a)},
+    {t:"صانع الألعاب",   sub:"أكثر اللاعبين صناعةً للأهداف",    L:rank(p=>p.a, p=>p.g)},
+    {t:"الأكثر مساهمة",  sub:"أهداف + صناعة لكل 90 دقيقة",     L:[...all].filter(p=>p.mins>=120).sort((x,y)=>((y.g+y.a)/y.mins)-((x.g+x.a)/x.mins)||(y.g+y.a)-(x.g+x.a))},
   ];
   /* بطاقات المراكز الدفاعية (منصور 2026-09-16): المركز من كشف النادي؛ الترتيب بالشباك النظيفة ثم المساهمة ثم الدقائق */
   const TCS=teamCleanSheets(); all.forEach(p=>{ p.dcs=TCS[p.n+"|"+p.c]||0; });
   const posOf=p=>{ const e=(SQUADS[p.c]||[]).find(x=>sqName(x)===p.n); return e?String(sqPos(e)).toUpperCase():""; };
-  const best=(codes,key)=>[...all].filter(p=>codes.includes(posOf(p)) && p.mins>0).sort(key)[0];
+  const best=(codes,key)=>[...all].filter(p=>codes.includes(posOf(p)) && p.mins>0).sort(key);
   const defSort=(x,y)=>(y.dcs-x.dcs)||((y.g+y.a)-(x.g+x.a))||(y.mins-x.mins);
   picks.push(
-    {t:"قلب الدفاع", sub:"أكثر قلوب الدفاع شباكاً نظيفة", role:"def", p:best(["CB"], defSort)},
-    {t:"الظهير",     sub:"الأظهرة: شباك نظيفة ومساهمة",   role:"def", p:best(["RB","LB","RWB","LWB"], defSort)},
-    {t:"الحارس",     sub:"أكثر الحرّاس شباكاً نظيفة",       role:"gk",  p:best(["GK"], (x,y)=>(y.cs-x.cs)||(y.mins-x.mins))}
+    {t:"قلب الدفاع", sub:"أكثر قلوب الدفاع شباكاً نظيفة", role:"def", L:best(["CB"], defSort)},
+    {t:"الظهير",     sub:"الأظهرة: شباك نظيفة ومساهمة",   role:"def", L:best(["RB","LB","RWB","LWB"], defSort)},
+    {t:"الحارس",     sub:"أكثر الحرّاس شباكاً نظيفة",       role:"gk",  L:best(["GK"], (x,y)=>(y.cs-x.cs)||(y.mins-x.mins))}
   );
-  const shown=picks.filter(x=>x.p);
-  /* لا يتكرر اللاعب نفسه في بطاقتين */
-  const seen=new Set(); const uniq=shown.filter(x=>{ const k=x.p.n+"|"+x.p.c; if(seen.has(k)) return false; seen.add(k); return true; });
+  /* لا يتكرر اللاعب نفسه في بطاقتين: البطاقة التالية تأخذ أول من لم
+     يُؤخذ بدل أن تختفي كلياً كما كان يحدث مع الفلترة القديمة */
+  const seen=new Set(); const uniq=[];
+  picks.forEach(x=>{
+    const p=(x.L||[]).find(c=>c && !seen.has(c.n+"|"+c.c));
+    if(!p) return;
+    seen.add(p.n+"|"+p.c); uniq.push({...x, p});
+  });
   const mxCS=Math.max(1,...all.map(p=>p.dcs)), mxGK=Math.max(1,...all.map(p=>p.cs));
   const card=({t,sub,p,role})=>{
     const disc=1-Math.min(1,(p.y+2*p.r)/mx.cards);
