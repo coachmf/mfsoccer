@@ -2134,6 +2134,9 @@ main{padding-bottom:48px}
 .tl-assist .ico-boot{opacity:.85}
 /* صفّ الإنذار في الشريط الزمني */
 .tl-row.card .tl-name{font-weight:700}
+/* صنف «card» هنا يعني بطاقة إنذار لا صندوق .card العام — كان يرث حدّاً وoverflow:hidden بلا حشوة فيُقصّ الاسم على الآيفون (منصور 2026-09-17) */
+.tl .tl-row.card,.tl .tl-ev.card{background:none;border:0;border-radius:0;box-shadow:none;overflow:visible;padding:0;animation:none}
+.tl .tl-row.card .tl-name{overflow:visible;padding-inline:2px}
 .tl-min.card span{background:#fff;color:var(--head);border:1.5px solid var(--line2)}
 .tl-ev.sub.a .tl-card{align-items:flex-start}
 /* ===== /v25 ===== */
