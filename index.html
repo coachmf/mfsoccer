@@ -2162,17 +2162,17 @@ html[data-theme="light"] .an-card{box-shadow:0 1px 3px rgba(11,31,58,.06)}
 .an-duo{display:grid;grid-template-columns:1fr;gap:0 18px}
 @media(min-width:900px){.an-duo{grid-template-columns:1.15fr 1fr}.an-duo .hint{min-height:2.6em}}
 .an-side{display:flex;flex-direction:column}
-#heatLeague.an-card .segbar{margin:0 0 12px}
-#heatLeague.an-card .hstats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:0 0 12px}
-#heatLeague.an-card .hstats>div{background:var(--an-track);border:0;border-radius:12px;padding:9px 4px;text-align:center}
-#heatLeague.an-card .hstats b{display:block;font-size:1.15rem;font-weight:800;color:var(--an-txt)}
-#heatLeague.an-card .hstats span{font-size:.64rem;color:var(--an-mut)}
-#heatLeague.an-card .pitchwrap{max-width:430px;margin:0 auto}
-.an #heatLeague .pitch{border-radius:10px;background:repeating-linear-gradient(180deg,rgba(255,255,255,.05) 0 10%,transparent 10% 20%),linear-gradient(180deg,#2F9E5F,#217A47 70%,#1B6B3D);box-shadow:0 10px 24px -8px rgba(0,0,0,.45)}
-.an #heatLeague .pitch .ln{stroke:rgba(255,255,255,.85);stroke-width:.7}
-.an #heatLeague .pitch .goal{stroke:#FFD97A;stroke-width:1.8}
-.an #heatLeague .pitch text.sm{fill:#EAF4FF;stroke:none;font-size:3px}
-#heatLeague.an-card .ztab{margin-top:12px;border-radius:12px}
+:is(#heatLeague,#heatClub).an-card .segbar{margin:0 0 12px}
+:is(#heatLeague,#heatClub).an-card .hstats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:0 0 12px}
+:is(#heatLeague,#heatClub).an-card .hstats>div{background:var(--an-track);border:0;border-radius:12px;padding:9px 4px;text-align:center}
+:is(#heatLeague,#heatClub).an-card .hstats b{display:block;font-size:1.15rem;font-weight:800;color:var(--an-txt)}
+:is(#heatLeague,#heatClub).an-card .hstats span{font-size:.64rem;color:var(--an-mut)}
+:is(#heatLeague,#heatClub).an-card .pitchwrap{max-width:430px;margin:0 auto}
+.an :is(#heatLeague,#heatClub) .pitch{border-radius:10px;background:repeating-linear-gradient(180deg,rgba(255,255,255,.05) 0 10%,transparent 10% 20%),linear-gradient(180deg,#2F9E5F,#217A47 70%,#1B6B3D);box-shadow:0 10px 24px -8px rgba(0,0,0,.45)}
+.an :is(#heatLeague,#heatClub) .pitch .ln{stroke:rgba(255,255,255,.85);stroke-width:.7}
+.an :is(#heatLeague,#heatClub) .pitch .goal{stroke:#FFD97A;stroke-width:1.8}
+.an :is(#heatLeague,#heatClub) .pitch text.sm{fill:#EAF4FF;stroke:none;font-size:3px}
+:is(#heatLeague,#heatClub).an-card .ztab{margin-top:12px;border-radius:12px}
 .an-tiles{display:grid;gap:8px;margin-top:12px}
 .an-tiles.t3{grid-template-columns:repeat(3,1fr)}
 .an-tiles>div{background:var(--an-track);border-radius:12px;padding:10px 6px;text-align:center;display:flex;flex-direction:column;justify-content:center}
@@ -2181,10 +2181,10 @@ html[data-theme="light"] .an-card{box-shadow:0 1px 3px rgba(11,31,58,.06)}
 .an-tiles span{font-size:.66rem;color:var(--an-mut)}
 .an-pens .goalwrap{max-width:420px;margin:0 auto}
 /* الخريطة الحرارية v3 */
-.an #heatLeague .segbar{display:flex;justify-content:center;gap:4px;border-bottom:1px solid var(--an-line);margin:-4px -16px 14px;padding:0 12px}
-.an #heatLeague .segbar .seg{background:none!important;border:0!important;border-radius:0;color:var(--an-mut)!important;padding:10px 14px;position:relative;font-weight:600;box-shadow:none}
-.an #heatLeague .segbar .seg[aria-pressed="true"]{color:var(--an-txt)!important}
-.an #heatLeague .segbar .seg[aria-pressed="true"]::after{content:"";position:absolute;inset-inline:10px;bottom:-1px;height:3px;border-radius:3px 3px 0 0;background:var(--an-acc)}
+.an :is(#heatLeague,#heatClub) .segbar{display:flex;justify-content:center;gap:4px;border-bottom:1px solid var(--an-line);margin:-4px -16px 14px;padding:0 12px}
+.an :is(#heatLeague,#heatClub) .segbar .seg{background:none!important;border:0!important;border-radius:0;color:var(--an-mut)!important;padding:10px 14px;position:relative;font-weight:600;box-shadow:none}
+.an :is(#heatLeague,#heatClub) .segbar .seg[aria-pressed="true"]{color:var(--an-txt)!important}
+.an :is(#heatLeague,#heatClub) .segbar .seg[aria-pressed="true"]::after{content:"";position:absolute;inset-inline:10px;bottom:-1px;height:3px;border-radius:3px 3px 0 0;background:var(--an-acc)}
 .ah-wrap{max-width:440px;margin:4px auto 0}
 .ah{width:100%;height:auto;display:block;overflow:visible}
 .ah-grass{fill:#1E4D31}
@@ -2207,6 +2207,11 @@ html[data-theme="light"] .an-card{box-shadow:0 1px 3px rgba(11,31,58,.06)}
 .ah-list .an-rows{padding:0 12px}
 @media(min-width:900px){.an-duo .ah-list .an-rows.two{grid-template-columns:1fr}}
 .ah-list .an-row.nil{opacity:.55}
+.an #heatClub .segbar.sub{margin-top:-14px}
+.an #heatClub .segbar.sub .seg{font-size:.72rem;padding:8px 12px}
+/* الهدّاف في إحصاءات النادي: الصورة بجانب الاسم لا فوقه (منصور 2026-09-17) */
+.stat .v .plk{display:inline-flex;align-items:center;gap:8px;min-width:0}
+.stat .v .plk img.pcut{flex:none;margin:-6px 0;width:2.4em;height:2.4em;object-fit:cover;object-position:50% 12%;border-radius:50%}
 
 .an{--an-cell0:rgba(143,166,196,.08)}
 html[data-theme="light"] .an{--an-cell0:rgba(100,116,139,.08)}
@@ -2238,9 +2243,9 @@ html[data-theme="light"] .an-goal .gn{fill:#0B1F3A;stroke:rgba(255,255,255,.7)}
 .an-lg b{font-weight:800;font-variant-numeric:tabular-nums}
 .an-lg em{font-style:normal;font-size:.72rem;color:var(--an-mut);text-align:left;font-variant-numeric:tabular-nums}
 @media(min-width:900px){.an-body .an-legend{max-width:460px}.an-body{gap:40px}}
-.an #heatLeague .ztab{background:transparent;border:1px solid var(--an-line)}
-.an #heatLeague .ztab-hd{background:var(--an-track);color:var(--an-txt);font-weight:700}
-.an #heatLeague .ztab-r i{background:var(--an-acc);color:#fff}
+.an :is(#heatLeague,#heatClub) .ztab{background:transparent;border:1px solid var(--an-line)}
+.an :is(#heatLeague,#heatClub) .ztab-hd{background:var(--an-track);color:var(--an-txt);font-weight:700}
+.an :is(#heatLeague,#heatClub) .ztab-r i{background:var(--an-acc);color:#fff}
 
 /* القوائم المرتّبة */
 .an-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px}
@@ -2270,7 +2275,7 @@ html[data-theme="light"] .an-goal .gn{fill:#0B1F3A;stroke:rgba(255,255,255,.7)}
   .an-row{grid-template-columns:18px 8px minmax(0,1fr) 44px 34px 26px;gap:6px;font-size:.8rem}
   .an-kpis{grid-template-columns:repeat(2,1fr)}
   .an-fg{flex-direction:column;align-items:stretch}.an-donut{align-self:center;width:140px;height:140px}
-  #heatLeague.an-card .hstats{grid-template-columns:repeat(2,1fr)}
+  :is(#heatLeague,#heatClub).an-card .hstats{grid-template-columns:repeat(2,1fr)}
 }
 @media print{.an-card,.an-row,.an-lg{break-inside:avoid;page-break-inside:avoid}}
 </style>
@@ -3185,15 +3190,13 @@ let HM_CLUB={cat:"الكل",side:"له"};
 function renderClubHeat(club){
   const base = HM_CLUB.side==="له" ? GOALS.filter(g=>g.sc===club) : GOALS.filter(g=>g.cd===club);
   const list = filterCat(base,HM_CLUB.cat);
+  /* نفس تصميم خريطة تبويب التحليل (منصور 2026-09-17): تبويب له/عليه ثم تبويب نوع اللعب */
   $("#heatClub").innerHTML = `
-    <div class="segbar">
-      ${["له","عليه"].map(x=>`<button class="seg" data-s="${x}" aria-pressed="${x===HM_CLUB.side}">${x==="له"?"أهدافه":"أهداف عليه"}</button>`).join("")}
-      <span style="width:10px"></span>
-      ${CATS.map(c=>`<button class="seg" data-c="${c}" aria-pressed="${c===HM_CLUB.cat}">${c}</button>`).join("")}
-    </div>
-    ${heatSVG(list)}
+    <div class="segbar">${["له","عليه"].map(x=>`<button class="seg" data-s="${x}" aria-pressed="${x===HM_CLUB.side}">${x==="له"?"أهدافه":"أهداف عليه"}</button>`).join("")}</div>
+    <div class="segbar sub">${CATS.map(c=>`<button class="seg" data-c="${c}" aria-pressed="${c===HM_CLUB.cat}">${c}</button>`).join("")}</div>
     ${heatStats(list)}
-    ${zoneTable(list)}`;
+    ${anHeatSVG(list)}
+    ${anZoneRows(list)}`;
   $("#heatClub").querySelectorAll("[data-s]").forEach(b=>b.onclick=()=>{HM_CLUB.side=b.dataset.s;renderClubHeat(club);});
   $("#heatClub").querySelectorAll("[data-c]").forEach(b=>b.onclick=()=>{HM_CLUB.cat=b.dataset.c;renderClubHeat(club);});
 }
@@ -6744,7 +6747,7 @@ function renderClubBody(c){
   })()}
 
   <h2 class="sec">ركلات الجزاء — خريطة المرمى</h2>
-  <div class="card pad">${goalMap(PENS.filter(x=>x.by===c))}</div>
+  <div class="an">${anPens(PENS.filter(x=>x.by===c))}</div>
 
   <h2 class="sec">توقيت الأهداف</h2>
   <div class="card pad">
@@ -6759,7 +6762,7 @@ function renderClubBody(c){
   </div>
 
   <h2 class="sec">خريطة أماكن التسجيل</h2>
-  <div class="card pad" id="heatClub"></div>
+  <div class="an"><div class="an-card" id="heatClub"></div></div>
 
   <h2 class="sec">أهداف النادي</h2>
   <div class="card pad">${s.gf.length?s.gf.map(g=>`<div class="gline" style="padding:6px 0;border-bottom:1px dashed rgba(143,166,196,.14)">
@@ -7330,8 +7333,8 @@ function anGoalSVG(list){
     <text class="glab" x="71" y="${(O.y+Y0)/2}">خارج إطار المرمى${out?` · ${out}`:""}</text>
   </svg></div>`;
 }
-function anPens(){
-  const L=PENS, has=L.some(x=>x.place);
+function anPens(list){
+  const L=list||PENS, has=L.some(x=>x.place);
   const scored=L.filter(x=>/سجل/.test(x.res||"")).length;
   const c={}; PZONES.forEach(z=>c[z]=0); L.forEach(x=>{ if(c[x.place]!==undefined) c[x.place]++; });
   const common=has?Object.entries(c).sort((a,b)=>b[1]-a[1])[0][0]:"—";
