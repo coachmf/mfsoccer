@@ -2987,7 +2987,7 @@ function clubStats(c){
 /* ===== دقائق اللعب والشباك النظيفة =====
    تُحسب من المباريات الملعّبة: التشكيلة الأساسية + التبديلات (خروج/دخول)
    والنتيجة. الأساسي يبدأ من 0، والبديل من دقيقة دخوله، وينتهي عند خروجه
-   أو نهاية المباراة. الشباك النظيفة للاعب: لعب 60 دقيقة فأكثر ولم يستقبل
+   أو نهاية المباراة. الشباك النظيفة للاعب: لعب ثلثَي المباراة فأكثر ولم يستقبل
    فريقه هدفاً في تلك المباراة. */
 /* طول المباراة = 90 + بدل ضائع الشوطين. الدقائق حقيقية بطلب منصور
    (2026-09-17): من أكمل مباراة فيها 7+5 يُسجَّل له 102 لا 90، والبديل
@@ -3015,7 +3015,8 @@ function isGoalkeeper(club, name){
   return !!e && sqPos(e)==="GK";
 }
 /* تجميع لكل لاعب: مباريات، دقائق، شباك نظيفة (على المسابقة المختارة).
-   الشباك النظيفة للحرّاس فقط: حارس لعب 60 دقيقة فأكثر ولم يستقبل هدفاً. */
+   الشباك النظيفة للحرّاس فقط: حارس لعب ثلثَي المباراة فأكثر (60 دقيقة في
+   مباراة 90) ولم يستقبل هدفاً. */
 function playerPlay(){
   const out = {};
   MATCHES.filter(m=>!isUpcoming(m)).forEach(m=>{
@@ -3031,7 +3032,7 @@ function playerPlay(){
         const k = name+"|"+club;
         const e = out[k] || (out[k] = {n:name, c:club, apps:0, mins:0, cs:0, gk:isGoalkeeper(club,name)});
         e.apps++; e.mins += mins;
-        if(e.gk && conceded===0 && mins>=60) e.cs++;
+        if(e.gk && conceded===0 && mins>=csLimit(m)) e.cs++;
       });
     });
   });
@@ -4920,6 +4921,9 @@ function absMinute(h, m, x, add1){
 const add1Of = m => Math.max(0, Math.min(30, +((m||{}).add1) || 0));
 const add2Of = m => Math.max(0, Math.min(30, +((m||{}).add2) || 0));
 const matchLen = m => 90 + add1Of(m) + add2Of(m);
+/* حدّ الشباك النظيفة ودقائق اللعب: ثلثا المباراة (67٪) بدل رقم ثابت —
+   يعطي 60 في مباراة 90، و68 في مباراة 102، فيبقى الشرط عادلاً مهما طالت. */
+const csLimit = m => Math.round(matchLen(m) * 2 / 3);
 /* الدقيقة المطلقة لحدث داخل مباراة بعينها — تراعي بدل ضائع الشوط الأول */
 const evAbs = (m, h, mn, x) => absMinute(h, mn, x, add1Of(m));
 /* تسمية الدقيقة كما تُقرأ: 45+3 لا 48 */
@@ -7338,7 +7342,7 @@ function renderPlayers(){
           <span class="ts-val" style="color:var(--win)">${p.cs}</span>
           <i class="ts-bar" style="width:${(p.cs/csMax*100).toFixed(0)}%"></i></div>`; }).join("");
       const cs = byCS.length? `<h2 class="sec">الشباك النظيفة (الحرّاس)</h2>
-        <p class="hint">حرّاس المرمى الذين لعبوا 60 دقيقة فأكثر في مباريات لم يستقبل فيها فريقهم هدفاً.</p>
+        <p class="hint">حرّاس المرمى الذين لعبوا ثلثَي المباراة فأكثر — 60 دقيقة في مباراة 90، وأكثر إن طال الوقت بدل الضائع — في مباريات لم يستقبل فيها فريقهم هدفاً.</p>
         <div class="ts-wrap"><div class="ts-list">
           <div class="ts-head"><span>#</span><span>الحارس</span><span class="ts-subs-h">مباريات · دقائق</span><span>شباك نظيفة</span></div>
           ${tsMore(csRows, byCS.length, "cs")}
@@ -11029,7 +11033,7 @@ function radarSVG(vals, labels, color, mini){
     ${vals.map((v,i)=>{ const [x,y]=pt(i,R*Math.max(.06,Math.min(1,v))); return `<circle class="rd" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="2.6" style="fill:${color}"/>`; }).join("")}
     ${lab}</svg>`;
 }
-/* شباك نظيفة لكل لاعب (أي مركز): 60 دقيقة فأكثر في مباراة لم يستقبل فيها فريقه — نفس قاعدة الحرّاس في playerPlay، للمدافعين في «أبرز اللاعبين» */
+/* شباك نظيفة لكل لاعب (أي مركز): ثلثا المباراة فأكثر في مباراة لم يستقبل فيها فريقه — نفس قاعدة الحرّاس في playerPlay، للمدافعين في «أبرز اللاعبين» */
 function teamCleanSheets(){
   const out={};
   MATCHES.filter(m=>!isUpcoming(m)).forEach(m=>{
@@ -11037,7 +11041,7 @@ function teamCleanSheets(){
     [m.home, m.away].forEach(club=>{
       if((club===m.home ? +m.ag : +m.hg)!==0) return;
       const men=new Set(xiNames(m.round, comp, club)); matchSubs(m).filter(s=>s.club===club && s.in).forEach(s=>men.add(s.in));
-      men.forEach(n=>{ if(playerMatchMinutes(m, club, n)>=60) out[n+"|"+club]=(out[n+"|"+club]||0)+1; });
+      men.forEach(n=>{ if(playerMatchMinutes(m, club, n)>=csLimit(m)) out[n+"|"+club]=(out[n+"|"+club]||0)+1; });
     });
   });
   return out;
@@ -11670,9 +11674,9 @@ const RATING = {
     {key:"red",     label:"الطرد",                   fn:c => c.red * -1.2},
     {key:"penMiss", label:"ركلات الجزاء الضائعة",    fn:c => c.penMissed * -0.6},
     {key:"result",  label:"نتيجة المباراة",          fn:c => (c.win ? 0.35 : c.loss ? -0.35 : 0) * c.share},
-    {key:"cs",      label:"الشباك النظيفة",          fn:c => (c.mins>=60 && c.conceded===0) ? ({G:0.9, D:0.5, M:0.15}[c.line] || 0) : 0},
+    {key:"cs",      label:"الشباك النظيفة",          fn:c => (c.mins>=(c.csLimit||60) && c.conceded===0) ? ({G:0.9, D:0.5, M:0.15}[c.line] || 0) : 0},
     {key:"against", label:"الأهداف المستقبَلة",      fn:c => c.conceded * ({G:-0.25, D:-0.15, M:-0.05}[c.line] || 0)},
-    {key:"minutes", label:"دقائق اللعب",             fn:c => c.mins>=60 ? 0.15 : 0},
+    {key:"minutes", label:"دقائق اللعب",             fn:c => c.mins>=(c.csLimit||60) ? 0.15 : 0},
   ]
 };
 function playerLine(club, name){
@@ -11691,7 +11695,7 @@ function ratingCtx(m, club, name){
   const pens=(PENS||[]).filter(p=>p.r===m.round && compOf(p)===compOf(m) && p.p===name && p.by===club);
   const cards=CARDS.filter(x=>x.r===m.round && compOf(x)===compOf(m) && x.club===club && x.p===name);
   const red=cards.filter(x=>isRed(x.type)).length;
-  return {m, club, name, line:playerLine(club,name), mins, share:Math.min(1, mins/matchLen(m)),
+  return {m, club, name, line:playerLine(club,name), mins, csLimit:csLimit(m), share:Math.min(1, mins/matchLen(m)),
     win:gf>ga, draw:gf===ga, loss:gf<ga,
     goals: mine.filter(g=>g.det!=="ركلة جزاء").length,
     penGoals: mine.filter(g=>g.det==="ركلة جزاء").length,
