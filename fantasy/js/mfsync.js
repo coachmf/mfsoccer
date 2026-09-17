@@ -19,8 +19,11 @@ const MF_SQUAD_ADD = {
 const MF_SQUAD_NUM = [
   {c:'العربي', n:'احمد عادي', s:26},
   {c:'العربي', n:'عايد ماجد', s:36},
-  {c:'الجهراء', n:'تركي المطيري', s:22, p:'ST'},
   {c:'الجهراء', n:'عبدالرحمن الاصيمع', s:10, p:'RM'},
+];
+/* حذف من الكشف (نفس SQUAD_REMOVE في index.html) — مطابقة حرفية */
+const MF_SQUAD_REMOVE = [
+  {c:'الجهراء', n:'تركي المطيري'},
 ];
 const MF_SQUAD_MOVE = [
   {n:'بدر طارق', from:'العربي', to:'كاظمة', s:77},
@@ -69,6 +72,8 @@ const MFSYNC = {
       MF_SQUAD_NUM.forEach(x=>{ const l=d.squads[x.c]; if(!Array.isArray(l)) return;
         const i=l.findIndex(e=>this.norm(typeof e==='string'?e:(e&&e.n))===this.norm(x.n)); if(i<0) return;
         l[i]=Object.assign({}, typeof l[i]==='object'?l[i]:{n:l[i]}, {s:x.s}, x.p?{p:x.p}:{}); });
+      MF_SQUAD_REMOVE.forEach(r=>{ const l=d.squads[r.c]; if(!Array.isArray(l)) return;
+        d.squads[r.c]=l.filter(e=>String(typeof e==='string'?e:(e&&e.n)||'').trim()!==r.n); });
       MF_SQUAD_MOVE.forEach(mv=>{ const nm=e=>this.norm(typeof e==='string'?e:(e&&e.n)), src=d.squads[mv.from], dst=d.squads[mv.to];
         if(!Array.isArray(dst) || dst.some(e=>nm(e)===this.norm(mv.n))) return;
         const i=Array.isArray(src)?src.findIndex(e=>nm(e)===this.norm(mv.n)):-1, old=i>=0?src.splice(i,1)[0]:{};
@@ -138,9 +143,12 @@ const MFSYNC = {
     if(al){ const p=DB.state.players.find(x=>x.club===clubId && x.name===al); if(p) return p; }
     const nm=this.norm(mfName);
     if(!nm) return null;
+    /* اسم بتمييز بين قوسين («تركي المطيري (وسط)») = لاعب مستقل: مطابقة حرفية فقط، وإلا لورث نقاط ومالكي صاحب الاسم الأصلي */
+    const exactOnly=/[()]/.test(clean);
     const squad=[...DB.state.players.filter(p=>p.club===clubId),
                  ...DB.state.players.filter(p=>p.club!==clubId && (p.exClubs||[]).includes(clubId))];
     let hit = squad.find(p=>this.norm(p.name)===nm);
+    if(exactOnly){ if(!hit && report) report.unmatched.push(`${clean} (${DB.club(clubId).name})`); return hit||null; }
     if(!hit) hit = squad.find(p=>{const n=this.norm(p.name); return n.length>3 && nm.length>3 && (n.includes(nm)||nm.includes(n));});
     if(!hit) hit = squad.find(p=>this.lev(this.norm(p.name),nm)<=2);
     if(!hit){

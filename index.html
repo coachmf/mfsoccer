@@ -3507,8 +3507,12 @@ const SQUAD_ADD={
 const SQUAD_NUM=[
   {c:"العربي", n:"احمد عادي", s:26},
   {c:"العربي", n:"عايد ماجد", s:36},   /* منصور 2026-09-17: رقمه 36 (كان 90 من صورة جلسة التصوير) */
-  {c:"الجهراء", n:"تركي المطيري", s:22, p:"ST"},   /* منصور 2026-09-17: السعودي مهاجم (الكشف المحفوظ صار CAM) */
   {c:"الجهراء", n:"عبدالرحمن الاصيمع", s:10, p:"RM"},   /* منصور: جناح أيمن (الكشف المحفوظ LM) */
+];
+/* حذف من الكشف (منصور 2026-09-17): مطابقة حرفية للاسم — «تركي المطيري (وسط)» لاعب آخر ويبقى.
+   في الفانتسي يبقى «غير متوفر» لأن عنده مالكين (FORCED_STATUS في fantasy/js/engine.js). */
+const SQUAD_REMOVE=[
+  {c:"الجهراء", n:"تركي المطيري"},
 ];
 const SQUAD_MOVE=[
   {n:"بدر طارق", from:"العربي", to:"كاظمة", s:77},
@@ -3530,6 +3534,8 @@ function applyData(d, source){
   SQUAD_NUM.forEach(f=>{ const l=SQUADS[f.c]; if(!Array.isArray(l)) return;
     const i=l.findIndex(e=>(typeof e==="string"?e:e&&e.n)===f.n); if(i<0) return;
     l[i]=Object.assign({}, typeof l[i]==="object"?l[i]:{n:l[i]}, {s:f.s}, f.p?{p:f.p}:{}); });
+  SQUAD_REMOVE.forEach(r=>{ const l=SQUADS[r.c]; if(!Array.isArray(l)) return;
+    SQUADS[r.c]=l.filter(e=>String(typeof e==="string"?e:e&&e.n||"").trim()!==r.n); });
   SQUAD_MOVE.forEach(mv=>{ const nm=e=>typeof e==="string"?e:e&&e.n, src=SQUADS[mv.from], dst=SQUADS[mv.to];
     if(!Array.isArray(dst) || dst.some(e=>nm(e)===mv.n)) return;
     const i=Array.isArray(src)?src.findIndex(e=>nm(e)===mv.n):-1, old=i>=0?src.splice(i,1)[0]:{};

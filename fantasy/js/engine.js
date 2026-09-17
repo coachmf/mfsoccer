@@ -17,6 +17,9 @@ function esc(s){ return String(s??'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'
 const POS_AR = { G:'حارس', D:'مدافع', M:'وسط', F:'مهاجم' };
 const POS_ORDER = { G:0, D:1, M:2, F:3 };
 
+/* حالة مفروضة من الكود (منصور 2026-09-17): لاعب خرج من كشف الموقع وفي فرق مشتركين — «غير متوفر» بدل حذفه
+   حتى لا يختفي فجأة من فرقهم. p189 = تركي المطيري السعودي (الجهراء 22، 11 مالكاً وقت القرار). */
+const FORCED_STATUS = { p189: 'n' };
 const DB = {
   /* رقم النسخة يُرفع عند أي تغيير جوهري في البذرة (كشف اللاعبين أو
      أسعارهم). الحالة المحفوظة تُبنى من جديد بدل أن تبقى على بيانات
@@ -27,7 +30,7 @@ const DB = {
   load(){
     try{
       const raw = localStorage.getItem(this.KEY);
-      if(raw){ this.state = JSON.parse(raw); if(this.state && this.state.ver===1){ (this.state.leagues||[]).forEach(l=>{ if(l.global) l.name='الترتيب العام — الدوري الكويتي الممتاز'; }); this.syncClubs(); this.syncPlayers(); this.syncScoring();
+      if(raw){ this.state = JSON.parse(raw); if(this.state && this.state.ver===1){ (this.state.leagues||[]).forEach(l=>{ if(l.global) l.name='الترتيب العام — الدوري الكويتي الممتاز'; }); this.syncClubs(); this.syncPlayers(); this.syncScoring(); this.applyForcedStatus();
         if((this.state.priceVer||0) < SEED_PRICE_VER){ this.applySeedPrices(); this.save(); }
         if(normalizeFixtures(this.state)) this.save();
         return; } }
@@ -35,6 +38,7 @@ const DB = {
     this.state = buildSeedState();
     this.save();
   },
+  applyForcedStatus(){ (this.state&&this.state.players||[]).forEach(p=>{ const s=FORCED_STATUS[p.id]; if(s) p.status=s; }); },
   save(){
     this.dirtyAt=Date.now();
     try{ const me=this.state.session; if(me && this.state.teams[me] && typeof TEAM!=='undefined') TEAM.normalize(this.state.teams[me], this.state); }catch(e){}
@@ -103,6 +107,7 @@ const DB = {
     if(unchanged || (players && players.list && players.list.length && rounds)) st.cloudUpdated = game.updated;   // تحميل كامل ناجح: نحفظ الطابع
     this.cloudAt = Date.now();
     try{ localStorage.setItem(this.KEY, JSON.stringify(st)); }catch(e){}
+    this.applyForcedStatus();
     return {ok:true};
   },
 
