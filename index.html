@@ -3107,6 +3107,9 @@ function filterCat(list,cat){ return cat==="الكل"?list:list.filter(g=>g.cat=
 /* الخريطة الحرارية للتحليل v3 (منصور 2026-09-17، تصميم Gemini): حرارة متصلة أزرق←سماوي←أصفر←برتقالي←أحمر
    تُلوَّن بمرشّح SVG من شدة البقع، وشارة عدد لكل منطقة (الصفر باهت) وتمييز المنطقة الأعلى. */
 let AN_HEAT_UID=0;
+/* مواضع الشارات: علامة الجزاء فوق ومنتصف منطقة الجزاء تحتها حتى لا تتداخل الدائرتان (منصور 2026-09-17) */
+const AN_BADGE_POS={"علامة الجزاء":[50,19],"داخل منطقة الجزاء - وسط":[50,30]};
+function anBadgePos(z){ return AN_BADGE_POS[z.k] || [z.lx ?? (z.t==="c"? z.cx : z.x+z.w/2), z.ly ?? (z.t==="c"? z.cy : z.y+z.h/2)]; }
 function anHeatSVG(list){
   const counts={}; ZONES.forEach(z=>counts[z.k]=0);
   list.forEach(g=>{ if(counts[g.zone]!==undefined) counts[g.zone]++; });
@@ -3115,9 +3118,9 @@ function anHeatSVG(list){
   const blob=z=>{ const n=counts[z.k]; if(!n) return ""; const k=n/mx, [cx,cy]=ctr(z);
     const r=(z.t==="c"?10:Math.min(18,Math.max(10,Math.min(z.w,z.h)*.6)))*(0.9+0.5*k);
     return `<circle cx="${cx}" cy="${cy}" r="${r.toFixed(1)}" fill="url(#${u}g)" opacity="${(0.22+0.78*k).toFixed(2)}"/>`; };
-  const badge=z=>{ const n=counts[z.k], [cx,cy]=ctr(z), top=n===mx&&n>0, R=top?5.4:(n>=10?4.6:4);
+  const badge=z=>{ const n=counts[z.k], [cx,cy]=anBadgePos(z), top=n===mx&&n>0, R=top?5:(n>=10?4.6:4);
     return `<g class="ahb${n?"":" nil"}${top?" top":""}"><title>${esc(z.k)}: ${n}</title>
-      ${top?`<circle class="ring" cx="${cx}" cy="${cy}" r="${R+2.4}"/>`:""}
+      ${top?`<circle class="ring" cx="${cx}" cy="${cy}" r="${R+1.5}"/>`:""}
       <circle class="dot" cx="${cx}" cy="${cy}" r="${R}"/><text x="${cx}" y="${cy}">${n}</text></g>`; };
   const stripes=[...Array(10)].map((_,i)=>i%2?`<rect x="0" y="${2+i*9.8}" width="100" height="9.8" fill="rgba(255,255,255,.035)"/>`:"").join("");
   return `<div class="ah-wrap"><svg class="ah" viewBox="-3 -6 106 112" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="خريطة أماكن التسجيل">
