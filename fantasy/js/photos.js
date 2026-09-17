@@ -4,7 +4,7 @@
 'use strict';
 
 /* رقم نسخة الصور: ارفعه عند إعادة توليد أي قصّة حتى لا يبقى المتصفح على النسخة القديمة */
-const PLAYER_PHOTOS_VER = '24';
+const PLAYER_PHOTOS_VER = '25';
 
 const PLAYER_PHOTOS = {
   // الصليبخات (17)
@@ -66,6 +66,7 @@ const PLAYER_PHOTOS = {
   'SAH|حمزه زياد': '/assets/players/sah/66',
   'SAH|راشد بن علي': '/assets/players/sah/77',
   'SAH|غازي العتيبي': '/assets/players/sah/87',
+  'SAH|فاضل الصراف': '/assets/players/sah/20',
   // الشباب (16)
   'SHB|منير السبيعي': '/assets/players/shb/5',   // مطابقة وجه مع ملصقات النادي
   'SHB|عبدالرحمن رفاعي': '/assets/players/shb/6',
