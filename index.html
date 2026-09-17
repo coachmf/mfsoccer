@@ -12906,8 +12906,9 @@ html[data-theme="light"]{--mo-shadow-2:0 12px 28px -14px rgba(11,31,58,.28),0 2p
 }
 #v-home :is(.btn,.hchip,.ts-morebtn,.seg):active{transform:scale(.97);transition-duration:80ms;filter:brightness(.96)}
 /* حلقة التركيز لوحة المفاتيح تتحرك بدل الظهور المفاجئ */
-#v-home :is(button,a,[role=button],tr),body:has(#v-home.on) :is(nav.tabs button,.crestbar button,.iconbtn,.wafab,.strip .rx){outline:2px solid transparent;outline-offset:6px;transition-property:outline-color,outline-offset,transform,box-shadow,filter,background-color,color,border-color;transition-duration:var(--mo-base);transition-timing-function:var(--mo-out)}
-#v-home :is(button,a,[role=button],tr):focus-visible,body:has(#v-home.on) :is(nav.tabs button,.crestbar button,.iconbtn,.wafab,.strip .rx):focus-visible{outline-color:var(--sky,#2EB0F0);outline-offset:2px}
+/* حلقة التركيز: داخل الرئيسية فقط، وتتحرك عند ظهورها فقط — لا انتقال على الحالة العادية حتى لا تومض إطارات بيضاء عند فتح الرئيسية (منصور 2026-09-17) */
+#v-home :is(button,a,[role=button],tr):focus-visible{outline:2px solid var(--sky,#2EB0F0);outline-offset:2px;animation:moFocus var(--mo-base) var(--mo-out)}
+@keyframes moFocus{from{outline-offset:6px;outline-color:transparent}to{outline-offset:2px}}
 
 /* ================= 4) شرائح المسابقة: مؤشر منزلق ================= */
 #v-home .compbar{position:relative;isolation:isolate}
