@@ -2633,7 +2633,7 @@ function matchSubsRaw(m){
   return (ALL && ALL.subs ? ALL.subs : [])
     .filter(s => s.r===m.round && compOf(s)===compOf(m) && (s.club===m.home || s.club===m.away))
     .slice()
-    .sort((a,b)=> absMinute(a.h,a.m) - absMinute(b.h,b.m));
+    .sort((a,b)=> evAbs(m,a.h,a.m,a.x) - evAbs(m,b.h,b.m,b.x));
 }
 function subsHTML(m){
   const ss = matchSubs(m);
@@ -2641,7 +2641,7 @@ function subsHTML(m){
   return `<div class="goals subs">
     <div class="subhd">التبديلات (${ss.length})</div>
     ${ss.map(s=>`<div class="gline">
-      <span class="gmin">${absMinute(s.h,s.m)}'</span>
+      <span class="gmin">${halfLabel(s.h,s.m,s.x)}'</span>
       ${crest(s.club)}
       <span class="subpair">
         ${s.in ? `<span class="subin" data-player="${esc(s.in)}" data-club="${esc(s.club)}"><i class="arw up"></i>${esc(s.in)}</span>` : ""}
@@ -2989,21 +2989,25 @@ function clubStats(c){
    والنتيجة. الأساسي يبدأ من 0، والبديل من دقيقة دخوله، وينتهي عند خروجه
    أو نهاية المباراة. الشباك النظيفة للاعب: لعب 60 دقيقة فأكثر ولم يستقبل
    فريقه هدفاً في تلك المباراة. */
-/* المباراة 90 دقيقة (بلا وقت بدل ضائع) لأرقام نظيفة ومفهومة */
-const MATCH_MIN = 90;
-const capMin = x => Math.max(0, Math.min(MATCH_MIN, x));
+/* طول المباراة = 90 + بدل ضائع الشوطين. الدقائق حقيقية بطلب منصور
+   (2026-09-17): من أكمل مباراة فيها 7+5 يُسجَّل له 102 لا 90، والبديل
+   الذي دخل في 45+3 تُحتسب له دقائق الوقت المحتسب كاملة. */
+const MATCH_MIN = 90;                       /* الأساس فقط — لا يُستعمل سقفاً */
+const capTo = (len, v) => Math.max(0, Math.min(len, v));
+const capMin = x => Math.max(0, Math.min(MATCH_MIN, x));   /* متبقٍّ لمن لا يعرف المباراة */
 function playerMatchMinutes(m, club, name){
   const comp = compOf(m);
   const starter = xiNames(m.round, comp, club).includes(name);
   const subs = matchSubs(m).filter(s=>s.club===club);
   const inSub  = subs.find(s=>s.in===name);
   const outSub = subs.find(s=>s.out===name);
+  const LEN = matchLen(m);
   let start;
   if(starter) start = 0;
-  else if(inSub) start = capMin(absMinute(inSub.h, inSub.m));
+  else if(inSub) start = capTo(LEN, evAbs(m, inSub.h, inSub.m, inSub.x));
   else return 0;                                   /* لم يشارك */
-  const end = outSub ? capMin(absMinute(outSub.h, outSub.m)) : MATCH_MIN;
-  return Math.max(inSub ? 1 : 0, end - start);   /* بديل دخل في الدقيقة 90+ يُحسب له ظهور بدقيقة واحدة */
+  const end = outSub ? capTo(LEN, evAbs(m, outSub.h, outSub.m, outSub.x)) : LEN;
+  return Math.max(inSub ? 1 : 0, end - start);   /* بديل دخل في آخر لحظة يُحسب له ظهور بدقيقة واحدة */
 }
 /* هل اللاعب حارس مرمى؟ (من مركزه في الكشف) */
 function isGoalkeeper(club, name){
@@ -4902,13 +4906,27 @@ const opt=(v,cur,ph)=> `<option value="">${ph||"—"}</option>`+v.map(x=>`<optio
 const mkey=m=>`${m.round}|${compOf(m)}|${m.home}|${m.away}`;
 /* الدقيقة المطلقة من (الشوط، الدقيقة): الشوط الثاني بدقيقة ≤45 تعني 45+الدقيقة،
    وبدقيقة أكبر تُقرأ كما هي. فيصح الإدخالان: «الشوط 2 الدقيقة 15» و«الشوط 2 الدقيقة 60». */
-function absMinute(h, m){
-  const mm = +m || 0;
+function absMinute(h, m, x, add1){
+  const mm = +m || 0, xx = +x || 0, a1 = +add1 || 0;
+  /* الشوط الثاني لا يبدأ من 45 بل من 45 + بدل ضائع الشوط الأول، وإلا ضاعت
+     دقائق البديل الذي دخل في الوقت المحتسب (منصور 2026-09-17). */
   /* «بين الشوطين» يُدخل كالشوط الثاني د45، وكان يُحسب 90 فيظهر اللاعب وكأنه أكمل المباراة (منصور 2026-09-16) */
-  if(+h === 2 && mm === 45) return 45;
-  if(+h === 2 && mm < 45) return 45 + mm;
-  return mm;
+  if(+h === 2 && mm === 45) return 45 + a1;
+  if(+h === 2 && mm < 45)   return 45 + a1 + mm + xx;
+  if(+h === 2)              return 45 + a1 + (mm - 45) + xx;
+  return mm + xx;
 }
+/* بدل الضائع المسجّل للمباراة، وطول المباراة الحقيقي المبني عليه */
+const add1Of = m => Math.max(0, Math.min(30, +((m||{}).add1) || 0));
+const add2Of = m => Math.max(0, Math.min(30, +((m||{}).add2) || 0));
+const matchLen = m => 90 + add1Of(m) + add2Of(m);
+/* الدقيقة المطلقة لحدث داخل مباراة بعينها — تراعي بدل ضائع الشوط الأول */
+const evAbs = (m, h, mn, x) => absMinute(h, mn, x, add1Of(m));
+/* تسمية الدقيقة كما تُقرأ: 45+3 لا 48 */
+const halfLabel = (h, mn, x) => {
+  const base = (+h === 2 && +mn < 45) ? 45 + (+mn||0) : (+mn||0);
+  return (+x) ? `${base}+${+x}` : `${base}`;
+};
 /* أيقونات تفاصيل المباراة: كرة للهدف، حذاء للصناعة — كحلية بهوية الموقع */
 const ICO_BALL = `<img class="ico-ball ico-ball-3d" src="assets/icons/ball-3d.webp?v=2" alt="" width="15" height="15" decoding="async" aria-hidden="true">`;   /* كرة Fluent 3D من Microsoft (رخصة MIT) — طلب منصور 2026-09-16: نفس شكل إيموجي الكرة */   /* كرة كلاسيكية بخماسي ودرزات — تصميم 2026-09-16 */
 const ICO_BOOT = `<svg class="ico-boot" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M2.6 15.4C2.5 12.6 3.1 9.8 4.8 8.6c.5-.4 1.1-.5 1.7-.5h2.3c.8 0 1.4.5 1.7 1.2l.8 1.9c.4 1 1.3 1.7 2.4 1.8l5.1.7c2.4.3 3.8 1.6 3.8 3.1 0 1-.7 1.6-1.8 1.6H4.2c-.9 0-1.6-.8-1.6-2.1z" fill="#0B1F3A"/><path d="M3 17.6h19.2c-.1.8-.7 1.2-1.6 1.2H4.4c-.8 0-1.3-.4-1.4-1.2z" fill="#2A8FD6"/><g fill="#0B1F3A"><rect x="5.2" y="18.6" width="1.6" height="1.8" rx=".5"/><rect x="9.2" y="18.6" width="1.6" height="1.8" rx=".5"/><rect x="14.6" y="18.6" width="1.6" height="1.8" rx=".5"/><rect x="18.4" y="18.6" width="1.6" height="1.8" rx=".5"/></g><path d="M5.4 15c3.2-1 7-.8 11.4.6" fill="none" stroke="#fff" stroke-width="1.35" stroke-linecap="round"/><g stroke="#fff" stroke-width=".9" stroke-linecap="round"><path d="M11.3 12l.9-1"/><path d="M13.1 12.5l.8-1"/><path d="M14.9 12.8l.7-.9"/></g></svg>`;   /* حذاء بمسامير ونعل أزرق — تصميم 2026-09-16 */
@@ -5729,7 +5747,7 @@ async function saveMatch(){
   if(EDIT.orig) removeMatchByKey(EDIT.orig);
   const other = t => t===m.home ? m.away : m.home;
   ALL.matches.push({n:ALL.matches.length+1, round, comp:m.comp, date:m.date, time:m.time,
-                    venue:m.venue, home:m.home, away:m.away, note:(m.note||"").trim(), ref:(m.ref||"").trim(), refs:REF_ROLES.reduce((o,[k])=>{ const v=String((m.refs||{})[k]||"").trim(); if(v) o[k]=v; return o; },{}), tv:(m.tv||"").trim(), status:m.status||"", hg:0, ag:0});   /* ref = حكم الساحة، refs = بقية الطاقم */
+                    venue:m.venue, home:m.home, away:m.away, note:(m.note||"").trim(), ref:(m.ref||"").trim(), refs:REF_ROLES.reduce((o,[k])=>{ const v=String((m.refs||{})[k]||"").trim(); if(v) o[k]=v; return o; },{}), tv:(m.tv||"").trim(), status:m.status||"", add1:+m.add1||0, add2:+m.add2||0, hg:0, ag:0});   /* ref = حكم الساحة، refs = بقية الطاقم */
   EDIT.goals.forEach(g=>ALL.goals.push({r:round, comp:m.comp, sc:g.sc, cd:other(g.sc), p:g.p, a:g.a||"",
       m:+g.m, x:+g.x||0, cat:catOf(g.det), det:g.det, bp:g.bp||"", zone:g.zone||"",
       og: g.bp==="هدف عكسي" ? (g.og||"") : ""}));
@@ -5745,7 +5763,7 @@ async function saveMatch(){
       ALL.lineups.push({r:round, comp:m.comp, club:x.club, p:x.p}));
   (EDIT.subs||[]).filter(x=>x.club && (x.out||x.in)).forEach(x=>
       ALL.subs.push({r:round, comp:m.comp, club:x.club, out:x.out||"", in:x.in||"",
-                     h:+x.h||1, m:+x.m||0}));
+                     h:+x.h||1, m:+x.m||0, x:+x.x||0}));
   ALL.shapes = ALL.shapes || [];
   for(const cl in (EDIT.shapes||{})){
     const s=EDIT.shapes[cl];
@@ -5936,7 +5954,7 @@ function renderMatchAdmin(){
     if(k==="cards") EDIT.cards.push({club:"",p:"",m:"",type:"إنذار"});
     if(k==="pens")  EDIT.pens.push({by:"",p:"",m:"",res:"سجلت",place:""});
     if(k==="lineup") EDIT.lineup.push({club:"",p:""});
-    if(k==="subs")   EDIT.subs.push({club:"",out:"",in:"",h:"1",m:""});
+    if(k==="subs")   EDIT.subs.push({club:"",out:"",in:"",h:"1",m:"",x:0});
   renderMatchAdmin();
   });
   box.querySelectorAll("[data-fill]").forEach(b=>b.onclick=()=>{
@@ -10844,8 +10862,9 @@ function playerWindow(m, club, name){
   const starter=xiNames(m.round, comp, club).includes(name);
   const subs=matchSubs(m).filter(s=>s.club===club);
   const inSub=subs.find(s=>s.in===name), outSub=subs.find(s=>s.out===name);
-  let start; if(starter) start=0; else if(inSub) start=capMin(absMinute(inSub.h,inSub.m)); else return null;
-  let end = outSub ? capMin(absMinute(outSub.h,outSub.m)) : MATCH_MIN;
+  const LEN=matchLen(m);
+  let start; if(starter) start=0; else if(inSub) start=capTo(LEN, evAbs(m,inSub.h,inSub.m,inSub.x)); else return null;
+  let end = outSub ? capTo(LEN, evAbs(m,outSub.h,outSub.m,outSub.x)) : LEN;
   if(inSub && end<=start) end=start+1;           /* بديل الدقيقة 90+: نافذة بدقيقة واحدة حتى يظهر في السجل */
   return {start, end};
 }
@@ -10882,12 +10901,12 @@ function playerProfileData(name, club){
       const gs=matchGoals(m);
       const g=gs.filter(x=>x.sc===cl && x.p===name && x.bp!=="هدف عكسي").length;
       const a=gs.filter(x=>x.sc===cl && x.a===name && !isOG(x)).length;
-      const con=gs.filter(x=>x.sc!==cl && abs(x)>=w.start && (w.end>=MATCH_MIN || abs(x)<=w.end)).length; conceded+=con;   /* ما لم يُستبدل، أهداف 90+ عليه أيضاً */
+      const con=gs.filter(x=>x.sc!==cl && abs(x)>=w.start && (w.end>=matchLen(m) || abs(x)<=w.end)).length; conceded+=con;   /* ما لم يُستبدل، أهداف الوقت المحتسب عليه أيضاً */
       const cd=CARDS.filter(x=>x.r===m.round && compOf(x)===compOf(m) && x.club===cl && x.p===name);
       const home=m.home===cl, opp=home?m.away:m.home;
       const gf=home?+m.hg:+m.ag, ga=home?+m.ag:+m.hg;
       log.push({m,opp,home,wc:cl,mins:w.end-w.start,on:w.start,offAt:w.end,g,a,con,y:cd.some(x=>isYellow(x.type)),r:cd.some(x=>isRed(x.type)),
-                res:`${gf} - ${ga}`, k: gf>ga?"w":gf<ga?"l":"d", sub: w.start>0, off: w.end<MATCH_MIN});
+                res:`${gf} - ${ga}`, k: gf>ga?"w":gf<ga?"l":"d", sub: w.start>0, off: w.end<matchLen(m)});
     });
   });
   /* في الإجمالي تختلط جولات المسابقات (ج1 كأس بعد ج3 دوري)، فالترتيب بالتاريخ؛ داخل مسابقة واحدة كما كان */
@@ -11664,15 +11683,15 @@ function playerLine(club, name){
 function ratingCtx(m, club, name){
   const mins=playerMatchMinutes(m, club, name);
   if(mins<=0) return null;
-  const w=playerWindow(m, club, name) || {start:0, end:MATCH_MIN};
+  const w=playerWindow(m, club, name) || {start:0, end:matchLen(m)};
   const gf = club===m.home ? +m.hg : +m.ag, ga = club===m.home ? +m.ag : +m.hg;
   const gs=matchGoals(m);
-  const on = g => { const t=Math.min(MATCH_MIN, abs(g)); return t>=w.start && t<=w.end; };
+  const on = g => { const t=Math.min(matchLen(m), abs(g)); return t>=w.start && t<=w.end; };
   const mine=gs.filter(g=>g.p===name && g.sc===club && g.bp!=="هدف عكسي");
   const pens=(PENS||[]).filter(p=>p.r===m.round && compOf(p)===compOf(m) && p.p===name && p.by===club);
   const cards=CARDS.filter(x=>x.r===m.round && compOf(x)===compOf(m) && x.club===club && x.p===name);
   const red=cards.filter(x=>isRed(x.type)).length;
-  return {m, club, name, line:playerLine(club,name), mins, share:Math.min(1, mins/MATCH_MIN),
+  return {m, club, name, line:playerLine(club,name), mins, share:Math.min(1, mins/matchLen(m)),
     win:gf>ga, draw:gf===ga, loss:gf<ga,
     goals: mine.filter(g=>g.det!=="ركلة جزاء").length,
     penGoals: mine.filter(g=>g.det==="ركلة جزاء").length,
@@ -12644,6 +12663,18 @@ html.mx-editing #waFab{display:none!important}   /* زر واتساب كان ي�
         <span class="mx-lbl">القناة الناقلة</span>
         <div class="mx-chips">${TV_LIST.map(t=>`<button class="mx-chip${m.tv===t?" on":""}" data-mtv="${esc(t)}">${esc(t)}</button>`).join("")}</div>
         <input data-mf="tv" value="${esc(m.tv||"")}" placeholder="أو اكتب اسم القناة" style="margin-top:10px"></div>
+      <div class="mx-card"><h3>الوقت بدل الضائع</h3>
+        <div class="mx-grid">
+          <div><span class="mx-lbl">الشوط الأول +</span>
+            <input data-mf="add1" type="number" min="0" max="30" inputmode="numeric"
+                   value="${esc(String(m.add1??""))}" placeholder="0"></div>
+          <div><span class="mx-lbl">الشوط الثاني +</span>
+            <input data-mf="add2" type="number" min="0" max="30" inputmode="numeric"
+                   value="${esc(String(m.add2??""))}" placeholder="0"></div>
+        </div>
+        <p class="mx-hint">ما أعلنه الحكم لكل شوط. تُحتسب في دقائق اللعب:
+          مباراة بها ٧+٥ طولها ١٠٢ دقيقة، والبديل الذي دخل ٤٥+٣ تُحسب له دقائق الوقت المحتسب.
+          اتركها فارغة إن لم تُسجّل.</p></div>
       <div class="mx-card"><h3>الملعب والحكم</h3>
         <div class="mx-grid">
           <div class="mx-span"><span class="mx-lbl">الملعب</span>
@@ -12700,7 +12731,7 @@ html.mx-editing #waFab{display:none!important}   /* زر واتساب كان ي�
           </div>
           <div class="mx-card"><h3>البدلاء والتبديلات<small>${clubSubs.length} تبديل</small></h3>
             <div class="mx-add"><button class="mx-addb" data-mnew="sub" data-mclub="${esc(club)}">${SV.swap}إضافة تبديل</button></div>
-            ${clubSubs.length?`<div class="mx-tl">${clubSubs.sort((a,b)=>absMinute(a.s.h,a.s.m)-absMinute(b.s.h,b.s.m)).map(o=>evRow({k:"sub",i:o.i,r:o.s})).join("")}</div>`
+            ${clubSubs.length?`<div class="mx-tl">${clubSubs.sort((a,b)=>absMinute(a.s.h,a.s.m,a.s.x,(EDIT.match&&EDIT.match.add1))-absMinute(b.s.h,b.s.m,b.s.x,(EDIT.match&&EDIT.match.add1))).map(o=>evRow({k:"sub",i:o.i,r:o.s})).join("")}</div>`
               :`<p class="mx-hint">لم يُسجَّل تبديل بعد. الاحتياط = كل من في القائمة وليس أساسياً.</p>`}
           </div>
         </div>
@@ -12712,7 +12743,7 @@ html.mx-editing #waFab{display:none!important}   /* زر واتساب كان ي�
     (EDIT.goals||[]).forEach((r,i)=>out.push({k:"goal",i,r,t:(+r.m||0)+(+r.x||0)/100}));
     (EDIT.cards||[]).forEach((r,i)=>out.push({k:"card",i,r,t:+r.m||0}));
     (EDIT.pens||[]).forEach((r,i)=>out.push({k:"pen",i,r,t:+r.m||0}));
-    (EDIT.subs||[]).forEach((r,i)=>out.push({k:"sub",i,r,t:absMinute(r.h,r.m)}));
+    (EDIT.subs||[]).forEach((r,i)=>out.push({k:"sub",i,r,t:absMinute(r.h,r.m,r.x,(EDIT.match&&EDIT.match.add1))}));
     (EDIT.mev||[]).forEach((r,i)=>out.push({k:r.k,i,r,t:(+r.m||0)+(+r.x||0)/100}));
     return out.sort((a,b)=>a.t-b.t);
   }
@@ -12723,7 +12754,7 @@ html.mx-editing #waFab{display:none!important}   /* زر واتساب كان ي�
     if(k==="card"){ club=r.club; who=r.p; mn=r.m?`${r.m}'`:"—";
       const t=r.type||""; ic=`<span class="ic-card ${/ثان/.test(t)?"yr":isRed(t)?"r":"y"}"></span>`; sub=t; }
     if(k==="pen"){ club=r.by; who=r.p; ic=SV.pen; mn=r.m?`${r.m}'`:"—"; sub=`ركلة جزاء · ${r.res||""}`; }
-    if(k==="sub"){ club=r.club; who=r.in||"—"; ic=SV.swap; mn=r.m?`${absMinute(r.h,r.m)}'`:"—"; sub=`خرج: ${r.out||"—"}`; }
+    if(k==="sub"){ club=r.club; who=r.in||"—"; ic=SV.swap; mn=r.m?`${halfLabel(r.h,r.m,r.x)}'`:"—"; sub=`خرج: ${r.out||"—"}`; }
     if(MEV[k]){ club=r.club; who=r.p||TITLE[k]; ic=SV[k]; mn=r.m?`${r.m}${+r.x?`+${r.x}`:""}'`:"—"; sub=[r.p?TITLE[k]:"", r.note||""].filter(Boolean).join(" · "); }
     return `<div class="mx-ev" style="--srgb:${rgbOf(club)}">
       <div class="mn">${esc(mn)}<small>${k==="sub"?`الشوط ${+r.h||1}`:esc(club||"")}</small></div>
@@ -12831,7 +12862,7 @@ html.mx-editing #waFab{display:none!important}   /* زر واتساب كان ي�
     }
     if(k==="sub"){
       body+=`<div class="mx-grid">
-          <div><span class="mx-lbl">الشوط</span>${chips("h",["1","2"],String(d.h||"1"))}</div>${stepper("m",d.m,"الدقيقة",130)}</div>
+          <div><span class="mx-lbl">الشوط</span>${chips("h",["1","2"],String(d.h||"1"))}</div>${stepper("m",d.m,"الدقيقة",130)}${stepper("x",d.x||0,"وقت بدل ضائع +",20)}</div>
         <div><span class="mx-lbl">خرج</span>${pickGrid(club,"out",d.out,{only:"xi"})}</div>
         <div><span class="mx-lbl">دخل</span>${pickGrid(club,"in",d.in,{only:"bench",exclude:d.out})}</div>`;
     }
