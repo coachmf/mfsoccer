@@ -6,487 +6,566 @@
 <title>وقت اللعب الفعلي — الدوري الكويتي الممتاز</title>
 <meta name="description" content="أداة تجريبية لقياس وقت اللعب الفعلي في مباريات الدوري الكويتي الممتاز.">
 <meta name="robots" content="noindex">
+<meta name="theme-color" content="#061529">
 <link rel="icon" href="/favicon.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
-/* هوية الموقع نفسها — المتغيّرات منسوخة من :root في index.html */
+/* هوية الموقع — المتغيّرات منسوخة من :root في index.html */
 :root{
   --ink:#061529; --navy-900:#0A2242; --navy-800:#0E2B52; --navy-600:#17417A;
   --sky:#5FB2E8; --sky-soft:#A9D8F5; --mist:#EDF3FA; --slate:#8FA6C4;
-  --win:#35A47C; --draw:#8FA6C4; --loss:#E0644F; --sand:#E9B949;
-  --body:'Vazirmatn',system-ui,sans-serif;
-  --r:12px;
+  --win:#35A47C; --loss:#E0644F; --sand:#E9B949;
+  --body:'Vazirmatn',system-ui,sans-serif; --r:14px;
+  --edge:rgba(95,178,232,.16);
 }
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 html{-webkit-text-size-adjust:100%}
-body{background:var(--ink);color:var(--mist);font-family:var(--body);font-size:15px;line-height:1.65;
-     padding:0 0 40px}
+body{background:var(--ink);color:var(--mist);font-family:var(--body);font-size:15px;
+     line-height:1.6;padding-bottom:36px;overscroll-behavior:none;
+     -webkit-user-select:none;user-select:none}
 button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
-input,select,textarea{font:inherit}
-:focus-visible{outline:3px solid var(--sky);outline-offset:2px;border-radius:8px}
-.wrap{max-width:900px;margin:0 auto;padding:0 14px}
+input,select{font:inherit}
+:focus-visible{outline:3px solid var(--sky);outline-offset:3px;border-radius:10px}
+.wrap{max-width:820px;margin:0 auto;padding:0 14px}
+svg{display:block}
+
+/* حالة عامة: إطار محيطي يخبر المُشغّل بلا قراءة */
+body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:5;
+  box-shadow:inset 0 0 0 0 transparent;transition:box-shadow .25s ease}
+body.is-stopped::before{box-shadow:inset 0 0 0 5px var(--sand)}
+body.is-running::before{box-shadow:inset 0 0 0 5px rgba(53,164,124,.5)}
 
 /* ——— الترويسة ——— */
-.top{position:sticky;top:0;z-index:20;background:rgba(6,21,41,.94);
-     backdrop-filter:blur(10px);border-bottom:1px solid var(--navy-800)}
-.top .wrap{display:flex;align-items:center;gap:12px;height:60px}
-.top h1{font-size:1.05rem;font-weight:800;letter-spacing:-.2px}
-.beta{background:var(--sand);color:var(--ink);font-size:.7rem;font-weight:800;
-      padding:3px 10px;border-radius:999px}
-.top a.back{margin-inline-start:auto;color:var(--sky);font-size:.85rem;font-weight:600;text-decoration:none}
+.top{position:sticky;top:0;z-index:20;background:rgba(6,21,41,.93);
+     backdrop-filter:blur(12px);border-bottom:1px solid var(--edge)}
+.top .wrap{display:flex;align-items:center;gap:10px;height:58px}
+.top h1{font-size:1rem;font-weight:800}
+.beta{background:var(--sand);color:var(--ink);font-size:.68rem;font-weight:800;
+      padding:3px 9px;border-radius:999px}
+.top .sp{margin-inline-start:auto}
+.iconbtn{width:38px;height:38px;border-radius:10px;border:1px solid var(--edge);
+         display:grid;place-items:center;color:var(--sky)}
+.iconbtn[aria-pressed="true"]{background:var(--sky);color:var(--ink);border-color:var(--sky)}
+.top a{color:var(--sky);text-decoration:none;font-size:.84rem;font-weight:600}
 
 /* ——— البطاقات ——— */
-.card{background:var(--navy-900);border:1px solid var(--navy-800);border-radius:var(--r);
-      padding:16px;margin-top:14px}
-.card h2{font-size:.95rem;font-weight:700;margin-bottom:10px;color:var(--sky-soft)}
-.hint{color:var(--slate);font-size:.82rem;line-height:1.6}
+.card{background:linear-gradient(180deg,var(--navy-900),rgba(10,34,66,.55));
+      border:1px solid var(--edge);border-radius:var(--r);padding:16px;margin-top:14px;
+      box-shadow:0 10px 30px rgba(0,0,0,.28)}
+.card > h2{font-size:.8rem;font-weight:700;color:var(--slate);margin-bottom:12px;
+           display:flex;align-items:center;gap:8px}
+.card > h2::before{content:'';width:4px;height:15px;border-radius:2px;background:var(--sky)}
+.hint{color:var(--slate);font-size:.8rem;line-height:1.6}
 
 /* ——— اختيار المباراة ——— */
-.filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
-.filters select{background:var(--navy-800);border:1px solid var(--navy-600);color:var(--mist);
-                border-radius:9px;padding:9px 12px;min-width:130px}
-.mlist{display:flex;flex-direction:column;gap:8px;max-height:280px;overflow:auto}
-.mrow{display:flex;align-items:center;gap:10px;background:var(--navy-800);border:1px solid transparent;
-      border-radius:10px;padding:11px 13px;text-align:start;width:100%}
-.mrow:hover{border-color:var(--navy-600)}
+.matchbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.matchbar select{background:var(--navy-800);border:1px solid var(--edge);color:var(--mist);
+                 border-radius:10px;padding:10px 12px;flex:1;min-width:120px}
+.mlist{display:flex;flex-direction:column;gap:7px;max-height:240px;overflow:auto;margin-top:10px}
+.mrow{display:flex;align-items:center;gap:10px;background:var(--navy-800);
+      border:1.5px solid transparent;border-radius:11px;padding:12px 13px;width:100%;text-align:start}
 .mrow[aria-pressed="true"]{border-color:var(--sky);background:var(--navy-600)}
 .mrow .tm{font-weight:700}
-.mrow .meta{margin-inline-start:auto;color:var(--slate);font-size:.78rem;white-space:nowrap}
+.mrow .meta{margin-inline-start:auto;color:var(--slate);font-size:.76rem;white-space:nowrap}
+.picked{display:flex;align-items:center;gap:10px;font-weight:800;font-size:1.05rem;flex-wrap:wrap}
+.picked .meta{margin-inline-start:auto;color:var(--slate);font-size:.78rem;font-weight:500}
+.chg{color:var(--sky);font-size:.8rem;font-weight:600;margin-top:8px}
 
 /* ——— الساعة ——— */
-.clock{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:4px 0 14px}
-.big{background:var(--ink);border:1px solid var(--navy-600);border-radius:var(--r);padding:16px;text-align:center}
-.big .lbl{color:var(--slate);font-size:.8rem;font-weight:600}
-.big .val{font-size:3rem;font-weight:800;line-height:1.1;font-variant-numeric:tabular-nums;
-          letter-spacing:-1px;direction:ltr}
-.big.eff .val{color:var(--sky)}
-.big.off .val{color:var(--mist)}
-.meter{height:10px;background:var(--navy-800);border-radius:999px;overflow:hidden;margin-top:6px}
-.meter i{display:block;height:100%;background:var(--sky);width:0;transition:width .2s linear}
-.pctline{display:flex;justify-content:space-between;color:var(--slate);font-size:.8rem;margin-top:8px}
-.pctline b{color:var(--mist)}
+.stage{text-align:center;padding:4px 0 2px}
+.halfpill{display:inline-flex;gap:4px;background:var(--navy-800);border:1px solid var(--edge);
+          border-radius:999px;padding:4px;margin-bottom:14px}
+.halfpill button{padding:7px 18px;border-radius:999px;font-size:.84rem;font-weight:700;color:var(--slate)}
+.halfpill button[aria-pressed="true"]{background:var(--sky);color:var(--ink)}
+.eff{font-size:5rem;font-weight:900;line-height:.98;letter-spacing:-3px;direction:ltr;
+     font-variant-numeric:tabular-nums;color:var(--mist);transition:color .2s}
+body.is-stopped .eff{color:var(--sand)}
+body.is-running .eff{color:var(--win)}
+.efflbl{color:var(--slate);font-size:.78rem;font-weight:600;margin-top:2px}
+.subrow{display:flex;justify-content:center;gap:22px;margin-top:12px;flex-wrap:wrap}
+.subrow div{text-align:center}
+.subrow b{display:block;font-size:1.3rem;font-weight:800;direction:ltr;font-variant-numeric:tabular-nums}
+.subrow span{color:var(--slate);font-size:.72rem}
+.meter{height:8px;background:var(--navy-800);border-radius:999px;overflow:hidden;margin:14px 0 4px}
+.meter i{display:block;height:100%;background:linear-gradient(90deg,var(--sky),var(--win));width:0}
 
-/* ——— الأزرار ——— */
-.halfsel{display:flex;gap:8px;margin-bottom:12px}
-.halfsel button{flex:1;background:var(--navy-800);border:1px solid var(--navy-600);border-radius:10px;
-                padding:10px;font-weight:700}
-.halfsel button[aria-pressed="true"]{background:var(--sky);color:var(--ink);border-color:var(--sky)}
-.ctrls{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px}
-.btn{border-radius:11px;padding:16px 12px;font-weight:800;font-size:1rem;border:1px solid transparent;
-     display:flex;align-items:center;justify-content:center;gap:8px;min-height:56px}
-.btn:disabled{opacity:.4;cursor:not-allowed}
-.btn.go{background:var(--win);color:#04231a}
-.btn.stop{background:var(--sand);color:var(--ink)}
-.btn.end{background:var(--navy-800);color:var(--mist);border-color:var(--navy-600)}
-.btn.danger{background:var(--loss);color:#2a0a06}
-.state{display:flex;align-items:center;gap:8px;margin-bottom:12px;font-weight:700}
-.dot{width:12px;height:12px;border-radius:50%;background:var(--slate);flex:none}
-.dot.run{background:var(--win);animation:pulse 1.4s infinite}
-.dot.pause{background:var(--sand)}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
-@media (prefers-reduced-motion:reduce){ .dot.run{animation:none} }
+/* ——— الزر الكبير ——— */
+.mainbtn{width:100%;min-height:84px;border-radius:16px;font-size:1.35rem;font-weight:900;
+         display:flex;align-items:center;justify-content:center;gap:12px;margin-top:14px;
+         border:2px solid transparent;transition:transform .08s}
+.mainbtn:active{transform:scale(.985)}
+.mainbtn.go{background:var(--win);color:#04231a}
+.mainbtn.stop{background:var(--sand);color:var(--ink)}
+.mainbtn.ghost{background:var(--navy-800);color:var(--mist);border-color:var(--edge)}
+.mainbtn:disabled{opacity:.4}
+.mainbtn svg{width:30px;height:30px}
 
-/* ——— سبب التوقف ——— */
-.reasons{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
-.chip{background:var(--navy-800);border:1px solid var(--navy-600);border-radius:999px;
-      padding:9px 14px;font-size:.85rem;font-weight:600}
-.chip[aria-pressed="true"]{background:var(--sky);color:var(--ink);border-color:var(--sky)}
-.note{width:100%;background:var(--navy-800);border:1px solid var(--navy-600);color:var(--mist);
-      border-radius:10px;padding:10px 12px;margin-top:8px}
+/* ——— شبكة أسباب التوقف ——— */
+.grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-top:12px}
+.rt{background:var(--navy-800);border:1.5px solid var(--edge);border-radius:13px;
+    padding:11px 4px 9px;display:flex;flex-direction:column;align-items:center;gap:6px;
+    position:relative;transition:transform .08s,background .15s}
+.rt:active{transform:scale(.94)}
+.rt svg{width:25px;height:25px;color:var(--sky-soft)}
+.rt span{font-size:.7rem;font-weight:700;line-height:1.2;text-align:center}
+.rt kbd{position:absolute;top:4px;inset-inline-end:5px;font-size:.58rem;color:var(--slate);
+        font-family:var(--body)}
+.rt[aria-pressed="true"]{background:var(--sand);border-color:var(--sand);color:var(--ink)}
+.rt[aria-pressed="true"] svg{color:var(--ink)}
+.rt[aria-pressed="true"] kbd{color:rgba(6,21,41,.6)}
+.noteline{display:flex;gap:8px;margin-top:10px}
+.noteline input{flex:1;background:var(--navy-800);border:1px solid var(--edge);color:var(--mist);
+                border-radius:10px;padding:10px 12px;font-size:.88rem}
+.noteline button{background:var(--navy-800);border:1px solid var(--edge);border-radius:10px;
+                 padding:0 14px;font-size:.82rem;font-weight:700;color:var(--sky)}
 
 /* ——— السجل ——— */
-table{width:100%;border-collapse:collapse;font-size:.85rem}
-th,td{padding:9px 8px;text-align:start;border-bottom:1px solid var(--navy-800)}
-th{color:var(--slate);font-weight:600;font-size:.78rem}
-td.num{font-variant-numeric:tabular-nums;direction:ltr;text-align:start}
-.del{color:var(--loss);font-weight:700;font-size:.8rem}
-.sum{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:10px;margin-top:12px}
-.sum div{background:var(--navy-800);border-radius:10px;padding:12px;text-align:center}
-.sum b{display:block;font-size:1.4rem;font-weight:800;font-variant-numeric:tabular-nums;direction:ltr}
-.sum span{color:var(--slate);font-size:.76rem}
+.log{display:flex;flex-direction:column;gap:6px;max-height:300px;overflow:auto}
+.lrow{display:flex;align-items:center;gap:10px;background:var(--navy-800);border-radius:10px;
+      padding:9px 11px}
+.lrow .ic{width:30px;height:30px;border-radius:8px;background:var(--navy-600);display:grid;
+          place-items:center;flex:none}
+.lrow .ic svg{width:17px;height:17px;color:var(--sky-soft)}
+.lrow .tx{min-width:0}
+.lrow .tx b{display:block;font-size:.86rem;font-weight:700}
+.lrow .tx small{color:var(--slate);font-size:.72rem;display:block;overflow:hidden;
+                text-overflow:ellipsis;white-space:nowrap}
+.lrow .du{margin-inline-start:auto;font-weight:800;direction:ltr;font-variant-numeric:tabular-nums;
+          font-size:.95rem}
+.lrow .x{color:var(--loss);font-size:.72rem;font-weight:700;padding:4px 6px}
+.sum{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:12px}
+.sum div{background:var(--navy-800);border-radius:11px;padding:11px 6px;text-align:center}
+.sum b{display:block;font-size:1.15rem;font-weight:800;direction:ltr;font-variant-numeric:tabular-nums}
+.sum span{color:var(--slate);font-size:.68rem}
 .tools{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
-.tools button{background:var(--navy-800);border:1px solid var(--navy-600);border-radius:9px;
-              padding:9px 14px;font-size:.85rem;font-weight:600}
+.tools button{background:var(--navy-800);border:1px solid var(--edge);border-radius:10px;
+              padding:10px 14px;font-size:.82rem;font-weight:700}
+.tools .warn{color:var(--loss)}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
-@media(max-width:560px){ .clock{grid-template-columns:1fr} .big .val{font-size:2.5rem} }
+.toast{position:fixed;inset-inline:0;bottom:18px;margin:auto;width:max-content;max-width:90vw;
+       background:var(--navy-600);border:1px solid var(--sky);border-radius:999px;
+       padding:10px 20px;font-weight:700;font-size:.88rem;z-index:40;opacity:0;
+       transform:translateY(10px);transition:.2s;pointer-events:none}
+.toast.on{opacity:1;transform:none}
+/* عشرة أسباب = صفّان من خمسة دائماً. أربعة أعمدة تترك صفاً ثالثاً
+   ناقصاً يشوّش العين ويبطئ العثور على الزر أثناء المباراة. */
+@media(max-width:430px){ .eff{font-size:4.2rem}
+  .rt{padding:9px 2px 8px;gap:5px} .rt svg{width:22px;height:22px}
+  .rt span{font-size:.62rem} .grid{gap:6px} }
+@media (prefers-reduced-motion:reduce){ *{transition:none!important} }
 </style>
 </head>
 <body>
 
+<svg class="sr" aria-hidden="true"><defs>
+  <g id="i-injury"><path d="M9.5 3h5v6h6v5h-6v6h-5v-6h-6V9h6z"/></g>
+  <g id="i-sub"><path d="M6 8h12l-3.5-3.5M18 16H6l3.5 3.5"/></g>
+  <g id="i-goal"><circle cx="12" cy="12" r="9"/><path d="M12 7.2l3.6 2.6-1.4 4.2H9.8L8.4 9.8z"/></g>
+  <g id="i-var"><rect x="3" y="5" width="18" height="12" rx="2"/><path d="M9 21h6M12 17v4"/></g>
+  <g id="i-throw"><path d="M12 2.5v5.5M8.5 7.5L12 4l3.5 3.5M6 21.5v-6a6 6 0 0112 0v6"/></g>
+  <g id="i-corner"><path d="M6.5 21.5V2.5l11 4-11 4"/></g>
+  <g id="i-gk"><path d="M4 8h16v9.5H4zM4 12.5h16M9.5 8v9.5M14.5 8v9.5"/></g>
+  <g id="i-free"><circle cx="4.5" cy="18.5" r="2"/><path d="M10.5 21V9h9.5v12M10.5 14.5h9.5"/></g>
+  <g id="i-time"><path d="M7 2.5h10M7 21.5h10M8 2.5c0 5 8 5 8 9.5s-8 4.5-8 9.5"/></g>
+  <g id="i-other"><circle cx="6" cy="12" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="18" cy="12" r="1.7"/></g>
+  <g id="i-play"><path d="M7 4l13 8-13 8z" fill="currentColor" stroke="none"/></g>
+  <g id="i-pause"><rect x="6" y="4" width="4" height="16" rx="1.2" fill="currentColor" stroke="none"/><rect x="14" y="4" width="4" height="16" rx="1.2" fill="currentColor" stroke="none"/></g>
+</defs></svg>
+
 <header class="top">
   <div class="wrap">
-    <h1>وقت اللعب الفعلي</h1>
-    <span class="beta">تجريبي</span>
-    <a class="back" href="/">← العودة للموقع</a>
+    <h1>وقت اللعب الفعلي</h1><span class="beta">تجريبي</span>
+    <span class="sp"></span>
+    <button class="iconbtn" id="btnWake" aria-pressed="false" aria-label="إبقاء الشاشة مضاءة">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg></button>
+    <a href="/">← الموقع</a>
   </div>
 </header>
 
 <main class="wrap">
 
-  <section class="card" aria-labelledby="h-match">
-    <h2 id="h-match">١ · اختر المباراة</h2>
-    <div class="filters">
-      <select id="fComp" aria-label="المسابقة"></select>
-      <select id="fRound" aria-label="الجولة"></select>
+  <section class="card">
+    <h2>المباراة</h2>
+    <div id="pickWrap">
+      <div class="matchbar">
+        <select id="fComp" aria-label="المسابقة"></select>
+        <select id="fRound" aria-label="الجولة"></select>
+      </div>
+      <div class="mlist" id="mList" role="group" aria-label="قائمة المباريات">
+        <p class="hint">جارٍ التحميل…</p>
+      </div>
     </div>
-    <div class="mlist" id="mList" role="group" aria-label="قائمة المباريات">
-      <p class="hint">جارٍ تحميل المباريات…</p>
+    <div id="pickedWrap" hidden>
+      <div class="picked"><span id="pTeams"></span><span class="meta" id="pMeta"></span></div>
+      <button class="chg" id="btnChange">تغيير المباراة</button>
     </div>
   </section>
 
-  <section class="card" aria-labelledby="h-timer">
-    <h2 id="h-timer">٢ · القياس</h2>
-
-    <div class="halfsel" role="group" aria-label="الشوط">
-      <button id="hf1" aria-pressed="true">الشوط الأول</button>
-      <button id="hf2" aria-pressed="false">الشوط الثاني</button>
-    </div>
-
-    <div class="state"><span class="dot" id="dot"></span><span id="stateTxt">لم يبدأ بعد</span></div>
-
-    <div class="clock">
-      <div class="big eff">
-        <div class="lbl">الوقت الفعلي</div>
-        <div class="val" id="effVal" role="timer" aria-live="off">00:00</div>
+  <section class="card">
+    <div class="stage">
+      <div class="halfpill" role="group" aria-label="الشوط">
+        <button id="hf1" aria-pressed="true">الشوط الأول</button>
+        <button id="hf2" aria-pressed="false">الشوط الثاني</button>
       </div>
-      <div class="big off">
-        <div class="lbl">الوقت الرسمي</div>
-        <div class="val" id="offVal">00:00</div>
+      <div class="eff" id="effVal" role="timer">00:00</div>
+      <div class="efflbl" id="effLbl">الوقت الفعلي</div>
+      <div class="meter"><i id="meter"></i></div>
+      <div class="subrow">
+        <div><b id="offVal">00:00</b><span>الوقت الرسمي</span></div>
+        <div><b id="lostVal">00:00</b><span>زمن التوقف</span></div>
+        <div><b id="pct">—</b><span>نسبة اللعب</span></div>
+        <div><b id="cnt">0</b><span>توقفات</span></div>
       </div>
     </div>
-    <div class="meter" aria-hidden="true"><i id="meter"></i></div>
-    <div class="pctline">
-      <span>نسبة اللعب الفعلي: <b id="pct">—</b></span>
-      <span>زمن التوقف: <b id="lostVal">00:00</b></span>
+
+    <button class="mainbtn go" id="btnMain">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><use href="#i-play"/></svg>
+      <span id="mainTxt">بدء الشوط الأول</span></button>
+
+    <div class="grid" id="grid" aria-label="أسباب التوقف"></div>
+    <p class="hint" style="margin-top:10px" id="gridHint"></p>
+
+    <div class="noteline">
+      <input id="noteIn" placeholder="ملاحظة على آخر توقف (اختياري)" maxlength="120" aria-label="ملاحظة">
+      <button id="btnUndo">تراجع</button>
     </div>
     <p class="sr" id="live" aria-live="polite"></p>
-
-    <div class="ctrls" style="margin-top:14px">
-      <button class="btn go" id="btnMain">بدء الشوط</button>
-      <button class="btn end" id="btnEnd" disabled>إنهاء الشوط</button>
-    </div>
-    <p class="hint" style="margin-top:10px">
-      <b>مسافة</b> أو <b>Enter</b> = إيقاف/استئناف. اضغط «إيقاف» لحظة خروج الكرة من اللعب،
-      و«استئناف» لحظة عودتها.</p>
   </section>
 
-  <section class="card" id="reasonCard" hidden aria-labelledby="h-reason">
-    <h2 id="h-reason">سبب التوقف</h2>
-    <div class="reasons" id="reasons" role="group" aria-label="سبب التوقف"></div>
-    <label class="sr" for="noteIn">ملاحظة</label>
-    <input class="note" id="noteIn" placeholder="ملاحظة (اختياري)" maxlength="120">
-    <p class="hint" style="margin-top:8px">يُحفظ السبب مع التوقف عند الاستئناف. تخطّيه يسجّل «غير محدّد».</p>
-  </section>
-
-  <section class="card" aria-labelledby="h-log">
-    <h2 id="h-log">٣ · سجل التوقفات</h2>
-    <div style="overflow:auto">
-      <table id="logTbl">
-        <thead><tr><th>#</th><th>الشوط</th><th>عند الدقيقة</th><th>المدة</th><th>السبب</th><th>ملاحظة</th><th></th></tr></thead>
-        <tbody id="logBody"><tr><td colspan="7" class="hint">لا توقفات مسجّلة.</td></tr></tbody>
-      </table>
-    </div>
+  <section class="card">
+    <h2>سجل التوقفات</h2>
+    <div class="log" id="log"><p class="hint">لا توقفات بعد.</p></div>
     <div class="sum">
-      <div><b id="sH1">00:00</b><span>فعلي · الشوط الأول</span></div>
-      <div><b id="sH2">00:00</b><span>فعلي · الشوط الثاني</span></div>
+      <div><b id="sH1">00:00</b><span>فعلي · أول</span></div>
+      <div><b id="sH2">00:00</b><span>فعلي · ثانٍ</span></div>
       <div><b id="sTot">00:00</b><span>فعلي · المباراة</span></div>
-      <div><b id="sCnt">0</b><span>عدد التوقفات</span></div>
+      <div><b id="sPct">—</b><span>نسبة المباراة</span></div>
     </div>
     <div class="tools">
+      <button id="btnEnd">إنهاء الشوط</button>
       <button id="btnExport">تصدير JSON</button>
       <button id="btnCopy">نسخ الملخص</button>
-      <button id="btnReset" class="del">مسح بيانات هذه المباراة</button>
+      <button id="btnReset" class="warn">مسح</button>
     </div>
     <p class="hint" style="margin-top:10px">
-      ⚠️ <b>نسخة تجريبية.</b> البيانات تُحفظ في هذا المتصفّح فقط ولا تُرسل إلى نظام إدارة المباريات بعد.
-      صدّرها قبل تفريغ ذاكرة المتصفّح.</p>
+      ⚠️ <b>تجريبي.</b> البيانات في هذا المتصفّح فقط ولا تُرسل لإدارة المباريات بعد — صدّرها قبل تفريغ الذاكرة.</p>
   </section>
 </main>
+
+<div class="toast" id="toast" role="status"></div>
 
 <script>
 'use strict';
 /* =========================================================
    وقت اللعب الفعلي — أداة تجريبية
-   القياس بالتوقيت المطلق (Date.now) لا بعدّ النبضات، فلا يختلّ
-   إن جمّد المتصفح المؤقّت في تبويب خلفي أو أُعيد تحميل الصفحة.
+
+   مبدأ الرصد: ضغطة واحدة. المُشغّل يتابع المباراة لا الشاشة، فأي
+   ضغطة على سبب أثناء اللعب توقف الساعة وتسجّل السبب معاً — لا ثلاث
+   خطوات. والتوقيت مطلق (Date.now) لا عدّ نبضات، فلا يختلّ إن جمّد
+   المتصفح المؤقّت في تبويب خلفي أو أُعيد تحميل الصفحة.
    ========================================================= */
-const SEASON_DOC = '2026-2027';
-const API_GET_MATCHES = '/api/doc/' + SEASON_DOC;   /* نقطة النهاية العامة للموقع */
-const STORE_PREFIX = 'bip:';
-const TICK_MS = 100;
+const SEASON_DOC='2026-2027';
+const API_GET_MATCHES='/api/doc/'+SEASON_DOC;
+const STORE_PREFIX='bip:';
+const TICK_MS=100;
 
-const REASONS = ['إصابة','تبديل','احتفال بهدف','مراجعة الحكم','رمية تماس',
-                 'ركلة ركنية','ضربة مرمى','ركلة حرة','تضييع وقت','أخرى'];
+const REASONS=[
+  {k:'injury', t:'إصابة',        i:'i-injury'},
+  {k:'sub',    t:'تبديل',        i:'i-sub'},
+  {k:'goal',   t:'احتفال بهدف',  i:'i-goal'},
+  {k:'var',    t:'مراجعة الحكم', i:'i-var'},
+  {k:'throw',  t:'رمية تماس',    i:'i-throw'},
+  {k:'corner', t:'ركلة ركنية',   i:'i-corner'},
+  {k:'gk',     t:'ضربة مرمى',    i:'i-gk'},
+  {k:'free',   t:'ركلة حرة',     i:'i-free'},
+  {k:'waste',  t:'تضييع وقت',    i:'i-time'},
+  {k:'other',  t:'أخرى',         i:'i-other'}
+];
+const R_BY_K={}; REASONS.forEach(r=>{ R_BY_K[r.k]=r; });
 
-const $ = id => document.getElementById(id);
-const pad = n => String(n).padStart(2,'0');
-const fmt = ms => { const s = Math.max(0, Math.round(ms/1000));
-                    return pad(Math.floor(s/60)) + ':' + pad(s%60); };
+const $=id=>document.getElementById(id);
+const pad=n=>String(n).padStart(2,'0');
+const fmt=ms=>{const s=Math.max(0,Math.round(ms/1000));return pad(Math.floor(s/60))+':'+pad(s%60);};
+const esc=t=>String(t==null?'':t).replace(/&/g,'&amp;').replace(/</g,'&lt;')
+  .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+const icon=id=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
+  stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#${id}"/></svg>`;
 
-let MATCHES = [];
-let match = null;                  /* المباراة المختارة */
-let half = 1;
-let pendingReason = '';
-/* الحالة المحفوظة لكل مباراة: شوطان، لكل شوط بداية ومجموع لعب وسجل توقفات */
-let S = null;
+let MATCHES=[], match=null, half=1, S=null, wakeLock=null;
 
-const blankHalf = () => ({ startedAt:0, endedAt:0, playedMs:0, pausedAt:0, stops:[] });
-const blankState = () => ({ v:1, matchKey:'', h1:blankHalf(), h2:blankHalf() });
-const cur = () => S[half === 1 ? 'h1' : 'h2'];
-const keyOf = m => [m.round, m.comp, m.home, m.away].join('|');
+const blankHalf=()=>({startedAt:0,endedAt:0,playedMs:0,pausedAt:0,lastResume:0,stops:[]});
+const blankState=()=>({v:1,matchKey:'',h1:blankHalf(),h2:blankHalf()});
+const cur=()=>S[half===1?'h1':'h2'];
+const keyOf=m=>[m.round,m.comp,m.home,m.away].join('|');
 
-/* ————— التخزين ————— */
-function save(){ if(!match) return;
-  try{ localStorage.setItem(STORE_PREFIX + S.matchKey, JSON.stringify(S)); }catch(e){} }
+function save(){ if(match) try{ localStorage.setItem(STORE_PREFIX+S.matchKey, JSON.stringify(S)); }catch(e){} }
 function load(m){
-  let st = null;
-  try{ const raw = localStorage.getItem(STORE_PREFIX + keyOf(m)); if(raw) st = JSON.parse(raw); }catch(e){}
-  if(!st || st.v !== 1) st = blankState();
-  st.matchKey = keyOf(m);
-  return st;
+  let st=null;
+  try{ const raw=localStorage.getItem(STORE_PREFIX+keyOf(m)); if(raw) st=JSON.parse(raw); }catch(e){}
+  if(!st||st.v!==1) st=blankState();
+  st.matchKey=keyOf(m); return st;
 }
 
 /* ————— الحساب ————— */
-/* الوقت الرسمي = من صافرة البداية حتى الآن (أو حتى نهاية الشوط).
-   الفعلي = ما تراكم من لعب، مضافاً إليه الجاري إن كانت الساعة تعمل. */
-function officialMs(h){
-  if(!h.startedAt) return 0;
-  return (h.endedAt || Date.now()) - h.startedAt;
-}
+const officialMs=h=>h.startedAt ? (h.endedAt||Date.now())-h.startedAt : 0;
 function effectiveMs(h){
-  let ms = h.playedMs || 0;
-  /* lastResume قد يغيب في بيانات محفوظة قديمة — بدونه يصير الناتج NaN */
-  if(h.startedAt && !h.endedAt && !h.pausedAt && h.lastResume) ms += Date.now() - h.lastResume;
+  let ms=h.playedMs||0;
+  if(h.startedAt && !h.endedAt && !h.pausedAt && h.lastResume) ms += Date.now()-h.lastResume;
   return ms;
 }
-function running(h){ return !!h.startedAt && !h.endedAt && !h.pausedAt; }
-function paused(h){ return !!h.startedAt && !h.endedAt && !!h.pausedAt; }
+const running=h=>!!h.startedAt && !h.endedAt && !h.pausedAt;
+const paused =h=>!!h.startedAt && !h.endedAt && !!h.pausedAt;
+const halfName=()=>half===1?'الشوط الأول':'الشوط الثاني';
 
 /* ————— الإجراءات ————— */
+function buzz(p){ try{ navigator.vibrate && navigator.vibrate(p); }catch(e){} }
+function toast(t){ const el=$('toast'); el.textContent=t; el.classList.add('on');
+  clearTimeout(toast._t); toast._t=setTimeout(()=>el.classList.remove('on'),1400);
+  $('live').textContent=t; }
+
 function startHalf(){
-  const h = cur();
-  if(h.startedAt) return;
-  h.startedAt = Date.now(); h.lastResume = h.startedAt;
-  h.playedMs = 0; h.pausedAt = 0; h.endedAt = 0;
-  announce('بدأ ' + halfName() + '');
-  save(); render();
+  const h=cur(); if(h.startedAt) return;
+  h.startedAt=Date.now(); h.lastResume=h.startedAt;
+  h.playedMs=0; h.pausedAt=0; h.endedAt=0;
+  buzz(30); toast('بدأ '+halfName()); save(); render();
 }
-function pause(){
-  const h = cur(); if(!running(h)) return;
-  h.playedMs += Date.now() - h.lastResume;
-  h.pausedAt = Date.now();
-  pendingReason = ''; $('noteIn').value = '';
-  $('reasonCard').hidden = false;
-  announce('توقف اللعب');
-  save(); render(); renderReasons();
+/* الإيقاف وتسجيل السبب في خطوة واحدة — reasonKey اختياري */
+function stop(reasonKey){
+  const h=cur();
+  if(!h.startedAt || h.endedAt) return;
+  if(running(h)){
+    h.playedMs += Date.now()-h.lastResume;
+    h.pausedAt = Date.now();
+    h.stops.push({at:h.pausedAt-h.startedAt, ms:0, reason:reasonKey||'', note:''});
+    buzz(45); toast(reasonKey ? 'توقف · '+R_BY_K[reasonKey].t : 'توقف');
+  }else if(paused(h) && reasonKey){
+    h.stops[h.stops.length-1].reason = reasonKey;   /* متوقف أصلاً: تصحيح السبب */
+    toast('السبب: '+R_BY_K[reasonKey].t);
+  }
+  save(); render();
 }
 function resume(){
-  const h = cur(); if(!paused(h)) return;
-  h.stops.push({ at: h.pausedAt - h.startedAt,          /* لحظة التوقف من بداية الشوط */
-                 ms: Date.now() - h.pausedAt,
-                 reason: pendingReason || 'غير محدّد',
-                 note: ($('noteIn').value || '').trim() });
-  h.pausedAt = 0; h.lastResume = Date.now();
-  $('reasonCard').hidden = true;
-  announce('استؤنف اللعب');
-  save(); render();
+  const h=cur(); if(!paused(h)) return;
+  const st=h.stops[h.stops.length-1];
+  if(st){ st.ms = Date.now()-h.pausedAt; if(!st.reason) st.reason='other'; }
+  h.pausedAt=0; h.lastResume=Date.now();
+  buzz(30); toast('استؤنف اللعب'); save(); render();
 }
 function endHalf(){
-  const h = cur(); if(!h.startedAt || h.endedAt) return;
-  if(paused(h)) resume();
-  else h.playedMs += Date.now() - h.lastResume;
-  h.endedAt = Date.now();
-  announce('انتهى ' + halfName());
-  save(); render();
+  const h=cur(); if(!h.startedAt||h.endedAt) return;
+  if(paused(h)) resume(); else h.playedMs += Date.now()-h.lastResume;
+  h.endedAt=Date.now(); buzz([30,60,30]); toast('انتهى '+halfName()); save(); render();
 }
-function halfName(){ return half === 1 ? 'الشوط الأول' : 'الشوط الثاني'; }
-function announce(t){ $('live').textContent = t; }
+/* تراجع: إن كنا متوقفين نلغي التوقف الجاري ونعود للّعب، وإلا نعيد
+   زمن التوقف المحذوف إلى رصيد اللعب حتى يبقى المجموع صحيحاً */
+function undo(){
+  const h=cur(); if(!h.stops.length) return toast('لا توقف للتراجع عنه');
+  if(paused(h)){ h.pausedAt=0; h.lastResume=Date.now(); }
+  else h.playedMs += h.stops[h.stops.length-1].ms;
+  h.stops.pop(); buzz(25); toast('أُلغي آخر توقف'); save(); render();
+}
+function mainAction(){
+  const h=cur();
+  if(half===1 && h.endedAt){ half=2; render(); return; }
+  if(h.endedAt) return;
+  if(!h.startedAt) startHalf(); else if(paused(h)) resume(); else stop('');
+}
 
 /* ————— الرسم ————— */
 function render(){
-  const h = cur();
-  const eff = effectiveMs(h), off = officialMs(h);
-  $('effVal').textContent = fmt(eff);
-  $('offVal').textContent = fmt(off);
-  $('lostVal').textContent = fmt(Math.max(0, off - eff));
-  const pct = off > 0 ? Math.round(eff / off * 100) : 0;
-  $('pct').textContent = off > 0 ? pct + '٪' : '—';
-  $('meter').style.width = (off > 0 ? pct : 0) + '%';
+  const h=cur(), eff=effectiveMs(h), off=officialMs(h);
+  $('effVal').textContent=fmt(eff);
+  $('offVal').textContent=fmt(off);
+  $('lostVal').textContent=fmt(Math.max(0,off-eff));
+  const pct=off>0?Math.round(eff/off*100):0;
+  $('pct').textContent=off>0?pct+'٪':'—';
+  $('meter').style.width=(off>0?pct:0)+'%';
+  $('cnt').textContent=String(h.stops.length);
 
-  const dot = $('dot'), main = $('btnMain');
-  dot.className = 'dot' + (running(h) ? ' run' : paused(h) ? ' pause' : '');
-  $('stateTxt').textContent = !match ? 'اختر مباراة أولاً'
-    : !h.startedAt ? 'لم يبدأ بعد'
-    : h.endedAt ? 'انتهى ' + halfName()
-    : paused(h) ? 'متوقف' : 'اللعب جارٍ';
+  document.body.classList.toggle('is-running', running(h));
+  document.body.classList.toggle('is-stopped', paused(h));
+  $('effLbl').textContent = !match ? 'اختر مباراة' : !h.startedAt ? 'الوقت الفعلي'
+    : h.endedAt ? 'انتهى '+halfName() : paused(h) ? 'متوقف — الكرة خارج اللعب' : 'الوقت الفعلي';
 
-  /* بعد نهاية الشوط الأول يصير الزر بوابة للشوط الثاني بدل أن يبقى
-     «إيقاف» معطّلاً بلا معنى */
-  const doneAll = half === 2 && !!h.endedAt;
-  main.disabled = !match || doneAll;
-  main.textContent = doneAll ? 'انتهت المباراة'
-    : (half === 1 && h.endedAt) ? 'الانتقال للشوط الثاني'
-    : !h.startedAt ? 'بدء ' + halfName()
-    : paused(h) ? 'استئناف' : 'إيقاف';
-  main.className = 'btn ' + (doneAll ? 'end' : (!h.startedAt || paused(h) || h.endedAt) ? 'go' : 'stop');
+  const btn=$('btnMain'), done2 = half===2 && !!h.endedAt;
+  btn.disabled = !match || done2;
+  $('mainTxt').textContent = done2 ? 'انتهت المباراة'
+    : (half===1 && h.endedAt) ? 'الانتقال للشوط الثاني'
+    : !h.startedAt ? 'بدء '+halfName()
+    : paused(h) ? 'استئناف اللعب' : 'إيقاف';
+  btn.className='mainbtn '+(done2?'ghost':(running(h)?'stop':'go'));
+  btn.querySelector('use').setAttribute('href', running(h)?'#i-pause':'#i-play');
+
+  $('hf1').setAttribute('aria-pressed', half===1);
+  $('hf2').setAttribute('aria-pressed', half===2);
   $('btnEnd').disabled = !h.startedAt || !!h.endedAt;
 
-  $('hf1').setAttribute('aria-pressed', half === 1);
-  $('hf2').setAttribute('aria-pressed', half === 2);
+  const last=h.stops[h.stops.length-1];
+  $('gridHint').textContent = !h.startedAt
+    ? 'ابدأ الشوط أولاً — ثم ضغطة واحدة على السبب توقف الساعة وتسجّله معاً.'
+    : paused(h) ? 'اضغط سبباً لتصحيحه، أو «استئناف» لحظة عودة الكرة للّعب.'
+    : 'ضغطة واحدة على السبب = إيقاف + تسجيل. أو المفاتيح ١…٠ · Z للتراجع.';
+  document.querySelectorAll('.rt').forEach(el=>
+    el.setAttribute('aria-pressed', !!(paused(h) && last && last.reason===el.dataset.k)));
   renderLog();
 }
-
-function renderReasons(){
-  $('reasons').innerHTML = REASONS.map(r =>
-    `<button class="chip" data-r="${r}" aria-pressed="${pendingReason === r}">${r}</button>`).join('');
+function renderGrid(){
+  $('grid').innerHTML = REASONS.map((r,i)=>
+    `<button class="rt" data-k="${r.k}" aria-pressed="false" aria-label="${r.t}">
+       <kbd>${(i+1)%10}</kbd>${icon(r.i)}<span>${r.t}</span></button>`).join('');
 }
-
 function renderLog(){
-  const rows = [];
-  [['h1','الأول'], ['h2','الثاني']].forEach(([k, nm]) => {
-    S[k].stops.forEach((st, i) => rows.push({ k, i, nm, st }));
-  });
-  const body = $('logBody');
-  body.innerHTML = rows.length ? rows.map((r, n) => `
-    <tr><td>${n + 1}</td><td>${r.nm}</td>
-      <td class="num">${fmt(r.st.at)}</td>
-      <td class="num">${fmt(r.st.ms)}</td>
-      <td>${esc(r.st.reason)}</td>
-      <td>${esc(r.st.note || '—')}</td>
-      <td><button class="del" data-del="${r.k}.${r.i}" aria-label="حذف التوقف ${n + 1}">حذف</button></td></tr>`).join('')
-    : '<tr><td colspan="7" class="hint">لا توقفات مسجّلة.</td></tr>';
+  const rows=[];
+  [['h1','أول'],['h2','ثانٍ']].forEach(([k,nm])=>S[k].stops.forEach((st,i)=>rows.push({k,i,nm,st})));
+  $('log').innerHTML = rows.length ? rows.map((r,n)=>{
+    const R=R_BY_K[r.st.reason]||R_BY_K.other;
+    return `<div class="lrow"><span class="ic">${icon(R.i)}</span>
+      <span class="tx"><b>${esc(R.t)}</b>
+        <small>الشوط ${r.nm} · عند ${fmt(r.st.at)}${r.st.note?' · '+esc(r.st.note):''}</small></span>
+      <span class="du">${fmt(r.st.ms)}</span>
+      <button class="x" data-del="${r.k}.${r.i}" aria-label="حذف التوقف ${n+1}">حذف</button></div>`;
+  }).reverse().join('') : '<p class="hint">لا توقفات بعد.</p>';
 
-  const e1 = effectiveMs(S.h1), e2 = effectiveMs(S.h2);
-  $('sH1').textContent = fmt(e1);
-  $('sH2').textContent = fmt(e2);
-  $('sTot').textContent = fmt(e1 + e2);
-  $('sCnt').textContent = String(S.h1.stops.length + S.h2.stops.length);
+  const e1=effectiveMs(S.h1), e2=effectiveMs(S.h2), o=officialMs(S.h1)+officialMs(S.h2);
+  $('sH1').textContent=fmt(e1); $('sH2').textContent=fmt(e2); $('sTot').textContent=fmt(e1+e2);
+  $('sPct').textContent = o>0 ? Math.round((e1+e2)/o*100)+'٪' : '—';
 }
-const esc = t => String(t == null ? '' : t)
-  .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 
 /* ————— المباريات ————— */
 async function loadMatches(){
-  try{
-    const r = await fetch(API_GET_MATCHES, { cache:'no-cache' });
-    const d = r.ok ? await r.json() : null;
-    MATCHES = (d && d.matches) || [];
-  }catch(e){ MATCHES = []; }
-  if(!MATCHES.length){
-    $('mList').innerHTML = '<p class="hint">تعذّر تحميل المباريات — تحقّق من الاتصال.</p>';
-    return;
-  }
-  const comps = [...new Set(MATCHES.map(m => m.comp || 'الدوري'))];
-  $('fComp').innerHTML = comps.map(c => `<option value="${esc(c)}">${esc(c)}</option>`).join('');
+  try{ const r=await fetch(API_GET_MATCHES,{cache:'no-cache'});
+       const d=r.ok?await r.json():null; MATCHES=(d&&d.matches)||[]; }
+  catch(e){ MATCHES=[]; }
+  if(!MATCHES.length){ $('mList').innerHTML='<p class="hint">تعذّر تحميل المباريات.</p>'; return; }
+  const comps=[]; MATCHES.forEach(m=>{ const c=m.comp||'الدوري'; if(!comps.includes(c)) comps.push(c); });
+  $('fComp').innerHTML=comps.map(c=>`<option>${esc(c)}</option>`).join('');
   fillRounds(); renderMatches();
 }
 function fillRounds(){
-  const comp = $('fComp').value;
-  const rs = [...new Set(MATCHES.filter(m => (m.comp || 'الدوري') === comp).map(m => +m.round))]
-             .sort((a,b) => a - b);
-  $('fRound').innerHTML = rs.map(r => `<option value="${r}">الجولة ${r}</option>`).join('');
+  const comp=$('fComp').value, rs=[];
+  MATCHES.forEach(m=>{ if((m.comp||'الدوري')===comp && !rs.includes(+m.round)) rs.push(+m.round); });
+  rs.sort((a,b)=>a-b);
+  $('fRound').innerHTML=rs.map(r=>`<option value="${r}">الجولة ${r}</option>`).join('');
 }
 function renderMatches(){
-  const comp = $('fComp').value, round = +$('fRound').value;
-  const list = MATCHES.filter(m => (m.comp || 'الدوري') === comp && +m.round === round);
-  $('mList').innerHTML = list.length ? list.map(m => `
-    <button class="mrow" data-k="${esc(keyOf(m))}" aria-pressed="${match && keyOf(match) === keyOf(m)}">
+  const comp=$('fComp').value, round=+$('fRound').value;
+  const list=MATCHES.filter(m=>(m.comp||'الدوري')===comp && +m.round===round);
+  $('mList').innerHTML = list.length ? list.map(m=>`
+    <button class="mrow" data-k="${esc(keyOf(m))}" aria-pressed="${match&&keyOf(match)===keyOf(m)}">
       <span class="tm">${esc(m.home)} × ${esc(m.away)}</span>
-      <span class="meta">${esc(m.date || '')}${m.time ? ' · ' + esc(m.time) : ''}</span>
-    </button>`).join('')
+      <span class="meta">${esc(m.date||'')}${m.time?' · '+esc(m.time):''}</span></button>`).join('')
     : '<p class="hint">لا مباريات في هذه الجولة.</p>';
 }
 function pick(k){
-  const m = MATCHES.find(x => keyOf(x) === k); if(!m) return;
-  match = m; S = load(m); half = 1;
-  $('reasonCard').hidden = true;
-  renderMatches(); render();
+  const m=MATCHES.find(x=>keyOf(x)===k); if(!m) return;
+  match=m; S=load(m); half=1;
+  $('pTeams').textContent=m.home+' × '+m.away;
+  $('pMeta').textContent=(m.date||'')+(m.time?' · '+m.time:'')+' · الجولة '+m.round;
+  $('pickWrap').hidden=true; $('pickedWrap').hidden=false;
+  render();
 }
 
 /* ————— التصدير ————— */
 function payload(){
-  const e1 = effectiveMs(S.h1), e2 = effectiveMs(S.h2), o1 = officialMs(S.h1), o2 = officialMs(S.h2);
-  return {
-    match: match ? { round: match.round, comp: match.comp, home: match.home, away: match.away,
-                     date: match.date, time: match.time } : null,
-    effectiveMs: { first: e1, second: e2, total: e1 + e2 },
-    officialMs:  { first: o1, second: o2, total: o1 + o2 },
-    stops: { first: S.h1.stops, second: S.h2.stops },
-    generatedAt: new Date().toISOString(), tool: 'bip', version: 1
-  };
+  const e1=effectiveMs(S.h1), e2=effectiveMs(S.h2), o1=officialMs(S.h1), o2=officialMs(S.h2);
+  const out=s=>s.map(x=>({atMs:x.at, durationMs:x.ms, reason:x.reason||'other',
+                          reasonLabel:(R_BY_K[x.reason]||R_BY_K.other).t, note:x.note||''}));
+  return { match: match?{round:match.round,comp:match.comp,home:match.home,away:match.away,
+                         date:match.date,time:match.time}:null,
+    effectiveMs:{first:e1,second:e2,total:e1+e2},
+    officialMs:{first:o1,second:o2,total:o1+o2},
+    stops:{first:out(S.h1.stops), second:out(S.h2.stops)},
+    generatedAt:new Date().toISOString(), tool:'bip', version:1 };
 }
 function summaryText(){
-  const p = payload(), m = p.match;
-  const line = (nm, e, o) => `${nm}: فعلي ${fmt(e)} من ${fmt(o)} (${o ? Math.round(e / o * 100) : 0}٪)`;
-  return [
-    m ? `${m.home} × ${m.away} — الجولة ${m.round}` : 'مباراة غير محدّدة',
-    line('الشوط الأول', p.effectiveMs.first, p.officialMs.first),
-    line('الشوط الثاني', p.effectiveMs.second, p.officialMs.second),
-    line('المباراة', p.effectiveMs.total, p.officialMs.total),
-    `عدد التوقفات: ${p.stops.first.length + p.stops.second.length}`
-  ].join('\n');
+  const p=payload(), m=p.match;
+  const ln=(nm,e,o)=>`${nm}: فعلي ${fmt(e)} من ${fmt(o)} (${o?Math.round(e/o*100):0}٪)`;
+  const by={};
+  p.stops.first.concat(p.stops.second).forEach(s=>{ by[s.reasonLabel]=(by[s.reasonLabel]||0)+s.durationMs; });
+  const top=Object.keys(by).sort((a,b)=>by[b]-by[a]).slice(0,4).map(t=>`  ${t}: ${fmt(by[t])}`);
+  return [ m?`${m.home} × ${m.away} — الجولة ${m.round}`:'مباراة غير محدّدة',
+    ln('الشوط الأول',p.effectiveMs.first,p.officialMs.first),
+    ln('الشوط الثاني',p.effectiveMs.second,p.officialMs.second),
+    ln('المباراة',p.effectiveMs.total,p.officialMs.total),
+    `عدد التوقفات: ${p.stops.first.length+p.stops.second.length}`,
+    top.length?'أطول أسباب التوقف:':'' ].concat(top).filter(Boolean).join('\n');
+}
+
+/* ————— إبقاء الشاشة مضاءة ————— */
+async function toggleWake(){
+  const b=$('btnWake');
+  if(wakeLock){ try{ await wakeLock.release(); }catch(e){} wakeLock=null;
+    b.setAttribute('aria-pressed','false'); toast('أُطفئ إبقاء الشاشة'); return; }
+  if(!('wakeLock' in navigator)) return toast('المتصفح لا يدعم إبقاء الشاشة');
+  try{ wakeLock=await navigator.wakeLock.request('screen');
+       wakeLock.addEventListener('release',()=>{ wakeLock=null; b.setAttribute('aria-pressed','false'); });
+       b.setAttribute('aria-pressed','true'); toast('الشاشة تبقى مضاءة'); }
+  catch(e){ toast('تعذّر إبقاء الشاشة مضاءة'); }
 }
 
 /* ————— الربط ————— */
-$('fComp').onchange = () => { fillRounds(); renderMatches(); };
-$('fRound').onchange = renderMatches;
-$('mList').addEventListener('click', e => {
-  const b = e.target.closest('[data-k]'); if(b) pick(b.dataset.k);
-});
-$('hf1').onclick = () => { half = 1; $('reasonCard').hidden = true; render(); };
-$('hf2').onclick = () => { half = 2; $('reasonCard').hidden = true; render(); };
-function mainAction(){
-  const h = cur();
-  if(half === 1 && h.endedAt){ half = 2; $('reasonCard').hidden = true; render(); return; }
-  if(h.endedAt) return;
-  if(!h.startedAt) startHalf(); else if(paused(h)) resume(); else pause();
-}
-$('btnMain').onclick = mainAction;
-$('btnEnd').onclick = () => { if(confirm('إنهاء ' + halfName() + '؟')) endHalf(); };
-$('reasons').addEventListener('click', e => {
-  const b = e.target.closest('[data-r]'); if(!b) return;
-  pendingReason = (pendingReason === b.dataset.r) ? '' : b.dataset.r;
-  renderReasons();
-});
-$('logBody').addEventListener('click', e => {
-  const b = e.target.closest('[data-del]'); if(!b) return;
-  const [k, i] = b.dataset.del.split('.');
-  if(!confirm('حذف هذا التوقف؟')) return;
-  S[k].stops.splice(+i, 1); save(); render();
-});
-$('btnExport').onclick = () => {
-  const blob = new Blob([JSON.stringify(payload(), null, 2)], { type:'application/json' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = 'bip-' + (match ? keyOf(match).replace(/\|/g,'-') : 'match') + '.json';
-  a.click(); URL.revokeObjectURL(a.href);
-  /* نقطة الوصل المستقبلية مع نظام إدارة المباريات */
-  console.log('[bip] payload for match admin:', payload());
+$('fComp').onchange=()=>{ fillRounds(); renderMatches(); };
+$('fRound').onchange=renderMatches;
+$('mList').addEventListener('click',e=>{ const b=e.target.closest('[data-k]'); if(b) pick(b.dataset.k); });
+$('btnChange').onclick=()=>{ $('pickWrap').hidden=false; $('pickedWrap').hidden=true; renderMatches(); };
+$('hf1').onclick=()=>{ half=1; render(); };
+$('hf2').onclick=()=>{ half=2; render(); };
+$('btnMain').onclick=mainAction;
+$('grid').addEventListener('click',e=>{ const b=e.target.closest('[data-k]'); if(b) stop(b.dataset.k); });
+$('btnEnd').onclick=()=>{ if(confirm('إنهاء '+halfName()+'؟')) endHalf(); };
+$('btnUndo').onclick=undo;
+$('btnWake').onclick=toggleWake;
+$('noteIn').onchange=()=>{
+  const h=cur(), st=h.stops[h.stops.length-1];
+  if(!st) return toast('لا توقف لإضافة ملاحظة له');
+  st.note=$('noteIn').value.trim(); $('noteIn').value=''; save(); render(); toast('حُفظت الملاحظة');
 };
-$('btnCopy').onclick = async () => {
-  try{ await navigator.clipboard.writeText(summaryText()); announce('نُسخ الملخص'); alert('نُسخ الملخص'); }
+$('log').addEventListener('click',e=>{
+  const b=e.target.closest('[data-del]'); if(!b) return;
+  const p=b.dataset.del.split('.');
+  if(!confirm('حذف هذا التوقف؟')) return;
+  S[p[0]].stops.splice(+p[1],1); save(); render();
+});
+$('btnExport').onclick=()=>{
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([JSON.stringify(payload(),null,2)],{type:'application/json'}));
+  a.download='bip-'+(match?keyOf(match).replace(/\|/g,'-'):'match')+'.json';
+  a.click(); URL.revokeObjectURL(a.href);
+  console.log('[bip] payload for match admin:', payload());   /* نقطة الوصل المستقبلية */
+};
+$('btnCopy').onclick=async()=>{
+  try{ await navigator.clipboard.writeText(summaryText()); toast('نُسخ الملخص'); }
   catch(e){ alert(summaryText()); }
 };
-$('btnReset').onclick = () => {
-  if(!match || !confirm('مسح كل بيانات هذه المباراة؟')) return;
-  try{ localStorage.removeItem(STORE_PREFIX + S.matchKey); }catch(e){}
-  S = blankState(); S.matchKey = keyOf(match); render();
+$('btnReset').onclick=()=>{
+  if(!match||!confirm('مسح كل بيانات هذه المباراة؟')) return;
+  try{ localStorage.removeItem(STORE_PREFIX+S.matchKey); }catch(e){}
+  S=blankState(); S.matchKey=keyOf(match); render();
 };
-/* مسافة/Enter = إيقاف أو استئناف — ما لم يكن التركيز على حقل أو زر آخر */
-addEventListener('keydown', e => {
-  if(e.key !== ' ' && e.key !== 'Enter') return;
-  const t = e.target;
-  if(t && (/^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName) || t.tagName === 'BUTTON')) return;
-  if(!match) return;
-  e.preventDefault();
-  mainAction();
+/* المفاتيح: مسافة/Enter = الزر الكبير · ١…٠ = سبب · Z = تراجع */
+addEventListener('keydown',e=>{
+  const t=e.target;
+  if(t && /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName)) return;
+  if(e.key===' '||e.key==='Enter'){
+    if(t && t.tagName==='BUTTON' && t.id!=='btnMain') return;
+    if(!match) return; e.preventDefault(); mainAction(); return;
+  }
+  if(e.key==='z'||e.key==='Z'){ if(match){ e.preventDefault(); undo(); } return; }
+  if(/^[0-9]$/.test(e.key)){
+    const r=REASONS[e.key==='0'?9:+e.key-1];
+    if(r && match){ e.preventDefault(); stop(r.k); }
+  }
+});
+document.addEventListener('visibilitychange',()=>{
+  if(document.visibilityState==='visible' && $('btnWake').getAttribute('aria-pressed')==='true' && !wakeLock)
+    toggleWake();
+  render();
 });
 
-S = blankState();
-renderReasons(); render(); loadMatches();
-setInterval(() => { if(match && running(cur())) render(); }, TICK_MS);
+S=blankState(); renderGrid(); render(); loadMatches();
+setInterval(()=>{ if(match && running(cur())) render(); }, TICK_MS);
 </script>
 </body>
 </html>
