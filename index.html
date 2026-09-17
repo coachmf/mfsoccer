@@ -208,10 +208,12 @@ tbody tr.rel{box-shadow:inset 3px 0 0 rgba(224,100,79,.7)}
 .ts-pod{overflow:hidden}
 .ts-pod-bg{position:absolute;left:50%;top:42%;width:150%;max-width:none;transform:translate(-50%,-50%);opacity:.07;pointer-events:none;filter:grayscale(.2)}
 .ts-pod>*:not(.ts-pod-bg){position:relative;z-index:1}
-.ts-pod-av{position:relative;width:150px;height:188px;margin:0 0 8px;overflow:hidden;border-radius:10px}
+.ts-pod-av{position:relative;width:150px;height:188px;margin:0 0 8px;overflow:hidden;border-radius:10px;
+  /* حواف ناعمة بدل قصّ الأكتاف بخط مستقيم (كان يظهر كصندوق خلف اللاعب في أندرويد) */
+  -webkit-mask-image:linear-gradient(to right,transparent 0,#000 16%,#000 84%,transparent 100%);mask-image:linear-gradient(to right,transparent 0,#000 16%,#000 84%,transparent 100%)}
 .ts-pod.first .ts-pod-av{width:196px;height:245px}
 /* كل القصّات بإطار موحّد (الوجه 190 من 1000 عند 85) → تكبير موحّد 1.55 من الأعلى فيظهر الثلاثة بحجم واحد وتُقصّ الخصور بحد الصندوق */
-.ts-pod-img{width:100%;height:100%;object-fit:contain;object-position:top;transform:scale(1.55);transform-origin:top center;filter:drop-shadow(0 4px 6px rgba(0,0,0,.3))}
+.ts-pod-img{width:100%;height:100%;object-fit:contain;object-position:top;transform:scale(1.55);transform-origin:top center}
 .ts-pod-img.ts-crestfb{padding:14px;filter:none;transform:none}
 .ts-pod-crest{position:absolute;bottom:6px;left:2px;width:34px;height:34px;background:#fff;border:1px solid var(--line);border-radius:50%;padding:3px;display:grid;place-items:center}
 .ts-pod-crest img{width:100%;height:100%;object-fit:contain}
@@ -1049,6 +1051,13 @@ table.lb td.pt{font-family:var(--display);font-weight:700;color:var(--sky);
 .wafab .lbl{white-space:nowrap}
 @media(max-width:400px){.wafab .lbl{display:none}.wafab{padding:12px}}
 @media(min-width:900px){.wafab{bottom:24px;left:24px}}
+/* ملاحظة مستخدم أندرويد (2026-09-17): الزر كان يغطي صور وأسماء اللاعبين فلا تُلمس البطاقة تحته.
+   تحت 900px: دائرة أيقونة فقط، ويختفي أثناء التمرير للأسفل ويعود عند التمرير للأعلى أو في نهاية الصفحة. */
+@media(max-width:899px){
+  .wafab .lbl{display:none}.wafab{padding:12px}
+  .wafab{transition:transform .28s cubic-bezier(.16,1,.3,1),opacity .2s ease,background .16s ease}
+  html.wa-hide .wafab{transform:translate3d(-140%,0,0);opacity:0;pointer-events:none}
+}
 .exportbar{display:flex;gap:8px;margin:14px 0 4px}
 .exportbar .btn{flex:1;display:flex;align-items:center;justify-content:center;gap:7px}
 .sitefoot{display:flex;align-items:center;justify-content:center;gap:10px;margin:34px 0 6px;
@@ -2192,10 +2201,20 @@ html[data-theme="light"] .an-card{box-shadow:0 1px 3px rgba(11,31,58,.06)}
 .ah-wrap::after{content:"";display:block;height:14px;margin:-10px 8% 0;border-radius:50%;background:radial-gradient(closest-side,rgba(0,0,0,.45),transparent)}
 html[data-theme="light"] .ah{filter:drop-shadow(0 18px 18px rgba(11,31,58,.22))}
 .ah{width:100%;height:auto;display:block;overflow:visible}
-.ah-grass{fill:#1E5A36;stroke:#123A22;stroke-width:1.6}
-.ah-slab{fill:#0E2D1A}
+.ah-grass{fill:#2A7443;stroke:#0F3D22;stroke-width:1.6}
+.ah-mow{fill:#2C7A46}.ah-mow.b{fill:#256B3D}
+.ah-hs{fill:rgba(255,255,255,.045)}
+.ah-lane{stroke:rgba(255,255,255,.34);stroke-width:.35;stroke-dasharray:1.4 1.2}
+.ah-third{stroke:rgba(127,224,255,.75);stroke-width:.5;stroke-dasharray:2.2 1.2}
+.ah-tag rect{fill:rgba(8,21,39,.72);stroke:rgba(127,224,255,.6);stroke-width:.3}
+.ah-tag text{font-family:var(--body);font-weight:700;font-size:3.1px;fill:#CFF3FF;text-anchor:middle;dominant-baseline:central}
+.ah-lanes{max-width:440px;margin:2px auto 0;padding:0 10px}
+.ah-lanes>div{direction:ltr;display:grid;grid-template-columns:21fr 15fr 28fr 15fr 21fr;margin:0 2.8%}
+.ah-lanes span{text-align:center;font-size:.64rem;line-height:1.25;font-weight:600;color:var(--an-mut);padding:3px 1px 0;border-top:2px solid var(--an-line)}
+.ah-lanes span:nth-child(3){color:var(--an-txt);border-top-color:var(--an-acc)}
+.ah-slab{fill:#0B2716}
 .ahb .dot{filter:drop-shadow(0 .6px .6px rgba(0,0,0,.5))}
-.ah-ln rect,.ah-ln path{fill:none;stroke:rgba(255,255,255,.72);stroke-width:.55}
+.ah-ln rect,.ah-ln path{fill:none;stroke:rgba(255,255,255,.85);stroke-width:.6}
 .ah-ln .dash{stroke:rgba(255,255,255,.35);stroke-width:.4;stroke-dasharray:1.6 1.4}
 .ah-goal{fill:rgba(255,255,255,.12);stroke:rgba(255,255,255,.85);stroke-width:.5}
 .ahb .dot{fill:rgba(8,21,39,.82);stroke:rgba(127,224,255,.85);stroke-width:.55}
@@ -3162,9 +3181,18 @@ function anHeatSVG(list){
     return `<g class="ahb${n?"":" nil"}${top?" top":""}"><title>${esc(z.k)}: ${n}</title>
       ${top?`<circle class="ring" cx="${cx}" cy="${cy}" r="${R+1.5}"/>`:""}
       <circle class="dot" cx="${cx}" cy="${cy}" r="${R}"/><text x="${cx}" y="${cy}">${n}</text></g>`; };
-  const stripes=[...Array(10)].map((_,i)=>i%2?`<rect x="0" y="${2+i*9.8}" width="100" height="9.8" fill="rgba(255,255,255,.035)"/>`:"").join("");
+  /* عشب واقعي (منصور 2026-09-17): شرائط قصّ بدرجتين + ملمس خفيف + إضاءة من جهة المرمى */
+  const stripes=[...Array(10)].map((_,i)=>`<rect class="ah-mow${i%2?" b":""}" x="0" y="${(2+i*9.8).toFixed(1)}" width="100" height="9.8"/>`).join("");
+  /* شبكة المناطق: الأروقة وأنصاف المساحات والعمق طولياً، والثلث الأخير عرضياً — مطابقة لحدود ZONES */
+  const lanes=[21,36,64,79].map(x=>`<line class="ah-lane" x1="${x}" y1="2" x2="${x}" y2="100"/>`).join("");
+  const laneLb=[[10.5,"رواق أيسر"],[28.5,"نصف مساحة"],[50,"العمق"],[71.5,"نصف مساحة"],[89.5,"رواق أيمن"]]
+    .map(([,t])=>`<span>${t}</span>`).join("");
   return `<div class="ah-wrap"><svg class="ah" viewBox="-3 -6 106 112" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="خريطة أماكن التسجيل">
     <defs>
+      <filter id="${u}n" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency="1.6 .35" numOctaves="2" seed="7"/>
+        <feColorMatrix values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 .5 0"/><feComposite in2="SourceGraphic" operator="in"/></filter>
+      <linearGradient id="${u}l" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".10"/><stop offset=".55" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".22"/></linearGradient>
+      <radialGradient id="${u}v" cx=".5" cy=".35" r=".75"><stop offset=".6" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".28"/></radialGradient>
       <radialGradient id="${u}g"><stop offset="0" stop-color="#fff" stop-opacity="1"/><stop offset=".55" stop-color="#fff" stop-opacity=".7"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>
       <filter id="${u}f" x="-20%" y="-20%" width="140%" height="140%" color-interpolation-filters="sRGB">
         <feGaussianBlur stdDeviation="2.4"/>
@@ -3179,7 +3207,12 @@ function anHeatSVG(list){
       <clipPath id="${u}c"><rect x="0" y="2" width="100" height="98" rx="1"/></clipPath>
     </defs>
     <rect class="ah-slab" x="-1.2" y="3.5" width="102.4" height="99.5" rx="2"/><rect class="ah-grass" x="0" y="2" width="100" height="98" rx="1"/>
-    <g clip-path="url(#${u}c)">${stripes}<g filter="url(#${u}f)">${ZONES.map(blob).join("")}</g></g>
+    <g clip-path="url(#${u}c)">${stripes}
+      <rect x="0" y="2" width="100" height="98" fill="#000" filter="url(#${u}n)" opacity=".16"/>
+      <rect class="ah-hs" x="21" y="2" width="15" height="62"/><rect class="ah-hs" x="64" y="2" width="15" height="62"/>
+      <rect x="0" y="2" width="100" height="98" fill="url(#${u}l)"/><rect x="0" y="2" width="100" height="98" fill="url(#${u}v)"/>
+      <g class="ah-grid">${lanes}<line class="ah-third" x1="0" y1="64" x2="100" y2="64"/></g>
+      <g filter="url(#${u}f)">${ZONES.map(blob).join("")}</g></g>
     <g class="ah-ln">
       <rect x="0" y="2" width="100" height="98" rx="1"/>
       <rect x="21" y="2" width="58" height="32"/>
@@ -3187,16 +3220,15 @@ function anHeatSVG(list){
       <path d="M 34.5 34 A 17 17 0 0 0 65.5 34"/>
       <path d="M 36 100 A 14 14 0 0 1 64 100"/>
       <path d="M 0 5 A 3 3 0 0 0 3 2 M 97 2 A 3 3 0 0 0 100 5"/>
-      <line class="dash" x1="0" y1="64" x2="100" y2="64"/>
+      <circle cx="50" cy="100" r=".8" fill="rgba(255,255,255,.9)" stroke="none"/>
     </g>
     <circle cx="50" cy="24" r=".8" fill="rgba(255,255,255,.9)"/>
     <rect class="ah-goal" x="43" y="-1.2" width="14" height="3.2" rx=".6"/>
     ${ZONES.map(badge).join("")}
     <text class="ah-sm out" x="50" y="-3.6">المرمى</text>
-    <text class="ah-sm" x="6" y="49">يسار</text>
-    <text class="ah-sm" x="94" y="49">يمين</text>
+    <g class="ah-tag"><rect x="1.4" y="59.4" width="20" height="5.4" rx="2.7"/><text x="11.4" y="62.15">الثلث الأخير</text></g>
     <text class="ah-sm" x="50" y="68.5">مسافة بعيدة</text>
-  </svg></div>
+  </svg></div><div class="ah-lanes"><div>${laneLb}</div></div>
   <div class="ah-legend"><span>أقل</span><i></i><span>أكثر</span></div>`;
 }
 function anZoneRows(list){
@@ -3423,7 +3455,7 @@ function keepField(incoming, current){
 /* لاعبون جدد انضموا للكشف قبل إدخالهم من الإدارة: يُضافون إن لم يكونوا موجودين بالاسم.
    s:0 = بلا رقم بعد (يُحدَّد الرقم لاحقاً من «الكشوفات» في الإدارة) */
 const SQUAD_ADD={
-  "العربي":[{n:"وليد ولد الشيخ", p:"CAM", s:0}, {n:"علي عبدالرسول", p:"LB", s:16}, {n:"علي الدوخي", p:"ST", s:9}, {n:"عمر العازمي", p:"CM", s:27}, {n:"حسين كنكوني", p:"GK", s:1}, {n:"حسين العريان", p:"ST", s:99}, {n:"عايد ماجد", p:"CB", s:36}, {n:"يوسف صباح", p:"CAM", s:70}, {n:"حمد الحربي", p:"CDM", s:12}],
+  "العربي":[{n:"وليد ولد الشيخ", p:"CAM", s:0}, {n:"علي عبدالرسول", p:"LB", s:16}, {n:"علي الدوخي", p:"ST", s:9}, {n:"عمر العازمي", p:"CM", s:27}, {n:"حسين كنكوني", p:"GK", s:1}, {n:"حسين العريان", p:"ST", s:99}, {n:"عايد ماجد", p:"CB", s:36}, {n:"يوسف صباح", p:"CAM", s:70}, {n:"حمد الحربي", p:"CDM", s:12}, {n:"فواز الداوود", p:"CAM", s:88}, {n:"سعود العنبري", p:"ST", s:40}],
   "النصر":[{n:"مسفر العدواني", p:"ST", s:0}, {n:"ابراهيم الظفيري", p:"CM", s:25}, {n:"احمد الرشيدي", p:"CB", s:14}, {n:"محمد عجاج", p:"GK", s:1}, {n:"مزيد نواف", p:"ST", s:88}],
   "الفحيحيل":[{n:"فهد الشلال", p:"LM", s:19}],
   "الساحل":[{n:"فاضل الصراف", p:"LM", s:20}],   /* منصور 2026-09-17: جناح أيسر (صورة النادي) */
@@ -4555,6 +4587,8 @@ const LOCAL_PHOTOS={
   "عمر العازمي":"assets/players/arb/27",
   "حسين العريان":"assets/players/arb/99",
   "عايد ماجد":"assets/players/arb/36",
+  "فواز الداوود":"assets/players/arb/88",
+  "سعود العنبري":"assets/players/arb/40",
   "يوسف صباح":"assets/players/arb/70",
   "حمد الحربي":"assets/players/arb/12",
   "مسفر العدواني":"assets/players/nsr/mesfer",   /* انضم للنصر 2026-09-15، مهاجم بلا رقم بعد — صورة من بطاقة ترحيب النادي */   /* انضم 2026-09-15، بلا رقم بعد — صورة من بطاقة المركز الإعلامي للنادي */
@@ -13200,5 +13234,126 @@ html[data-theme="light"] .mo-tip{color:#0B1F3A;background:#fff;border-color:#E2E
 })();
 </script>
 <!-- /home-motion -->
+<!-- site-motion: نفس لغة حركة الرئيسية على كل صفحات الموقع + تجربة سينمائية عند التمرير (منصور 2026-09-17، محلي) — بصري فقط -->
+<style id="site-motion-css">
+/* ========== 1) دخول الصفحة: ارتفاع ناعم بدل الوميض ========== */
+.view.on:not(#v-admin){animation:moViewIn .52s var(--mo-out) both}
+@keyframes moViewIn{from{opacity:0;transform:translate3d(0,22px,0)}to{opacity:1;transform:none}}
+.ctab-panel.on{animation:moPanelIn .45s var(--mo-out) both}
+@keyframes moPanelIn{from{opacity:0;transform:translate3d(0,14px,0) scale(.992)}to{opacity:1;transform:none}}
+.ctabs .ctab-ind{transition:transform var(--mo-slow) var(--mo-out)!important}
+
+/* ========== 2) شريط تقدّم القراءة أعلى الشاشة ========== */
+.mo-progress{position:fixed;z-index:9998;top:0;left:0;right:0;height:2px;pointer-events:none;transform-origin:right center;transform:scaleX(0);
+  background:linear-gradient(270deg,var(--sky,#2EB0F0),#7FE0FF 60%,#F9E64A)}
+html[dir="ltr"] .mo-progress{transform-origin:left center}
+
+/* ========== 3) بطاقات وأزرار كل الصفحات: ارتفاع عند المرور وضغط عند اللمس ========== */
+.view:not(#v-home):not(#v-admin) :is(.mc,.pcard,.ts-row,.ts-pod,.rt-row,.fx-card,.tl-card,.an-card,.card){
+  transition:translate var(--mo-base) var(--mo-out),scale var(--mo-base) var(--mo-out),box-shadow var(--mo-base) var(--mo-out),border-color var(--mo-base) var(--mo-std),background-color var(--mo-base) var(--mo-std)}
+@media (hover:hover) and (pointer:fine){
+  .view:not(#v-home):not(#v-admin) :is(.mc,.pcard,.ts-pod,.fx-card,.tl-card):hover{translate:0 var(--mo-lift);box-shadow:var(--mo-shadow-2)}
+  .view:not(#v-home):not(#v-admin) :is(.ts-row,.rt-row):hover{background-color:rgba(143,166,196,.06)}
+  .view:not(#v-home):not(#v-admin) .pcard .ph img{transition:transform var(--mo-slow) var(--mo-out)}
+  .view:not(#v-home):not(#v-admin) .pcard:hover .ph img{transform:translate3d(0,-3px,0) scale(1.03)}
+  .view:not(#v-home):not(#v-admin) :is(.btn,.hchip,.ts-morebtn,.rs-btn):hover{translate:0 -1px;filter:brightness(1.07)}
+}
+.view:not(#v-home):not(#v-admin) :is(.btn,.hchip,.ts-morebtn,.rs-btn,.seg,.chip){transition:translate var(--mo-base) var(--mo-out),scale var(--mo-base) var(--mo-out),filter var(--mo-base) var(--mo-std),background-color var(--mo-base) var(--mo-std),color var(--mo-base) var(--mo-std)}
+.view:not(#v-home):not(#v-admin) :is(.mc,.pcard,.ts-row,.ts-pod,.rt-row,.fx-card):active{scale:var(--mo-press);transition-duration:var(--mo-fast)}
+.view:not(#v-home):not(#v-admin) :is(.btn,.hchip,.ts-morebtn,.rs-btn,.seg,.chip,.ctabs button):active{scale:.97;transition-duration:80ms}
+body :is(.crestbar button,nav.tabs button,.iconbtn,.wafab):active{transform:scale(.95);transition:transform 80ms}
+
+/* ========== 4) النوافذ المنبثقة من أي صفحة ========== */
+body .pprof.on,body .mpage.on{animation:moScrim var(--mo-base) var(--mo-std) both}
+body .pprof.on .pprof-sheet,body .mpage.on .mp-sheet{animation:moSheetIn var(--mo-slow) var(--mo-out) both}
+
+/* ========== 5) تجربة سينمائية مرتبطة بالتمرير (Chrome / Safari 26+) — المتصفحات الأقدم تعرض المحتوى ثابتاً ========== */
+@supports (animation-timeline: view()){
+  /* العناوين: مسح من جهة البداية */
+  .view:not(#v-admin) h2.sec{animation:moWipe linear both;animation-timeline:view();animation-range:entry 0% entry 90%}
+  @keyframes moWipe{from{clip-path:inset(0 0 0 100%);opacity:.2}to{clip-path:inset(0 0 0 0);opacity:1}}
+  html[dir="ltr"] .view:not(#v-admin) h2.sec{animation-name:moWipeL}
+  @keyframes moWipeL{from{clip-path:inset(0 100% 0 0);opacity:.2}to{clip-path:inset(0 0 0 0);opacity:1}}
+  /* البطاقات: ترتفع وتكبر من العمق */
+  .view:not(#v-home):not(#v-admin) :is(.mc,.card,.an-card,.pcard,.ts-pod,.fx-card,.tl-card,.cfact,.exportbar,.psearch,.mx-head){
+    animation:moRise linear both;animation-timeline:view();animation-range:entry 0% entry 75%}
+  @keyframes moRise{from{opacity:0;transform:translate3d(0,46px,0) scale(.94)}to{opacity:1;transform:none}}
+  /* الصفوف: انزلاق جانبي خفيف */
+  .view:not(#v-home):not(#v-admin) :is(.ts-row,.rt-row,.an-row,.vt-row){animation:moSlide linear both;animation-timeline:view();animation-range:entry 0% entry 100%}
+  @keyframes moSlide{from{opacity:0;transform:translate3d(-18px,0,0)}to{opacity:1;transform:none}}
+  /* أشرطة القيم تمتلئ عند ظهورها */
+  .view:not(#v-admin) :is(.an-row .mb i,.ts-bar i){animation:moFill linear both;animation-timeline:view();animation-range:entry 20% cover 45%;transform-origin:right center}
+  @keyframes moFill{from{transform:scale(0,1)}to{transform:none}}
+  .view:not(#v-admin) .ct-up .ct-bar{animation:moGrowUp linear both;animation-timeline:view();animation-range:entry 20% cover 45%;transform-origin:center bottom}
+  .view:not(#v-admin) .ct-dn .ct-bar{animation:moGrowUp linear both;animation-timeline:view();animation-range:entry 20% cover 45%;transform-origin:center top}
+  @keyframes moGrowUp{from{transform:scale(1,0)}to{transform:none}}
+  /* الملعب الحراري: ينقلب من الأفق إلى زاويته عند الوصول إليه */
+  .ah{animation:moPitch linear both;animation-timeline:view();animation-range:entry 0% cover 40%}
+  @keyframes moPitch{from{transform:rotateX(62deg) scale(.86);opacity:.3}to{transform:rotateX(24deg);opacity:1}}
+  /* لاعبو التشكيلة يظهرون من أرضية الملعب */
+  .view:not(#v-admin) .pp-spot .pp-card{animation:moPop linear both;animation-timeline:view();animation-range:entry 0% entry 100%}
+  @keyframes moPop{from{opacity:0;transform:translate3d(0,14px,0) scale(.6)}to{opacity:1;transform:none}}
+  /* صورة الملعب في نبذة النادي: عمق (بارالاكس) عند مغادرتها */
+  .cabout-hero{overflow:hidden}
+  .cabout-hero img{animation:moParallax linear both;animation-timeline:view();animation-range:cover 50% exit 100%}
+  @keyframes moParallax{from{transform:none}to{transform:translate3d(0,18%,0) scale(1.12);filter:brightness(.7)}}
+  /* شريط التقدّم */
+  .mo-progress{animation:moProg linear both;animation-timeline:scroll(root block)}
+  @keyframes moProg{to{transform:scaleX(1)}}
+}
+
+/* ========== تقليل الحركة + الطباعة ========== */
+@media (prefers-reduced-motion:reduce){
+  .view.on,.ctab-panel.on,body .pprof.on,body .mpage.on,body .pprof.on .pprof-sheet,body .mpage.on .mp-sheet{animation:none!important}
+  .view :is(h2.sec,.mc,.card,.an-card,.pcard,.ts-pod,.fx-card,.tl-card,.cfact,.exportbar,.psearch,.mx-head,.ts-row,.rt-row,.an-row,.vt-row,.ts-bar i,.ct-bar,.pp-card,.cabout-hero img),.view .an-row .mb i,.ah{animation:none!important}
+  .mo-progress{display:none}
+}
+@media print{
+  .view *,.ah,.view.on{animation:none!important;opacity:1!important;clip-path:none!important}
+  .mo-progress{display:none!important}
+}
+</style>
+<script id="site-motion-js">
+/* بصري فقط: شريط التقدّم + عدّاد الأرقام اللافتة عند أول ظهور في كل الصفحات (عدا الرئيسية التي لها عدّادها) */
+(function(){
+  var RM=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)');
+  if(RM&&RM.matches) return;
+  if(window.CSS&&CSS.supports&&CSS.supports('animation-timeline: scroll()')){
+    var bar=document.createElement('i'); bar.className='mo-progress'; bar.setAttribute('aria-hidden','true'); document.body.appendChild(bar);
+  }
+  if(!('IntersectionObserver' in window)) return;
+  var SEL=['.an-kpis b','.hstats > div > b','.ct-chips b'].map(function(s){ return '.view.on:not(#v-home) '+s; }).join(', ');
+  function countUp(el){
+    if(el.childNodes.length!==1 || el.firstChild.nodeType!==3) return;
+    var txt=el.textContent, m=txt.match(/^(\s*)(\d+(?:\.(\d+))?)(%?)(\s*)$/); if(!m) return;
+    var target=parseFloat(m[2]), dec=m[3]?m[3].length:0; if(!(target>0)) return;
+    var t0=null, dur=Math.min(1000, 500+target*6), last=txt;
+    function step(ts){ if(t0===null) t0=ts; var k=Math.min(1,(ts-t0)/dur), e=1-Math.pow(1-k,4);
+      if(!el.isConnected || el.textContent!==last) return;   /* أُعيد رسمه ببيانات جديدة: لا نلمسه */
+      last = k<1 ? m[1]+(target*e).toFixed(dec)+m[4]+m[5] : txt; el.textContent=last;
+      if(k<1) requestAnimationFrame(step); }
+    requestAnimationFrame(step);
+  }
+  var io=new IntersectionObserver(function(es){ es.forEach(function(e){ if(e.isIntersecting){ io.unobserve(e.target); countUp(e.target); } }); }, {threshold:.6});
+  var pend=null;
+  function scan(){ pend=null; document.querySelectorAll(SEL).forEach(function(el){ if(!el._moObs){ el._moObs=1; io.observe(el); } }); }
+  new MutationObserver(function(){ if(!pend) pend=setTimeout(scan, 80); }).observe(document.body, {childList:true, subtree:true});
+  scan();
+})();
+</script>
+<!-- /site-motion -->
+<script>
+/* زر واتساب العائم: يختفي أثناء التمرير للأسفل (تحت 900px) حتى لا يغطي البطاقات، ويعود عند الصعود أو آخر الصفحة */
+(function(){
+  var last=scrollY, root=document.documentElement, mq=matchMedia('(max-width:899px)');
+  addEventListener('scroll', function(){
+    var y=scrollY, end=y+innerHeight>=root.scrollHeight-40;
+    if(!mq.matches || y<80 || end) root.classList.remove('wa-hide');
+    else if(y>last+6) root.classList.add('wa-hide');
+    else if(y<last-6) root.classList.remove('wa-hide');
+    last=y;
+  }, {passive:true});
+})();
+</script>
 </body>
 </html>

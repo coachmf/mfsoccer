@@ -1,0 +1,92 @@
+/* =========================================================
+   لغة الحركة — نفس لغة الموقع (home-motion / site-motion) مع تجربة سينمائية عند التمرير
+   منصور 2026-09-17، محلي. بصري فقط: لا يغيّر بيانات ولا تخطيطاً ولا وظائف.
+   ملاحظة: الحركة تستعمل خصائص translate/scale المستقلة حيث قد يكون للعنصر transform خاص به.
+   ========================================================= */
+:root{
+  --mo-fast:140ms; --mo-base:220ms; --mo-slow:380ms;
+  --mo-out:cubic-bezier(.16,1,.3,1);
+  --mo-std:cubic-bezier(.4,0,.2,1);
+  --mo-press:.975;
+  --mo-shadow-2:0 12px 28px -14px rgba(11,31,58,.28),0 2px 6px -2px rgba(11,31,58,.10);
+}
+[data-theme="dark"]{--mo-shadow-2:0 10px 28px -12px rgba(0,0,0,.55),0 2px 6px -2px rgba(0,0,0,.25)}
+
+/* ---------- 1) دخول الصفحة: تتابع سينمائي للأقسام ---------- */
+.view.anim{animation:none}
+.view.anim > *,.view.anim .home-wrap > *{animation:moIn .6s var(--mo-out) both}
+.view.anim > :nth-child(2),.view.anim .home-wrap > :nth-child(2){animation-delay:60ms}
+.view.anim > :nth-child(3),.view.anim .home-wrap > :nth-child(3){animation-delay:120ms}
+.view.anim > :nth-child(4),.view.anim .home-wrap > :nth-child(4){animation-delay:180ms}
+.view.anim > :nth-child(5),.view.anim .home-wrap > :nth-child(5){animation-delay:230ms}
+.view.anim > :nth-child(n+6),.view.anim .home-wrap > :nth-child(n+6){animation-delay:270ms}
+@keyframes moIn{from{opacity:0;translate:0 26px;scale:.985}to{opacity:1;translate:0 0;scale:1}}
+.view.anim .home-hero{animation:moHero .8s var(--mo-out) both}
+@keyframes moHero{from{opacity:0;scale:.94;filter:blur(6px)}to{opacity:1;scale:1;filter:none}}
+
+/* لاعبو الملعب: يظهرون صفاً صفاً من أرضية الملعب */
+.view.anim .pitch-row .pslot{animation:moSlot .55s var(--mo-out) both}
+.view.anim .pitch-row:nth-of-type(1) .pslot{animation-delay:160ms}
+.view.anim .pitch-row:nth-of-type(2) .pslot{animation-delay:230ms}
+.view.anim .pitch-row:nth-of-type(3) .pslot{animation-delay:300ms}
+.view.anim .pitch-row:nth-of-type(4) .pslot{animation-delay:370ms}
+.view.anim .pitch-row:nth-of-type(n+5) .pslot{animation-delay:430ms}
+@keyframes moSlot{from{opacity:0;translate:0 16px;scale:.7}to{opacity:1;translate:0 0;scale:1}}
+
+/* ---------- 2) بطاقات وأزرار: ارتفاع عند المرور، ضغط عند اللمس ---------- */
+#main :is(.card,.btn,.pslot,.tabs button,.pill,.big-pill,.side-row){transition:transform .15s,translate var(--mo-base) var(--mo-out),scale var(--mo-base) var(--mo-out),box-shadow var(--mo-base) var(--mo-out),background-color var(--mo-base) var(--mo-std),color var(--mo-base) var(--mo-std),filter var(--mo-base) var(--mo-std)}
+@media (hover:hover) and (pointer:fine){
+  #main .card:hover{box-shadow:var(--mo-shadow-2)}
+  #main .btn:hover{translate:0 -1px;filter:brightness(1.06)}
+  #main .side-row:hover{translate:-2px 0}
+}
+#main :is(.btn,.tabs button,.pill,.big-pill):active{scale:.97;transition-duration:80ms}
+#main :is(.pslot,.side-row,tr[onclick]):active{scale:var(--mo-press);transition-duration:var(--mo-fast)}
+#bottomnav button{transition:scale var(--mo-base) var(--mo-out),color var(--mo-base) var(--mo-std)}
+#bottomnav button:active{scale:.92;transition-duration:80ms}
+#bottomnav button .ic{transition:translate var(--mo-slow) var(--mo-out)}
+#bottomnav button.active .ic{animation:moNavPop var(--mo-slow) var(--mo-out)}
+@keyframes moNavPop{0%{translate:0 3px;scale:.85}100%{translate:0 0;scale:1}}
+.iconbtn{transition:scale var(--mo-base) var(--mo-out),background-color var(--mo-base) var(--mo-std)}
+.iconbtn:active{scale:.92;transition-duration:80ms}
+
+/* ---------- 3) النوافذ: فتح بنابض ناعم وإغلاق متحرك ---------- */
+#sheetBack{animation:moScrim var(--mo-base) var(--mo-std) both}
+.psheet{animation:moSheetUp .46s var(--mo-out) both}
+@keyframes moSheetUp{from{translate:0 60%;opacity:.4}to{translate:0 0;opacity:1}}
+@keyframes moScrim{from{opacity:0}to{opacity:1}}
+.psheet > *{animation:moIn .5s var(--mo-out) both}
+.psheet > :nth-child(2){animation-delay:40ms}
+.psheet > :nth-child(3){animation-delay:90ms}
+.psheet > :nth-child(n+4){animation-delay:140ms}
+.mo-sheet-ghost{position:fixed;inset:0;z-index:191;display:flex;align-items:flex-end;justify-content:center;background:rgba(2,10,22,.6);pointer-events:none;animation:moScrimOut .22s var(--mo-std) both}
+.mo-sheet-ghost .psheet{animation:moSheetDown .22s var(--mo-std) both!important}
+.mo-sheet-ghost .psheet *{animation:none!important}
+@keyframes moScrimOut{to{opacity:0}}
+@keyframes moSheetDown{to{translate:0 40%;opacity:0}}
+#modalBox{animation:moModal .36s var(--mo-out) both}
+@keyframes moModal{from{opacity:0;translate:0 18px;scale:.97}to{opacity:1;translate:0 0;scale:1}}
+
+/* ---------- 4) تجربة سينمائية مرتبطة بالتمرير (Chrome / Safari 26+) ---------- */
+.mo-progress{position:fixed;z-index:400;top:0;left:0;right:0;height:2px;pointer-events:none;transform-origin:right center;transform:scaleX(0);
+  background:linear-gradient(270deg,var(--accent),#7FE0FF 60%,#F9E64A)}
+[dir="ltr"] .mo-progress{transform-origin:left center}
+@supports (animation-timeline: view()){
+  #main .view > * .card{animation:moRise linear both;animation-timeline:view();animation-range:entry 0% entry 70%}
+  @keyframes moRise{from{opacity:0;translate:0 40px;scale:.95}to{opacity:1;translate:0 0;scale:1}}
+  #main .tbl tbody tr{animation:moRow linear both;animation-timeline:view();animation-range:entry 0% entry 100%}
+  @keyframes moRow{from{opacity:0;translate:-14px 0}to{opacity:1;translate:0 0}}
+  #main .pitch-frame{animation:moPitch linear both;animation-timeline:view();animation-range:entry 0% cover 25%}
+  @keyframes moPitch{from{opacity:.4;scale:.94}to{opacity:1;scale:1}}
+  .mo-progress{animation:moProg linear both;animation-timeline:scroll(root block)}
+  @keyframes moProg{to{transform:scaleX(1)}}
+}
+
+/* ---------- تقليل الحركة + الطباعة ---------- */
+@media (prefers-reduced-motion:reduce){
+  .view.anim > *,.view.anim .home-wrap > *,.view.anim .home-hero,.view.anim .pslot,#sheetBack,.psheet,.psheet > *,#modalBox,
+  #main .card,#main .tbl tbody tr,#main .pitch-frame,#bottomnav button.active .ic{animation:none!important}
+  #main *,#bottomnav *{transition-duration:.01ms!important}
+  .mo-progress{display:none}
+}
+@media print{#main *{animation:none!important;opacity:1!important}.mo-progress{display:none}}
