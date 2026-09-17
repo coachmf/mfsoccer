@@ -292,11 +292,13 @@ Object.assign(VIEWS, {
         </div>
         <div class="muted" style="line-height:2;margin-top:10px">
           ${li(EN ? [
+            `<b>Minutes</b> are counted on a 90-minute match, without stoppage time — so 60 minutes always means the same thing. The site's player pages show the real minutes including stoppage time, so the two numbers can differ.`,
             `<b>Clean sheets</b> go to players who played 60 minutes or more while their team conceded no goal with them on the pitch.`,
             `<b>Goals conceded</b> count against goalkeepers and defenders only while they are on the pitch (every 2 goals ${S.concededPer2? S.concededPer2.val:''}).`,
             `<b>A second yellow</b> counts as one red card (not added to the yellow).`,
             `<b>Bonus</b> (3/2/1 for the best three in the match) is entered by the admins when available.`,
           ] : [
+            `<b>الدقائق</b> تُحسب على مباراة 90 دقيقة بلا وقت بدل ضائع، فتبقى الـ60 دقيقة تعني الشيء نفسه في كل مباراة. صفحات اللاعبين في الموقع تعرض الدقائق الحقيقية مع بدل الضائع، فقد يختلف الرقمان.`,
             `<b>الشباك النظيفة</b> تُمنح لمن لعب 60 دقيقة فأكثر ولم يستقبل فريقه هدفاً وهو في الملعب.`,
             `<b>الأهداف المستقبلة</b> تُحسب على الحارس والمدافع فقط أثناء وجوده في الملعب (كل هدفين ${S.concededPer2? S.concededPer2.val:''}).`,
             `<b>الطرد بإنذارين</b> يُحتسب بطاقة حمراء واحدة (لا يُجمع مع الصفراء).`,

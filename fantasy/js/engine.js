@@ -386,7 +386,15 @@ function buildGameweeks(fixtures){
 /* =========================================================
    توليد إحصاءات المباراة من الأحداث الحقيقية
    ========================================================= */
-/* الدقيقة المطلقة من (الشوط، الدقيقة) — مطابقة لنظيرتها في الموقع الرئيسي */
+/* الدقيقة المطلقة من (الشوط، الدقيقة) على مقياس مباراة 90 دقيقة.
+   ⚠️ قاعدة الفانتسي مقصودة وثابتة (قرار منصور 2026-09-18): المباراة 90 دقيقة،
+   والشباك النظيفة ونقطتا المشاركة عند 60 دقيقة — كقاعدة FPL، مهما طال الوقت
+   بدل الضائع. الموقع صار منذ 2026-09-17 يعرض الدقائق الحقيقية (90 + بدل ضائع
+   الشوطين) وحدّ الشباك النظيفة عنده ثلثا المباراة — وهذا **لا يُنقل إلى هنا**:
+   mfsync يستورد التبديل بالشوط والدقيقة فقط ويُسقط خانة «+» عمداً، وadd1/add2
+   لا تُستورد أصلاً. لا تُحدِّث هذه الدالة «لتطابق الموقع» — النقاط المنشورة
+   للجولات المنتهية محسوبة على هذا المقياس، وتغييره يغيّرها بأثر رجعي. */
+const FPL_MATCH_MIN = 90;
 function absMinute(h, m){
   const mm = +m || 0;
   /* «بين الشوطين» يُدخل كالشوط الثاني د45، وكان يُحسب 90 فيظهر من خرج
@@ -460,7 +468,7 @@ function genMatchStats(st, fx){
   /* التبديلات: تُحدّد دقائق الخارج والداخل بدقة */
   (fx.subs||[]).forEach(s=>{
     const clubId=s.club; const rows=fx.stats[clubId]; if(!rows) return;
-    const at=Math.max(0, Math.min(90, absMinute(s.h, s.m)));
+    const at=Math.max(0, Math.min(FPL_MATCH_MIN, absMinute(s.h, s.m)));
     if(s.out){
       const po=find(s.out, clubId);
       if(po){
@@ -502,7 +510,7 @@ function genMatchStats(st, fx){
   // الأهداف المستقبلة أثناء وجوده في الملعب، والشباك النظيفة (60+ دقيقة بلا هدف عليه) — كقاعدة FPL
   for(const side of ['h','a']){
     const clubId=fx[side]; const conceded=(side==='h'?fx.as:fx.hs)||0;
-    const against=(fx.goals||[]).filter(g=>g.club!==clubId).map(g=>Math.min(90, +g.min||0));
+    const against=(fx.goals||[]).filter(g=>g.club!==clubId).map(g=>Math.min(FPL_MATCH_MIN, +g.min||0));
     const timed = against.length===conceded && against.every(m=>m>0);
     const rows=fx.stats[clubId];
     for(const pid in rows){
