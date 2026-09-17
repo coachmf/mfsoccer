@@ -1061,7 +1061,7 @@ table.lb td.pt{font-family:var(--display);font-weight:700;color:var(--sky);
   /* اللوحات المخفية (display:none) تظهر عند الطباعة فيبدأ حركة fade من الشفافية 0 داخل نسخة الطباعة — فتخرج صفحات بيضاء. لا حركات في الطباعة (منصور 2026-09-17) */
   *,*::before,*::after{animation:none!important;transition:none!important}
   /* ملف اللاعب وصفحة المباراة نوافذ ثابتة (fixed) فتتكرر فوق كل ورقة: عند الطباعة تُطبع وحدها كصفحة عادية ممتدة */
-  body:has(.pprof.on) :is(main,#resStrip,#crestBar,#lfoot),body:has(.mpage.on) :is(main,#resStrip,#crestBar,#lfoot),body:has(.pprof.on) .mpage{display:none!important}
+  html.pp-open body :is(main,#resStrip,#crestBar,#lfoot),html.mp-open body :is(main,#resStrip,#crestBar,#lfoot),html.pp-open body .mpage{display:none!important}
   #toast{display:none!important}
   .pprof.on,.mpage.on{position:static!important;display:block!important;background:none!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
   .pprof.on .pprof-sheet,.mpage.on .mp-sheet{max-height:none!important;height:auto!important;overflow:visible!important;max-width:none!important;border-radius:0!important;box-shadow:none!important;border:0!important}
@@ -2147,10 +2147,10 @@ html[data-theme="light"] .an-card{box-shadow:0 1px 3px rgba(11,31,58,.06)}
 .an-per-hd b{font-size:1.45rem;font-weight:800;color:var(--an-txt);line-height:1.15;font-variant-numeric:tabular-nums}
 .an-per-hd span{font-size:.7rem;color:var(--an-mut);text-align:center}
 .an-chart{display:flex;align-items:stretch;gap:8px;height:210px}   /* يمين→يسار مثل الموقع: الدقيقة 0 يميناً */
-.an-chart .half{flex:1;display:flex;gap:8px;align-items:stretch}
+.an-chart .half{flex:1 1 0;min-width:0;display:flex;gap:8px;align-items:stretch}
 .an-chart .ht{width:18px;display:flex;align-items:center;justify-content:center;border-inline:1px dashed var(--an-line);margin-bottom:22px}
 .an-chart .ht span{writing-mode:vertical-rl;font-size:.62rem;color:var(--an-mut);white-space:nowrap}
-.an-col{flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;min-width:0}
+.an-col{flex:1 1 0;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;min-width:0}
 .an-col .v{font-size:.95rem;font-weight:800;color:var(--an-txt);margin-bottom:4px;font-variant-numeric:tabular-nums}
 .an-col .bar{width:100%;max-width:58px;border-radius:9px 9px 3px 3px;background:linear-gradient(180deg,rgba(46,176,240,.75),rgba(24,120,190,.55))}
 .an-col.peak .bar{background:linear-gradient(180deg,#7FE0FF,#2EB0F0);box-shadow:0 0 18px rgba(46,176,240,.45)}
@@ -2265,7 +2265,7 @@ html[data-theme="light"] .an-goal .gn{fill:#0B1F3A;stroke:rgba(255,255,255,.7)}
 .an-row.top b,.an-row.top .lb{color:var(--an-acc)}
 @media(max-width:560px){
   .an-card{padding:13px;border-radius:16px}
-  .an-chart{height:180px;gap:4px}.an-chart .half{gap:4px}.an-col .p{font-size:.58rem}
+  .an-chart{height:180px;gap:3px}.an-chart .half{gap:3px}.an-chart .ht{width:12px}.an-col .p{font-size:.52rem;letter-spacing:-.02em}.an-col .v{font-size:.85rem}   /* Safari: الأعمدة الثمانية تبقى داخل البطاقة */
   .an-per-hd b{font-size:1.2rem}
   .an-row{grid-template-columns:18px 8px minmax(0,1fr) 44px 34px 26px;gap:6px;font-size:.8rem}
   .an-kpis{grid-template-columns:repeat(2,1fr)}
@@ -12926,26 +12926,26 @@ html[data-theme="light"] #v-home .compbar .mo-pill{background:var(--zain-deep,#0
 
 /* ================= 6) الشريط العلوي والهيدر (والرئيسية مفتوحة فقط) ================= */
 @media (hover:hover) and (pointer:fine){
-  body:has(#v-home.on) .crestbar button img{transition:transform var(--mo-base) var(--mo-out),filter var(--mo-base) var(--mo-std)}
-  body:has(#v-home.on) .crestbar button:hover img{transform:translate3d(0,-2px,0) scale(1.08);filter:drop-shadow(0 6px 8px rgba(0,0,0,.3))}
-  body:has(#v-home.on) nav.tabs button{transition:color var(--mo-base) var(--mo-std),background-color var(--mo-base) var(--mo-std),border-color var(--mo-base) var(--mo-std)}
-  body:has(#v-home.on) nav.tabs button:not([aria-selected="true"]):hover{background-color:rgba(255,255,255,.06)}
-  body:has(#v-home.on) .strip .rx{transition:background-color var(--mo-base) var(--mo-std),transform var(--mo-base) var(--mo-out)}
-  body:has(#v-home.on) .strip .rx:hover{transform:translate3d(0,-1px,0)}
-  body:has(#v-home.on) .iconbtn{transition:transform var(--mo-base) var(--mo-out),background-color var(--mo-base) var(--mo-std)}
-  body:has(#v-home.on) .iconbtn:hover{transform:translate3d(0,-1px,0)}
-  body:has(#v-home.on) .wafab{transition:transform var(--mo-base) var(--mo-out),box-shadow var(--mo-base) var(--mo-out)}
-  body:has(#v-home.on) .wafab:hover{transform:translate3d(0,-2px,0);box-shadow:var(--mo-shadow-2)}
-  body:has(#v-home.on) .hero-players img{transition:transform var(--mo-slow) var(--mo-out)}
-  body:has(#v-home.on) .hero-players img:hover{transform:translate3d(0,-4px,0)}
+  html.mo-home body .crestbar button img{transition:transform var(--mo-base) var(--mo-out),filter var(--mo-base) var(--mo-std)}
+  html.mo-home body .crestbar button:hover img{transform:translate3d(0,-2px,0) scale(1.08);filter:drop-shadow(0 6px 8px rgba(0,0,0,.3))}
+  html.mo-home body nav.tabs button{transition:color var(--mo-base) var(--mo-std),background-color var(--mo-base) var(--mo-std),border-color var(--mo-base) var(--mo-std)}
+  html.mo-home body nav.tabs button:not([aria-selected="true"]):hover{background-color:rgba(255,255,255,.06)}
+  html.mo-home body .strip .rx{transition:background-color var(--mo-base) var(--mo-std),transform var(--mo-base) var(--mo-out)}
+  html.mo-home body .strip .rx:hover{transform:translate3d(0,-1px,0)}
+  html.mo-home body .iconbtn{transition:transform var(--mo-base) var(--mo-out),background-color var(--mo-base) var(--mo-std)}
+  html.mo-home body .iconbtn:hover{transform:translate3d(0,-1px,0)}
+  html.mo-home body .wafab{transition:transform var(--mo-base) var(--mo-out),box-shadow var(--mo-base) var(--mo-out)}
+  html.mo-home body .wafab:hover{transform:translate3d(0,-2px,0);box-shadow:var(--mo-shadow-2)}
+  html.mo-home body .hero-players img{transition:transform var(--mo-slow) var(--mo-out)}
+  html.mo-home body .hero-players img:hover{transform:translate3d(0,-4px,0)}
 }
-body:has(#v-home.on) :is(.crestbar button,.iconbtn,.wafab,nav.tabs button,.strip .rx):active{transform:scale(.95);transition-duration:80ms}
-body:has(#v-home.on) #themeBtn svg{animation:moIconSwap var(--mo-slow) var(--mo-out)}
+html.mo-home body :is(.crestbar button,.iconbtn,.wafab,nav.tabs button,.strip .rx):active{transform:scale(.95);transition-duration:80ms}
+html.mo-home body #themeBtn svg{animation:moIconSwap var(--mo-slow) var(--mo-out)}
 @keyframes moIconSwap{from{transform:rotate(-70deg) scale(.6);opacity:0}to{transform:none;opacity:1}}
 
 /* ================= 7) النوافذ المنبثقة من الرئيسية (ملف اللاعب، صفحة المباراة) ================= */
-body:has(#v-home.on) .pprof.on,body:has(#v-home.on) .mpage.on{animation:moScrim var(--mo-base) var(--mo-std) both}
-body:has(#v-home.on) .pprof.on .pprof-sheet,body:has(#v-home.on) .mpage.on .mp-sheet{animation:moSheetIn var(--mo-slow) var(--mo-out) both}
+html.mo-home body .pprof.on,html.mo-home body .mpage.on{animation:moScrim var(--mo-base) var(--mo-std) both}
+html.mo-home body .pprof.on .pprof-sheet,html.mo-home body .mpage.on .mp-sheet{animation:moSheetIn var(--mo-slow) var(--mo-out) both}
 @keyframes moScrim{from{opacity:0}to{opacity:1}}
 @keyframes moSheetIn{from{opacity:.4;transform:translate3d(0,28px,0) scale(.985)}to{opacity:1;transform:none}}
 .mo-ghost{pointer-events:none!important;animation:moScrimOut var(--mo-base) var(--mo-std) both!important}
@@ -12966,8 +12966,8 @@ html[data-theme="light"] .mo-tip{color:#0B1F3A;background:#fff;border-color:#E2E
 /* ================= تقليل الحركة + الطباعة ================= */
 @media (prefers-reduced-motion:reduce){
   #v-home .mv,#v-home .mv.in,#v-home img.mv-img,#v-home .tp.mv .rad .rp,#v-home h2.sec.mv::after{opacity:1!important;transform:none!important;transition:none!important}
-  #v-home *,body:has(#v-home.on) :is(nav.tabs,.crestbar,.strip,.hero,.wafab,.pprof,.mpage) *,.mo-tip{transition-duration:.01ms!important;animation:none!important}
-  body:has(#v-home.on) :is(.pprof.on,.mpage.on){animation:none!important}
+  #v-home *,html.mo-home body :is(nav.tabs,.crestbar,.strip,.hero,.wafab,.pprof,.mpage) *,.mo-tip{transition-duration:.01ms!important;animation:none!important}
+  html.mo-home body :is(.pprof.on,.mpage.on){animation:none!important}
   #v-home .compbar .mo-pill{transition:none!important}
 }
 @media print{#v-home .mv,#v-home img.mv-img,#v-home .tp.mv .rad .rp,#v-home h2.sec.mv::after{opacity:1!important;transform:none!important}.mo-tip,.mo-ghost{display:none!important}}
@@ -12981,6 +12981,9 @@ html[data-theme="light"] .mo-tip{color:#0B1F3A;background:#fff;border-color:#E2E
   var RM=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)');
   var reduced=function(){ return !!(RM&&RM.matches); };
   var onHome=function(){ return home.classList.contains('on'); };
+  /* بدل body:has(#v-home.on) في CSS: صنف على html — :has على body ثقيل في Safari عند كل تغيير كبير في الصفحة (فتح ملف اللاعب) */
+  var syncHomeCls=function(){ document.documentElement.classList.toggle('mo-home', onHome()); };
+  syncHomeCls();
   var $$=function(sel,root){ return [].slice.call((root||document).querySelectorAll(sel)); };
 
   /* ---------- 1) الظهور عند التمرير ---------- */
@@ -13098,6 +13101,7 @@ html[data-theme="light"] .mo-tip{color:#0B1F3A;background:#fff;border-color:#E2E
   var t=null;
   new MutationObserver(function(){ clearTimeout(t); t=setTimeout(prep, 16); }).observe(home, {childList:true});
   new MutationObserver(function(){
+    syncHomeCls();
     if(onHome()){ if(!home._mvWasOn){ home._mvWasOn=true; seen=false; $$(':scope > *', home).forEach(function(el){ delete el.dataset.mv; }); prep(); } }
     else { home._mvWasOn=false; hideTip(); }
   }).observe(home, {attributes:true, attributeFilter:['class']});
