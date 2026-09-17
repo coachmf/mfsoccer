@@ -9,7 +9,7 @@
 
    عند كل نشر: ارفع رقم VER فتُبنى ذاكرة جديدة وتُحذف القديمة.
    ========================================================= */
-const VER   = 'mf-2026-09-17-175';
+const VER   = 'mf-2026-09-17-176';
 const SHELL = 'shell-' + VER;
 const RUN   = 'run-'   + VER;
 
@@ -81,6 +81,22 @@ self.addEventListener('fetch', e => {
       if (hit) return hit;
       try { const res = await fetch(req); if (res.ok || res.type === 'opaque') c.put(req, res.clone()); return res; }
       catch (err) { return hit || Response.error(); }
+    })());
+    return;
+  }
+
+  /* أداة وقت اللعب: الشبكة أولاً. صفحة قيد التطوير، والذاكرة أولاً
+     كانت تُبقي المُشغّل على نسخة قديمة بلا أن يدري (منصور 2026-09-17). */
+  if (url.pathname === '/bip.html' || url.pathname === '/bip') {
+    e.respondWith((async () => {
+      try {
+        const res = await fetch(req, { cache: 'no-store' });
+        if (res.ok) { const c = await caches.open(RUN); c.put(req, res.clone()); }
+        return res;
+      } catch (err) {
+        const c = await caches.open(RUN);
+        return (await c.match(req)) || Response.error();
+      }
     })());
     return;
   }
