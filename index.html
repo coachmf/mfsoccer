@@ -7253,7 +7253,7 @@ function topScorersHTML(){
   const PP={}; playerPlay().forEach(p=>{ PP[p.n+"|"+p.c]=p; });
   const mins=p=>(PP[p.n+"|"+p.c]||{}).mins||0;
   const L=scorers().map(p=>({...p, ga:p.g+p.a})).filter(p=>p[key]>0)
-    .sort((a,b)=>b[key]-a[key] || (key==="g"?b.a-a.a:b.g-a.g) || mins(a)-mins(b));
+    .sort((a,b)=>b[key]-a[key] || mins(a)-mins(b) || (key==="g"?b.a-a.a:b.g-a.g));   /* عند التساوي: الأقل دقائق أولاً (منصور 2026-09-17) */
   L.forEach((p,i)=>{ p.rk=i+1; });   /* ترقيم تسلسلي 1،2،3… حتى عند التساوي (منصور 2026-09-15) */
   const max=L.length?L[0][key]:1;
   const cut=p=>(PHOTOSON && typeof LOCAL_PHOTOS!=="undefined") ? photoCut(p.n,p.c) : null;
@@ -7330,7 +7330,7 @@ function renderPlayers(){
     ${topScorersHTML()}
     ${(()=>{ const PP=playerPlay();
       const byMin=[...PP].sort((a,b)=>b.mins-a.mins);
-      const byCS=PP.filter(p=>p.cs>0).sort((a,b)=>b.cs-a.cs||b.mins-a.mins);
+      const byCS=PP.filter(p=>p.cs>0).sort((a,b)=>b.cs-a.cs||a.mins-b.mins);   /* الأقل دقائق أولاً عند التساوي */
       const gkAv=p=>{ const c=(PHOTOSON && typeof LOCAL_PHOTOS!=="undefined") ? photoCut(p.n,p.c) : null;
         return c ? `<img src="${c}_f.webp?v=28" alt="" loading="lazy" decoding="async">` : (LOGOS[p.c]?`<img class="ts-crestfb" src="${LOGOS[p.c]}" alt="" loading="lazy">`:""); };
       const csMax = byCS.length ? byCS[0].cs : 1;
@@ -11064,11 +11064,11 @@ function topPlayersHTML(){
   const TCS=teamCleanSheets(); all.forEach(p=>{ p.dcs=TCS[p.n+"|"+p.c]||0; });
   const posOf=p=>{ const e=(SQUADS[p.c]||[]).find(x=>sqName(x)===p.n); return e?String(sqPos(e)).toUpperCase():""; };
   const best=(codes,key)=>[...all].filter(p=>codes.includes(posOf(p)) && p.mins>0).sort(key);
-  const defSort=(x,y)=>(y.dcs-x.dcs)||((y.g+y.a)-(x.g+x.a))||(y.mins-x.mins);
+  const defSort=(x,y)=>(y.dcs-x.dcs)||((y.g+y.a)-(x.g+x.a))||(x.mins-y.mins);   /* الأقل دقائق أولاً عند التساوي (منصور 2026-09-17) */
   picks.push(
     {t:"قلب الدفاع", sub:"أكثر قلوب الدفاع شباكاً نظيفة", role:"def", L:best(["CB"], defSort)},
     {t:"الظهير",     sub:"الأظهرة: شباك نظيفة ومساهمة",   role:"def", L:best(["RB","LB","RWB","LWB"], defSort)},
-    {t:"الحارس",     sub:"أكثر الحرّاس شباكاً نظيفة",       role:"gk",  L:best(["GK"], (x,y)=>(y.cs-x.cs)||(y.mins-x.mins))}
+    {t:"الحارس",     sub:"أكثر الحرّاس شباكاً نظيفة",       role:"gk",  L:best(["GK"], (x,y)=>(y.cs-x.cs)||(x.mins-y.mins))}
   );
   /* لا يتكرر اللاعب نفسه في بطاقتين: البطاقة التالية تأخذ أول من لم
      يُؤخذ بدل أن تختفي كلياً كما كان يحدث مع الفلترة القديمة */
