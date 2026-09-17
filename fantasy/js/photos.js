@@ -259,6 +259,7 @@ const PLAYER_PHOTOS = {
   'JAH|محمد العمران': '/assets/players/jah/20',
   'JAH|حمد الخالدي': '/assets/players/jah/40',
   'JAH|أحمد الشمري': '/assets/players/jah/77',
+  'JAH|محمد فهد': '/assets/players/jah/9',
   'JAH|عبدالرحمن الظفيري': '/assets/players/jah/88',
   // العربي (1)
   'ARB|سليمان عبدالغفور': '/assets/players/arb/22',
