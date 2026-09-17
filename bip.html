@@ -1,0 +1,492 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>وقت اللعب الفعلي — الدوري الكويتي الممتاز</title>
+<meta name="description" content="أداة تجريبية لقياس وقت اللعب الفعلي في مباريات الدوري الكويتي الممتاز.">
+<meta name="robots" content="noindex">
+<link rel="icon" href="/favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+/* هوية الموقع نفسها — المتغيّرات منسوخة من :root في index.html */
+:root{
+  --ink:#061529; --navy-900:#0A2242; --navy-800:#0E2B52; --navy-600:#17417A;
+  --sky:#5FB2E8; --sky-soft:#A9D8F5; --mist:#EDF3FA; --slate:#8FA6C4;
+  --win:#35A47C; --draw:#8FA6C4; --loss:#E0644F; --sand:#E9B949;
+  --body:'Vazirmatn',system-ui,sans-serif;
+  --r:12px;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html{-webkit-text-size-adjust:100%}
+body{background:var(--ink);color:var(--mist);font-family:var(--body);font-size:15px;line-height:1.65;
+     padding:0 0 40px}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+input,select,textarea{font:inherit}
+:focus-visible{outline:3px solid var(--sky);outline-offset:2px;border-radius:8px}
+.wrap{max-width:900px;margin:0 auto;padding:0 14px}
+
+/* ——— الترويسة ——— */
+.top{position:sticky;top:0;z-index:20;background:rgba(6,21,41,.94);
+     backdrop-filter:blur(10px);border-bottom:1px solid var(--navy-800)}
+.top .wrap{display:flex;align-items:center;gap:12px;height:60px}
+.top h1{font-size:1.05rem;font-weight:800;letter-spacing:-.2px}
+.beta{background:var(--sand);color:var(--ink);font-size:.7rem;font-weight:800;
+      padding:3px 10px;border-radius:999px}
+.top a.back{margin-inline-start:auto;color:var(--sky);font-size:.85rem;font-weight:600;text-decoration:none}
+
+/* ——— البطاقات ——— */
+.card{background:var(--navy-900);border:1px solid var(--navy-800);border-radius:var(--r);
+      padding:16px;margin-top:14px}
+.card h2{font-size:.95rem;font-weight:700;margin-bottom:10px;color:var(--sky-soft)}
+.hint{color:var(--slate);font-size:.82rem;line-height:1.6}
+
+/* ——— اختيار المباراة ——— */
+.filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.filters select{background:var(--navy-800);border:1px solid var(--navy-600);color:var(--mist);
+                border-radius:9px;padding:9px 12px;min-width:130px}
+.mlist{display:flex;flex-direction:column;gap:8px;max-height:280px;overflow:auto}
+.mrow{display:flex;align-items:center;gap:10px;background:var(--navy-800);border:1px solid transparent;
+      border-radius:10px;padding:11px 13px;text-align:start;width:100%}
+.mrow:hover{border-color:var(--navy-600)}
+.mrow[aria-pressed="true"]{border-color:var(--sky);background:var(--navy-600)}
+.mrow .tm{font-weight:700}
+.mrow .meta{margin-inline-start:auto;color:var(--slate);font-size:.78rem;white-space:nowrap}
+
+/* ——— الساعة ——— */
+.clock{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:4px 0 14px}
+.big{background:var(--ink);border:1px solid var(--navy-600);border-radius:var(--r);padding:16px;text-align:center}
+.big .lbl{color:var(--slate);font-size:.8rem;font-weight:600}
+.big .val{font-size:3rem;font-weight:800;line-height:1.1;font-variant-numeric:tabular-nums;
+          letter-spacing:-1px;direction:ltr}
+.big.eff .val{color:var(--sky)}
+.big.off .val{color:var(--mist)}
+.meter{height:10px;background:var(--navy-800);border-radius:999px;overflow:hidden;margin-top:6px}
+.meter i{display:block;height:100%;background:var(--sky);width:0;transition:width .2s linear}
+.pctline{display:flex;justify-content:space-between;color:var(--slate);font-size:.8rem;margin-top:8px}
+.pctline b{color:var(--mist)}
+
+/* ——— الأزرار ——— */
+.halfsel{display:flex;gap:8px;margin-bottom:12px}
+.halfsel button{flex:1;background:var(--navy-800);border:1px solid var(--navy-600);border-radius:10px;
+                padding:10px;font-weight:700}
+.halfsel button[aria-pressed="true"]{background:var(--sky);color:var(--ink);border-color:var(--sky)}
+.ctrls{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px}
+.btn{border-radius:11px;padding:16px 12px;font-weight:800;font-size:1rem;border:1px solid transparent;
+     display:flex;align-items:center;justify-content:center;gap:8px;min-height:56px}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn.go{background:var(--win);color:#04231a}
+.btn.stop{background:var(--sand);color:var(--ink)}
+.btn.end{background:var(--navy-800);color:var(--mist);border-color:var(--navy-600)}
+.btn.danger{background:var(--loss);color:#2a0a06}
+.state{display:flex;align-items:center;gap:8px;margin-bottom:12px;font-weight:700}
+.dot{width:12px;height:12px;border-radius:50%;background:var(--slate);flex:none}
+.dot.run{background:var(--win);animation:pulse 1.4s infinite}
+.dot.pause{background:var(--sand)}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+@media (prefers-reduced-motion:reduce){ .dot.run{animation:none} }
+
+/* ——— سبب التوقف ——— */
+.reasons{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+.chip{background:var(--navy-800);border:1px solid var(--navy-600);border-radius:999px;
+      padding:9px 14px;font-size:.85rem;font-weight:600}
+.chip[aria-pressed="true"]{background:var(--sky);color:var(--ink);border-color:var(--sky)}
+.note{width:100%;background:var(--navy-800);border:1px solid var(--navy-600);color:var(--mist);
+      border-radius:10px;padding:10px 12px;margin-top:8px}
+
+/* ——— السجل ——— */
+table{width:100%;border-collapse:collapse;font-size:.85rem}
+th,td{padding:9px 8px;text-align:start;border-bottom:1px solid var(--navy-800)}
+th{color:var(--slate);font-weight:600;font-size:.78rem}
+td.num{font-variant-numeric:tabular-nums;direction:ltr;text-align:start}
+.del{color:var(--loss);font-weight:700;font-size:.8rem}
+.sum{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:10px;margin-top:12px}
+.sum div{background:var(--navy-800);border-radius:10px;padding:12px;text-align:center}
+.sum b{display:block;font-size:1.4rem;font-weight:800;font-variant-numeric:tabular-nums;direction:ltr}
+.sum span{color:var(--slate);font-size:.76rem}
+.tools{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.tools button{background:var(--navy-800);border:1px solid var(--navy-600);border-radius:9px;
+              padding:9px 14px;font-size:.85rem;font-weight:600}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+@media(max-width:560px){ .clock{grid-template-columns:1fr} .big .val{font-size:2.5rem} }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <h1>وقت اللعب الفعلي</h1>
+    <span class="beta">تجريبي</span>
+    <a class="back" href="/">← العودة للموقع</a>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <section class="card" aria-labelledby="h-match">
+    <h2 id="h-match">١ · اختر المباراة</h2>
+    <div class="filters">
+      <select id="fComp" aria-label="المسابقة"></select>
+      <select id="fRound" aria-label="الجولة"></select>
+    </div>
+    <div class="mlist" id="mList" role="group" aria-label="قائمة المباريات">
+      <p class="hint">جارٍ تحميل المباريات…</p>
+    </div>
+  </section>
+
+  <section class="card" aria-labelledby="h-timer">
+    <h2 id="h-timer">٢ · القياس</h2>
+
+    <div class="halfsel" role="group" aria-label="الشوط">
+      <button id="hf1" aria-pressed="true">الشوط الأول</button>
+      <button id="hf2" aria-pressed="false">الشوط الثاني</button>
+    </div>
+
+    <div class="state"><span class="dot" id="dot"></span><span id="stateTxt">لم يبدأ بعد</span></div>
+
+    <div class="clock">
+      <div class="big eff">
+        <div class="lbl">الوقت الفعلي</div>
+        <div class="val" id="effVal" role="timer" aria-live="off">00:00</div>
+      </div>
+      <div class="big off">
+        <div class="lbl">الوقت الرسمي</div>
+        <div class="val" id="offVal">00:00</div>
+      </div>
+    </div>
+    <div class="meter" aria-hidden="true"><i id="meter"></i></div>
+    <div class="pctline">
+      <span>نسبة اللعب الفعلي: <b id="pct">—</b></span>
+      <span>زمن التوقف: <b id="lostVal">00:00</b></span>
+    </div>
+    <p class="sr" id="live" aria-live="polite"></p>
+
+    <div class="ctrls" style="margin-top:14px">
+      <button class="btn go" id="btnMain">بدء الشوط</button>
+      <button class="btn end" id="btnEnd" disabled>إنهاء الشوط</button>
+    </div>
+    <p class="hint" style="margin-top:10px">
+      <b>مسافة</b> أو <b>Enter</b> = إيقاف/استئناف. اضغط «إيقاف» لحظة خروج الكرة من اللعب،
+      و«استئناف» لحظة عودتها.</p>
+  </section>
+
+  <section class="card" id="reasonCard" hidden aria-labelledby="h-reason">
+    <h2 id="h-reason">سبب التوقف</h2>
+    <div class="reasons" id="reasons" role="group" aria-label="سبب التوقف"></div>
+    <label class="sr" for="noteIn">ملاحظة</label>
+    <input class="note" id="noteIn" placeholder="ملاحظة (اختياري)" maxlength="120">
+    <p class="hint" style="margin-top:8px">يُحفظ السبب مع التوقف عند الاستئناف. تخطّيه يسجّل «غير محدّد».</p>
+  </section>
+
+  <section class="card" aria-labelledby="h-log">
+    <h2 id="h-log">٣ · سجل التوقفات</h2>
+    <div style="overflow:auto">
+      <table id="logTbl">
+        <thead><tr><th>#</th><th>الشوط</th><th>عند الدقيقة</th><th>المدة</th><th>السبب</th><th>ملاحظة</th><th></th></tr></thead>
+        <tbody id="logBody"><tr><td colspan="7" class="hint">لا توقفات مسجّلة.</td></tr></tbody>
+      </table>
+    </div>
+    <div class="sum">
+      <div><b id="sH1">00:00</b><span>فعلي · الشوط الأول</span></div>
+      <div><b id="sH2">00:00</b><span>فعلي · الشوط الثاني</span></div>
+      <div><b id="sTot">00:00</b><span>فعلي · المباراة</span></div>
+      <div><b id="sCnt">0</b><span>عدد التوقفات</span></div>
+    </div>
+    <div class="tools">
+      <button id="btnExport">تصدير JSON</button>
+      <button id="btnCopy">نسخ الملخص</button>
+      <button id="btnReset" class="del">مسح بيانات هذه المباراة</button>
+    </div>
+    <p class="hint" style="margin-top:10px">
+      ⚠️ <b>نسخة تجريبية.</b> البيانات تُحفظ في هذا المتصفّح فقط ولا تُرسل إلى نظام إدارة المباريات بعد.
+      صدّرها قبل تفريغ ذاكرة المتصفّح.</p>
+  </section>
+</main>
+
+<script>
+'use strict';
+/* =========================================================
+   وقت اللعب الفعلي — أداة تجريبية
+   القياس بالتوقيت المطلق (Date.now) لا بعدّ النبضات، فلا يختلّ
+   إن جمّد المتصفح المؤقّت في تبويب خلفي أو أُعيد تحميل الصفحة.
+   ========================================================= */
+const SEASON_DOC = '2026-2027';
+const API_GET_MATCHES = '/api/doc/' + SEASON_DOC;   /* نقطة النهاية العامة للموقع */
+const STORE_PREFIX = 'bip:';
+const TICK_MS = 100;
+
+const REASONS = ['إصابة','تبديل','احتفال بهدف','مراجعة الحكم','رمية تماس',
+                 'ركلة ركنية','ضربة مرمى','ركلة حرة','تضييع وقت','أخرى'];
+
+const $ = id => document.getElementById(id);
+const pad = n => String(n).padStart(2,'0');
+const fmt = ms => { const s = Math.max(0, Math.round(ms/1000));
+                    return pad(Math.floor(s/60)) + ':' + pad(s%60); };
+
+let MATCHES = [];
+let match = null;                  /* المباراة المختارة */
+let half = 1;
+let pendingReason = '';
+/* الحالة المحفوظة لكل مباراة: شوطان، لكل شوط بداية ومجموع لعب وسجل توقفات */
+let S = null;
+
+const blankHalf = () => ({ startedAt:0, endedAt:0, playedMs:0, pausedAt:0, stops:[] });
+const blankState = () => ({ v:1, matchKey:'', h1:blankHalf(), h2:blankHalf() });
+const cur = () => S[half === 1 ? 'h1' : 'h2'];
+const keyOf = m => [m.round, m.comp, m.home, m.away].join('|');
+
+/* ————— التخزين ————— */
+function save(){ if(!match) return;
+  try{ localStorage.setItem(STORE_PREFIX + S.matchKey, JSON.stringify(S)); }catch(e){} }
+function load(m){
+  let st = null;
+  try{ const raw = localStorage.getItem(STORE_PREFIX + keyOf(m)); if(raw) st = JSON.parse(raw); }catch(e){}
+  if(!st || st.v !== 1) st = blankState();
+  st.matchKey = keyOf(m);
+  return st;
+}
+
+/* ————— الحساب ————— */
+/* الوقت الرسمي = من صافرة البداية حتى الآن (أو حتى نهاية الشوط).
+   الفعلي = ما تراكم من لعب، مضافاً إليه الجاري إن كانت الساعة تعمل. */
+function officialMs(h){
+  if(!h.startedAt) return 0;
+  return (h.endedAt || Date.now()) - h.startedAt;
+}
+function effectiveMs(h){
+  let ms = h.playedMs || 0;
+  /* lastResume قد يغيب في بيانات محفوظة قديمة — بدونه يصير الناتج NaN */
+  if(h.startedAt && !h.endedAt && !h.pausedAt && h.lastResume) ms += Date.now() - h.lastResume;
+  return ms;
+}
+function running(h){ return !!h.startedAt && !h.endedAt && !h.pausedAt; }
+function paused(h){ return !!h.startedAt && !h.endedAt && !!h.pausedAt; }
+
+/* ————— الإجراءات ————— */
+function startHalf(){
+  const h = cur();
+  if(h.startedAt) return;
+  h.startedAt = Date.now(); h.lastResume = h.startedAt;
+  h.playedMs = 0; h.pausedAt = 0; h.endedAt = 0;
+  announce('بدأ ' + halfName() + '');
+  save(); render();
+}
+function pause(){
+  const h = cur(); if(!running(h)) return;
+  h.playedMs += Date.now() - h.lastResume;
+  h.pausedAt = Date.now();
+  pendingReason = ''; $('noteIn').value = '';
+  $('reasonCard').hidden = false;
+  announce('توقف اللعب');
+  save(); render(); renderReasons();
+}
+function resume(){
+  const h = cur(); if(!paused(h)) return;
+  h.stops.push({ at: h.pausedAt - h.startedAt,          /* لحظة التوقف من بداية الشوط */
+                 ms: Date.now() - h.pausedAt,
+                 reason: pendingReason || 'غير محدّد',
+                 note: ($('noteIn').value || '').trim() });
+  h.pausedAt = 0; h.lastResume = Date.now();
+  $('reasonCard').hidden = true;
+  announce('استؤنف اللعب');
+  save(); render();
+}
+function endHalf(){
+  const h = cur(); if(!h.startedAt || h.endedAt) return;
+  if(paused(h)) resume();
+  else h.playedMs += Date.now() - h.lastResume;
+  h.endedAt = Date.now();
+  announce('انتهى ' + halfName());
+  save(); render();
+}
+function halfName(){ return half === 1 ? 'الشوط الأول' : 'الشوط الثاني'; }
+function announce(t){ $('live').textContent = t; }
+
+/* ————— الرسم ————— */
+function render(){
+  const h = cur();
+  const eff = effectiveMs(h), off = officialMs(h);
+  $('effVal').textContent = fmt(eff);
+  $('offVal').textContent = fmt(off);
+  $('lostVal').textContent = fmt(Math.max(0, off - eff));
+  const pct = off > 0 ? Math.round(eff / off * 100) : 0;
+  $('pct').textContent = off > 0 ? pct + '٪' : '—';
+  $('meter').style.width = (off > 0 ? pct : 0) + '%';
+
+  const dot = $('dot'), main = $('btnMain');
+  dot.className = 'dot' + (running(h) ? ' run' : paused(h) ? ' pause' : '');
+  $('stateTxt').textContent = !match ? 'اختر مباراة أولاً'
+    : !h.startedAt ? 'لم يبدأ بعد'
+    : h.endedAt ? 'انتهى ' + halfName()
+    : paused(h) ? 'متوقف' : 'اللعب جارٍ';
+
+  /* بعد نهاية الشوط الأول يصير الزر بوابة للشوط الثاني بدل أن يبقى
+     «إيقاف» معطّلاً بلا معنى */
+  const doneAll = half === 2 && !!h.endedAt;
+  main.disabled = !match || doneAll;
+  main.textContent = doneAll ? 'انتهت المباراة'
+    : (half === 1 && h.endedAt) ? 'الانتقال للشوط الثاني'
+    : !h.startedAt ? 'بدء ' + halfName()
+    : paused(h) ? 'استئناف' : 'إيقاف';
+  main.className = 'btn ' + (doneAll ? 'end' : (!h.startedAt || paused(h) || h.endedAt) ? 'go' : 'stop');
+  $('btnEnd').disabled = !h.startedAt || !!h.endedAt;
+
+  $('hf1').setAttribute('aria-pressed', half === 1);
+  $('hf2').setAttribute('aria-pressed', half === 2);
+  renderLog();
+}
+
+function renderReasons(){
+  $('reasons').innerHTML = REASONS.map(r =>
+    `<button class="chip" data-r="${r}" aria-pressed="${pendingReason === r}">${r}</button>`).join('');
+}
+
+function renderLog(){
+  const rows = [];
+  [['h1','الأول'], ['h2','الثاني']].forEach(([k, nm]) => {
+    S[k].stops.forEach((st, i) => rows.push({ k, i, nm, st }));
+  });
+  const body = $('logBody');
+  body.innerHTML = rows.length ? rows.map((r, n) => `
+    <tr><td>${n + 1}</td><td>${r.nm}</td>
+      <td class="num">${fmt(r.st.at)}</td>
+      <td class="num">${fmt(r.st.ms)}</td>
+      <td>${esc(r.st.reason)}</td>
+      <td>${esc(r.st.note || '—')}</td>
+      <td><button class="del" data-del="${r.k}.${r.i}" aria-label="حذف التوقف ${n + 1}">حذف</button></td></tr>`).join('')
+    : '<tr><td colspan="7" class="hint">لا توقفات مسجّلة.</td></tr>';
+
+  const e1 = effectiveMs(S.h1), e2 = effectiveMs(S.h2);
+  $('sH1').textContent = fmt(e1);
+  $('sH2').textContent = fmt(e2);
+  $('sTot').textContent = fmt(e1 + e2);
+  $('sCnt').textContent = String(S.h1.stops.length + S.h2.stops.length);
+}
+const esc = t => String(t == null ? '' : t)
+  .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+
+/* ————— المباريات ————— */
+async function loadMatches(){
+  try{
+    const r = await fetch(API_GET_MATCHES, { cache:'no-cache' });
+    const d = r.ok ? await r.json() : null;
+    MATCHES = (d && d.matches) || [];
+  }catch(e){ MATCHES = []; }
+  if(!MATCHES.length){
+    $('mList').innerHTML = '<p class="hint">تعذّر تحميل المباريات — تحقّق من الاتصال.</p>';
+    return;
+  }
+  const comps = [...new Set(MATCHES.map(m => m.comp || 'الدوري'))];
+  $('fComp').innerHTML = comps.map(c => `<option value="${esc(c)}">${esc(c)}</option>`).join('');
+  fillRounds(); renderMatches();
+}
+function fillRounds(){
+  const comp = $('fComp').value;
+  const rs = [...new Set(MATCHES.filter(m => (m.comp || 'الدوري') === comp).map(m => +m.round))]
+             .sort((a,b) => a - b);
+  $('fRound').innerHTML = rs.map(r => `<option value="${r}">الجولة ${r}</option>`).join('');
+}
+function renderMatches(){
+  const comp = $('fComp').value, round = +$('fRound').value;
+  const list = MATCHES.filter(m => (m.comp || 'الدوري') === comp && +m.round === round);
+  $('mList').innerHTML = list.length ? list.map(m => `
+    <button class="mrow" data-k="${esc(keyOf(m))}" aria-pressed="${match && keyOf(match) === keyOf(m)}">
+      <span class="tm">${esc(m.home)} × ${esc(m.away)}</span>
+      <span class="meta">${esc(m.date || '')}${m.time ? ' · ' + esc(m.time) : ''}</span>
+    </button>`).join('')
+    : '<p class="hint">لا مباريات في هذه الجولة.</p>';
+}
+function pick(k){
+  const m = MATCHES.find(x => keyOf(x) === k); if(!m) return;
+  match = m; S = load(m); half = 1;
+  $('reasonCard').hidden = true;
+  renderMatches(); render();
+}
+
+/* ————— التصدير ————— */
+function payload(){
+  const e1 = effectiveMs(S.h1), e2 = effectiveMs(S.h2), o1 = officialMs(S.h1), o2 = officialMs(S.h2);
+  return {
+    match: match ? { round: match.round, comp: match.comp, home: match.home, away: match.away,
+                     date: match.date, time: match.time } : null,
+    effectiveMs: { first: e1, second: e2, total: e1 + e2 },
+    officialMs:  { first: o1, second: o2, total: o1 + o2 },
+    stops: { first: S.h1.stops, second: S.h2.stops },
+    generatedAt: new Date().toISOString(), tool: 'bip', version: 1
+  };
+}
+function summaryText(){
+  const p = payload(), m = p.match;
+  const line = (nm, e, o) => `${nm}: فعلي ${fmt(e)} من ${fmt(o)} (${o ? Math.round(e / o * 100) : 0}٪)`;
+  return [
+    m ? `${m.home} × ${m.away} — الجولة ${m.round}` : 'مباراة غير محدّدة',
+    line('الشوط الأول', p.effectiveMs.first, p.officialMs.first),
+    line('الشوط الثاني', p.effectiveMs.second, p.officialMs.second),
+    line('المباراة', p.effectiveMs.total, p.officialMs.total),
+    `عدد التوقفات: ${p.stops.first.length + p.stops.second.length}`
+  ].join('\n');
+}
+
+/* ————— الربط ————— */
+$('fComp').onchange = () => { fillRounds(); renderMatches(); };
+$('fRound').onchange = renderMatches;
+$('mList').addEventListener('click', e => {
+  const b = e.target.closest('[data-k]'); if(b) pick(b.dataset.k);
+});
+$('hf1').onclick = () => { half = 1; $('reasonCard').hidden = true; render(); };
+$('hf2').onclick = () => { half = 2; $('reasonCard').hidden = true; render(); };
+function mainAction(){
+  const h = cur();
+  if(half === 1 && h.endedAt){ half = 2; $('reasonCard').hidden = true; render(); return; }
+  if(h.endedAt) return;
+  if(!h.startedAt) startHalf(); else if(paused(h)) resume(); else pause();
+}
+$('btnMain').onclick = mainAction;
+$('btnEnd').onclick = () => { if(confirm('إنهاء ' + halfName() + '؟')) endHalf(); };
+$('reasons').addEventListener('click', e => {
+  const b = e.target.closest('[data-r]'); if(!b) return;
+  pendingReason = (pendingReason === b.dataset.r) ? '' : b.dataset.r;
+  renderReasons();
+});
+$('logBody').addEventListener('click', e => {
+  const b = e.target.closest('[data-del]'); if(!b) return;
+  const [k, i] = b.dataset.del.split('.');
+  if(!confirm('حذف هذا التوقف؟')) return;
+  S[k].stops.splice(+i, 1); save(); render();
+});
+$('btnExport').onclick = () => {
+  const blob = new Blob([JSON.stringify(payload(), null, 2)], { type:'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'bip-' + (match ? keyOf(match).replace(/\|/g,'-') : 'match') + '.json';
+  a.click(); URL.revokeObjectURL(a.href);
+  /* نقطة الوصل المستقبلية مع نظام إدارة المباريات */
+  console.log('[bip] payload for match admin:', payload());
+};
+$('btnCopy').onclick = async () => {
+  try{ await navigator.clipboard.writeText(summaryText()); announce('نُسخ الملخص'); alert('نُسخ الملخص'); }
+  catch(e){ alert(summaryText()); }
+};
+$('btnReset').onclick = () => {
+  if(!match || !confirm('مسح كل بيانات هذه المباراة؟')) return;
+  try{ localStorage.removeItem(STORE_PREFIX + S.matchKey); }catch(e){}
+  S = blankState(); S.matchKey = keyOf(match); render();
+};
+/* مسافة/Enter = إيقاف أو استئناف — ما لم يكن التركيز على حقل أو زر آخر */
+addEventListener('keydown', e => {
+  if(e.key !== ' ' && e.key !== 'Enter') return;
+  const t = e.target;
+  if(t && (/^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName) || t.tagName === 'BUTTON')) return;
+  if(!match) return;
+  e.preventDefault();
+  mainAction();
+});
+
+S = blankState();
+renderReasons(); render(); loadMatches();
+setInterval(() => { if(match && running(cur())) render(); }, TICK_MS);
+</script>
+</body>
+</html>
