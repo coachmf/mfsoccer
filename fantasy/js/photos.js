@@ -298,6 +298,7 @@ const PLAYER_PHOTOS = {
   'JAH|عبدالرحمن الاصيمع': '/assets/players/jah/usaimi',
   'JAH|عبدالعزيز المسافر': '/assets/players/jah/musafer',
   'JAH|تركي المطيري (وسط)': '/assets/players/jah/turki_mid',
+  'JAH|محمد الرشيدي': '/assets/players/jah/rashidi_gk',
   'ARB|يوسف صباح': '/assets/players/arb/70',
   'ARB|حمد الحربي': '/assets/players/arb/12',
   'NSR|مسفر العدواني': '/assets/players/nsr/mesfer',   // بطاقة ترحيب النادي، مهاجم بلا رقم بعد   // بطاقة المركز الإعلامي للنادي، بلا رقم بعد
