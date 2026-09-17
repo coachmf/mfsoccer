@@ -103,7 +103,7 @@ body.is-running .eff{color:var(--win)}
 .mainbtn svg{width:30px;height:30px}
 
 /* ——— شبكة أسباب التوقف ——— */
-.grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-top:12px}
+.grid{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-top:12px}
 .rt{background:var(--navy-800);border:1.5px solid var(--edge);border-radius:13px;
     padding:11px 4px 9px;display:flex;flex-direction:column;align-items:center;gap:6px;
     position:relative;transition:transform .08s,background .15s}
@@ -112,6 +112,10 @@ body.is-running .eff{color:var(--win)}
 .rt span{font-size:.7rem;font-weight:700;line-height:1.2;text-align:center}
 .rt kbd{position:absolute;top:4px;inset-inline-end:5px;font-size:.58rem;color:var(--slate);
         font-family:var(--body)}
+.rt .quota{position:absolute;top:4px;inset-inline-start:5px;font-size:.58rem;font-weight:800;
+           color:var(--sky);direction:ltr}
+.rt .quota.full{color:var(--win)}
+.rt[aria-pressed="true"] .quota{color:rgba(6,21,41,.65)}
 .rt[aria-pressed="true"]{background:var(--sand);border-color:var(--sand);color:var(--ink)}
 .rt[aria-pressed="true"] svg{color:var(--ink)}
 .rt[aria-pressed="true"] kbd{color:rgba(6,21,41,.6)}
@@ -149,11 +153,12 @@ body.is-running .eff{color:var(--win)}
        padding:10px 20px;font-weight:700;font-size:.88rem;z-index:40;opacity:0;
        transform:translateY(10px);transition:.2s;pointer-events:none}
 .toast.on{opacity:1;transform:none}
-/* عشرة أسباب = صفّان من خمسة دائماً. أربعة أعمدة تترك صفاً ثالثاً
-   ناقصاً يشوّش العين ويبطئ العثور على الزر أثناء المباراة. */
+/* أحد عشر سبباً: ستة أعمدة على الواسع (٦+٥)، وأربعة على الهاتف
+   (٤+٤+٣) فتكبر مساحة اللمس ويسهل إصابتها بلا نظر. */
+@media(max-width:560px){ .grid{grid-template-columns:repeat(4,1fr)} }
 @media(max-width:430px){ .eff{font-size:4.2rem}
-  .rt{padding:9px 2px 8px;gap:5px} .rt svg{width:22px;height:22px}
-  .rt span{font-size:.62rem} .grid{gap:6px} }
+  .rt{padding:10px 2px 9px;gap:5px} .rt svg{width:23px;height:23px}
+  .rt span{font-size:.66rem} .grid{gap:6px} }
 @media (prefers-reduced-motion:reduce){ *{transition:none!important} }
 </style>
 </head>
@@ -169,6 +174,7 @@ body.is-running .eff{color:var(--win)}
   <g id="i-gk"><path d="M4 8h16v9.5H4zM4 12.5h16M9.5 8v9.5M14.5 8v9.5"/></g>
   <g id="i-free"><circle cx="4.5" cy="18.5" r="2"/><path d="M10.5 21V9h9.5v12M10.5 14.5h9.5"/></g>
   <g id="i-time"><path d="M7 2.5h10M7 21.5h10M8 2.5c0 5 8 5 8 9.5s-8 4.5-8 9.5"/></g>
+  <g id="i-water"><path d="M12 2.5S6 9.5 6 13.8a6 6 0 0012 0C18 9.5 12 2.5 12 2.5z"/><path d="M9.3 14.2a2.8 2.8 0 002.7 2.6"/></g>
   <g id="i-other"><circle cx="6" cy="12" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="18" cy="12" r="1.7"/></g>
   <g id="i-play"><path d="M7 4l13 8-13 8z" fill="currentColor" stroke="none"/></g>
   <g id="i-pause"><rect x="6" y="4" width="4" height="16" rx="1.2" fill="currentColor" stroke="none"/><rect x="14" y="4" width="4" height="16" rx="1.2" fill="currentColor" stroke="none"/></g>
@@ -271,17 +277,21 @@ const API_GET_MATCHES='/api/doc/'+SEASON_DOC;
 const STORE_PREFIX='bip:';
 const TICK_MS=100;
 
+/* مرتّبة بالأكثر تكراراً في المباراة لا بالأهمية: الرميات وضربات
+   المرمى والركلات الحرة تتكرّر عشرات المرات، والإصابة والمراجعة
+   نادرتان. الأقرب لليد أسرع في الضغط أثناء اللعب. */
 const REASONS=[
-  {k:'injury', t:'إصابة',        i:'i-injury'},
-  {k:'sub',    t:'تبديل',        i:'i-sub'},
-  {k:'goal',   t:'احتفال بهدف',  i:'i-goal'},
-  {k:'var',    t:'مراجعة الحكم', i:'i-var'},
   {k:'throw',  t:'رمية تماس',    i:'i-throw'},
-  {k:'corner', t:'ركلة ركنية',   i:'i-corner'},
   {k:'gk',     t:'ضربة مرمى',    i:'i-gk'},
   {k:'free',   t:'ركلة حرة',     i:'i-free'},
+  {k:'corner', t:'ركلة ركنية',   i:'i-corner'},
+  {k:'sub',    t:'تبديل',        i:'i-sub'},
+  {k:'water',  t:'بريك ماء',     i:'i-water', max:2},   /* مرتان لكل شوط */
+  {k:'goal',   t:'احتفال بهدف',  i:'i-goal'},
+  {k:'injury', t:'إصابة',        i:'i-injury'},
+  {k:'var',    t:'مراجعة الحكم', i:'i-var'},
   {k:'waste',  t:'تضييع وقت',    i:'i-time'},
-  {k:'other',  t:'أخرى',         i:'i-other'}
+  {k:'other',  t:'أخرى',         i:'i-other'}      /* بلا مفتاح — الأندر */
 ];
 const R_BY_K={}; REASONS.forEach(r=>{ R_BY_K[r.k]=r; });
 
@@ -409,12 +419,24 @@ function render(){
     : 'ضغطة واحدة على السبب = إيقاف + تسجيل. أو المفاتيح ١…٠ · Z للتراجع.';
   document.querySelectorAll('.rt').forEach(el=>
     el.setAttribute('aria-pressed', !!(paused(h) && last && last.reason===el.dataset.k)));
-  renderLog();
+  renderQuota(); renderLog();
 }
 function renderGrid(){
   $('grid').innerHTML = REASONS.map((r,i)=>
     `<button class="rt" data-k="${r.k}" aria-pressed="false" aria-label="${r.t}">
-       <kbd>${(i+1)%10}</kbd>${icon(r.i)}<span>${r.t}</span></button>`).join('');
+       ${i<10?`<kbd>${(i+1)%10}</kbd>`:''}
+       ${r.max?`<i class="quota" id="q-${r.k}"></i>`:''}
+       ${icon(r.i)}<span>${r.t}</span></button>`).join('');
+}
+/* حصة الأسباب المحدودة العدد (بريك الماء مرتان لكل شوط) */
+function renderQuota(){
+  const h=cur();
+  REASONS.filter(r=>r.max).forEach(r=>{
+    const el=$('q-'+r.k); if(!el) return;
+    const n=h.stops.filter(s=>s.reason===r.k).length;
+    el.textContent=n+'/'+r.max;
+    el.className='quota'+(n>=r.max?' full':'');
+  });
 }
 function renderLog(){
   const rows=[];
