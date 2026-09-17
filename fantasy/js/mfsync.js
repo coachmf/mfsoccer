@@ -7,16 +7,18 @@
 /* لاعبون انضموا للكشف قبل إدخالهم في كشوفات الموقع (نفس SQUAD_ADD في index.html للموقع).
    يُدمجون في squads عند القراءة فيصلون لسحب الكشوفات كلاعبين جدد بانتظار التأكيد، و price = سعره المقترح في اللعبة. */
 const MF_SQUAD_ADD = {
-  'العربي': [ {n:'وليد ولد الشيخ', p:'CAM', s:0, price:8.5}, {n:'علي عبدالرسول', p:'LB', s:16}, {n:'علي الدوخي', p:'ST', s:9}, {n:'عمر العازمي', p:'CM', s:27}, {n:'حسين كنكوني', p:'GK', s:1}, {n:'حسين العريان', p:'ST', s:99}, {n:'عايد ماجد', p:'CB', s:36}, {n:'يوسف صباح', p:'CAM', s:70}, {n:'حمد الحربي', p:'CDM', s:12}, {n:'فواز الداوود', p:'CAM', s:88}, {n:'سعود العنبري', p:'ST', s:40} ],
+  'العربي': [ {n:'وليد ولد الشيخ', p:'CAM', s:0, price:8.5}, {n:'علي عبدالرسول', p:'LB', s:16}, {n:'علي الدوخي', p:'ST', s:9}, {n:'عمر العازمي', p:'CM', s:27}, {n:'حسين كنكوني', p:'GK', s:1}, {n:'حسين العريان', p:'ST', s:99}, {n:'عايد ماجد', p:'CB', s:36}, {n:'يوسف صباح', p:'CAM', s:70}, {n:'حمد الحربي', p:'CDM', s:12}, {n:'فواز الداوود', p:'CAM', s:88}, {n:'سعود العنبري', p:'ST', s:40}, {n:'حسين اشكناني', p:'CB', s:8} ],
   'النصر':  [ {n:'مسفر العدواني', p:'ST', s:0}, {n:'ابراهيم الظفيري', p:'CM', s:25}, {n:'احمد الرشيدي', p:'CB', s:14}, {n:'محمد عجاج', p:'GK', s:1}, {n:'مزيد نواف', p:'ST', s:88} ],   /* بلا سعر مقترح: يحدّده المدير في «لاعبون جدد بانتظار التأكيد» */
   'الفحيحيل': [ {n:'فهد الشلال', p:'LM', s:19}, {n:'احمد الشمري', p:'GK', s:22}, {n:'عبدالرحمن سالم', p:'CB', s:12} ],
   'الساحل': [ {n:'فاضل الصراف', p:'LM', s:20} ],
+  'الجهراء': [ {n:'عبدالرحمن الاصيمع', p:'RM', s:0}, {n:'عبدالعزيز المسافر', p:'GK', s:0} ],
 };
 /* انتقالات (نفس SQUAD_MOVE في index.html): تُطبّق على squads عند القراءة، فيلتقطها سحب الكشوفات كانتقال ويبقى السعر. */
 /* تصحيح رقم القميص (نفس SQUAD_NUM في index.html) */
 const MF_SQUAD_NUM = [
   {c:'العربي', n:'احمد عادي', s:26},
   {c:'العربي', n:'عايد ماجد', s:36},
+  {c:'الجهراء', n:'تركي المطيري', s:22, p:'CM'},
 ];
 const MF_SQUAD_MOVE = [
   {n:'بدر طارق', from:'العربي', to:'كاظمة', s:77},
@@ -64,7 +66,7 @@ const MFSYNC = {
       }
       MF_SQUAD_NUM.forEach(x=>{ const l=d.squads[x.c]; if(!Array.isArray(l)) return;
         const i=l.findIndex(e=>this.norm(typeof e==='string'?e:(e&&e.n))===this.norm(x.n)); if(i<0) return;
-        l[i]=Object.assign({}, typeof l[i]==='object'?l[i]:{n:l[i]}, {s:x.s}); });
+        l[i]=Object.assign({}, typeof l[i]==='object'?l[i]:{n:l[i]}, {s:x.s}, x.p?{p:x.p}:{}); });
       MF_SQUAD_MOVE.forEach(mv=>{ const nm=e=>this.norm(typeof e==='string'?e:(e&&e.n)), src=d.squads[mv.from], dst=d.squads[mv.to];
         if(!Array.isArray(dst) || dst.some(e=>nm(e)===this.norm(mv.n))) return;
         const i=Array.isArray(src)?src.findIndex(e=>nm(e)===this.norm(mv.n)):-1, old=i>=0?src.splice(i,1)[0]:{};

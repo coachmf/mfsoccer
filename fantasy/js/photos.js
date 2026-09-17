@@ -4,7 +4,7 @@
 'use strict';
 
 /* رقم نسخة الصور: ارفعه عند إعادة توليد أي قصّة حتى لا يبقى المتصفح على النسخة القديمة */
-const PLAYER_PHOTOS_VER = '25';
+const PLAYER_PHOTOS_VER = '26';
 
 const PLAYER_PHOTOS = {
   // الصليبخات (17)
@@ -292,6 +292,9 @@ const PLAYER_PHOTOS = {
   'ARB|عايد ماجد': '/assets/players/arb/36',
   'ARB|فواز الداوود': '/assets/players/arb/88',
   'ARB|سعود العنبري': '/assets/players/arb/40',
+  'ARB|حسين اشكناني': '/assets/players/arb/8',
+  'JAH|عبدالرحمن الاصيمع': '/assets/players/jah/usaimi',
+  'JAH|عبدالعزيز المسافر': '/assets/players/jah/musafer',
   'ARB|يوسف صباح': '/assets/players/arb/70',
   'ARB|حمد الحربي': '/assets/players/arb/12',
   'NSR|مسفر العدواني': '/assets/players/nsr/mesfer',   // بطاقة ترحيب النادي، مهاجم بلا رقم بعد   // بطاقة المركز الإعلامي للنادي، بلا رقم بعد
