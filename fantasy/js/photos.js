@@ -149,6 +149,8 @@ const PLAYER_PHOTOS = {
   'SAL|تريسور': '/assets/players/sal/29',
   'SAL|عبدالرحمن الفضلي': '/assets/players/sal/35',
   'SAL|ديفيــد سامبيسا': '/assets/players/sal/77',
+  'SAL|فهد العميري': '/assets/players/sal/umairi94',
+  'SAL|علي دشتي': '/assets/players/sal/dashti28',
   // الكويت (20)
   'KUW|فينيسيوس': '/assets/players/kuw/17',   // من منشور النادي
   'KUW|عبدالله القرزعي': '/assets/players/kuw/88',   // جلسة النادي الرسمية (Drive) من إعلان التعاقد
@@ -295,6 +297,7 @@ const PLAYER_PHOTOS = {
   'ARB|حسين اشكناني': '/assets/players/arb/8',
   'JAH|عبدالرحمن الاصيمع': '/assets/players/jah/usaimi',
   'JAH|عبدالعزيز المسافر': '/assets/players/jah/musafer',
+  'JAH|تركي المطيري (وسط)': '/assets/players/jah/turki_mid',
   'ARB|يوسف صباح': '/assets/players/arb/70',
   'ARB|حمد الحربي': '/assets/players/arb/12',
   'NSR|مسفر العدواني': '/assets/players/nsr/mesfer',   // بطاقة ترحيب النادي، مهاجم بلا رقم بعد   // بطاقة المركز الإعلامي للنادي، بلا رقم بعد
