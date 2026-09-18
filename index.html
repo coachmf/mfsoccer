@@ -9923,6 +9923,23 @@ html[data-theme="dark"] .rs-btn,html[data-theme="dark"] .rs-nav,html[data-theme=
 .kfa-board-it b{font-family:var(--display);font-size:.86rem;color:var(--head,#fff)}
 .kfa-links{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
 .kfa-links .hchip b{font-weight:700}
+.chon{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px}
+.chon-it{padding:14px 14px 12px;border-top:3px solid var(--ca,#2EB0F0);display:flex;flex-direction:column;gap:8px}
+.chon-top{display:flex;align-items:center;gap:12px}
+.chon-top .n{font-family:var(--display);font-weight:800;font-size:2rem;line-height:1;color:var(--ca,#2EB0F0);font-variant-numeric:tabular-nums;min-width:44px;text-align:center}
+.chon-top .t{font-family:var(--display);font-weight:700;font-size:.92rem;color:var(--head,#fff);line-height:1.35}
+.chon-it .y{display:flex;flex-wrap:wrap;gap:4px 6px;font-size:.68rem;line-height:1.5;color:var(--slate);font-variant-numeric:tabular-nums}
+.chon-it .y bdi{padding:1px 6px;border-radius:6px;background:rgba(143,166,196,.10)}
+.chon-intl{margin-top:10px}
+.ctl{position:relative;padding-inline-start:26px}
+.ctl::before{content:"";position:absolute;inset-inline-start:13px;top:18px;bottom:18px;width:2px;background:linear-gradient(var(--ca,#2EB0F0),rgba(143,166,196,.18))}
+.ctl-it{position:relative;display:grid;grid-template-columns:120px 1fr;gap:12px;padding:10px 0;border-bottom:1px solid var(--line,rgba(143,166,196,.14));font-size:.8rem;line-height:1.65}
+.ctl-it:last-child{border-bottom:0}
+.ctl-it::before{content:"";position:absolute;inset-inline-start:-18px;top:16px;width:10px;height:10px;border-radius:50%;background:var(--ca,#2EB0F0);box-shadow:0 0 0 3px rgba(var(--ca-rgb,46,176,240),.22)}
+.ctl-it .d{font-family:var(--display);font-weight:700;color:var(--ca,#2EB0F0);font-variant-numeric:tabular-nums}
+.ctl-it .t{color:var(--head,#fff)}
+[data-theme="light"] .ctl-it .t,[data-theme="light"] .chon-top .t{color:#0B1F3A}
+@media(max-width:600px){.ctl-it{grid-template-columns:1fr;gap:2px}.chon{grid-template-columns:1fr 1fr}.chon-top{flex-direction:column;align-items:flex-start;gap:4px}.chon-top .n{min-width:0;text-align:start;font-size:1.7rem}}
 .kfa-tl{display:flex;flex-direction:column;gap:0}
 .kfa-tl-it{display:grid;grid-template-columns:150px 1fr;gap:12px;padding:9px 0;border-bottom:1px solid var(--line,rgba(143,166,196,.14));font-size:.8rem;line-height:1.6}
 .kfa-tl-it:last-child{border-bottom:0}
@@ -10526,7 +10543,7 @@ const CLUB_INFO = {
   "الفحيحيل": {f:1964,                        st:"ستاد نايف الدبوس",      loc:"الفحيحيل",   cap:12000, col:"الأحمر والأبيض",    slug:"fahaheel", kit:"FAH", pres:"حمد الدبوس", presImg:"fahaheel"},
   "التضامن":  {f:1965, nick:"العنيد",        st:"ملعب مساعد الشنفا",     loc:"الفروانية",  cap:14000, col:"الأزرق والأبيض",    slug:"tadamon", kit:"TDM", pres:"مبارك محمد النزال", presImg:"tadamon"},
   "الشباب":   {f:1963,                        st:"ملعب الأحمدي",          loc:"الأحمدي",    cap:18000, col:"الأزرق والأبيض",    slug:"shabab", kit:"SHB", pres:"د. مناحي فلاح العازمي", presImg:"shabab"},
-  "الصليبخات":{f:1972,                        st:"ستاد الصليبخات",        loc:"الصليبخات",  cap:15000, col:"الأحمر والأبيض",    slug:"sulaibikhat", kit:"SLB", pres:"سعد عناد", presImg:"sulaibikhat"},
+  "الصليبخات":{f:1972,                        st:"استاد جابر مبارك الحمد الصباح",        loc:"الصليبخات",  cap:15000, col:"الأحمر والأبيض",    slug:"sulaibikhat", kit:"SLB", pres:"سعد عناد", presImg:"sulaibikhat"},
 };
 const POS_FULL = {GK:"حارس مرمى",RB:"ظهير أيمن",CB:"قلب دفاع",LB:"ظهير أيسر",RWB:"ظهير جناح أيمن",LWB:"ظهير جناح أيسر",
   CDM:"وسط مدافع",CM:"وسط ميدان",CAM:"صانع ألعاب",RM:"جناح أيمن",LM:"جناح أيسر",RW:"جناح أيمن",LW:"جناح أيسر",ST:"مهاجم"};
@@ -10815,7 +10832,806 @@ function clubAboutHTML(c, r, played){
   ${I.pres?`<div class="card cpres">
     <span class="cpres-ph">${I.presImg?`<img src="assets/presidents/${I.presImg}_s.webp?v=1" alt="${esc(I.pres)}" loading="lazy" decoding="async">`:`<img class="noph" src="${crestSrcOf(c)}" alt="">`}</span>
     <div class="cpres-txt"><small>رئيس مجلس الإدارة</small><b>${esc(I.pres)}</b><span>${crest(c)}${esc(c)}</span></div>
-  </div>`:""}`;   /* الأطقم حول صورة الملعب ورئيس النادي تحتها (منصور 2026-09-15) */
+  </div>`:""}
+  ${clubHonoursHTML(c)}`;   /* الأطقم حول صورة الملعب ورئيس النادي تحتها (منصور 2026-09-15) */
+}
+/* ---------- إنجازات النادي ومحطاته (منصور 2026-09-17، معاينة) ----------
+   CLUB_HONOURS[c] = { titles:[{t, n, years}], intl:[{t, d}], milestones:[[date, text]] }
+   كل معلومة هنا مؤكدة من مصدرين مستقلين على الأقل؛ المصادر والمستبعد في AlArabiTest/club-honours. */
+const CLUB_HONOURS = {
+ "القادسية": {
+  "titles": [
+   {
+    "t": "الدوري الكويتي الممتاز",
+    "n": 17,
+    "years": "1968–69، 1970–71، 1972–73، 1974–75، 1975–76، 1977–78، 1991–92، 1998–99، 2002–03، 2003–04، 2004–05، 2008–09، 2009–10، 2010–11، 2011–12، 2013–14، 2015–16"
+   },
+   {
+    "t": "كأس الأمير",
+    "n": 17,
+    "years": "1964–65، 1966–67، 1967–68، 1971–72، 1973–74، 1974–75، 1978–79، 1988–89، 1993–94، 2002–03، 2003–04، 2006–07، 2009–10، 2011–12، 2012–13، 2014–15، 2023–24"
+   },
+   {
+    "t": "كأس سمو ولي العهد",
+    "n": 9,
+    "years": "1997–98، 2001–02، 2003–04، 2004–05، 2005–06، 2008–09، 2012–13، 2013–14، 2017–18"
+   },
+   {
+    "t": "كأس السوبر",
+    "n": 7,
+    "years": "2009، 2011، 2013، 2014، 2018، 2019، 2025–26"
+   },
+   {
+    "t": "كأس الاتحاد",
+    "n": 6,
+    "years": "2007–08، 2008–09، 2010–11، 2012–13، 2018–19، 2022–23"
+   }
+  ],
+  "intl": [
+   {
+    "t": "بطولة الأندية الخليجية / دوري أبطال الخليج للأندية",
+    "d": "بطل 2000، 2005 · وصيف 2006 (النسخة 22، والإياب في فبراير 2007)، 2024–25"
+   },
+   {
+    "t": "كأس الاتحاد الآسيوي",
+    "d": "بطل 2014 · وصيف 2010، 2013"
+   }
+  ],
+  "milestones": [
+   [
+    "20 أكتوبر 1960",
+    "اعتماد اسم نادي القادسية بدلا من نادي الجزيرة، ومقره منطقة حولي."
+   ],
+   [
+    "1965",
+    "أحرز كأس الأمير للمرة الأولى بفوزه على العربي 3-1 في النهائي."
+   ],
+   [
+    "1969",
+    "أحرز لقب الدوري للمرة الأولى في موسم 1968-1969."
+   ],
+   [
+    "2000",
+    "أحرز بطولة الأندية الخليجية أبطال الدوري للمرة الأولى على أرضه في الكويت."
+   ],
+   [
+    "2004",
+    "حقق الثلاثية المحلية: الدوري وكأس الأمير وكأس ولي العهد في موسم 2003-2004."
+   ],
+   [
+    "2012",
+    "أحرز لقب الدوري للموسم الرابع على التوالي بين 2008-2009 و2011-2012."
+   ],
+   [
+    "18 أكتوبر 2014",
+    "أحرز كأس الاتحاد الآسيوي بفوزه على أربيل بركلات الترجيح 4-2 في دبي."
+   ],
+   [
+    "2016",
+    "أحرز لقب الدوري للمرة السابعة عشرة في موسم 2015-2016، وهو آخر ألقابه في الدوري."
+   ],
+   [
+    "2024",
+    "أحرز كأس الأمير للمرة السابعة عشرة بفوزه على السالمية 1-0 في النهائي."
+   ],
+   [
+    "1 فبراير 2026",
+    "أحرز كأس السوبر للمرة السابعة بفوزه على الكويت بركلات الترجيح 4-3."
+   ]
+  ]
+ },
+ "الكويت": {
+  "titles": [
+   {
+    "t": "الدوري الكويتي الممتاز",
+    "n": 21,
+    "years": "1964–65، 1967–68، 1971–72، 1973–74، 1976–77، 1978–79، 2000–01، 2005–06، 2006–07، 2007–08، 2012–13، 2014–15، 2016–17، 2017–18، 2018–19، 2019–20، 2021–22، 2022–23، 2023–24، 2024–25، 2025–26"
+   },
+   {
+    "t": "كأس الأمير",
+    "n": 17,
+    "years": "1975–76، 1976–77، 1977–78، 1979–80، 1984–85، 1986–87، 1987–88، 2001–02، 2008–09، 2013–14، 2015–16، 2016–17، 2017–18، 2018–19، 2020–21، 2022–23، 2024–25"
+   },
+   {
+    "t": "كأس سمو ولي العهد",
+    "n": 10,
+    "years": "1993–94، 2002–03، 2007–08، 2009–10، 2010–11، 2016–17، 2018–19، 2019–20، 2020–21، 2024–25"
+   },
+   {
+    "t": "كأس السوبر",
+    "n": 8,
+    "years": "2010، 2015، 2016، 2017، 2020، 2022، 2023–24، 2024–25"
+   },
+   {
+    "t": "كأس الاتحاد",
+    "n": 3,
+    "years": "2009–10، 2011–12، 2014–15"
+   }
+  ],
+  "intl": [
+   {
+    "t": "كأس الاتحاد الآسيوي",
+    "d": "بطل 2009، 2012، 2013 · وصيف 2011"
+   },
+   {
+    "t": "دوري التحدي الآسيوي",
+    "d": "بطل 2025–26"
+   },
+   {
+    "t": "كأس الكؤوس العربية",
+    "d": "وصيف 1989"
+   },
+   {
+    "t": "البطولة العربية الموحدة للأندية (بطولة الأمير فيصل بن فهد)",
+    "d": "وصيف 2003"
+   }
+  ],
+  "milestones": [
+   [
+    "1960",
+    "تأسيس نادي الكويت الرياضي."
+   ],
+   [
+    "22 سبتمبر 1963",
+    "الإشهار الرسمي لنادي الكويت الرياضي."
+   ],
+   [
+    "1965",
+    "أحرز لقب الدوري للمرة الأولى في موسم 1964-1965."
+   ],
+   [
+    "1976",
+    "أحرز كأس الأمير للمرة الأولى بفوزه على القادسية 1-0 في النهائي."
+   ],
+   [
+    "2009",
+    "أحرز كأس الاتحاد الآسيوي بفوزه على الكرامة السوري 2-1، كأول ناد كويتي يحرز هذه البطولة."
+   ],
+   [
+    "2013",
+    "أحرز كأس الاتحاد الآسيوي للمرة الثالثة بفوزه على القادسية 2-0 في النهائي."
+   ],
+   [
+    "6 مارس 2024",
+    "توقيع عقود تصميم إعادة بناء استاد نادي الكويت."
+   ],
+   [
+    "2025",
+    "جمع أربعة ألقاب محلية في موسم 2024-2025: الدوري وكأس الأمير وكأس ولي العهد والسوبر."
+   ],
+   [
+    "مايو 2026",
+    "أحرز دوري التحدي الآسيوي بفوزه على سفاي رينغ الكمبودي 4-3 بعد التمديد."
+   ],
+   [
+    "يونيو 2026",
+    "أحرز لقب الدوري للمرة الحادية والعشرين، وأصبح أول فريق يحرزه خمس مرات متتالية."
+   ]
+  ]
+ },
+ "العربي": {
+  "titles": [
+   {
+    "t": "الدوري الكويتي الممتاز",
+    "n": 17,
+    "years": "1961–62، 1962–63، 1963–64، 1965–66، 1966–67، 1969–70، 1979–80، 1981–82، 1982–83، 1983–84، 1984–85، 1987–88، 1988–89، 1992–93، 1996–97، 2001–02، 2020–21"
+   },
+   {
+    "t": "كأس الأمير",
+    "n": 16,
+    "years": "1961–62، 1962–63، 1963–64، 1965–66، 1968–69، 1970–71، 1980–81، 1982–83، 1991–92، 1995–96، 1998–99، 1999–00، 2004–05، 2005–06، 2007–08، 2019–20"
+   },
+   {
+    "t": "كأس سمو ولي العهد",
+    "n": 10,
+    "years": "1995–96، 1996–97، 1998–99، 1999–00، 2006–07، 2011–12، 2014–15، 2021–22، 2022–23، 2025–26"
+   },
+   {
+    "t": "كأس السوبر",
+    "n": 3,
+    "years": "2008، 2012، 2021"
+   }
+  ],
+  "intl": [
+   {
+    "t": "بطولة الأندية الخليجية / دوري أبطال الخليج للأندية",
+    "d": "بطل 1982 (1982–83)، 2003 · وصيف 1983 (يُذكر أيضاً 1984)، 1985، 1994"
+   },
+   {
+    "t": "كأس الاتحاد العربي للأندية (UAFA)",
+    "d": "وصيف 2012–13"
+   }
+  ],
+  "milestones": [
+   [
+    "1960",
+    "اعتماد اسم النادي العربي الرياضي بدلا من نادي العروبة."
+   ],
+   [
+    "1962",
+    "أحرز أول نسختين من الدوري (1961-1962) وكأس الأمير في تاريخ الكرة الكويتية."
+   ],
+   [
+    "1964",
+    "أول فريق يحرز الدوري ثلاث مرات متتالية بين 1961-1962 و1963-1964."
+   ],
+   [
+    "1972",
+    "بلغ نهائي كأس الأمير في إحدى عشرة نسخة متتالية بين 1962 و1972."
+   ],
+   [
+    "1982",
+    "أحرز بطولة الأندية الخليجية أبطال الدوري في نسختها الأولى، كأول ناد كويتي يحرزها."
+   ],
+   [
+    "1985",
+    "أحرز لقب الدوري أربع مرات متتالية بين 1981-1982 و1984-1985."
+   ],
+   [
+    "2003",
+    "أحرز بطولة الأندية الخليجية أبطال الدوري للمرة الثانية."
+   ],
+   [
+    "14 مايو 2013",
+    "حل وصيفا لكأس الاتحاد العربي للأندية بعد خسارته إياب النهائي أمام اتحاد العاصمة 3-2."
+   ],
+   [
+    "2021",
+    "أحرز لقب الدوري للمرة السابعة عشرة دون خسارة، بعد غياب دام تسعة عشر عاما."
+   ],
+   [
+    "مايو 2026",
+    "أحرز كأس ولي العهد للمرة العاشرة بفوزه على الكويت 3-0، معادلا الرقم القياسي."
+   ]
+  ]
+ },
+ "كاظمة": {
+  "titles": [
+   {
+    "t": "الدوري الكويتي الممتاز",
+    "n": 4,
+    "years": "1985–86، 1986–87، 1993–94، 1995–96"
+   },
+   {
+    "t": "كأس الأمير",
+    "n": 8,
+    "years": "1981–82، 1983–84، 1989–90، 1994–95، 1996–97، 1997–98، 2010–11، 2021–22"
+   },
+   {
+    "t": "كأس سمو ولي العهد",
+    "n": 1,
+    "years": "1994–95"
+   },
+   {
+    "t": "كأس الاتحاد",
+    "n": 2,
+    "years": "2015–16، 2017–18"
+   }
+  ],
+  "intl": [
+   {
+    "t": "بطولة الأندية الخليجية / دوري أبطال الخليج للأندية",
+    "d": "بطل 1987، 1995 (أقيمت في ديسمبر 1994) · وصيف 1988، 1997 (ديسمبر 1996 - يناير 1997)"
+   }
+  ],
+  "milestones": [
+   [
+    "31 أغسطس 1964",
+    "إشهار نادي كاظمة الرياضي."
+   ],
+   [
+    "1982",
+    "أحرز كأس الأمير للمرة الأولى بفوزه على الكويت 6-1 في النهائي."
+   ],
+   [
+    "1986",
+    "أحرز لقب الدوري للمرة الأولى في موسم 1985-1986."
+   ],
+   [
+    "1987",
+    "أحرز بطولة الأندية الخليجية أبطال الدوري للمرة الأولى، في نسخة أقيمت بالكويت."
+   ],
+   [
+    "1987",
+    "احتفظ بلقب الدوري للموسم الثاني على التوالي في 1986-1987."
+   ],
+   [
+    "1995",
+    "أحرز كأس ولي العهد للمرة الأولى والوحيدة بفوزه على القادسية 4-1."
+   ],
+   [
+    "1996",
+    "أحرز لقب الدوري للمرة الرابعة في موسم 1995-1996، وهو آخر ألقابه في الدوري."
+   ],
+   [
+    "1998",
+    "أحرز كأس الأمير عامين متتاليين في 1997 و1998."
+   ],
+   [
+    "2016",
+    "أحرز كأس الاتحاد الكويتي للمرة الأولى بفوزه على الكويت 2-1."
+   ],
+   [
+    "2022",
+    "أحرز كأس الأمير للمرة الثامنة بفوزه على السالمية 2-1 في النهائي."
+   ]
+  ]
+ },
+ "السالمية": {
+  "titles": [
+   {
+    "t": "الدوري الكويتي الممتاز",
+    "n": 4,
+    "years": "1980–81، 1994–95، 1997–98، 1999–00"
+   },
+   {
+    "t": "كأس الأمير",
+    "n": 2,
+    "years": "1992–93، 2000–01"
+   },
+   {
+    "t": "كأس سمو ولي العهد",
+    "n": 2,
+    "years": "2000–01، 2015–16"
+   }
+  ],
+  "intl": [
+   {
+    "t": "بطولة الأندية الخليجية / دوري أبطال الخليج للأندية",
+    "d": "وصيف 1999"
+   }
+  ],
+  "milestones": [
+   [
+    "13 يونيو 1964",
+    "تأسيس نادي السالمية الرياضي."
+   ],
+   [
+    "1972",
+    "أحرز لقب دوري الدرجة الأولى في موسم 1971-1972 وصعد إلى الدوري الممتاز."
+   ],
+   [
+    "1981",
+    "أحرز لقب الدوري للمرة الأولى في موسم 1980-1981."
+   ],
+   [
+    "1993",
+    "أحرز كأس الأمير للمرة الأولى بفوزه على اليرموك 5-0 في النهائي."
+   ],
+   [
+    "1995",
+    "أحرز لقب الدوري للمرة الثانية في موسم 1994-1995."
+   ],
+   [
+    "1998",
+    "أحرز لقب الدوري للمرة الثالثة في موسم 1997-1998."
+   ],
+   [
+    "1999",
+    "حل وصيفا لبطولة الأندية الخليجية أبطال الدوري خلف الاتحاد السعودي."
+   ],
+   [
+    "2000",
+    "أحرز لقب الدوري للمرة الرابعة في موسم 1999-2000، وهو آخر ألقابه في الدوري."
+   ],
+   [
+    "2001",
+    "جمع كأس الأمير وكأس ولي العهد في موسم واحد."
+   ],
+   [
+    "2016",
+    "أحرز كأس ولي العهد للمرة الثانية بفوزه على الكويت 1-0 في النهائي."
+   ]
+  ]
+ },
+ "النصر": {
+  "titles": [
+   {
+    "t": "كأس الاتحاد",
+    "n": 1,
+    "years": "2021–22"
+   }
+  ],
+  "intl": [],
+  "milestones": [
+   [
+    "1965",
+    "تأسيس نادي النصر الرياضي في محافظة الفروانية."
+   ],
+   [
+    "1978",
+    "أحرز لقب دوري الدرجة الأولى في موسم 1977-1978 وصعد إلى الدوري الممتاز."
+   ],
+   [
+    "1987",
+    "أحرز لقب دوري الدرجة الأولى في موسم 1986-1987 وصعد إلى الدوري الممتاز."
+   ],
+   [
+    "31 مايو 2005",
+    "افتتاح استاد علي صباح السالم في النادي بتكلفة نحو مليون دينار."
+   ],
+   [
+    "2007",
+    "أحرز لقب دوري الدرجة الأولى في موسم 2006-2007 وصعد إلى الدوري الممتاز."
+   ],
+   [
+    "2011",
+    "شارك في كأس الاتحاد الآسيوي وخرج من دور المجموعات."
+   ],
+   [
+    "28 مارس 2022",
+    "أحرز كأس الاتحاد الكويتي، أول ألقابه في مسابقات الكؤوس المحلية، بفوزه على العربي بركلات الترجيح."
+   ]
+  ]
+ },
+ "الجهراء": {
+  "titles": [
+   {
+    "t": "الدوري الكويتي الممتاز",
+    "n": 1,
+    "years": "1989–90"
+   }
+  ],
+  "intl": [],
+  "milestones": [
+   [
+    "4 ديسمبر 1966",
+    "إشهار النادي رسمياً باسم «نادي الشهداء الرياضي» في منطقة الجهراء."
+   ],
+   [
+    "1990",
+    "أحرز لقب الدوري الممتاز لموسم 1989-1990، وهو لقبه الوحيد في البطولة."
+   ],
+   [
+    "1996",
+    "بلغ نهائي كأس الأمير وخسر أمام العربي 1-2."
+   ],
+   [
+    "2002",
+    "بلغ نهائي كأس الأمير وخسر أمام الكويت 0-1."
+   ],
+   [
+    "9 نوفمبر 2003",
+    "تُوّج بلقب دوري الدرجة الأولى لموسم 2002-2003 وصعد إلى الدوري الممتاز."
+   ],
+   [
+    "2013",
+    "بلغ نهائي كأس الأمير للمرة الثالثة وخسر أمام القادسية 0-3."
+   ],
+   [
+    "2022",
+    "تُوّج بلقب دوري الدرجة الأولى لموسم 2021-2022 وصعد إلى الدوري الممتاز."
+   ],
+   [
+    "17 مايو 2024",
+    "هبط إلى دوري الدرجة الأولى بعد خسارته أمام خيطان 0-1 في ختام مجموعة الهبوط."
+   ],
+   [
+    "15 مايو 2025",
+    "ضمن الصعود إلى الدوري الممتاز بفوزه على الساحل 2-0، وتُوّج بلقب الدرجة الأولى للمرة الخامسة."
+   ],
+   [
+    "2 يوليو 2026",
+    "بقي في الدوري الممتاز رغم حلوله أخيراً في موسم 2025-2026، بعد قرار زيادة الأندية إلى 12."
+   ]
+  ]
+ },
+ "الساحل": {
+  "titles": [],
+  "intl": [],
+  "milestones": [
+   [
+    "1999",
+    "بلغ نهائي كأس الأمير للمرة الوحيدة في تاريخه وخسر أمام العربي 1-2."
+   ],
+   [
+    "2010",
+    "تُوّج بلقب دوري الدرجة الأولى لموسم 2009-2010 وصعد إلى الدوري الممتاز."
+   ],
+   [
+    "2021",
+    "هبط إلى دوري الدرجة الأولى بعد حلوله أخيراً في الدوري الممتاز 2020-2021."
+   ],
+   [
+    "2022",
+    "صعد إلى الدوري الممتاز بعد حلوله ثانياً في دوري الدرجة الأولى 2021-2022."
+   ],
+   [
+    "17 أغسطس 2026",
+    "ضمن الصعود إلى الدوري الممتاز بتعادله مع الصليبخات 0-0 في الجولة العشرين."
+   ],
+   [
+    "20 أغسطس 2026",
+    "أنهى دوري الدرجة الأولى 2025-2026 ثانياً برصيد 44 نقطة، متساوياً مع البطل."
+   ]
+  ]
+ },
+ "الفحيحيل": {
+  "titles": [
+   {
+    "t": "كأس الأمير",
+    "n": 1,
+    "years": "1985–86"
+   }
+  ],
+  "intl": [],
+  "milestones": [
+   [
+    "19 أبريل 1964",
+    "إشهار نادي الفحيحيل رسمياً تحت رقم 24."
+   ],
+   [
+    "1986",
+    "أحرز كأس الأمير بفوزه على كاظمة 3-0 في النهائي، وهو لقبه الوحيد في البطولة."
+   ],
+   [
+    "أبريل 2013",
+    "تُوّج بلقب دوري الدرجة الأولى لموسم 2012-2013 وصعد إلى الدوري الممتاز."
+   ],
+   [
+    "16 ديسمبر 2025",
+    "افتتاح استاد نايف الدبوس بسعة 12 ألف متفرج ضمن مجمع رياضي في النادي."
+   ],
+   [
+    "19 ديسمبر 2025",
+    "خاض أول مباراة رسمية على استاد نايف الدبوس أمام التضامن في الدوري الممتاز."
+   ]
+  ]
+ },
+ "التضامن": {
+  "titles": [],
+  "intl": [],
+  "milestones": [
+   [
+    "8 يونيو 1965",
+    "إشهار نادي التضامن في منطقة الفروانية بقرار وزاري رقم 37."
+   ],
+   [
+    "1984",
+    "بلغ نهائي كأس الأمير للمرة الأولى وخسر أمام كاظمة 0-2."
+   ],
+   [
+    "1987",
+    "بلغ نهائي كأس الأمير وخسر أمام الكويت 2-4."
+   ],
+   [
+    "1994",
+    "بلغ نهائي كأس الأمير وخسر أمام القادسية 0-2."
+   ],
+   [
+    "2000",
+    "بلغ نهائي كأس الأمير للمرة الرابعة وخسر أمام العربي 1-2 بعد التمديد."
+   ],
+   [
+    "20 مايو 2021",
+    "تُوّج بلقب دوري الدرجة الأولى بفوزه على الصليبخات 4-2، وصعد إلى الدوري الممتاز."
+   ],
+   [
+    "2024",
+    "صعد إلى الدوري الممتاز بعد حلوله ثانياً في دوري الدرجة الأولى 2023-2024."
+   ]
+  ]
+ },
+ "الشباب": {
+  "titles": [],
+  "intl": [],
+  "milestones": [
+   [
+    "15 ديسمبر 1963",
+    "إشهار نادي الشباب في منطقة الأحمدي تحت رقم 20."
+   ],
+   [
+    "23 مارس 2019",
+    "بلغ نهائي كأس الاتحاد وخسر أمام القادسية بركلات الترجيح بعد التعادل 1-1."
+   ],
+   [
+    "16 مايو 2023",
+    "تُوّج بلقب دوري الدرجة الأولى برصيد 38 نقطة وصعد إلى الدوري الممتاز."
+   ],
+   [
+    "17 مايو 2024",
+    "هبط إلى دوري الدرجة الأولى بعد خسارته أمام كاظمة 0-2 في ختام مجموعة الهبوط."
+   ],
+   [
+    "2025",
+    "عاد إلى الدوري الممتاز بعد حلوله ثانياً في دوري الدرجة الأولى 2025."
+   ],
+   [
+    "2 يوليو 2026",
+    "بقي في الدوري الممتاز رغم حلوله في مركز الهبوط، بعد قرار زيادة الأندية إلى 12."
+   ]
+  ]
+ },
+ "الصليبخات": {
+  "titles": [],
+  "intl": [],
+  "milestones": [
+   [
+    "16 أبريل 2009",
+    "تُوّج بلقب دوري الدرجة الأولى بفوزه على اليرموك 2-1، وصعد إلى الدوري الممتاز."
+   ],
+   [
+    "ديسمبر 2024",
+    "استضاف ملعب النادي مباريات من كأس الخليج العربي السادسة والعشرين."
+   ],
+   [
+    "11 ديسمبر 2024",
+    "افتتاح استاد جابر مبارك الحمد الصباح في النادي بسعة 15 ألف متفرج."
+   ],
+   [
+    "20 أغسطس 2026",
+    "تُوّج بلقب دوري الدرجة الأولى 2025-2026 بفوزه على الجزيرة 1-0 برصيد 44 نقطة."
+   ],
+   [
+    "20 أغسطس 2026",
+    "صعد إلى الدوري الممتاز لموسم 2026-2027 الذي زاد عدد أنديته إلى 12."
+   ]
+  ]
+ }
+};
+/* ---------- الإنجازات والمحطات بالإنجليزية ----------
+   النصوص هنا طويلة وفيها أرقام وأسماء أندية، وقاموس site-i18n.js يطابق العقدة
+   النصية كاملة — ولو تُركت له لتفتّت النص حول أرقام <bdi> وخرج ركيكاً. لذلك
+   تُترجم من البيانات قبل الرسم: المفتاح النص العربي كما هو في CLUB_HONOURS،
+   والقيمة ترجمته. ما ليس هنا يُجرَّب في القاموس العام. (منصور 2026-09-18) */
+const HON_EN = {
+  /* أسماء البطولات */
+  "كأس الاتحاد":"Federation Cup",
+  "كأس الاتحاد الآسيوي":"AFC Cup",
+  "بطولة الأندية الخليجية / دوري أبطال الخليج للأندية":"GCC Club Championship / Gulf Club Champions League",
+  "كأس الكؤوس العربية":"Arab Cup Winners’ Cup",
+  "البطولة العربية الموحدة للأندية (بطولة الأمير فيصل بن فهد)":"Arab Unified Club Championship (Prince Faisal bin Fahd Tournament)",
+  "كأس الاتحاد العربي للأندية (UAFA)":"UAFA Arab Club Cup",
+  /* وصف الإنجازات الخارجية */
+  "بطل 2000، 2005 · وصيف 2006 (النسخة 22، والإياب في فبراير 2007)، 2024–25":"Winners 2000, 2005 · runners-up 2006 (22nd edition, second leg in February 2007), 2024–25",
+  "بطل 2014 · وصيف 2010، 2013":"Winners 2014 · runners-up 2010, 2013",
+  "بطل 2009، 2012، 2013 · وصيف 2011":"Winners 2009, 2012, 2013 · runners-up 2011",
+  "بطل 2025–26":"Winners 2025–26",
+  "وصيف 1989":"Runners-up 1989",
+  "وصيف 2003":"Runners-up 2003",
+  "بطل 1982 (1982–83)، 2003 · وصيف 1983 (يُذكر أيضاً 1984)، 1985، 1994":"Winners 1982 (1982–83), 2003 · runners-up 1983 (also cited as 1984), 1985, 1994",
+  "وصيف 2012–13":"Runners-up 2012–13",
+  "بطل 1987، 1995 (أقيمت في ديسمبر 1994) · وصيف 1988، 1997 (ديسمبر 1996 - يناير 1997)":"Winners 1987, 1995 (played in December 1994) · runners-up 1988, 1997 (December 1996 – January 1997)",
+  "وصيف 1999":"Runners-up 1999",
+  /* القادسية */
+  "اعتماد اسم نادي القادسية بدلا من نادي الجزيرة، ومقره منطقة حولي.":"The club takes the name Qadsia in place of Al-Jazira, with its home in Hawalli.",
+  "أحرز كأس الأمير للمرة الأولى بفوزه على العربي 3-1 في النهائي.":"Won the Emir Cup for the first time, beating Al-Arabi 3-1 in the final.",
+  "أحرز لقب الدوري للمرة الأولى في موسم 1968-1969.":"Won the league title for the first time, in the 1968-1969 season.",
+  "أحرز بطولة الأندية الخليجية أبطال الدوري للمرة الأولى على أرضه في الكويت.":"Won the GCC Club Championship for the first time, at home in Kuwait.",
+  "حقق الثلاثية المحلية: الدوري وكأس الأمير وكأس ولي العهد في موسم 2003-2004.":"Completed the domestic treble — league, Emir Cup and Crown Prince Cup — in the 2003-2004 season.",
+  "أحرز لقب الدوري للموسم الرابع على التوالي بين 2008-2009 و2011-2012.":"Won a fourth league title in a row, from 2008-2009 to 2011-2012.",
+  "أحرز كأس الاتحاد الآسيوي بفوزه على أربيل بركلات الترجيح 4-2 في دبي.":"Won the AFC Cup, beating Erbil 4-2 on penalties in Dubai.",
+  "أحرز لقب الدوري للمرة السابعة عشرة في موسم 2015-2016، وهو آخر ألقابه في الدوري.":"Won a seventeenth league title in 2015-2016 — its last in the competition to date.",
+  "أحرز كأس الأمير للمرة السابعة عشرة بفوزه على السالمية 1-0 في النهائي.":"Won a seventeenth Emir Cup, beating Salmiya 1-0 in the final.",
+  "أحرز كأس السوبر للمرة السابعة بفوزه على الكويت بركلات الترجيح 4-3.":"Won a seventh Super Cup, beating Kuwait SC 4-3 on penalties.",
+  /* الكويت */
+  "تأسيس نادي الكويت الرياضي.":"Kuwait Sporting Club is founded.",
+  "الإشهار الرسمي لنادي الكويت الرياضي.":"Kuwait Sporting Club is officially registered.",
+  "أحرز لقب الدوري للمرة الأولى في موسم 1964-1965.":"Won the league title for the first time, in the 1964-1965 season.",
+  "أحرز كأس الأمير للمرة الأولى بفوزه على القادسية 1-0 في النهائي.":"Won the Emir Cup for the first time, beating Qadsia 1-0 in the final.",
+  "أحرز كأس الاتحاد الآسيوي بفوزه على الكرامة السوري 2-1، كأول ناد كويتي يحرز هذه البطولة.":"Won the AFC Cup, beating Syria’s Al-Karamah 2-1 — the first Kuwaiti club to lift it.",
+  "أحرز كأس الاتحاد الآسيوي للمرة الثالثة بفوزه على القادسية 2-0 في النهائي.":"Won a third AFC Cup, beating Qadsia 2-0 in the final.",
+  "توقيع عقود تصميم إعادة بناء استاد نادي الكويت.":"Design contracts are signed for the rebuild of the club’s stadium.",
+  "جمع أربعة ألقاب محلية في موسم 2024-2025: الدوري وكأس الأمير وكأس ولي العهد والسوبر.":"Took four domestic titles in 2024-2025: the league, Emir Cup, Crown Prince Cup and Super Cup.",
+  "أحرز دوري التحدي الآسيوي بفوزه على سفاي رينغ الكمبودي 4-3 بعد التمديد.":"Won the AFC Challenge League, beating Cambodia’s Svay Rieng 4-3 after extra time.",
+  "أحرز لقب الدوري للمرة الحادية والعشرين، وأصبح أول فريق يحرزه خمس مرات متتالية.":"Won a twenty-first league title and became the first side to win it five seasons in a row.",
+  /* العربي */
+  "اعتماد اسم النادي العربي الرياضي بدلا من نادي العروبة.":"The club takes the name Al-Arabi Sporting Club in place of Al-Uruba.",
+  "أحرز أول نسختين من الدوري (1961-1962) وكأس الأمير في تاريخ الكرة الكويتية.":"Won the first ever editions of the league (1961-1962) and the Emir Cup in Kuwaiti football.",
+  "أول فريق يحرز الدوري ثلاث مرات متتالية بين 1961-1962 و1963-1964.":"The first side to win three league titles in a row, from 1961-1962 to 1963-1964.",
+  "بلغ نهائي كأس الأمير في إحدى عشرة نسخة متتالية بين 1962 و1972.":"Reached eleven consecutive Emir Cup finals between 1962 and 1972.",
+  "أحرز بطولة الأندية الخليجية أبطال الدوري في نسختها الأولى، كأول ناد كويتي يحرزها.":"Won the inaugural GCC Club Championship — the first Kuwaiti club to do so.",
+  "أحرز لقب الدوري أربع مرات متتالية بين 1981-1982 و1984-1985.":"Won four league titles in a row, from 1981-1982 to 1984-1985.",
+  "أحرز بطولة الأندية الخليجية أبطال الدوري للمرة الثانية.":"Won the GCC Club Championship for a second time.",
+  "حل وصيفا لكأس الاتحاد العربي للأندية بعد خسارته إياب النهائي أمام اتحاد العاصمة 3-2.":"Finished runners-up in the UAFA Arab Club Cup after losing the second leg of the final 2-3 to USM Alger.",
+  "أحرز لقب الدوري للمرة السابعة عشرة دون خسارة، بعد غياب دام تسعة عشر عاما.":"Won a seventeenth league title unbeaten, ending a nineteen-year wait.",
+  "أحرز كأس ولي العهد للمرة العاشرة بفوزه على الكويت 3-0، معادلا الرقم القياسي.":"Won a tenth Crown Prince Cup, beating Kuwait SC 3-0 to equal the record.",
+  /* كاظمة */
+  "إشهار نادي كاظمة الرياضي.":"Kazma Sporting Club is officially registered.",
+  "أحرز كأس الأمير للمرة الأولى بفوزه على الكويت 6-1 في النهائي.":"Won the Emir Cup for the first time, beating Kuwait SC 6-1 in the final.",
+  "أحرز لقب الدوري للمرة الأولى في موسم 1985-1986.":"Won the league title for the first time, in the 1985-1986 season.",
+  "أحرز بطولة الأندية الخليجية أبطال الدوري للمرة الأولى، في نسخة أقيمت بالكويت.":"Won the GCC Club Championship for the first time, in an edition held in Kuwait.",
+  "احتفظ بلقب الدوري للموسم الثاني على التوالي في 1986-1987.":"Retained the league title for a second season in a row in 1986-1987.",
+  "أحرز كأس ولي العهد للمرة الأولى والوحيدة بفوزه على القادسية 4-1.":"Won its only Crown Prince Cup, beating Qadsia 4-1.",
+  "أحرز لقب الدوري للمرة الرابعة في موسم 1995-1996، وهو آخر ألقابه في الدوري.":"Won a fourth league title in 1995-1996 — its last in the competition to date.",
+  "أحرز كأس الأمير عامين متتاليين في 1997 و1998.":"Won the Emir Cup in back-to-back years, 1997 and 1998.",
+  "أحرز كأس الاتحاد الكويتي للمرة الأولى بفوزه على الكويت 2-1.":"Won the Kuwait Federation Cup for the first time, beating Kuwait SC 2-1.",
+  "أحرز كأس الأمير للمرة الثامنة بفوزه على السالمية 2-1 في النهائي.":"Won an eighth Emir Cup, beating Salmiya 2-1 in the final.",
+  /* السالمية */
+  "تأسيس نادي السالمية الرياضي.":"Salmiya Sporting Club is founded.",
+  "أحرز لقب دوري الدرجة الأولى في موسم 1971-1972 وصعد إلى الدوري الممتاز.":"Won the First Division in 1971-1972 and was promoted to the Premier League.",
+  "أحرز لقب الدوري للمرة الأولى في موسم 1980-1981.":"Won the league title for the first time, in the 1980-1981 season.",
+  "أحرز كأس الأمير للمرة الأولى بفوزه على اليرموك 5-0 في النهائي.":"Won the Emir Cup for the first time, beating Al-Yarmouk 5-0 in the final.",
+  "أحرز لقب الدوري للمرة الثانية في موسم 1994-1995.":"Won a second league title in the 1994-1995 season.",
+  "أحرز لقب الدوري للمرة الثالثة في موسم 1997-1998.":"Won a third league title in the 1997-1998 season.",
+  "حل وصيفا لبطولة الأندية الخليجية أبطال الدوري خلف الاتحاد السعودي.":"Finished runners-up in the GCC Club Championship behind Saudi side Al-Ittihad.",
+  "أحرز لقب الدوري للمرة الرابعة في موسم 1999-2000، وهو آخر ألقابه في الدوري.":"Won a fourth league title in 1999-2000 — its last in the competition to date.",
+  "جمع كأس الأمير وكأس ولي العهد في موسم واحد.":"Took the Emir Cup and the Crown Prince Cup in the same season.",
+  "أحرز كأس ولي العهد للمرة الثانية بفوزه على الكويت 1-0 في النهائي.":"Won a second Crown Prince Cup, beating Kuwait SC 1-0 in the final.",
+  /* النصر */
+  "تأسيس نادي النصر الرياضي في محافظة الفروانية.":"Al-Nasr Sporting Club is founded in Farwaniya Governorate.",
+  "أحرز لقب دوري الدرجة الأولى في موسم 1977-1978 وصعد إلى الدوري الممتاز.":"Won the First Division in 1977-1978 and was promoted to the Premier League.",
+  "أحرز لقب دوري الدرجة الأولى في موسم 1986-1987 وصعد إلى الدوري الممتاز.":"Won the First Division in 1986-1987 and was promoted to the Premier League.",
+  "افتتاح استاد علي صباح السالم في النادي بتكلفة نحو مليون دينار.":"Ali Sabah Al-Salem Stadium opens at the club, at a cost of about one million dinars.",
+  "أحرز لقب دوري الدرجة الأولى في موسم 2006-2007 وصعد إلى الدوري الممتاز.":"Won the First Division in 2006-2007 and was promoted to the Premier League.",
+  "شارك في كأس الاتحاد الآسيوي وخرج من دور المجموعات.":"Played in the AFC Cup and went out at the group stage.",
+  "أحرز كأس الاتحاد الكويتي، أول ألقابه في مسابقات الكؤوس المحلية، بفوزه على العربي بركلات الترجيح.":"Won the Kuwait Federation Cup — its first domestic cup title — beating Al-Arabi on penalties.",
+  /* الجهراء */
+  "إشهار النادي رسمياً باسم «نادي الشهداء الرياضي» في منطقة الجهراء.":"The club is officially registered as Al-Shuhada Sporting Club in Al-Jahra.",
+  "أحرز لقب الدوري الممتاز لموسم 1989-1990، وهو لقبه الوحيد في البطولة.":"Won the Premier League in 1989-1990 — its only title in the competition.",
+  "بلغ نهائي كأس الأمير وخسر أمام العربي 1-2.":"Reached the Emir Cup final and lost 1-2 to Al-Arabi.",
+  "بلغ نهائي كأس الأمير وخسر أمام الكويت 0-1.":"Reached the Emir Cup final and lost 0-1 to Kuwait SC.",
+  "تُوّج بلقب دوري الدرجة الأولى لموسم 2002-2003 وصعد إلى الدوري الممتاز.":"Crowned First Division champions for 2002-2003 and promoted to the Premier League.",
+  "بلغ نهائي كأس الأمير للمرة الثالثة وخسر أمام القادسية 0-3.":"Reached a third Emir Cup final and lost 0-3 to Qadsia.",
+  "تُوّج بلقب دوري الدرجة الأولى لموسم 2021-2022 وصعد إلى الدوري الممتاز.":"Crowned First Division champions for 2021-2022 and promoted to the Premier League.",
+  "هبط إلى دوري الدرجة الأولى بعد خسارته أمام خيطان 0-1 في ختام مجموعة الهبوط.":"Relegated to the First Division after a 0-1 defeat to Khaitan on the final day of the relegation group.",
+  "ضمن الصعود إلى الدوري الممتاز بفوزه على الساحل 2-0، وتُوّج بلقب الدرجة الأولى للمرة الخامسة.":"Sealed promotion to the Premier League with a 2-0 win over Al-Sahel, and took a fifth First Division title.",
+  "بقي في الدوري الممتاز رغم حلوله أخيراً في موسم 2025-2026، بعد قرار زيادة الأندية إلى 12.":"Stayed in the Premier League despite finishing last in 2025-2026, after the decision to expand to 12 clubs.",
+  /* الساحل */
+  "بلغ نهائي كأس الأمير للمرة الوحيدة في تاريخه وخسر أمام العربي 1-2.":"Reached its only Emir Cup final and lost 1-2 to Al-Arabi.",
+  "تُوّج بلقب دوري الدرجة الأولى لموسم 2009-2010 وصعد إلى الدوري الممتاز.":"Crowned First Division champions for 2009-2010 and promoted to the Premier League.",
+  "هبط إلى دوري الدرجة الأولى بعد حلوله أخيراً في الدوري الممتاز 2020-2021.":"Relegated to the First Division after finishing last in the 2020-2021 Premier League.",
+  "صعد إلى الدوري الممتاز بعد حلوله ثانياً في دوري الدرجة الأولى 2021-2022.":"Promoted to the Premier League after finishing second in the 2021-2022 First Division.",
+  "ضمن الصعود إلى الدوري الممتاز بتعادله مع الصليبخات 0-0 في الجولة العشرين.":"Sealed promotion to the Premier League with a 0-0 draw against Sulaibikhat in round twenty.",
+  "أنهى دوري الدرجة الأولى 2025-2026 ثانياً برصيد 44 نقطة، متساوياً مع البطل.":"Finished the 2025-2026 First Division second on 44 points, level with the champions.",
+  /* الفحيحيل */
+  "إشهار نادي الفحيحيل رسمياً تحت رقم 24.":"Fahaheel Club is officially registered under number 24.",
+  "أحرز كأس الأمير بفوزه على كاظمة 3-0 في النهائي، وهو لقبه الوحيد في البطولة.":"Won the Emir Cup, beating Kazma 3-0 in the final — its only title in the competition.",
+  "تُوّج بلقب دوري الدرجة الأولى لموسم 2012-2013 وصعد إلى الدوري الممتاز.":"Crowned First Division champions for 2012-2013 and promoted to the Premier League.",
+  "افتتاح استاد نايف الدبوس بسعة 12 ألف متفرج ضمن مجمع رياضي في النادي.":"Nayef Al-Dabbous Stadium opens with a 12,000 capacity, inside a sports complex at the club.",
+  "خاض أول مباراة رسمية على استاد نايف الدبوس أمام التضامن في الدوري الممتاز.":"Played its first competitive match at Nayef Al-Dabbous Stadium, against Tadamon in the Premier League.",
+  /* التضامن */
+  "إشهار نادي التضامن في منطقة الفروانية بقرار وزاري رقم 37.":"Tadamon Club is registered in Farwaniya by ministerial decree number 37.",
+  "بلغ نهائي كأس الأمير للمرة الأولى وخسر أمام كاظمة 0-2.":"Reached its first Emir Cup final and lost 0-2 to Kazma.",
+  "بلغ نهائي كأس الأمير وخسر أمام الكويت 2-4.":"Reached the Emir Cup final and lost 2-4 to Kuwait SC.",
+  "بلغ نهائي كأس الأمير وخسر أمام القادسية 0-2.":"Reached the Emir Cup final and lost 0-2 to Qadsia.",
+  "بلغ نهائي كأس الأمير للمرة الرابعة وخسر أمام العربي 1-2 بعد التمديد.":"Reached a fourth Emir Cup final and lost 1-2 to Al-Arabi after extra time.",
+  "تُوّج بلقب دوري الدرجة الأولى بفوزه على الصليبخات 4-2، وصعد إلى الدوري الممتاز.":"Crowned First Division champions with a 4-2 win over Sulaibikhat, and promoted to the Premier League.",
+  "صعد إلى الدوري الممتاز بعد حلوله ثانياً في دوري الدرجة الأولى 2023-2024.":"Promoted to the Premier League after finishing second in the 2023-2024 First Division.",
+  /* الشباب */
+  "إشهار نادي الشباب في منطقة الأحمدي تحت رقم 20.":"Al-Shabab Club is registered in Ahmadi under number 20.",
+  "بلغ نهائي كأس الاتحاد وخسر أمام القادسية بركلات الترجيح بعد التعادل 1-1.":"Reached the Federation Cup final and lost to Qadsia on penalties after a 1-1 draw.",
+  "تُوّج بلقب دوري الدرجة الأولى برصيد 38 نقطة وصعد إلى الدوري الممتاز.":"Crowned First Division champions on 38 points and promoted to the Premier League.",
+  "هبط إلى دوري الدرجة الأولى بعد خسارته أمام كاظمة 0-2 في ختام مجموعة الهبوط.":"Relegated to the First Division after a 0-2 defeat to Kazma on the final day of the relegation group.",
+  "عاد إلى الدوري الممتاز بعد حلوله ثانياً في دوري الدرجة الأولى 2025.":"Returned to the Premier League after finishing second in the 2025 First Division.",
+  "بقي في الدوري الممتاز رغم حلوله في مركز الهبوط، بعد قرار زيادة الأندية إلى 12.":"Stayed in the Premier League despite finishing in a relegation place, after the decision to expand to 12 clubs.",
+  /* الصليبخات */
+  "تُوّج بلقب دوري الدرجة الأولى بفوزه على اليرموك 2-1، وصعد إلى الدوري الممتاز.":"Crowned First Division champions with a 2-1 win over Al-Yarmouk, and promoted to the Premier League.",
+  "استضاف ملعب النادي مباريات من كأس الخليج العربي السادسة والعشرين.":"The club’s stadium hosted matches at the 26th Arabian Gulf Cup.",
+  "افتتاح استاد جابر مبارك الحمد الصباح في النادي بسعة 15 ألف متفرج.":"Jaber Mubarak Al-Hamad Al-Sabah Stadium opens at the club with a 15,000 capacity.",
+  "تُوّج بلقب دوري الدرجة الأولى 2025-2026 بفوزه على الجزيرة 1-0 برصيد 44 نقطة.":"Crowned 2025-2026 First Division champions with a 1-0 win over Al-Jazira, on 44 points.",
+  "صعد إلى الدوري الممتاز لموسم 2026-2027 الذي زاد عدد أنديته إلى 12.":"Promoted to the Premier League for 2026-2027, the season it expanded to 12 clubs.",
+};
+/* ترجمة نص من بيانات الإنجازات: HON_EN أولاً ثم القاموس العام، وإلا يبقى عربياً */
+function honT(s){
+  if(typeof I18N==="undefined" || !I18N.isEn || !I18N.isEn()) return s;
+  const k=String(s||"").trim(); if(!k) return s;
+  if(HON_EN[k]!=null) return HON_EN[k];
+  const d=I18N.tr ? I18N.tr(k) : null;
+  return d!=null ? d : s;
+}
+/* تاريخ المحطة: «20 أكتوبر 1960» ← «20 October 1960» (الأرقام كما هي) */
+function honDate(s){
+  if(typeof I18N==="undefined" || !I18N.isEn || !I18N.isEn()) return s;
+  return String(s||"").replace(/[ء-ي]+/g, w => (I18N.MON && I18N.MON[w]) || w);
+}
+function clubHonoursHTML(c){
+  const H=CLUB_HONOURS[c]; if(!H) return "";
+  /* الأرقام بشرطة (مواسم 2009–10، نتائج 2-1) معزولة باتجاه LTR حتى لا تنقلب داخل النص العربي */
+  const nums=t=>esc(t).replace(/(\d+(?:[-–]\d+)+)/g,'<bdi dir="ltr">$1</bdi>');
+  const titles=(H.titles||[]).filter(x=>x.n>0), intl=H.intl||[], ms=H.milestones||[];
+  const total=titles.reduce((a,x)=>a+x.n,0);
+  let out="";
+  if(titles.length||intl.length){
+    out+=`<h2 class="sec">الإنجازات${total?`<span class="sq-n">${total} لقباً محلياً</span>`:""}</h2>`;
+    if(titles.length) out+=`<div class="chon">${titles.map(x=>`<div class="card chon-it">
+        <div class="chon-top"><b class="n">${x.n}</b><span class="t">${esc(honT(x.t))}</span></div>
+        ${x.years?`<div class="y">${String(x.years).split("، ").map(y=>`<bdi dir="ltr">${esc(y)}</bdi>`).join("")}</div>`:""}</div>`).join("")}</div>`;
+    if(intl.length) out+=`<div class="kfa-hon chon-intl">${intl.map(h=>`<div class="card pad kfa-hon-it"><b>${esc(honT(h.t))}</b><small>${nums(honT(h.d))}</small></div>`).join("")}</div>`;
+  }
+  if(ms.length) out+=`<h2 class="sec">محطات في تاريخ النادي<span class="sq-n">${ms.length}</span></h2>
+    <div class="card pad ctl">${ms.map(([d,t])=>`<div class="ctl-it"><span class="d">${esc(honDate(d))}</span><span class="t">${nums(honT(t))}</span></div>`).join("")}</div>`;
+  return out;
 }
 /* ---------- قائمة الفريق ---------- */
 function playerCardHTML(p, c){
@@ -11653,11 +12469,23 @@ const I18N_EXTRA = {
   "ارتدت عن ⟨x⟩":"Deflected off ⟨x⟩",
   'الفريق الأول':'First team', 'المنتخب الأولمبي':'Olympic team', 'نبذة عن الاتحاد':'About the FA', 'الهدافون التاريخيون':'All-time top scorers', 'الأكثر مشاركة':'Most capped',
   'دوري أبطال الخليج للأندية':'Gulf Club Champions League', 'دوري أبطال آسيا 2':'AFC Champions League Two', 'دوري التحدي الآسيوي':'AFC Challenge League', 'محلي':'Domestic', 'خارجي':'International', 'كل المسابقات':'All competitions', 'أُقيمت':'Played', 'مجموعة الأزرق':'Kuwait’s group', 'مجموعة كاظمة':'Kazma’s group', 'مجموعة الكويت':'Kuwait SC’s group', 'المجموعة C · القادسية':'Group C · Qadsia', 'مجموعة العربي':'Al-Arabi’s group', 'الفريق':'Team',
+  /* الإنجازات ومحطات النادي — «محطات في تاريخ النادي» بلا مدخل تام كان يخرج «محطات in تاريخ Club» من المطابقة الجزئية */
+  'الإنجازات':'Honours', 'محطات في تاريخ النادي':'Club milestones', '⟨x⟩ لقباً محلياً':'⟨x⟩ domestic titles', '1 لقباً محلياً':'1 domestic title',
+  /* اسم ملعب الصليبخات الرسمي — بلا مدخل كان يخرج نصفه عربياً في الإنجليزية */
+  'استاد جابر مبارك الحمد الصباح':'Jaber Mubarak Al-Hamad Al-Sabah Stadium',
 };
 document.addEventListener("DOMContentLoaded", ()=>{
   /* I18N معرَّف بـconst فليس خاصية على window */
   if(typeof I18N!=="undefined" && I18N.DICT){ for(const k in I18N_EXTRA){ if(I18N.DICT[k]==null) I18N.DICT[k]=I18N_EXTRA[k]; } I18N._cmp=null; I18N._keysSorted=null;
     if(I18N.isEn && I18N.isEn() && I18N.apply){ try{ I18N.apply(document.body); }catch(e){} } }
+  /* تبديل اللغة يعيد رسم صفحة النادي: نصوص الإنجازات والمحطات تُترجم من بياناتها
+     قبل الرسم (honT)، فلا يكفي أن يمر عليها القاموس بعد الرسم. */
+  if(typeof I18N!=="undefined" && typeof I18N.setLang==="function"){
+    const base=I18N.setLang.bind(I18N);
+    I18N.setLang=(l)=>{ base(l);
+      try{ const sel=document.getElementById("clubSel");
+        if(sel && sel.value && typeof renderClubBody==="function") renderClubBody(sel.value); }catch(e){} };
+  }
 });
 /* رابط عميق #c/النادي/التبويب: يفتح صفحة النادي على التبويب المطلوب (about | stats | squad) */
 (function(){
