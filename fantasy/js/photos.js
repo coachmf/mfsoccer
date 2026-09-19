@@ -4,7 +4,7 @@
 'use strict';
 
 /* رقم نسخة الصور: ارفعه عند إعادة توليد أي قصّة حتى لا يبقى المتصفح على النسخة القديمة */
-const PLAYER_PHOTOS_VER = '31';
+const PLAYER_PHOTOS_VER = '32';
 
 const PLAYER_PHOTOS = {
   // الصليبخات (17)
@@ -242,7 +242,8 @@ const PLAYER_PHOTOS = {
   'JAH|كيريست افالانا': '/assets/players/jah/98',   // جلسة النادي الرسمية (Drive) من صورة المباراة
   'JAH|مبارك الحربي': '/assets/players/jah/1',   // جلسة النادي الرسمية (Drive) من رسم تشكيلة النادي
   'JAH|تاكامبا ناسام': '/assets/players/jah/26',   // جلسة النادي الرسمية (Drive) من رسم تشكيلة النادي
-  'JAH|ماركوس راموس': '/assets/players/jah/13',   // جلسة النادي الرسمية (Drive) من رسم تشكيلة النادي
+  'JAH|لويسنهو': '/assets/players/jah/16',   // منصور 2026-09-19: بورتريه Gemini من صورته + بطاقة النادي
+  'JAH|ماركوس راموس': '/assets/players/jah/13',   // منصور 2026-09-19: بورتريه Gemini من صورته الحقيقية (السابق وجه مختلف)
   'JAH|تركي المطيري': '/assets/players/jah/turki_mid',   // جلسة النادي الرسمية (Drive) من صورة منصور
   'JAH|عبدالله الداحس': '/assets/players/jah/80',
   'JAH|جاسم العنزي': '/assets/players/jah/4',
