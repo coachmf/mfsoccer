@@ -12589,8 +12589,9 @@ const RATING = {
     {key:"red",     label:"الطرد",                   fn:c => c.red * -1.2},
     {key:"penMiss", label:"ركلات الجزاء الضائعة",    fn:c => c.penMissed * -0.6},
     {key:"result",  label:"نتيجة المباراة",          fn:c => (c.win ? 0.35 : c.loss ? -0.35 : 0) * c.share},
-    {key:"cs",      label:"الشباك النظيفة",          fn:c => (c.mins>=(c.csLimit||60) && c.conceded===0) ? ({G:0.9, D:0.5, M:0.15}[c.line] || 0) : 0},
-    {key:"against", label:"الأهداف المستقبَلة",      fn:c => c.conceded * ({G:-0.25, D:-0.15, M:-0.05}[c.line] || 0)},
+    {key:"cs",      label:"الشباك النظيفة",          fn:c => (c.mins>=(c.csLimit||60) && c.conceded===0) ? ({G:1.2, D:0.5, M:0.15}[c.line] || 0) : 0},
+    /* الحارس: الموقع لا يسجّل التصديات، فخصم الأهداف عليه −0.2 للهدف بحد أقصى −0.6 في المباراة (منصور 2026-09-19) */
+    {key:"against", label:"الأهداف المستقبَلة",      fn:c => c.line==="G" ? -Math.min(0.6, c.conceded*0.2) : c.conceded * ({D:-0.15, M:-0.05}[c.line] || 0)},
     {key:"minutes", label:"دقائق اللعب",             fn:c => c.mins>=(c.csLimit||60) ? 0.15 : 0},
   ]
 };
