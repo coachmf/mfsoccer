@@ -813,7 +813,7 @@ details.squadbox summary label.lb{margin:0;cursor:pointer}
 .fx-p{display:flex;align-items:center;gap:6px;min-width:0}
 .fx-p img,.fx-p svg{width:22px;height:22px;flex:0 0 auto}
 /* الاسم كاملاً على سطرين عند الحاجة بدل «عبدالر...» (منصور 2026-09-15)، والشعار أصغر ليترك مساحة للاسم */
-.fx-p b{color:var(--head);font-size:.85rem;line-height:1.3;white-space:normal;overflow-wrap:anywhere;min-width:0;flex:1 1 auto}
+.fx-p b{color:var(--head);font-size:.85rem;line-height:1.3;white-space:normal;overflow-wrap:normal;word-break:normal;min-width:0;flex:1 1 auto}   /* لا يُكسر الاسم داخل الكلمة («عبدالرحم/ن») */
 .fx-p .crest{width:26px!important;height:26px!important;flex:0 0 auto}
 .fx-v{font-size:.7rem;color:var(--slate);margin-top:4px}
 .pp-v{font-style:normal;background:rgba(11,31,58,.55);border-radius:5px;padding:0 4px;
@@ -5428,7 +5428,7 @@ function gkKitOf(club, shirt){
 /* بطاقة لاعب على الملعب (طلب منصور 2026-09-15): بطاقة بألوان النادي فيها قصّة اللاعب (إن وُجدت) ورقمه،
    والاسم تحتها. بلا صورة: البطاقة نفسها بالرقم كبيراً. الشارات (هدف/صناعة/كرت/خروج) على أركان البطاقة كما كانت. */
 function spotHTML(p, x, y, n, kit, ev, compact, extraNm){
-  const nm = compact ? shortName(p.n) : p.n;
+  const nm = compact ? shortName(p.n) : cardName(p.n);
   const cut = (typeof LOCAL_PHOTOS!=="undefined") ? photoCut(p.n, kit.club) : null;
   const num = p.s||"–";
   const k = (String(p.p||"").toUpperCase()==="GK" && kit.club) ? (gkKitOf(kit.club, p.s)||kit) : kit;
@@ -5437,6 +5437,15 @@ function spotHTML(p, x, y, n, kit, ev, compact, extraNm){
       ${cut?`<img class="pp-img" src="${cut}_f.webp?v=28" alt="" loading="lazy" draggable="false">`:""}
       <span class="pp-num">${num}</span>
       <span class="pp-nm">${esc(nm)}${extraNm||""}</span>${spotBadges(ev)}${natFlag(p.n, kit.club)}</span></div>`;
+}
+/* الأسماء الطويلة في شريط اسم البطاقة (منصور 2026-09-19: «خالد محمد ابراهيم» و«عبدالرحمن المشيفري» كانا مقصوصين
+   من الطرفين): الشريط يتسع لنحو 12 حرفاً، فالأطول يُعرض بالاسم الأول والأخير، ثم الأخير وحده. الاسم الكامل في الملف. */
+const PP_NM_MAX = 12;
+function cardName(n){
+  const full=String(n||"").trim(); if(full.length<=PP_NM_MAX) return full;
+  const w=full.split(/\s+/);
+  if(w.length>2){ const two=w[0]+" "+w[w.length-1]; if(two.length<=PP_NM_MAX) return two; }
+  return w.length>1 ? w[w.length-1] : full;
 }
 /* القميص الفاتح يحتاج حافة غامقة ليُرى على العشب، والغامق حافة فاتحة */
 function dotVars(kit){
@@ -14301,8 +14310,10 @@ body .pprof.on .pprof-sheet,body .mpage.on .mp-sheet{animation:moSheetIn var(--m
   /* البطاقات: ترتفع وتكبر من العمق */
   /* على مستوى الأقسام فقط (منصور 2026-09-17): لا حركة على كل بطاقة مباراة أو صف — أخف على الآيفون،
      ولا على الحاويات التي فيها قوائم منسدلة (.mx-head/.psearch) حتى لا تُحبس القائمة خلف البطاقات */
-  .view:not(#v-home):not(#v-admin) :is(.card,.an-card,.pcard,.ts-pod,.fx-card,.tl-card,.cfact){
+  .view:not(#v-home):not(#v-admin) :is(.card,.an-card,.pcard,.ts-pod,.fx-card,.tl-card,.cfact):not(:has(.ts-morebtn)){
     animation:moRise linear both;animation-timeline:view();animation-range:entry 0% entry 75%}
+  /* القوائم ذات «عرض المزيد» بلا حركة (منصور 2026-09-19): بعد الفتح تصير البطاقة أطول من الشاشة فيتوقف
+     مدى entry عند منتصفه على الآيفون وتبقى القائمة باهتة */
   @keyframes moRise{from{opacity:0;transform:translate3d(0,46px,0) scale(.94)}to{opacity:1;transform:none}}
   /* أشرطة القيم تمتلئ عند ظهورها */
   .view:not(#v-admin) :is(.an-row .mb i,.ts-bar i){animation:moFill linear both;animation-timeline:view();animation-range:entry 20% cover 45%;transform-origin:right center}
