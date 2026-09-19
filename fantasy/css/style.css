@@ -1139,3 +1139,8 @@ html.lang-en .pp-actions{justify-content:flex-start;}
   .pslot .pk .kit.kit-img,.pslot .pk .kit{width:52px!important;height:52px!important;margin:0 0 -8px!important}
   .pslot .badge,.pslot .badge.v{top:2px!important;right:2px!important;width:14px!important;height:14px!important;font-size:.48rem!important;border-width:1px!important}
 }
+
+/* منصور 2026-09-19: قمصان الأساسيين بنفس حجم ووضوح البدلاء (كانت 52px منخفضة داخل المربع وفوقها فراغ) */
+@media (max-width:860px){
+  .pitch .pslot .pk .kit.kit-img,.pitch .pslot .pk .kit{width:56px!important;height:56px!important;margin:0 0 -6px!important}
+}
