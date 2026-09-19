@@ -11682,7 +11682,7 @@ function clubHonoursHTML(c){
   /* الأرقام بشرطة (مواسم 2009–10، نتائج 2-1) معزولة باتجاه LTR حتى لا تنقلب داخل النص العربي */
   const nums=t=>esc(t).replace(/(\d+(?:[-–]\d+)+)/g,'<bdi dir="ltr">$1</bdi>');
   const titles=(H.titles||[]).filter(x=>x.n>0), intl=H.intl||[], ms=H.milestones||[];
-  const total=titles.reduce((a,x)=>a+(x.tier===2?0:x.n),0);   /* لقب الدرجة الأولى (tier 2) يظهر ولا يدخل في مجموع الألقاب */
+  const total=titles.reduce((a,x)=>a+x.n,0);   /* ألقاب الدرجة الأولى تدخل في المجموع (منصور 2026-09-19) */
   let out="";
   if(titles.length||intl.length){
     out+=`<h2 class="sec">الإنجازات${total?`<span class="sq-n">${total} لقباً محلياً</span>`:""}</h2>`;
