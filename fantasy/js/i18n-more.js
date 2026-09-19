@@ -94,7 +94,7 @@ const NAMES_EN = {
   'عبدالله عمار':'Abdullah Ammar', 'محمد خالد':'Mohammad Khalid', 'جمعة عبود':'Jumaa Abboud', 'عزيز نصاري':'Aziz Nassari', 'شيلدون':'Sheldon',
   'خادم رسول':'Khadim Rassoul', 'علي عزيز':'Ali Aziz', 'بدر طارق':'Bader Tareq', 'طلال القيسي':'Talal Al-Qaisi', 'يوسف الخبيزي':'Yousef Al-Khubaizi',
   'خالد المرشد':'Khalid Al-Murshed', 'كينان ماليكو':'Kenean Maliko', 'بندر السلامة':'Bandar Al-Salama', 'علي خلف':'Ali Khalaf', 'يوسف ماجد':'Yousef Majed',
-  'ايوالا':'Iwuala', 'وليد ولد الشيخ':'Walid Ould-Chikh', 'مسفر العدواني':'Mesfer Al-Adwani', 'زيد قنبر':'Zaid Qanbar',
+  'ايوالا':'Iwuala', 'وليد ولد الشيخ':'Walid Ould-Chikh', 'بدر الدين سوياد':'Badreddine Souyad', 'مسفر العدواني':'Mesfer Al-Adwani', 'زيد قنبر':'Zaid Qanbar',
   // كاظمة
   'حسين كنكوني':'Hussain Kankouni', 'خليفة رحيل':'Khalifa Raheel', 'فيصل السبيعي':'Faisal Al-Subaie', 'ضاري المسري':'Dhari Al-Masri',
   'صالح المحطب':'Saleh Al-Mahtab', 'بدر ذكرالله':'Bader Thekrallah', 'فهد الهاجري':'Fahad Al-Hajri', 'عبدالله الفهد':'Abdullah Al-Fahad',

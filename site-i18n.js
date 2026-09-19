@@ -165,7 +165,7 @@ const I18N = {
     'أُقفلت التوقعات — بدأت مباريات الجولة':'Predictions locked — the round has started', 'أُقفلت التوقعات لهذه الجولة':'Predictions are locked for this round', 'تعذّر الحفظ — أعد المحاولة':'Could not save — try again',
     // أسماء أجنبية من البيانات الافتراضية
     'فورتيس':'Fortes', 'فيتور':'Vitor', 'أوروك':'Oruk', 'ماتيوس توتو':'Matheus Toto', 'سانتوس':'Santos', 'الن ديسوزا':'Allan De Souza', 'اماث نداو':'Amath Ndaw', 'باتريك روبسون':'Patrick Robson',
-    'ادريس شعيبي':'Idris Shuaibi', 'ايمن لقجع':'Aymen Lakjaa', 'غازي العتيبي':'Ghazi Al-Otaibi', 'عبدالله يوسف':'Abdullah Yousef', 'ناصر خضر':'Nasser Khudhur', 'علي حسن':'Ali Hassan',
+    'ادريس شعيبي':'Idris Shuaibi', 'بدر الدين سوياد':'Badreddine Souyad', 'ايمن لقجع':'Aymen Lakjaa', 'غازي العتيبي':'Ghazi Al-Otaibi', 'عبدالله يوسف':'Abdullah Yousef', 'ناصر خضر':'Nasser Khudhur', 'علي حسن':'Ali Hassan',
     'يعقوب الطراروة':'Yaqoub Al-Tararwa', 'مشاري البارود':'Mishari Al-Baroud', 'فهد السلامة':'Fahad Al-Salama', 'عبدالرحمن الظفيري':'Abdulrahman Al-Dhafiri', 'محمد القحطاني':'Mohammad Al-Qahtani', 'شبيب الخالدي':'Shabib Al-Khaldi',
   },
 
