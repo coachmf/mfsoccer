@@ -10838,8 +10838,9 @@ function clubAboutHTML(c, r, played){
   ${clubHonoursHTML(c)}`;   /* الأطقم حول صورة الملعب ورئيس النادي تحتها (منصور 2026-09-15) */
 }
 /* ---------- إنجازات النادي ومحطاته (منصور 2026-09-17، معاينة) ----------
-   CLUB_HONOURS[c] = { titles:[{t, n, years}], intl:[{t, d}], milestones:[[date, text]] }
-   كل معلومة هنا مؤكدة من مصدرين مستقلين على الأقل؛ المصادر والمستبعد في AlArabiTest/club-honours. */
+   CLUB_HONOURS[c] = { titles:[{t, n, years, tier?}], intl:[{t, d}], milestones:[[date, text]] }
+   كل معلومة هنا مؤكدة من مصدرين مستقلين على الأقل؛ المصادر والمستبعد في AlArabiTest/club-honours.
+   استثناء (منصور 2026-09-19): ألقاب الدرجة الأولى القديمة يكفيها أرشيف RSSSF؛ المختلف عليه مستبعد (first_division.md). */
 const CLUB_HONOURS = {
  "القادسية": {
   "titles": [
@@ -11108,6 +11109,12 @@ const CLUB_HONOURS = {
     "t": "كأس الاتحاد",
     "n": 2,
     "years": "2015–16، 2017–18"
+   },
+   {
+    "t": "دوري الدرجة الأولى",
+    "n": 1,
+    "years": "1968–69",
+    "tier": 2
    }
   ],
   "intl": [
@@ -11175,6 +11182,12 @@ const CLUB_HONOURS = {
     "t": "كأس سمو ولي العهد",
     "n": 2,
     "years": "2000–01، 2015–16"
+   },
+   {
+    "t": "دوري الدرجة الأولى",
+    "n": 1,
+    "years": "1971–72",
+    "tier": 2
    }
   ],
   "intl": [
@@ -11232,6 +11245,12 @@ const CLUB_HONOURS = {
     "t": "كأس الاتحاد",
     "n": 1,
     "years": "2021–22"
+   },
+   {
+    "t": "دوري الدرجة الأولى",
+    "n": 3,
+    "years": "1977–78، 1986–87، 2006–07",
+    "tier": 2
    }
   ],
   "intl": [],
@@ -11272,6 +11291,12 @@ const CLUB_HONOURS = {
     "t": "الدوري الكويتي الممتاز",
     "n": 1,
     "years": "1989–90"
+   },
+   {
+    "t": "دوري الدرجة الأولى",
+    "n": 5,
+    "years": "1987–88، 2002–03، 2019–20، 2021–22، 2024–25",
+    "tier": 2
    }
   ],
   "intl": [],
@@ -11319,7 +11344,14 @@ const CLUB_HONOURS = {
   ]
  },
  "الساحل": {
-  "titles": [],
+  "titles": [
+   {
+    "t": "دوري الدرجة الأولى",
+    "n": 2,
+    "years": "2000–01، 2009–10",
+    "tier": 2
+   }
+  ],
   "intl": [],
   "milestones": [
    [
@@ -11354,6 +11386,12 @@ const CLUB_HONOURS = {
     "t": "كأس الأمير",
     "n": 1,
     "years": "1985–86"
+   },
+   {
+    "t": "دوري الدرجة الأولى",
+    "n": 6,
+    "years": "1969–70، 1972–73، 1975–76، 1978–79، 1989–90، 2012–13",
+    "tier": 2
    }
   ],
   "intl": [],
@@ -11381,7 +11419,14 @@ const CLUB_HONOURS = {
   ]
  },
  "التضامن": {
-  "titles": [],
+  "titles": [
+   {
+    "t": "دوري الدرجة الأولى",
+    "n": 4,
+    "years": "1966–67، 1985–86، 1992–93، 2020–21",
+    "tier": 2
+   }
+  ],
   "intl": [],
   "milestones": [
    [
@@ -11415,7 +11460,14 @@ const CLUB_HONOURS = {
   ]
  },
  "الشباب": {
-  "titles": [],
+  "titles": [
+   {
+    "t": "دوري الدرجة الأولى",
+    "n": 6,
+    "years": "1974–75، 2001–02، 2007–08، 2010–11، 2017–18، 2022–23",
+    "tier": 2
+   }
+  ],
   "intl": [],
   "milestones": [
    [
@@ -11445,7 +11497,14 @@ const CLUB_HONOURS = {
   ]
  },
  "الصليبخات": {
-  "titles": [],
+  "titles": [
+   {
+    "t": "دوري الدرجة الأولى",
+    "n": 4,
+    "years": "1976–77، 2008–09، 2011–12، 2025–26",
+    "tier": 2
+   }
+  ],
   "intl": [],
   "milestones": [
    [
@@ -11479,6 +11538,7 @@ const CLUB_HONOURS = {
 const HON_EN = {
   /* أسماء البطولات */
   "كأس الاتحاد":"Federation Cup",
+  "دوري الدرجة الأولى":"Kuwaiti Division One",
   "كأس الاتحاد الآسيوي":"AFC Cup",
   "بطولة الأندية الخليجية / دوري أبطال الخليج للأندية":"GCC Club Championship / Gulf Club Champions League",
   "كأس الكؤوس العربية":"Arab Cup Winners’ Cup",
@@ -11622,7 +11682,7 @@ function clubHonoursHTML(c){
   /* الأرقام بشرطة (مواسم 2009–10، نتائج 2-1) معزولة باتجاه LTR حتى لا تنقلب داخل النص العربي */
   const nums=t=>esc(t).replace(/(\d+(?:[-–]\d+)+)/g,'<bdi dir="ltr">$1</bdi>');
   const titles=(H.titles||[]).filter(x=>x.n>0), intl=H.intl||[], ms=H.milestones||[];
-  const total=titles.reduce((a,x)=>a+x.n,0);
+  const total=titles.reduce((a,x)=>a+(x.tier===2?0:x.n),0);   /* لقب الدرجة الأولى (tier 2) يظهر ولا يدخل في مجموع الألقاب */
   let out="";
   if(titles.length||intl.length){
     out+=`<h2 class="sec">الإنجازات${total?`<span class="sq-n">${total} لقباً محلياً</span>`:""}</h2>`;
