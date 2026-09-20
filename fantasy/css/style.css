@@ -1406,3 +1406,7 @@ html.lang-en .pp-actions{justify-content:flex-start;}
 /* منصور: اللوحة أعلى قليلاً وبنص كبير بسطر واحد حتى يُقرأ على شاشة 1x */
 .pitch-board,.pitch-board.l,.pitch-board.r{height:4.4%;top:3.6%;background-image:url("../assets/adboard.webp?v=277");image-rendering:-webkit-optimize-contrast;}
 @media (max-width:600px){ .pitch-board,.pitch-board.l,.pitch-board.r{height:4.4%;top:3.6%;} }
+
+/* سطر العقد في شريط المدرب (منصور): يتحدّث مع تقدم الجولات */
+.coach-bar .cb-ct{font-size:.66rem;opacity:.9;line-height:1.5;display:block;}
+@media (max-width:600px){ .coach-bar .cb-ct{font-size:.62rem;} }

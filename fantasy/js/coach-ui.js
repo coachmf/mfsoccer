@@ -69,7 +69,7 @@ Object.assign(VIEWS, {
     else {
       const ct=TEAM.coachContract(team, st);
       const next=FDR.next(c.club,1)[0];
-      sub = next ? `${DB.club(next.opp).short} ${UI.ha(next.home)}` : `عقد ${ct.n}/${ct.len}`;
+      sub = next ? `${DB.club(next.opp).short} ${UI.ha(next.home)}` : `عقد ج${ct.since}→ج${ct.since+ct.len}`;
     }
     const click = opt.view ? `onclick="VIEWS.openCoach('${c.id}')"` : `onclick="VIEWS.coachSheet('${c.id}','${opt.mode||'team'}')"`;
     return `<div class="pslot cslot" ${click} data-testid="coach-slot">
@@ -98,7 +98,7 @@ Object.assign(VIEWS, {
     const club=DB.club(c.club), next=FDR.next(c.club,1)[0];
     const rec=STANDINGS.record(st, c.club)||{form:[]}, rank=COACH_UI.rankNow(c.club);
     const formHTML=`<div class="cb-form" title="آخر 5 مباريات">${COACH_UI.formPills(rec.form.slice(-5))||'<span class="cb-cap">لا مباريات بعد</span>'}</div>`;
-    let side='', sub=`${UI.crest(c.club)} ${esc(club.short)}${rank? ` · المركز ${rank}` : ''}`, click='';   // الشريط: صورة واسم وسطر النادي فقط (منصور)
+    let side='', sub=`${UI.crest(c.club)} ${esc(club.short)}${rank? ` · المركز ${rank}` : ''}`, click='', ctLine='';   // الشريط: صورة واسم وسطر النادي (+ سطر العقد) — منصور
     if(opt.coachPts!==undefined){
       const cp=opt.coachPts;
       const txt = !cp ? '—' : cp.gone ? 'غادر النادي' : cp.pending && !cp.rows.length ? 'لم تُلعب' : !cp.matches.length ? 'بلا مباراة' : String(cp.total);
@@ -116,10 +116,12 @@ Object.assign(VIEWS, {
     } else {
       if(next) sub += ` · ${DB.club(next.opp).short} ${UI.ha(next.home)}`;
       click=`onclick="VIEWS.coachSheet('${c.id}','team')"`;
+      const ct=TEAM.coachContract(team, st);
+      ctLine = ct.free ? 'العقد انتهى — التغيير مجاني' : `العقد: من الجولة ${ct.since} إلى الجولة ${ct.since+ct.len}`;
     }
     return `<div class="coach-bar" ${click} data-testid="coach-bar">
       <div class="cb-ph cb-bust" style="--cc:${club.color}"><img class="ccut" src="${esc(COACHES.photo(c,false))}" alt="" onerror="this.onerror=null;this.src='${esc(COACHES.photo(c,true))}'"></div>
-      <div class="cb-txt"><div class="cb-lbl">المدرب ${COACH_UI.flag(c,14)}</div><b>${esc(c.name)}</b><span>${sub}</span></div>
+      <div class="cb-txt"><div class="cb-lbl">المدرب ${COACH_UI.flag(c,14)}</div><b>${esc(c.name)}</b><span>${sub}</span>${ctLine? `<span class="cb-ct">${ctLine}</span>`:''}</div>
       ${side? `<div class="cb-side">${side}</div>` : ''}
     </div>`;
   },
@@ -142,7 +144,7 @@ Object.assign(VIEWS, {
     } else if(mine){
       const why = locked ? 'أُغلقت الجولة' : (cost&&!cost.free)? '' : '';
       actions=`<button class="btn sec" ${locked?'disabled':''} onclick="UI.closeSheet();VIEWS.openAddCoach({ctx:'team'})">تغيير المدرب</button>`;
-      if(ct) actions=`<div class="tiny" style="margin-bottom:8px">العقد: الجولة ${ct.n} من ${ct.len}${ct.free? ' — التغيير مجاني الآن' : (st.rules.freeChanges? ' — تغييرات حرة حتى الإغلاق' : ' — التغيير المبكر يستهلك انتقالاً أو −'+st.rules.transferCost)}</div>`+actions;
+      if(ct) actions=`<div class="tiny" style="margin-bottom:8px">العقد: من الجولة ${ct.since} إلى الجولة ${ct.since+ct.len}${ct.free? ' — التغيير مجاني الآن' : (st.rules.freeChanges? ' — تغييرات حرة حتى الإغلاق' : ' — التغيير المبكر يستهلك انتقالاً أو −'+st.rules.transferCost)}</div>`+actions;
     }
     UI.sheet(`
       <div class="ps-head ps-head-photo" style="background:linear-gradient(135deg,${club.color} 0%,${club.dark} 100%)">
@@ -301,7 +303,7 @@ Object.assign(VIEWS, {
         <div style="flex:1 1 0;min-width:0">
           <h2>${esc(c.name)} ${COACH_UI.flag(c,20)}</h2>
           <div class="row" style="gap:8px;margin-top:4px;flex-wrap:wrap">${UI.crest(c.club)} <b>${club.name}</b> <span class="pill">المدرب</span>
-          <span class="pill blue">${fmtK(c.price)}</span>${mine? `<span class="pill gold">مدربك · عقد ${ct.n}/${ct.len}</span>`:''}${COACHES.gone(c, st.currentGW)? '<span class="pill red">غادر النادي</span>':''}</div>
+          <span class="pill blue">${fmtK(c.price)}</span>${mine? `<span class="pill gold">مدربك · عقد ج${ct.since}→ج${ct.since+ct.len}</span>`:''}${COACHES.gone(c, st.currentGW)? '<span class="pill red">غادر النادي</span>':''}</div>
         </div>
       </div>
       <div class="pp-actions">
@@ -471,6 +473,11 @@ const COACH_I18N = {
   RX: [
     [/^(.+?) · المدرب$/, (m, c) => I18N.trIn(c) + ' · Coach'],
     [/^عقد (\d+)\/(\d+)$/, 'Contract $1/$2'],
+    [/^عقد ج(\d+)→ج(\d+)$/, 'Contract GW$1→GW$2'],
+    [/^العقد: من الجولة (\d+) إلى الجولة (\d+)$/, 'Contract: from gameweek $1 to gameweek $2'],
+    [/^العقد انتهى — التغيير مجاني$/, 'Contract over — change is free'],
+    [/^مدربك · عقد ج(\d+)→ج(\d+)$/, 'Your coach · contract GW$1→GW$2'],
+    [/^العقد: من الجولة (\d+) إلى الجولة (\d+)(.*)$/, (m, a, b, r) => 'Contract: from gameweek ' + a + ' to gameweek ' + b + I18N.trIn(r)],
     [/^مدربك · عقد (\d+)\/(\d+)$/, 'Your coach · contract $1/$2'],
     [/^العقد: الجولة (\d+) من (\d+)(.*)$/, (m, a, b, r) => 'Contract: gameweek ' + a + ' of ' + b + I18N.trIn(r)],
     [/^ — التغيير مجاني الآن$/, ' — change is free now'],

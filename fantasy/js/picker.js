@@ -129,7 +129,7 @@ Object.assign(VIEWS, {
     ${locked? '<div class="card" style="border-color:var(--red);margin-bottom:12px">أُغلقت الجولة — الانتقالات تفتح بعد احتساب النتائج.</div>':''}
     <div class="tf-wrap">
       <div class="tf-stats">
-        <div><b>${team.ft}</b><span>مجاني</span></div>
+        <div><b>${st.rules.freeChanges ? '∞' : team.ft}</b><span>مجاني</span></div>
         <div><b style="color:${hits?'var(--red)':'var(--text)'}">${freeMode?'حر':(hits?'−'+hits:'0')}</b><span>الخصم</span></div>
         <div><b style="color:${bankAfter<0?'var(--red)':'var(--text)'}">${fmtM(bankAfter)}</b><span>بالبنك (${CUR})</span></div>
       </div>
