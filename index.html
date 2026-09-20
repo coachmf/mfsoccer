@@ -10732,7 +10732,7 @@ function kfaMatchesHTML(sq){
 }
 function kfaTeamPanel(sq){
   return `<div class="card pad kfa-coach">
-      ${sq.coachImg?`<div class="kfa-coach-ph"><img src="${sq.coachImg}_s.webp?v=29" alt="" loading="lazy" decoding="async"></div>`:""}
+      ${sq.coachImg?`<div class="kfa-coach-ph"><img src="${sq.coachImg}_s.webp?v=30" alt="" loading="lazy" decoding="async"></div>`:""}
       <div class="kfa-coach-ttl"><small>المدرب</small><b>${esc(sq.coach)}</b></div>
       <div class="kfa-coach-sub">${esc(sq.camp)} · ${sq.gk.length+sq.out.length} لاعباً</div>
     </div>
@@ -11734,7 +11734,7 @@ function coachFlag(nat, cls){ if(!nat) return "";
 function coachCardHTML(c){
   const k=(typeof CLUB_COACH!=="undefined") && CLUB_COACH[c]; if(!k) return "";
   return `<div class="pcard sq-coach" role="button" tabindex="0" data-coach="${esc(c)}" aria-label="المدرب ${esc(k.n)}">
-    <div class="ph">${k.img?`<img src="${k.img}_s.webp?v=29" alt="" loading="lazy" decoding="async" draggable="false">`
+    <div class="ph">${k.img?`<img src="${k.img}_s.webp?v=30" alt="" loading="lazy" decoding="async" draggable="false">`
                            :`<img class="noph" src="${crestSrcOf(c)}" alt="" loading="lazy" draggable="false">`}</div>
     ${coachFlag(k.nat)}
     <div class="nm">${esc(k.n)}</div>
@@ -11937,7 +11937,7 @@ function coachProfileHTML(D){
     <button type="button" class="pprof-close" aria-label="إغلاق" onclick="closePlayer()">✕</button>
     <div class="pprof-hero">
       <div class="wm" style="background-image:url('${crestSrcOf(D.club)}')"></div>
-      <div class="ph">${D.img?`<img src="${D.img}.webp?v=29" alt="" decoding="async">`:`<img class="noph" src="${crestSrcOf(D.club)}" alt="">`}${coachFlag(D.nat,"pprof-flag")}</div>
+      <div class="ph">${D.img?`<img src="${D.img}.webp?v=30" alt="" decoding="async">`:`<img class="noph" src="${crestSrcOf(D.club)}" alt="">`}${coachFlag(D.nat,"pprof-flag")}</div>
       <div class="pprof-id">
         <div class="club" data-club-link="${esc(D.club)}">${crest(D.club)}<span>${esc(D.club)}</span></div>
         <h3>${esc(D.name)}</h3>
