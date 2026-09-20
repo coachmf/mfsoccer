@@ -75,11 +75,12 @@ Object.assign(VIEWS, {
   /* الملعب بنقاط الجولة: التشكيلة بعد التبديل التلقائي كما احتُسبت */
   pointsPitch(res, info, gw){
     const xi=res.rows.filter(r=>!r.bench).map(r=>r.pid), bench=res.rows.filter(r=>r.bench).map(r=>r.pid);
-    const vt={ xi, bench, cap:null, vice:null };
+    const vt={ xi, bench, cap:null, vice:null, coach: res.coach? res.coach.id : null };
     const slot=pid=>this.pointsSlot(pid, info[pid], gw);
     let k=0;
     return `<div class="pitch-frame">
-      ${this.pitchHTML(vt, {view:true, slot})}
+      ${this.pitchHTML(vt, {view:true, slot, coachPts:res.coach||null, gw})}
+      ${this.coachBarHTML(vt, {coachPts:res.coach||null, gw})}
       <div class="bench-strip">
         ${bench.map(pid=>{ const p=DB.player(pid); const lbl=p.pos==='G' ? 'حارس' : `بديل ${++k} · ${POS_AR[p.pos]}`;
           return `<div class="bench-slot"><div class="bench-pos">${lbl}</div>${slot(pid)}</div>`; }).join('')}
@@ -104,6 +105,11 @@ Object.assign(VIEWS, {
       ${res.rows.filter(r=>!r.bench).map(row).join('')}</table></div>
       <h3 style="margin-top:16px">الدكة ${res.chip==='benchboost'?'<span class="pill green">دكة قوية — احتُسبت</span>':''}</h3>
       <div class="scroll-x"><table class="tbl">${res.rows.filter(r=>r.bench).map(row).join('')}</table></div>
+      ${res.coach && COACHES.get(st,res.coach.id) ? (()=>{ const c=COACHES.get(st,res.coach.id), cp=res.coach; const txt = cp.gone? 'غادر النادي' : cp.pending && !cp.rows.length ? 'لم تُلعب' : !cp.matches.length ? 'بلا مباراة' : cp.total;
+        return `<h3 style="margin-top:16px">المدرب</h3><div class="scroll-x"><table class="tbl"><tr onclick="VIEWS.coachPointsSheet('${c.id}',${gw})" style="cursor:pointer">
+        <td><div class="row">${COACH_UI.avatar(c,28)} <div><b>${esc(c.name)}</b><div class="tiny">${DB.club(c.club).short} · المدرب</div></div></div></td>
+        <td class="tiny" colspan="3">${cp.rows.filter(r=>r.pts).map(r=>`${r.label} ${r.pts>0?'+':''}${r.pts}`).join(' · ')||'—'}</td>
+        <td class="num" style="color:var(--accent)">${txt}</td></tr></table></div>`; })() : ''}
     </div>`;
   },
 

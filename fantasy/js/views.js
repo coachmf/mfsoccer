@@ -301,6 +301,7 @@ const VIEWS = {
       </div>
       <div class="chips-row">${Object.keys(chips).map(chipCard).join('')}</div>
       ${xiV.ok? '' : `<div class="card" style="border-color:var(--red);margin:0 0 10px">${xiV.errs.map(e=>`<div style="color:var(--red)">${e}</div>`).join('')}</div>`}
+      ${typeof COACHES!=='undefined' && COACHES.enabled(st) && !team.coach && !locked ? `<div class="card cnotice" style="margin:0 0 10px"><div class="row spread" style="gap:8px;flex-wrap:wrap"><div><b>فريقك بلا مدرب</b><div class="tiny">اختر مدرباً من الشريط تحت الملعب — نقاطه من نتائج ناديه وصعوبة المنافس. بلا مدرب لا تُخصم نقاط، لكن تخسر نقاطه.</div></div><button class="btn sm" onclick="VIEWS.openAddCoach({ctx:'team'})">اختر مدرباً</button></div></div>` : ''}
       <div class="pt-toggle ${hasPts?'w4':''}">
         <button class="${view==='pitch'?'active':''}" onclick="VIEWS.ui.teamView='pitch';APP.render()">الملعب</button>
         <button class="${view==='list'?'active':''}" onclick="VIEWS.ui.teamView='list';APP.render()">قائمة</button>
@@ -314,7 +315,9 @@ const VIEWS = {
           ${view==='pitch'? `
             <div class="pitch-frame">
             ${this.pitchHTML(team, {mode:'team', locked})}
+            ${COACH_UI.layout()==='bar' ? this.coachBarHTML(team,{locked}) : ''}
             <div class="bench-strip">
+              ${COACH_UI.layout()==='bench' ? `<div class="bench-slot"><div class="bench-pos">المدرب</div>${this.coachSlotHTML(team,{mode:'team',locked})}</div>` : ''}
               ${(()=>{ let k=0; return team.bench.map(pid=>{
                 const p=DB.player(pid); const lbl = p.pos==='G' ? 'حارس' : `بديل ${++k} · ${POS_AR[p.pos]}`;
                 return `<div class="bench-slot"><div class="bench-pos">${lbl}</div>${this.slotHTML(pid, team, {bench:true, locked})}</div>`;
@@ -379,10 +382,11 @@ const VIEWS = {
     opt=opt||{};
     const xi=team.xi.map(pid=>DB.player(pid)).filter(Boolean);
     const slot = opt.slot || (pid=>this.slotHTML(pid, team, opt));   // صفحة النقاط تمرّر بطاقتها الخاصة
+    // المدرب: أقصى يمين صف الحارس (منصور 2026-09-20)
     const rows=['G','D','M','F'].map(pos=>
-      `<div class="pitch-row">${xi.filter(p=>p.pos===pos).map(p=>slot(p.id)).join('')}</div>`);
+      `<div class="pitch-row row-${pos.toLowerCase()}">${xi.filter(p=>p.pos===pos).map(p=>slot(p.id)).join('')}${pos==='G' && typeof this.coachSlotHTML==='function' && COACH_UI.layout()==='row' ? this.coachSlotHTML(team, opt) : ''}</div>`);
     return `<div class="pitch">
-      <div class="pitch-brand"><img src="assets/logo-light.png" alt=""><img src="assets/logo-light.png" alt=""><img src="assets/logo-light.png" alt=""></div>
+      <div class="pitch-board l"></div><div class="pitch-board r"></div>
       <div class="pf-goal"></div><div class="pf-box6"></div><div class="pf-box"></div><div class="pf-circle"></div>
       ${rows.join('')}</div>`;
   },
@@ -566,6 +570,7 @@ const VIEWS = {
       if(key==='freehit' && team.fhBackup){
         Object.assign(team, {squad:team.fhBackup.squad, xi:team.fhBackup.xi, bench:team.fhBackup.bench,
           cap:team.fhBackup.cap, vice:team.fhBackup.vice, bank:team.fhBackup.bank});
+        if('coach' in team.fhBackup){ team.coach=team.fhBackup.coach; team.coachSince=team.fhBackup.coachSince; }
         team.fhBackup=null;
         team.transfers=(team.transfers||[]).filter(t=>!(t.gw===st.currentGW && (t.date||'')>=since));   // صفقات الضربة الحرة أُلغيت معها
         this.tReset();
@@ -589,7 +594,7 @@ const VIEWS = {
     if(GWADMIN.deadlinePassed(st.currentGW)){ UI.toast('أُغلقت الجولة — لا يمكن تفعيل الكروت بعد انطلاق المباراة',true); return; }
     if(team.activeChip) return;
     team.activeChip=key; team.chipAt=new Date().toISOString();
-    if(key==='freehit'){ team.fhBackup={squad:[...team.squad], xi:[...team.xi], bench:[...team.bench], cap:team.cap, vice:team.vice, bank:team.bank}; }
+    if(key==='freehit'){ team.fhBackup={squad:[...team.squad], xi:[...team.xi], bench:[...team.bench], cap:team.cap, vice:team.vice, bank:team.bank, coach:team.coach||null, coachSince:team.coachSince||null}; }
     DB.save(); UI.toast(`فُعّل كرت ${st.rules.chips[key].label} لهذه الجولة`); APP.render();
   },
 
@@ -628,9 +633,10 @@ const VIEWS = {
   confirmSquad(){
     const team=DB.myTeam(); const st=DB.state;
     const sq=this.ui.pickerSquad;
-    const v=TEAM.validateSquad(sq);
+    const v=TEAM.validateSquad(sq, st, this.ui.pickerCoach||null);
     if(!v.ok){ UI.toast(v.errs[0],true); return; }
     team.squad=[...sq];
+    team.coach=this.ui.pickerCoach||null; team.coachSince=st.currentGW;
     // اختيار تشكيلة تلقائية: الأغلى مع احترام القيود
     const ps=sq.map(pid=>DB.player(pid));
     const best=pos=>ps.filter(p=>p.pos===pos).sort((a,b)=>b.price-a.price);
@@ -649,7 +655,7 @@ const VIEWS = {
     const sorted=[...team.xi].sort((a,b)=>DB.player(b).price-DB.player(a).price);
     team.cap=sorted[0]; team.vice=sorted[1];
     team.bank=Math.round((st.rules.budget-v.cost)*10)/10;
-    this.ui.pickerSquad=[];
+    this.ui.pickerSquad=[]; this.ui.pickerCoach=null;
     DB.save(); UI.toast('تم اعتماد فريقك! '); APP.render();
   },
 
@@ -1013,7 +1019,7 @@ const VIEWS = {
     if(!picks){
       return back+head+`<div class="card"><div class="muted">لم تُقفل له تشكيلة بعد — تظهر تشكيلات المشتركين بعد إغلاق الجولة ${gw}${st.gws.find(g=>g.n===gw&&g.deadline)? ' ('+UI.fmtDateShort(st.gws.find(g=>g.n===gw).deadline)+')' : ''}.</div></div>`;
     }
-    const vt={ xi:(picks.xi||[]).filter(pid=>DB.player(pid)), bench:(picks.bench||[]).filter(pid=>DB.player(pid)), cap:picks.cap||null, vice:picks.vice||null };
+    const vt={ xi:(picks.xi||[]).filter(pid=>DB.player(pid)), bench:(picks.bench||[]).filter(pid=>DB.player(pid)), cap:picks.cap||null, vice:picks.vice||null, coach:picks.coach||null };
     // نقاط الجولة المعروضة إن كانت محتسبة (أو جارية)
     let pts=null, res=null;
     const g=st.gws.find(x=>x.n===showGw);
@@ -1023,7 +1029,7 @@ const VIEWS = {
     const chip=picks.chip? (st.rules.chips[picks.chip]||{}).label||picks.chip : null;
     // مع نقاط محتسبة: بطاقات صفحة النقاط (الضغط يفتح تفصيل النقاط) بدل بطاقة العرض العادية
     const info = (res && typeof this.pointsSlotInfo==='function') ? this.pointsSlotInfo(res, picks, showGw) : null;
-    const opt = info ? {view:true, pts, slot:pid=>this.pointsSlot(pid, info[pid], showGw)} : {view:true, pts};
+    const opt = info ? {view:true, pts, slot:pid=>this.pointsSlot(pid, info[pid], showGw), coachPts:res.coach||null, gw:showGw} : {view:true, pts};
     let k=0;
     return back+head+`<div class="card">
       <div class="row spread" style="flex-wrap:wrap;gap:8px;margin-bottom:10px">
@@ -1032,6 +1038,7 @@ const VIEWS = {
       </div>
       <div class="pitch-frame">
         ${this.pitchHTML(vt, opt)}
+        ${this.coachBarHTML(vt, info ? {coachPts:res.coach||null, gw:showGw} : {view:true})}
         <div class="bench-strip">
           ${vt.bench.map(pid=>{ const p=DB.player(pid); const lbl=p.pos==='G'?'حارس':`بديل ${++k} · ${POS_AR[p.pos]}`;
             return `<div class="bench-slot"><div class="bench-pos">${lbl}</div>${opt.slot? opt.slot(pid) : this.slotHTML(pid, vt, opt)}</div>`; }).join('')}

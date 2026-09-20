@@ -6,7 +6,7 @@ const ADMIN = {
     if(!ADMINAUTH.active()) return ADMINAUTH.loginView();
     const sec=VIEWS.ui.adminSec;
     const menu=[['gws','الجولات والاحتساب'],['results','النتائج والإحصاءات'],['scoring','نظام النقاط'],
-      ['rules','قواعد اللعبة'],['players','اللاعبون'],['clubs','الأندية'],
+      ['rules','قواعد اللعبة'],['players','اللاعبون'],['clubs','الأندية'],['coaches','المدربون'],
       ['users','المستخدمون'],['admins','المديرون'],['feedback','الاقتراحات'],['push','الإشعارات'],['cloud','السحابة'],['data','البيانات']];
     return `<h2 style="margin-bottom:12px">لوحة الإدارة</h2>
     <div class="admin-grid">
@@ -225,6 +225,8 @@ const ADMIN = {
     if(!fxs.length){ UI.toast(`الجولة ${gw} بلا جدول بعد — اسحب الجدول من mfsoccer أولاً`, true); return; }
     if(fxs.some(f=>f.status!=='F')){ UI.toast('بقيت مباريات بلا نتيجة — اسحب الجولة من mfsoccer أولاً', true); return; }
 
+    // ترتيب الجولة المرجعي لنقاط المدرب يُثبَّت قبل الاحتساب (تعديل لاحق لا يغيّره)
+    if(typeof STANDINGS!=='undefined') STANDINGS.snapshot(st, gw);
     // 1) الخادم أولاً: نقاط كل مشترك من تشكيلته المقفلة + ترحيل فريقه + خلاصة التملّك والصفقات
     let agg=null;
     const cloudOn = typeof CLOUD!=='undefined' && CLOUD.admin;

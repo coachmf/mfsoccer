@@ -9749,9 +9749,14 @@ h2.sec.sq-grp{margin-top:22px}
   display:grid;place-items:center;box-shadow:0 2px 6px rgba(0,0,0,.30),inset 0 0 0 1px rgba(255,255,255,.18);font-variant-numeric:tabular-nums}
 .pcard .nm{font-family:var(--display);font-weight:700;font-size:.85rem;color:var(--head,#fff);padding:8px 8px 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .pcard .ps{font-size:.68rem;color:var(--slate);margin-top:2px}
-/* بطاقة المدرب: نفس شكل وخلفية بطاقات اللاعبين، بلا رقم ولا نقر (منصور 2026-09-15) */
-.sq-coach{cursor:default}
-.sq-coach:hover,.sq-coach:active{transform:none;box-shadow:none;border-color:rgba(var(--ca-rgb),.45)}
+/* بطاقة المدرب: نفس شكل وخلفية بطاقات اللاعبين، بلا رقم — تفتح ملف المدرب (منصور 2026-09-20) */
+.sq-coach{cursor:pointer}
+/* ملف المدرب */
+.cprof-form{display:flex;gap:6px;justify-content:center;padding:4px 16px 10px;flex-wrap:wrap}
+.cprof-form span{display:inline-grid;place-items:center;width:26px;height:26px;border-radius:7px;font-weight:800;font-size:.72rem;color:#fff}
+.cprof-form .w{background:#12b76a}.cprof-form .d{background:#8a97ad}.cprof-form .l{background:#d92d20}
+.cprof-form .lbl{width:auto;color:var(--slate);font-weight:700;background:none;font-size:.72rem}
+.plog-r .sc{font-variant-numeric:tabular-nums;font-weight:800;color:var(--head,#fff);direction:ltr;min-width:38px;text-align:center}
 /* --- عناصر اللاعب القابلة للنقر في كل الموقع --- */
 [data-player]{cursor:pointer}
 .teamcell[data-player]:hover b,.tl-name[data-player]:hover,.tl-assist[data-player]:hover,.fx-p[data-player]:hover b,.plk:hover{text-decoration:underline;text-decoration-color:rgba(143,166,196,.6);text-underline-offset:3px}
@@ -11728,7 +11733,7 @@ function coachFlag(nat, cls){ if(!nat) return "";
   return `<img class="natf${cls?" "+cls:""}" src="https://flagcdn.com/w40/${c}.png" srcset="https://flagcdn.com/w80/${c}.png 2x" alt="${esc(nat)}" title="${esc(nat)}" decoding="async" draggable="false">`; }
 function coachCardHTML(c){
   const k=(typeof CLUB_COACH!=="undefined") && CLUB_COACH[c]; if(!k) return "";
-  return `<div class="pcard sq-coach" aria-label="المدرب ${esc(k.n)}">
+  return `<div class="pcard sq-coach" role="button" tabindex="0" data-coach="${esc(c)}" aria-label="المدرب ${esc(k.n)}">
     <div class="ph">${k.img?`<img src="${k.img}_s.webp?v=29" alt="" loading="lazy" decoding="async" draggable="false">`
                            :`<img class="noph" src="${crestSrcOf(c)}" alt="" loading="lazy" draggable="false">`}</div>
     ${coachFlag(k.nat)}
@@ -11742,11 +11747,11 @@ const SQUAD_HIDE=[{c:"الكويت", n:"فينيسيوس"}];
 const isHidden=(club,name)=>SQUAD_HIDE.some(h=>h.c===club && _natKey(h.c,h.n)===_natKey(club,name));
 function clubSquadHTML(c){
   const men=squadEntriesOf(c).filter(x=>!isHidden(c, x.n));
-  if(!men.length) return `<div class="card pad"><p class="hint" style="margin:0">لم يُرفع كشف لاعبي هذا النادي بعد.</p></div>`;
-  const groups=[["G","حراس المرمى"],["D","الدفاع"],["M","الوسط"],["F","الهجوم"],["","بدون مركز محدد"]];
   const coach=coachCardHTML(c);
-  /* المدرب قسم مستقل أول القائمة ثم الحراس (منصور 2026-09-15) */
+  /* المدرب قسم مستقل أول القائمة ثم الحراس (منصور 2026-09-15) — يظهر حتى قبل رفع كشف اللاعبين */
   const coachSec = coach ? `<h2 class="sec sq-grp">المدرب</h2><div class="sq-grid">${coach}</div>` : "";
+  if(!men.length) return coachSec + `<div class="card pad"><p class="hint" style="margin:0">لم يُرفع كشف لاعبي هذا النادي بعد.</p></div>`;
+  const groups=[["G","حراس المرمى"],["D","الدفاع"],["M","الوسط"],["F","الهجوم"],["","بدون مركز محدد"]];
   return coachSec + groups.map(([k,t])=>{
     const L=men.filter(p=>(POS_MAIN[String(p.p||"").toUpperCase()]||"")===k);
     if(!L.length) return "";
@@ -11889,6 +11894,8 @@ document.addEventListener("click", e=>{
   if(box && !box.hidden && e.target===box){ closePlayer(); return; }
   const cl=e.target.closest("[data-club-link]");
   if(cl && box && box.contains(cl)){ const c=cl.dataset.clubLink; closePlayer(); if(typeof openClub==="function") openClub(c); return; }
+  const ce=e.target.closest("[data-coach]");
+  if(ce && !ce.closest("#v-admin")){ e.preventDefault(); openCoach(ce.dataset.coach); return; }
   const el=e.target.closest("[data-player]"); if(!el) return;
   if(el.closest("#v-admin") || e.target.closest("a,button,select,input,textarea,label")) return;
   e.preventDefault(); openPlayer(el.dataset.player, el.dataset.club||"");
@@ -11897,7 +11904,61 @@ document.addEventListener("keydown", e=>{
   if(e.key==="Escape") closePlayer();
   const a=document.activeElement;
   if((e.key==="Enter"||e.key===" ") && a && a.matches && a.matches(".pcard[data-player]")){ e.preventDefault(); openPlayer(a.dataset.player, a.dataset.club); }
+  if((e.key==="Enter"||e.key===" ") && a && a.matches && a.matches(".pcard[data-coach]")){ e.preventDefault(); openCoach(a.dataset.coach); }
 });
+
+/* ===== ملف المدرب (منصور 2026-09-20): نفس صندوق ملف اللاعب، وسجل الموسم من مباريات الدوري المُقامة ===== */
+function coachProfileData(c){
+  const k=(typeof CLUB_COACH!=="undefined") && CLUB_COACH[c]; if(!k) return null;
+  const rows=standings(); const row=rows.find(x=>x.c===c)||{P:0,W:0,D:0,L:0,GF:0,GA:0,Pts:0,form:[],cs:0};
+  const pos=rows.findIndex(x=>x.c===c)+1;
+  const log=playedMatches().filter(m=>m.home===c||m.away===c).map(m=>{
+    const home=m.home===c, opp=home?m.away:m.home, gf=home?m.hg:m.ag, ga=home?m.ag:m.hg;
+    const k2=gf>ga?"w":gf<ga?"l":"d";
+    return {m, opp, home, gf, ga, k:k2, res:k2==="w"?"فوز":k2==="d"?"تعادل":"خسارة"};
+  });
+  return {club:c, name:k.n, nat:k.nat, img:k.img, row, pos, log};
+}
+function coachProfileHTML(D){
+  const st=(v,t,hi)=>`<div class="pstat${hi?" hi":""}"><b>${v}</b><small>${t}</small></div>`;
+  const r=D.row;
+  const cards=[st(D.pos||"—","المركز",true), st(r.Pts,"النقاط",true), st(r.P,"مباريات"), st(r.W,"فوز"), st(r.D,"تعادل"), st(r.L,"خسارة"),
+    st(r.P?(r.Pts/r.P).toFixed(2):"0.00","نقطة/مباراة"), st(`${r.GF} / ${r.GA}`,"له / عليه"), st(r.cs||0,"شباك نظيفة")];
+  const form=(r.form||[]).slice(-5);
+  const formHTML = form.length ? `<div class="cprof-form"><span class="lbl">آخر 5 مباريات</span>${form.map(f=>`<span class="${f}">${f==="w"?"ف":f==="d"?"ت":"خ"}</span>`).join("")}</div>` : "";
+  const logHTML = D.log.length ? `<div class="pprof-log"><h4>مباراة بمباراة</h4><div class="plog">${D.log.map(l=>`
+    <div class="plog-r">
+      <span class="rd">ج${l.m.round}</span>
+      <span class="op">${crest(l.opp)}<span>${esc(l.opp)}<i> · ${l.home?"أرضه":"خارج أرضه"}</i></span></span>
+      <span class="ev"><span class="sc">${l.gf}-${l.ga}</span><span class="rs ${l.k}">${l.res}</span></span>
+    </div>`).join("")}</div></div>` : "";
+  return `<div class="pprof-sheet" style="${accentVars(D.club)}">
+    <span class="pprof-grab"></span>
+    <button type="button" class="pprof-close" aria-label="إغلاق" onclick="closePlayer()">✕</button>
+    <div class="pprof-hero">
+      <div class="wm" style="background-image:url('${crestSrcOf(D.club)}')"></div>
+      <div class="ph">${D.img?`<img src="${D.img}.webp?v=29" alt="" decoding="async">`:`<img class="noph" src="${crestSrcOf(D.club)}" alt="">`}${coachFlag(D.nat,"pprof-flag")}</div>
+      <div class="pprof-id">
+        <div class="club" data-club-link="${esc(D.club)}">${crest(D.club)}<span>${esc(D.club)}</span></div>
+        <h3>${esc(D.name)}</h3>
+        <div class="meta"><span>المدرب</span></div>
+      </div>
+    </div>
+    <div class="pprof-comp">${esc(SEASON)} · الدوري</div>
+    ${r.P ? `<div class="pprof-stats">${cards.join("")}</div>${formHTML}` : `<p class="pprof-empty">لم يخض ${esc(D.club)} أي مباراة في الدوري بعد.</p>`}
+    ${logHTML}
+  </div>`;
+}
+function openCoach(club){
+  club=String(club||"").trim(); const D=coachProfileData(club); if(!D) return;
+  const box=$("#pprof"); if(!box) return;
+  box.innerHTML=coachProfileHTML(D);
+  box.hidden=false; box.classList.add("on");
+  document.documentElement.classList.add("pp-open");
+  box.querySelector(".pprof-sheet").scrollTop=0;
+  try{ history.pushState({pp:1}, "", "#coach/"+encodeURIComponent(club)); }catch(e){}
+}
+window.openCoach=openCoach;
 
 /* ===== أبرز اللاعبين (رادار) + حالة الفرق — على الرئيسية، أرقام الموسم كاملاً (2026-09-15) ===== */
 function seasonPlayerStats(){
@@ -12182,6 +12243,11 @@ document.addEventListener("click", e=>{
 /* ===== الإنجليزية: قاموس المكوّنات الجديدة (تبويبات النادي، ملف اللاعب، المباريات، الرئيسية) =====
    يُدمج في I18N.DICT قبل I18N.init() — site-i18n.js مؤجّل (defer) فيُنفَّذ قبل DOMContentLoaded، ومستمعنا سُجّل قبله. */
 const I18N_EXTRA = {
+  /* ملف المدرب (منصور 2026-09-20) */
+  'المدرب':'Coach', 'مباريات':'Matches', 'فوز':'Won', 'تعادل':'Drawn', 'خسارة':'Lost', 'النقاط':'Points', 'المركز':'Position',
+  'نقطة/مباراة':'Pts per match', 'له / عليه':'For / against', 'شباك نظيفة':'Clean sheets', 'آخر 5 مباراة':'Last 5', 'آخر 5 مباريات':'Last 5 matches',
+  'مباراة بمباراة':'Match by match', 'أرضه':'home', 'خارج أرضه':'away', 'ف':'W', 'ت':'D', 'خ':'L',
+  'لم يخض ⟨x⟩ أي مباراة في الدوري بعد.':'⟨x⟩ has not played a league match yet.', '⟨x⟩ · الدوري':'⟨x⟩ · League',
   /* عناصر معادلة التقييم (منصور 2026-09-16) */
   'الأهداف':'Goals',
   'الصناعة':'Assists',

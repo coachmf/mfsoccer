@@ -30,13 +30,14 @@ const DB = {
   load(){
     try{
       const raw = localStorage.getItem(this.KEY);
-      if(raw){ this.state = JSON.parse(raw); if(this.state && this.state.ver===1){ (this.state.leagues||[]).forEach(l=>{ if(l.global) l.name='الترتيب العام — الدوري الكويتي الممتاز'; }); this.syncClubs(); this.syncPlayers(); this.syncScoring(); this.applyForcedStatus();
+      if(raw){ this.state = JSON.parse(raw); if(this.state && this.state.ver===1){ (this.state.leagues||[]).forEach(l=>{ if(l.global) l.name='الترتيب العام — الدوري الكويتي الممتاز'; }); this.syncClubs(); this.syncPlayers(); this.syncScoring(); this.applyForcedStatus(); this.syncCoaches();
         if((this.state.priceVer||0) < SEED_PRICE_VER){ this.applySeedPrices(); this.save(); }
         if(normalizeFixtures(this.state)) this.save();
         return; } }
     }catch(e){ console.warn('storage read failed', e); }
     this.state = buildSeedState();
     this.save();
+    this.syncCoaches();   // أول تشغيل: المدربون من البذرة
   },
   applyForcedStatus(){ (this.state&&this.state.players||[]).forEach(p=>{ const f=FORCED_STATUS[p.id]; if(f) Object.assign(p, f, {photo:''}); }); },
   save(){
@@ -74,6 +75,8 @@ const DB = {
     if(st.rules && typeof SEED_RULES!=='undefined'){ st.rules.freeChanges = SEED_RULES.freeChanges; st.rules.scoringFromGW = SEED_RULES.scoringFromGW; }
     if(game.scoring) st.scoring = game.scoring;
     if(game.clubs)   st.clubs   = game.clubs;
+    if(game.coaches) st.coaches = game.coaches;                    // المدربون وأسعارهم — ينشرها المدير مع اللعبة
+    this.syncCoaches();
     if(game.news)    st.news    = game.news;
     if(game.gws)     st.gws     = game.gws;
     if(game.currentGW) st.currentGW = game.currentGW;
@@ -249,6 +252,18 @@ const DB = {
         shirt:t[4]||0, status:'a', news:'', photo:'' });
       dirty=true;
     });
+    if(dirty) this.save();
+  },
+
+  /* المدربون وقواعدهم: المفاتيح الجديدة من الكود، والأسعار/التعديلات من المدير تبقى.
+     الميزانية 105 تُرفع لكل فريق مرة واحدة (bankVer) بدل أن يظهر الجميع فوق الميزانية. */
+  syncCoaches(){
+    const st=this.state; if(!st || typeof COACH_RULES==='undefined') return;
+    st.rules = st.rules||{};
+    if(!st.rules.coach) st.rules.coach = JSON.parse(JSON.stringify(COACH_RULES));
+    else for(const k in COACH_RULES){ if(st.rules.coach[k]===undefined) st.rules.coach[k]=JSON.parse(JSON.stringify(COACH_RULES[k])); }
+    let dirty = (typeof COACHES!=='undefined') ? COACHES.seed(st) : false;
+    if(typeof COACH_UPGRADE!=='undefined' && (+st.rules.budget||0) > 100 && COACH_UPGRADE.local(st)) dirty=true;
     if(dirty) this.save();
   },
 
@@ -595,9 +610,11 @@ function refreshGWSummary(st, gw){
    فريق المستخدم: تحقق، نقاط، تبديل تلقائي، كابتن، كروت
    ========================================================= */
 const TEAM = {
-  validateSquad(squad, st){
+  validateSquad(squad, st, coachId){
     st = st||DB.state;
     const R = st.rules, errs=[];
+    const coach = (coachId && typeof COACHES!=='undefined') ? COACHES.get(st, coachId) : null;
+    if(coachId===null && typeof COACHES!=='undefined' && COACHES.enabled(st) && COACHES.rules(st).required) errs.push('اختر مدرباً لفريقك');
     if(squad.length!==R.squadSize) errs.push(`القائمة يجب أن تضم ${R.squadSize} لاعباً (لديك ${squad.length})`);
     const byPos={G:0,D:0,M:0,F:0}, byClub={};
     let cost=0;
@@ -609,6 +626,7 @@ const TEAM = {
       errs.push(`${POS_AR[pos]}: المطلوب ${R.posCount[pos]} (لديك ${byPos[pos]})`);
     for(const c in byClub) if(byClub[c]>R.maxPerClub)
       errs.push(`الحد الأقصى ${R.maxPerClub} لاعبين من ${DB.club(c).name} (لديك ${byClub[c]})`);
+    if(coach) cost+= +coach.price||0;
     if(cost>R.budget+1e-9) errs.push(`تجاوزت الميزانية: ${fmtM(cost)} من ${fmtK(R.budget)}`);
     return { ok:errs.length===0, errs, cost };
   },
@@ -670,7 +688,7 @@ const TEAM = {
   gwPoints(team, gw, st, opts){
     st=st||DB.state; opts=opts||{};
     const picks = team.gwPicks[gw];
-    if(!picks) return { total:0, rows:[], benchPts:0, chip:null, capName:'', hits:picks?0:0 };
+    if(!picks) return { total:0, rows:[], benchPts:0, chip:null, capName:'', hits:picks?0:0, coach:null };
     const S=k=>st.scoring[k].val;
     const pts = pid => { const r=DB.pgw(pid,gw); return r? r.pts : 0; };
     const played = pid => { const r=DB.pgw(pid,gw); return r && r.min>0; };
@@ -716,7 +734,10 @@ const TEAM = {
     });
     const hits = picks.hits||0;
     total -= hits;
-    return { total, rows, benchPts, chip, hits, capName: (capUsed && DB.player(capUsed))? DB.player(capUsed).name : '—' };
+    // المدرب: خانة مستقلة، لا يتأثر بالكابتن ولا بالدكة القوية
+    let coach=null;
+    if(picks.coach && typeof COACH!=='undefined'){ const cp=COACH.points(st, picks.coach, gw); coach={ id:picks.coach, ...cp }; total+=cp.total; }
+    return { total, rows, benchPts, chip, hits, coach, capName: (capUsed && DB.player(capUsed))? DB.player(capUsed).name : '—' };
   },
 
   totalPoints(team, st){
@@ -727,10 +748,11 @@ const TEAM = {
      (بعد الموعد يرفض الخادم أي تعديل، فالتشكيلة المحفوظة عنده هي عين الاختيارات المقفلة) */
   picksFrom(team){
     return { xi:[...(team.xi||[])], bench:[...(team.bench||[])], cap:team.cap||null, vice:team.vice||null,
-      chip:team.activeChip||null, hits:+team.pendingHits||0 };
+      chip:team.activeChip||null, hits:+team.pendingHits||0, coach:team.coach||null };
   },
   teamValue(team){
-    return team.squad.reduce((s,pid)=>s+((DB.player(pid)||{}).price||0),0);
+    const coach = (team.coach && typeof COACHES!=='undefined') ? COACHES.get(DB.state, team.coach) : null;
+    return team.squad.reduce((s,pid)=>s+((DB.player(pid)||{}).price||0),0) + (coach? +coach.price||0 : 0);
   },
 };
 
@@ -797,7 +819,7 @@ const MARKET = {
     if(st.managerCount>0 && st.own) return Math.round(((st.own[pid]||0)/st.managerCount)*1000)/10;
     if(typeof CLOUD!=='undefined' && CLOUD.ready) return 0;   // متصل لكن لم تُنشر بعد: لا نُظهر أرقام جهاز واحد
     const users=Object.keys(st.teams||{}); if(!users.length) return 0;
-    const real=users.filter(uid=>(st.teams[uid].squad||[]).includes(pid)).length;
+    const real=users.filter(uid=>(st.teams[uid].squad||[]).includes(pid) || st.teams[uid].coach===pid).length;
     return Math.round(real/users.length*1000)/10;
   },
   /* دخول/خروج اللاعب في آخر جولة محتسبة — من صفقات المشتركين الحقيقية */
@@ -1004,6 +1026,7 @@ const GWADMIN = {
       return { ok:false, err:`لا يمكن إغلاق الجولة — ${pending.length} مباريات بلا نتيجة. اسحبها من mfsoccer أو أدخلها من «النتائج والإحصاءات» أولاً.` };
     }
     const g=st.gws.find(x=>x.n===gw); g.status='finished';
+    if(typeof STANDINGS!=='undefined') STANDINGS.snapshot(st, gw);   // ترتيب الجولة المرجعي لنقاط المدرب (لا يتغيّر بتعديل لاحق)
 
     // فرق هذا الجهاز (ضيف أو بلا اتصال): تُحتسب محلياً ما لم يكن الخادم رحّلها
     const scored={};
@@ -1058,6 +1081,7 @@ const GWADMIN = {
     if(picks && picks.chip==='freehit' && team.fhBackup){
       team.squad=team.fhBackup.squad; team.xi=team.fhBackup.xi; team.bench=team.fhBackup.bench;
       team.cap=team.fhBackup.cap; team.vice=team.fhBackup.vice; team.bank=team.fhBackup.bank;
+      if('coach' in team.fhBackup){ team.coach=team.fhBackup.coach; team.coachSince=team.fhBackup.coachSince; }
     }
     team.fhBackup=null;
     // الكرت يُحسب مستخدماً هنا فقط (بعد احتساب الجولة) — قبلها يمكن إلغاؤه بلا خسارة
@@ -1075,6 +1099,7 @@ const GWADMIN = {
       const t=st.teams[uid]; if(!(t.squad||[]).length) continue;
       count++;
       t.squad.forEach(pid=>{ own[pid]=(own[pid]||0)+1; });
+      if(t.coach) own[t.coach]=(own[t.coach]||0)+1;
       (t.transfers||[]).filter(x=>x.gw===gw).forEach(x=>{
         transfers[x.in]=transfers[x.in]||{in:0,out:0}; transfers[x.in].in++;
         transfers[x.out]=transfers[x.out]||{in:0,out:0}; transfers[x.out].out++;

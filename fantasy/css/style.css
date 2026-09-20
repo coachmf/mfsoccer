@@ -1144,3 +1144,265 @@ html.lang-en .pp-actions{justify-content:flex-start;}
 @media (max-width:860px){
   .pitch .pslot .pk .kit.kit-img,.pitch .pslot .pk .kit{width:56px!important;height:56px!important;margin:0 0 -6px!important}
 }
+/* ---------- المدرب: في صف الحارس على يمينه، بنفس شكل بطاقات اللاعبين ---------- */
+.row-g .cslot{order:1;}             /* الملعب مرسوم LTR دائماً: آخر عنصر = أقصى اليمين */
+.cslot .cavatar{box-shadow:0 4px 10px rgba(0,25,10,.4);border-radius:50%;}
+.cslot.empty.need .empty-shirt{border-color:var(--gold);}
+.cslot .club-tag{max-width:98px;}
+.cform{display:inline-grid;place-items:center;width:18px;height:18px;border-radius:5px;font-size:.6rem;font-weight:800;color:#fff;}
+.cform.w{background:#12b76a;} .cform.d{background:#9aa5b8;} .cform.l{background:#d92d20;}
+.cflag{height:auto;border-radius:2px;vertical-align:middle;margin-inline-start:4px;}
+.cstats .statbox{padding:8px 6px;} .cstats .statbox .v{font-size:1rem;}
+.cnotice{border-color:color-mix(in srgb,var(--gold) 60%,var(--line));}
+@media(max-width:560px){ .cslot{right:2px;} }
+
+.cstats{grid-template-columns:repeat(2,1fr) !important;gap:8px;}
+@media(max-width:700px){ .cprof{grid-template-columns:1fr 1fr !important;} }
+
+.ccut{display:block;width:auto;max-width:80px;object-fit:contain;object-position:bottom center;filter:drop-shadow(0 4px 8px rgba(0,20,10,.38));}
+.cslot .ccut{margin-bottom:-3px;}
+.addp-row .ccut{max-width:40px;}
+/* صندوق المدرب على الملعب: بحجم صندوق القميص، خلفية داكنة مستديرة والمدرب واقف بداخله */
+.cpk{width:56px;height:56px;border-radius:12px;overflow:hidden;background:linear-gradient(180deg,rgba(8,52,28,.55),rgba(8,52,28,.8));
+  display:flex;align-items:flex-end;justify-content:center;box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.14),0 3px 6px rgba(0,25,10,.35);}
+.cpk .ccut{height:66px;max-width:none;margin-bottom:-8px;filter:none;}
+.cpk .ccut.noph{height:34px;margin:0 auto 11px;}
+@media (max-width:860px){ .cpk{width:50px;height:50px;} .cpk .ccut{height:60px;} }
+.pslot.sel .cpk{outline:3px solid var(--gold);outline-offset:2px;}
+
+/* ---------- شريط الجهاز الفني: المدرب تحت الملعب وفوق الدكة — بنفس تدرّج بطاقات التطبيق الزرقاء ---------- */
+.coach-bar{display:flex;align-items:center;gap:12px;margin:10px 0 0;padding:10px 14px;border-radius:12px;cursor:pointer;
+  background:linear-gradient(115deg,#54bdec 0%,var(--kpl1) 45%,var(--kpl2) 100%);color:#fff;
+  box-shadow:0 4px 14px rgba(13,79,146,.22);position:relative;overflow:hidden;}
+.coach-bar::after{content:"";position:absolute;inset-inline-end:-30px;top:-40px;width:150px;height:150px;border-radius:50%;background:rgba(255,255,255,.07);pointer-events:none;}
+.coach-bar .cb-ph{width:58px;height:58px;border-radius:14px;overflow:hidden;flex:none;position:relative;z-index:1;
+  background:linear-gradient(180deg,rgba(255,255,255,.22),rgba(255,255,255,.08));box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.35);
+  display:flex;align-items:flex-end;justify-content:center;}
+.coach-bar .cb-ph .ccut{height:70px;max-width:none;margin-bottom:-9px;filter:drop-shadow(0 2px 4px rgba(0,0,0,.25));}
+.coach-bar .cb-txt{flex:1;min-width:0;display:grid;gap:2px;position:relative;z-index:1;}
+.coach-bar .cb-lbl{font-size:.62rem;font-weight:800;letter-spacing:.08em;opacity:.85;display:flex;align-items:center;gap:4px;}
+.coach-bar .cb-lbl .cflag{width:14px;margin:0;}
+.coach-bar b{font-size:1rem;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.coach-bar .cb-txt>span{font-size:.74rem;opacity:.92;display:flex;align-items:center;gap:4px;white-space:nowrap;overflow:hidden;}
+.coach-bar .cb-txt .crest{width:16px;height:16px;}
+.coach-bar .cb-side{display:flex;flex-direction:column;gap:5px;align-items:flex-end;flex:none;position:relative;z-index:1;}
+.coach-bar .cb-pill{background:rgba(255,255,255,.18);color:#fff;border:1px solid rgba(255,255,255,.28);}
+.coach-bar .cb-pill.gold{background:rgba(253,185,19,.22);color:#ffd66b;border-color:rgba(253,185,19,.4);}
+.coach-bar .cb-pts{font-family:'Vazirmatn';font-size:1.45rem;font-weight:800;line-height:1;}
+.coach-bar .cb-pts.pend{font-size:.8rem;font-weight:700;opacity:.9;} .coach-bar .cb-pts.neg{color:#ffb4b0;}
+.coach-bar .cb-cap{font-size:.62rem;opacity:.8;}
+.coach-bar.empty{background:rgba(255,255,255,.92);color:var(--kpl2);border:1.5px dashed color-mix(in srgb,var(--kpl1) 55%,transparent);box-shadow:none;}
+.coach-bar.empty .cb-ph{background:color-mix(in srgb,var(--kpl1) 10%,transparent);box-shadow:none;}
+.coach-bar.empty .empty-shirt{width:36px;height:36px;border-color:var(--kpl1);color:var(--kpl1);background:transparent;}
+.coach-bar.empty .cb-pill{background:var(--kpl1);color:#fff;border-color:transparent;}
+.coach-bar.empty b{color:var(--kpl2);} .coach-bar.empty .cb-txt>span,.coach-bar.empty .cb-lbl{color:var(--text2);opacity:1;}
+.picker-pitch+.coach-bar,.tf-board+.coach-bar{margin:10px 0 2px;}
+
+/* ---------- الملعب بمنظور (2026-09-20): خلفية SVG بخطوط منظورية بدل العناصر المسطّحة ---------- */
+.pitch{background:#37994f url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 400 560%22 preserveAspectRatio=%22none%22%3E%0A%3Cdefs%3E%3Cpattern id=%22net%22 width=%225%22 height=%225%22 patternUnits=%22userSpaceOnUse%22%3E%3Cpath d=%22M0 0H5M0 0V5%22 stroke=%22%23fff%22 stroke-width=%22.9%22 opacity=%22.55%22/%3E%3C/pattern%3E%0A%3ClinearGradient id=%22sh%22 x1=%220%22 y1=%220%22 x2=%220%22 y2=%221%22%3E%3Cstop offset=%220%22 stop-color=%22%23000%22 stop-opacity=%22.18%22/%3E%3Cstop offset=%22.35%22 stop-color=%22%23000%22 stop-opacity=%220%22/%3E%3Cstop offset=%221%22 stop-color=%22%23000%22 stop-opacity=%22.12%22/%3E%3C/linearGradient%3E%3C/defs%3E%0A%3Crect width=%22400%22 height=%22560%22 fill=%22%232f8f47%22/%3E%0A%3Cpath d=%22M52.0,66.0 L348.0,66.0 L355.4,136.6 L44.6,136.6 Z%22 fill=%22%233ea757%22/%3E%3Cpath d=%22M44.6,136.6 L355.4,136.6 L362.9,207.1 L37.1,207.1 Z%22 fill=%22%2337994f%22/%3E%3Cpath d=%22M37.1,207.1 L362.9,207.1 L370.3,277.7 L29.7,277.7 Z%22 fill=%22%233ea757%22/%3E%3Cpath d=%22M29.7,277.7 L370.3,277.7 L377.7,348.3 L22.3,348.3 Z%22 fill=%22%2337994f%22/%3E%3Cpath d=%22M22.3,348.3 L377.7,348.3 L385.1,418.9 L14.9,418.9 Z%22 fill=%22%233ea757%22/%3E%3Cpath d=%22M14.9,418.9 L385.1,418.9 L392.6,489.4 L7.4,489.4 Z%22 fill=%22%2337994f%22/%3E%3Cpath d=%22M7.4,489.4 L392.6,489.4 L400.0,560.0 L0.0,560.0 Z%22 fill=%22%233ea757%22/%3E%0A%3Cpath d=%22M52.0,66.0 L348.0,66.0 L400.0,560.0 L0.0,560.0 Z%22 fill=%22url(%23sh)%22/%3E%0A%3Cg fill=%22none%22 stroke=%22%23fff%22 stroke-width=%222.2%22 stroke-linejoin=%22round%22 opacity=%22.92%22%3E%0A%3Cpath d=%22M52.0,66.0 L348.0,66.0 L400.0,560.0 L0.0,560.0 Z%22/%3E%3Cpath d=%22M140.8,66.0 L139.0,108.0 L261.0,108.0 L259.2,66.0%22/%3E%3Cpath d=%22M102.3,66.0 L94.6,177.2 L305.4,177.2 L297.7,66.0%22/%3E%3Cpath d=%22M164.9,177.2 C173.8,214.2 226.2,214.2 235.1,177.2%22/%3E%0A%3Ccircle cx=%22200%22 cy=%22560%22 r=%2274%22/%3E%3Cpath d=%22M0 560 H400%22/%3E%0A%3C/g%3E%0A%3Ccircle cx=%22200.0%22 cy=%22147.5%22 r=%222.2%22 fill=%22%23fff%22 opacity=%22.9%22/%3E%3Crect x=%22170.4%22 y=%2253%22 width=%2259.2%22 height=%2213%22 fill=%22url(%23net)%22 stroke=%22%23fff%22 stroke-width=%222.4%22 opacity=%22.95%22/%3E%0A%3C/svg%3E") center top / 100% 100% no-repeat !important;}
+.pf-goal,.pf-box6,.pf-box,.pf-circle{display:none !important;}
+.pitch{min-height:0 !important;padding:54px 6px 14px !important;justify-content:flex-start !important;gap:16px;}
+.pitch-brand{background:linear-gradient(90deg,#54bdec,var(--kpl1) 50%,var(--kpl2));}
+.pitch-brand img{filter:brightness(0) invert(1);opacity:.95;}
+/* بطاقات أصغر وأرتب على الجوال حتى يظهر الملعب والمدرب والدكة في شاشة واحدة */
+@media (max-width:600px){
+  .pitch{padding:48px 4px 10px !important;gap:10px;}
+  .pitch-brand{height:20px;} .pitch-brand img{height:12px;}
+  .pitch-row{gap:4px;}
+  .pslot{width:62px;} .pslot .pk{height:44px;} .pslot .pk .kit{width:40px;height:auto;}
+  .pslot .nm{font-size:.58rem;padding:2px 4px;min-width:54px;max-width:62px;}
+  .pslot .pt{font-size:.5rem;padding:1px 4px;min-width:54px;max-width:62px;}
+  .club-tag{display:none;}
+  .pitch-frame .bench-strip{padding:5px 2px;margin-top:8px;}
+  .bench-strip .pslot{width:56px;} .bench-pos{font-size:.52rem;}
+  .coach-bar{padding:6px 10px;margin-top:8px;gap:8px;}
+  .coach-bar .cb-ph{width:44px;height:44px;border-radius:11px;} .coach-bar .cb-ph .ccut{height:54px;margin-bottom:-7px;}
+  .coach-bar b{font-size:.86rem;} .coach-bar .cb-txt>span{font-size:.66rem;} .coach-bar .cb-lbl{font-size:.56rem;}
+  .coach-bar .cb-side{gap:3px;} .coach-bar .cb-pill{padding:2px 8px;font-size:.62rem;}
+  .coach-bar .cb-pts{font-size:1.2rem;}
+  .form-now{margin:0 0 6px;font-size:.8rem;}
+}
+/* ---------- لوحة الإعلانات خلف المرمى بشكل 3D (2026-09-20) ---------- */
+.pitch{padding-top:66px !important;}
+.pitch-brand{
+  top:8px;left:12%;right:12%;height:30px;border-radius:3px;border-bottom:0;
+  transform:perspective(520px) rotateX(34deg);transform-origin:50% 100%;
+  background:linear-gradient(180deg,#6dd0f5 0%,#2a93d6 38%,#1470b8 70%,#0d5296 100%);
+  box-shadow:0 3px 0 #083a68, 0 6px 0 #062a4d, 0 14px 22px rgba(0,20,40,.45), inset 0 1px 0 rgba(255,255,255,.55), inset 0 -2px 0 rgba(0,0,0,.25);
+  overflow:hidden;
+}
+.pitch-brand::before{content:"";position:absolute;inset:0;background:repeating-linear-gradient(90deg,rgba(255,255,255,.06) 0 2px,transparent 2px 4px);pointer-events:none;} /* شبكة LED خفيفة */
+.pitch-brand::after{content:"";position:absolute;left:0;right:0;top:0;height:45%;background:linear-gradient(180deg,rgba(255,255,255,.28),rgba(255,255,255,0));pointer-events:none;}
+.pitch-brand img{height:15px;filter:brightness(0) invert(1) drop-shadow(0 1px 1px rgba(0,0,0,.35));position:relative;z-index:1;}
+.pitch-brand img:nth-child(2){transform:scale(1.06);}
+.pitch-brand img:first-child,.pitch-brand img:last-child{opacity:.9;}
+@media (max-width:600px){
+  .pitch{padding-top:52px !important;}
+  .pitch-brand{top:6px;height:24px;} .pitch-brand img{height:11px;}
+}
+/* شارة الكابتن والنائب: سوداء بشكل 3D (منصور 2026-09-20) */
+.pslot .badge,.pslot .badge.v{
+  background:radial-gradient(circle at 35% 28%,#4a4a4a 0%,#161616 55%,#000 100%);color:#fff;border:1.5px solid #fff;
+  box-shadow:0 2px 0 #000, 0 4px 8px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.28), inset 0 -2px 3px rgba(0,0,0,.6);
+  text-shadow:0 1px 1px rgba(0,0,0,.7);
+}
+/* لوحة الإعلانات: صورة LED مولّدة (assets/adboard.webp) + منظور */
+.pitch-brand{background:url("../assets/adboard.webp?v=254") center/cover no-repeat;}
+.pitch-brand::before{display:none;}
+.pitch-brand::after{background:linear-gradient(180deg,rgba(255,255,255,.18),rgba(255,255,255,0) 60%);}
+.pitch-brand img{height:16px;opacity:1;filter:brightness(0) invert(1) drop-shadow(0 1px 2px rgba(0,0,0,.45));}
+@media (max-width:600px){ .pitch-brand img{height:12px;} }
+/* شارة الكابتن والنائب: إطار أسود شفاف وحرف أبيض (منصور) */
+.pslot .badge,.pslot .badge.v{
+  background:rgba(0,0,0,.55);border:1.5px solid rgba(0,0,0,.75);color:#fff;
+  box-shadow:0 1px 3px rgba(0,0,0,.35);text-shadow:none;backdrop-filter:blur(2px);
+}
+/* لوحة الإعلانات: أكبر وبصورة LED كاملة، والمرمى تحتها */
+.pitch{padding-top:92px !important;}
+.pitch-brand{top:8px;left:11%;right:11%;height:40px;background:url("../assets/adboard.webp?v=254") center/100% 100% no-repeat;
+  transform:perspective(700px) rotateX(22deg);box-shadow:0 3px 0 #0a3556, 0 10px 18px rgba(0,20,40,.4);border-radius:4px;}
+.pitch-brand img{height:19px;}
+@media (max-width:600px){ .pitch{padding-top:74px !important;} .pitch-brand{top:6px;height:32px;} .pitch-brand img{height:14px;} }
+/* ---------- منصور 2026-09-20 (مساءً): أطقم الملعب بحجم أطقم الدكة نفسه، ولوحة إعلانات بألوان الدوري وشعاره ---------- */
+@media (max-width:860px){
+  .pslot .pk .kit.kit-img,.pslot .pk .kit,
+  .bench-strip .pslot .pk .kit.kit-img,.bench-strip .pslot .pk .kit{width:56px!important;height:56px!important;margin:0 0 -6px!important}
+}
+@media (max-width:600px){ .pslot{width:60px;} .bench-strip .pslot{width:60px;} .pitch-row{gap:4px;} }
+/* اللوحة: الصورة المرسومة تحمل الشعار والنص، فلا حاجة لشعارات الفانتسي فوقها */
+.pitch-brand{background:url("../assets/adboard.webp?v=255") center/100% 100% no-repeat;left:9%;right:9%;}
+.pitch-brand img{display:none!important;}
+.pitch-brand::after{background:linear-gradient(180deg,rgba(255,255,255,.10),rgba(255,255,255,0) 50%);}
+/* صورة المدرب في الشريط: نسخة الوجه (_f) تملأ المربع بدل قصّ الكتفين من الصورة الواقفة */
+.coach-bar .cb-ph .ccut{width:100%;height:100%!important;margin:0!important;object-fit:cover;object-position:top;filter:none;}
+
+/* صفحة المدرب: الصورة الواقفة الكاملة (Gemini 2026-09-20) بدل القصّة الصدرية */
+.pp-cut.pp-body{width:auto;height:250px;object-fit:contain;object-position:bottom center;margin:-6px 0 -18px;filter:drop-shadow(0 8px 12px rgba(0,0,0,.35));}
+@media (max-width:520px){.pp-cut.pp-body{height:200px;margin:-4px 0 -14px;}}
+
+/* شريط المدرب: المدرب واقف بكامل جسمه يطلع فوق حافة الشريط (منصور 2026-09-20 «جرب تخليه واقف») */
+.coach-bar{overflow:visible;margin-top:14px;}
+.coach-bar::after{display:none;}
+.coach-bar .cb-ph.cb-stand{width:64px;height:54px;border-radius:0;background:none;box-shadow:none;overflow:visible;align-items:flex-end;justify-content:center;}
+.coach-bar .cb-ph.cb-stand .ccut{height:118px!important;width:auto;max-width:none;margin:0 0 -6px!important;object-fit:contain;object-position:bottom center;
+  filter:drop-shadow(0 4px 6px rgba(0,0,0,.35));}
+@media (max-width:600px){
+  .coach-bar{margin-top:12px;}
+  .coach-bar .cb-ph.cb-stand{width:64px;height:52px;}
+  .coach-bar .cb-ph.cb-stand .ccut{height:126px!important;margin-bottom:-5px!important;}
+}
+
+/* منصور: المدرب داخل إطار الشريط لا يطلع منه — الشريط أطول والصورة الواقفة كاملة داخله */
+.coach-bar{overflow:hidden;margin-top:10px;padding-top:8px;padding-bottom:8px;}
+.coach-bar .cb-ph.cb-stand{width:60px;height:96px;align-items:flex-end;}
+.coach-bar .cb-ph.cb-stand .ccut{height:96px!important;margin:0!important;}
+@media (max-width:600px){
+  .coach-bar{margin-top:8px;padding-top:6px;padding-bottom:6px;}
+  .coach-bar .cb-ph.cb-stand{width:54px;height:88px;}
+  .coach-bar .cb-ph.cb-stand .ccut{height:88px!important;margin:0!important;}
+}
+
+/* منصور: «الكلام ماكول» — لا قصّ للنص في شريط المدرب: ارتفاع سطر أكبر حتى لا تُقطع ذيول الحروف، والسطر الثاني يلتف بدل ما يُقص */
+.coach-bar .cb-txt{gap:3px;padding-inline-end:4px;}
+.coach-bar .cb-lbl{line-height:1.5;overflow:visible;}
+.coach-bar b{white-space:normal;overflow:visible;text-overflow:clip;line-height:1.5;}
+.coach-bar .cb-txt>span{white-space:normal;overflow:visible;flex-wrap:wrap;line-height:1.5;row-gap:0;}
+
+/* منصور: رجوع لمربع الصورة في الشريط لكن بالنسخة الصدرية (الوجه + شعار النادي على الصدر) بدل الواقفة */
+.coach-bar{padding-top:8px;padding-bottom:8px;}
+.coach-bar .cb-ph.cb-bust{width:66px;height:82px;border-radius:14px;overflow:hidden;align-items:flex-end;justify-content:center;
+  background:linear-gradient(180deg,rgba(255,255,255,.26),rgba(255,255,255,.10));box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.4);}
+.coach-bar .cb-ph.cb-bust .ccut{width:100%;height:100%!important;margin:0!important;object-fit:cover;object-position:top center;filter:none;}
+@media (max-width:600px){
+  .coach-bar{padding-top:6px;padding-bottom:6px;}
+  .coach-bar .cb-ph.cb-bust{width:60px;height:75px;border-radius:12px;}
+}
+
+/* لوحة الإعلانات كاملة من Gemini (إطار + شعار + نص) — بلا لمعة CSS فوقها، ومنظور أخف */
+.pitch-brand{background:url("../assets/adboard.webp?v=263") center/100% 100% no-repeat;left:8%;right:8%;height:44px;border-radius:5px;
+  transform:perspective(700px) rotateX(16deg);box-shadow:0 8px 16px rgba(0,20,40,.35);}
+.pitch-brand::before,.pitch-brand::after{display:none;}
+@media (max-width:600px){ .pitch-brand{height:36px;left:7%;right:7%;} .pitch{padding-top:86px !important;} }
+/* شارتا C/V زجاجيتان شفافتان (منصور) */
+.pslot .badge,.pslot .badge.v{
+  background:rgba(255,255,255,.14);border:1.5px solid rgba(255,255,255,.85);color:#fff;
+  box-shadow:0 1px 4px rgba(0,0,0,.35);text-shadow:0 1px 2px rgba(0,0,0,.5);backdrop-filter:blur(3px);
+}
+
+/* لوحتا إعلانات بيضاوان (شعار الفانتسي) يمين المرمى ويساره تماماً — مثل لوحات الملعب الحقيقية (منصور 2026-09-20) */
+.pitch-brand{display:none !important;}
+.pitch-board{position:absolute;top:10px;height:38px;background:url("../assets/adboard.webp?v=264") center/100% 100% no-repeat;border-radius:3px;
+  transform:perspective(600px) rotateX(24deg);transform-origin:50% 100%;box-shadow:0 6px 12px rgba(0,20,40,.35);}
+.pitch-board.l{left:4%;right:58.6%;}   /* المرمى في خلفية SVG من 42.6% إلى 57.4% */
+.pitch-board.r{left:58.6%;right:4%;}
+@media (max-width:600px){ .pitch-board{top:8px;height:32px;} .pitch{padding-top:78px !important;} }
+
+/* اللوحتان تقفان على خط المرمى (خط النهاية في خلفية SVG عند 11.8% من ارتفاع الملعب) */
+.pitch-board{top:auto;bottom:88.4%;height:40px;}
+@media (max-width:600px){ .pitch-board{top:auto;bottom:88.4%;height:34px;} }
+
+/* منصور: اللوحتان أصغر بكثير وتتداخلان مع طرفي المرمى */
+.pitch-board{height:24px;bottom:88.6%;transform:perspective(500px) rotateX(22deg);box-shadow:0 3px 7px rgba(0,20,40,.35);}
+.pitch-board.l{left:auto;right:53%;width:24%;}   /* طرفها الداخلي يدخل فوق القائم الأيسر (المرمى 42.6%–57.4%) */
+.pitch-board.r{right:auto;left:53%;width:24%;}
+@media (max-width:600px){ .pitch-board{height:20px;bottom:88.6%;} .pitch-board.l,.pitch-board.r{width:25%;} .pitch{padding-top:64px !important;} }
+
+/* ---------- ملعب بهندسة FPL بالضبط (منصور 2026-09-20): خلفية SVG + صفوف اللاعبين في مواضع ثابتة ---------- */
+.pitch{background:#2f8a4a url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 400 520%22 preserveAspectRatio=%22none%22%3E%0A%3Cdefs%3E%3Cpattern id=%22net%22 width=%224%22 height=%224%22 patternUnits=%22userSpaceOnUse%22%3E%3Cpath d=%22M0 0H4M0 0V4%22 stroke=%22%23fff%22 stroke-width=%22.8%22 opacity=%22.55%22/%3E%3C/pattern%3E%0A%3ClinearGradient id=%22sh%22 x1=%220%22 y1=%220%22 x2=%220%22 y2=%221%22%3E%3Cstop offset=%220%22 stop-color=%22%23000%22 stop-opacity=%22.16%22/%3E%3Cstop offset=%22.4%22 stop-color=%22%23000%22 stop-opacity=%220%22/%3E%3Cstop offset=%221%22 stop-color=%22%23000%22 stop-opacity=%22.10%22/%3E%3C/linearGradient%3E%0A%3ClinearGradient id=%22bg%22 x1=%220%22 y1=%220%22 x2=%220%22 y2=%221%22%3E%3Cstop offset=%220%22 stop-color=%22%232b7d44%22/%3E%3Cstop offset=%221%22 stop-color=%22%232f8a4a%22/%3E%3C/linearGradient%3E%3C/defs%3E%0A%3Crect width=%22400%22 height=%22520%22 fill=%22url(%23bg)%22/%3E%0A%3Cpath d=%22M34.0,44.2 L366.0,44.2 L369.8,97.1 L30.2,97.1 Z%22 fill=%22%233fa257%22/%3E%3Cpath d=%22M30.2,97.1 L369.8,97.1 L373.6,149.9 L26.4,149.9 Z%22 fill=%22%2337944e%22/%3E%3Cpath d=%22M26.4,149.9 L373.6,149.9 L377.3,202.8 L22.7,202.8 Z%22 fill=%22%233fa257%22/%3E%3Cpath d=%22M22.7,202.8 L377.3,202.8 L381.1,255.7 L18.9,255.7 Z%22 fill=%22%2337944e%22/%3E%3Cpath d=%22M18.9,255.7 L381.1,255.7 L384.9,308.5 L15.1,308.5 Z%22 fill=%22%233fa257%22/%3E%3Cpath d=%22M15.1,308.5 L384.9,308.5 L388.7,361.4 L11.3,361.4 Z%22 fill=%22%2337944e%22/%3E%3Cpath d=%22M11.3,361.4 L388.7,361.4 L392.4,414.3 L7.6,414.3 Z%22 fill=%22%233fa257%22/%3E%3Cpath d=%22M7.6,414.3 L392.4,414.3 L396.2,467.1 L3.8,467.1 Z%22 fill=%22%2337944e%22/%3E%3Cpath d=%22M3.8,467.1 L396.2,467.1 L400.0,520.0 L0.0,520.0 Z%22 fill=%22%233fa257%22/%3E%0A%3Cpath d=%22M34.0,44.2 L366.0,44.2 L400.0,520.0 L0.0,520.0 Z%22 fill=%22url(%23sh)%22/%3E%0A%3Cg fill=%22none%22 stroke=%22%23fff%22 stroke-width=%222%22 stroke-linejoin=%22round%22 opacity=%22.95%22%3E%0A%3Cpath d=%22M34.0,44.2 L366.0,44.2 L400.0,520.0 L0.0,520.0 Z%22/%3E%3Cpath d=%22M146.9,44.2 L146.0,80.6 L254.0,80.6 L253.1,44.2%22/%3E%3Cpath d=%22M108.7,44.2 L106.5,101.4 L293.5,101.4 L291.3,44.2%22/%3E%3Cpath d=%22M155.8,101.4 C169.1,121.3 230.9,121.3 244.2,101.4%22/%3E%3Cpath d=%22M11.9,353.6 L388.1,353.6%22/%3E%3Cellipse cx=%22200%22 cy=%22353.6%22 rx=%2288.0%22 ry=%2249.4%22/%3E%3Cpath d=%22M41.0,44.2 A7,6 0 0 1 34.0,50.2%22/%3E%3Cpath d=%22M359.0,44.2 A7,6 0 0 0 366.0,50.2%22/%3E%0A%3C/g%3E%0A%3Cellipse cx=%22200.0%22 cy=%2288.4%22 rx=%222.6%22 ry=%221.8%22 fill=%22%23fff%22 opacity=%22.95%22/%3E%3Cellipse cx=%22200%22 cy=%22353.6%22 rx=%223%22 ry=%222%22 fill=%22%23fff%22 opacity=%22.95%22/%3E%3Cg%3E%0A%3Crect x=%22170.1%22 y=%2213.0%22 width=%2259.8%22 height=%2231.2%22 fill=%22%234a5a52%22 opacity=%22.55%22/%3E%0A%3Crect x=%22170.1%22 y=%2213.0%22 width=%2259.8%22 height=%2231.2%22 fill=%22url(%23net)%22/%3E%0A%3Cpath d=%22M170.1,44.2 V13.0 H229.9 V44.2%22 fill=%22none%22 stroke=%22%23fff%22 stroke-width=%222.6%22/%3E%0A%3Cpath d=%22M176.1,18.0 H223.9 M176.1,18.0 V44.2 M223.9,18.0 V44.2%22 fill=%22none%22 stroke=%22%23fff%22 stroke-width=%221%22 opacity=%22.6%22/%3E%0A%3C/g%3E%0A%3C/svg%3E") center top / 100% 100% no-repeat !important;
+  display:block !important;position:relative;aspect-ratio:400/520;min-height:0 !important;padding:0 !important;gap:0;overflow:visible;}
+.pitch-row{position:absolute;left:0;right:0;transform:translateY(-50%);margin:0;}
+.pitch-row.row-g{top:23%;} .pitch-row.row-d{top:47%;} .pitch-row.row-m{top:69%;} .pitch-row.row-f{top:91%;}
+.pitch-board{bottom:auto;top:calc(8.5% - 20px);}
+@media (max-width:600px){ .pitch-board{top:calc(8.5% - 17px);} .pitch{padding:0 !important;} }
+
+/* منصور: مسافة بين اللوحتين والمرمى، وتمتدان قريباً من الكورنر (خط النهاية من 8.5% إلى 91.5%، المرمى 41%–59%) */
+.pitch-board.l{left:10%;right:auto;width:26%;}
+.pitch-board.r{right:10%;left:auto;width:26%;}
+
+/* منصور: كل لوحة أقرب للمرمى قليلاً ومسحوبة للخلف قليلاً */
+.pitch-board.l{left:12%;width:26%;} .pitch-board.r{right:12%;width:26%;}
+.pitch-board{top:calc(8.5% - 25px);}
+@media (max-width:600px){ .pitch-board{top:calc(8.5% - 21px);} }
+
+/* منصور: كل الصفوف ترجع للخلف قليلاً (نحو المرمى) */
+.pitch-row.row-g{top:20.5%;} .pitch-row.row-d{top:44.5%;} .pitch-row.row-m{top:66.5%;} .pitch-row.row-f{top:88.5%;}
+
+/* منصور: اللوحتان للخلف أكثر قليلاً + أرجل داكنة تحتهما (واقعية 3D) */
+.pitch-board{top:calc(8.5% - 28px);transform-style:preserve-3d;box-shadow:0 2px 0 #1a1a1a,0 6px 8px rgba(0,20,40,.4);}
+.pitch-board::before,.pitch-board::after{content:"";position:absolute;bottom:-9px;width:5px;height:10px;border-radius:0 0 2px 2px;
+  background:linear-gradient(90deg,#2b2b2b,#4a4a4a 40%,#1c1c1c);transform-origin:50% 0;transform:rotateX(-22deg);box-shadow:1px 2px 2px rgba(0,0,0,.35);}
+.pitch-board::before{left:7%;} .pitch-board::after{right:7%;}
+@media (max-width:600px){ .pitch-board{top:calc(8.5% - 24px);} .pitch-board::before,.pitch-board::after{bottom:-8px;width:4px;height:9px;} }
+
+/* منصور: الصفوف ترجع خطوتين إضافيتين للخلف */
+.pitch-row.row-g{top:17%;} .pitch-row.row-d{top:41%;} .pitch-row.row-m{top:63%;} .pitch-row.row-f{top:85%;}
+
+/* منصور: بلا أرجل — اللوحتان على خط المرمى نفسه وبارتفاعه (6% من الملعب)، من جانب المرمى حتى قرب الكورنر، بلا ميلان */
+.pitch-board::before,.pitch-board::after{display:none;}
+.pitch-board,.pitch-board.l,.pitch-board.r{top:2.5%;bottom:auto;height:6%;transform:none;border-radius:2px;
+  box-shadow:0 2px 0 #1a1a1a,0 4px 8px rgba(0,20,40,.35);}
+.pitch-board.l{left:9.5%;right:auto;width:29.5%;}
+.pitch-board.r{right:9.5%;left:auto;width:29.5%;}
+@media (max-width:600px){ .pitch-board,.pitch-board.l,.pitch-board.r{top:2.5%;height:6%;} }
+
+/* منصور: لوحة قصيرة جداً (شريط محيطي حقيقي) متصلة بقائم المرمى وتمتد حتى الكورنر */
+.pitch-board,.pitch-board.l,.pitch-board.r{height:3%;top:5.5%;background-image:url("../assets/adboard.webp?v=273");box-shadow:0 1px 0 #1a1a1a,0 2px 5px rgba(0,20,40,.35);border-radius:1px;}
+.pitch-board.l{left:8.6%;width:32.6%;}   /* من الكورنر (8.5%) حتى القائم (41.2%) */
+.pitch-board.r{right:8.6%;width:32.6%;}
+@media (max-width:600px){ .pitch-board,.pitch-board.l,.pitch-board.r{height:3%;top:5.5%;} }
+
+/* منصور: الطرف الخارجي لا يغطي قوس الكورنر — يبدأ بعد الكورنر بقليل، ويبقى متصلاً بالقائم */
+.pitch-board.l{left:11.5%;width:29.7%;}
+.pitch-board.r{right:11.5%;width:29.7%;}
+
+/* منصور: الشعار أوضح — اللوحة أعلى قليلاً والصورة بلا ضغط */
+.pitch-board,.pitch-board.l,.pitch-board.r{height:3.6%;top:4.9%;background-image:url("../assets/adboard.webp?v=275");image-rendering:auto;}
+@media (max-width:600px){ .pitch-board,.pitch-board.l,.pitch-board.r{height:3.6%;top:4.9%;} }
+
+/* منصور: اللوحتان مسحوبتان قليلاً للخلف عن خط المرمى */
+.pitch-board,.pitch-board.l,.pitch-board.r{top:4.3%;}
+@media (max-width:600px){ .pitch-board,.pitch-board.l,.pitch-board.r{top:4.3%;} }
+
+/* منصور: اللوحة أعلى قليلاً وبنص كبير بسطر واحد حتى يُقرأ على شاشة 1x */
+.pitch-board,.pitch-board.l,.pitch-board.r{height:4.4%;top:3.6%;background-image:url("../assets/adboard.webp?v=277");image-rendering:-webkit-optimize-contrast;}
+@media (max-width:600px){ .pitch-board,.pitch-board.l,.pitch-board.r{height:4.4%;top:3.6%;} }

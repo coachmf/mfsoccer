@@ -336,6 +336,8 @@ const RX_MORE = [
 (function mergeI18N(){
   if(typeof I18N === 'undefined') return;
   Object.assign(I18N.DICT, DICT_MORE);
+  /* المدرب (coach-ui.js): القاموس والأسماء والأنماط */
+  if(typeof COACH_I18N!=='undefined'){ Object.assign(I18N.DICT, COACH_I18N.DICT); for(const ar in COACH_I18N.NAMES) NAMES_EN[ar]=COACH_I18N.NAMES[ar]; }
   /* الأسماء الكاملة + الكلمة الأخيرة (بطاقات الملعب تعرض الاسم الأخير فقط) */
   for(const ar in NAMES_EN){
     const en = NAMES_EN[ar];
@@ -344,7 +346,7 @@ const RX_MORE = [
     if(la && la.length >= 2 && I18N.DICT[la] == null) I18N.DICT[la] = le;
   }
   /* الأنماط الجديدة قبل القديمة حتى لا يلتقط نمط عام (مثل «N من N») الحالات الخاصة */
-  I18N.RX = RX_MORE.concat(I18N.RX);
+  I18N.RX = (typeof COACH_I18N!=='undefined' ? COACH_I18N.RX : []).concat(RX_MORE, I18N.RX);
   I18N._keysSorted = null;
 })();
 

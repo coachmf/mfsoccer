@@ -229,12 +229,12 @@ Object.assign(VIEWS, {
       <button class="btn sm sec" onclick="APP.go('about')">${T('المطوّر والاقتراحات','Developer and feedback')}</button></div>
 
       ${sec(T('نبذة','Overview'), T(`<b>فانتسي الدوري الكويتي</b> لعبة فانتسي بلاعبي الدوري الكويتي:
-        تكوّن فريقاً من 15 لاعباً حقيقياً بميزانية محدودة، تختار تشكيلتك وكابتنك قبل كل جولة،
-        وتجمع نقاطاً من أداء لاعبيك الفعلي في مباريات الدوري (أهداف، صناعة، شباك نظيفة…).
+        تكوّن فريقاً من 15 لاعباً حقيقياً ومدرباً واحداً بميزانية محدودة، تختار تشكيلتك وكابتنك قبل كل جولة،
+        وتجمع نقاطاً من أداء لاعبيك الفعلي في مباريات الدوري (أهداف، صناعة، شباك نظيفة…) ومن نتائج مدربك.
         تنافس في الترتيب العام وفي دوريات خاصة مع أصحابك.`,
         `<b>Kuwait League Fantasy</b> is a fantasy game built on the players of the Kuwaiti league:
-        you build a squad of 15 real players within a limited budget, pick your lineup and captain before every gameweek,
-        and collect points from how your players actually perform in league matches (goals, assists, clean sheets…).
+        you build a squad of 15 real players plus one coach within a limited budget, pick your lineup and captain before every gameweek,
+        and collect points from how your players actually perform in league matches (goals, assists, clean sheets…) and from your coach's results.
         Compete in the overall table and in private leagues with your friends.`))}
 
       ${sec(T('فريق العمل وضمان الجودة','The team and quality assurance'), T(`احتساب النقاط في هذه اللعبة عمل جماعي بالتعاون مع فريق موقع <b>mfsoccer.com</b>:
@@ -249,13 +249,13 @@ Object.assign(VIEWS, {
         Spotted a wrong player name, minute or result? Tell us on the <a href="#about" onclick="APP.go('about');return false;">Developer and feedback</a> page.`))}
 
       ${sec(T('كيف تلعب','How to play'), li(EN ? [
-        `<b>Build your squad:</b> ${R.squadSize} players — ${R.posCount.G} goalkeepers, ${R.posCount.D} defenders, ${R.posCount.M} midfielders, ${R.posCount.F} forwards — within a ${fmtK(R.budget)} budget and a maximum of ${R.maxPerClub} players from any one club.`,
+        `<b>Build your squad:</b> ${R.squadSize} players — ${R.posCount.G} goalkeepers, ${R.posCount.D} defenders, ${R.posCount.M} midfielders, ${R.posCount.F} forwards — plus one coach, within a ${fmtK(R.budget)} budget and a maximum of ${R.maxPerClub} players from any one club (the coach does not count towards that limit).`,
         `<b>Pick your gameweek lineup:</b> 11 starters and 4 on the bench in priority order. Any formation within the limits: ${R.formationMin.D}–${R.formationMax.D} defenders, ${R.formationMin.M}–${R.formationMax.M} midfielders, ${R.formationMin.F}–${R.formationMax.F} forwards, and one goalkeeper.`,
         `<b>Set a captain and vice-captain:</b> the captain's points are doubled (×2). If the captain does not play, the double passes to the vice-captain automatically.`,
         `<b>Before the deadline:</b> each gameweek locks when its first match kicks off — you are free to change until then. After the deadline the lineup cannot be edited until the gameweek is scored.`,
         `<b>Create an account:</b> without one your team stays on this device only and earns no points. With an account your team follows you on every device and enters the table.`,
       ] : [
-        `<b>كوّن فريقك:</b> ${R.squadSize} لاعباً — ${R.posCount.G} حارسان، ${R.posCount.D} مدافعين، ${R.posCount.M} لاعبي وسط، ${R.posCount.F} مهاجمين — بميزانية ${fmtK(R.budget)}، وبحد أقصى ${R.maxPerClub} لاعبين من النادي الواحد.`,
+        `<b>كوّن فريقك:</b> ${R.squadSize} لاعباً — ${R.posCount.G} حارسان، ${R.posCount.D} مدافعين، ${R.posCount.M} لاعبي وسط، ${R.posCount.F} مهاجمين — ومدرب واحد، بميزانية ${fmtK(R.budget)}، وبحد أقصى ${R.maxPerClub} لاعبين من النادي الواحد (المدرب لا يُحتسب ضمنهم).`,
         `<b>اختر تشكيلة الجولة:</b> 11 أساسياً و4 على الدكة بترتيب الأولوية. الخطة حرة ضمن الحدود: ${R.formationMin.D}–${R.formationMax.D} مدافعين، ${R.formationMin.M}–${R.formationMax.M} وسط، ${R.formationMin.F}–${R.formationMax.F} مهاجمين، وحارس واحد.`,
         `<b>عيّن الكابتن ونائبه:</b> نقاط الكابتن تُضاعف (×2). إن لم يشارك الكابتن انتقلت المضاعفة للنائب تلقائياً.`,
         `<b>قبل موعد الإغلاق:</b> كل جولة تُقفل مع انطلاق أول مباراة فيها — لك حرية التغيير حتى تلك اللحظة. بعد الموعد لا يمكن تعديل التشكيلة حتى تُحتسب الجولة.`,
@@ -283,6 +283,8 @@ Object.assign(VIEWS, {
       ])))}
 
       ${sec(T('الكروت الخاصة','Chips'), T(`تُفعَّل من شاشة «فريقي» قبل الموعد، كرت واحد في الجولة:`, `Activated from the "My Team" screen before the deadline, one chip per gameweek:`) + li(chips.map(chipLine)))}
+
+      ${typeof this.coachGuide==='function' ? this.coachGuide(T, li, sec) : ''}
 
       <div class="card" style="margin-bottom:12px"><h3>${T('نظام النقاط','Scoring system')}</h3>
         <div class="tiny" style="margin-bottom:8px">${T('تُحتسب لكل لاعب في كل مباراة يشارك فيها، ثم تُجمع لتشكيلتك الأساسية (والكابتن مضاعف).','Counted for every player in every match he plays, then summed for your starting XI (captain doubled).')}</div>

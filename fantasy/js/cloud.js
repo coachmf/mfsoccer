@@ -581,6 +581,7 @@ const CLOUD = {
       if(!squad.length) return;
       count++;
       squad.forEach(pid=>{ own[pid]=(own[pid]||0)+1; });
+      if(v.team.coach) own[v.team.coach]=(own[v.team.coach]||0)+1;
       board.push(this.boardRow(d.id, v));
     });
     board.sort((a,b)=>b.total-a.total || a.name.localeCompare(b.name,'ar'));
@@ -648,6 +649,7 @@ const CLOUD = {
       rules: st.rules, scoring: st.scoring, currentGW: st.currentGW,
       gws: st.gws, news: st.news, liveSpeed: st.liveSpeed,
       clubs: st.clubs,
+      coaches: st.coaches||[],
       own: st.own||{}, managerCount: st.managerCount||0, transferStats: st.transferStats||{},
       ownUpdated: st.ownUpdated||null, board: st.board||[],
       updated: new Date().toISOString(),
@@ -725,6 +727,7 @@ const CLOUD = {
       }
       count++;
       squad.forEach(pid=>{ own[pid]=(own[pid]||0)+1; });
+      if(team.coach) own[team.coach]=(own[team.coach]||0)+1;
       (team.transfers||[]).filter(t=>t.gw===gw).forEach(t=>{
         transfers[t.in]=transfers[t.in]||{in:0,out:0};   transfers[t.in].in++;
         transfers[t.out]=transfers[t.out]||{in:0,out:0}; transfers[t.out].out++;
@@ -822,6 +825,34 @@ const CLOUD = {
     // فرق هذا الجهاز
     for(const uid in st.teams){ const t=st.teams[uid]; if(TEAM.normalize(t, st) || opts.resetChips){ if(opts.resetChips) t.usedChips={}; t.repairedAt=now; } }
     return {ok:true, total:snap.size, fixed, chips, written:writes.length};
+  },
+
+  /* ---------- ترقية الميزانية (المدرب): +5 لكل فريق مرة واحدة ----------
+     repairedAt تجعل كل جهاز يعتمد نسخة الخادم بدل طمسها بنسخته القديمة. */
+  async bumpBudget(st){
+    if(!this.admin) return {ok:false, err:'الترقية للمدير فقط'};
+    if(typeof COACH_UPGRADE==='undefined') return {ok:false, err:'ملف المدرب غير محمّل'};
+    let snap;
+    try{ snap = await this.managers().get(); }
+    catch(e){ return {ok:false, err:'تعذّرت قراءة قائمة المشتركين'}; }
+    const now=new Date().toISOString();
+    const writes=[]; let bumped=0;
+    snap.forEach(d=>{
+      const v=d.data(); if(!v.team || !(v.team.squad||[]).length) return;
+      const team=JSON.parse(JSON.stringify(v.team));
+      if(COACH_UPGRADE.bumpTeam(team, st)){ bumped++; team.repairedAt=now; writes.push([d.id, {team}]); }
+    });
+    let done=0;
+    for(let i=0;i<writes.length;i+=400){
+      const chunk=writes.slice(i,i+400);
+      const batch=this.db.batch();
+      chunk.forEach(([uid,data])=>batch.set(this.managers().doc(uid), data, {merge:true}));
+      const w = await this.race(batch.commit(), 20000);
+      if(!w.ok) return {ok:false, err:`تعذّر الحفظ (${done} من ${writes.length})`, done};
+      done += chunk.length;
+    }
+    for(const uid in st.teams){ if(COACH_UPGRADE.bumpTeam(st.teams[uid], st)) st.teams[uid].repairedAt=now; }
+    return {ok:true, total:snap.size, bumped};
   },
 
   /* ---------- الدوريات ---------- */

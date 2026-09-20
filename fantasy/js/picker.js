@@ -17,8 +17,8 @@ Object.assign(VIEWS, {
   squadPicker(){
     const st=DB.state, R=st.rules;
     const sq=this.ui.pickerSquad;
-    const v=TEAM.validateSquad(sq);
-    const cost=sq.reduce((s,pid)=>s+DB.player(pid).price,0);
+    const v=TEAM.validateSquad(sq, st, this.ui.pickerCoach||null);
+    const cost=v.cost;   // اللاعبون + المدرب
     const byPos=pos=>sq.map(pid=>DB.player(pid)).filter(p=>p.pos===pos);
     const POS_ONE={G:'حارس',D:'مدافع',M:'وسط',F:'مهاجم'};
     const slotRow=pos=>{
@@ -35,13 +35,13 @@ Object.assign(VIEWS, {
               <div class="empty-shirt">${UI.icon('plus',20)}</div>
               <div class="nm">${POS_ONE[pos]}</div><div class="pt">إضافة</div></div>`;
       }
-      return `<div class="pitch-row">${cells}</div>`;
+      return `<div class="pitch-row row-${pos.toLowerCase()}">${cells}${pos==='G' && COACH_UI.layout()==='row' ? this.coachSlotHTML(null,{mode:'picker'}) : ''}</div>`;
     };
     return `<div class="pickteam picker-wrap">
       <div class="squad-hero">
         <div class="sh-info">
           <div class="sh-name">كوّن فريقك</div>
-          <div class="sh-sub">${R.posCount.G} حراس · ${R.posCount.D} مدافعين · ${R.posCount.M} وسط · ${R.posCount.F} مهاجمين · حد أقصى ${R.maxPerClub} من كل نادٍ</div>
+          <div class="sh-sub">${R.posCount.G} حراس · ${R.posCount.D} مدافعين · ${R.posCount.M} وسط · ${R.posCount.F} مهاجمين · حد أقصى ${R.maxPerClub} من كل نادٍ${typeof COACHES!=='undefined' && COACHES.enabled(st)? ' · ومدرب' : ''}</div>
         </div>
         <div class="sh-stats">
           <div><b style="${cost>R.budget?'color:#ffb4b0':''}">${fmtM(R.budget-cost)}</b><span>بالبنك (${CUR})</span></div>
@@ -53,10 +53,10 @@ Object.assign(VIEWS, {
         ${sq.length? `<button class="btn ghost sm" onclick="VIEWS.ui.pickerSquad=[];APP.render()">إفراغ الكل</button>`:''}
       </div>
       <div class="pitch-frame"><div class="pitch picker-pitch">
-        <div class="pitch-brand"><img src="assets/logo-light.png" alt=""><img src="assets/logo-light.png" alt=""><img src="assets/logo-light.png" alt=""></div>
+        <div class="pitch-board l"></div><div class="pitch-board r"></div>
         <div class="pf-goal"></div><div class="pf-box6"></div><div class="pf-box"></div><div class="pf-circle"></div>
         ${['G','D','M','F'].map(slotRow).join('')}
-      </div></div>
+      </div>${this.coachBarHTML(null,{mode:'picker'})}</div>
       ${v.ok? `<button class="btn" style="width:100%;margin-top:12px;font-size:1.05rem;border-radius:26px;padding:14px" onclick="VIEWS.confirmSquad()">اعتماد الفريق</button>`
         : `<div class="card picker-errs" style="margin-top:12px">${v.errs.map(e=>`<div class="tiny">• ${e}</div>`).join('')}</div>`}
     </div>`;
@@ -115,7 +115,7 @@ Object.assign(VIEWS, {
         <div class="pt">${next? `${DB.club(next.opp).short} ${UI.ha(next.home)}` : fmtM(p.price)}</div></div>`;
     };
     const board=['G','D','M','F'].map(pos=>
-      `<div class="pitch-row">${team.squad.filter(pid=>DB.player(pid).pos===pos).map(card).join('')}</div>`).join('');
+      `<div class="pitch-row row-${pos.toLowerCase()}">${team.squad.filter(pid=>DB.player(pid).pos===pos).map(card).join('')}${pos==='G' && COACH_UI.layout()==='row' ? this.coachSlotHTML(team,{mode:'transfer', locked}) : ''}</div>`).join('');
 
     return `
     <div class="row" style="margin-bottom:10px;flex-wrap:wrap;gap:8px;justify-content:center">
@@ -133,7 +133,7 @@ Object.assign(VIEWS, {
         <div><b style="color:${hits?'var(--red)':'var(--text)'}">${freeMode?'حر':(hits?'−'+hits:'0')}</b><span>الخصم</span></div>
         <div><b style="color:${bankAfter<0?'var(--red)':'var(--text)'}">${fmtM(bankAfter)}</b><span>بالبنك (${CUR})</span></div>
       </div>
-      <div class="pitch-frame"><div class="pitch tf-board">${board}</div></div>
+      <div class="pitch-frame"><div class="pitch tf-board">${board}</div>${this.coachBarHTML(team,{mode:'transfer', locked})}</div>
       <div class="tiny" style="text-align:center;margin-top:8px;color:var(--text3)">اضغط أي لاعب لعرض خياراته: إزالة أو اختيار بديل.</div>
     </div>
     ${tOut.length? `<div class="tf-bar"><div class="tf-bar-in">

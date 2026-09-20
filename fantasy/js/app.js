@@ -256,6 +256,7 @@ const APP = {
       else if(r==='transfers'){ VIEWS.ui.teamView='market'; this.route='team'; html=VIEWS.team(); }
       else if(r==='players') html=VIEWS.players();
       else if(r==='player') html=VIEWS.player();
+      else if(r==='coach') html=VIEWS.coachPage();
       else if(r==='fixtures') html=VIEWS.fixtures();
       else if(r==='live') html=VIEWS.live();
       else if(r==='leagues') html=VIEWS.leagues();
