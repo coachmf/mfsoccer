@@ -299,6 +299,7 @@ const PLAYER_PHOTOS = {
   'ARB|طلال المطرود': '/assets/players/arb/matroud',
   'ARB|صالح الرويضان': '/assets/players/arb/90',
   'ARB|بدر الدين سوياد': '/assets/players/arb/souyad',
+  'QAD|ناصر الرواحي': '/assets/players/qad/rawahi',
   'JAH|عبدالرحمن الاصيمع': '/assets/players/jah/usaimi',
   'JAH|عبدالعزيز المسافر': '/assets/players/jah/musafer',
   'JAH|محمد الرشيدي': '/assets/players/jah/rashidi_gk',
