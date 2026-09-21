@@ -103,6 +103,22 @@ function defaultMatches(){
     return {n:i+1, round:rd, comp:COMP_G, date:e.d, time:e.time||"", venue:e.venue||"", home:pr[0], away:pr[1], note:"", ref:"", refs:{}, tv:"", status:"",
             add1:0, add2:0, hg:(e.hg!=null?+e.hg:0), ag:(e.ag!=null?+e.ag:0)}; }).filter(m=>T[m.home] && T[m.away]);
 }
+/* جدول دور المجموعات (النهار 2026-09-21؛ المواعيد بتوقيت الكويت = GMT+3) — يُضاف ما لم يكن موجوداً دون المساس بالموجود */
+const KASC = "مدينة الملك عبدالله الرياضية، جدة", PAF = "استاد الأمير عبدالله الفيصل، جدة";
+const FIXTURES = [
+  [1,"2026-09-23","17:30","العراق","عمان",PAF], [1,"2026-09-23","21:00","السعودية","الكويت",KASC],
+  [1,"2026-09-24","18:30","الامارات","اليمن",KASC], [1,"2026-09-24","21:00","قطر","البحرين",PAF],
+  [2,"2026-09-26","18:55","الكويت","العراق",PAF], [2,"2026-09-26","21:00","عمان","السعودية",KASC],
+  [2,"2026-09-27","18:55","اليمن","قطر",KASC], [2,"2026-09-27","21:00","البحرين","الامارات",PAF],
+  [3,"2026-09-29","20:30","السعودية","العراق",KASC], [3,"2026-09-29","20:30","عمان","الكويت",PAF],
+  [3,"2026-09-30","20:30","الامارات","قطر",KASC], [3,"2026-09-30","20:30","البحرين","اليمن",PAF]
+];
+function addFixtures(d){
+  FIXTURES.forEach(([r,dt,tm,h,a,v])=>{
+    if(d.matches.some(m=>+m.round===r && ((m.home===h&&m.away===a)||(m.home===a&&m.away===h)))) return;
+    d.matches.push({n:d.matches.length+1, round:r, comp:COMP_G, date:dt, time:tm, venue:v, home:h, away:a, note:"", ref:"", refs:{}, tv:"", status:"", add1:0, add2:0, hg:0, ag:0});
+  });
+}
 function blankDoc(){ return {season:NAME, squadsVer:SQUADS_VER, matches:defaultMatches(), goals:[], cards:[], pens:[], lineups:[], subs:[], shapes:[], mev:[], squads:defaultSquads(), updated:""}; }
 const SQUADS_VER = 2;   /* ارفعه عند تحديث القوائم الافتراضية (يستبدل المحفوظ) */
 let DATA = null;
@@ -112,6 +128,7 @@ function normalize(d){
   ["matches","goals","cards","pens","lineups","subs","shapes","mev"].forEach(k=>{ if(!Array.isArray(d[k])) d[k]=[]; });
   if(!d.squads || !Object.keys(d.squads).length || (d.squadsVer||1) < SQUADS_VER){ d.squads = defaultSquads(); d.squadsVer = SQUADS_VER; }
   else { defaultSquads(); TEAMS.forEach(c=>{ if(!d.squads[c]) d.squads[c] = defaultSquads()[c]; }); }
+  addFixtures(d);
   d.matches.forEach(m=>{ m.comp = COMP_G; Object.defineProperty(m, "__gulf", {value:true, enumerable:false, configurable:true}); });
   return d;
 }
@@ -254,7 +271,7 @@ function render(){
   if(!DATA) DATA = normalize(null);
   const tabs = [["teams","المنتخبات"],["squad","قائمة الفريق"],["matches","المباريات"]];
   v.innerHTML = `<div class="gc">
-    <div class="gc-hero"><img class="gc-logo" src="assets/gulf/khaleeji27.png?v=1" alt="خليجي 27"><div class="gc-hero-tx"><small>الديار العربية · السعودية 2026</small><h2>${NAME}</h2><div class="gc-hero-flags">${TEAMS.map(c=>flagImg(c)).join("")}</div></div></div>
+    <div class="gc-hero"><span class="gc-logo"><img src="assets/gulf/khaleeji27c.webp?v=1" alt="خليجي 27"></span><div class="gc-hero-tx"><small>الديار العربية · السعودية 2026</small><h2>${NAME}</h2><div class="gc-hero-flags">${TEAMS.map(c=>flagImg(c)).join("")}</div></div></div>
     <p class="gc-note">إحصاءات البطولة منفصلة تماماً — لا تدخل في إحصاءات الدوري ولا ملفات اللاعبين ولا الفانتسي.</p>
     <nav class="gc-tabs">${tabs.map(([k,t])=>`<button type="button" data-gtab="${k}" aria-selected="${VIEW.tab===k}">${t}</button>`).join("")}</nav>
     <div class="gc-body">${VIEW.tab==="squad"?teamsHTML():VIEW.tab==="matches"?groupsHTML()+leadersHTML():profilesHTML()}</div></div>`;
