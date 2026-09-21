@@ -9,7 +9,7 @@
 
    عند كل نشر: ارفع رقم VER فتُبنى ذاكرة جديدة وتُحذف القديمة.
    ========================================================= */
-const VER   = 'mf-2026-09-21-196';
+const VER   = 'mf-2026-09-21-199';
 const SHELL = 'shell-' + VER;
 const RUN   = 'run-'   + VER;
 
@@ -27,7 +27,8 @@ const PRECACHE = [
   '/assets/hero/qadsia_12.webp', '/assets/hero/arabi_77.webp', '/assets/hero/kuwait_26.webp',
   '/assets/hero/salmiya_9.webp', '/assets/hero/kazma_10.webp',
   '/assets/hero/stadium.jpg', '/assets/hero/stadium_dark.jpg',
-  '/site-theme.css', '/site-i18n.js', '/fantasy/js/i18n-more.js'
+  '/site-theme.css', '/site-i18n.js', '/fantasy/js/i18n-more.js',
+  '/live.css', '/live.js'
 ];
 
 /* نطاقات تُخزَّن عند أول استعمال: الخطوط ثابتة فلا داعي لإعادة جلبها */
