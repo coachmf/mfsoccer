@@ -73,6 +73,8 @@ html[data-theme="dark"] .gc-card,html[data-theme="dark"] .gc-tb,html[data-theme=
 html[data-theme="dark"] .gc-m,html[data-theme="dark"] .gc-pl,html[data-theme="dark"] .gadm-row{background:#132238;border-color:#213653}
 @media (max-width:560px){
   .gc-tbl{font-size:.72rem}
+  .gc-tbl th,.gc-tbl td{padding:7px 2px}
+  .gc-tn{gap:5px} .gc-tn .gc-flag{width:20px;height:14px}
   .gc-tbl th:nth-child(7),.gc-tbl td:nth-child(7),.gc-tbl th:nth-child(8),.gc-tbl td:nth-child(8){display:none}
 }
 
@@ -91,3 +93,6 @@ html[data-theme="dark"] .gc-m,html[data-theme="dark"] .gc-pl,html[data-theme="da
 html[data-theme="dark"] .gc-pc{background:#0F1E35;border-color:#213653;border-top-color:var(--tc)}
 html[data-theme="dark"] .gc-pc-y em{background:#132238;border-color:#213653}
 html[data-theme="dark"] .gc-pc-note{color:#4ade80}
+.gc table.gc-tbl{min-width:0;width:100%;table-layout:auto}
+.gc table.gc-tbl thead th,.gc table.gc-tbl tbody td{padding:7px 3px;white-space:nowrap;letter-spacing:0}
+.gc table.gc-tbl thead th{background:transparent}

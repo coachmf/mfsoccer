@@ -21,7 +21,11 @@ G.COMP = COMP_G;
    p: GK حارس (حين يذكره الملصق) · D/M/F حين يقسّم الملصق القائمة · "" غير مذكور — لا نخترع مراكز */
 const T = {
   "الكويت":  {f:"kw", g:"A", c:["#0A57A8","#FFFFFF"], coach:"هيليو سوزا", kfa:true},
-  "السعودية":{f:"sa", g:"A", c:["#0C7A3D","#FFFFFF"], coach:"جورجوس دونيس",
+  "السعودية":{f:"sa", g:"A", c:["#0C7A3D","#FFFFFF"], coach:"جورجوس دونيس", faces:"sa", faceIdx:[1,2,4,5,6,7,8,9,10,11,12,13,15,16,17,18,19,20,21,22,23,24,25,26],
+    /* المراكز: الحراس والدفاع والوسط من إعلان القائمة الرسمي، والهجوم من SofaScore؛ ومن لم يُذكر مركزه يبقى بلا مركز */
+    pos:{"عبدالإله العمري":"D","جهاد ذكري":"D","ريان حامد":"D","حسن كادش":"D","حسان التمبكتي":"D","نواف بوشل":"D","محمد محزري":"D","متعب الحربي":"D","زكريا هوساوي":"D",
+         "مصعب الجوير":"M","محمد القحطاني":"M","محمد كنو":"M","زياد الجهني":"M","عبدالله الخيبري":"M","ناصر الدوسري":"M","علاء آل حجي":"M","محمد أبو الشامات":"M",
+         "سلطان مندش":"F","عبدالله الحمدان":"F","فراس البريكان":"F"},
     gk:["محمد العويس","نواف العقيدي","حامد يوسف"],
     out:["عبدالإله العمري","جهاد ذكري","ريان حامد","حسن كادش","حسان التمبكتي","نواف بوشل","محمد محزري","متعب الحربي","زكريا هوساوي","مصعب الجوير","محمد القحطاني",
          "محمد كنو","زياد الجهني","عبدالله الخيبري","ناصر الدوسري","علاء آل حجي","سلطان مندش","محمد أبو الشامات","همام الهمامي","صالح أبو الشامات","عبدالله الحمدان","فراس البريكان","عبدالله آل سالم"]},
@@ -50,6 +54,9 @@ const T = {
           "نواف عبدالله","عادل عباس","أسامة عنبر","عمر منصور","عبدالمجيد صبارة","صقر خالد","ديماني ميلو","عمر الداحي","ممدوح بن عجاج","محمد هاشم","احمد ماهر","ناصر محمدوه","علي الدقين"],
     gkSet:["اسامة مكرف","محمد أمان","أسامة حيدر"]}
 };
+/* لون قميص المنتخب الأساسي (بحث 2026-09-21: السعودية أخضر، العراق أبيض، الإمارات أبيض، قطر عنابي، البحرين/عُمان/اليمن أحمر، الكويت أزرق) — خلفية صور اللاعبين */
+const KIT = {"الكويت":"#0A57A8","السعودية":"#0C7A3D","العراق":"#EEF1F4","عمان":"#C8102E","قطر":"#7A1535","الامارات":"#EEF1F4","البحرين":"#CE1126","اليمن":"#CE1126"};
+const kitInk = c => (KIT[c]==="#EEF1F4") ? "#0B1F3A" : "#FFFFFF";
 const TEAMS = Object.keys(T);
 G.TEAMS = TEAMS; G.T = T;
 const GROUPS = [["A","المجموعة A"],["B","المجموعة B"]];
@@ -69,8 +76,9 @@ function defaultSquads(){
       t.list.forEach((n,i)=>{ L.push({n, p:(t.gkSet||[]).includes(n)?"GK":""}); if(t.faces) (FACES[c] ||= {})[n] = `assets/gulf/${t.faces}/${i+1}`; });
     } else {
       (t.gk||[]).forEach(n=>L.push({n, p:"GK"}));
+      if(t.faceIdx){ [...(t.gk||[]),...(t.out||[])].forEach((n,i)=>{ if(t.faceIdx.includes(i+1)) (FACES[c] ||= {})[n] = `assets/gulf/${t.faces}/${i+1}`; }); }
       (t.d||[]).forEach(n=>L.push({n, p:"D"})); (t.m||[]).forEach(n=>L.push({n, p:"M"})); (t.fw||[]).forEach(n=>L.push({n, p:"F"}));
-      (t.out||[]).forEach(n=>L.push({n, p:""}));
+      (t.out||[]).forEach(n=>L.push({n, p:(t.pos||{})[n]||""}));
     }
     out[c] = L;
   });
@@ -176,7 +184,7 @@ const TITLE_NOTE = {"الكويت":"صاحب الرقم القياسي في عد
 const flagImg = (c, cls) => `<img class="gc-flag ${cls||""}" src="${flagUrl(c,80)}" srcset="${flagUrl(c,160)} 2x" alt="" loading="lazy">`;
 function face(c, n){
   const p = withGulf(()=>photoCut(n, c));
-  return p ? `<img src="${H(p)}_f.webp?v=29" alt="" loading="lazy" decoding="async">` : `<span class="gc-ini">${H(String(n).trim().split(/\s+/).slice(0,2).map(w=>w[0]||"").join(""))}</span>`;
+  return p ? `<img src="${H(p)}_f.webp?v=30" alt="" loading="lazy" decoding="async">` : `<span class="gc-ini" style="color:${kitInk(c)}">${H(String(n).trim().split(/\s+/).slice(0,2).map(w=>w[0]||"").join(""))}</span>`;
 }
 function matchCard(m){
   const up = isUp(m) && !(m.hg+m.ag) && m.status!=="ft", L = window.LIVE && LIVE.liveOf ? LIVE.liveOf(m) : null;
@@ -203,7 +211,7 @@ function groupsHTML(){
 function leadersHTML(){
   const L = leaders();
   const blk = (t, arr, unit) => `<section class="gc-card"><h3>${t}</h3>${arr.length?`<div class="gc-lead">${arr.slice(0,15).map((x,i)=>`<div class="gc-lr" data-gplayer="${H(x.n)}" data-gclub="${H(x.c)}">
-      <span class="rk">${i+1}</span><span class="ph">${face(x.c,x.n)}</span><span class="nm"><b>${H(x.n)}</b><small>${flagImg(x.c,"sm")}${H(x.c)}</small></span><span class="v">${x.v}</span></div>`).join("")}</div>`:`<div class="gc-empty">لا ${unit} مسجّلة بعد.</div>`}</section>`;
+      <span class="rk">${i+1}</span><span class="ph" style="background:${KIT[x.c]||"transparent"}">${face(x.c,x.n)}</span><span class="nm"><b>${H(x.n)}</b><small>${flagImg(x.c,"sm")}${H(x.c)}</small></span><span class="v">${x.v}</span></div>`).join("")}</div>`:`<div class="gc-empty">لا ${unit} مسجّلة بعد.</div>`}</section>`;
   return blk("الهدافون", L.g, "أهداف") + blk("صناعة الأهداف", L.a, "تمريرات حاسمة") + blk("الإنذارات", L.y, "إنذارات") + blk("الطرد", L.r, "بطاقات حمراء");
 }
 function profilesHTML(){
@@ -224,7 +232,7 @@ function teamsHTML(){
     <section class="gc-card gc-sq" style="--tc:${t.c[0]}">
       <div class="gc-sq-hd">${flagImg(c,"lg")}<div><h3>منتخب ${H(c)}</h3><span>${t.g==="A"?"المجموعة A":"المجموعة B"} · ${sq.length} لاعباً${t.coach?` · المدرب: ${H(t.coach)}`:""}</span></div></div>
       ${sq.length?groupsP.map(([k,lbl])=>{ const L = sq.filter(x=>posG(x.p)===k || (k==="" && !["GK","D","M","F"].includes(posG(x.p)))); if(!L.length) return "";
-        return `<div class="gc-sq-g">${lbl}</div><div class="gc-sq-grid">${L.map(x=>`<div class="gc-pl" data-gplayer="${H(x.n)}" data-gclub="${H(c)}"><span class="ph">${face(c,x.n)}</span><b>${H(x.n)}</b>${x.s?`<em>${x.s}</em>`:""}</div>`).join("")}</div>`; }).join("")
+        return `<div class="gc-sq-g">${lbl}</div><div class="gc-sq-grid">${L.map(x=>`<div class="gc-pl" data-gplayer="${H(x.n)}" data-gclub="${H(c)}"><span class="ph" style="background:${KIT[c]}">${face(c,x.n)}</span><b>${H(x.n)}</b>${x.s?`<em>${x.s}</em>`:""}</div>`).join("")}</div>`; }).join("")
         :`<div class="gc-empty">لم تُضف قائمة هذا المنتخب بعد.</div>`}
     </section>`;
 }
