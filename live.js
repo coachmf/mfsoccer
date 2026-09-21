@@ -841,7 +841,7 @@ if(!LV.TEST){ let n=0; const w=()=>{ if(LV.store.ready()) startIdx(); else if(++
 (function(){
 const LV = window.LIVE, U = LV.util, H = U.H;
 const IW = 1376, IH = 768, MID = 688;
-const HM = [5.27619048,-5.07160837,411.0, 0,-1.45494171,340.5, 0,-0.00736619,1];
+const HM = [5.09047619,-5.57064979,419.3, 0,-0.94755805,291.3, 0,-0.00812548,1];   /* ملعب 2 (زاوية أعلى، 2026-09-21) */
 function inv3(m){
   const [a,b,c,d,e,f,g,h,i]=m, A=e*i-f*h, B=-(d*i-f*g), C=d*h-e*g, det=a*A+b*B+c*C;
   return [A/det,-(b*i-c*h)/det,(b*f-c*e)/det, B/det,(a*i-c*g)/det,-(a*f-c*d)/det, C/det,-(a*h-b*g)/det,(a*e-b*d)/det];
@@ -850,15 +850,15 @@ const HI = inv3(HM);
 const ap = (m,x,y) => { const w=m[6]*x+m[7]*y+m[8]; return [(m[0]*x+m[1]*y+m[2])/w, (m[3]*x+m[4]*y+m[5])/w]; };
 LV.project = (mx,my) => { const [u,v]=ap(HM,mx,my); return {u,v}; };
 LV.unproject = (u,v) => { const [mx,my]=ap(HI,u,v); return {mx,my}; };
-const depth = v => Math.max(0, Math.min(1, (v-330)/170));   /* 0 = الخط البعيد، 1 = القريب */
+const depth = v => Math.max(0, Math.min(1, (v-291)/216));   /* 0 = الخط البعيد، 1 = القريب */
 
 /* crop = [x, y, w, h] بكسلات الصورة: نقصّ السماء ونُبقي الملعب والمدرجات، فيكبر الملعب في الإطار */
-LV.STAD_CROP = {ctl:[40,190,1296,470], pub:[70,200,1236,480]};
+LV.STAD_CROP = {ctl:[20,150,1336,560], pub:[40,160,1296,540]};
 LV.stadiumHTML = function(cls){
   const [cx,cy,cw,ch] = LV.STAD_CROP[cls] || [0,0,IW,IH];
   const inner = `width:${(IW/cw*100).toFixed(3)}%;left:${(-cx/cw*100).toFixed(3)}%;top:${(-cy/ch*100).toFixed(3)}%`;
   return `<div class="lv-stad ${cls||""}" style="aspect-ratio:${cw}/${ch}"><div class="lv-stad-in" style="${inner}">
-    <img class="lv-stad-img" src="assets/live/stadium.webp?v=1" alt="" draggable="false">
+    <img class="lv-stad-img" src="assets/live/stadium.webp?v=2" alt="" draggable="false">
     <canvas class="lv-crowd" width="${IW}" height="${IH}"></canvas>
     <svg class="lv-pitch lv-stad-svg" viewBox="0 0 ${IW} ${IH}" preserveAspectRatio="xMidYMid meet">
       <g class="lv-dirs"></g><g class="lv-marks"></g><g class="lv-ghost"></g>
@@ -897,14 +897,14 @@ LV.dirsStad = function(doc, ph){
   /* شعار الفريق المدافع عن كل جهة، بلا خلفية (منصور) — وإن لم يوجد شعار نعرض الاسم */
   const src = c => (typeof crestSrcOf==="function" ? crestSrcOf(c) : "") || ((typeof LOGOS==="object" && LOGOS) ? LOGOS[c] : "") || "";
   const tag = (x, s) => { const c = nm(s), u = src(c);
-    return u ? `<image class="lv-dircrest" href="${H(u)}" x="${x-34}" y="${522-34}" width="68" height="68" preserveAspectRatio="xMidYMid meet"><title>${H(c)}</title></image>`
-             : `<text x="${x}" y="526" text-anchor="middle" class="lv-dirt3">${H(c)}</text>`; };
-  return tag(330, r) + tag(1046, l);
+    return u ? `<image class="lv-dircrest" href="${H(u)}" x="${x-34}" y="${566-34}" width="68" height="68" preserveAspectRatio="xMidYMid meet"><title>${H(c)}</title></image>`
+             : `<text x="${x}" y="570" text-anchor="middle" class="lv-dirt3">${H(c)}</text>`; };
+  return tag(250, r) + tag(1126, l);
 };
 
 /* ───────────── الجمهور ───────────── */
 let SEATS = null, seatsP = null;
-function loadSeats(){ if(SEATS) return Promise.resolve(SEATS); if(!seatsP) seatsP = fetch("assets/live/seats.json?v=2").then(r=>r.json()).then(d=>{ SEATS=d; return d; }); return seatsP; }
+function loadSeats(){ if(SEATS) return Promise.resolve(SEATS); if(!seatsP) seatsP = fetch("assets/live/seats.json?v=3").then(r=>r.json()).then(d=>{ SEATS=d; return d; }); return seatsP; }
 const rnd = i => { let x = Math.imul(i ^ 0x9e3779b9, 0x85ebca6b); x ^= x>>>13; x = Math.imul(x, 0xc2b2ae35); x ^= x>>>16; return (x>>>0)/4294967296; };
 const SKIN = ["#e0b18f","#c68c65","#a8714f","#8a5a3c","#d9a178"];
 function teamColors(club){
