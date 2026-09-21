@@ -1,0 +1,36 @@
+/* ===== تبويبات لوحة الإدارة + طواقم المباريات + قائمة المباريات (2026-09-21) ===== */
+.adm-tabs{position:sticky;top:0;z-index:30;display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding:10px 2px;margin:4px 0 14px;background:var(--ink);border-bottom:1px solid var(--line)}
+.adm-tabs::-webkit-scrollbar{display:none}
+.adm-tabs button{flex:none;border:1px solid var(--line);background:var(--navy-900);color:var(--head);font:700 .84rem var(--display);padding:9px 16px;border-radius:999px;cursor:pointer;white-space:nowrap}
+.adm-tabs button:hover{background:var(--navy-800)}
+.adm-tabs button[aria-selected="true"]{background:var(--zain-deep,#0d4f92);border-color:var(--zain-deep,#0d4f92);color:#fff}
+.adm-panel[hidden]{display:none}
+.adm-panel > h2.sec:first-child,.adm-panel > div:first-child > h2.sec:first-child{margin-top:4px}
+html[data-theme="dark"] .adm-tabs{background:#061529;border-color:#213653}
+html[data-theme="dark"] .adm-tabs button{background:#0F1E35;border-color:#213653;color:#E6EEF8}
+html[data-theme="dark"] .adm-tabs button[aria-selected="true"]{background:#1878BE;border-color:#1878BE}
+/* فلتر البطولة وأزرار المباراة */
+.adm-compf{margin:14px 0 4px}
+.adm-compf .seg small{opacity:.65;font-weight:600;margin-inline-start:4px}
+.mrow.adm[hidden],.rndbox[hidden]{display:none!important}
+.mstat.live{background:rgba(239,68,68,.12);color:#e0443a;border:1px solid rgba(239,68,68,.35);border-radius:999px;padding:1px 8px;font-weight:700}
+.am-tv{font-weight:700}
+.am-btns .am-live{background:#b91c1c!important;color:#fff!important;border-color:#b91c1c!important}
+/* طواقم المباريات */
+.crew-rounds{display:flex;gap:4px;flex-wrap:wrap;margin:10px 0 14px}
+.crew-rounds .seg{min-width:44px}
+.crew-row{border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:10px;background:var(--navy-800)}
+.crew-hd{display:flex;align-items:center;gap:8px;font-size:.88rem;margin-bottom:10px;flex-wrap:wrap}
+.crew-hd .crest{width:22px;height:22px}
+.crew-hd small{margin-inline-start:auto;color:var(--slate)}
+.crew-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:8px;margin-bottom:10px}
+.crew-grid label{display:flex;flex-direction:column;gap:3px;font-size:.72rem;color:var(--slate);font-weight:700}
+.crew-grid .refin{margin:0}
+/* المحرّر اليدوي: ملخص الطاقم + تنبيه الربط */
+.mx-crewsum{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0}
+.mx-crewsum span{display:inline-flex;flex-direction:column;gap:1px;padding:6px 10px;border-radius:10px;border:1px solid var(--line);font-weight:700;font-size:.8rem}
+.mx-crewsum small{font-weight:600;font-size:.66rem;color:var(--slate)}
+.mx-crewsum .none{color:var(--slate);font-weight:600}
+.mx-livenote{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;margin:0 0 12px;padding:12px 14px;border-radius:14px;border:1px solid rgba(239,68,68,.4);background:rgba(239,68,68,.08)}
+.mx-livenote b{color:#e0443a}
+.mx-livenote span{flex:1 1 260px;font-size:.8rem;color:var(--slate)}

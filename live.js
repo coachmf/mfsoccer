@@ -44,7 +44,7 @@ function noteServerTs(ms){
    team: يحتاج فريقاً · p/p2: تسمية اللاعب الأول/الثاني · loc: له مكان على الملعب
    major: يظهر على الخط الزمني الأفقي · key: اختصار لوحة المفاتيح */
 const EV = [
-  {k:"goal",   t:"هدف",            ic:"goal",  g:"main", team:1, p:"المسجّل", p2:"صانع الهدف", loc:1, major:1, key:"g"},
+  {k:"goal",   t:"هدف",            ic:"goal",  g:"main", team:1, p:"المسجّل", p2:"صانع الهدف", loc:1, major:1, key:"g", goal:1},
   {k:"yellow", t:"إنذار",           ic:"yc",    g:"main", team:1, p:"اللاعب", loc:1, major:1, key:"y"},
   {k:"red",    t:"طرد",             ic:"rc",    g:"main", team:1, p:"اللاعب", loc:1, major:1, key:"r"},
   {k:"yr",     t:"إنذار ثانٍ وطرد", ic:"yr",    g:"main", team:1, p:"اللاعب", loc:1, major:1},
@@ -66,10 +66,11 @@ const EV = [
   {k:"tackle", t:"افتكاك",          ic:"tackle",g:"def",  team:1, p:"اللاعب", loc:1},
   {k:"intercept",t:"قطع كرة",       ic:"intercept",g:"def",team:1, p:"اللاعب", loc:1},
   {k:"clear",  t:"تشتيت",           ic:"clear", g:"def",  team:1, p:"اللاعب", loc:1},
-  {k:"pen",    t:"ركلة جزاء محتسبة",ic:"pen",   g:"pen",  team:1, p:"المتعرّض للخطأ", loc:1, major:1},
-  {k:"penmiss",t:"ركلة جزاء ضائعة", ic:"penmiss",g:"pen", team:1, p:"المنفّذ", loc:1, major:1},
-  {k:"pensave",t:"ركلة جزاء متصدّى لها",ic:"pensave",g:"pen",team:1, p:"المنفّذ", p2:"الحارس المتصدّي", p2opp:1, loc:1, major:1},
-  {k:"og",     t:"هدف عكسي",        ic:"og",    g:"pen",  team:1, p:"من سجّل في مرماه", pOpp:1, loc:1, major:1},
+  {k:"pen",    t:"ركلة جزاء",       ic:"pen",   g:"pen",  team:1, p:"المنفّذ", loc:1, major:1, res:1},
+  {k:"penmiss",t:"ركلة جزاء ضائعة", ic:"penmiss",g:"pen", team:1, p:"المنفّذ", loc:1, major:1, res:1},
+  {k:"pensave",t:"ركلة جزاء متصدّى لها",ic:"pensave",g:"pen",team:1, p:"المنفّذ", p2:"الحارس المتصدّي", p2opp:1, loc:1, major:1, res:1},
+  {k:"og",     t:"هدف عكسي",        ic:"og",    g:"pen",  team:1, p:"من سجّل في مرماه", pOpp:1, p2:"صاحب التسديدة", loc:1, major:1, goal:1},
+  {k:"chance", t:"فرصة خطيرة",      ic:"on",    g:"shot", team:1, p:"اللاعب", loc:1},
   {k:"var",    t:"مراجعة VAR",      ic:"var",   g:"var",  team:0, major:1, key:"a", note:"سبب المراجعة"},
   {k:"vard",   t:"قرار VAR",        ic:"vard",  g:"var",  team:0, major:1, dec:1, note:"تفاصيل القرار"},
   {k:"medical",t:"توقف طبي",        ic:"med",   g:"stop", team:0},
@@ -495,9 +496,11 @@ function evLines(doc, e){
   if(e.k==="sub"){ if(e.p2) out.push(`<span class="lv-in">دخل: ${H(e.p2)}</span>`); if(e.p) out.push(`<span class="lv-outp">خرج: ${H(e.p)}</span>`); }
   else {
     if(e.p) out.push(`<b>${H(e.p)}</b>`);
-    if(e.p2 && d.p2) out.push(`<span>${H(d.p2)}: ${H(e.p2)}</span>`);
+    if(e.p2 && d.p2 && e.k!=="goal") out.push(`<span>${H(d.p2)}: ${H(e.p2)}</span>`);
   }
   if(e.k==="added" && e.n!=null) out.push(`<b>+${H(e.n)} دقائق</b>`);
+  if(e.res) out.push(`<span>${H(e.res)}</span>`);
+  if(e.k==="goal" && e.p2) out.push(`<span>صناعة: ${H(e.p2)}</span>`);
   if(e.k==="vard" && e.dec) out.push(`<b>${H(e.dec)}</b>`);
   if(e.reason) out.push(`<span>${H(e.reason)}</span>`);
   if(e.note) out.push(`<span class="lv-note">${H(e.note)}</span>`);
@@ -568,6 +571,13 @@ function evModalHTML(doc, e){
   if(e.k==="sub"){ if(e.p) rows.push(["خرج", H(e.p)]); if(e.p2) rows.push(["دخل", H(e.p2)]); }
   else { if(e.p) rows.push([d.p||"اللاعب", H(e.p)]); if(e.p2) rows.push([d.p2||"", H(e.p2)]); }
   if(e.k==="goal") rows.push(["صناعة", e.p2 ? H(e.p2) : "بدون صناعة"]);
+  if(e.k==="goal" && e.pen) rows.push(["النوع", "ركلة جزاء"]);
+  if(e.det) rows.push(["تفصيل الهجمة", H(e.det)]);
+  if(e.bp) rows.push(["طريقة التسجيل", H(e.bp)]);
+  if(e.gz) rows.push(["منطقة التسجيل", H(e.gz)]);
+  if(e.res) rows.push(["نتيجة الركلة", H(e.res)]);
+  if(e.place) rows.push(["مكان التسديد", H(e.place)]);
+  if(["yellow","yr","red"].includes(e.k)) rows.push(["نوع البطاقة", {yellow:"إنذار", yr:"إنذار ثانٍ (طرد)", red:"طرد مباشر"}[e.k]]);
   if(e.k==="added") rows.push(["الدقائق", "+"+H(e.n)]);
   if(e.dec) rows.push(["القرار", H(e.dec)]);
   if(e.reason) rows.push(["السبب", H(e.reason)]);
@@ -772,7 +782,7 @@ function startIdx(){
   });
 }
 /* ───── غرفة التحكم: تُحمَّل عند الحاجة فقط (live-admin.js) ───── */
-LV.VER = 2;
+LV.VER = 3;
 LV.loadAdmin = function(){
   if(window.LIVE_ADMIN) return Promise.resolve(window.LIVE_ADMIN);
   return new Promise((res, rej)=>{ const s=document.createElement("script"); s.src="live-admin.js?v="+LV.VER; s.onload=()=>res(window.LIVE_ADMIN); s.onerror=rej; document.head.appendChild(s); });
@@ -809,7 +819,14 @@ function hookAdmin(){
   if(typeof RENDER==="object" && RENDER && RENDER.admin && !RENDER.admin.__lv){ RENDER.admin = renderAdmin; }
 }
 
-function boot(){ hookMatchPage(); hookAdmin(); startIdx(); routeCtl(); }
+function boot(){
+  if(LV.TEST){   /* وضع الاختبار المحلي: الحفظ اليدوي والدمج السحابي محليان فقط */
+    try{ window.rebaseOnCloud = rebaseOnCloud = async()=>({ok:true, changed:false}); }catch(e){}
+    try{ window.persistData = persistData = async()=>{ try{ localStorage.setItem("zain_data", JSON.stringify(dataObject())); }catch(e){} return true; }; }catch(e){}
+    try{ window.isAdmin = isAdmin = true; }catch(e){}
+  }
+  hookMatchPage(); hookAdmin(); startIdx(); routeCtl();
+}
 if(document.readyState==="loading") document.addEventListener("DOMContentLoaded", ()=>setTimeout(boot, 0)); else setTimeout(boot, 0);
 /* fbDb يُهيّأ بعد تحميل مكتبات Firebase: ننتظره ثم نفتح قناة الفهرس */
 if(!LV.TEST){ let n=0; const w=()=>{ if(LV.store.ready()) startIdx(); else if(++n<120) setTimeout(w, 250); }; setTimeout(w, 300); }
@@ -938,4 +955,230 @@ LV.cheer = function(root, doc, side){
   });
 };
 LV.cmd.setCrowd = (id, c) => LV.store.tx(id, d=>{ if(!d) return null; d.crowd = {h:Math.max(0,Math.min(100,+c.h||0)), a:Math.max(0,Math.min(100,+c.a||0))}; return d; });
+})();
+
+/* =====================================================================
+   الربط بسجل المباراة الرسمي — مصدر واحد للإحصاءات (منصور 2026-09-21)
+
+   السجل الرسمي = مصفوفات الموسم (goals/cards/pens/subs/mev) التي تُبنى منها كل
+   الإحصاءات والترتيب والفانتسي. اللعب الفعلي والإدخال اليدوي يكتبان فيه بالدالة
+   نفسها applyEdit (تستبدل صفوف المباراة كاملة ⇒ لا تكرار مهما تكرر الحفظ).
+   كل صف يحمل lid = معرّف حدثه في وثيقة البث، فالتعديل من أي واجهة يصل الحدث نفسه.
+
+   الاتجاهان:
+   · بث ← سجل  (push)  بعد كل أمر من غرفة التحكم (مجمّعة 1.2 ث)
+   · سجل ← بث  (pull)  بعد حفظ المحرّر اليدوي لمباراة مرتبطة، وعند فتح البث لمباراة مسجّلة يدوياً
+   أحداث البث الإضافية (ركنية، تماس، تسديدة…) تبقى في البث وحده ولا تمسّ السجل.
+   ===================================================================== */
+(function(){
+const LV = window.LIVE, U = LV.util;
+const REC = LV.rec = {};
+const PHASE_TXT = {kickoff:[1,"بداية المباراة"], ht:[45,"نهاية الشوط الأول"], h2:[46,"بداية الشوط الثاني"], ft:[90,"نهاية المباراة"]};
+const TXT_PHASE = {}; Object.entries(PHASE_TXT).forEach(([k,[m,t]])=>TXT_PHASE[t]=k);
+const CARD = {yellow:"إنذار", yr:"إنذار ثانٍ", red:"طرد مباشر"};
+const PEN_DEF = {pensave:"تصدى لها الحارس", penmiss:"خارج المرمى"};
+/* الأنواع التي لها صف في السجل (غيرها للعرض المباشر فقط) */
+const RECK = new Set(["goal","og","yellow","yr","red","sub","pen","penmiss","pensave","chance","var","vard","custom","kickoff","ht","h2","ft"]);
+REC.RECK = RECK;
+const isRecEv = e => RECK.has(e.k) && !(e.k==="pen" && !e.res);     /* ركلة محتسبة بلا نتيجة بعد = عرض فقط */
+
+/* ── دقائق: ثواني البث ↔ دقيقة السجل (m, x) ── */
+const mOf = e => LV.minuteOf(+e.t||0, e.ph);
+/* الدقيقة كما كُتبت في السجل (rm) تبقى ما دام وقت الحدث لم يُغيَّر — تحفظ دقيقة 0 (غير مسجّلة) و«الشوط 2 د45» كما هي */
+function recMin(e){
+  const c = mOf(e);
+  if(e.rm){ const tt = tOf(e.rm.m, e.rm.x, e.rm.h), r = LV.minuteOf(tt.t, tt.ph);
+    if(r.m===c.m && r.x===c.x) return {m:+e.rm.m||0, x:+e.rm.x||0, h:e.rm.h}; }
+  return c;
+}
+function tOf(m, x, h){
+  m = +m||1; x = +x||0;
+  if(x && m===45) return {t:2700 + (x-1)*60 + 30, ph:"h1"};
+  if(x && m===90) return {t:5400 + (x-1)*60 + 30, ph:"h2"};
+  if(x && m===105) return {t:6300 + (x-1)*60 + 30, ph:"e1"};
+  if(x && m===120) return {t:7200 + (x-1)*60 + 30, ph:"e2"};
+  const ph = h==1 && m<=45 ? "h1" : h==2 && m<=45 ? "h2" : m<=45 ? "h1" : m<=90 ? "h2" : m<=105 ? "e1" : "e2";
+  return {t:(m-1)*60 + 30, ph};
+}
+REC.tOf = tOf;
+
+/* ── بث ← صفوف السجل ── */
+function liveToRows(doc){
+  const club = s => s==="h" ? doc.home : s==="a" ? doc.away : "";
+  const R = {goals:[], cards:[], pens:[], subs:[], mev:[]};
+  const seenPhase = new Set();
+  U.sortEvents(U.activeEvents(doc)).forEach(e=>{
+    if(!isRecEv(e)) return;
+    const mm = recMin(e), {m, x} = mm, c = club(e.team);
+    switch(e.k){
+      case "goal":
+        R.goals.push({sc:c, p:e.p||"", a:e.p2||"", m, x, det:e.det||(e.pen?"ركلة جزاء":""), bp:e.bp||"", zone:e.gz||"", og:"", lid:e.id});
+        if(e.pen) R.pens.push({by:c, p:e.p||"", m:(e.penm!=null ? e.penm : m + x), res:"سجلت", place:e.place||"", lid:e.id+":p"});   /* صف الجزاء بالدقيقة المطلقة (90+2 ⇒ 92) كما في السجل */
+        break;
+      case "og":
+        R.goals.push({sc:c, p:e.p2||"", a:e.ast||"", m, x, det:e.det||"", bp:"هدف عكسي", zone:e.gz||"", og:e.p||"", lid:e.id}); break;
+      case "yellow": case "yr": case "red":
+        R.cards.push({club:c, p:e.p||"", m, type:CARD[e.k], lid:e.id}); break;
+      case "pen": case "penmiss": case "pensave":
+        R.pens.push({by:c, p:e.p||"", m, res:e.res||PEN_DEF[e.k]||"", place:e.place||"", lid:e.id}); break;
+      case "sub":
+        R.subs.push({club:c, out:e.p||"", in:e.p2||"", h:(mm.h!=null ? +mm.h : (e.ph==="h1")?1:2), m, x, lid:e.id}); break;
+      case "chance":
+        R.mev.push({k:"chance", club:c, p:e.p||"", m, x, note:e.note||"", lid:e.id}); break;
+      case "var": case "vard":
+        R.mev.push({k:"var", club:c, p:e.p||"", m, x, note:[e.k==="vard"?(e.dec||"قرار VAR"):"", e.note||""].filter(Boolean).join(" — "), lid:e.id}); break;
+      case "custom":
+        R.mev.push({k:"note", club:c, p:"", m, x, note:e.note||"حدث", lid:e.id}); break;
+      default: {                                   /* بداية/نهاية الأشواط = تعليق مرحلة كما يفعل المحرّر اليدوي */
+        const pt = PHASE_TXT[e.k]; if(!pt || seenPhase.has(e.k)) break;
+        seenPhase.add(e.k); R.mev.push({k:"note", club:"", p:"", m:(e.rm ? mm.m : pt[0]), x:(e.rm ? mm.x : 0), note:pt[1], lid:e.id});
+      }
+    }
+  });
+  return R;
+}
+REC.liveToRows = liveToRows;
+
+/* ── صفوف السجل ← أحداث بث (لكل صف: lid الحالي أو معرّف جديد) ── */
+function rowsToLive(doc, E){
+  const side = c => c===doc.home ? "h" : c===doc.away ? "a" : "";
+  const out = [];
+  const nid = () => U.uid();
+  const penUsed = new Set();
+  const pens = (E.pens||[]).map((p,i)=>({...p, _i:i}));
+  (E.goals||[]).forEach(g=>{
+    const tt = tOf(g.m, g.x);
+    const rm = {m:+g.m||0, x:+g.x||0};
+    if(g.bp==="هدف عكسي"){ out.push({k:"og", team:side(g.sc), p:g.og||"", p2:g.p||"", ...(g.a?{ast:g.a}:{}), det:g.det||"", gz:g.zone||"", ...tt, rm, id:g.lid||nid()}); return; }
+    const e = {k:"goal", team:side(g.sc), p:g.p||"", p2:g.a||"", det:g.det||"", bp:g.bp||"", gz:g.zone||"", ...tt, rm, id:g.lid||nid()};
+    /* ركلة جزاء مسجّلة لنفس اللاعب ⇒ الهدف نفسه (لا حدثان) */
+    if(g.det==="ركلة جزاء"){ const pr = pens.find(p=>!penUsed.has(p._i) && p.res==="سجلت" && p.by===g.sc && (!p.p || p.p===g.p));
+      if(pr){ penUsed.add(pr._i); e.pen = true; if(pr.place) e.place = pr.place; e.penm = +pr.m||0; } }
+    out.push(e);
+  });
+  pens.forEach(p=>{ if(penUsed.has(p._i)) return;
+    const k = /تصدى/.test(p.res||"") ? "pensave" : /خارج|القائم|العارضة/.test(p.res||"") ? "penmiss" : "pen";
+    const lid = String(p.lid||""); const id = lid && !lid.endsWith(":p") ? lid : nid();
+    out.push({k, team:side(p.by), p:p.p||"", res:p.res||"", place:p.place||"", ...tOf(p.m, 0), rm:{m:+p.m||0, x:0}, id}); });
+  (E.cards||[]).forEach(c=>{ const t = c.type||"إنذار";
+    const k = /ثان/.test(t) ? "yr" : /طرد/.test(t) ? "red" : "yellow";
+    out.push({k, team:side(c.club), p:c.p||"", ...tOf(c.m, 0), rm:{m:+c.m||0, x:0}, id:c.lid||nid()}); });
+  (E.subs||[]).forEach(x=>out.push({k:"sub", team:side(x.club), p:x.out||"", p2:x.in||"", ...tOf(x.m, x.x, +x.h||1), rm:{m:+x.m||0, x:+x.x||0, h:+x.h||1}, id:x.lid||nid()}));
+  (E.mev||[]).forEach(x=>{
+    const rm = {m:+x.m||0, x:+x.x||0};
+    if(x.k==="note" && TXT_PHASE[x.note]){ const k=TXT_PHASE[x.note]; out.push({k, team:"", ...tOf(x.m, x.x), rm, id:x.lid||nid()}); return; }
+    const k = x.k==="chance" ? "chance" : x.k==="var" ? "var" : "custom";
+    out.push({k, team:side(x.club), p:x.p||"", note:x.note||"", ...tOf(x.m, x.x), rm, id:x.lid||nid()}); });
+  out.forEach(e=>{ if(e.t==null) e.t = 0; });
+  return out;
+}
+REC.rowsToLive = rowsToLive;
+
+/* دمج صفوف السجل في وثيقة البث: الحدث المرتبط يحتفظ بمكانه على الملعب وثوانيه (إن لم تتغيّر الدقيقة)
+   ويأخذ القيم الجديدة؛ حدث سجل حُذف يُحذف من البث؛ أحداث العرض فقط لا تُمسّ. */
+function mergeRows(doc, E){
+  const incoming = rowsToLive(doc, E), byId = new Map(incoming.map(e=>[e.id, e]));
+  const keep = [];
+  (doc.events||[]).forEach(e=>{
+    if(!isRecEv(e)){ keep.push(e); return; }
+    const n = byId.get(e.id);
+    if(!n) return;                                 /* حُذف من السجل */
+    byId.delete(e.id);
+    const sameMin = (()=>{ const a=recMin(e), b=recMin(n); return a.m===b.m && a.x===b.x; })();
+    const merged = Object.assign({}, e, n);
+    if(sameMin){ merged.t = e.t; merged.ph = e.ph; }
+    ["x","y","zone","reason","seq","at"].forEach(f=>{ if(e[f]!=null) merged[f]=e[f]; });
+    if(!n.pen) delete merged.pen;
+    keep.push(merged);
+  });
+  let seq = doc.seq||0;
+  byId.forEach(n=>{ seq++; keep.push(Object.assign({seq, status:"ok", at:Date.now(), src:"manual"}, n)); });
+  doc.events = keep; doc.seq = seq;
+  return doc;
+}
+REC.mergeRows = mergeRows;
+
+/* ── مطابقة المباراة في السجل ── */
+function recMatch(doc){
+  if(typeof ALL==="undefined" || !ALL || !ALL.matches) return null;
+  return ALL.matches.find(x=>+x.round===+doc.round && compOf(x)===doc.comp && x.home===doc.home && x.away===doc.away) || null;
+}
+REC.recMatch = recMatch;
+REC.hasRows = m => { if(!m || typeof loadEdit!=="function") return false; const E=loadEdit(m);
+  return !!(E.goals.length||E.cards.length||E.pens.length||E.subs.length||(E.mev||[]).length); };
+
+/* بث ← سجل: يبني صفوف المباراة من الأحداث ويحفظ عبر applyEdit نفسها */
+let lastBackup = 0;
+REC.push = async function(doc, opt){
+  if(!doc || doc.detached) return {skipped:true};
+  if(typeof applyEdit!=="function" || typeof loadEdit!=="function") return {skipped:true};
+  if(!LV.TEST && typeof rebaseOnCloud==="function") await rebaseOnCloud();
+  const m = recMatch(doc); if(!m) throw new Error("المباراة غير موجودة في سجل الموسم");
+  const E = loadEdit(m), R = liveToRows(doc);
+  E.goals = R.goals; E.cards = R.cards; E.pens = R.pens; E.subs = R.subs; E.mev = R.mev;
+  const ph = doc.clock && doc.clock.phase;
+  if(ph && ph!=="pre") E.match.status = ph==="et"||ph==="e1"||ph==="e2" ? "h2" : ph;
+  const add = (doc.clock && doc.clock.added) || {};
+  if(add.h1!=null) E.match.add1 = String(add.h1);
+  if(add.h2!=null) E.match.add2 = String(add.h2);
+  if(opt && opt.tv!=null) E.match.tv = opt.tv;
+  E.match.rec = "live";
+  applyEdit(E);
+  if(typeof applyComp==="function") applyComp();
+  if(LV.TEST){ try{ localStorage.setItem("zain_data", JSON.stringify(dataObject())); }catch(e){} if(typeof renderAll==="function") renderAll(); return {ok:true, test:true}; }
+  const bk = (opt && opt.backup) || (Date.now() - lastBackup > 15*60*1000);
+  const r = await persistData({noBackup:!bk});
+  if(r===true && bk){ lastBackup = Date.now(); }
+  if(typeof renderAll==="function") renderAll();
+  return {ok:r===true, pending:r==="pending", r};
+};
+/* سجل ← بث: بعد حفظ يدوي لمباراة مرتبطة، أو عند ربط مباراة مسجّلة يدوياً */
+REC.pull = async function(m){
+  const key = LV.keyOf(m), id = LV.idOf(key);
+  const E = loadEdit(m);
+  const n = await LV.store.tx(id, d=>{
+    d = d || LV.newDoc(m);
+    if(d.detached) return null;
+    mergeRows(d, E);
+    d.ops = []; d.linked = true;                 /* التراجع لا يعبر حفظاً يدوياً */
+    return d;
+  });
+  if(n) await LV.store.idxSet(id, LV.idxSummary(n)).catch(()=>{});
+  return n;
+};
+REC.detach = async function(doc){
+  const id = LV.idOf(doc.key);
+  await LV.store.tx(id, d=>{ if(!d) return null; d.detached = true; return d; });
+  const m = recMatch(doc);
+  if(m && m.rec==="live"){ if(!LV.TEST && typeof rebaseOnCloud==="function") await rebaseOnCloud();
+    const E = loadEdit(recMatch(doc)); E.match.rec = ""; applyEdit(E); applyComp();
+    if(LV.TEST){ try{ localStorage.setItem("zain_data", JSON.stringify(dataObject())); }catch(e){} } else await persistData(); }
+};
+REC.relink = async function(doc){
+  const id = LV.idOf(doc.key), m = recMatch(doc); if(!m) return;
+  await LV.store.tx(id, d=>{ if(!d) return null; d.detached = false; return d; });
+  await REC.pull(m);
+};
+
+/* ── ربط المحرّر اليدوي: حفظ مباراة مرتبطة ⇒ تحديث البث ثم إعادة كتابة lid في السجل ── */
+function hookManual(){
+  if(typeof saveMatch!=="function" || saveMatch.__lv) return;
+  const orig = saveMatch;
+  saveMatch = async function(){
+    const key = EDIT && EDIT.match ? {round:+EDIT.match.round, comp:EDIT.match.comp, home:EDIT.match.home, away:EDIT.match.away} : null;
+    const linked = !!(EDIT && EDIT.match && EDIT.match.rec==="live");
+    const r = await orig.apply(this, arguments);
+    if(!key || !linked || EDIT) return r;          /* EDIT باقٍ = فشل التحقق */
+    try{
+      const m = (ALL.matches||[]).find(x=>x.round===key.round && compOf(x)===key.comp && x.home===key.home && x.away===key.away);
+      if(!m) return r;
+      const d = await REC.pull(m);
+      if(d && !d.detached) await REC.push(d);       /* صفوف جديدة بلا lid تأخذ معرّفاتها */
+      toast("حُدّث اللعب الفعلي بتعديلاتك", "ok");
+    }catch(e){ console.error(e); toast("حُفظ السجل، لكن تعذّر تحديث اللعب الفعلي", "err"); }
+    return r;
+  };
+  saveMatch.__lv = true;
+}
+if(document.readyState==="loading") document.addEventListener("DOMContentLoaded", ()=>setTimeout(hookManual, 0)); else setTimeout(hookManual, 0);
 })();

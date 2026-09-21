@@ -2151,8 +2151,11 @@ main{padding-bottom:48px}
 <script src="fantasy/js/i18n-more.js?v=12" defer></script>
 <script src="site-i18n.js?v=17" defer></script>
 <!-- مركز المباراة المباشر: صفحة الجمهور + الربط (غرفة التحكم live-admin.js تُحمَّل عند فتحها فقط) -->
-<link rel="stylesheet" href="live.css?v=2">
-<script src="live.js?v=3" defer></script>
+<link rel="stylesheet" href="live.css?v=3">
+<script src="live.js?v=4" defer></script>
+<!-- تبويبات لوحة الإدارة: إعادة تنظيم للأقسام الموجودة فقط -->
+<link rel="stylesheet" href="admin-tabs.css?v=1">
+<script src="admin-tabs.js?v=1" defer></script>
 <style>
 /* تبويب التحليل — التصميم الجديد (منصور 2026-09-17) */
 .an{--an-card:#0F1E35;--an-line:#213653;--an-txt:#EDF3FA;--an-mut:#8FA6C4;--an-track:rgba(143,166,196,.16);--an-acc:#2EB0F0;--an-acc2:#1878BE}
@@ -3600,12 +3603,12 @@ function downloadJSON(){
   a.href=u; a.download="data.json"; document.body.appendChild(a); a.click(); a.remove();
   setTimeout(()=>URL.revokeObjectURL(u),4000);
 }
-async function persistData(){
+async function persistData(opt){
   const obj=dataObject();
   CUR_STAMP = LASTSTAMP = stampOf(obj);   /* v27:rebase — النسخة المكتوبة هي المرجع الآن */
   await localSet("zain_data", JSON.stringify(obj));
   const r = await fbSaveSeason(obj);
-  if(r===true) pushBackup();     /* بلا انتظار حتى لا يبطئ الحفظ */
+  if(r===true && !(opt&&opt.noBackup)) pushBackup();     /* بلا انتظار حتى لا يبطئ الحفظ — حفظ اللعب الفعلي يخفّف النسخ (مرة كل 15 دقيقة) */
   return r;
 }
 
@@ -3808,6 +3811,53 @@ function wireRefs(){
     if(ok===true){ LASTSYNC=new Date(); REFDRAFT=null; toast("حُفظت قائمة الحكام","ok"); renderAdmin(); }
     else toast(SYNCMSG||"حُفظت محلياً، لكن تعذّر الحفظ في السحابة","err");
   };
+}
+
+/* ===== طواقم التحكيم لكل مباراة — تبويب «الحكام» (منصور 2026-09-21) =====
+   بيانات الحكام مستقلة عن أحداث المباراة: تُحفظ في حقلي ref/refs للمباراة نفسها بالدالة applyEdit
+   (loadEdit يحمل كل صفوف المباراة كما هي، فلا يتأثر أي حدث ولا الربط باللعب الفعلي). */
+let CREW_COMP = "الدوري", CREW_ROUND = null;
+function refCrewsHTML(){
+  const ms=(ALL&&ALL.matches||[]).filter(m=>compOf(m)===CREW_COMP);
+  const rounds=[...new Set(ms.map(m=>+m.round))].sort((a,b)=>a-b);
+  if(CREW_ROUND==null || !rounds.includes(CREW_ROUND)){ const played=ms.filter(m=>!isUpcoming(m)).map(m=>+m.round); CREW_ROUND = played.length?Math.max(...played):(rounds[0]||null); }
+  const pool=refPool();
+  const L=ms.filter(m=>+m.round===CREW_ROUND).sort((a,b)=>String(a.date).localeCompare(String(b.date)));
+  const inp=(m,k,cat,val)=>`<input class="refin" data-crew="${esc(mkey(m))}" data-crk="${k}" list="crewL-${cat}" value="${esc(val||"")}" placeholder="—" autocomplete="off">`;
+  return `<div id="crewAdmin"><h2 class="sec">طواقم المباريات</h2>
+    <div class="card pad">
+      <p class="hint" style="margin:0 0 12px">حكم الساحة والمساعدون والرابع وحكام الفيديو لكل مباراة. الاقتراحات من قائمة الحكام حسب الفئة، واكتب «لا يوجد» حين لا يُستخدم الدور.</p>
+      <div class="segbar compbar">${COMPS.map(c=>`<button class="seg" data-crewcomp="${esc(c)}" aria-pressed="${c===CREW_COMP}">${esc(c)}</button>`).join("")}</div>
+      ${rounds.length?`<div class="crew-rounds">${rounds.map(r=>`<button class="seg" data-crewround="${r}" aria-pressed="${r===CREW_ROUND}">ج${r}</button>`).join("")}</div>`:""}
+      ${REF_CATS.map(([c])=>`<datalist id="crewL-${c}">${pool.filter(r=>r.roles.includes(c)).map(r=>`<option value="${esc(r.name)}">`).join("")}</datalist>`).join("")}
+      ${L.length?L.map(m=>{ const cw=crewOf(m); return `<div class="crew-row">
+          <div class="crew-hd">${crest(m.home)}<b>${esc(m.home)}</b><span>×</span><b>${esc(m.away)}</b>${crest(m.away)}<small dir="ltr">${esc(m.date||"")}</small></div>
+          <div class="crew-grid">
+            <label><span>حكم الساحة</span>${inp(m,"ref","ref",cw.ref)}</label>
+            ${REF_ROLES.map(([k,t])=>`<label><span>${t}</span>${inp(m,k,refCatOf(k),cw.refs[k])}</label>`).join("")}
+          </div>
+          <button class="btn ghost" data-crewsave="${esc(mkey(m))}">حفظ طاقم المباراة</button></div>`; }).join("")
+        :`<p class="hint" style="margin:0">لا مباريات في ${esc(CREW_COMP)} بعد.</p>`}
+    </div></div>`;
+}
+function wireRefCrews(){
+  const root=$("#crewAdmin"); if(!root) return;
+  const repaint=()=>{ root.outerHTML=refCrewsHTML(); wireRefCrews(); };
+  root.querySelectorAll("[data-crewcomp]").forEach(b=>b.onclick=()=>{ CREW_COMP=b.dataset.crewcomp; CREW_ROUND=null; repaint(); });
+  root.querySelectorAll("[data-crewround]").forEach(b=>b.onclick=()=>{ CREW_ROUND=+b.dataset.crewround; repaint(); });
+  root.querySelectorAll("[data-crewsave]").forEach(b=>b.onclick=async()=>{
+    const key=b.dataset.crewsave, vals={};
+    root.querySelectorAll("[data-crew]").forEach(i=>{ if(i.dataset.crew===key) vals[i.dataset.crk]=i.value.trim(); });
+    busy(b,true,"جارٍ الحفظ…");
+    const reb=await rebaseOnCloud(); if(reb.changed) toast(`وصل تحديث من ${reb.by||"محرّر آخر"} — دُمج قبل الحفظ`,"busy");
+    const m=(ALL.matches||[]).find(x=>mkey(x)===key);
+    if(!m){ busy(b,false); toast("لم تُعثر على المباراة","err"); return; }
+    const E=loadEdit(m); E.match.ref=vals.ref||""; E.match.refs={}; REF_ROLES.forEach(([k])=>{ if(vals[k]) E.match.refs[k]=vals[k]; });
+    applyEdit(E); applyComp();
+    const ok=await persistData(); busy(b,false);
+    if(ok===true){ LASTSYNC=new Date(); toast(`حُفظ طاقم ${m.home} × ${m.away}`,"ok"); renderAll(); }
+    else toast(SYNCMSG||"حُفظ محلياً، لكن تعذّر الحفظ في السحابة","err");
+  });
 }
 function kitsAdminHTML(){
   const rows=CLUBS.filter(c=>c).map(c=>{
@@ -5038,13 +5088,14 @@ function loadEdit(m){
   (ALL.shapes||[]).filter(x=>x.r===m.round && compOf(x)===compOf(m) && (x.club===m.home||x.club===m.away))
     .forEach(x=>{ shp[x.club]={f:x.f||"", pos:JSON.parse(JSON.stringify(x.pos||{}))}; });
   return {orig:mkey(m), shapes:shp,
-    match:{round:m.round, comp:compOf(m), home:m.home, away:m.away, venue:m.venue||"", date:m.date||"", time:m.time||"", note:m.note||"", ref:crewOf(m).ref, refs:crewOf(m).refs, tv:m.tv||"", status:m.status||"", add1:(m.add1??""), add2:(m.add2??"")},
-    mev:(ALL.mev||[]).filter(x=>x.r===m.round && compOf(x)===compOf(m) && x.home===m.home && x.away===m.away).map(x=>({k:x.k, club:x.club||"", p:x.p||"", m:x.m||"", x:x.x||0, note:x.note||""})),
+    match:{round:m.round, comp:compOf(m), home:m.home, away:m.away, venue:m.venue||"", date:m.date||"", time:m.time||"", note:m.note||"", ref:crewOf(m).ref, refs:crewOf(m).refs, tv:m.tv||"", status:m.status||"", add1:(m.add1??""), add2:(m.add2??""), rec:m.rec||""},
+    mev:(ALL.mev||[]).filter(x=>x.r===m.round && compOf(x)===compOf(m) && x.home===m.home && x.away===m.away).map(x=>({k:x.k, club:x.club||"", p:x.p||"", m:x.m||"", x:x.x||0, note:x.note||"", lid:x.lid||""})),
     lineup:lus.map(x=>({club:x.club, p:x.p})),
-    subs:sbs.map(x=>({club:x.club, out:x.out||"", in:x.in||"", h:x.h||1, m:x.m||"", x:x.x||0})),
-    goals:gs.map(g=>({sc:g.sc,p:g.p,a:g.a||"",m:g.m,x:g.x||0,det:g.det||"",bp:g.bp||"",zone:g.zone||"",og:g.og||""})),   /* og كان يضيع عند إعادة التحرير */
-    cards:cs.map(x=>({club:x.club,p:x.p,m:x.m,type:x.type})),
-    pens:ps.map(x=>({by:x.by,p:x.p,m:x.m,res:x.res,place:x.place||""}))};
+    subs:sbs.map(x=>({club:x.club, out:x.out||"", in:x.in||"", h:x.h||1, m:x.m||"", x:x.x||0, lid:x.lid||""})),
+    goals:gs.map(g=>({sc:g.sc,p:g.p,a:g.a||"",m:g.m,x:g.x||0,det:g.det||"",bp:g.bp||"",zone:g.zone||"",og:g.og||"",lid:g.lid||""})),   /* og كان يضيع عند إعادة التحرير */
+    cards:cs.map(x=>({club:x.club,p:x.p,m:x.m,type:x.type,lid:x.lid||""})),
+    pens:ps.map(x=>({by:x.by,p:x.p,m:x.m,res:x.res,place:x.place||"",lid:x.lid||""}))};
+  /* lid = معرّف الحدث في اللعب الفعلي: يربط صف السجل بحدثه فيُعدَّل الحدث نفسه من أي واجهة بلا تكرار */
 }
 
 /* ---------- أرقام ومراكز اللاعبين ----------
@@ -5734,6 +5785,10 @@ function validateEdit(){
   if(!m.date) return "أدخل تاريخ المباراة.";
   const dup=(ALL.matches||[]).some(x=>mkey(x)===`${+m.round}|${m.comp}|${m.home}|${m.away}` && mkey(x)!==EDIT.orig);
   if(dup) return "هذه المباراة مسجّلة مسبقاً في هذه الجولة والمسابقة.";
+  /* مباراة مرتبطة باللعب الفعلي: وثيقة البث مربوطة بهويتها (المسابقة/الجولة/الفريقان) فلا تتغيّر من هنا */
+  if(EDIT.orig){ const o0=(ALL.matches||[]).find(x=>mkey(x)===EDIT.orig);
+    if(o0 && o0.rec==="live" && `${+m.round}|${m.comp}|${m.home}|${m.away}`!==EDIT.orig)
+      return "هذه المباراة مرتبطة باللعب الفعلي — لا يمكن تغيير المسابقة أو الجولة أو الفريقين. افصلها عن اللعب الفعلي أولاً من غرفة التحكم."; }
   for(const [i,g] of EDIT.goals.entries()){
     if(!g.sc) return `الهدف ${i+1}: اختر الفريق المسجل.`;
     if(!g.p) return `الهدف ${i+1}: اكتب اسم اللاعب.`;
@@ -5766,37 +5821,31 @@ function removeMatchByKey(key){
   ALL.mev     = (ALL.mev||[]).filter(x=>!(x.r===old.round && compOf(x)===compOf(old) && x.home===old.home && x.away===old.away));
 }
 
-async function saveMatch(){
-  toast("جارٍ حفظ المباراة…","busy",true);
-  FORMERR = validateEdit();
-  if(FORMERR){ renderMatchAdmin(); return; }
-  /* نبني على أحدث نسخة سحابية حتى لا نمحو ما أدخله محرّر آخر بيننا */
-  const reb = await rebaseOnCloud();
-  if(reb.changed) toast(`وصل تحديث من ${reb.by||"محرّر آخر"} — دُمج قبل الحفظ`,"busy");
-  const m=EDIT.match, round=+m.round;
-  if(EDIT.orig) removeMatchByKey(EDIT.orig);
+function applyEdit(E){
+  const m=E.match, round=+m.round;
+  if(E.orig) removeMatchByKey(E.orig);
   const other = t => t===m.home ? m.away : m.home;
   ALL.matches.push({n:ALL.matches.length+1, round, comp:m.comp, date:m.date, time:m.time,
-                    venue:m.venue, home:m.home, away:m.away, note:(m.note||"").trim(), ref:(m.ref||"").trim(), refs:REF_ROLES.reduce((o,[k])=>{ const v=String((m.refs||{})[k]||"").trim(); if(v) o[k]=v; return o; },{}), tv:(m.tv||"").trim(), status:m.status||"", add1:+m.add1||0, add2:+m.add2||0, hg:0, ag:0});   /* ref = حكم الساحة، refs = بقية الطاقم */
-  EDIT.goals.forEach(g=>ALL.goals.push({r:round, comp:m.comp, sc:g.sc, cd:other(g.sc), p:g.p, a:g.a||"",
+                    venue:m.venue, home:m.home, away:m.away, note:(m.note||"").trim(), ref:(m.ref||"").trim(), refs:REF_ROLES.reduce((o,[k])=>{ const v=String((m.refs||{})[k]||"").trim(); if(v) o[k]=v; return o; },{}), tv:(m.tv||"").trim(), status:m.status||"", ...(m.rec?{rec:m.rec}:{}), add1:+m.add1||0, add2:+m.add2||0, hg:0, ag:0});   /* ref = حكم الساحة، refs = بقية الطاقم */
+  E.goals.forEach(g=>ALL.goals.push({r:round, comp:m.comp, sc:g.sc, cd:other(g.sc), p:g.p, a:g.a||"",
       m:+g.m, x:+g.x||0, cat:catOf(g.det), det:g.det, bp:g.bp||"", zone:g.zone||"",
-      og: g.bp==="هدف عكسي" ? (g.og||"") : ""}));
-  upgradeSecondYellows(EDIT.cards).forEach(x=>ALL.cards.push(
-      {r:round, comp:m.comp, club:x.club, p:x.p, m:+x.m||0, type:x.type}));
-  EDIT.pens.forEach(x=>ALL.pens.push({r:round, comp:m.comp, by:x.by, vs:other(x.by), p:x.p,
-      m:+x.m||0, res:x.res, place:x.place||""}));
+      og: g.bp==="هدف عكسي" ? (g.og||"") : "", ...(g.lid?{lid:g.lid}:{})}));
+  upgradeSecondYellows(E.cards).forEach(x=>ALL.cards.push(
+      {r:round, comp:m.comp, club:x.club, p:x.p, m:+x.m||0, type:x.type, ...(x.lid?{lid:x.lid}:{})}));
+  E.pens.forEach(x=>ALL.pens.push({r:round, comp:m.comp, by:x.by, vs:other(x.by), p:x.p,
+      m:+x.m||0, res:x.res, place:x.place||"", ...(x.lid?{lid:x.lid}:{})}));
   ALL.mev = ALL.mev || [];
-  (EDIT.mev||[]).forEach(x=>ALL.mev.push({r:round, comp:m.comp, home:m.home, away:m.away, k:x.k, club:x.club||"", p:x.p||"",
-      m:+x.m||0, x:+x.x||0, note:(x.note||"").trim()}));
+  (E.mev||[]).forEach(x=>ALL.mev.push({r:round, comp:m.comp, home:m.home, away:m.away, k:x.k, club:x.club||"", p:x.p||"",
+      m:+x.m||0, x:+x.x||0, note:(x.note||"").trim(), ...(x.lid?{lid:x.lid}:{})}));
   ALL.lineups = ALL.lineups || []; ALL.subs = ALL.subs || [];
-  (EDIT.lineup||[]).filter(x=>x.club && x.p).forEach(x=>
+  (E.lineup||[]).filter(x=>x.club && x.p).forEach(x=>
       ALL.lineups.push({r:round, comp:m.comp, club:x.club, p:x.p}));
-  (EDIT.subs||[]).filter(x=>x.club && (x.out||x.in)).forEach(x=>
+  (E.subs||[]).filter(x=>x.club && (x.out||x.in)).forEach(x=>
       ALL.subs.push({r:round, comp:m.comp, club:x.club, out:x.out||"", in:x.in||"",
-                     h:+x.h||1, m:+x.m||0, x:+x.x||0}));
+                     h:+x.h||1, m:+x.m||0, x:+x.x||0, ...(x.lid?{lid:x.lid}:{})}));
   ALL.shapes = ALL.shapes || [];
-  for(const cl in (EDIT.shapes||{})){
-    const s=EDIT.shapes[cl];
+  for(const cl in (E.shapes||{})){
+    const s=E.shapes[cl];
     if(!s || (!s.f && !Object.keys(s.pos||{}).length)) continue;   /* بلا تعديل: لا نحفظ صفاً */
     ALL.shapes.push({r:round, comp:m.comp, club:cl, f:s.f||"", pos:s.pos||{}});
   }
@@ -5809,6 +5858,17 @@ async function saveMatch(){
   ALL.matches.forEach((mm,i)=>mm.n=i+1);
   stampComp(ALL);
   if(COMP!=="الكل" && !COMPS.includes(COMP)) COMP="الدوري";
+}
+let ADM_MCOMP = "الكل";   /* فلتر البطولة في قائمة مباريات الإدارة */
+async function saveMatch(){
+  toast("جارٍ حفظ المباراة…","busy",true);
+  FORMERR = validateEdit();
+  if(FORMERR){ renderMatchAdmin(); return; }
+  /* نبني على أحدث نسخة سحابية حتى لا نمحو ما أدخله محرّر آخر بيننا */
+  const reb = await rebaseOnCloud();
+  if(reb.changed) toast(`وصل تحديث من ${reb.by||"محرّر آخر"} — دُمج قبل الحفظ`,"busy");
+  const m=EDIT.match;
+  applyEdit(EDIT);
   applyComp(); DATA_SOURCE="إدخال يدوي في الموقع"; DATA_UPDATED=new Date().toISOString();
   DATA_BY=(FBUSER&&FBUSER.email)||"";
   EDIT=null; FORMERR="";
@@ -5934,17 +5994,22 @@ function renderMatchAdmin(){
   } else {
     const ms=(ALL?.matches||[]).slice();
     const rounds=[...new Set(ms.map(m=>+m.round))].sort((a,b)=>b-a);
-    const mRow=m=>`<div class="mrow adm" style="${clubVars(m.home).replace(/--cc/g,"--hc")};${clubVars(m.away).replace(/--cc/g,"--ac")}">
+    const mRow=m=>`<div class="mrow adm" data-mcomp-row="${esc(compOf(m))}" style="${clubVars(m.home).replace(/--cc/g,"--hc")};${clubVars(m.away).replace(/--cc/g,"--ac")}">
         <div class="am-teams">
           <span class="am-t h">${crest(m.home)}<b>${esc(m.home)}</b></span>
           <span class="am-score${isUpcoming(m)?" soon":""}">${isUpcoming(m)?(m.time?esc(m.time):"—"):`${m.hg} - ${m.ag}`}</span>
           <span class="am-t a">${crest(m.away)}<b>${esc(m.away)}</b></span>
         </div>
-        <div class="am-meta">${isUpcoming(m)?'<span class="mstat soon">لم تبدأ</span>':""}<span>${esc(compOf(m))}</span><span dir="ltr">${esc(m.date||"بلا تاريخ")}</span>${m.venue?`<span>${esc(m.venue)}</span>`:""}</div>
-        <div class="am-btns"><button data-edit="${esc(mkey(m))}">تعديل</button><button class="dl" data-rm="${esc(mkey(m))}">حذف</button></div>
+        <div class="am-meta">${isUpcoming(m)?'<span class="mstat soon">لم تبدأ</span>':""}${m.rec==="live"?'<span class="mstat live">مرتبطة باللعب الفعلي</span>':""}<span>${esc(compOf(m))}</span><span dir="ltr">${esc(m.date||"بلا تاريخ")}</span>${m.venue?`<span>${esc(m.venue)}</span>`:""}${m.tv?`<span class="am-tv">${esc(m.tv)}</span>`:""}</div>
+        <div class="am-btns">${window.LIVE?`<button class="am-live" data-live-open="${esc(matchKey(m))}" title="تسجيل الأحداث أثناء المباراة">لعب فعلي</button>`:""}<button data-edit="${esc(mkey(m))}" title="إدخال الأحداث يدوياً بعد المباراة">${window.LIVE?"إدخال يدوي":"تعديل"}</button><button class="dl" data-rm="${esc(mkey(m))}">حذف</button></div>
       </div>`;
+    const cc={}; ms.forEach(m=>{ const c=compOf(m); cc[c]=(cc[c]||0)+1; });
+    const mf = (typeof ADM_MCOMP!=="undefined" && ADM_MCOMP) || "الكل";
     box.innerHTML = `
       <button class="btn" data-act="new">+ إضافة مباراة جديدة</button>
+      <div class="segbar compbar adm-compf" role="tablist" aria-label="البطولة">
+        <button class="seg" data-mcompf="الكل" aria-pressed="${mf==="الكل"}">كل البطولات <small>${ms.length}</small></button>
+        ${COMPS.map(c=>`<button class="seg" data-mcompf="${esc(c)}" aria-pressed="${mf===c}">${esc(c)} <small>${cc[c]||0}</small></button>`).join("")}</div>
       <h2 class="sec">المباريات المسجّلة (${ms.length})</h2>
       ${ms.length? `<div class="card pad">`+rounds.map((r,ri)=>{
         const rms=ms.filter(m=>+m.round===r).sort((a,b)=>String(a.date).localeCompare(String(b.date)));
@@ -6003,6 +6068,13 @@ function renderMatchAdmin(){
   box.querySelectorAll("[data-edit]").forEach(b=>b.onclick=()=>{
     const m=(ALL.matches||[]).find(x=>mkey(x)===b.dataset.edit);
     if(m){ EDIT=loadEdit(m); FORMERR=""; renderMatchAdmin(); } });
+  /* فلتر البطولة: يُخفي مباريات البطولات الأخرى والجولات الفارغة (منصور 2026-09-21) */
+  const applyMF=()=>{ const f=(typeof ADM_MCOMP!=="undefined" && ADM_MCOMP)||"الكل";
+    box.querySelectorAll("[data-mcomp-row]").forEach(r=>r.hidden = f!=="الكل" && r.dataset.mcompRow!==f);
+    box.querySelectorAll(".rndbox").forEach(d=>{ const n=[...d.querySelectorAll("[data-mcomp-row]")].filter(r=>!r.hidden).length; d.hidden=!n; const rc=d.querySelector(".rc"); if(rc) rc.textContent=n+" مباراة"; }); };
+  box.querySelectorAll("[data-mcompf]").forEach(b=>b.onclick=()=>{ ADM_MCOMP=b.dataset.mcompf; box.querySelectorAll("[data-mcompf]").forEach(x=>x.setAttribute("aria-pressed", x===b)); applyMF(); });
+  applyMF();
+  box.querySelectorAll("[data-live-open]").forEach(b=>b.onclick=()=>{ const k=b.dataset.liveOpen; try{ history.pushState({lv:1},"","#livectl/"+k); }catch(e){} if(window.LIVE) LIVE.openControl(k); });
   box.querySelectorAll("[data-rm]").forEach(b=>b.onclick=async()=>{
     if(!confirm("حذف هذه المباراة وكل أهدافها وبطاقاتها وركلاتها؟")) return;
     await rebaseOnCloud();   /* v27 */
@@ -7924,6 +7996,7 @@ function renderEditorAdmin(){
     <div id="matchAdmin"></div>
 
     ${refsAdminHTML()}
+    ${refCrewsHTML()}
 
     ${squadsSectionHTML()}
 
@@ -7945,6 +8018,7 @@ function renderEditorAdmin(){
   wireSquads();
   wireKits();
   wireRefs();
+  wireRefCrews();
   wireTot();
   const lo=$("#logout");
   if(lo) lo.onclick=async()=>{
@@ -8122,6 +8196,7 @@ function renderAdmin(){
     <div id="matchAdmin"></div>
 
     ${refsAdminHTML()}
+    ${refCrewsHTML()}
 
     <h2 class="sec">لعبة الفانتسي</h2>
     <div class="card pad">
@@ -8318,6 +8393,7 @@ function renderAdmin(){
   if(du) du.onchange=e=>{ const f=e.target.files[0]; if(f) readDataFile(f); };
   wireKits();
   wireRefs();
+  wireRefCrews();
   wireTot();
   const eva=$("#evAdd");
   if(eva) eva.onclick=async()=>{
@@ -13887,12 +13963,8 @@ html.mx-editing #waFab{display:none!important}   /* زر واتساب كان ي�
             <input data-mf="venue" value="${esc(m.venue)}" placeholder="اسم الملعب">
             ${stHome&&stHome!==m.venue?`<div class="mx-sug">ملعب ${esc(m.home)}: <button data-mvenue="${esc(stHome)}">${esc(stHome)}</button></div>`:""}</div>
           <div class="mx-span mx-crew"><span class="mx-lbl" style="font-size:.8rem;color:var(--head,#fff)">طاقم التحكيم</span>
-            <div class="mx-grid g3">
-              <div><span class="mx-lbl">حكم الساحة</span><input data-mf="ref" list="mxRefs-ref" value="${esc(m.ref||"")}" placeholder="اسم الحكم"></div>
-              ${REF_ROLES.map(([k,t])=>`<div><span class="mx-lbl">${t}</span><input data-mref="${k}" list="mxRefs-${refCatOf(k)}" value="${esc((m.refs||{})[k]||"")}" placeholder="—"></div>`).join("")}
-            </div>
-            ${REF_CATS.map(([c])=>`<datalist id="mxRefs-${c}">${pool.filter(r=>r.roles.includes(c)).map(r=>`<option value="${esc(r.name)}">`).join("")}</datalist>`).join("")}
-            <p class="mx-hint">الاقتراحات حسب فئة كل حكم. أضف حكاماً جدداً من قسم «الحكام» في الإدارة، واكتب «لا يوجد» حين لا يُستخدم الدور.</p></div>
+            <div class="mx-crewsum">${[["حكم الساحة",m.ref],...REF_ROLES.map(([k,t])=>[t,(m.refs||{})[k]])].filter(x=>x[1]).map(([t,v])=>`<span><small>${esc(t)}</small>${esc(v)}</span>`).join("")||`<span class="none">لم يُحدَّد الطاقم بعد</span>`}</div>
+            <p class="mx-hint">الحكام يُدارون من تبويب «الحكام» في الإدارة (قائمة الحكام وطاقم كل مباراة) — منفصلين عن أحداث المباراة.</p></div>
           <div class="mx-span"><span class="mx-lbl">ملاحظة تظهر للجمهور (اختيارية)</span><input data-mf="note" value="${esc(m.note)}" placeholder="مثال: المباراة غير منقولة"></div>
         </div></div>
       <p class="mx-hint">النتيجة تُحتسب تلقائياً من الأهداف في تبويب الأحداث.</p>`;
@@ -14105,6 +14177,7 @@ html.mx-editing #waFab{display:none!important}   /* زر واتساب كان ي�
     box.innerHTML=`<div class="mx" style="--hrgb:${rgbOf(m.home)};--argb:${rgbOf(m.away)}">
       <div class="mx-top"><button class="mx-ghost" data-act="cancel">${SV.back}القائمة</button><h2>${EDIT.orig?"تعديل مباراة":"مباراة جديدة"}</h2></div>
       ${FORMERR?`<div class="mx-err">${SV.warn}${esc(FORMERR)}</div>`:""}
+      ${m.rec==="live"?`<div class="mx-livenote"><b>مرتبطة باللعب الفعلي</b><span>أحداث هذه المباراة مصدرها واحد: أي تعديل أو إضافة أو حذف هنا يعود إلى غرفة التحكم تلقائياً بعد الحفظ، والعكس. المسابقة والجولة والفريقان مقفلة.</span>${window.LIVE?`<button class="mx-ghost" data-mlive="${esc(matchKey({comp:m.comp, round:+m.round, home:m.home, away:m.away}))}">فتح غرفة التحكم</button>`:""}</div>`:""}
       <div class="mx-board">
         <div class="mx-teams">${teamBtn("home")}
           <div class="mx-sc"><div class="n">${ag}<i>:</i>${hg}</div><span class="st${m.status&&m.status!=="ft"&&m.status!=="pre"?" live":""}">${m.status?(PHASES.find(p=>p[0]===m.status)||["",""])[1]:upcoming?"لم تبدأ":m.round?`الجولة ${esc(m.round)}`:"—"}</span></div>
@@ -14146,6 +14219,7 @@ html.mx-editing #waFab{display:none!important}   /* زر واتساب كان ي�
         saveMatch().then(()=>{ if(EDIT) return; const x=(ALL.matches||[]).find(z=>z.round===key.round && compOf(z)===key.comp && z.home===key.home && z.away===key.away);
           if(!x) return; EDIT=loadEdit(x); MX._edit=EDIT; MX.tab=tab; MX.side=side; renderMatchAdmin(); }); }
     });
+    q("[data-mlive]",b=>b.onclick=()=>{ const k=b.dataset.mlive; if(!confirm("فتح غرفة التحكم؟ التعديلات غير المحفوظة هنا ستضيع.")) return; EDIT=null; renderMatchAdmin(); try{ history.pushState({lv:1},"","#livectl/"+k); }catch(e){} LIVE.openControl(k); });
     q("[data-mtab]",b=>b.onclick=()=>{ MX.tab=b.dataset.mtab; MX.sel=null; rerender(); window.scrollTo({top:box.getBoundingClientRect().top+scrollY-80,behavior:"smooth"}); });
     q("[data-mcomp]",b=>b.onclick=()=>{ EDIT.match.comp=b.dataset.mcomp; rerender(); });
     q("[data-mf]",el=>{ el.oninput=()=>{ EDIT.match[el.dataset.mf]=el.value; }; el.onchange=()=>{ if(!EDIT) return; EDIT.match[el.dataset.mf]=el.value;

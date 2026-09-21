@@ -376,3 +376,13 @@ html.lvc-open,html.lvc-open body{overflow:hidden}
 .lvc-crowd-row input[type=range]{width:calc(100% - 50px);accent-color:#2eb0f0;vertical-align:middle}
 .lvc-crowd-row b{font-size:.8rem;margin-inline-start:6px}
 .lvc-hint{z-index:3}
+/* ---------- تفاصيل الحدث (نفس حقول المحرّر اليدوي) ---------- */
+.lvc-chips{display:flex;flex-wrap:wrap;gap:4px}
+.lvc-chip{height:30px;padding:0 10px;border-radius:8px;border:1px solid var(--lv-line2);background:#0a1322;color:#cbd5e1;font:700 .72rem var(--lv-font);cursor:pointer}
+.lvc-chip:hover{border-color:#3a5b8a;color:#fff}
+.lvc-chip.on{background:#1878be;border-color:#5fb2e8;color:#fff}
+.lvc-rec{font-size:.7rem;color:var(--lv-mut);display:inline-flex;align-items:center;gap:6px;margin-inline-start:10px}
+.lvc-rec i{width:8px;height:8px;border-radius:2px;background:var(--lv-mut)}
+.lvc-rec.ok i{background:var(--lv-go)} .lvc-rec.wait i{background:#fbbf24;animation:lvPulse 1s infinite}
+.lvc-rec.err{color:#f87171} .lvc-rec.err i{background:var(--lv-live)} .lvc-rec.off{color:#fbbf24} .lvc-rec.off i{background:#fbbf24}
+.lvc-comp-b .lvc-f > .lvc-chips{margin-top:2px}

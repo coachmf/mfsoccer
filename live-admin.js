@@ -61,7 +61,7 @@ function shell(){
     <div class="lvc-cc" id="lvcCC"></div>
     <div class="lvc-topr">
       <button type="button" class="lvc-undo" data-a="undo" title="تراجع (Ctrl+Z)">${ico("undo")}<span>تراجع</span></button>
-      <span class="lvc-status" id="lvcStatus"></span>
+      <span class="lvc-status" id="lvcStatus"></span><span class="lvc-rec" id="lvcRec"></span>
     </div>
   </header>
   <aside class="lvc-nav">
@@ -131,6 +131,7 @@ function paint(){
   S.root.querySelector("#lvcHtl").innerHTML = LV.hTimelineHTML(d);
   S.root.querySelector("#lvcStats").innerHTML = LV.statsHTML(d);
   S.root.querySelector(".lvc-undo").disabled = !(d.ops||[]).length;
+  if(d.detached){ const r=S.root.querySelector("#lvcRec"); if(r && !r.classList.contains("off")) setRec("off"); }
   paintMatches();
 }
 function paintClock(){
@@ -223,8 +224,8 @@ function paintComposer(){
       ${(def.team||def.optTeam)?`<div class="lvc-f"><span>${def.k==="og"?"الفريق المستفيد":def.k==="save"?"فريق الحارس":"الفريق"}${def.optTeam?" (اختياري)":""}</span><div class="lvc-teams">${teamBtn("h")}${teamBtn("a")}</div></div>`:""}
       ${def.p?`<label class="lvc-f"><span>${H(def.p)}</span><input id="lvcP" list="lvcPL" value="${H(d.p)}" placeholder="${d.team?"اكتب الرقم أو الاسم":"اختر الفريق أولاً"}" autocomplete="off">${dl("lvcPL", pList)}</label>`:""}
       ${def.p2?`<label class="lvc-f"><span>${H(def.p2)}${def.k==="goal"?" (اختياري)":""}</span><input id="lvcP2" list="lvcP2L" value="${H(d.p2)}" placeholder="${def.k==="goal"?"بدون صناعة":"اكتب الرقم أو الاسم"}" autocomplete="off">${dl("lvcP2L", p2List)}</label>`:""}
-      ${def.k==="goal"?`<div class="lvc-row"><label class="lvc-chk"><input type="checkbox" id="lvcPen"${d.pen?" checked":""}> من ركلة جزاء</label>
-        <label class="lvc-f"><span>طريقة التسجيل</span><select id="lvcBp">${BP_OPTS.map(o=>`<option value="${H(o)}"${(d.bp||"")===o?" selected":""}>${o||"—"}</option>`).join("")}</select></label></div>`:""}
+      ${def.goal?goalFields(d):""}
+      ${def.res?penFields(d):""}
       ${def.reason?`<label class="lvc-f"><span>السبب (اختياري)</span><input id="lvcReason" value="${H(d.reason||"")}" list="lvcRL" autocomplete="off"><datalist id="lvcRL"><option value="تكتيكي"><option value="إصابة"><option value="إرهاق"></datalist></label>`:""}
       ${def.dec?`<label class="lvc-f"><span>القرار</span><select id="lvcDec">${["",...VAR_DEC].map(o=>`<option value="${H(o)}"${(d.dec||"")===o?" selected":""}>${o||"—"}</option>`).join("")}</select></label>`:""}
       <label class="lvc-f"><span>${H(def.note||"ملاحظة (اختياري)")}</span><input id="lvcNote" value="${H(d.note||"")}" autocomplete="off"></label>
@@ -235,6 +236,23 @@ function paintComposer(){
   const first = !d.team && (def.team) ? null : box.querySelector("#lvcP") || box.querySelector("#lvcNote");
   if(first && !S.editId) setTimeout(()=>first.focus(), 0);
 }
+/* تفاصيل الهدف = حقول المحرّر اليدوي نفسها (LIST.det / LIST.bp / LIST.zone) — التفصيل مطلوب كما في السجل */
+const LISTS = () => (typeof LIST==="object" && LIST) || {det:[], bp:[], zone:[], penres:[]};
+const chipRow = (key, list, cur) => `<div class="lvc-chips" data-chips="${key}">${list.map(v=>`<button type="button" class="lvc-chip${cur===v?" on":""}" data-chip="${key}" data-val="${H(v)}">${H(v)}</button>`).join("")}</div>`;
+function goalFields(d){
+  const L = LISTS(), bps = (L.bp||[]).filter(v=>v!=="هدف عكسي");
+  return `${d.k==="goal"?`<label class="lvc-chk"><input type="checkbox" id="lvcPen"${d.pen?" checked":""}> من ركلة جزاء</label>`:""}
+    <div class="lvc-f"><span>تفصيل الهجمة (مطلوب)</span>${chipRow("det", L.det||[], d.det||"")}</div>
+    ${d.k==="goal"?`<div class="lvc-f"><span>طريقة التسجيل</span>${chipRow("bp", bps, d.bp||"")}</div>`:""}
+    <label class="lvc-f"><span>منطقة التسجيل</span><select id="lvcGz"><option value="">—</option>${(L.zone||[]).map(z=>`<option${(d.gz||"")===z?" selected":""}>${H(z)}</option>`).join("")}</select></label>`;
+}
+function penFields(d){
+  const L = LISTS(), res = L.penres||[], places = (typeof PZONES!=="undefined" && PZONES) || [];
+  const def = d.k==="pensave" ? "تصدى لها الحارس" : d.k==="penmiss" ? "خارج المرمى" : "";
+  if(d.res==null && def) d.res = def;
+  return `<div class="lvc-f"><span>نتيجة الركلة${d.k==="pen"?" (اتركها فارغة إن لم تُنفَّذ بعد)":""}</span>${chipRow("res", res, d.res||"")}</div>
+    <div class="lvc-f"><span>مكان التسديد</span>${chipRow("place", places, d.place||"")}</div>`;
+}
 function readForm(){
   const d = S.draft, r = S.root, v = id => { const el=r.querySelector("#"+id); return el ? el.value : undefined; };
   const t = parseT(v("lvcT")); if(t!=null){ if(t!==d.t) d.live=false; d.t=t; }
@@ -244,7 +262,7 @@ function readForm(){
   if(v("lvcNote")!==undefined) d.note = v("lvcNote").trim();
   if(v("lvcReason")!==undefined) d.reason = v("lvcReason").trim();
   if(v("lvcDec")!==undefined) d.dec = v("lvcDec");
-  if(v("lvcBp")!==undefined) d.bp = v("lvcBp");
+  if(v("lvcGz")!==undefined) d.gz = v("lvcGz");
   const pen = r.querySelector("#lvcPen"); if(pen) d.pen = pen.checked;
   if(v("lvcType")) d.k = v("lvcType");
 }
@@ -255,8 +273,15 @@ async function save(){
   if(def.team && !d.team){ err.textContent = "اختر الفريق (1 أو 2)."; return; }
   if(d.k==="sub" && (!d.p || !d.p2)){ err.textContent = "حدّد اللاعب الخارج والداخل."; return; }
   if(d.k==="sub" && d.p===d.p2){ err.textContent = "الخارج والداخل لاعب واحد!"; return; }
+  /* نفس شروط المحرّر اليدوي حتى يصلح الحدث للسجل والإحصاءات */
+  if((d.k==="goal"||d.k==="og") && !d.p){ err.textContent = d.k==="og" ? "اختر من سجّل في مرماه." : "اختر المسجّل."; return; }
+  if((d.k==="goal"||d.k==="og") && !d.det && !(d.k==="goal" && d.pen)){ err.textContent = "اختر تفصيل الهجمة (مطلوب لإحصاءات الأهداف)."; return; }
+  if(["yellow","yr","red","chance"].includes(d.k) && !d.p){ err.textContent = "اختر اللاعب."; return; }
+  if(d.k==="custom" && !d.note){ err.textContent = "اكتب وصف الحدث."; return; }
+  if(d.k==="goal" && d.pen && !d.det) d.det = "ركلة جزاء";
+  if(d.k==="goal" && d.p2===d.p) d.p2 = "";
   const rec = {k:d.k, t:+d.t||0, ph:d.ph, team:d.team||""};
-  ["p","p2","note","reason","dec","bp","zone"].forEach(f=>{ if(d[f]) rec[f]=d[f]; });
+  ["p","p2","note","reason","dec","bp","zone","det","gz","res","place"].forEach(f=>{ if(d[f]) rec[f]=d[f]; });
   if(d.k==="goal" && d.pen) rec.pen = true;
   if(d.x!=null){ rec.x=d.x; rec.y=d.y; }
   const editId = S.editId;
@@ -264,7 +289,7 @@ async function save(){
   if(d.team) S.lastTeam = d.team;
   paintComposer(); paintTools(); paintGhost();
   if(editId){
-    const clean = {k:rec.k, t:rec.t, ph:rec.ph, team:rec.team, p:rec.p||"", p2:rec.p2||"", note:rec.note||"", reason:rec.reason||"", dec:rec.dec||"", bp:rec.bp||"", zone:rec.zone||"", pen:!!rec.pen, x:rec.x??null, y:rec.y??null};
+    const clean = {k:rec.k, t:rec.t, ph:rec.ph, team:rec.team, p:rec.p||"", p2:rec.p2||"", note:rec.note||"", reason:rec.reason||"", dec:rec.dec||"", bp:rec.bp||"", zone:rec.zone||"", det:rec.det||"", gz:rec.gz||"", res:rec.res||"", place:rec.place||"", pen:!!rec.pen, x:rec.x??null, y:rec.y??null};
     await run(()=>LV.cmd.editEvent(S.id, editId, clean), "عُدّل الحدث");
   } else {
     await run(()=>LV.cmd.addEvent(S.id, rec), EVK[rec.k].t+" ✓");
@@ -277,13 +302,35 @@ async function run(fn, okMsg){
   setStatus("saving");
   try{
     const n = await fn();
-    if(n){ LV.store.idxSet(S.id, LV.idxSummary(n)).catch(()=>{}); }   /* العرض يتحدّث من لقطة الوثيقة نفسها */
+    if(n){ LV.store.idxSet(S.id, LV.idxSummary(n)).catch(()=>{}); scheduleRec(n, okMsg==="نهاية المباراة"); }   /* العرض يتحدّث من لقطة الوثيقة نفسها */
     setStatus("ok"); if(okMsg) toast(okMsg, "ok");
     paint(); return n;
   }catch(e){
     console.error(e); setStatus("err", (e && (e.code||e.message)) || "");
     toast("تعذّر الحفظ — تحقّق من الاتصال أو الصلاحية", "err"); return null;
   }
+}
+/* بث ← سجل الموسم (الإحصاءات): مجمّعة 1.2 ث حتى لا يُكتب الموسم مع كل نقرة متتالية */
+let recTimer = null, recDoc = null, recBackup = false, recBusy = false;
+function scheduleRec(doc, backup){
+  if(!LV.rec || doc.detached) return;
+  recDoc = doc; recBackup = recBackup || !!backup;
+  clearTimeout(recTimer); recTimer = setTimeout(flushRec, 1200);
+  setRec("wait");
+}
+async function flushRec(){
+  if(recBusy){ recTimer = setTimeout(flushRec, 600); return; }
+  const doc = (S && S.doc) || recDoc; if(!doc) return;
+  recBusy = true; const bk = recBackup; recBackup = false;
+  try{ const r = await LV.rec.push(doc, {backup:bk}); setRec(r.ok||r.test ? "ok" : r.pending ? "wait" : r.skipped ? "off" : "err"); }
+  catch(e){ console.error(e); setRec("err", e.message); }
+  finally{ recBusy = false; }
+}
+A.flushRec = flushRec;
+function setRec(k, msg){
+  const el = S && S.root && S.root.querySelector("#lvcRec"); if(!el) return;
+  el.className = "lvc-rec "+k;
+  el.innerHTML = k==="wait" ? "<i></i>مزامنة الإحصاءات…" : k==="ok" ? "<i></i>الإحصاءات محدّثة" : k==="off" ? "<i></i>غير مرتبطة بالسجل" : `<i></i>تعذّرت مزامنة الإحصاءات${msg?` — ${H(msg)}`:""}`;
 }
 function setStatus(k, msg){
   const el = S.root && S.root.querySelector("#lvcStatus"); if(!el) return;
@@ -355,43 +402,18 @@ function openSettings(){
         <input type="range" min="0" max="100" step="5" value="${v}" data-crowdr="${sd}"><b>${v}%</b></div>`; }).join("")}</div>
     <div class="lvc-set"><h4>الاستحواذ (يُدخل يدوياً)</h4><p>نسبة ${H(d.home)} — تُعرض للجمهور فقط إذا أُدخلت.</p>
       <div class="lvc-row"><input type="number" min="0" max="100" id="lvcPoss" value="${d.poss&&d.poss.h!=null?d.poss.h:""}" placeholder="مثلاً 55"><button type="button" class="lvc-save" data-a="poss">حفظ</button><button type="button" class="lvc-cancel" data-a="possclear">مسح</button></div></div>
-    <div class="lvc-set"><h4>اعتماد في سجل المباراة</h4><p>ينقل الأهداف والبطاقات والتبديلات وركلات الجزاء من البث المباشر إلى محرّر المباراة الرسمي لتراجعها ثم تحفظها — فتدخل في الإحصاءات والترتيب والفانتسي.</p>
-      <button type="button" class="lvc-save" data-a="publish">فتح في محرّر المباراة</button></div>
+    <div class="lvc-set"><h4>القناة الناقلة</h4><p>تُحفظ في بيانات المباراة نفسها وتظهر للجمهور.</p>
+      <div class="lvc-row"><input id="lvcTv" list="lvcTvL" value="${H(((LV.rec&&LV.rec.recMatch(d))||{}).tv||"")}" placeholder="مثال: كويت سبورت"><datalist id="lvcTvL"><option value="كويت سبورت"><option value="كويت سبورت بلس"><option value="الكويت الأولى"><option value="غير منقولة"></datalist><button type="button" class="lvc-save" data-a="tv">حفظ</button></div></div>
+    <div class="lvc-set"><h4>الربط بسجل المباراة</h4>
+      ${d.detached?`<p>هذه المباراة <b>منفصلة</b> عن السجل: أحداث البث لا تدخل الإحصاءات، والسجل يُدار من المحرّر اليدوي. إعادة الربط تستورد أحداث السجل الحالية إلى البث ثم تعود المزامنة.</p>
+        <button type="button" class="lvc-save" data-a="relink">إعادة الربط بالسجل</button>`
+      :`<p>كل هدف وبطاقة وتبديل وركلة جزاء وفرصة وVAR وتعليق يُكتب تلقائياً في سجل المباراة الرسمي الذي تُبنى منه الإحصاءات والترتيب والفانتسي — ولا حاجة لإدخاله مرة ثانية. التعديل من المحرّر اليدوي يعود إلى هنا تلقائياً.</p>
+        <button type="button" class="lvc-cancel" data-a="detach">فصل عن السجل (إدارة يدوية فقط)</button>`}</div>
     <div class="lvc-set danger"><h4>حذف البث المباشر</h4><p>يحذف وثيقة البث وأحداثها نهائياً (لا يمسّ سجل المباراة الرسمي).</p><button type="button" class="lvc-delbtn" data-a="remove">${ico("del")}حذف البث</button></div>
   </div>`;
   m.hidden = false;
 }
-function toRecord(){
-  const d = S.doc, ev = U.sortEvents(U.activeEvents(d)), club = s => s==="h" ? d.home : d.away, opp = s => s==="h" ? d.away : d.home;
-  const mm = e => LV.minuteOf(+e.t||0, e.ph);
-  const goals=[], cards=[], subs=[], pens=[];
-  const yellows = {};
-  ev.forEach(e=>{ const {m, x} = mm(e);
-    if(e.k==="goal"){ goals.push({sc:club(e.team), p:e.p||"", a:e.p2||"", m, x, det:e.pen?"ركلة جزاء":"", bp:e.bp||"", zone:"", og:""});
-      if(e.pen) pens.push({by:club(e.team), p:e.p||"", m, res:"سجلت", place:""}); }
-    if(e.k==="og") goals.push({sc:club(e.team), p:"", a:"", m, x, det:"", bp:"هدف عكسي", zone:"", og:e.p||""});
-    if(e.k==="penmiss") pens.push({by:club(e.team), p:e.p||"", m, res:"خارج المرمى", place:""});
-    if(e.k==="pensave") pens.push({by:club(e.team), p:e.p||"", m, res:"تصدى لها الحارس", place:""});
-    if(e.k==="yellow"){ const k=e.team+"|"+e.p; yellows[k]=(yellows[k]||0)+1; cards.push({club:club(e.team), p:e.p||"", m, type: yellows[k]>=2 ? "إنذار ثانٍ" : "إنذار"}); }
-    if(e.k==="yr"){ cards.push({club:club(e.team), p:e.p||"", m, type:"إنذار ثانٍ"}); }
-    if(e.k==="red") cards.push({club:club(e.team), p:e.p||"", m, type:"طرد مباشر"});
-    if(e.k==="sub") subs.push({club:club(e.team), out:e.p||"", in:e.p2||"", h:(e.ph==="h1")?1:2, m, x});
-  });
-  return {goals, cards, subs, pens};
-}
-function publish(){
-  if(typeof loadEdit!=="function" || typeof renderMatchAdmin!=="function"){ toast("محرّر المباراة غير متاح في هذه الصفحة", "err"); return; }
-  const m = LV.findMatch(S.key); if(!m){ toast("لم تُعثر على المباراة في بيانات الموسم", "err"); return; }
-  const rec = toRecord(), E = loadEdit(m);
-  const had = E.goals.length + E.cards.length + E.subs.length + E.pens.length;
-  if(!confirm(`سيُستبدل في محرّر المباراة: ${rec.goals.length} هدف، ${rec.cards.length} بطاقة، ${rec.subs.length} تبديل، ${rec.pens.length} ركلة جزاء${had?`\n(السجل الحالي فيه ${had} عنصراً سيُستبدل)`:""}.\nلن يُحفظ شيء قبل أن تضغط «حفظ» في المحرّر. متابعة؟`)) return;
-  Object.assign(E, rec);
-  A.close();
-  if(typeof go==="function") go("admin");
-  setTimeout(()=>{ EDIT = E; if(typeof FORMERR!=="undefined") FORMERR=""; renderMatchAdmin();
-    const f = document.querySelector("#v-admin .mx, #v-admin form, #matchAdmin"); if(f) f.scrollIntoView({block:"start"}); }, 250);
-}
-A.toRecord = () => toRecord();
+A.toRecord = () => LV.rec.liveToRows(S.doc);
 
 /* ───────────── الأحداث ───────────── */
 function onClick(e){
@@ -411,6 +433,7 @@ function onClick(e){
   }
   const tool = t.closest("[data-tool]"); if(tool){ const k=tool.dataset.tool; if(S.tool===k && !S.editId){ cancel(); return; } if(S.draft && S.editId){ readForm(); S.draft.k=k; S.tool=k; paintComposer(); paintTools(); paintGhost(); return; } startDraft(k, S.draft && S.draft.x!=null ? {x:S.draft.x, y:S.draft.y, zone:U.zoneOf(U.toM(S.draft.x,S.draft.y).mx, U.toM(S.draft.x,S.draft.y).my)} : null); return; }
   const pop = t.closest("[data-pop]"); if(pop){ const loc=S.pop; startDraft(pop.dataset.pop, loc); return; }
+  const ch = t.closest("[data-chip]"); if(ch && S.draft){ readForm(); const k=ch.dataset.chip, v=ch.dataset.val; S.draft[k] = (S.draft[k]===v && k!=="res") ? "" : v; paintComposer(); return; }
   const tb = t.closest("[data-team]"); if(tb && S.draft){ readForm(); S.draft.team = tb.dataset.team; paintComposer(); const p=S.root.querySelector("#lvcP"); if(p) p.focus(); return; }
   const clk = t.closest("[data-clk]"); if(clk){ clockCmd(clk.dataset.clk); return; }
   const ed = t.closest("[data-lv-edit]"); if(ed){ editDraft(ed.dataset.lvEdit); return; }
@@ -431,7 +454,11 @@ function settingsAction(k){
   if(k==="closemodal"){ m.hidden=true; return; }
   if(k==="poss"){ const v=m.querySelector("#lvcPoss").value; run(()=>LV.cmd.setPoss(S.id, v), "حُفظ الاستحواذ"); m.hidden=true; return; }
   if(k==="possclear"){ run(()=>LV.cmd.setPoss(S.id, null), "مُسح الاستحواذ"); m.hidden=true; return; }
-  if(k==="publish"){ m.hidden=true; publish(); return; }
+  if(k==="tv"){ const v=m.querySelector("#lvcTv").value.trim(); m.hidden=true; setRec("wait");
+    LV.rec.push(S.doc, {tv:v}).then(r=>{ setRec(r.ok||r.test?"ok":"err"); toast("حُفظت القناة الناقلة","ok"); }).catch(e=>{ setRec("err", e.message); }); return; }
+  if(k==="detach"){ if(!confirm("فصل هذه المباراة عن السجل؟ أحداث البث لن تدخل الإحصاءات بعد الآن، ويبقى السجل كما هو الآن.")) return; m.hidden=true;
+    LV.rec.detach(S.doc).then(()=>{ toast("فُصلت المباراة — السجل يُدار يدوياً","ok"); setRec("off"); }).catch(e=>toast("تعذّر الفصل","err")); return; }
+  if(k==="relink"){ m.hidden=true; LV.rec.relink(S.doc).then(()=>{ toast("أُعيد الربط واستُوردت أحداث السجل","ok"); scheduleRec(S.doc); }).catch(e=>toast("تعذّر الربط","err")); return; }
   if(k==="remove"){ if(!confirm("حذف البث المباشر لهذه المباراة نهائياً؟")) return; m.hidden=true; LV.cmd.remove(S.id).then(()=>{ toast("حُذف البث", "ok"); A.close(); }).catch(()=>toast("تعذّر الحذف", "err")); return; }
 }
 document.addEventListener("change", e=>{ const r=e.target.closest && e.target.closest("[data-crowdr]"); if(!r || !S) return;
@@ -466,7 +493,16 @@ A.open = async function(key){
   host.innerHTML = `<div class="lvc-loading">جارٍ فتح غرفة التحكم…</div>`;
   S = {id, key, m, doc:null, tool:null, draft:null, editId:null, sel:null, seen:null, feedF:"all"};
   const me = S;
-  try{ await LV.cmd.ensure(m); }catch(e){ host.innerHTML = `<div class="lvc-loading err">تعذّر إنشاء البث: ${H(e.code||e.message||"")}<br><button type="button" class="btn" onclick="LIVE_ADMIN.close()">رجوع</button></div>`; return; }
+  try{
+    await LV.cmd.ensure(m);
+    /* مباراة مسجّلة يدوياً ⇒ نستورد أحداث سجلها إلى البث مرة واحدة (بمعرّفاتها) بدل إنشاء أحداث مكررة */
+    const cur = await new Promise(r=>{ const u=LV.store.watch(id, d=>{ if(d!==undefined){ setTimeout(()=>u&&u(),0); r(d); } }); });
+    if(cur && !cur.linked && !cur.detached && LV.rec){
+      const rm = LV.rec.recMatch(cur);
+      if(rm && LV.rec.hasRows(rm)) await LV.rec.pull(rm);
+      else await LV.store.tx(id, d=>{ if(!d || d.linked) return null; d.linked = true; return d; });
+    }
+  }catch(e){ host.innerHTML = `<div class="lvc-loading err">تعذّر إنشاء البث: ${H(e.code||e.message||"")}<br><button type="button" class="btn" onclick="LIVE_ADMIN.close()">رجوع</button></div>`; return; }
   S.unsub = LV.store.watch(id, (d)=>{
     if(S!==me || d===undefined) return;
     if(d===null){ return; }
