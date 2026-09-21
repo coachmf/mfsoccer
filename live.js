@@ -908,6 +908,7 @@ function loadSeats(){ if(SEATS) return Promise.resolve(SEATS); if(!seatsP) seats
 const rnd = i => { let x = Math.imul(i ^ 0x9e3779b9, 0x85ebca6b); x ^= x>>>13; x = Math.imul(x, 0xc2b2ae35); x ^= x>>>16; return (x>>>0)/4294967296; };
 const SKIN = ["#e0b18f","#c68c65","#a8714f","#8a5a3c","#d9a178"];
 function teamColors(club){
+  if(club==="الكويت") return Object.assign(["#FFFFFF","#FFFFFF"], {light:false});   /* جمهور نادي الكويت بالأبيض (منصور) */
   const cc = (window.CLUB_COLORS||{})[club] || ["#1878BE","#FFFFFF"];
   const hex = cc[0].replace("#",""), lum = (parseInt(hex.slice(0,2),16)*.299 + parseInt(hex.slice(2,4),16)*.587 + parseInt(hex.slice(4,6),16)*.114)/255;
   const out = [cc[0], cc[1] || "#FFFFFF"]; out.light = lum > .8; return out;
