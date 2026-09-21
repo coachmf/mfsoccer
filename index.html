@@ -742,6 +742,9 @@ details.squadbox summary label.lb{margin:0;cursor:pointer}
 .pcard .natf{top:10px;left:10px;width:26px}
 .natf.inl{position:static;display:inline-block;vertical-align:-2px;width:18px;margin-inline-start:6px;box-shadow:0 0 0 1px rgba(255,255,255,.7)}
 .pprof-hero .ph img.natf{position:absolute;top:auto;bottom:14px;left:14px;width:34px;height:auto;max-width:none;filter:none;aspect-ratio:auto;object-fit:fill}
+/* العلم لا يظهر إلا في مكانه النهائي (بعد قياس الصورة) فلا يقفز — منصور 2026-09-21 */
+.pprof-hero .ph img[onload]:not(.natf) ~ img.natf{opacity:0}
+.pprof-hero .ph img.natf.placed{opacity:1!important;transition:opacity .18s}
 .pp-card .pp-b.assist{bottom:-6px;right:-6px}
 .pp-card .pp-b.card{right:auto;left:-4px;top:auto;bottom:34%}
 .pp-card .pp-b.goal{top:auto;left:auto;bottom:-6px;right:-6px;background:#fff}
@@ -11937,7 +11940,7 @@ function playerProfileHTML(D){
     <button type="button" class="pprof-close" aria-label="إغلاق" onclick="closePlayer()">✕</button>
     <div class="pprof-hero">
       <div class="wm" style="background-image:url('${crestSrcOf(D.club)}')"></div>
-      <div class="ph">${cut?`<img src="${cut}.webp?v=29" alt="" decoding="async" onload="fitNatFlag(this)">`:`<img class="noph" src="${crestSrcOf(D.club)}" alt="">`}${natFlag(D.name, D.club, "pprof-flag")}</div>
+      <div class="ph">${cut?`<img src="${cut}.webp?v=29" alt="" decoding="async" onload="fitNatFlag(this)" onerror="var f=this.parentNode.querySelector('.natf');if(f)f.classList.add('placed')">`:`<img class="noph" src="${crestSrcOf(D.club)}" alt="">`}${natFlag(D.name, D.club, "pprof-flag")}</div>
       <div class="pprof-id">
         ${D.club?`<div class="club" data-club-link="${esc(D.club)}">${crest(D.club)}<span>${esc(D.club)}</span></div>`:""}
         <h3>${esc(D.name)}</h3>
@@ -11966,6 +11969,7 @@ function fitNatFlag(img){
     fl.style.left = Math.max(8, Math.min(x0 + 8, pr.width - fw - 8)) + "px";
     fl.style.bottom = Math.max(6, pr.height - y1 + 4) + "px";
     if (pr.height - y1 + 6 + fh > pr.height) fl.style.bottom = (pr.height - fh - 4) + "px";
+    fl.classList.add("placed");
   };
   if (_natBox[img.src]) return place(_natBox[img.src]);
   try {
@@ -12090,7 +12094,7 @@ function coachProfileHTML(D){
     <button type="button" class="pprof-close" aria-label="إغلاق" onclick="closePlayer()">✕</button>
     <div class="pprof-hero">
       <div class="wm" style="background-image:url('${crestSrcOf(D.club)}')"></div>
-      <div class="ph">${D.img?`<img class="cph" src="${D.img}.webp?v=32" alt="" decoding="async" onload="fitNatFlag(this)">`:`<img class="noph" src="${crestSrcOf(D.club)}" alt="">`}${coachFlag(D.nat,"pprof-flag")}</div>
+      <div class="ph">${D.img?`<img class="cph" src="${D.img}.webp?v=32" alt="" decoding="async" onload="fitNatFlag(this)" onerror="var f=this.parentNode.querySelector('.natf');if(f)f.classList.add('placed')">`:`<img class="noph" src="${crestSrcOf(D.club)}" alt="">`}${coachFlag(D.nat,"pprof-flag")}</div>
       <div class="pprof-id">
         <div class="club" data-club-link="${esc(D.club)}">${crest(D.club)}<span>${esc(D.club)}</span></div>
         <h3>${esc(D.name)}</h3>
