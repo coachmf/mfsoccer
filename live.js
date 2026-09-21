@@ -894,8 +894,11 @@ LV.ghostStad = function(x, y, k){
 LV.dirsStad = function(doc, ph){
   const r = LV.attackerOfEnd(doc, "right", ph||doc.clock.phase), l = r==="h" ? "a" : "h";
   const nm = s => s==="h" ? doc.home : doc.away;
-  const tag = (x, s) => `<g transform="translate(${x} 522)"><rect x="-86" y="-15" width="172" height="26" rx="13" fill="rgba(5,10,19,.62)"/>
-      <text x="0" y="3.5" text-anchor="middle" class="lv-dirt3">${H(nm(s))} يدافع</text></g>`;
+  /* شعار الفريق المدافع عن كل جهة، بلا خلفية (منصور) — وإن لم يوجد شعار نعرض الاسم */
+  const src = c => (typeof crestSrcOf==="function" ? crestSrcOf(c) : "") || ((typeof LOGOS==="object" && LOGOS) ? LOGOS[c] : "") || "";
+  const tag = (x, s) => { const c = nm(s), u = src(c);
+    return u ? `<image class="lv-dircrest" href="${H(u)}" x="${x-34}" y="${522-34}" width="68" height="68" preserveAspectRatio="xMidYMid meet"><title>${H(c)}</title></image>`
+             : `<text x="${x}" y="526" text-anchor="middle" class="lv-dirt3">${H(c)}</text>`; };
   return tag(330, r) + tag(1046, l);
 };
 

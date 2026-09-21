@@ -386,3 +386,4 @@ html.lvc-open,html.lvc-open body{overflow:hidden}
 .lvc-rec.ok i{background:var(--lv-go)} .lvc-rec.wait i{background:#fbbf24;animation:lvPulse 1s infinite}
 .lvc-rec.err{color:#f87171} .lvc-rec.err i{background:var(--lv-live)} .lvc-rec.off{color:#fbbf24} .lvc-rec.off i{background:#fbbf24}
 .lvc-comp-b .lvc-f > .lvc-chips{margin-top:2px}
+.lv-dircrest{opacity:.9;filter:drop-shadow(0 3px 6px rgba(0,0,0,.55));pointer-events:none}
