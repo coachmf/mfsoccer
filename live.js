@@ -840,8 +840,8 @@ if(!LV.TEST){ let n=0; const w=()=>{ if(LV.store.ready()) startIdx(); else if(++
    ===================================================================== */
 (function(){
 const LV = window.LIVE, U = LV.util, H = U.H;
-const IW = 1376, IH = 768, MID = 688;
-const HM = [5.09047619,-5.57064979,419.3, 0,-0.94755805,291.3, 0,-0.00812548,1];   /* ملعب 2 (زاوية أعلى، 2026-09-21) */
+const IW = 1376, IH = 860, MID = 688;
+const HM = [8.34285666,-2.94688529,250.0, 0,3.98058435,190.0, 0,-0.00428327,1];   /* ملعب 3: صورة Gemini مصحّحة المنظور (كاميرا أعلى، الملعب يملأ الإطار) */
 function inv3(m){
   const [a,b,c,d,e,f,g,h,i]=m, A=e*i-f*h, B=-(d*i-f*g), C=d*h-e*g, det=a*A+b*B+c*C;
   return [A/det,-(b*i-c*h)/det,(b*f-c*e)/det, B/det,(a*i-c*g)/det,-(a*f-c*d)/det, C/det,-(a*h-b*g)/det,(a*e-b*d)/det];
@@ -850,15 +850,15 @@ const HI = inv3(HM);
 const ap = (m,x,y) => { const w=m[6]*x+m[7]*y+m[8]; return [(m[0]*x+m[1]*y+m[2])/w, (m[3]*x+m[4]*y+m[5])/w]; };
 LV.project = (mx,my) => { const [u,v]=ap(HM,mx,my); return {u,v}; };
 LV.unproject = (u,v) => { const [mx,my]=ap(HI,u,v); return {mx,my}; };
-const depth = v => Math.max(0, Math.min(1, (v-291)/216));   /* 0 = الخط البعيد، 1 = القريب */
+const depth = v => Math.max(0, Math.min(1, (v-190)/460));   /* 0 = الخط البعيد، 1 = القريب */
 
 /* crop = [x, y, w, h] بكسلات الصورة: نقصّ السماء ونُبقي الملعب والمدرجات، فيكبر الملعب في الإطار */
-LV.STAD_CROP = {ctl:[20,150,1336,560], pub:[40,160,1296,540]};
+LV.STAD_CROP = {ctl:[0,130,1376,640], pub:[0,90,1376,690]};
 LV.stadiumHTML = function(cls){
   const [cx,cy,cw,ch] = LV.STAD_CROP[cls] || [0,0,IW,IH];
   const inner = `width:${(IW/cw*100).toFixed(3)}%;left:${(-cx/cw*100).toFixed(3)}%;top:${(-cy/ch*100).toFixed(3)}%`;
   return `<div class="lv-stad ${cls||""}" style="aspect-ratio:${cw}/${ch}"><div class="lv-stad-in" style="${inner}">
-    <img class="lv-stad-img" src="assets/live/stadium.webp?v=2" alt="" draggable="false">
+    <img class="lv-stad-img" src="assets/live/stadium.webp?v=3" alt="" draggable="false">
     <canvas class="lv-crowd" width="${IW}" height="${IH}"></canvas>
     <svg class="lv-pitch lv-stad-svg" viewBox="0 0 ${IW} ${IH}" preserveAspectRatio="xMidYMid meet">
       <g class="lv-dirs"></g><g class="lv-marks"></g><g class="lv-ghost"></g>
@@ -879,7 +879,7 @@ LV.markersStad = function(doc, opts){
   const ev = U.sortEvents(U.activeEvents(doc)).filter(e=>e.x!=null && e.y!=null && (!opts.filter || opts.filter(e)));
   return ev.map(e=>{ const {mx,my}=U.toM(e.x,e.y), {u,v}=LV.project(mx,my), dp=depth(v), col=MARK_COLORS[e.team||""];
     const big = ["goal","og","pen","penmiss","pensave","red","yr"].includes(e.k);
-    const r = (big?10:8) + dp*7;
+    const r = (big?15:12) + dp*6;
     return `<g class="lv-mk${e.id===opts.flash?" new":""}${opts.sel===e.id?" sel":""}" data-ev="${H(e.id)}" transform="translate(${u.toFixed(1)} ${v.toFixed(1)})" tabindex="0" role="button" aria-label="${H(LV.EVK[e.k]?LV.EVK[e.k].t:e.k)} ${H(LV.minLabel(e))}">
       <ellipse cx="0" cy="${(r*.9).toFixed(1)}" rx="${(r*.9).toFixed(1)}" ry="${(r*.28).toFixed(1)}" fill="rgba(0,0,0,.35)"/>
       <circle r="${r+2}" fill="rgba(0,0,0,.45)"/><circle r="${r}" fill="#0b1422" stroke="${col}" stroke-width="2.4"/>
@@ -887,7 +887,7 @@ LV.markersStad = function(doc, opts){
     </g>`; }).join("");
 };
 LV.ghostStad = function(x, y, k){
-  const {mx,my}=U.toM(x,y), {u,v}=LV.project(mx,my), r = 10 + depth(v)*7;
+  const {mx,my}=U.toM(x,y), {u,v}=LV.project(mx,my), r = 15 + depth(v)*6;
   return `<g transform="translate(${u} ${v})"><circle r="${r*1.9}" class="lv-ghost-r3"/><circle r="${r}" fill="#0b1422" stroke="#fff" stroke-width="2"/>
     ${k?`<svg x="${-r*.72}" y="${-r*.72}" width="${r*1.44}" height="${r*1.44}" viewBox="0 0 24 24" style="color:#fff">${icoInner((LV.EVK[k]||{}).ic)}</svg>`:""}</g>`;
 };
@@ -897,14 +897,14 @@ LV.dirsStad = function(doc, ph){
   /* شعار الفريق المدافع عن كل جهة، بلا خلفية (منصور) — وإن لم يوجد شعار نعرض الاسم */
   const src = c => (typeof crestSrcOf==="function" ? crestSrcOf(c) : "") || ((typeof LOGOS==="object" && LOGOS) ? LOGOS[c] : "") || "";
   const tag = (x, s) => { const c = nm(s), u = src(c);
-    return u ? `<image class="lv-dircrest" href="${H(u)}" x="${x-34}" y="${566-34}" width="68" height="68" preserveAspectRatio="xMidYMid meet"><title>${H(c)}</title></image>`
-             : `<text x="${x}" y="570" text-anchor="middle" class="lv-dirt3">${H(c)}</text>`; };
-  return tag(250, r) + tag(1126, l);
+    return u ? `<image class="lv-dircrest" href="${H(u)}" x="${x-40}" y="${722-40}" width="80" height="80" preserveAspectRatio="xMidYMid meet"><title>${H(c)}</title></image>`
+             : `<text x="${x}" y="726" text-anchor="middle" class="lv-dirt3">${H(c)}</text>`; };
+  return tag(200, r) + tag(1176, l);
 };
 
 /* ───────────── الجمهور ───────────── */
 let SEATS = null, seatsP = null;
-function loadSeats(){ if(SEATS) return Promise.resolve(SEATS); if(!seatsP) seatsP = fetch("assets/live/seats.json?v=3").then(r=>r.json()).then(d=>{ SEATS=d; return d; }); return seatsP; }
+function loadSeats(){ if(SEATS) return Promise.resolve(SEATS); if(!seatsP) seatsP = fetch("assets/live/seats.json?v=4").then(r=>r.json()).then(d=>{ SEATS=d; return d; }); return seatsP; }
 const rnd = i => { let x = Math.imul(i ^ 0x9e3779b9, 0x85ebca6b); x ^= x>>>13; x = Math.imul(x, 0xc2b2ae35); x ^= x>>>16; return (x>>>0)/4294967296; };
 const SKIN = ["#e0b18f","#c68c65","#a8714f","#8a5a3c","#d9a178"];
 function teamColors(club){
@@ -921,7 +921,7 @@ function drawCrowd(cv, doc, bounce){
   const lv = LV.crowdOf(doc), home = teamColors(doc.home), away = teamColors(doc.away);
   const P = SEATS.p, t = bounce ? bounce.t : 0;
   for(let i=0, n=0; i<P.length; i+=3, n++){
-    const x = P[i]/10, y = P[i+1]/10, s = P[i+2]/10, side = (y < 500 && x >= MID) ? "a" : "h";   /* الضيف: يمين المنصة الرئيسية والمدرج المجاور لها — والباقي لصاحب الأرض (منصور) */
+    const x = P[i]/10, y = P[i+1]/10, s = P[i+2]/10, side = (y < 380 && x >= MID) ? "a" : "h";   /* الضيف: يمين المنصة الرئيسية والمدرج المجاور لها — والباقي لصاحب الأرض (منصور) */
     const lvl = (side==="h" ? lv.h : lv.a) / 100;
     if(rnd(n) >= lvl) continue;
     const pal = side==="h" ? home : away, second = rnd(n+7777) < (pal.light ? .55 : .3);   /* لون أساسي فاتح (أبيض) يضيع على المقاعد: نُكثر الثاني */
