@@ -165,6 +165,17 @@ function clockLabel(clock){
   return `${pad(t/60)}:${pad(t%60)}`;
 }
 LV.clockLabel = clockLabel;
+/* الوقت الفعلي للشوط الحالي، والمهدر = زمن الشوط − الفعلي، والإجمالي عبر الأشواط */
+function effInfo(clock, at){
+  const c = clock||{}, E = c.eff||{}, now = at==null ? LV.now() : at;
+  const cur = (+E.base||0) + (E.run && tsMs(E.anchor)!=null ? Math.max(0,(now - tsMs(E.anchor))/1000) : 0);
+  const ph = c.phase, st = PH_START[ph];
+  const phEl = (isLivePh(ph) && st!=null) ? Math.max(0, elapsed(c, now) - st) : 0;
+  const done = E.done||{}; const doneEff = Object.values(done).reduce((a,b)=>a+(+b||0),0);
+  return {run:!!E.run, cur: isLivePh(ph) ? cur : 0, phEl, waste: isLivePh(ph) ? Math.max(0, phEl - cur) : 0, total: doneEff + (isLivePh(ph)?cur:0), done, has: !!c.eff};
+}
+LV.effInfo = effInfo;
+LV.fmtS = t => `${pad(t/60)}:${pad(t%60)}`;
 /* دقيقة الحدث بصيغة الكرة: 32' أو 45+2' — من الثواني ومرحلة المباراة */
 function minuteOf(t, ph){
   const end = PH_END[ph], start = PH_START[ph];
@@ -245,14 +256,19 @@ const store = {
       return ()=>{ this._subs[id]=(this._subs[id]||[]).filter(f=>f!==cb); }; }
     if(!this.ready()) return ()=>{};
     let lastUpd = null;
-    return this.ref(id).onSnapshot({includeMetadataChanges:false}, snap=>{
-      if(!snap.exists){ cb(null, {}); return; }
+    (this._loc[id] ||= []).push(cb);
+    const un = this.ref(id).onSnapshot({includeMetadataChanges:false}, snap=>{
+      if(!snap.exists){ this.cache[id]=null; cb(null, {}); return; }
       const d = snap.data({serverTimestamps:"estimate"});
+      if(this._inflight[id] > 0) return;   /* كتابة محلية جارية: لا نرجع العرض لنسخة أقدم */
+      this.cache[id]=d;
       const u = tsMs(d.updatedAt);
       if(!snap.metadata.hasPendingWrites && !snap.metadata.fromCache && u!==lastUpd){ lastUpd=u; noteServerTs(u); }
       cb(d, {pending:snap.metadata.hasPendingWrites});
     }, err=>{ cb(undefined, {error:err}); });
+    return ()=>{ un(); this._loc[id]=(this._loc[id]||[]).filter(f=>f!==cb); };
   },
+  cache:{}, _loc:{}, _inflight:{}, _q:{}, onError:null,
   /* تعديل آمن: قراءة ← تعديل ← كتابة داخل معاملة، فلا يمحو مشغّلان عمل بعضهما */
   async tx(id, fn){
     if(TEST){
@@ -260,13 +276,24 @@ const store = {
       n.updatedAt = Date.now(); this._write(id, n); return n;
     }
     const ref = this.ref(id);
-    return fbDb.runTransaction(async t=>{
+    /* كتابة متفائلة (سرعة): نطبّق التعديل على النسخة المحلية ونعرضه فوراً، والمعاملة تكمل في الخلفية
+       وتعيد تطبيق fn على أحدث نسخة في الخادم فلا يضيع عمل مشغّل آخر */
+    let local = null;
+    if(this.cache[id]){ LOCAL = true; try{ local = fn(clone(this.cache[id])); }catch(e){ local = null; } LOCAL = false;
+      if(local){ local.updatedAt = LV.now(); this.cache[id] = local; (this._loc[id]||[]).forEach(f=>{ try{ f(clone(local), {local:true, fresh:true}); }catch(e){} }); } }
+    this._inflight[id] = (this._inflight[id]||0) + 1;
+    /* طابور لكل مباراة: المعاملات تتتابع فلا تتصادم ولا تُعاد (أسرع وأضمن من التزامن) */
+    const prev = this._q[id] || Promise.resolve();
+    const p = prev.catch(()=>{}).then(()=>fbDb.runTransaction(async t=>{
       const s = await t.get(ref); const cur = s.exists ? s.data() : null;
       const n = fn(clone(cur)); if(!n) return cur;
       n.updatedAt = firebase.firestore.FieldValue.serverTimestamp();
       n.updatedBy = (typeof FBUSER!=="undefined" && FBUSER && FBUSER.email) || "";
       t.set(ref, n); return n;
-    });
+    })).finally(()=>{ this._inflight[id]--; if(!this._inflight[id]) ref.get().then(x=>{ if(x.exists && !this._inflight[id]){ const d=x.data({serverTimestamps:"estimate"}); this.cache[id]=d; (this._loc[id]||[]).forEach(f=>f(d,{})); } }).catch(()=>{}); });
+    this._q[id] = p;
+    if(local){ p.catch(e=>{ if(this.onError) this.onError(e); }); return local; }
+    return p;
   },
   /* فهرس المباريات الجارية (للشريط في الرئيسية وتبويب «مباشر») */
   idxWatch(cb){
@@ -334,11 +361,13 @@ LV.idxSummary = idxSummary;
 const pushOp = (d, op) => { d.ops = (d.ops||[]); d.ops.push(op); if(d.ops.length>40) d.ops.splice(0, d.ops.length-40); };
 
 /* أوامر الحالة — كلها تمر عبر store.tx فتبقى آمنة ومتسلسلة */
-const SERVER_NOW = () => TEST ? Date.now() : firebase.firestore.FieldValue.serverTimestamp();
+let LOCAL = false;   /* أثناء التطبيق المحلي المتفائل: وقت الجهاز بدل طابع الخادم */
+const SERVER_NOW = () => (TEST || LOCAL) ? LV.now() : firebase.firestore.FieldValue.serverTimestamp();
 LV.cmd = {
   async ensure(m){ const id=LV.idOf(keyOf(m)); return store.tx(id, cur=>cur ? null : newDoc(m)); },
-  addEvent(id, ev){ return store.tx(id, d=>{ if(!d) return null;
-      d.seq=(d.seq||0)+1; const e=Object.assign({id:uid(), seq:d.seq, status:"ok", at:Date.now()}, ev);
+  addEvent(id, ev){ const eid = uid(), at = Date.now(); return store.tx(id, d=>{ if(!d) return null;
+      if(d.events.some(x=>x.id===eid)) return null;
+      d.seq=(d.seq||0)+1; const e=Object.assign({id:eid, seq:d.seq, status:"ok", at}, ev);
       d.events.push(e); pushOp(d, {op:"add", id:e.id}); return d; }); },
   editEvent(id, evId, patch){ return store.tx(id, d=>{ if(!d) return null;
       const e=d.events.find(x=>x.id===evId); if(!e) return null;
@@ -354,28 +383,41 @@ LV.cmd = {
       else if(op.op==="clock"){ d.clock=op.clock; if(op.addId) d.events=d.events.filter(e=>e.id!==op.addId); }
       return d; }); },
   /* انتقالات الساعة: كل انتقال يُسجَّل أيضاً حدثاً في الخط الزمني */
-  clock(id, action, arg){ return store.tx(id, d=>{ if(!d) return null;
-      const c=d.clock, before=clone(c), now=LV.now(), t=elapsed(c, now);
+  clock(id, action, arg){ const sid = uid(), now0 = LV.now(); return store.tx(id, d=>{ if(!d) return null;
+      const c=d.clock, before=clone(c), now=now0, t=elapsed(c, now);
       let sys=null;
+      /* الوقت الفعلي (الكرة في اللعب): يتوقف مع أحداث التوقف ويُستأنف بزر، والساعة الأصلية تستمر */
+      const E = c.eff = c.eff || {run:false, base:0, anchor:null, done:{}};
+      E.done = E.done || {};
+      const effNow = () => (+E.base||0) + (E.run && tsMs(E.anchor)!=null ? Math.max(0,(now - tsMs(E.anchor))/1000) : 0);
+      const effStop = () => { E.base = effNow(); E.run = false; E.anchor = null; };
+      const effGo = () => { E.run = true; E.anchor = SERVER_NOW(); };
+      const effNew = ph0 => { if(ph0) E.done[ph0] = effNow(); E.base = 0; E.run = false; E.anchor = null; };
       const run = base => { c.base=base; c.anchor=SERVER_NOW(); c.running=true; };
       const stop = () => { c.base=elapsed(c, now); c.anchor=null; c.running=false; };
+      if(action==="effstop" || action==="effgo"){
+        if(!c.running || !isLivePh(c.phase)) return null;
+        if(action==="effstop"){ if(!E.run) return null; effStop(); }
+        else { if(E.run) return null; effGo(); }
+        return d;                                      /* بلا حدث وبلا خطوة تراجع: تبديل متكرر */
+      }
       switch(action){
-        case "kickoff": if(c.phase!=="pre") return null; c.phase="h1"; run(0); sys={k:"kickoff", t:0, ph:"h1"}; break;
-        case "ht":      if(c.phase!=="h1") return null; stop(); sys={k:"ht", t:c.base, ph:"h1"}; c.phase="ht"; break;
-        case "h2":      if(c.phase!=="ht") return null; c.phase="h2"; run(2700); sys={k:"h2", t:2700, ph:"h2"}; break;
-        case "et":      if(c.phase!=="h2") return null; stop(); sys={k:"ht", t:c.base, ph:"h2", note:"نهاية الوقت الأصلي"}; c.phase="et"; break;
-        case "e1":      if(c.phase!=="et") return null; c.phase="e1"; run(5400); sys={k:"e1", t:5400, ph:"e1"}; break;
-        case "e2":      if(c.phase!=="e1") return null; stop(); c.phase="e2"; run(6300); sys={k:"e2", t:6300, ph:"e2"}; break;
-        case "ft":      if(c.phase==="ft"||c.phase==="pre") return null; const ph0=c.phase; stop(); sys={k:"ft", t:c.base, ph:ph0==="ht"?"h1":ph0==="et"?"h2":ph0}; c.phase="ft"; break;
-        case "pause":   if(!c.running) return null; stop(); sys={k:"pause", t:c.base, ph:c.phase}; break;
-        case "resume":  if(c.running || !isLivePh(c.phase)) return null; run(c.base); sys={k:"resume", t:c.base, ph:c.phase}; break;
+        case "kickoff": if(c.phase!=="pre") return null; c.phase="h1"; run(0); E.done={}; E.base=0; effGo(); sys={k:"kickoff", t:0, ph:"h1"}; break;
+        case "ht":      if(c.phase!=="h1") return null; stop(); effNew("h1"); sys={k:"ht", t:c.base, ph:"h1"}; c.phase="ht"; break;
+        case "h2":      if(c.phase!=="ht") return null; c.phase="h2"; run(2700); E.base=0; effGo(); sys={k:"h2", t:2700, ph:"h2"}; break;
+        case "et":      if(c.phase!=="h2") return null; stop(); effNew("h2"); sys={k:"ht", t:c.base, ph:"h2", note:"نهاية الوقت الأصلي"}; c.phase="et"; break;
+        case "e1":      if(c.phase!=="et") return null; c.phase="e1"; run(5400); E.base=0; effGo(); sys={k:"e1", t:5400, ph:"e1"}; break;
+        case "e2":      if(c.phase!=="e1") return null; stop(); effNew("e1"); c.phase="e2"; run(6300); effGo(); sys={k:"e2", t:6300, ph:"e2"}; break;
+        case "ft":      if(c.phase==="ft"||c.phase==="pre") return null; const ph0=c.phase; stop(); if(isLivePh(ph0)) effNew(ph0); sys={k:"ft", t:c.base, ph:ph0==="ht"?"h1":ph0==="et"?"h2":ph0}; c.phase="ft"; break;
+        case "pause":   if(!c.running) return null; stop(); effStop(); sys={k:"pause", t:c.base, ph:c.phase}; break;
+        case "resume":  if(c.running || !isLivePh(c.phase)) return null; run(c.base); effGo(); sys={k:"resume", t:c.base, ph:c.phase}; break;
         case "set":     { const v=Math.max(0, +arg||0); c.base=v; if(c.running) c.anchor=SERVER_NOW(); break; }
         case "added":   { const ph=isLivePh(c.phase)?c.phase:(c.phase==="ht"?"h1":c.phase==="et"?"h2":null); if(!ph) return null;
                           c.added=c.added||{}; c.added[ph]=Math.max(0, +arg||0); sys={k:"added", t:Math.min(t, PH_END[ph]||t), ph, n:c.added[ph]}; break; }
         default: return null;
       }
       let addId=null;
-      if(sys){ d.seq=(d.seq||0)+1; const e=Object.assign({id:uid(), seq:d.seq, status:"ok", at:Date.now(), team:""}, sys); addId=e.id; d.events.push(e); }
+      if(sys){ if(d.events.some(x=>x.id===sid)) return d; d.seq=(d.seq||0)+1; const e=Object.assign({id:sid, seq:d.seq, status:"ok", at:now0, team:""}, sys); addId=e.id; d.events.push(e); }
       pushOp(d, {op:"clock", clock:before, addId});
       return d; }); },
   setDir(id, dir){ return store.tx(id, d=>{ if(!d) return null; d.dir = dir==="a" ? "a" : "h"; return d; }); },
@@ -556,6 +598,7 @@ function infoHTML(doc){
   const rows = [
     ["الحالة", PH[c.phase]||"—"],
     ["الوقت", isLivePh(c.phase)||c.phase==="ht"||c.phase==="ft" ? `<span dir="ltr">${clockLabel(c)}</span>` : "—"],
+    ["الوقت الفعلي", c.eff ? (()=>{ const e=effInfo(c), d=e.done||{}; const parts=[d.h1!=null?`الشوط الأول ${LV.fmtS(d.h1)}`:"", d.h2!=null?`الشوط الثاني ${LV.fmtS(d.h2)}`:"", LV.isLivePh(c.phase)?`الحالي ${LV.fmtS(e.cur)} (المهدر ${LV.fmtS(e.waste)})`:""].filter(Boolean); return parts.join(" · ")||"—"; })() : "—"],
     ["بدل الضائع", [add.h1?`الشوط الأول +${add.h1}`:"", add.h2?`الشوط الثاني +${add.h2}`:"", add.e1?`الإضافي الأول +${add.e1}`:"", add.e2?`الإضافي الثاني +${add.e2}`:""].filter(Boolean).join(" · ") || "—"],
     ["الملعب", doc.venue ? H(doc.venue) : "—"],
     ["المسابقة", `${H(doc.comp||"")} · الجولة ${H(doc.round)}`]
@@ -653,8 +696,12 @@ function scoreHTML(doc){
     : c.phase==="ht" ? `<span class="lv-badge ht">استراحة</span>` : c.phase==="ft" ? `<span class="lv-badge ft">انتهت</span>` : `<span class="lv-badge pre">لم تبدأ</span>`;
   return `${tm("h")}<div class="lv-ps-mid"><div class="lv-ps-res"><b data-s="h">${s.h}</b><i>-</i><b data-s="a">${s.a}</b></div>
     <div class="lv-ps-clock" dir="ltr" data-lv-clock>${live||c.phase==="ht"||c.phase==="ft" ? H(LV.clockLabel(c)) : "—"}</div>${badge}
-    <span class="lv-ps-ph">${H(LV.PH[c.phase]||"")}${c.added && c.added[c.phase] ? ` · +${c.added[c.phase]}` : ""}</span></div>${tm("a")}`;
+    <span class="lv-ps-ph">${H(LV.PH[c.phase]||"")}${c.added && c.added[c.phase] ? ` · +${c.added[c.phase]}` : ""}</span>
+    ${c.eff && (live||c.phase==="ht"||c.phase==="ft") ? `<span class="lv-ps-eff" data-lv-eff>${effLine(c)}</span>` : ""}</div>${tm("a")}`;
 }
+function effLine(c){ const e = LV.effInfo(c);
+  if(LV.isLivePh(c.phase)) return `<span>الفعلي <b dir="ltr">${LV.fmtS(e.cur)}</b></span><span>المهدر <b dir="ltr">${LV.fmtS(e.waste)}</b></span>`;
+  return `<span>الوقت الفعلي <b dir="ltr">${LV.fmtS(e.total)}</b></span>`; }
 function paintPub(fresh){
   if(!PUB) return; const root = document.getElementById("lvPub"); if(!root){ stopPub(); return; }
   const doc = PUB.doc;
@@ -711,7 +758,8 @@ LV.mountPublic = function(host, m){
   const me = PUB = {id, m, doc:null, seen:null, filter:"all"};
   me.unsub = LV.store.watch(id, (d, meta)=>{ if(d===undefined || PUB!==me) return; me.doc = d; paintPub(!!(meta&&meta.fresh) || !(meta&&meta.pending)); });
   me.untick = LV.tick(()=>{ if(PUB!==me || !me.doc) return; const c=me.doc.clock; if(!c.running) return;
-    document.querySelectorAll("#mpage [data-lv-clock]").forEach(el=>el.textContent=LV.clockLabel(c)); });
+    document.querySelectorAll("#mpage [data-lv-clock]").forEach(el=>el.textContent=LV.clockLabel(c));
+    document.querySelectorAll("#mpage [data-lv-eff]").forEach(el=>el.innerHTML=effLine(c)); });
   host.onclick = e=>{
     if(e.target.closest("#lvPubMore") && PUB){ PUB.allEv = !PUB.allEv; paintPub(false); return; }
     const f = e.target.closest("#lvPubFilter [data-f]"); if(f && PUB){ PUB.filter=f.dataset.f; host.querySelectorAll("#lvPubFilter [data-f]").forEach(b=>b.setAttribute("aria-pressed", b===f)); paintPub(false); return; }
@@ -785,7 +833,7 @@ function startIdx(){
   });
 }
 /* ───── غرفة التحكم: تُحمَّل عند الحاجة فقط (live-admin.js) ───── */
-LV.VER = 4;
+LV.VER = 5;
 LV.loadAdmin = function(){
   if(window.LIVE_ADMIN) return Promise.resolve(window.LIVE_ADMIN);
   return new Promise((res, rej)=>{ const s=document.createElement("script"); s.src="live-admin.js?v="+LV.VER; s.onload=()=>res(window.LIVE_ADMIN); s.onerror=rej; document.head.appendChild(s); });

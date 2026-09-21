@@ -57,7 +57,10 @@ function shell(){
       <div class="lvc-score"><b id="lvcSh">0</b><i>-</i><b id="lvcSa">0</b></div>
       <div class="lvc-team a"><b>${H(d.away)}</b>${U.crestOf(d.away)}</div>
     </div>
-    <div class="lvc-clockbox"><div class="lvc-clock" dir="ltr" id="lvcClock">00:00</div><div class="lvc-ph" id="lvcPh"></div></div>
+    <div class="lvc-clockbox"><small class="lvc-clk-t">وقت المباراة</small><div class="lvc-clock" dir="ltr" id="lvcClock">00:00</div><div class="lvc-ph" id="lvcPh"></div></div>
+    <button type="button" class="lvc-effbox" id="lvcEff" data-a="efftoggle" title="الوقت الفعلي — Space للإيقاف/الاستئناف">
+      <small class="lvc-clk-t">الوقت الفعلي</small><div class="lvc-effclk" dir="ltr" id="lvcEffClk">00:00</div>
+      <div class="lvc-effst" id="lvcEffSt"></div></button>
     <div class="lvc-cc" id="lvcCC"></div>
     <div class="lvc-topr">
       <button type="button" class="lvc-undo" data-a="undo" title="تراجع (Ctrl+Z)">${ico("undo")}<span>تراجع</span></button>
@@ -142,11 +145,18 @@ function paintClock(){
   const add = c.added && c.added[livePhaseOf(c)];
   ph.innerHTML = `${c.running?'<i class="lv-dot"></i>':""}${H(LV.PH[c.phase]||"")}${add?` · <b>+${add}</b>`:""}${LV.isLivePh(c.phase)&&!c.running?' · <em>متوقفة</em>':""}`;
   S.root.querySelector(".lvc-clockbox").classList.toggle("run", !!c.running);
+  const ei = LV.effInfo(c), eb = S.root.querySelector("#lvcEff");
+  if(eb){ const live = LV.isLivePh(c.phase) && c.running;
+    S.root.querySelector("#lvcEffClk").textContent = LV.fmtS(ei.cur);
+    S.root.querySelector("#lvcEffSt").innerHTML = !live ? `<span>المهدر ${LV.fmtS(ei.waste)}</span>` : ei.run
+      ? `<span class="on"><i></i>الكرة في اللعب</span><span>المهدر ${LV.fmtS(ei.waste)}</span>`
+      : `<span class="off"><i></i>متوقف — اضغط للاستئناف</span><span>المهدر ${LV.fmtS(ei.waste)}</span>`;
+    eb.classList.toggle("run", live && ei.run); eb.classList.toggle("stop", live && !ei.run); eb.disabled = !live; }
   if(S.draft && !S.editId && S.draft.live){ const t=Math.floor(LV.elapsed(c)); const inp=S.root.querySelector("#lvcT"); if(inp && document.activeElement!==inp){ inp.value=fmtT(t); S.draft.t=t; S.draft.ph=livePhaseOf(c); const ps=S.root.querySelector("#lvcPhSel"); if(ps) ps.value=S.draft.ph; } }
 }
 function clockControlsHTML(c){
   const b = (a, t, cls, ic) => `<button type="button" class="lvc-cbtn ${cls||""}" data-clk="${a}">${ic?ico(ic):""}<span>${t}</span></button>`;
-  const run = c.running ? b("pause","إيقاف","warn","pause") : (LV.isLivePh(c.phase) ? b("resume","استئناف","go","resume") : "");
+  const run = c.running ? b("pause","إيقاف المباراة","warn","pause") : (LV.isLivePh(c.phase) ? b("resume","استئناف المباراة","go","resume") : "");
   let main = "";
   switch(c.phase){
     case "pre": main = b("kickoff","بدء المباراة","go big","play"); break;
@@ -174,8 +184,14 @@ A.onIdx = () => { if(S){ S.idxDirty = true; if(S.root) paintMatches(); } };
 /* ───────────── نموذج الحدث ───────────── */
 const fmtT = t => `${String(Math.floor(t/60)).padStart(2,"0")}:${String(Math.floor(t%60)).padStart(2,"0")}`;
 function parseT(v){ const m=/^\s*(\d{1,3})(?::(\d{1,2}))?\s*$/.exec(String(v||"")); if(!m) return null; return (+m[1])*60 + (+(m[2]||0)); }
+/* أحداث توقف اللعب: الضغط عليها يوقف الوقت الفعلي فوراً، والضغط عليها مرة ثانية (أو زر الوقت الفعلي) يستأنفه */
+const STOP_K = new Set(["throw","corner","gk","fk","foul","handball","danger","offside","injury","medical","water","var","vard","goal","og","yellow","red","yr","sub","pen","penmiss","pensave","shotoff","custom"]);
+function effCmd(a){ const c = S.doc && S.doc.clock; if(!c || !c.running || !LV.isLivePh(c.phase)) return;
+  const on = LV.effInfo(c).run; if((a==="effstop" && !on) || (a==="effgo" && on)) return;
+  LV.cmd.clock(S.id, a).then(()=>{ paintClock(); }).catch(e=>{ console.error(e); setStatus("err", e.code||e.message); }); }
 function startDraft(k, loc){
   const def = EVK[k]; if(!def) return;
+  if(STOP_K.has(k)){ effCmd("effstop"); S.stopTool = k; }
   if(k==="added"){ const inp=S.root.querySelector("#lvcAdd"); if(inp){ inp.focus(); inp.select(); } else toast("ابدأ المباراة أولاً", "err"); return; }
   const c = S.doc.clock, t = Math.floor(LV.elapsed(c));
   S.editId = null; S.tool = k;
@@ -302,7 +318,9 @@ async function run(fn, okMsg){
   setStatus("saving");
   try{
     const n = await fn();
-    if(n){ LV.store.idxSet(S.id, LV.idxSummary(n)).catch(()=>{}); scheduleRec(n, okMsg==="نهاية المباراة"); }   /* العرض يتحدّث من لقطة الوثيقة نفسها */
+    if(n){ const sm = LV.idxSummary(n), sk = [sm.phase, sm.running, sm.hg, sm.ag, sm.base].join("|");
+      if(sk!==S.idxKey){ S.idxKey = sk; LV.store.idxSet(S.id, sm).catch(()=>{}); }
+      scheduleRec(n, okMsg==="نهاية المباراة"); }   /* العرض يتحدّث من لقطة الوثيقة نفسها */
     setStatus("ok"); if(okMsg) toast(okMsg, "ok");
     paint(); return n;
   }catch(e){
@@ -312,8 +330,13 @@ async function run(fn, okMsg){
 }
 /* بث ← سجل الموسم (الإحصاءات): مجمّعة 1.2 ث حتى لا يُكتب الموسم مع كل نقرة متتالية */
 let recTimer = null, recDoc = null, recBackup = false, recBusy = false;
+let recKey = null;
 function scheduleRec(doc, backup){
   if(!LV.rec || doc.detached) return;
+  /* السرعة: لا نكتب وثيقة الموسم الكبيرة إلا إذا تغيّر ما يدخل السجل (أهداف/بطاقات/تبديلات/مرحلة) — الركنيات والتماس والوقت الفعلي لا */
+  let k = ""; try{ const c = doc.clock||{}; k = JSON.stringify([LV.rec.liveToRows(doc), c.phase, c.added||{}]); }catch(e){}
+  if(!backup && k && k===recKey){ return; }
+  recKey = k;
   recDoc = doc; recBackup = recBackup || !!backup;
   clearTimeout(recTimer); recTimer = setTimeout(flushRec, 1200);
   setRec("wait");
@@ -322,6 +345,7 @@ async function flushRec(){
   if(recBusy){ recTimer = setTimeout(flushRec, 600); return; }
   const doc = (S && S.doc) || recDoc; if(!doc) return;
   recBusy = true; const bk = recBackup; recBackup = false;
+  try{ const c = doc.clock||{}; recKey = JSON.stringify([LV.rec.liveToRows(doc), c.phase, c.added||{}]); }catch(e){}
   try{ const r = await LV.rec.push(doc, {backup:bk}); setRec(r.ok||r.test ? "ok" : r.pending ? "wait" : r.skipped ? "off" : "err"); }
   catch(e){ console.error(e); setRec("err", e.message); }
   finally{ recBusy = false; }
@@ -421,6 +445,7 @@ function onClick(e){
   const a = t.closest("[data-a]");
   if(a){ const k=a.dataset.a;
     if(k==="exit"){ A.close(); return; }
+    if(k==="efftoggle"){ const on = LV.effInfo(S.doc.clock).run; S.stopTool=null; effCmd(on?"effstop":"effgo"); return; }
     if(k==="undo"){ doUndo(); return; }
     if(k==="save"){ if(a.closest("#lvcModal")) return settingsAction(k); save(); return; }
     if(k==="cancel"){ cancel(); return; }
@@ -431,7 +456,8 @@ function onClick(e){
     if(k==="nav-ctl"){ return; }
     return settingsAction(k);
   }
-  const tool = t.closest("[data-tool]"); if(tool){ const k=tool.dataset.tool; if(S.tool===k && !S.editId){ cancel(); return; } if(S.draft && S.editId){ readForm(); S.draft.k=k; S.tool=k; paintComposer(); paintTools(); paintGhost(); return; } startDraft(k, S.draft && S.draft.x!=null ? {x:S.draft.x, y:S.draft.y, zone:U.zoneOf(U.toM(S.draft.x,S.draft.y).mx, U.toM(S.draft.x,S.draft.y).my)} : null); return; }
+  const tool = t.closest("[data-tool]"); if(tool && !S.draft && S.stopTool===tool.dataset.tool && S.doc && !LV.effInfo(S.doc.clock).run && S.doc.clock.running){ S.stopTool=null; effCmd("effgo"); toast("استؤنف الوقت الفعلي","ok"); return; }
+  if(tool){ const k=tool.dataset.tool; if(S.tool===k && !S.editId){ cancel(); return; } if(S.draft && S.editId){ readForm(); S.draft.k=k; S.tool=k; paintComposer(); paintTools(); paintGhost(); return; } startDraft(k, S.draft && S.draft.x!=null ? {x:S.draft.x, y:S.draft.y, zone:U.zoneOf(U.toM(S.draft.x,S.draft.y).mx, U.toM(S.draft.x,S.draft.y).my)} : null); return; }
   const pop = t.closest("[data-pop]"); if(pop){ const loc=S.pop; startDraft(pop.dataset.pop, loc); return; }
   const ch = t.closest("[data-chip]"); if(ch && S.draft){ readForm(); const k=ch.dataset.chip, v=ch.dataset.val; S.draft[k] = (S.draft[k]===v && k!=="res") ? "" : v; paintComposer(); return; }
   const tb = t.closest("[data-team]"); if(tb && S.draft){ readForm(); S.draft.team = tb.dataset.team; paintComposer(); const p=S.root.querySelector("#lvcP"); if(p) p.focus(); return; }
@@ -474,7 +500,7 @@ function onKey(e){
     e.preventDefault(); save(); return; }
   if(typing) return;
   if(e.ctrlKey||e.metaKey||e.altKey) return;
-  if(e.key===" "){ e.preventDefault(); const c=S.doc.clock; if(c.running) clockCmd("pause"); else if(LV.isLivePh(c.phase)) clockCmd("resume"); return; }
+  if(e.key===" "){ e.preventDefault(); const c=S.doc.clock; if(c.running && LV.isLivePh(c.phase)){ const on=LV.effInfo(c).run; S.stopTool=null; effCmd(on?"effstop":"effgo"); } else if(LV.isLivePh(c.phase)) clockCmd("resume"); return; }
   if(S.draft && (e.key==="1"||e.key==="2")){ readForm(); S.draft.team = e.key==="1" ? "h" : "a"; paintComposer(); const p=S.root.querySelector("#lvcP"); if(p) p.focus(); e.preventDefault(); return; }
   if((e.key==="Delete"||e.key==="Backspace") && S.sel){ delEvent(S.sel); e.preventDefault(); return; }
   const def = LV.EV.find(x=>x.key===e.key.toLowerCase()); if(def){ e.preventDefault(); startDraft(def.k, S.draft && S.draft.x!=null ? {x:S.draft.x, y:S.draft.y, zone:U.zoneOf(U.toM(S.draft.x,S.draft.y).mx,U.toM(S.draft.x,S.draft.y).my)} : null); }
@@ -511,7 +537,7 @@ A.open = async function(key){
     if(first){ host.innerHTML = shell(); S.root = host.querySelector(".lvc"); S.root.addEventListener("click", onClick); paintComposer(); LV.store.idxSet(id, LV.idxSummary(d)).catch(()=>{}); }
     paint();
   });
-  S.untick = LV.tick(()=>{ if(S===me && S.doc && S.doc.clock.running) paintClock(); });
+  S.untick = LV.tick(()=>{ if(S===me && S.doc && (S.doc.clock.running || (S.doc.clock.eff||{}).run)) paintClock(); });
   document.addEventListener("keydown", onKey);
 };
 A.close = function(silent){
