@@ -243,7 +243,7 @@ function render(){
   if(!DATA) DATA = normalize(null);
   const tabs = [["teams","المنتخبات"],["squad","قائمة الفريق"],["matches","المباريات"]];
   v.innerHTML = `<div class="gc">
-    <div class="gc-hero"><div><small>الديار العربية · السعودية 2026</small><h2>${NAME}</h2></div><div class="gc-hero-flags">${TEAMS.map(c=>flagImg(c)).join("")}</div></div>
+    <div class="gc-hero"><img class="gc-logo" src="assets/gulf/khaleeji27.png?v=1" alt="خليجي 27"><div class="gc-hero-tx"><small>الديار العربية · السعودية 2026</small><h2>${NAME}</h2><div class="gc-hero-flags">${TEAMS.map(c=>flagImg(c)).join("")}</div></div></div>
     <p class="gc-note">إحصاءات البطولة منفصلة تماماً — لا تدخل في إحصاءات الدوري ولا ملفات اللاعبين ولا الفانتسي.</p>
     <nav class="gc-tabs">${tabs.map(([k,t])=>`<button type="button" data-gtab="${k}" aria-selected="${VIEW.tab===k}">${t}</button>`).join("")}</nav>
     <div class="gc-body">${VIEW.tab==="squad"?teamsHTML():VIEW.tab==="matches"?groupsHTML()+leadersHTML():profilesHTML()}</div></div>`;

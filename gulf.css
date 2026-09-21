@@ -1,6 +1,6 @@
 /* ===== كأس الخليج 27 (2026-09-21) ===== */
 .gc{display:flex;flex-direction:column;gap:14px;margin:6px 0 20px}
-.gc-hero{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;padding:18px;border-radius:18px;color:#fff;background:linear-gradient(135deg,#0b5132 0%,#0c7a3d 55%,#d3a238 140%);box-shadow:var(--shadow)}
+.gc-hero{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;padding:18px;border-radius:18px;color:#fff;background:radial-gradient(120% 140% at 85% 0%,#1f6fd0 0%,#0a4a9c 45%,#062a60 100%);box-shadow:var(--shadow)}
 .gc-hero small{opacity:.8;font-size:.74rem}
 .gc-hero h2{margin:2px 0 0;font:900 1.5rem var(--display);color:#fff}
 .gc-hero-flags{display:flex;flex-wrap:wrap;gap:6px}
@@ -10,7 +10,7 @@
 .gc-note{margin:0;font-size:.76rem;color:var(--slate)}
 .gc-tabs{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none}
 .gc-tabs button{flex:none;border:1px solid var(--line);background:var(--navy-900);color:var(--head);font:700 .84rem var(--display);padding:9px 16px;border-radius:999px;cursor:pointer}
-.gc-tabs button[aria-selected="true"]{background:#0c7a3d;border-color:#0c7a3d;color:#fff}
+.gc-tabs button[aria-selected="true"]{background:#0a4a9c;border-color:#0a4a9c;color:#fff}
 .gc-body{display:flex;flex-direction:column;gap:14px}
 .gc-card{background:var(--navy-900);border:1px solid var(--line);border-radius:16px;padding:14px;box-shadow:var(--shadow)}
 .gc-card h3{margin:0 0 10px;font:800 1rem var(--display);color:var(--head)}
@@ -19,7 +19,7 @@
 .gc-tbl td{padding:8px 4px;text-align:center;border-top:1px solid var(--line);color:var(--head);font-variant-numeric:tabular-nums}
 .gc-tbl .tl{text-align:start}
 .gc-tbl tr{cursor:pointer}
-.gc-tbl tr.q td:first-child{box-shadow:inset 3px 0 0 #0c7a3d}
+.gc-tbl tr.q td:first-child{box-shadow:inset 3px 0 0 #1f6fd0}
 .gc-tn{display:inline-flex;align-items:center;gap:8px;font-weight:800}
 .gc-hint{font-size:.7rem;color:var(--slate);margin:8px 0 12px}
 .gc-ms{display:flex;flex-direction:column;gap:8px}
@@ -46,7 +46,7 @@
 .gc-ini{font-weight:800;font-size:.8rem;color:var(--slate)}
 .gc-teams{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
 .gc-tb{display:flex;flex-direction:column;align-items:center;gap:6px;padding:10px 4px;border-radius:12px;border:1px solid var(--line);background:var(--navy-900);color:var(--head);font:700 .76rem var(--display);cursor:pointer}
-.gc-tb.on{border-color:#0c7a3d;box-shadow:0 0 0 2px rgba(12,122,61,.35)}
+.gc-tb.on{border-color:#1f6fd0;box-shadow:0 0 0 2px rgba(31,111,208,.35)}
 .gc-tb .gc-flag{width:34px;height:23px}
 .gc-sq{border-top:4px solid var(--tc)}
 .gc-sq-hd{display:flex;align-items:center;gap:12px;margin-bottom:12px}
@@ -96,3 +96,10 @@ html[data-theme="dark"] .gc-pc-note{color:#4ade80}
 .gc table.gc-tbl{min-width:0;width:100%;table-layout:auto}
 .gc table.gc-tbl thead th,.gc table.gc-tbl tbody td{padding:7px 3px;white-space:nowrap;letter-spacing:0}
 .gc table.gc-tbl thead th{background:transparent}
+
+.gc-hero{justify-content:flex-start;align-items:center;flex-wrap:nowrap}
+.gc-logo{width:120px;height:auto;flex:none;filter:drop-shadow(0 4px 10px rgba(0,0,0,.3))}
+.gc-hero-tx{display:flex;flex-direction:column;gap:6px;min-width:0}
+.gc-hero-tx .gc-hero-flags{margin-top:6px}
+@media (max-width:560px){ .gc-logo{width:92px} .gc-hero h2{font-size:1.25rem} .gc-hero .gc-flag{width:22px;height:15px} }
+html[data-theme="dark"] .gc-tabs button[aria-selected="true"]{background:#0a4a9c;border-color:#1f6fd0;color:#fff}
