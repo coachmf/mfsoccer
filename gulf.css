@@ -104,6 +104,10 @@ html[data-theme="dark"] .gc-pc-note{color:#4ade80}
 @media (max-width:560px){ .gc-logo{width:92px} .gc-hero h2{font-size:1.25rem} .gc-hero .gc-flag{width:22px;height:15px} }
 html[data-theme="dark"] .gc-tabs button[aria-selected="true"]{background:#0a4a9c;border-color:#1f6fd0;color:#fff}
 .gc-pl,.gc-lr{cursor:default}
-.gc-logo{width:auto;display:inline-flex;align-items:center;justify-content:center;padding:6px 10px;border-radius:14px;background:#fff;box-shadow:0 6px 16px rgba(0,0,0,.25);filter:none}
-.gc-logo img{display:block;width:150px;height:auto}
-@media (max-width:560px){ .gc-logo img{width:108px} .gc-logo{padding:5px 8px} }
+.gc-sub{font-size:.7rem;color:var(--slate);font-weight:600;margin-inline-start:6px}
+.gc-ls{margin:10px 0 14px}
+.gc-ls-t{font-size:.78rem;font-weight:800;color:var(--head);margin-bottom:6px}
+.gc-ls-r{display:grid;grid-template-columns:110px 1fr 32px;align-items:center;gap:8px;padding:3px 0;font-size:.76rem;color:var(--head)}
+.gc-ls-r i{display:block;height:8px;border-radius:5px;background:linear-gradient(90deg,#1f6fd0,#5fb2e8)}
+.gc-ls-r b{text-align:center;font-variant-numeric:tabular-nums}
+@media (max-width:560px){ .gc-tabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px} .gc-tabs button{padding:9px 4px;font-size:.76rem} }
