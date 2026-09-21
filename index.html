@@ -741,7 +741,7 @@ details.squadbox summary label.lb{margin:0;cursor:pointer}
 .pp-card .natf{left:auto;right:-8px;top:56%}
 .pcard .natf{top:10px;left:10px;width:26px}
 .natf.inl{position:static;display:inline-block;vertical-align:-2px;width:18px;margin-inline-start:6px;box-shadow:0 0 0 1px rgba(255,255,255,.7)}
-.pprof-hero .ph img.natf{position:absolute;top:auto;bottom:14px;left:14px;width:34px;height:auto;max-width:none;filter:none}
+.pprof-hero .ph img.natf{position:absolute;top:auto;bottom:14px;left:14px;width:34px;height:auto;max-width:none;filter:none;aspect-ratio:auto;object-fit:fill}
 .pprof-hero .ph img.cph{height:auto;width:calc(100% - 14px);max-height:calc(100% - 10px);object-fit:cover;object-position:center top;margin:0 0 10px 12px;align-self:flex-end;border-radius:14px;background:linear-gradient(180deg,rgba(255,255,255,.10),rgba(255,255,255,.03));box-shadow:inset 0 0 0 1px rgba(255,255,255,.16),0 10px 22px -10px rgba(0,0,0,.55);filter:none}
 .pp-card .pp-b.assist{bottom:-6px;right:-6px}
 .pp-card .pp-b.card{right:auto;left:-4px;top:auto;bottom:34%}
@@ -2148,9 +2148,6 @@ main{padding-bottom:48px}
 <link rel="stylesheet" href="site-theme.css?v=5">
 <script src="fantasy/js/i18n-more.js?v=12" defer></script>
 <script src="site-i18n.js?v=17" defer></script>
-<!-- مركز المباراة المباشر: صفحة الجمهور + الربط (غرفة التحكم live-admin.js تُحمَّل عند فتحها فقط) -->
-<link rel="stylesheet" href="live.css?v=1">
-<script src="live.js?v=1" defer></script>
 <style>
 /* تبويب التحليل — التصميم الجديد (منصور 2026-09-17) */
 .an{--an-card:#0F1E35;--an-line:#213653;--an-txt:#EDF3FA;--an-mut:#8FA6C4;--an-track:rgba(143,166,196,.16);--an-acc:#2EB0F0;--an-acc2:#1878BE}
@@ -7346,119 +7343,60 @@ function wireTS(box){
     w.outerHTML=topScorersHTML(); wireTS(box); wireMore(box);
   });
 }
-/* ===== صفحة اللاعبين على طريقة إحصائيات LALIGA (منصور 2026-09-21) =====
-   شريط العنوان بلون الموقع + قائمتا المسابقة والفريق + أزرار الإحصاء (كل زر ينقل إلى جدوله) + جدول واحد:
-   الترتيب · صورة اللاعب · الاسم · الفريق · الرقم · المباريات. كل الأرقام تُحسب من بيانات الموقع نفسها لحظة العرض. */
-let ST_TAB = "g", ST_CLUB = "";
-const ST_TABS = [
-  {k:"g",  t:"الهدافون"},       {k:"a",  t:"صناعة الأهداف"},  {k:"ga", t:"المساهمات"},
-  {k:"y",  t:"الإنذارات"},      {k:"r",  t:"الطرد"},           {k:"cs", t:"الشباك النظيفة"},
-  {k:"mn", t:"دقائق اللعب"},    {k:"pk", t:"ركلات الجزاء"},    {k:"tm", t:"الفرق"}
-];
-const ST_SHOW = 20;
-function stClubs(){
-  const set = new Set(); ((ALL&&ALL.matches)||MATCHES||[]).forEach(m=>{ if(m.home) set.add(m.home); if(m.away) set.add(m.away); });
-  return [...set].sort((x,y)=>x.localeCompare(y,"ar"));
-}
-function stData(){
-  const PP = {}; playerPlay().forEach(p=>{ PP[p.n+"|"+p.c] = p; });
-  const play = (n,c) => PP[n+"|"+c] || {apps:0, mins:0, cs:0};
-  const T = ST_TAB;
-  let rows = [], col = "", sub = "المباريات", team = false;
-  if (T==="g"||T==="a"||T==="ga"){
-    col = T==="g" ? "الأهداف" : T==="a" ? "الصناعة" : "المساهمات";
-    rows = scorers().map(p=>({...play(p.n,p.c), n:p.n, c:p.c, v: T==="ga" ? p.g+p.a : p[T]})).filter(r=>r.v>0)
-      .sort((x,y)=>y.v-x.v || x.mins-y.mins);
-  } else if (T==="y"||T==="r"){
-    col = T==="y" ? "الإنذارات" : "الطرد";
-    const d = {}; CARDS.forEach(x=>{ const k=x.p+"|"+x.club; (d[k] ??= {n:x.p, c:x.club, y:0, r:0});
-      if(isYellow(x.type)) d[k].y++; if(isRed(x.type)) d[k].r++; });
-    rows = Object.values(d).map(p=>({...play(p.n,p.c), n:p.n, c:p.c, v:p[T]})).filter(r=>r.v>0)
-      .sort((x,y)=>y.v-x.v || y.mins-x.mins);
-  } else if (T==="cs"){
-    col = "شباك نظيفة";
-    rows = Object.values(PP).filter(p=>p.cs>0).map(p=>({...p, v:p.cs})).sort((x,y)=>y.v-x.v || x.mins-y.mins);
-  } else if (T==="mn"){
-    col = "الدقائق";
-    rows = Object.values(PP).map(p=>({...p, v:p.mins})).sort((x,y)=>y.v-x.v);
-  } else if (T==="pk"){
-    col = "سجّل"; sub = "المحاولات";
-    const d = {}; PENS.forEach(x=>{ const k=x.p+"|"+x.by; (d[k] ??= {n:x.p, c:x.by, v:0, apps:0}); d[k].apps++; if(/سجل/.test(x.res||"")) d[k].v++; });
-    rows = Object.values(d).sort((x,y)=>y.v-x.v || x.apps-y.apps);
-  } else {
-    team = true; col = "الأهداف";
-    const d = {};
-    MATCHES.filter(m=>!isUpcoming(m)).forEach(m=>{
-      [[m.home,+m.hg,+m.ag],[m.away,+m.ag,+m.hg]].forEach(([c,f,a])=>{ const e = d[c] ??= {n:c, c, v:0, ga:0, apps:0, cs:0};
-        e.apps++; e.v += f; e.ga += a; if(a===0) e.cs++; });
-    });
-    rows = Object.values(d).sort((x,y)=>y.v-x.v || x.ga-y.ga);
-  }
-  if (ST_CLUB) rows = rows.filter(r=>r.c===ST_CLUB);
-  rows.forEach((r,i)=>{ r.rk = i+1; });
-  return {rows, col, sub, team};
-}
-function stTableHTML(){
-  const {rows, col, sub, team} = stData();
-  const face = r => { const c = (PHOTOSON && typeof LOCAL_PHOTOS!=="undefined") ? photoCut(r.n, r.c) : null;
-    return c ? `<img src="${c}_f.webp?v=29" alt="" loading="lazy" decoding="async">`
-             : (LOGOS[r.c] ? `<img class="fb" src="${LOGOS[r.c]}" alt="" loading="lazy">` : ""); };
-  const fmt = v => ST_TAB==="mn" ? `${v}′` : v;
-  const tr = r => team
-    ? `<div class="st-row" data-club-open="${esc(r.c)}" role="button" tabindex="0">
-        <span class="st-rk">${r.rk}</span>
-        <span class="st-nm st-club-big">${crest(r.c)}<b>${esc(r.c)}</b></span>
-        <span class="st-num">${r.v}</span><span class="st-num st-sub">${r.apps}</span></div>`
-    : `<div class="st-row" data-player="${esc(r.n)}" data-club="${esc(r.c)}" role="button" tabindex="0">
-        <span class="st-rk">${r.rk}</span>
-        <span class="st-nm"><span class="st-ph">${face(r)}</span><b>${esc(r.n)}</b></span>
-        <span class="st-tm">${crest(r.c)}<i>${esc(r.c)}</i></span>
-        <span class="st-num">${fmt(r.v)}</span><span class="st-num st-sub">${r.apps}</span></div>`;
-  const head = team
-    ? `<div class="st-head"><span></span><span>الفريق</span><span>${col}</span><span>${sub}</span></div>`
-    : `<div class="st-head"><span></span><span>الاسم</span><span class="st-tm-h">الفريق</span><span>${col}</span><span>${sub}</span></div>`;
-  if (!rows.length) return `<div class="st-table${team?" team":""}">${head}<div class="st-empty">لا توجد بيانات في ${esc(compLabel(COMP))}${ST_CLUB?" لـ"+esc(ST_CLUB):""} بعد.</div></div>`;
-  const first = rows.slice(0, ST_SHOW).map(tr).join(""), rest = rows.slice(ST_SHOW).map(tr).join("");
-  return `<div class="st-table${team?" team":""}">${head}${first}
-    ${rest?`<div class="st-rest" hidden>${rest}</div><button type="button" class="st-more" data-n="${rows.length-ST_SHOW}">عرض المزيد <small>+${rows.length-ST_SHOW}</small></button>`:""}</div>`;
-}
 function renderPlayers(){
-  $("#v-players").innerHTML = `
-  <div class="st-wrap">
-    <div class="st-body">
-      <div class="st-filters">
-        <label class="st-sel"><select id="stComp" aria-label="المسابقة">
-          <option value="الكل"${COMP==="الكل"?" selected":""}>${esc(COMP_TOTAL_LABEL)}</option>
-          ${COMPS.map(c=>`<option value="${esc(c)}"${c===COMP?" selected":""}>${esc(c)}</option>`).join("")}
-        </select></label>
-        <label class="st-sel"><select id="stClub" aria-label="الفريق">
-          <option value="">كل الفرق</option>
-          ${stClubs().map(c=>`<option value="${esc(c)}"${c===ST_CLUB?" selected":""}>${esc(c)}</option>`).join("")}
-        </select></label>
-      </div>
-      <div class="st-tabs" role="tablist">${ST_TABS.map(t=>`<button type="button" role="tab" class="st-tab" data-st="${t.k}" aria-selected="${t.k===ST_TAB}">${esc(t.t)}</button>`).join("")}</div>
-      <div id="stTable">${stTableHTML()}</div>
-    </div>
-  </div>`;
-  wireStats($("#v-players"));
-}
-function wireStats(box){
-  const paint = () => { box.querySelector("#stTable").innerHTML = stTableHTML(); wireStMore(box); };
-  box.querySelectorAll("[data-st]").forEach(b=>b.onclick=()=>{
-    ST_TAB = b.dataset.st;
-    box.querySelectorAll("[data-st]").forEach(x=>x.setAttribute("aria-selected", x===b));
-    paint();
-  });
-  const cs = box.querySelector("#stComp");
-  if (cs) cs.onchange = () => { MXC=null; COMP=cs.value; SELR=null; SELDAY=null; applyComp(); paintRail(); renderAll(); go("players"); };
-  const cl = box.querySelector("#stClub");
-  if (cl) cl.onchange = () => { ST_CLUB = cl.value; paint(); };
-  wireStMore(box);
-}
-function wireStMore(box){
-  const b = box.querySelector(".st-more"); if(!b) return;
-  b.onclick = () => { const r = box.querySelector(".st-rest"), open = r.hidden; r.hidden = !open;
-    b.innerHTML = open ? "عرض أقل" : `عرض المزيد <small>+${b.dataset.n}</small>`; };
+  const disc={}; CARDS.forEach(x=>{ const k=x.p+"|"+x.club; (disc[k]??={n:x.p,c:x.club,y:0,r:0});
+    if(isYellow(x.type)) disc[k].y++; if(isRed(x.type)) disc[k].r++; });
+  const DL=Object.values(disc).sort((a,b)=>b.r-a.r||b.y-a.y);
+  $("#v-players").innerHTML=`
+    ${compChips(true)}
+    <h2 class="sec">المساهمون</h2>
+    ${topScorersHTML()}
+    ${(()=>{ const PP=playerPlay();
+      const byMin=[...PP].sort((a,b)=>b.mins-a.mins);
+      const byCS=PP.filter(p=>p.cs>0).sort((a,b)=>b.cs-a.cs||a.mins-b.mins);   /* الأقل دقائق أولاً عند التساوي */
+      const gkAv=p=>{ const c=(PHOTOSON && typeof LOCAL_PHOTOS!=="undefined") ? photoCut(p.n,p.c) : null;
+        return c ? `<img src="${c}_f.webp?v=29" alt="" loading="lazy" decoding="async">` : (LOGOS[p.c]?`<img class="ts-crestfb" src="${LOGOS[p.c]}" alt="" loading="lazy">`:""); };
+      const csMax = byCS.length ? byCS[0].cs : 1;
+      const csRows = byCS.map((p,i)=>{ const csRk=i+1;
+        return `<div class="ts-row${csRk<=3?" top":""}" data-player="${esc(p.n)}" data-club="${esc(p.c)}" role="button" tabindex="0">
+          <span class="ts-rk">${csRk}</span>
+          <span class="ts-pl"><span class="ts-av">${gkAv(p)}</span>${crest(p.c)}<span class="ts-pi"><b>${esc(p.n)}</b><small>${esc(p.c)}</small></span></span>
+          <span class="ts-subs"><span class="ts-sub">${p.apps} <i>مباراة</i></span><span class="ts-sub">${p.mins}′</span></span>
+          <span class="ts-val" style="color:var(--win)">${p.cs}</span>
+          <i class="ts-bar" style="width:${(p.cs/csMax*100).toFixed(0)}%"></i></div>`; }).join("");
+      const cs = byCS.length? `<h2 class="sec">الشباك النظيفة (الحرّاس)</h2>
+        <p class="hint">حرّاس المرمى الذين لعبوا ثلثَي المباراة فأكثر — 60 دقيقة في مباراة 90، وأكثر إن طال الوقت بدل الضائع — في مباريات لم يستقبل فيها فريقهم هدفاً.</p>
+        <div class="ts-wrap"><div class="ts-list">
+          <div class="ts-head"><span>#</span><span>الحارس</span><span class="ts-subs-h">مباريات · دقائق</span><span>شباك نظيفة</span></div>
+          ${tsMore(csRows, byCS.length, "cs")}
+        </div></div>`:`<h2 class="sec">الشباك النظيفة (الحرّاس)</h2><div class="card pad" style="color:var(--slate);font-size:.85rem">لا توجد شباك نظيفة مسجّلة في ${esc(compLabel(COMP))} بعد.</div>`;
+      const mn = byMin.length? `<h2 class="sec">دقائق اللعب</h2>
+        <p class="hint">إجمالي دقائق كل لاعب من التشكيلات والتبديلات. اضغط رأس المباريات للترتيب الذهني.</p>
+        <div class="card"><div class="twrap"><table style="min-width:440px">
+          <thead><tr><th>اللاعب</th><th>النادي</th><th>الدقائق</th><th>مباريات</th><th>شباك نظيفة</th></tr></thead>
+          <tbody>${(()=>{ const t=tsMoreTable(byMin.map((p,i)=>`<tr><td><div class="teamcell" data-player="${esc(p.n)}" data-club="${esc(p.c)}"><span class="pos">${i+1}</span>${pav(p.n,0,false,p.c)}${crest(p.c)}<b>${esc(p.n)}</b></div></td>
+            <td style="color:var(--slate)">${esc(p.c)}</td>
+            <td style="color:var(--head);font-weight:700;font-variant-numeric:tabular-nums">${p.mins}′</td>
+            <td style="color:var(--slate)">${p.apps}</td>
+            <td style="color:var(--slate)">${p.cs||"—"}</td></tr>`).join(""), byMin.length, "min"); return t.rows+`</tbody></table></div>${t.btn}</div>`; })()}`:`<h2 class="sec">دقائق اللعب</h2><div class="card pad" style="color:var(--slate);font-size:.85rem">لا توجد مباريات مُقامة في ${esc(compLabel(COMP))} بعد.</div>`;
+      return cs+mn;
+    })()}
+
+    <h2 class="sec">الانضباط</h2>
+    ${DL.length?`<div class="card"><div class="twrap"><table style="min-width:380px">
+      <thead><tr><th>اللاعب</th><th>النادي</th><th>إنذار</th><th>طرد</th></tr></thead>
+      <tbody>${(()=>{ const t=tsMoreTable(DL.map((p,i)=>`<tr><td><div class="teamcell" data-player="${esc(p.n)}" data-club="${esc(p.c)}"><span class="pos">${i+1}</span>${pav(p.n,0,false,p.c)}${crest(p.c)}<b>${esc(p.n)}</b></div></td>
+        <td style="color:var(--slate)">${esc(p.c)}</td>
+        <td style="color:var(--sand);font-weight:700">${p.y}</td>
+        <td style="color:var(--loss);font-weight:700">${p.r}</td></tr>`).join(""), DL.length, "disc"); return t.rows+`</tbody></table></div>${t.btn}</div>`; })()}`
+      :`<div class="card pad" style="color:var(--slate);font-size:.85rem">لا توجد بيانات إنذارات بعد. أضف ورقة «سجل الإنذارات» في ملف الاستوديو بالأعمدة: الجولة · المسابقة · النادي · اللاعب · الدقيقة · النوع.</div>`}
+
+    <h2 class="sec">ركلات الجزاء</h2>
+    <div class="card pad">${PENS.length?PENS.map(p=>`<div class="stat">
+      <span><span data-player="${esc(p.p)}" data-club="${esc(p.by)}">${esc(p.p)}</span> <span style="color:var(--slate);font-size:.75rem">· ${esc(p.by)} ضد ${esc(p.vs)}</span></span>
+      <span class="v">${p.m}' ${esc(p.res)}${p.place?` · ${esc(p.place)}`:""}</span></div>`).join(""):'<span style="color:var(--slate)">—</span>'}</div>`;
+  wireComp($("#v-players"));
+  wireTS($("#v-players")); wireMore($("#v-players"));
 }
 
 function renderAnalysisLegacy(){
@@ -13475,60 +13413,6 @@ function openMatchFromHash(){
 })();
 </script>
 
-
-<style>/* ===== صفحة اللاعبين — نمط LALIGA بألوان الموقع (2026-09-21) ===== */
-.st-wrap{margin:4px 0 18px;border-radius:16px;overflow:hidden;border:1px solid var(--line);background:var(--navy-900);box-shadow:var(--shadow)}
-.st-band{position:relative;background:linear-gradient(135deg,var(--zain-deep) 0%,#0a3f78 60%,#08325f 100%);color:#fff;padding:16px 16px 18px;overflow:hidden}
-.st-band::after{content:"";position:absolute;inset:auto -40px -60px auto;width:220px;height:220px;border-radius:50%;background:radial-gradient(circle,rgba(46,176,240,.35),transparent 70%);pointer-events:none}
-.st-crumb{font-size:.72rem;color:rgba(255,255,255,.72);margin-bottom:6px}
-.st-title{font-family:var(--display);font-weight:900;font-size:1.32rem;line-height:1.3;letter-spacing:-.01em;color:#fff;margin:0 0 14px;padding:0;border:0}
-.st-title::before{display:none}
-.st-filters{display:grid;grid-template-columns:1fr 1fr;gap:14px;position:relative;z-index:1;padding:0 14px 14px}
-.st-sel{position:relative;display:block}
-.st-sel select{appearance:none;-webkit-appearance:none;width:100%;background:transparent;border:0;border-bottom:2px solid rgba(255,255,255,.85);color:#fff;font-family:var(--display);font-weight:700;font-size:.86rem;padding:6px 2px 7px 22px;border-radius:0;cursor:pointer;text-overflow:ellipsis}
-.st-sel select option{color:#0B1F3A;background:#fff}
-html .st-body .st-sel select{background:transparent!important;color:var(--head)!important;border:0!important;border-bottom:2px solid var(--zain-deep)!important;box-shadow:none!important;border-radius:0!important}
-html[data-theme="dark"] .st-body .st-sel select{color:#E6EEF8!important;border-bottom-color:#2eb0f0!important}
-html[data-theme="dark"] .st-sel::after{border-top-color:#E6EEF8}
-.st-sel::after{content:"";position:absolute;left:4px;top:50%;width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;border-top:6px solid var(--zain-deep);transform:translateY(-30%);pointer-events:none}
-.st-body{padding:14px 0 0}
-.st-tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;padding:0 12px 14px}
-.st-tabs::-webkit-scrollbar{display:none}
-.st-tab{border:1px solid var(--line);background:transparent;color:var(--head);font-family:var(--display);font-weight:700;font-size:.78rem;padding:8px 4px;border-radius:999px;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:background .15s,color .15s}
-.st-tab:hover{background:var(--navy-800)}
-.st-tab[aria-selected="true"]{background:var(--zain-deep);border-color:var(--zain-deep);color:#fff;box-shadow:0 4px 12px -4px rgba(13,79,146,.55)}
-.st-table{border-top:1px solid var(--line)}
-.st-head,.st-row{display:grid;grid-template-columns:22px minmax(0,1.5fr) minmax(0,1fr) 50px 46px;align-items:center;gap:8px;padding:0 12px}
-.st-table.team .st-head,.st-table.team .st-row{grid-template-columns:22px minmax(0,1fr) 64px 64px}
-.st-head{font-size:.7rem;font-weight:800;color:var(--head);min-height:40px;border-bottom:1px solid var(--line)}
-.st-head span:nth-child(n+4),.st-table.team .st-head span:nth-child(n+3){text-align:center}
-.st-row{min-height:60px;border-bottom:1px solid var(--line);cursor:pointer;transition:background .12s}
-.st-row:hover{background:var(--navy-800)}
-.st-row:last-child{border-bottom:0}
-.st-rk{font-family:var(--display);font-weight:800;font-size:.8rem;color:var(--slate);text-align:center;font-variant-numeric:tabular-nums}
-.st-nm{display:flex;align-items:center;gap:9px;min-width:0}
-.st-nm b{font-family:var(--display);font-weight:800;font-size:.8rem;color:var(--head);line-height:1.3;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
-.st-ph{flex:none;width:44px;height:52px;display:flex;align-items:flex-end;justify-content:center;overflow:hidden}
-.st-ph img{width:44px;height:52px;object-fit:cover;object-position:center top}
-.st-ph img.fb{width:28px;height:28px;object-fit:contain;margin-bottom:12px;opacity:.9}
-.st-tm{display:flex;align-items:center;gap:6px;min-width:0}
-.st-tm .crest{flex:none;width:20px;height:20px}
-.st-tm i{font-style:normal;font-weight:700;font-size:.72rem;color:var(--head);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.st-club-big .crest{width:30px;height:30px;flex:none}
-.st-num{font-family:var(--display);font-weight:900;font-size:1rem;color:var(--head);text-align:center;font-variant-numeric:tabular-nums}
-.st-num.st-sub{font-weight:600;font-size:.86rem;color:var(--slate)}
-.st-empty{padding:28px 16px;text-align:center;color:var(--slate);font-size:.85rem}
-.st-more{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;padding:12px;border:0;border-top:1px solid var(--line);background:var(--navy-800);color:var(--head);font-family:var(--display);font-weight:700;font-size:.82rem;cursor:pointer}
-.st-more small{color:var(--slate)}
-@media (min-width:720px){ .st-title{font-size:1.7rem} .st-filters{max-width:520px} .st-head,.st-row{grid-template-columns:40px minmax(0,1.6fr) minmax(0,1fr) 90px 80px;padding:0 20px} .st-table.team .st-head,.st-table.team .st-row{grid-template-columns:40px minmax(0,1fr) 90px 90px} .st-tabs{padding:0 20px 14px;grid-template-columns:repeat(9,auto);justify-content:start} .st-tab{padding:8px 16px} }
-@media (max-width:360px){ .st-tm i{display:none} .st-head,.st-row{grid-template-columns:20px minmax(0,1fr) 24px 42px 38px;gap:6px} .st-tm-h{font-size:0} }
-html[data-theme="dark"] .st-wrap{background:#0F1E35;border-color:#213653;box-shadow:none}
-html[data-theme="dark"] .st-table,html[data-theme="dark"] .st-head,html[data-theme="dark"] .st-row,html[data-theme="dark"] .st-more{border-color:#213653}
-html[data-theme="dark"] .st-head,html[data-theme="dark"] .st-nm b,html[data-theme="dark"] .st-tm i,html[data-theme="dark"] .st-num:not(.st-sub),html[data-theme="dark"] .st-tab,html[data-theme="dark"] .st-more{color:#E6EEF8}
-html[data-theme="dark"] .st-row:hover,html[data-theme="dark"] .st-tab:hover,html[data-theme="dark"] .st-more{background:#182C48}
-html[data-theme="dark"] .st-tab{border-color:#213653}
-html[data-theme="dark"] .st-tab[aria-selected="true"]{background:#1878BE;border-color:#1878BE;color:#fff}
-</style>
 <style>/* ===== محرّر المباراة في الإدارة (MX) — 2026-09-15 =====
    واجهة جديدة فوق نموذج EDIT نفسه وsaveMatch نفسها: البيانات والحفظ لم يتغيّرا، فكل ما يُحفظ هنا
    يظهر في تبويب المباريات وتفاصيلها كما كان. ملعب التشكيلة بألوان العشب الموحّدة (--pitch-*). */
