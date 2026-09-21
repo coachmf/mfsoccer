@@ -26,7 +26,7 @@ const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,7
 function hashId(s){ let h=0x811c9dc5; for(const ch of String(s)){ h^=ch.codePointAt(0); h=Math.imul(h,0x01000193)>>>0; } return h.toString(36); }
 LV.idOf = key => "live_" + hashId(key);
 const tsMs = v => v==null ? null : typeof v==="number" ? v : v.toMillis ? v.toMillis() : (v.seconds!=null ? v.seconds*1000 + Math.round((v.nanoseconds||0)/1e6) : null);
-const crestOf = c => (typeof crest==="function") ? crest(c) : "";
+const crestOf = c => (LV.crestHook && LV.crestHook(c)) || ((typeof crest==="function") ? crest(c) : "");
 const logoOf = c => (typeof LOGOS==="object" && LOGOS && LOGOS[c]) || "";
 
 /* فرق ساعة الجهاز عن الخادم: يُقدَّر من طوابع الخادم في كل لقطة جديدة */
@@ -291,14 +291,16 @@ if(TEST){ /* قناة الفهرس في وضع الاختبار */
 /* ───────────── مطابقة المباراة وقوائم اللاعبين ───────────── */
 const keyOf = m => (typeof matchKey==="function") ? matchKey(m) : [m.comp||"الدوري", m.round, m.home, m.away].map(encodeURIComponent).join("/");
 LV.keyOf = keyOf;
-const findMatch = k => (typeof matchByKey==="function") ? matchByKey(k) : null;
+const findMatch = k => ((typeof matchByKey==="function") ? matchByKey(k) : null) || (LV.findHook ? LV.findHook(k) : null);
 LV.findMatch = findMatch;
 function squadList(club){
+  if(LV.squadHook){ const h = LV.squadHook(club); if(h) return h; }
   const L = (typeof SQUADS==="object" && SQUADS && SQUADS[club]) || [];
   return L.map(x=>({n: typeof x==="string" ? x : (x&&x.n)||"", s: typeof x==="string" ? 0 : (+(x&&x.s)||0), p: typeof x==="string" ? "" : (x&&x.p)||""})).filter(x=>x.n);
 }
 function lineupOf(doc, club){
   if(!doc) return [];
+  if(doc.gulf && LV.gulfCtx) return LV.gulfCtx(()=>{ try{ return xiNames(doc.round, doc.comp, club) || []; }catch(e){ return []; } });
   try{ if(typeof xiNames==="function") return xiNames(doc.round, doc.comp, club) || []; }catch(e){}
   return [];
 }
@@ -317,7 +319,7 @@ LV.subbed = (doc, side) => { const out=new Set(), inn=new Set(); activeEvents(do
 
 /* ───────────── إنشاء وثيقة المباراة ───────────── */
 function newDoc(m){
-  return {v:1, key:keyOf(m), comp:(typeof compOf==="function"?compOf(m):(m.comp||"الدوري")), round:m.round, home:m.home, away:m.away,
+  return {v:1, ...(m.__gulf?{gulf:1}:{}), key:keyOf(m), comp:(typeof compOf==="function"?compOf(m):(m.comp||"الدوري")), round:m.round, home:m.home, away:m.away,
           date:m.date||"", time:m.time||"", venue:m.venue||"",
           clock:{phase:"pre", running:false, base:0, anchor:null, added:{}},
           dir:"h", poss:null, events:[], seq:0, ops:[], createdAt:Date.now()};
@@ -702,6 +704,7 @@ function syncHeaderFromIdx(L){
 }
 function stopPub(){ if(!PUB) return; try{ PUB.unsub&&PUB.unsub(); }catch(e){} try{ PUB.untick&&PUB.untick(); }catch(e){} PUB=null; }
 LV.mountPublic = function(host, m){
+  LV.ctxGulf = !!(m && m.__gulf);
   const id = LV.idOf(LV.keyOf(m));
   stopPub();
   host.innerHTML = pubShell(m);
@@ -782,7 +785,7 @@ function startIdx(){
   });
 }
 /* ───── غرفة التحكم: تُحمَّل عند الحاجة فقط (live-admin.js) ───── */
-LV.VER = 3;
+LV.VER = 4;
 LV.loadAdmin = function(){
   if(window.LIVE_ADMIN) return Promise.resolve(window.LIVE_ADMIN);
   return new Promise((res, rej)=>{ const s=document.createElement("script"); s.src="live-admin.js?v="+LV.VER; s.onload=()=>res(window.LIVE_ADMIN); s.onerror=rej; document.head.appendChild(s); });
@@ -908,6 +911,7 @@ function loadSeats(){ if(SEATS) return Promise.resolve(SEATS); if(!seatsP) seats
 const rnd = i => { let x = Math.imul(i ^ 0x9e3779b9, 0x85ebca6b); x ^= x>>>13; x = Math.imul(x, 0xc2b2ae35); x ^= x>>>16; return (x>>>0)/4294967296; };
 const SKIN = ["#e0b18f","#c68c65","#a8714f","#8a5a3c","#d9a178"];
 function teamColors(club){
+  if(LV.colorsHook){ const h = LV.colorsHook(club); if(h) return h; }
   if(club==="الكويت") return Object.assign(["#FFFFFF","#FFFFFF"], {light:false});   /* جمهور نادي الكويت بالأبيض (منصور) */
   const cc = (window.CLUB_COLORS||{})[club] || ["#1878BE","#FFFFFF"];
   const hex = cc[0].replace("#",""), lum = (parseInt(hex.slice(0,2),16)*.299 + parseInt(hex.slice(2,4),16)*.587 + parseInt(hex.slice(4,6),16)*.114)/255;
@@ -1104,17 +1108,19 @@ REC.mergeRows = mergeRows;
 
 /* ── مطابقة المباراة في السجل ── */
 function recMatch(doc){
+  if(doc && doc.gulf && LV.gulfRec) return LV.gulfRec.find(doc);
   if(typeof ALL==="undefined" || !ALL || !ALL.matches) return null;
   return ALL.matches.find(x=>+x.round===+doc.round && compOf(x)===doc.comp && x.home===doc.home && x.away===doc.away) || null;
 }
 REC.recMatch = recMatch;
-REC.hasRows = m => { if(!m || typeof loadEdit!=="function") return false; const E=loadEdit(m);
+REC.hasRows = m => { if(!m || typeof loadEdit!=="function") return false; const E=(m.__gulf && LV.gulfCtx) ? LV.gulfCtx(()=>loadEdit(m)) : loadEdit(m);
   return !!(E.goals.length||E.cards.length||E.pens.length||E.subs.length||(E.mev||[]).length); };
 
 /* بث ← سجل: يبني صفوف المباراة من الأحداث ويحفظ عبر applyEdit نفسها */
 let lastBackup = 0;
 REC.push = async function(doc, opt){
   if(!doc || doc.detached) return {skipped:true};
+  if(doc.gulf && LV.gulfRec) return LV.gulfRec.push(doc, opt, liveToRows(doc));
   if(typeof applyEdit!=="function" || typeof loadEdit!=="function") return {skipped:true};
   if(!LV.TEST && typeof rebaseOnCloud==="function") await rebaseOnCloud();
   const m = recMatch(doc); if(!m) throw new Error("المباراة غير موجودة في سجل الموسم");
@@ -1139,7 +1145,7 @@ REC.push = async function(doc, opt){
 /* سجل ← بث: بعد حفظ يدوي لمباراة مرتبطة، أو عند ربط مباراة مسجّلة يدوياً */
 REC.pull = async function(m){
   const key = LV.keyOf(m), id = LV.idOf(key);
-  const E = loadEdit(m);
+  const E = (m.__gulf && LV.gulfCtx) ? LV.gulfCtx(()=>loadEdit(m)) : loadEdit(m);
   const n = await LV.store.tx(id, d=>{
     d = d || LV.newDoc(m);
     if(d.detached) return null;
@@ -1152,6 +1158,7 @@ REC.pull = async function(m){
 };
 REC.detach = async function(doc){
   const id = LV.idOf(doc.key);
+  if(doc.gulf && LV.gulfRec){ await LV.store.tx(id, d=>{ if(!d) return null; d.detached = true; return d; }); return LV.gulfRec.detach(doc); }
   await LV.store.tx(id, d=>{ if(!d) return null; d.detached = true; return d; });
   const m = recMatch(doc);
   if(m && m.rec==="live"){ if(!LV.TEST && typeof rebaseOnCloud==="function") await rebaseOnCloud();

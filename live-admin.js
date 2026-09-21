@@ -487,6 +487,7 @@ A.open = async function(key){
   if(!m){ alert("لم تُعثر على المباراة."); return; }
   if(S) A.close(true);
   const id = LV.idOf(key);
+  LV.ctxGulf = !!m.__gulf;
   let host = document.getElementById("lvCtl");
   if(!host){ host = document.createElement("div"); host.id="lvCtl"; host.className="lvc-host"; document.body.appendChild(host); }
   host.hidden = false; document.documentElement.classList.add("lvc-open");
