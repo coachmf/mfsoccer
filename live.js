@@ -884,12 +884,13 @@ LV.dirsStad = function(doc, ph){
 
 /* ───────────── الجمهور ───────────── */
 let SEATS = null, seatsP = null;
-function loadSeats(){ if(SEATS) return Promise.resolve(SEATS); if(!seatsP) seatsP = fetch("assets/live/seats.json?v=1").then(r=>r.json()).then(d=>{ SEATS=d; return d; }); return seatsP; }
+function loadSeats(){ if(SEATS) return Promise.resolve(SEATS); if(!seatsP) seatsP = fetch("assets/live/seats.json?v=2").then(r=>r.json()).then(d=>{ SEATS=d; return d; }); return seatsP; }
 const rnd = i => { let x = Math.imul(i ^ 0x9e3779b9, 0x85ebca6b); x ^= x>>>13; x = Math.imul(x, 0xc2b2ae35); x ^= x>>>16; return (x>>>0)/4294967296; };
 const SKIN = ["#e0b18f","#c68c65","#a8714f","#8a5a3c","#d9a178"];
 function teamColors(club){
   const cc = (window.CLUB_COLORS||{})[club] || ["#1878BE","#FFFFFF"];
-  return [cc[0], cc[1] || "#FFFFFF"];
+  const hex = cc[0].replace("#",""), lum = (parseInt(hex.slice(0,2),16)*.299 + parseInt(hex.slice(2,4),16)*.587 + parseInt(hex.slice(4,6),16)*.114)/255;
+  const out = [cc[0], cc[1] || "#FFFFFF"]; out.light = lum > .8; return out;
 }
 /* المستويات: 0 فارغ … 100 ممتلئ — يحددها المشغّل (d.crowd)؛ الافتراضي حضور متوسط للطرفين */
 LV.CROWD_DEF = {h:60, a:35};
@@ -903,7 +904,7 @@ function drawCrowd(cv, doc, bounce){
     const x = P[i]/10, y = P[i+1]/10, s = P[i+2]/10, side = (y < 500 && x >= MID) ? "a" : "h";   /* الضيف: يمين المنصة الرئيسية والمدرج المجاور لها — والباقي لصاحب الأرض (منصور) */
     const lvl = (side==="h" ? lv.h : lv.a) / 100;
     if(rnd(n) >= lvl) continue;
-    const pal = side==="h" ? home : away, second = rnd(n+7777) < .3;
+    const pal = side==="h" ? home : away, second = rnd(n+7777) < (pal.light ? .55 : .3);   /* لون أساسي فاتح (أبيض) يضيع على المقاعد: نُكثر الثاني */
     let dy = 0;
     if(bounce && bounce.side===side) dy = -Math.abs(Math.sin(t*9 + rnd(n+99)*6)) * s * 1.1;
     const yy = y + dy;
