@@ -7436,9 +7436,9 @@ function renderPlayers(){
     </div>
     <div class="st-body">
       <div class="st-tabsw">
-        <button type="button" class="st-arr" data-st-arr="-1" aria-label="السابق"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg></button>
+        <button type="button" class="st-arr" data-st-arr="-1" aria-label="السابق"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button>
         <div class="st-tabs" role="tablist">${ST_TABS.map(t=>`<button type="button" role="tab" class="st-tab" data-st="${t.k}" aria-selected="${t.k===ST_TAB}">${esc(t.t)}</button>`).join("")}</div>
-        <button type="button" class="st-arr" data-st-arr="1" aria-label="التالي"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button>
+        <button type="button" class="st-arr" data-st-arr="1" aria-label="التالي"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg></button>
       </div>
       <div id="stTable">${stTableHTML()}</div>
     </div>
