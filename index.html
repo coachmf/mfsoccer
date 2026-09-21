@@ -742,6 +742,7 @@ details.squadbox summary label.lb{margin:0;cursor:pointer}
 .pcard .natf{top:10px;left:10px;width:26px}
 .natf.inl{position:static;display:inline-block;vertical-align:-2px;width:18px;margin-inline-start:6px;box-shadow:0 0 0 1px rgba(255,255,255,.7)}
 .pprof-hero .ph img.natf{position:absolute;top:auto;bottom:14px;left:14px;width:34px;height:auto;max-width:none;filter:none}
+.pprof-hero .ph img.cph{-webkit-mask-image:linear-gradient(to bottom,#000 70%,transparent 98%),linear-gradient(to right,transparent 0,#000 12%,#000 88%,transparent 100%);-webkit-mask-composite:source-in;mask-image:linear-gradient(to bottom,#000 70%,transparent 98%),linear-gradient(to right,transparent 0,#000 12%,#000 88%,transparent 100%);mask-composite:intersect}
 .pp-card .pp-b.assist{bottom:-6px;right:-6px}
 .pp-card .pp-b.card{right:auto;left:-4px;top:auto;bottom:34%}
 .pp-card .pp-b.goal{top:auto;left:auto;bottom:-6px;right:-6px;background:#fff}
@@ -10746,7 +10747,7 @@ function kfaMatchesHTML(sq){
 }
 function kfaTeamPanel(sq){
   return `<div class="card pad kfa-coach">
-      ${sq.coachImg?`<div class="kfa-coach-ph"><img src="${sq.coachImg}_s.webp?v=31" alt="" loading="lazy" decoding="async"></div>`:""}
+      ${sq.coachImg?`<div class="kfa-coach-ph"><img src="${sq.coachImg}_s.webp?v=32" alt="" loading="lazy" decoding="async"></div>`:""}
       <div class="kfa-coach-ttl"><small>المدرب</small><b>${esc(sq.coach)}</b></div>
       <div class="kfa-coach-sub">${esc(sq.camp)} · ${sq.gk.length+sq.out.length} لاعباً</div>
     </div>
@@ -11748,7 +11749,7 @@ function coachFlag(nat, cls){ if(!nat) return "";
 function coachCardHTML(c){
   const k=(typeof CLUB_COACH!=="undefined") && CLUB_COACH[c]; if(!k) return "";
   return `<div class="pcard sq-coach" role="button" tabindex="0" data-coach="${esc(c)}" aria-label="المدرب ${esc(k.n)}">
-    <div class="ph">${k.img?`<img src="${k.img}_s.webp?v=31" alt="" loading="lazy" decoding="async" draggable="false">`
+    <div class="ph">${k.img?`<img src="${k.img}_s.webp?v=32" alt="" loading="lazy" decoding="async" draggable="false">`
                            :`<img class="noph" src="${crestSrcOf(c)}" alt="" loading="lazy" draggable="false">`}</div>
     ${coachFlag(k.nat)}
     <div class="nm">${esc(k.n)}</div>
@@ -11883,8 +11884,8 @@ function fitNatFlag(img){
     const pr = ph.getBoundingClientRect(), ir = img.getBoundingClientRect();
     const x0 = ir.left - pr.left + b[0]*ir.width, y1 = ir.top - pr.top + b[3]*ir.height;
     const fw = fl.offsetWidth || 34, fh = fl.offsetHeight || 23;
-    fl.style.left = Math.max(4, Math.min(x0 + 6, pr.width - fw - 4)) + "px";
-    fl.style.bottom = Math.max(4, pr.height - y1 + 6) + "px";
+    fl.style.left = Math.max(8, Math.min(x0 + 8, pr.width - fw - 8)) + "px";
+    fl.style.bottom = Math.max(8, pr.height - y1 + 8) + "px";
     if (pr.height - y1 + 6 + fh > pr.height) fl.style.bottom = (pr.height - fh - 4) + "px";
   };
   if (_natBox[img.src]) return place(_natBox[img.src]);
@@ -11895,7 +11896,8 @@ function fitNatFlag(img){
     const d = g.getImageData(0, 0, W, H).data; let x0 = W, y1 = 0, x1 = 0, y0 = H;
     for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (d[(y*W + x)*4 + 3] > 60) {
       if (x < x0) x0 = x; if (x > x1) x1 = x; if (y > y1) y1 = y; if (y < y0) y0 = y; }
-    const b = x1 >= x0 ? [x0/W, y0/H, (x1+1)/W, (y1+1)/H] : [0, 0, 1, 1];
+    let b = x1 >= x0 ? [x0/W, y0/H, (x1+1)/W, (y1+1)/H] : [0, 0, 1, 1];
+    if (img.classList.contains("cph")) b = [Math.max(b[0], .22), b[1], Math.min(b[2], .90), Math.min(b[3], .76)];   /* صورة المدرب ممتلئة الإطار ومتلاشية الأطراف */
     _natBox[img.src] = b; place(b);
   } catch(e) { place([0, 0, 1, 1]); }
 }
@@ -12007,7 +12009,7 @@ function coachProfileHTML(D){
     <button type="button" class="pprof-close" aria-label="إغلاق" onclick="closePlayer()">✕</button>
     <div class="pprof-hero">
       <div class="wm" style="background-image:url('${crestSrcOf(D.club)}')"></div>
-      <div class="ph">${D.img?`<img src="${D.img}.webp?v=31" alt="" decoding="async" onload="fitNatFlag(this)">`:`<img class="noph" src="${crestSrcOf(D.club)}" alt="">`}${coachFlag(D.nat,"pprof-flag")}</div>
+      <div class="ph">${D.img?`<img class="cph" src="${D.img}.webp?v=32" alt="" decoding="async" onload="fitNatFlag(this)">`:`<img class="noph" src="${crestSrcOf(D.club)}" alt="">`}${coachFlag(D.nat,"pprof-flag")}</div>
       <div class="pprof-id">
         <div class="club" data-club-link="${esc(D.club)}">${crest(D.club)}<span>${esc(D.club)}</span></div>
         <h3>${esc(D.name)}</h3>

@@ -23,7 +23,7 @@ const COACHES = {
   ofClub(st, club){ return this.get(st, coachIdOf(club)); },
   /* صور المدربين من الموقع: القصّة الكاملة، ووجه للبطاقات الصغيرة (نفس ملفات صفحة النادي) */
   /* face=true وجه للقوائم الصغيرة، 's' قصّة واقفة صغيرة (بطاقة الملعب)، غير ذلك القصّة الكاملة */
-  photo(c, face){ if(!c || !c.slug) return ''; const v = face===true ? '_f' : face==='s' ? '_s' : face==='b' ? '_body' : ''; return `/assets/coaches/${c.slug}${v}.webp?v=31`; },  /* 'b' = صورة واقفة كاملة (Gemini 2026-09-20) */
+  photo(c, face){ if(!c || !c.slug) return ''; const v = face===true ? '_f' : face==='s' ? '_s' : face==='b' ? '_body' : ''; return `/assets/coaches/${c.slug}${v}.webp?v=32`; },  /* 'b' = صورة واقفة كاملة (Gemini 2026-09-20) */
   /* البذرة: يضيف المفقود ويحدّث الاسم والجنسية والصورة؛ السعر يبقى كما ضبطه المدير */
   seed(st){
     st=st||DB.state; if(typeof SEED_COACHES==='undefined') return false;
