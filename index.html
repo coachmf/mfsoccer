@@ -7422,7 +7422,7 @@ function stTableHTML(){
 function renderPlayers(){
   $("#v-players").innerHTML = `
   <div class="st-wrap">
-    <div class="st-body">
+    <div class="st-band">
       <div class="st-filters">
         <label class="st-sel"><select id="stComp" aria-label="المسابقة">
           <option value="الكل"${COMP==="الكل"?" selected":""}>${esc(COMP_TOTAL_LABEL)}</option>
@@ -7433,7 +7433,13 @@ function renderPlayers(){
           ${stClubs().map(c=>`<option value="${esc(c)}"${c===ST_CLUB?" selected":""}>${esc(c)}</option>`).join("")}
         </select></label>
       </div>
-      <div class="st-tabs" role="tablist">${ST_TABS.map(t=>`<button type="button" role="tab" class="st-tab" data-st="${t.k}" aria-selected="${t.k===ST_TAB}">${esc(t.t)}</button>`).join("")}</div>
+    </div>
+    <div class="st-body">
+      <div class="st-tabsw">
+        <button type="button" class="st-arr" data-st-arr="-1" aria-label="السابق"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg></button>
+        <div class="st-tabs" role="tablist">${ST_TABS.map(t=>`<button type="button" role="tab" class="st-tab" data-st="${t.k}" aria-selected="${t.k===ST_TAB}">${esc(t.t)}</button>`).join("")}</div>
+        <button type="button" class="st-arr" data-st-arr="1" aria-label="التالي"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button>
+      </div>
       <div id="stTable">${stTableHTML()}</div>
     </div>
   </div>`;
@@ -7441,11 +7447,26 @@ function renderPlayers(){
 }
 function wireStats(box){
   const paint = () => { box.querySelector("#stTable").innerHTML = stTableHTML(); wireStMore(box); };
-  box.querySelectorAll("[data-st]").forEach(b=>b.onclick=()=>{
+  const strip = box.querySelector(".st-tabs");
+  const arrows = () => { const i = ST_TABS.findIndex(t=>t.k===ST_TAB);
+    box.querySelectorAll("[data-st-arr]").forEach(a=>a.disabled = (+a.dataset.stArr<0 ? i<=0 : i>=ST_TABS.length-1)); };
+  const pick = b => {
     ST_TAB = b.dataset.st;
     box.querySelectorAll("[data-st]").forEach(x=>x.setAttribute("aria-selected", x===b));
-    paint();
+    if(strip){ const sr=strip.getBoundingClientRect(), br=b.getBoundingClientRect();
+      strip.scrollBy({left:(br.left+br.width/2)-(sr.left+sr.width/2), behavior:"smooth"}); }
+    arrows(); paint();
+  };
+  box.querySelectorAll("[data-st]").forEach(b=>b.onclick=()=>pick(b));
+  /* السهمان ينقلان إلى التبويب السابق/التالي (منصور 2026-09-21) */
+  box.querySelectorAll("[data-st-arr]").forEach(a=>a.onclick=()=>{
+    const i = ST_TABS.findIndex(t=>t.k===ST_TAB) + (+a.dataset.stArr);
+    const t = ST_TABS[i]; if(!t) return;
+    const b = box.querySelector(`[data-st="${t.k}"]`); if(b) pick(b);
   });
+  arrows();
+  const on = box.querySelector('.st-tab[aria-selected="true"]');
+  if(on && strip) requestAnimationFrame(()=>{ const sr=strip.getBoundingClientRect(), br=on.getBoundingClientRect(); strip.scrollLeft += (br.left+br.width/2)-(sr.left+sr.width/2); });
   const cs = box.querySelector("#stComp");
   if (cs) cs.onchange = () => { MXC=null; COMP=cs.value; SELR=null; SELDAY=null; applyComp(); paintRail(); renderAll(); go("players"); };
   const cl = box.querySelector("#stClub");
@@ -13480,18 +13501,22 @@ function openMatchFromHash(){
 .st-crumb{font-size:.72rem;color:rgba(255,255,255,.72);margin-bottom:6px}
 .st-title{font-family:var(--display);font-weight:900;font-size:1.32rem;line-height:1.3;letter-spacing:-.01em;color:#fff;margin:0 0 14px;padding:0;border:0}
 .st-title::before{display:none}
-.st-filters{display:grid;grid-template-columns:1fr 1fr;gap:14px;position:relative;z-index:1;padding:0 14px 14px}
+.st-filters{display:grid;grid-template-columns:1fr 1fr;gap:14px;position:relative;z-index:1}
 .st-sel{position:relative;display:block}
 .st-sel select{appearance:none;-webkit-appearance:none;width:100%;background:transparent;border:0;border-bottom:2px solid rgba(255,255,255,.85);color:#fff;font-family:var(--display);font-weight:700;font-size:.86rem;padding:6px 2px 7px 22px;border-radius:0;cursor:pointer;text-overflow:ellipsis}
 .st-sel select option{color:#0B1F3A;background:#fff}
-html .st-body .st-sel select{background:transparent!important;color:var(--head)!important;border:0!important;border-bottom:2px solid var(--zain-deep)!important;box-shadow:none!important;border-radius:0!important}
-html[data-theme="dark"] .st-body .st-sel select{color:#E6EEF8!important;border-bottom-color:#2eb0f0!important}
-html[data-theme="dark"] .st-sel::after{border-top-color:#E6EEF8}
-.st-sel::after{content:"";position:absolute;left:4px;top:50%;width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;border-top:6px solid var(--zain-deep);transform:translateY(-30%);pointer-events:none}
+html .st-band .st-sel select{background:transparent!important;color:#fff!important;border:0!important;border-bottom:2px solid rgba(255,255,255,.85)!important;box-shadow:none!important;border-radius:0!important}
+.st-sel::after{content:"";position:absolute;left:4px;top:50%;width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;border-top:6px solid #fff;transform:translateY(-30%);pointer-events:none}
 .st-body{padding:14px 0 0}
-.st-tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;padding:0 12px 14px}
+.st-tabsw{position:relative;display:flex;align-items:center;gap:4px;padding:0 6px 12px}
+.st-tabs{flex:1;min-width:0;display:flex;gap:6px;overflow-x:auto;scroll-behavior:smooth;scrollbar-width:none;scroll-snap-type:x proximity;padding:2px 2px;-webkit-mask-image:linear-gradient(to left,transparent 0,#000 14px,#000 calc(100% - 28px),transparent 100%);mask-image:linear-gradient(to left,transparent 0,#000 14px,#000 calc(100% - 28px),transparent 100%)}
 .st-tabs::-webkit-scrollbar{display:none}
-.st-tab{border:1px solid var(--line);background:transparent;color:var(--head);font-family:var(--display);font-weight:700;font-size:.78rem;padding:8px 4px;border-radius:999px;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:background .15s,color .15s}
+.st-arr{flex:none;width:32px;height:32px;border-radius:50%;border:1px solid var(--line);background:var(--navy-900);color:var(--head);display:grid;place-items:center;cursor:pointer;padding:0;transition:opacity .15s,background .15s}
+.st-arr:hover{background:var(--navy-800)}
+.st-arr:disabled{opacity:.25;cursor:default}
+.st-arr svg{width:16px;height:16px}
+.st-tabs::-webkit-scrollbar{display:none}
+.st-tab{flex:none;scroll-snap-align:center;border:1px solid var(--line);background:transparent;color:var(--head);font-family:var(--display);font-weight:700;font-size:.82rem;padding:8px 16px;border-radius:999px;cursor:pointer;white-space:nowrap;transition:background .15s,color .15s}
 .st-tab:hover{background:var(--navy-800)}
 .st-tab[aria-selected="true"]{background:var(--zain-deep);border-color:var(--zain-deep);color:#fff;box-shadow:0 4px 12px -4px rgba(13,79,146,.55)}
 .st-table{border-top:1px solid var(--line)}
@@ -13517,13 +13542,14 @@ html[data-theme="dark"] .st-sel::after{border-top-color:#E6EEF8}
 .st-empty{padding:28px 16px;text-align:center;color:var(--slate);font-size:.85rem}
 .st-more{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;padding:12px;border:0;border-top:1px solid var(--line);background:var(--navy-800);color:var(--head);font-family:var(--display);font-weight:700;font-size:.82rem;cursor:pointer}
 .st-more small{color:var(--slate)}
-@media (min-width:720px){ .st-title{font-size:1.7rem} .st-filters{max-width:520px} .st-head,.st-row{grid-template-columns:40px minmax(0,1.6fr) minmax(0,1fr) 90px 80px;padding:0 20px} .st-table.team .st-head,.st-table.team .st-row{grid-template-columns:40px minmax(0,1fr) 90px 90px} .st-tabs{padding:0 20px 14px;grid-template-columns:repeat(9,auto);justify-content:start} .st-tab{padding:8px 16px} }
+@media (min-width:720px){ .st-title{font-size:1.7rem} .st-filters{max-width:520px} .st-head,.st-row{grid-template-columns:40px minmax(0,1.6fr) minmax(0,1fr) 90px 80px;padding:0 20px} .st-table.team .st-head,.st-table.team .st-row{grid-template-columns:40px minmax(0,1fr) 90px 90px} .st-tabsw{padding:0 14px 14px} }
 @media (max-width:360px){ .st-tm i{display:none} .st-head,.st-row{grid-template-columns:20px minmax(0,1fr) 24px 42px 38px;gap:6px} .st-tm-h{font-size:0} }
 html[data-theme="dark"] .st-wrap{background:#0F1E35;border-color:#213653;box-shadow:none}
 html[data-theme="dark"] .st-table,html[data-theme="dark"] .st-head,html[data-theme="dark"] .st-row,html[data-theme="dark"] .st-more{border-color:#213653}
 html[data-theme="dark"] .st-head,html[data-theme="dark"] .st-nm b,html[data-theme="dark"] .st-tm i,html[data-theme="dark"] .st-num:not(.st-sub),html[data-theme="dark"] .st-tab,html[data-theme="dark"] .st-more{color:#E6EEF8}
 html[data-theme="dark"] .st-row:hover,html[data-theme="dark"] .st-tab:hover,html[data-theme="dark"] .st-more{background:#182C48}
 html[data-theme="dark"] .st-tab{border-color:#213653}
+html[data-theme="dark"] .st-arr{background:#0F1E35;border-color:#213653;color:#E6EEF8}
 html[data-theme="dark"] .st-tab[aria-selected="true"]{background:#1878BE;border-color:#1878BE;color:#fff}
 </style>
 <style>/* ===== محرّر المباراة في الإدارة (MX) — 2026-09-15 =====
