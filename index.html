@@ -9228,7 +9228,7 @@ paintAdminBtn();
 window.addEventListener("hashchange", ()=>{
   if(location.hash==="#admin"){ ADMIN_REVEAL=true; paintAdminBtn(); go("admin"); }
 });
-if(location.hash==="#admin"){ ADMIN_REVEAL=true; paintAdminBtn(); }
+if(location.hash==="#admin"){ ADMIN_REVEAL=true; paintAdminBtn(); setTimeout(()=>{ if(location.hash==="#admin") go("admin"); }, 600); }   /* رابط يُفتح مباشرة بـ #admin يذهب لشاشة الدخول (كان يكشف الزر فقط) */
 /* المدخل السرّي (ب): ضغطة مطوّلة (~0.8ث) على شعار الدوري أعلى الصفحة */
 (function(){
   const brand=document.querySelector(".hero-brand"); if(!brand) return;
