@@ -33,14 +33,21 @@ const T = {
     list:["أحمد يحيى","حسين حسن","محمد صالح","أحمد باسل","مصطفى سعدون","ميثم جبار","زيد تحسين","أكام هاشم","يوسف الإمام","ميرخاس دوسكي","محمد دلاور","إبراهيم بايش","زيدان إقبال",
           "بسام شاكر","زيد إسماعيل","أمير العماري","حيدر عبدالكريم","عبدالرزاق قاسم","كرار نبيل","محمد قاسم","أحمد قاسم","علي جاسم","سيف رشيد","أيمن حسين","علي الحمادي","يوسف النصراوي"],
     gkSet:["حسين حسن","محمد صالح","أحمد باسل"]},
-  "عمان":    {f:"om", g:"A", c:["#D6202B","#FFFFFF"], coach:"طارق السكتيوي",
-    out:["إبراهيم المخيني","أحمد الرواحي","إبراهيم الراجحي","حارب السعدي","خالد البريكي","عبدالمجيد البلوشي","محسن الغساني","جميل اليحمدي","أحمد الكعبي","أمجد الحارثي","عبدالله فواز","زاهر الأغبري","مصعب الشقصي",
-         "غانم الحبشي","عصام الصبحي","ناصر الرواحي","عاهد المشايخي","سلطان المرزوق","خالد الفطريفي","عبد الحافظ المخيني","تركي بيت ربيع","يوسف المالكي","حسين الشحري","الحارث المخيني","أرشد العلوي","وليد السلمي"]},
-  "قطر":     {f:"qa", g:"B", c:["#7A1535","#FFFFFF"], coach:"",
-    gk:["محمود أبوندى","مشعل برشم","صلاح زكريا"],
-    d:["أيوب العلوي","بوعلام خوخي","همام الأمين","لوكاس مينديز","عيسى لي","بيدرو ميغيل","الهاشمي الحسين","سلطان البريك"],
-    m:["عاصم مادبو","عبدالعزيز حاتم","أحمد فتحي","كريم بوضياف","جاسم جابر","محمد مناعي"],
-    fw:["أحمد الجانحي","أحمد علاء","أكرم عفيف","المعز علي","أدميلسون جونيور","حسن الهيدوس","محمد مونتاري","تحسين محمد","يوسف عبدالرزاق"]},
+  "عمان":    {f:"om", g:"A", c:["#D6202B","#FFFFFF"], coach:"طارق السكتيوي", faces:"om",
+    /* من القائمة الرسمية للاتحاد العُماني؛ مصعب المعمري بدل أرشد العلوي وعبدالله المعمري بدل يوسف المالكي (إصابة) */
+    list:["ابراهيم المخيني","أحمد الرواحي","ابراهيم الراجحي","حارب السعدي","خالد البريكي","عبدالمجيد البلوشي","محسن الغساني","جميل اليحمدي","أحمد الكعبي","أمجد الحارثي","عبدالله فواز",
+          "زاهر الأغبري","مصعب الشقصي","غانم الحبشي","عصام الصبحي","ناصر الرواحي","عاهد المشايخي","سلطان المرزوق","خالد الغطريفي","عبد الحافظ المخيني","تركي بيت ربيع",
+          "عبدالله المعمري","حسين الشحري","الحارث المخيني","مصعب المعمري","وليد المسلمي"],
+    faceFile:{"عبدالله المعمري":28, "مصعب المعمري":27},
+    gkSet:["ابراهيم المخيني","أحمد الرواحي","ابراهيم الراجحي"]},
+  "قطر":     {f:"qa", g:"B", c:["#7A1535","#FFFFFF"], coach:"جولين لوبيتيغي", faces:"qa",
+    list:["صلاح زكريا","محمود أبوندى","مشعل برشم","أحمد الجانحي","أحمد علاء","أحمد فتحي","أديميلسون جونيور","أكرم عفيف","المعز علي","ايوب العلوي","بوعلام خوخي","بيدرو ميغيل","تحسين محمد",
+          "جاسم جابر","حسن الهيدوس","سلطان البريك","طارق سلمان","عاصم مادبو","عبدالعزيز حاتم","عيسى لاي","كريم بوضياف","محمد مناعي","نايف الحضرمي","هاشم علي","همام الأمين","يوسف عبدالرزاق"],
+    gkSet:["صلاح زكريا","محمود أبوندى","مشعل برشم"],
+    /* مراكز من قائمة قطر السابقة (نفس اللاعبين)؛ الجدد بلا مركز */
+    pos:{"ايوب العلوي":"D","بوعلام خوخي":"D","همام الأمين":"D","عيسى لاي":"D","بيدرو ميغيل":"D","سلطان البريك":"D",
+         "عاصم مادبو":"M","عبدالعزيز حاتم":"M","أحمد فتحي":"M","كريم بوضياف":"M","جاسم جابر":"M","محمد مناعي":"M",
+         "أحمد الجانحي":"F","أحمد علاء":"F","أكرم عفيف":"F","المعز علي":"F","أديميلسون جونيور":"F","حسن الهيدوس":"F","تحسين محمد":"F","يوسف عبدالرزاق":"F"}},
   "الامارات":{f:"ae", g:"B", c:["#C8102E","#FFFFFF"], coach:"", faces:"ae",
     list:["خالد الظنحاني","زايد الزعابي","ماركوس ميلوني","فهد الظنحاني","حمد المقبالي","خالد عيسى","روبن فيليب","إيريك دي مينيزيس","لوكاس بيمنتا","ساشا إيفكوفيتش","علاء الدين زهير","خليفة الحمادي","حارب عبدالله",
           "نيكولاس خيمينيز","فابيو دي ليما","عصام فايز","مامادو كوليبالي","عبدالله حمد","لوان بيريرا","عثمان كامارا","سلطان عادل","جويلهرم دا سيلفا","ريتشارد أكونور","يوري سيزار","علي صالح","برونو دي أوليفيرا"],
@@ -56,6 +63,9 @@ const T = {
 };
 /* لون قميص المنتخب الأساسي (بحث 2026-09-21: السعودية أخضر، العراق أبيض، الإمارات أبيض، قطر عنابي، البحرين/عُمان/اليمن أحمر، الكويت أزرق) — خلفية صور اللاعبين */
 const KIT = {"الكويت":"#0A57A8","السعودية":"#0C7A3D","العراق":"#EEF1F4","عمان":"#C8102E","قطر":"#7A1535","الامارات":"#EEF1F4","البحرين":"#CE1126","اليمن":"#CE1126"};
+/* ألوان المنتخبات لتوهّج رأس صفحة المباراة (clubAccent): [لون القميص الأساسي، اللون الثانوي] — القميص الأبيض يأخذ لونه الثانوي */
+const NAT_COLORS = {"الكويت":["#0A57A8","#FFFFFF"],"السعودية":["#0C7A3D","#FFFFFF"],"العراق":["#FFFFFF","#1F7A3A"],"عمان":["#C8102E","#1F7A3A"],
+  "قطر":["#7A1535","#FFFFFF"],"الامارات":["#FFFFFF","#C8102E"],"البحرين":["#CE1126","#FFFFFF"],"اليمن":["#CE1126","#1A1A1A"]};
 const kitInk = c => (KIT[c]==="#EEF1F4") ? "#0B1F3A" : "#FFFFFF";
 const TEAMS = Object.keys(T);
 G.TEAMS = TEAMS; G.T = T;
@@ -75,7 +85,7 @@ function defaultSquads(){
       (KFA_SQUADS.first.gk||[]).forEach(n=>L.push({n, p:"GK"}));
       (KFA_SQUADS.first.out||[]).forEach(n=>L.push({n, p:""}));
     } else if(t.list){
-      t.list.forEach((n,i)=>{ L.push({n, p:(t.gkSet||[]).includes(n)?"GK":""}); if(t.faces) (FACES[c] ||= {})[n] = `assets/gulf/${t.faces}/${i+1}`; });
+      t.list.forEach((n,i)=>{ L.push({n, p:(t.gkSet||[]).includes(n)?"GK":((t.pos||{})[n]||"")}); if(t.faces) (FACES[c] ||= {})[n] = `assets/gulf/${t.faces}/${(t.faceFile||{})[n]||i+1}`; });
     } else {
       (t.gk||[]).forEach(n=>L.push({n, p:"GK"}));
       if(t.faceIdx){ [...(t.gk||[]),...(t.out||[])].forEach((n,i)=>{ if(t.faceIdx.includes(i+1)) (FACES[c] ||= {})[n] = `assets/gulf/${t.faces}/${i+1}`; }); }
@@ -93,13 +103,14 @@ function defaultMatches(){
     return {n:i+1, round:rd, comp:COMP_G, date:e.d, time:e.time||"", venue:e.venue||"", home:pr[0], away:pr[1], note:"", ref:"", refs:{}, tv:"", status:"",
             add1:0, add2:0, hg:(e.hg!=null?+e.hg:0), ag:(e.ag!=null?+e.ag:0)}; }).filter(m=>T[m.home] && T[m.away]);
 }
-function blankDoc(){ return {season:NAME, matches:defaultMatches(), goals:[], cards:[], pens:[], lineups:[], subs:[], shapes:[], mev:[], squads:defaultSquads(), updated:""}; }
+function blankDoc(){ return {season:NAME, squadsVer:SQUADS_VER, matches:defaultMatches(), goals:[], cards:[], pens:[], lineups:[], subs:[], shapes:[], mev:[], squads:defaultSquads(), updated:""}; }
+const SQUADS_VER = 2;   /* ارفعه عند تحديث القوائم الافتراضية (يستبدل المحفوظ) */
 let DATA = null;
 G.data = () => DATA;
 function normalize(d){
   d = d || blankDoc();
   ["matches","goals","cards","pens","lineups","subs","shapes","mev"].forEach(k=>{ if(!Array.isArray(d[k])) d[k]=[]; });
-  if(!d.squads || !Object.keys(d.squads).length) d.squads = defaultSquads();
+  if(!d.squads || !Object.keys(d.squads).length || (d.squadsVer||1) < SQUADS_VER){ d.squads = defaultSquads(); d.squadsVer = SQUADS_VER; }
   else { defaultSquads(); TEAMS.forEach(c=>{ if(!d.squads[c]) d.squads[c] = defaultSquads()[c]; }); }
   d.matches.forEach(m=>{ m.comp = COMP_G; Object.defineProperty(m, "__gulf", {value:true, enumerable:false, configurable:true}); });
   return d;
@@ -107,7 +118,7 @@ function normalize(d){
 
 /* ───────────── السياق المعزول ───────────── */
 let depth = 0;
-const GLOBALS = () => ({ALL, SQUADS, CLUBS, LOGOS, COMP, MATCHES, GOALS, PENS, CARDS, LSCALE, pc:photoCut, nf:natFlag});
+const GLOBALS = () => ({ALL, SQUADS, CLUBS, LOGOS, COMP, MATCHES, GOALS, PENS, CARDS, LSCALE, pc:photoCut, nf:natFlag, cc:window.CLUB_COLORS});
 function withGulf(fn){
   if(!DATA) DATA = normalize(null);
   if(depth){ return fn(); }
@@ -119,12 +130,12 @@ function withGulf(fn){
     photoCut = (name, club) => { if(!name) return null;
       if(club==="الكويت" && !(FACES[club]||{})[name]){ const lc = leagueClubOf(saved, name); return lc ? saved.pc(name, lc) : null; }
       return (FACES[club]||{})[name] || null; };
-    natFlag = () => "";
+    natFlag = () => ""; window.CLUB_COLORS = NAT_COLORS;
     MATCHES = DATA.matches.slice(); GOALS = DATA.goals.slice(); PENS = DATA.pens.slice(); CARDS = DATA.cards.slice();
     return fn();
   } finally {
     ({ALL, SQUADS, CLUBS, LOGOS, COMP, MATCHES, GOALS, PENS, CARDS, LSCALE} = saved);
-    photoCut = saved.pc; natFlag = saved.nf;
+    photoCut = saved.pc; natFlag = saved.nf; window.CLUB_COLORS = saved.cc;
     depth--;
   }
 }
@@ -289,18 +300,14 @@ function hookSite(){
       const r = withGulf(()=>o.apply(this, arguments));
       const box = document.getElementById("mpage");
       if(box){ box.querySelectorAll('.mp-tabs [data-mp-tab="squad"], .mp-tabs [data-mp-tab="table"]').forEach(b=>b.remove());
+        box.querySelectorAll('[data-player]').forEach(el=>{ el.removeAttribute('data-player'); el.style.cursor='default'; });
         const hd = box.querySelector(".mp-head .mp-when"); if(hd && !/كأس الخليج/.test(hd.textContent)) hd.insertAdjacentHTML("afterbegin", `<b>${NAME}</b> · `); }
       return r;
     };
     renderMatchPage.__gulf = true; renderMatchPage.__lv = true;
   }
   if(typeof matchByKey==="function" && !matchByKey.__gulf){ const o = matchByKey; matchByKey = function(k){ return o(k) || findGulf(k); }; matchByKey.__gulf = true; }
-  /* ملف اللاعب من داخل البطولة: يُفتح بسياقها (إحصاءات البطولة وحدها) */
-  document.addEventListener("click", e=>{
-    const el = e.target.closest("[data-gplayer]"); if(!el) return;
-    e.preventDefault(); e.stopPropagation();
-    if(typeof openPlayer==="function") withGulf(()=>openPlayer(el.dataset.gplayer, el.dataset.gclub, {noHistory:true}));
-  }, true);
+  /* بلا ملف لاعب في البطولة (منصور: صور الملصقات لا تصلح للتكبير) */
 }
 
 /* اللعب الفعلي: خطافات live.js */

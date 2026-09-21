@@ -103,3 +103,4 @@ html[data-theme="dark"] .gc-pc-note{color:#4ade80}
 .gc-hero-tx .gc-hero-flags{margin-top:6px}
 @media (max-width:560px){ .gc-logo{width:92px} .gc-hero h2{font-size:1.25rem} .gc-hero .gc-flag{width:22px;height:15px} }
 html[data-theme="dark"] .gc-tabs button[aria-selected="true"]{background:#0a4a9c;border-color:#1f6fd0;color:#fff}
+.gc-pl,.gc-lr{cursor:default}
