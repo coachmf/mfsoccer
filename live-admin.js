@@ -80,7 +80,7 @@ function shell(){
   <main class="lvc-center">
     <div class="lvc-tools" id="lvcTools">${toolsHTML()}</div>
     <div class="lvc-stage">
-      <div class="lvc-pitchbox" id="lvcPitchBox">${LV.pitchSVG("ctl")}<div class="lvc-pop" id="lvcPop" hidden></div>
+      <div class="lvc-pitchbox lv-3d" id="lvcPitchBox">${LV.stadiumHTML("ctl")}<div class="lvc-pop" id="lvcPop" hidden></div>
         <div class="lvc-hint" id="lvcHint">انقر على الملعب: خط التماس ← رمية، الزاوية ← ركنية، خط المرمى ← ركلة مرمى، أو اختر حدثاً أولاً.</div></div>
       <div class="lvc-comp" id="lvcComp"></div>
     </div>
@@ -116,9 +116,11 @@ function paint(){
   const ev = U.sortEvents(U.activeEvents(d));
   /* الأحداث الجديدة (من هذا الجهاز أو مشغّل آخر): نبضة على العلامة والسطر */
   let flash = null; if(S.seen) ev.forEach(e=>{ if(!S.seen.has(e.id)) flash=e.id; }); S.seen = new Set(ev.map(e=>e.id));
-  const pitch = S.root.querySelector("#lvcPitchBox svg");
-  pitch.querySelector(".lv-marks").innerHTML = LV.markersSVG(d, {flash, sel:S.sel || S.editId});
-  pitch.querySelector(".lv-dirs").innerHTML = U.dirsSVG(d, livePhaseOf(d.clock));
+  const pbox = S.root.querySelector("#lvcPitchBox");
+  pbox.querySelector(".lv-marks").innerHTML = LV.markersStad(d, {flash, sel:S.sel || S.editId});
+  pbox.querySelector(".lv-dirs").innerHTML = LV.dirsStad(d, livePhaseOf(d.clock));
+  LV.paintCrowd(pbox, d);
+  if(flash){ const fe = ev.find(e=>e.id===flash); if(fe && (fe.k==="goal"||fe.k==="og")) LV.cheer(pbox, d, fe.team); }
   paintGhost();
   const f = S.feedF || "all";
   const list = ev.slice().reverse().filter(e=> f==="all" ? true : f==="major" ? (EVK[e.k]||{}).major : e.team===f);
@@ -195,8 +197,7 @@ function paintTools(){ S.root.querySelectorAll("[data-tool]").forEach(b=>b.class
 function paintGhost(){
   const g = S.root && S.root.querySelector("#lvcPitchBox .lv-ghost"); if(!g) return;
   const d = S.draft; if(!d || d.x==null){ g.innerHTML=""; return; }
-  const {mx,my} = U.toM(d.x, d.y);
-  g.innerHTML = `<g transform="translate(${mx} ${my})"><circle r="3.4" class="lv-ghost-r"/><circle r="1.9" fill="#0b1422" stroke="#fff" stroke-width=".45"/><svg x="-1.35" y="-1.35" width="2.7" height="2.7" viewBox="0 0 24 24" style="color:#fff">${(LV.ico(EVK[d.k].ic).match(/<svg[^>]*>([\s\S]*)<\/svg>/)||[])[1]||""}</svg></g>`;
+  g.innerHTML = LV.ghostStad(d.x, d.y, d.k);
 }
 function paintComposer(){
   const box = S.root.querySelector("#lvcComp"), d = S.draft;
@@ -314,10 +315,11 @@ async function clockCmd(a){
 
 /* ───────────── النقر على الملعب ───────────── */
 function pitchClick(ev){
-  const svg = S.root.querySelector("#lvcPitchBox svg");
+  const svg = S.root.querySelector("#lvcPitchBox svg.lv-stad-svg");
   const mk = ev.target.closest(".lv-mk");
   if(mk && !S.draft){ editDraft(mk.dataset.ev); return; }
-  const {mx, my} = U.svgPoint(svg, ev);
+  const sp = LV.stadPoint(svg, ev); if(!sp){ closePop(); return; }   /* نقرة في المدرجات: تجاهل */
+  const {mx, my} = sp;
   const zone = U.zoneOf(mx, my), n = U.toNorm(mx, my), loc = {x:n.x, y:n.y, zone};
   if(S.draft){ applyLoc(loc); paintGhost();
     /* إعادة الرسم مع الحفاظ على ما كُتب */
@@ -335,8 +337,8 @@ function openPop(ev, loc, tools){
   pop.style.left = Math.min(Math.max(8, x+10), box.width-190)+"px"; pop.style.top = Math.min(Math.max(8, y-10), box.height-Math.min(box.height-16, 44+tools.length*38))+"px";
   S.pop = loc;
   /* علامة مؤقتة في مكان النقر */
-  S.draft = null; const g=S.root.querySelector("#lvcPitchBox .lv-ghost"); const {mx,my}=U.toM(loc.x, loc.y);
-  g.innerHTML = `<circle cx="${mx}" cy="${my}" r="1.6" fill="#fff" class="lv-ghost-dot"/>`;
+  S.draft = null; const g=S.root.querySelector("#lvcPitchBox .lv-ghost");
+  g.innerHTML = LV.ghostStad(loc.x, loc.y, null);
 }
 function closePop(){ const p=S.root && S.root.querySelector("#lvcPop"); if(p){ p.hidden=true; p.innerHTML=""; } S.pop=null; }
 
@@ -347,6 +349,10 @@ function openSettings(){
   m.innerHTML = `<div class="lvc-mcard"><button type="button" class="lvc-x" data-a="closemodal">${ico("close")}</button><h3>إعدادات المباراة</h3>
     <div class="lvc-set"><h4>اتجاه اللعب في الشوط الأول</h4><p>الفريق الذي يهاجم نحو اليمين (ينقلب تلقائياً في الشوط الثاني) — يُستعمل لتخمين الفريق في الركنيات وركلات المرمى والتسديدات.</p>
       <div class="lvc-teams"><button type="button" class="lvc-teambtn${d.dir!=="a"?" on":""}" data-dir="h">${U.crestOf(d.home)}<span>${H(d.home)}</span></button><button type="button" class="lvc-teambtn${d.dir==="a"?" on":""}" data-dir="a">${U.crestOf(d.away)}<span>${H(d.away)}</span></button></div></div>
+    <div class="lvc-set"><h4>الجمهور</h4><p>كثافة الحضور لكل فريق بألوانه — ${H(d.home)} في يسار المنصة والمدرج المقابل ويسار الملعب، و${H(d.away)} في يمين المنصة الرئيسية والمدرج المجاور لها.</p>
+      ${["h","a"].map(sd=>{ const cr=LV.crowdOf(d), v=cr[sd], nm=sd==="h"?d.home:d.away; return `<div class="lvc-crowd-row"><span>${U.crestOf(nm)}${H(nm)}</span>
+        <div class="lvc-crowd-pre">${[[0,"فارغ"],[20,"قليل"],[55,"متوسط"],[90,"ممتلئ"]].map(([n,t])=>`<button type="button" data-crowd="${sd}:${n}" class="${Math.abs(v-n)<8?"on":""}">${t}</button>`).join("")}</div>
+        <input type="range" min="0" max="100" step="5" value="${v}" data-crowdr="${sd}"><b>${v}%</b></div>`; }).join("")}</div>
     <div class="lvc-set"><h4>الاستحواذ (يُدخل يدوياً)</h4><p>نسبة ${H(d.home)} — تُعرض للجمهور فقط إذا أُدخلت.</p>
       <div class="lvc-row"><input type="number" min="0" max="100" id="lvcPoss" value="${d.poss&&d.poss.h!=null?d.poss.h:""}" placeholder="مثلاً 55"><button type="button" class="lvc-save" data-a="poss">حفظ</button><button type="button" class="lvc-cancel" data-a="possclear">مسح</button></div></div>
     <div class="lvc-set"><h4>اعتماد في سجل المباراة</h4><p>ينقل الأهداف والبطاقات والتبديلات وركلات الجزاء من البث المباشر إلى محرّر المباراة الرسمي لتراجعها ثم تحفظها — فتدخل في الإحصاءات والترتيب والفانتسي.</p>
@@ -411,8 +417,9 @@ function onClick(e){
   const dl = t.closest("[data-lv-del]"); if(dl){ delEvent(dl.dataset.lvDel); return; }
   const ff = t.closest("#lvcFeedF [data-f]"); if(ff){ S.feedF = ff.dataset.f; S.root.querySelectorAll("#lvcFeedF [data-f]").forEach(b=>b.setAttribute("aria-pressed", b===ff)); paint(); return; }
   const om = t.closest("[data-open]"); if(om){ if(om.dataset.open!==S.key){ try{ history.replaceState({lv:1}, "", "#livectl/"+om.dataset.open); }catch(x){} A.open(om.dataset.open); } return; }
+  const cp = t.closest("[data-crowd]"); if(cp){ const [sd,n]=cp.dataset.crowd.split(":"); const c=LV.crowdOf(S.doc); c[sd]=+n; run(()=>LV.cmd.setCrowd(S.id, c), "حُدّث الجمهور").then(()=>openSettings()); return; }
   const dirb = t.closest("[data-dir]"); if(dirb){ run(()=>LV.cmd.setDir(S.id, dirb.dataset.dir), "حُدّث الاتجاه").then(()=>openSettings()); return; }
-  if(t.closest("#lvcPitchBox svg")){ pitchClick(e); return; }
+  if(t.closest("#lvcPitchBox svg.lv-stad-svg")){ pitchClick(e); return; }
   if(!t.closest("#lvcPop")) closePop();
   const row = t.closest(".lv-ev[data-ev]"); if(row){ S.sel = S.sel===row.dataset.ev ? null : row.dataset.ev; paint(); return; }
   if(t.closest("#lvcHtl [data-ev]")){ const id=t.closest("[data-ev]").dataset.ev; S.sel=id; paint(); const r=S.root.querySelector(`#lvcFeed [data-ev="${id}"]`); if(r) r.scrollIntoView({block:"nearest"}); return; }
@@ -427,6 +434,9 @@ function settingsAction(k){
   if(k==="publish"){ m.hidden=true; publish(); return; }
   if(k==="remove"){ if(!confirm("حذف البث المباشر لهذه المباراة نهائياً؟")) return; m.hidden=true; LV.cmd.remove(S.id).then(()=>{ toast("حُذف البث", "ok"); A.close(); }).catch(()=>toast("تعذّر الحذف", "err")); return; }
 }
+document.addEventListener("change", e=>{ const r=e.target.closest && e.target.closest("[data-crowdr]"); if(!r || !S) return;
+  const c=LV.crowdOf(S.doc); c[r.dataset.crowdr]=+r.value; run(()=>LV.cmd.setCrowd(S.id, c), "حُدّث الجمهور").then(()=>openSettings()); });
+document.addEventListener("input", e=>{ const r=e.target.closest && e.target.closest("[data-crowdr]"); if(r && r.nextElementSibling) r.nextElementSibling.textContent=r.value+"%"; });
 function onKey(e){
   if(!S || !S.root) return;
   const tag = (e.target.tagName||"").toLowerCase(), typing = tag==="input"||tag==="textarea"||tag==="select";

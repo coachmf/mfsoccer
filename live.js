@@ -627,7 +627,7 @@ function pubShell(m){
     <div class="lv-toasts" id="lvPubToasts"></div>
     <section class="lv-card sec-pitch"><div class="lv-card-hd"><h3>الملعب المباشر</h3><div class="lv-seg" id="lvPubFilter">
       <button type="button" data-f="all" aria-pressed="true">الكل</button><button type="button" data-f="h" title="${H(m.home)}">${U.crestOf(m.home)}</button><button type="button" data-f="a" title="${H(m.away)}">${U.crestOf(m.away)}</button></div></div>
-      <div class="lv-pitch-wrap" id="lvPubPitch">${LV.pitchSVG("pub")}</div><p class="lv-hint">اضغط أي علامة لعرض تفاصيل الحدث.</p></section>
+      <div class="lv-pitch-wrap lv-3d" id="lvPubPitch">${LV.stadiumHTML("pub")}</div><p class="lv-hint">اضغط أي علامة لعرض تفاصيل الحدث.</p></section>
     <section class="lv-card sec-htl"><div class="lv-card-hd"><h3>الخط الزمني</h3></div><div id="lvPubHtl"></div></section>
     <section class="lv-card sec-feed"><div class="lv-card-hd"><h3>أحداث المباراة</h3><span class="lv-sub" id="lvPubCount"></span></div><div class="lv-feed" id="lvPubFeed"></div><button type="button" class="lv-more" id="lvPubMore" hidden></button></section>
     <section class="lv-card sec-stats"><div class="lv-card-hd"><h3>الإحصاءات</h3><span class="lv-sub">من الأحداث المُدخلة فقط</span></div><div id="lvPubStats"></div></section>
@@ -656,8 +656,11 @@ function paintPub(fresh){
   if(PUB.seen){ ev.forEach(e=>{ if(!PUB.seen.has(e.id)){ flash=e.id; if(fresh) LV.celebrate(root.querySelector("#lvPubToasts"), doc, e); } }); }
   PUB.seen = new Set(ev.map(e=>e.id));
   const f = PUB.filter;
-  root.querySelector("#lvPubPitch .lv-marks").innerHTML = LV.markersSVG(doc, {flash, filter: f==="all" ? null : e=>e.team===f});
-  root.querySelector("#lvPubPitch .lv-dirs").innerHTML = U.dirsSVG(doc);
+  const pbox = root.querySelector("#lvPubPitch");
+  pbox.querySelector(".lv-marks").innerHTML = LV.markersStad(doc, {flash, filter: f==="all" ? null : e=>e.team===f});
+  pbox.querySelector(".lv-dirs").innerHTML = LV.dirsStad(doc);
+  LV.paintCrowd(pbox, doc);
+  if(flash && fresh){ const fe = ev.find(e=>e.id===flash); if(fe && (fe.k==="goal"||fe.k==="og")) LV.cheer(pbox, doc, fe.team); }
   root.querySelector("#lvPubHtl").innerHTML = LV.hTimelineHTML(doc);
   const list = ev.slice().reverse();
   root.querySelector("#lvPubFeed").innerHTML = list.length ? list.map(e=>LV.evRowHTML(doc, e, false)).join("") : `<div class="lv-empty">لم تُسجَّل أحداث بعد.</div>`;
@@ -769,7 +772,7 @@ function startIdx(){
   });
 }
 /* ───── غرفة التحكم: تُحمَّل عند الحاجة فقط (live-admin.js) ───── */
-LV.VER = 1;
+LV.VER = 2;
 LV.loadAdmin = function(){
   if(window.LIVE_ADMIN) return Promise.resolve(window.LIVE_ADMIN);
   return new Promise((res, rej)=>{ const s=document.createElement("script"); s.src="live-admin.js?v="+LV.VER; s.onload=()=>res(window.LIVE_ADMIN); s.onerror=rej; document.head.appendChild(s); });
@@ -810,4 +813,128 @@ function boot(){ hookMatchPage(); hookAdmin(); startIdx(); routeCtl(); }
 if(document.readyState==="loading") document.addEventListener("DOMContentLoaded", ()=>setTimeout(boot, 0)); else setTimeout(boot, 0);
 /* fbDb يُهيّأ بعد تحميل مكتبات Firebase: ننتظره ثم نفتح قناة الفهرس */
 if(!LV.TEST){ let n=0; const w=()=>{ if(LV.store.ready()) startIdx(); else if(++n<120) setTimeout(w, 250); }; setTimeout(w, 300); }
+})();
+
+/* =====================================================================
+   الملعب ثلاثي الأبعاد (صورة Gemini بطراز الملاعب الكويتية) + الجمهور
+   الإسقاط: مصفوفة تحويل منظوري من أمتار الملعب (105×68) إلى بكسلات الصورة (1376×768)،
+   مقيسة من زوايا الملعب الأربع في الصورة. الجمهور يُرسم على canvas فوق المقاعد:
+   جمهور الضيف في النصف الأيمن من المنصة الرئيسية والمدرج المجاور لها، والباقي لصاحب الأرض؛ الكثافة يحددها المشغّل.
+   ===================================================================== */
+(function(){
+const LV = window.LIVE, U = LV.util, H = U.H;
+const IW = 1376, IH = 768, MID = 688;
+const HM = [5.27619048,-5.07160837,411.0, 0,-1.45494171,340.5, 0,-0.00736619,1];
+function inv3(m){
+  const [a,b,c,d,e,f,g,h,i]=m, A=e*i-f*h, B=-(d*i-f*g), C=d*h-e*g, det=a*A+b*B+c*C;
+  return [A/det,-(b*i-c*h)/det,(b*f-c*e)/det, B/det,(a*i-c*g)/det,-(a*f-c*d)/det, C/det,-(a*h-b*g)/det,(a*e-b*d)/det];
+}
+const HI = inv3(HM);
+const ap = (m,x,y) => { const w=m[6]*x+m[7]*y+m[8]; return [(m[0]*x+m[1]*y+m[2])/w, (m[3]*x+m[4]*y+m[5])/w]; };
+LV.project = (mx,my) => { const [u,v]=ap(HM,mx,my); return {u,v}; };
+LV.unproject = (u,v) => { const [mx,my]=ap(HI,u,v); return {mx,my}; };
+const depth = v => Math.max(0, Math.min(1, (v-330)/170));   /* 0 = الخط البعيد، 1 = القريب */
+
+/* crop = [x, y, w, h] بكسلات الصورة: نقصّ السماء ونُبقي الملعب والمدرجات، فيكبر الملعب في الإطار */
+LV.STAD_CROP = {ctl:[40,190,1296,470], pub:[70,200,1236,480]};
+LV.stadiumHTML = function(cls){
+  const [cx,cy,cw,ch] = LV.STAD_CROP[cls] || [0,0,IW,IH];
+  const inner = `width:${(IW/cw*100).toFixed(3)}%;left:${(-cx/cw*100).toFixed(3)}%;top:${(-cy/ch*100).toFixed(3)}%`;
+  return `<div class="lv-stad ${cls||""}" style="aspect-ratio:${cw}/${ch}"><div class="lv-stad-in" style="${inner}">
+    <img class="lv-stad-img" src="assets/live/stadium.webp?v=1" alt="" draggable="false">
+    <canvas class="lv-crowd" width="${IW}" height="${IH}"></canvas>
+    <svg class="lv-pitch lv-stad-svg" viewBox="0 0 ${IW} ${IH}" preserveAspectRatio="xMidYMid meet">
+      <g class="lv-dirs"></g><g class="lv-marks"></g><g class="lv-ghost"></g>
+    </svg></div></div>`;
+};
+/* نقرة ← أمتار (قد تكون خارج الخط على المضمار) — null إن كانت في المدرجات بعيداً */
+LV.stadPoint = function(svg, ev){
+  const pt = svg.createSVGPoint(); pt.x = ev.clientX; pt.y = ev.clientY;
+  const p = pt.matrixTransform(svg.getScreenCTM().inverse());
+  const {mx,my} = LV.unproject(p.x, p.y);
+  if(mx < -8 || mx > 113 || my < -7 || my > 75) return null;
+  return {mx, my};
+};
+function icoInner(k){ return (LV.ico(k).match(/<svg[^>]*>([\s\S]*)<\/svg>/)||[])[1]||""; }
+const MARK_COLORS = {h:"#2eb0f0", a:"#f5a524", "":"#cbd5e1"};
+LV.markersStad = function(doc, opts){
+  opts = opts || {};
+  const ev = U.sortEvents(U.activeEvents(doc)).filter(e=>e.x!=null && e.y!=null && (!opts.filter || opts.filter(e)));
+  return ev.map(e=>{ const {mx,my}=U.toM(e.x,e.y), {u,v}=LV.project(mx,my), dp=depth(v), col=MARK_COLORS[e.team||""];
+    const big = ["goal","og","pen","penmiss","pensave","red","yr"].includes(e.k);
+    const r = (big?10:8) + dp*7;
+    return `<g class="lv-mk${e.id===opts.flash?" new":""}${opts.sel===e.id?" sel":""}" data-ev="${H(e.id)}" transform="translate(${u.toFixed(1)} ${v.toFixed(1)})" tabindex="0" role="button" aria-label="${H(LV.EVK[e.k]?LV.EVK[e.k].t:e.k)} ${H(LV.minLabel(e))}">
+      <ellipse cx="0" cy="${(r*.9).toFixed(1)}" rx="${(r*.9).toFixed(1)}" ry="${(r*.28).toFixed(1)}" fill="rgba(0,0,0,.35)"/>
+      <circle r="${r+2}" fill="rgba(0,0,0,.45)"/><circle r="${r}" fill="#0b1422" stroke="${col}" stroke-width="2.4"/>
+      <svg x="${-r*.72}" y="${-r*.72}" width="${r*1.44}" height="${r*1.44}" viewBox="0 0 24 24" style="color:#e6eef8">${icoInner((LV.EVK[e.k]||{}).ic)}</svg>
+    </g>`; }).join("");
+};
+LV.ghostStad = function(x, y, k){
+  const {mx,my}=U.toM(x,y), {u,v}=LV.project(mx,my), r = 10 + depth(v)*7;
+  return `<g transform="translate(${u} ${v})"><circle r="${r*1.9}" class="lv-ghost-r3"/><circle r="${r}" fill="#0b1422" stroke="#fff" stroke-width="2"/>
+    ${k?`<svg x="${-r*.72}" y="${-r*.72}" width="${r*1.44}" height="${r*1.44}" viewBox="0 0 24 24" style="color:#fff">${icoInner((LV.EVK[k]||{}).ic)}</svg>`:""}</g>`;
+};
+LV.dirsStad = function(doc, ph){
+  const r = LV.attackerOfEnd(doc, "right", ph||doc.clock.phase), l = r==="h" ? "a" : "h";
+  const nm = s => s==="h" ? doc.home : doc.away;
+  const tag = (x, s) => `<g transform="translate(${x} 522)"><rect x="-86" y="-15" width="172" height="26" rx="13" fill="rgba(5,10,19,.62)"/>
+      <text x="0" y="3.5" text-anchor="middle" class="lv-dirt3">${H(nm(s))} يدافع</text></g>`;
+  return tag(330, r) + tag(1046, l);
+};
+
+/* ───────────── الجمهور ───────────── */
+let SEATS = null, seatsP = null;
+function loadSeats(){ if(SEATS) return Promise.resolve(SEATS); if(!seatsP) seatsP = fetch("assets/live/seats.json?v=1").then(r=>r.json()).then(d=>{ SEATS=d; return d; }); return seatsP; }
+const rnd = i => { let x = Math.imul(i ^ 0x9e3779b9, 0x85ebca6b); x ^= x>>>13; x = Math.imul(x, 0xc2b2ae35); x ^= x>>>16; return (x>>>0)/4294967296; };
+const SKIN = ["#e0b18f","#c68c65","#a8714f","#8a5a3c","#d9a178"];
+function teamColors(club){
+  const cc = (window.CLUB_COLORS||{})[club] || ["#1878BE","#FFFFFF"];
+  return [cc[0], cc[1] || "#FFFFFF"];
+}
+/* المستويات: 0 فارغ … 100 ممتلئ — يحددها المشغّل (d.crowd)؛ الافتراضي حضور متوسط للطرفين */
+LV.CROWD_DEF = {h:60, a:35};
+LV.crowdOf = doc => Object.assign({}, LV.CROWD_DEF, (doc && doc.crowd) || {});
+function drawCrowd(cv, doc, bounce){
+  if(!SEATS || !cv) return;
+  const g = cv.getContext("2d"); g.clearRect(0,0,IW,IH);
+  const lv = LV.crowdOf(doc), home = teamColors(doc.home), away = teamColors(doc.away);
+  const P = SEATS.p, t = bounce ? bounce.t : 0;
+  for(let i=0, n=0; i<P.length; i+=3, n++){
+    const x = P[i]/10, y = P[i+1]/10, s = P[i+2]/10, side = (y < 500 && x >= MID) ? "a" : "h";   /* الضيف: يمين المنصة الرئيسية والمدرج المجاور لها — والباقي لصاحب الأرض (منصور) */
+    const lvl = (side==="h" ? lv.h : lv.a) / 100;
+    if(rnd(n) >= lvl) continue;
+    const pal = side==="h" ? home : away, second = rnd(n+7777) < .3;
+    let dy = 0;
+    if(bounce && bounce.side===side) dy = -Math.abs(Math.sin(t*9 + rnd(n+99)*6)) * s * 1.1;
+    const yy = y + dy;
+    g.fillStyle = second ? pal[1] : pal[0];
+    g.beginPath(); g.ellipse(x, yy + s*.45, s, s*.85, 0, 0, Math.PI*2); g.fill();
+    if(s > 2.2){ g.strokeStyle = "rgba(0,0,0,.25)"; g.lineWidth = .6; g.stroke(); }
+    g.fillStyle = SKIN[(rnd(n+333)*SKIN.length)|0];
+    g.beginPath(); g.arc(x, yy - s*.55, s*.5, 0, Math.PI*2); g.fill();
+    if(bounce && bounce.side===side && s > 3 && rnd(n+5) < .35){   /* أذرع مرفوعة في الاحتفال */
+      g.strokeStyle = pal[0]; g.lineWidth = Math.max(1, s*.35); g.lineCap = "round";
+      g.beginPath(); g.moveTo(x - s*.8, yy + s*.1); g.lineTo(x - s*1.05, yy - s*1.1);
+      g.moveTo(x + s*.8, yy + s*.1); g.lineTo(x + s*1.05, yy - s*1.1); g.stroke();
+    }
+  }
+}
+LV.paintCrowd = function(root, doc){
+  const cv = root && root.querySelector(".lv-crowd"); if(!cv) return;
+  const key = JSON.stringify([doc.home, doc.away, LV.crowdOf(doc)]);
+  if(cv.dataset.k === key && !cv._bouncing) return;
+  cv.dataset.k = key;
+  loadSeats().then(()=>{ if(!cv._bouncing) drawCrowd(cv, doc); }).catch(()=>{});
+};
+/* احتفال جمهور الفريق المسجّل (ثانيتان) */
+LV.cheer = function(root, doc, side){
+  const cv = root && root.querySelector(".lv-crowd"); if(!cv || !side) return;
+  loadSeats().then(()=>{
+    cv._bouncing = true; const t0 = performance.now();
+    const step = now => { const t = (now - t0)/1000; if(t > 2.4){ cv._bouncing = false; drawCrowd(cv, doc); return; }
+      drawCrowd(cv, doc, {side, t}); requestAnimationFrame(step); };
+    requestAnimationFrame(step);
+  });
+};
+LV.cmd.setCrowd = (id, c) => LV.store.tx(id, d=>{ if(!d) return null; d.crowd = {h:Math.max(0,Math.min(100,+c.h||0)), a:Math.max(0,Math.min(100,+c.a||0))}; return d; });
 })();
