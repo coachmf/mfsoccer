@@ -742,7 +742,7 @@ details.squadbox summary label.lb{margin:0;cursor:pointer}
 .pcard .natf{top:10px;left:10px;width:26px}
 .natf.inl{position:static;display:inline-block;vertical-align:-2px;width:18px;margin-inline-start:6px;box-shadow:0 0 0 1px rgba(255,255,255,.7)}
 .pprof-hero .ph img.natf{position:absolute;top:auto;bottom:14px;left:14px;width:34px;height:auto;max-width:none;filter:none}
-.pprof-hero .ph img.cph{-webkit-mask-image:linear-gradient(to bottom,#000 70%,transparent 98%),linear-gradient(to right,transparent 0,#000 12%,#000 88%,transparent 100%);-webkit-mask-composite:source-in;mask-image:linear-gradient(to bottom,#000 70%,transparent 98%),linear-gradient(to right,transparent 0,#000 12%,#000 88%,transparent 100%);mask-composite:intersect}
+.pprof-hero .ph img.cph{height:auto;width:calc(100% - 14px);max-height:calc(100% - 10px);object-fit:cover;object-position:center top;margin:0 0 10px 12px;align-self:flex-end;border-radius:14px;background:linear-gradient(180deg,rgba(255,255,255,.10),rgba(255,255,255,.03));box-shadow:inset 0 0 0 1px rgba(255,255,255,.16),0 10px 22px -10px rgba(0,0,0,.55);filter:none}
 .pp-card .pp-b.assist{bottom:-6px;right:-6px}
 .pp-card .pp-b.card{right:auto;left:-4px;top:auto;bottom:34%}
 .pp-card .pp-b.goal{top:auto;left:auto;bottom:-6px;right:-6px;background:#fff}
@@ -11963,7 +11963,7 @@ function fitNatFlag(img){
     for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (d[(y*W + x)*4 + 3] > 60) {
       if (x < x0) x0 = x; if (x > x1) x1 = x; if (y > y1) y1 = y; if (y < y0) y0 = y; }
     let b = x1 >= x0 ? [x0/W, y0/H, (x1+1)/W, (y1+1)/H] : [0, 0, 1, 1];
-    if (img.classList.contains("cph")) b = [Math.max(b[0], .22), b[1], Math.min(b[2], .90), Math.min(b[3], .76)];   /* صورة المدرب ممتلئة الإطار ومتلاشية الأطراف */
+    if (img.classList.contains("cph")) b = [0, 0, 1, 1];   /* صورة المدرب داخل إطار مستدير: العلم في زاويته السفلية اليسرى من الداخل */
     _natBox[img.src] = b; place(b);
   } catch(e) { place([0, 0, 1, 1]); }
 }
