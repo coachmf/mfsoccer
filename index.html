@@ -10746,7 +10746,7 @@ function kfaMatchesHTML(sq){
 }
 function kfaTeamPanel(sq){
   return `<div class="card pad kfa-coach">
-      ${sq.coachImg?`<div class="kfa-coach-ph"><img src="${sq.coachImg}_s.webp?v=30" alt="" loading="lazy" decoding="async"></div>`:""}
+      ${sq.coachImg?`<div class="kfa-coach-ph"><img src="${sq.coachImg}_s.webp?v=31" alt="" loading="lazy" decoding="async"></div>`:""}
       <div class="kfa-coach-ttl"><small>المدرب</small><b>${esc(sq.coach)}</b></div>
       <div class="kfa-coach-sub">${esc(sq.camp)} · ${sq.gk.length+sq.out.length} لاعباً</div>
     </div>
@@ -11748,7 +11748,7 @@ function coachFlag(nat, cls){ if(!nat) return "";
 function coachCardHTML(c){
   const k=(typeof CLUB_COACH!=="undefined") && CLUB_COACH[c]; if(!k) return "";
   return `<div class="pcard sq-coach" role="button" tabindex="0" data-coach="${esc(c)}" aria-label="المدرب ${esc(k.n)}">
-    <div class="ph">${k.img?`<img src="${k.img}_s.webp?v=30" alt="" loading="lazy" decoding="async" draggable="false">`
+    <div class="ph">${k.img?`<img src="${k.img}_s.webp?v=31" alt="" loading="lazy" decoding="async" draggable="false">`
                            :`<img class="noph" src="${crestSrcOf(c)}" alt="" loading="lazy" draggable="false">`}</div>
     ${coachFlag(k.nat)}
     <div class="nm">${esc(k.n)}</div>
@@ -11857,7 +11857,7 @@ function playerProfileHTML(D){
     <button type="button" class="pprof-close" aria-label="إغلاق" onclick="closePlayer()">✕</button>
     <div class="pprof-hero">
       <div class="wm" style="background-image:url('${crestSrcOf(D.club)}')"></div>
-      <div class="ph">${cut?`<img src="${cut}.webp?v=29" alt="" decoding="async">`:`<img class="noph" src="${crestSrcOf(D.club)}" alt="">`}${natFlag(D.name, D.club, "pprof-flag")}</div>
+      <div class="ph">${cut?`<img src="${cut}.webp?v=29" alt="" decoding="async" onload="fitNatFlag(this)">`:`<img class="noph" src="${crestSrcOf(D.club)}" alt="">`}${natFlag(D.name, D.club, "pprof-flag")}</div>
       <div class="pprof-id">
         ${D.club?`<div class="club" data-club-link="${esc(D.club)}">${crest(D.club)}<span>${esc(D.club)}</span></div>`:""}
         <h3>${esc(D.name)}</h3>
@@ -11874,6 +11874,31 @@ function playerProfileHTML(D){
 }
 const playerHash = (n,c) => "#p/"+encodeURIComponent(n)+"/"+encodeURIComponent(c||"");
 let PROF_COMP=null;   /* مسابقة ملف اللاعب: تبدأ بمسابقة الصفحة، وتتبدّل داخل الملف وحده */
+/* علم المنتخب داخل حدود الصورة نفسها: الصور المقصوصة تختلف مساحتها الشفافة (حتى ربع الارتفاع فارغ تحتها)،
+   فنقرأ حدود الجسم المعتم من قناة الشفافية ونضع العلم عند زاويته السفلية اليسرى (منصور 2026-09-21) */
+const _natBox = {};
+function fitNatFlag(img){
+  const ph = img.parentElement, fl = ph && ph.querySelector(".natf"); if(!fl) return;
+  const place = b => {
+    const pr = ph.getBoundingClientRect(), ir = img.getBoundingClientRect();
+    const x0 = ir.left - pr.left + b[0]*ir.width, y1 = ir.top - pr.top + b[3]*ir.height;
+    const fw = fl.offsetWidth || 34, fh = fl.offsetHeight || 23;
+    fl.style.left = Math.max(4, Math.min(x0 + 6, pr.width - fw - 4)) + "px";
+    fl.style.bottom = Math.max(4, pr.height - y1 + 6) + "px";
+    if (pr.height - y1 + 6 + fh > pr.height) fl.style.bottom = (pr.height - fh - 4) + "px";
+  };
+  if (_natBox[img.src]) return place(_natBox[img.src]);
+  try {
+    const W = 80, H = Math.max(1, Math.round(W * img.naturalHeight / img.naturalWidth));
+    const c = document.createElement("canvas"); c.width = W; c.height = H;
+    const g = c.getContext("2d", { willReadFrequently: true }); g.drawImage(img, 0, 0, W, H);
+    const d = g.getImageData(0, 0, W, H).data; let x0 = W, y1 = 0, x1 = 0, y0 = H;
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (d[(y*W + x)*4 + 3] > 60) {
+      if (x < x0) x0 = x; if (x > x1) x1 = x; if (y > y1) y1 = y; if (y < y0) y0 = y; }
+    const b = x1 >= x0 ? [x0/W, y0/H, (x1+1)/W, (y1+1)/H] : [0, 0, 1, 1];
+    _natBox[img.src] = b; place(b);
+  } catch(e) { place([0, 0, 1, 1]); }
+}
 function openPlayer(name, club, opts){
   name=String(name||"").trim(); if(!name) return;
   club=String(club||"").trim() || clubOfPlayer(name);
@@ -11982,7 +12007,7 @@ function coachProfileHTML(D){
     <button type="button" class="pprof-close" aria-label="إغلاق" onclick="closePlayer()">✕</button>
     <div class="pprof-hero">
       <div class="wm" style="background-image:url('${crestSrcOf(D.club)}')"></div>
-      <div class="ph">${D.img?`<img src="${D.img}.webp?v=30" alt="" decoding="async">`:`<img class="noph" src="${crestSrcOf(D.club)}" alt="">`}${coachFlag(D.nat,"pprof-flag")}</div>
+      <div class="ph">${D.img?`<img src="${D.img}.webp?v=31" alt="" decoding="async" onload="fitNatFlag(this)">`:`<img class="noph" src="${crestSrcOf(D.club)}" alt="">`}${coachFlag(D.nat,"pprof-flag")}</div>
       <div class="pprof-id">
         <div class="club" data-club-link="${esc(D.club)}">${crest(D.club)}<span>${esc(D.club)}</span></div>
         <h3>${esc(D.name)}</h3>
