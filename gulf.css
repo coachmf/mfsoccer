@@ -111,3 +111,19 @@ html[data-theme="dark"] .gc-tabs button[aria-selected="true"]{background:#0a4a9c
 .gc-ls-r i{display:block;height:8px;border-radius:5px;background:linear-gradient(90deg,#1f6fd0,#5fb2e8)}
 .gc-ls-r b{text-align:center;font-variant-numeric:tabular-nums}
 @media (max-width:560px){ .gc-tabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px} .gc-tabs button{padding:9px 4px;font-size:.76rem} }
+/* الإدارة: قوائم المنتخبات */
+#gsqAdmin .gsq-teams{margin-bottom:10px}
+.gsq-hd{display:flex;align-items:baseline;gap:8px;margin:4px 0 8px}
+.gsq-hd b{font:900 1rem var(--display);color:var(--head)}
+.gsq-hd span{font-size:.74rem;color:var(--slate)}
+.gsq-hd em{font-style:normal;color:#d97706;font-weight:700}
+.gsq-cols,.gsq-row{display:grid;grid-template-columns:52px minmax(0,1fr) 82px 52px;gap:6px;align-items:center}
+.gsq-cols{font-size:.68rem;color:var(--slate);font-weight:700;padding:0 2px 4px}
+.gsq-list{display:flex;flex-direction:column;gap:6px}
+.gsq-row input,.gsq-row select{width:100%;min-width:0;height:38px;padding:0 8px;border:1px solid var(--line);border-radius:9px;background:var(--navy-900);color:var(--head);font:600 .86rem var(--display)}
+.gsq-row .gsq-s{text-align:center;font-weight:900;font-variant-numeric:tabular-nums}
+.gsq-row .gsq-p{padding:0 4px}
+.gsq-rm{height:38px;border:1px solid var(--line);border-radius:9px;background:transparent;color:var(--loss);font:700 .74rem var(--display);cursor:pointer}
+.gsq-err{margin:10px 0 0;color:var(--loss);font-weight:700;font-size:.8rem}
+.gsq-btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+html[data-theme="dark"] .gsq-row input,html[data-theme="dark"] .gsq-row select{background:#0e1a2c;border-color:#213653}

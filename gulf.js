@@ -126,7 +126,9 @@ G.data = () => DATA;
 function normalize(d){
   d = d || blankDoc();
   ["matches","goals","cards","pens","lineups","subs","shapes","mev"].forEach(k=>{ if(!Array.isArray(d[k])) d[k]=[]; });
-  if(!d.squads || !Object.keys(d.squads).length || (d.squadsVer||1) < SQUADS_VER){ d.squads = defaultSquads(); d.squadsVer = SQUADS_VER; }
+  if(!d.squads || !Object.keys(d.squads).length || (d.squadsVer||1) < SQUADS_VER){   /* القوائم المعدّلة من الإدارة تبقى كما هي */
+    const ed = d.squadsEdited || {}, keep = d.squads || {}, def = defaultSquads();
+    d.squads = {}; TEAMS.forEach(c=>{ d.squads[c] = (ed[c] && keep[c]) ? keep[c] : def[c]; }); d.squadsVer = SQUADS_VER; }
   else { defaultSquads(); TEAMS.forEach(c=>{ if(!d.squads[c]) d.squads[c] = defaultSquads()[c]; }); }
   addFixtures(d);
   d.matches.forEach(m=>{ m.comp = COMP_G; Object.defineProperty(m, "__gulf", {value:true, enumerable:false, configurable:true}); });
@@ -146,6 +148,7 @@ function withGulf(fn){
     const L = {}; TEAMS.forEach(c=>L[c]=flagUrl(c)); LOGOS = L; LSCALE = {};
     photoCut = (name, club) => { if(!name) return null;
       if(club==="الكويت" && !(FACES[club]||{})[name]){ const lc = leagueClubOf(saved, name); return lc ? saved.pc(name, lc) : null; }
+      const e = (DATA.squads[club]||[]).find(x=>x && x.n===name); if(e && e.f) return e.f;
       return (FACES[club]||{})[name] || null; };
     natFlag = () => ""; window.CLUB_COLORS = NAT_COLORS;
     MATCHES = DATA.matches.slice(); GOALS = DATA.goals.slice(); PENS = DATA.pens.slice(); CARDS = DATA.cards.slice();
@@ -445,10 +448,85 @@ function adminHTML(){
         <span class="btns"><button class="am-live" data-gadm="live" data-k="${H(LIVE?LIVE.keyOf(m):"")}">لعب فعلي</button><button data-gadm="edit" data-k="${H(LIVE?LIVE.keyOf(m):"")}">إدخال يدوي</button><button class="dl" data-gadm="rm" data-k="${H(LIVE?LIVE.keyOf(m):"")}">حذف</button></span>
       </div>`).join(""):`<p class="hint">لا مباريات بعد.</p>`}</div>
       <p class="hint" style="margin:12px 0 0">الجولات 1–3 = دور المجموعات، 4 = نصف النهائي، 5 = النهائي. المنتخبات والقوائم من الملصقات الرسمية.</p>
+    </div>
+    ${squadAdminHTML()}</div>`;
+}
+
+/* قوائم المنتخبات: الأرقام والأسماء والمراكز، إضافة وحذف — مسودة حتى الضغط على «حفظ القائمة» */
+let SQE = null;   /* {team, rows:[{n,s,p,o,f}], dirty, err} ؛ o = الاسم الأصلي لتتبّع إعادة التسمية */
+const SQ_POS = [["GK","حارس"],["D","دفاع"],["M","وسط"],["F","هجوم"],["","—"]];
+const posKey = p => { p = String(p||"").toUpperCase(); if(p==="GK"||p==="G") return "GK"; const m = typeof POS_MAIN==="object" && POS_MAIN[p]; return m==="G"?"GK":(m||""); };
+function sqeLoad(c){
+  SQE = {team:c, dirty:false, err:"", rows:(DATA.squads[c]||[]).map(x=>({n:x.n||"", s:x.s?String(x.s):"", p:posKey(x.p), o:x.n||"", f:x.f||""}))};
+}
+function squadAdminHTML(){
+  if(!SQE || !T[SQE.team]) sqeLoad("الكويت");
+  const c = SQE.team;
+  return `<div id="gsqAdmin"><h2 class="sec" style="margin-top:18px">قوائم المنتخبات</h2>
+    <div class="card pad">
+      <p class="hint" style="margin:0 0 10px">عدّل رقم القميص والاسم والمركز، أو أضف لاعباً واحذف آخر. لا يُحفظ شيء حتى تضغط «حفظ القائمة». تغيير الاسم ينقله في أحداث المباريات المحفوظة أيضاً.</p>
+      <div class="gc-teams gsq-teams">${TEAMS.map(x=>`<button type="button" class="gc-tb${x===c?" on":""}" data-gsqe="team" data-c="${H(x)}">${flagImg(x)}<span>${H(x)}</span></button>`).join("")}</div>
+      <div class="gsq-hd"><b>${H(c)}</b><span>${SQE.rows.length} لاعباً${SQE.dirty?` · <em>تعديلات غير محفوظة</em>`:""}</span></div>
+      <div class="gsq-cols"><span>الرقم</span><span>الاسم</span><span>المركز</span><span></span></div>
+      <div class="gsq-list">${SQE.rows.map((r,i)=>`<div class="gsq-row">
+        <input class="gsq-s" type="text" inputmode="numeric" maxlength="2" placeholder="#" value="${H(r.s)}" data-gsqe="s" data-i="${i}" aria-label="الرقم">
+        <input class="gsq-n" type="text" placeholder="اسم اللاعب" value="${H(r.n)}" data-gsqe="n" data-i="${i}" aria-label="الاسم">
+        <select class="gsq-p" data-gsqe="p" data-i="${i}" aria-label="المركز">${SQ_POS.map(([k,l])=>`<option value="${k}"${r.p===k?" selected":""}>${l}</option>`).join("")}</select>
+        <button type="button" class="gsq-rm" data-gsqe="rm" data-i="${i}">حذف</button>
+      </div>`).join("")||`<p class="hint">القائمة فارغة.</p>`}</div>
+      ${SQE.err?`<p class="gsq-err">${H(SQE.err)}</p>`:""}
+      <div class="gsq-btns">
+        <button type="button" class="btn ghost" data-gsqe="add">+ إضافة لاعب</button>
+        <button type="button" class="btn" data-gsqe="save"${SQE.dirty?"":" disabled"}>حفظ القائمة</button>
+        ${SQE.dirty?`<button type="button" class="btn ghost" data-gsqe="undo">تراجع</button>`:""}
+      </div>
     </div></div>`;
 }
+function paintSquadAdmin(focusI){
+  const box = document.getElementById("gsqAdmin"); if(!box) return;
+  const tmp = document.createElement("div"); tmp.innerHTML = squadAdminHTML(); box.replaceWith(tmp.firstElementChild);
+  if(focusI!=null){ const n = document.querySelector(`#gsqAdmin [data-gsqe="n"][data-i="${focusI}"]`); if(n){ n.focus(); n.scrollIntoView({block:"center"}); } }
+}
+/* إعادة تسمية لاعب: تُستبدل القيمة المطابقة تماماً في أحداث البطولة المحفوظة */
+function renameInEvents(from, to){
+  const fix = o => { if(!o || typeof o!=="object") return; for(const k of Object.keys(o)){ const v = o[k];
+    if(v===from) o[k] = to; else if(Array.isArray(v)) v.forEach((x,j)=>{ if(x===from) v[j] = to; else fix(x); }); else if(v && typeof v==="object") fix(v); } };
+  ["goals","cards","pens","lineups","subs","shapes","mev"].forEach(k=>(DATA[k]||[]).forEach(fix));
+}
+async function saveSquad(){
+  const c = SQE.team, rows = SQE.rows.map(r=>({...r, n:r.n.trim().replace(/\s+/g," "), s:r.s.trim()}));
+  if(rows.some(r=>!r.n)){ SQE.err = "اكتب اسم كل لاعب أو احذف السطر الفارغ."; return paintSquadAdmin(); }
+  const dn = rows.map(r=>r.n).find((n,i,a)=>a.indexOf(n)!==i); if(dn){ SQE.err = `الاسم «${dn}» مكرر.`; return paintSquadAdmin(); }
+  if(rows.some(r=>r.s && !/^\d{1,2}$/.test(r.s))){ SQE.err = "الرقم يجب أن يكون من 1 إلى 99."; return paintSquadAdmin(); }
+  const ds = rows.map(r=>r.s).find((x,i,a)=>x && a.indexOf(x)!==i); if(ds){ SQE.err = `الرقم ${ds} مكرر.`; return paintSquadAdmin(); }
+  rows.forEach(r=>{ if(r.o && r.o!==r.n){ renameInEvents(r.o, r.n); if(!r.f){ const f = (FACES[c]||{})[r.o]; if(f) r.f = f; } } });
+  DATA.squads[c] = rows.map(r=>{ const x = {n:r.n, p:r.p}; if(r.s) x.s = +r.s; if(r.f) x.f = r.f; return x; });
+  (DATA.squadsEdited ||= {})[c] = true;
+  try{ toast("جارٍ حفظ القائمة…","busy",true); await store.save(DATA); toast(`حُفظت قائمة ${c} ✅`,"ok"); sqeLoad(c); }
+  catch(e){ toast("تعذّر الحفظ: "+(e.code||e.message),"err"); SQE.err = "لم تُحفظ — حاول مرة ثانية."; }
+  repaint();
+}
+document.addEventListener("input", e=>{
+  const el = e.target.closest && e.target.closest("#gsqAdmin [data-gsqe]"); if(!el || !SQE) return;
+  const k = el.dataset.gsqe, r = SQE.rows[+el.dataset.i]; if(!r || !["s","n","p"].includes(k)) return;
+  if(k==="s") el.value = el.value.replace(/[٠-٩]/g, d=>"٠١٢٣٤٥٦٧٨٩".indexOf(d)).replace(/\D/g,"").slice(0,2);
+  r[k] = el.value; SQE.err = "";
+  if(!SQE.dirty){ SQE.dirty = true; const box = document.getElementById("gsqAdmin");
+    if(box){ const hd = box.querySelector(".gsq-hd span"); if(hd) hd.innerHTML = `${SQE.rows.length} لاعباً · <em>تعديلات غير محفوظة</em>`;
+      const sv = box.querySelector('[data-gsqe="save"]'); if(sv){ sv.disabled = false; if(!box.querySelector('[data-gsqe="undo"]')) sv.insertAdjacentHTML("afterend", `<button type="button" class="btn ghost" data-gsqe="undo">تراجع</button>`); } } }
+}, true);
+document.addEventListener("click", e=>{
+  const b = e.target.closest("#gsqAdmin [data-gsqe]"); if(!b || !SQE) return;
+  const a = b.dataset.gsqe;
+  if(a==="team"){ if(b.dataset.c===SQE.team) return; if(SQE.dirty && !confirm("في تعديلات غير محفوظة على هذه القائمة. تتركها؟")) return; sqeLoad(b.dataset.c); paintSquadAdmin(); }
+  if(a==="add"){ SQE.rows.push({n:"", s:"", p:"", o:"", f:""}); SQE.dirty = true; paintSquadAdmin(SQE.rows.length-1); }
+  if(a==="rm"){ const r = SQE.rows[+b.dataset.i]; if(!r) return; if(r.n.trim() && !confirm(`حذف ${r.n} من قائمة ${SQE.team}؟`)) return; SQE.rows.splice(+b.dataset.i, 1); SQE.dirty = true; paintSquadAdmin(); }
+  if(a==="undo"){ sqeLoad(SQE.team); paintSquadAdmin(); }
+  if(a==="save") saveSquad();
+}, true);
 function paintAdmin(){
   const box = document.getElementById("gulfAdmin"); if(!box) return;
+  if(SQE && !SQE.dirty) sqeLoad(SQE.team);
   const tmp = document.createElement("div"); tmp.innerHTML = adminHTML(); box.replaceWith(tmp.firstElementChild);
 }
 function injectAdmin(){
