@@ -403,3 +403,16 @@ html.lvc-open,html.lvc-open body{overflow:hidden}
 .lvc-effst .off{color:#fbbf24} .lvc-effst .off i{background:#f5a524}
 .lv-ps-eff{display:flex;gap:10px;font-size:.66rem;color:var(--lv-mut);font-variant-numeric:tabular-nums}
 .lv-ps-eff b{color:#e6eef8;font-weight:800}
+/* قائمة اختيار اللاعب بالصور */
+.lvc-pf{position:relative}
+.lvc-pk{position:absolute;top:100%;inset-inline:0;z-index:40;margin-top:4px;max-height:300px;overflow-y:auto;background:#0f1b2e;border:1px solid var(--lv-line2);border-radius:12px;box-shadow:0 14px 34px rgba(0,0,0,.55);padding:4px}
+.lvc-pk-o{display:flex;align-items:center;gap:10px;width:100%;padding:6px 8px;border:0;border-radius:9px;background:transparent;color:#e6eef8;font:700 .86rem var(--lv-font);text-align:start;cursor:pointer}
+.lvc-pk-o:hover,.lvc-pk-o.hi{background:#1b2d48}
+.lvc-pk-o .ph{position:relative;flex:0 0 40px;width:40px;height:40px;border-radius:50%;overflow:hidden;background:#22375a;display:grid;place-items:center}
+.lvc-pk-o .ph img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:1}
+.lvc-pk-o .ph i{font-style:normal;font-size:.72rem;color:#9fb3cc}
+.lvc-pk-o b{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:700}
+.lvc-pk-o em{font-style:normal;min-width:28px;padding:2px 6px;border-radius:7px;background:#0a1322;color:#2eb0f0;font-weight:900;text-align:center;font-variant-numeric:tabular-nums}
+.lvc-pk-empty{padding:10px;color:var(--lv-mut);font-size:.8rem;text-align:center}
+.lvc-comp.on{overflow:visible}
+.lvc-comp.on .lvc-comp-hd{border-radius:14px 14px 0 0}

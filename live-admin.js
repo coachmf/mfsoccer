@@ -32,6 +32,55 @@ function roster(side, mode){
   return all;
 }
 const optVal = x => (x.s ? x.s+" · " : "") + x.n;
+/* صورة اللاعب (الوجه) من مصدر الموقع نفسه — داخل سياق كأس الخليج إن كانت المباراة منها */
+function photoOf(name, side){
+  if(!S || !name || typeof photoCut!=="function") return "";
+  const club = side==="h" ? S.doc.home : S.doc.away, f = () => { try{ return photoCut(name, club) || ""; }catch(e){ return ""; } };
+  const p = (S.doc.gulf && LV.gulfCtx) ? LV.gulfCtx(f) : f();
+  return p ? `${p}_f.webp?v=${S.doc.gulf ? 31 : 29}` : "";
+}
+/* قائمة اختيار اللاعب بالصور (بدل datalist الذي لا يعرض صوراً) */
+const normAr = t => String(t||"").replace(/[أإآ]/g,"ا").replace(/ى/g,"ي").replace(/ة/g,"ه").replace(/[٠-٩]/g, d=>"٠١٢٣٤٥٦٧٨٩".indexOf(d)).toLowerCase();
+function pkMatches(f){
+  const pk = S && S.pk && S.pk[f]; if(!pk) return [];
+  const inp = S.root.querySelector(f==="p" ? "#lvcP" : "#lvcP2"), q = normAr(parseName(inp ? inp.value : "")).trim();
+  const exact = pk.list.some(x=>inp && inp.value===optVal(x));
+  if(!q || exact) return pk.list;
+  const num = /^\d+$/.test(q);
+  return pk.list.filter(x=> num ? String(x.s||"").startsWith(q) : normAr(x.n).includes(q) || (x.s && String(x.s)===q));
+}
+function pkPaint(f, open){
+  const box = S && S.root && S.root.querySelector("#lvcPK_"+f); if(!box) return;
+  const pk = S.pk[f]; if(!open || !pk || !pk.list.length){ box.hidden = true; box.innerHTML = ""; return; }
+  const L = pkMatches(f); pk.hi = Math.max(0, Math.min(pk.hi||0, L.length-1));
+  if(!L.length){ box.hidden = false; box.innerHTML = `<div class="lvc-pk-empty">لا يوجد لاعب بهذا الرقم أو الاسم</div>`; return; }
+  box.hidden = false;
+  box.innerHTML = L.map((x,i)=>{ const ph = photoOf(x.n, pk.side), ini = H(String(x.n).trim().split(/\s+/).slice(0,2).map(w=>w[0]||"").join(""));
+    return `<button type="button" class="lvc-pk-o${i===pk.hi?" hi":""}" data-pk="${f}" data-i="${i}" tabindex="-1">
+      <span class="ph">${ph?`<img src="${H(ph)}" alt="" loading="lazy" onerror="this.remove()">`:""}<i>${ini}</i></span>
+      <b>${H(x.n)}</b>${x.s?`<em>${x.s}</em>`:""}</button>`; }).join("");
+  const hi = box.querySelector(".hi"); if(hi) hi.scrollIntoView({block:"nearest"});
+}
+function pkPick(f, i){
+  const L = pkMatches(f), x = L[i]; if(!x) return;
+  const inp = S.root.querySelector(f==="p" ? "#lvcP" : "#lvcP2"); if(inp){ inp.value = optVal(x); inp.dataset.entered = "1"; }
+  pkPaint(f, false);
+  const nx = f==="p" ? (S.root.querySelector("#lvcP2") || S.root.querySelector("#lvcNote")) : S.root.querySelector("#lvcNote");
+  if(nx) nx.focus();
+}
+const pkField = el => el && el.id==="lvcP" ? "p" : el && el.id==="lvcP2" ? "p2" : null;
+document.addEventListener("focusin", e=>{ const f = pkField(e.target); if(f && S && S.pk){ S.pk[f].hi = 0; pkPaint(f, true); const b = S.root.querySelector("#lvcPK_"+f); if(b && !b.hidden) setTimeout(()=>b.scrollIntoView({block:"nearest", behavior:"smooth"}), 30); } });
+document.addEventListener("focusout", e=>{ const f = pkField(e.target); if(f) setTimeout(()=>{ if(S && S.root && document.activeElement!==e.target) pkPaint(f, false); }, 120); });
+document.addEventListener("input", e=>{ const f = pkField(e.target); if(f && S && S.pk){ e.target.dataset.entered = ""; S.pk[f].hi = 0; pkPaint(f, true); } });
+document.addEventListener("mousedown", e=>{ const o = e.target.closest && e.target.closest(".lvc-pk-o"); if(!o || !S) return; e.preventDefault(); pkPick(o.dataset.pk, +o.dataset.i); });
+/* الأسهم وEnter داخل القائمة — قبل اختصارات اللوحة (Enter = حفظ الحدث) */
+document.addEventListener("keydown", e=>{
+  const f = pkField(e.target); if(!f || !S || !S.pk) return;
+  const box = S.root.querySelector("#lvcPK_"+f), open = box && !box.hidden && box.querySelector(".lvc-pk-o");
+  if(e.key==="ArrowDown" || e.key==="ArrowUp"){ e.preventDefault(); if(!open){ pkPaint(f, true); return; } const n = pkMatches(f).length; S.pk[f].hi = (S.pk[f].hi + (e.key==="ArrowDown"?1:-1) + n) % n; pkPaint(f, true); e.stopImmediatePropagation(); return; }
+  if(e.key==="Enter" && open && !e.target.dataset.entered && e.target.value.trim()){ e.preventDefault(); e.stopImmediatePropagation(); pkPick(f, S.pk[f].hi||0); return; }
+  if(e.key==="Escape" && open){ e.preventDefault(); e.stopImmediatePropagation(); pkPaint(f, false); }
+}, true);
 const parseName = v => String(v||"").replace(/^\s*\d+\s*·\s*/, "").trim();
 function listFor(field, def, team){
   if(!team) return [];
@@ -223,8 +272,10 @@ function paintComposer(){
   if(hint) hint.hidden = true;
   const def = EVK[d.k];
   const teamBtn = s => { const n = s==="h" ? S.doc.home : S.doc.away; return `<button type="button" class="lvc-teambtn${d.team===s?" on":""}" data-team="${s}">${U.crestOf(n)}<span>${H(n)}</span><kbd>${s==="h"?1:2}</kbd></button>`; };
-  const dl = (id, list) => `<datalist id="${id}">${list.map(x=>`<option value="${H(optVal(x))}"></option>`).join("")}</datalist>`;
   const pList = listFor("p", def, d.team), p2List = listFor("p2", def, d.team);
+  const opp = d.team==="h" ? "a" : "h";
+  S.pk = {p:{list:pList, side: def.pOpp ? opp : d.team, hi:0},
+          p2:{list:p2List, side: def.k==="sub" ? d.team : (def.p2opp || def.k==="foul") ? opp : d.team, hi:0}};
   const typeSel = S.editId ? `<label class="lvc-f"><span>نوع الحدث</span><select id="lvcType">${LV.EV.filter(e=>!e.sys||e.k===d.k).map(e=>`<option value="${e.k}"${e.k===d.k?" selected":""}>${H(e.t)}</option>`).join("")}</select></label>` : "";
   const locTxt = d.x!=null ? `<span class="lvc-loc on">${ico("pin")}${H(d.zone||"")}<button type="button" data-a="clearloc" title="إزالة المكان">${ico("close")}</button></span>`
                           : def.loc ? `<span class="lvc-loc">${ico("pin")}انقر على الملعب لتحديد المكان (اختياري)</span>` : "";
@@ -238,8 +289,8 @@ function paintComposer(){
         <label class="lvc-f"><span>المرحلة</span><select id="lvcPhSel">${PHASE_OPTS.map(([k,t])=>`<option value="${k}"${k===d.ph?" selected":""}>${t}</option>`).join("")}</select></label>
       </div>
       ${(def.team||def.optTeam)?`<div class="lvc-f"><span>${def.k==="og"?"الفريق المستفيد":def.k==="save"?"فريق الحارس":"الفريق"}${def.optTeam?" (اختياري)":""}</span><div class="lvc-teams">${teamBtn("h")}${teamBtn("a")}</div></div>`:""}
-      ${def.p?`<label class="lvc-f"><span>${H(def.p)}</span><input id="lvcP" list="lvcPL" value="${H(d.p)}" placeholder="${d.team?"اكتب الرقم أو الاسم":"اختر الفريق أولاً"}" autocomplete="off">${dl("lvcPL", pList)}</label>`:""}
-      ${def.p2?`<label class="lvc-f"><span>${H(def.p2)}${def.k==="goal"?" (اختياري)":""}</span><input id="lvcP2" list="lvcP2L" value="${H(d.p2)}" placeholder="${def.k==="goal"?"بدون صناعة":"اكتب الرقم أو الاسم"}" autocomplete="off">${dl("lvcP2L", p2List)}</label>`:""}
+      ${def.p?`<div class="lvc-f lvc-pf"><span>${H(def.p)}</span><input id="lvcP" value="${H(d.p)}" placeholder="${d.team?"اكتب الرقم أو الاسم":"اختر الفريق أولاً"}" autocomplete="off"><div class="lvc-pk" id="lvcPK_p" hidden></div></div>`:""}
+      ${def.p2?`<div class="lvc-f lvc-pf"><span>${H(def.p2)}${def.k==="goal"?" (اختياري)":""}</span><input id="lvcP2" value="${H(d.p2)}" placeholder="${def.k==="goal"?"بدون صناعة":"اكتب الرقم أو الاسم"}" autocomplete="off"><div class="lvc-pk" id="lvcPK_p2" hidden></div></div>`:""}
       ${def.goal?goalFields(d):""}
       ${def.res?penFields(d):""}
       ${def.reason?`<label class="lvc-f"><span>السبب (اختياري)</span><input id="lvcReason" value="${H(d.reason||"")}" list="lvcRL" autocomplete="off"><datalist id="lvcRL"><option value="تكتيكي"><option value="إصابة"><option value="إرهاق"></datalist></label>`:""}
