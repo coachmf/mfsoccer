@@ -396,6 +396,13 @@ function hookLive(){
       await store.save(DATA); repaint();
       return {ok:true};
     },
+    async wipe(doc, keepRecord){
+      const m = LV.gulfRec.find(doc); if(!m || m.rec!=="live") return;
+      withGulf(()=>{ const E = loadEdit(m); E.match.rec = ""; E.match.comp = COMP_G;
+        if(!keepRecord){ E.goals = []; E.cards = []; E.pens = []; E.subs = []; E.mev = []; E.match.status = ""; E.match.add1 = 0; E.match.add2 = 0; }
+        applyEdit(E); });
+      DATA = normalize(DATA); await store.save(DATA); repaint();
+    },
     async detach(doc){
       const m = LV.gulfRec.find(doc); if(!m || m.rec!=="live") return;
       withGulf(()=>{ const E = loadEdit(m); E.match.rec = ""; E.match.comp = COMP_G; applyEdit(E); });

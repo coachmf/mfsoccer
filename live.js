@@ -833,7 +833,7 @@ function startIdx(){
   });
 }
 /* ───── غرفة التحكم: تُحمَّل عند الحاجة فقط (live-admin.js) ───── */
-LV.VER = 6;
+LV.VER = 7;
 LV.loadAdmin = function(){
   if(window.LIVE_ADMIN) return Promise.resolve(window.LIVE_ADMIN);
   return new Promise((res, rej)=>{ const s=document.createElement("script"); s.src="live-admin.js?v="+LV.VER; s.onload=()=>res(window.LIVE_ADMIN); s.onerror=rej; document.head.appendChild(s); });
@@ -1212,6 +1212,20 @@ REC.detach = async function(doc){
   if(m && m.rec==="live"){ if(!LV.TEST && typeof rebaseOnCloud==="function") await rebaseOnCloud();
     const E = loadEdit(recMatch(doc)); E.match.rec = ""; applyEdit(E); applyComp();
     if(LV.TEST){ try{ localStorage.setItem("zain_data", JSON.stringify(dataObject())); }catch(e){} } else await persistData(); }
+};
+/* مسح اللعب الفعلي من السجل قبل حذف البث — يمسّ السجل فقط إن كانت المباراة مرتبطة (rec:"live")؛ المنفصلة يُديرها المحرّر اليدوي فلا تُلمس.
+   keepRecord=true: يُفصل السجل ويبقى كما هو. false: تُمسح الأهداف والبطاقات والجزاء والتبديلات وأحداث المباراة التي كتبها البث،
+   وتعود المباراة «لم تبدأ» 0-0 — التشكيلة والطاقم والقناة تبقى. */
+REC.wipe = async function(doc, keepRecord){
+  if(doc.gulf && LV.gulfRec && LV.gulfRec.wipe) return LV.gulfRec.wipe(doc, keepRecord);
+  if(typeof applyEdit!=="function" || typeof loadEdit!=="function") return;
+  if(!LV.TEST && typeof rebaseOnCloud==="function") await rebaseOnCloud();
+  const m = recMatch(doc); if(!m || m.rec!=="live") return;
+  const E = loadEdit(m); E.match.rec = "";
+  if(!keepRecord){ E.goals = []; E.cards = []; E.pens = []; E.subs = []; E.mev = []; E.match.status = ""; E.match.add1 = 0; E.match.add2 = 0; }
+  applyEdit(E); if(typeof applyComp==="function") applyComp();
+  if(LV.TEST){ try{ localStorage.setItem("zain_data", JSON.stringify(dataObject())); }catch(e){} } else await persistData();
+  if(typeof renderAll==="function") renderAll();
 };
 REC.relink = async function(doc){
   const id = LV.idOf(doc.key), m = recMatch(doc); if(!m) return;

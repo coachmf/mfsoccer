@@ -416,3 +416,8 @@ html.lvc-open,html.lvc-open body{overflow:hidden}
 .lvc-pk-empty{padding:10px;color:var(--lv-mut);font-size:.8rem;text-align:center}
 .lvc-comp.on{overflow:visible}
 .lvc-comp.on .lvc-comp-hd{border-radius:14px 14px 0 0}
+/* حذف الحدث: زر أحمر واضح في السجل */
+.lv-ev-act button[data-lv-del]{color:#f87171;border-color:rgba(248,113,113,.45)}
+.lv-ev-act button[data-lv-del]:hover{background:#7f1d1d;color:#fff;border-color:#f87171}
+.lvc-wipe{display:flex;flex-direction:column;align-items:flex-start;gap:6px;margin-top:10px}
+.lvc-wipe p{margin:0}

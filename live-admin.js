@@ -383,7 +383,7 @@ async function run(fn, okMsg){
 let recTimer = null, recDoc = null, recBackup = false, recBusy = false;
 let recKey = null;
 function scheduleRec(doc, backup){
-  if(!LV.rec || doc.detached) return;
+  if(!LV.rec || doc.detached || (S && S.wiping)) return;
   /* السرعة: لا نكتب وثيقة الموسم الكبيرة إلا إذا تغيّر ما يدخل السجل (أهداف/بطاقات/تبديلات/مرحلة) — الركنيات والتماس والوقت الفعلي لا */
   let k = ""; try{ const c = doc.clock||{}; k = JSON.stringify([LV.rec.liveToRows(doc), c.phase, c.added||{}]); }catch(e){}
   if(!backup && k && k===recKey){ return; }
@@ -392,9 +392,14 @@ function scheduleRec(doc, backup){
   clearTimeout(recTimer); recTimer = setTimeout(flushRec, 1200);
   setRec("wait");
 }
+/* قبل الحذف/المسح: نلغي أي كتابة معلّقة للسجل وننتظر الجارية، حتى لا تعيد ربط المباراة بعد مسحها */
+async function stopRec(){
+  if(S) S.wiping = true; clearTimeout(recTimer); recDoc = null;
+  for(let i=0; recBusy && i<50; i++) await new Promise(r=>setTimeout(r, 200));
+}
 async function flushRec(){
   if(recBusy){ recTimer = setTimeout(flushRec, 600); return; }
-  const doc = (S && S.doc) || recDoc; if(!doc) return;
+  const doc = (S && S.doc) || recDoc; if(!doc || (S && S.wiping)) return;
   recBusy = true; const bk = recBackup; recBackup = false;
   try{ const c = doc.clock||{}; recKey = JSON.stringify([LV.rec.liveToRows(doc), c.phase, c.added||{}]); }catch(e){}
   try{ const r = await LV.rec.push(doc, {backup:bk}); setRec(r.ok||r.test ? "ok" : r.pending ? "wait" : r.skipped ? "off" : "err"); }
@@ -471,7 +476,7 @@ function openSettings(){
   m.innerHTML = `<div class="lvc-mcard"><button type="button" class="lvc-x" data-a="closemodal">${ico("close")}</button><h3>إعدادات المباراة</h3>
     <div class="lvc-set"><h4>اتجاه اللعب في الشوط الأول</h4><p>الفريق الذي يهاجم نحو اليمين (ينقلب تلقائياً في الشوط الثاني) — يُستعمل لتخمين الفريق في الركنيات وركلات المرمى والتسديدات.</p>
       <div class="lvc-teams"><button type="button" class="lvc-teambtn${d.dir!=="a"?" on":""}" data-dir="h">${U.crestOf(d.home)}<span>${H(d.home)}</span></button><button type="button" class="lvc-teambtn${d.dir==="a"?" on":""}" data-dir="a">${U.crestOf(d.away)}<span>${H(d.away)}</span></button></div></div>
-    <div class="lvc-set"><h4>الجمهور</h4><p>كثافة الحضور لكل فريق بألوانه — ${H(d.home)} في يسار المنصة والمدرج المقابل ويسار الملعب، و${H(d.away)} في يمين المنصة الرئيسية والمدرج المجاور لها.</p>
+    <div class="lvc-set"><h4>الجمهور</h4><p>كثافة الحضور لكل فريق بألوانه — ${H(d.away)} في يسار المنصة الرئيسية والمدرج المجاور لها (نفس جهته في اللوحة العلوية)، و${H(d.home)} في باقي المدرجات.</p>
       ${["h","a"].map(sd=>{ const cr=LV.crowdOf(d), v=cr[sd], nm=sd==="h"?d.home:d.away; return `<div class="lvc-crowd-row"><span>${U.crestOf(nm)}${H(nm)}</span>
         <div class="lvc-crowd-pre">${[[0,"فارغ"],[20,"قليل"],[55,"متوسط"],[90,"ممتلئ"]].map(([n,t])=>`<button type="button" data-crowd="${sd}:${n}" class="${Math.abs(v-n)<8?"on":""}">${t}</button>`).join("")}</div>
         <input type="range" min="0" max="100" step="5" value="${v}" data-crowdr="${sd}"><b>${v}%</b></div>`; }).join("")}</div>
@@ -484,7 +489,12 @@ function openSettings(){
         <button type="button" class="lvc-save" data-a="relink">إعادة الربط بالسجل</button>`
       :`<p>كل هدف وبطاقة وتبديل وركلة جزاء وفرصة وVAR وتعليق يُكتب تلقائياً في سجل المباراة الرسمي الذي تُبنى منه الإحصاءات والترتيب والفانتسي — ولا حاجة لإدخاله مرة ثانية. التعديل من المحرّر اليدوي يعود إلى هنا تلقائياً.</p>
         <button type="button" class="lvc-cancel" data-a="detach">فصل عن السجل (إدارة يدوية فقط)</button>`}</div>
-    <div class="lvc-set danger"><h4>حذف البث المباشر</h4><p>يحذف وثيقة البث وأحداثها نهائياً (لا يمسّ سجل المباراة الرسمي).</p><button type="button" class="lvc-delbtn" data-a="remove">${ico("del")}حذف البث</button></div>
+    <div class="lvc-set danger"><h4>مسح اللعب الفعلي</h4>
+      <div class="lvc-wipe"><button type="button" class="lvc-delbtn" data-a="wipeall">${ico("del")}مسح اللعب الفعلي بالكامل</button>
+        <p>${d.detached ? `يحذف البث وكل أحداثه. المباراة منفصلة عن السجل، فسجلها اليدوي يبقى كما هو.`
+          : `يحذف البث وكل أحداثه، ويمسح من سجل المباراة الأهداف والبطاقات والجزاء والتبديلات اللي دخلت منه، فترجع المباراة «لم تبدأ» 0-0. التشكيلة والحكام والقناة تبقى.`}</p></div>
+      <div class="lvc-wipe"><button type="button" class="lvc-cancel" data-a="remove">${ico("del")}حذف البث فقط</button>
+        <p>يحذف البث ويُبقي سجل المباراة كما هو الآن (يُفصل عن اللعب الفعلي).</p></div></div>
   </div>`;
   m.hidden = false;
 }
@@ -536,7 +546,13 @@ function settingsAction(k){
   if(k==="detach"){ if(!confirm("فصل هذه المباراة عن السجل؟ أحداث البث لن تدخل الإحصاءات بعد الآن، ويبقى السجل كما هو الآن.")) return; m.hidden=true;
     LV.rec.detach(S.doc).then(()=>{ toast("فُصلت المباراة — السجل يُدار يدوياً","ok"); setRec("off"); }).catch(e=>toast("تعذّر الفصل","err")); return; }
   if(k==="relink"){ m.hidden=true; LV.rec.relink(S.doc).then(()=>{ toast("أُعيد الربط واستُوردت أحداث السجل","ok"); scheduleRec(S.doc); }).catch(e=>toast("تعذّر الربط","err")); return; }
-  if(k==="remove"){ if(!confirm("حذف البث المباشر لهذه المباراة نهائياً؟")) return; m.hidden=true; LV.cmd.remove(S.id).then(()=>{ toast("حُذف البث", "ok"); A.close(); }).catch(()=>toast("تعذّر الحذف", "err")); return; }
+  if(k==="remove"){ if(!confirm("حذف البث المباشر لهذه المباراة؟ سجل المباراة يبقى كما هو.")) return; m.hidden=true;
+    const doc = S.doc, id = S.id;
+    stopRec().then(()=>LV.rec.wipe(doc, true)).then(()=>LV.cmd.remove(id)).then(()=>{ toast("حُذف البث — السجل باقٍ", "ok"); A.close(); }).catch(e=>{ console.error(e); if(S) S.wiping = false; toast("تعذّر الحذف", "err"); }); return; }
+  if(k==="wipeall"){ const d = S.doc;
+    if(!confirm(`مسح اللعب الفعلي لمباراة ${d.home} × ${d.away} بالكامل؟\n\nيُحذف البث وكل أحداثه${d.detached?"":"، وتُمسح أحداثه من سجل المباراة وترجع «لم تبدأ» 0-0"}. لا يمكن التراجع.`)) return;
+    m.hidden=true; const id = S.id;
+    stopRec().then(()=>LV.rec.wipe(d, !!d.detached)).then(()=>LV.cmd.remove(id)).then(()=>{ toast("مُسح اللعب الفعلي بالكامل", "ok"); A.close(); }).catch(e=>{ console.error(e); if(S) S.wiping = false; toast("تعذّر المسح", "err"); }); return; }
 }
 document.addEventListener("change", e=>{ const r=e.target.closest && e.target.closest("[data-crowdr]"); if(!r || !S) return;
   const c=LV.crowdOf(S.doc); c[r.dataset.crowdr]=+r.value; run(()=>LV.cmd.setCrowd(S.id, c), "حُدّث الجمهور").then(()=>openSettings()); });
