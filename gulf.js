@@ -257,7 +257,7 @@ const TITLE_NOTE = {"الكويت":"صاحب الرقم القياسي في عد
 const flagImg = (c, cls) => `<img class="gc-flag ${cls||""}" src="${flagUrl(c,80)}" srcset="${flagUrl(c,160)} 2x" alt="" loading="lazy">`;
 function face(c, n){
   const p = withGulf(()=>photoCut(n, c));
-  return p ? `<img src="${H(p)}_f.webp?v=30" alt="" loading="lazy" decoding="async">` : `<span class="gc-ini" style="color:${kitInk(c)}">${H(String(n).trim().split(/\s+/).slice(0,2).map(w=>w[0]||"").join(""))}</span>`;
+  return p ? `<img src="${H(p)}_f.webp?v=31" alt="" loading="lazy" decoding="async">` : `<span class="gc-ini" style="color:${kitInk(c)}">${H(String(n).trim().split(/\s+/).slice(0,2).map(w=>w[0]||"").join(""))}</span>`;
 }
 function matchCard(m){
   const up = isUp(m) && !(m.hg+m.ag) && m.status!=="ft", L = window.LIVE && LIVE.liveOf ? LIVE.liveOf(m) : null;
