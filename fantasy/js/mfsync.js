@@ -30,6 +30,7 @@ const MF_SQUAD_RENAME = [
 ];
 const MF_SQUAD_MOVE = [
   {n:'بدر طارق', from:'العربي', to:'كاظمة', s:77},
+  {n:'شيلدون', from:'العربي', to:'الصليبخات', s:33},   // منصور 2026-09-22
 ];
 const MFSYNC = {
   URL: 'https://firestore.googleapis.com/v1/projects/mfsoccer-c7ee4/databases/(default)/documents/seasons/2026-2027?key=AIzaSyD_ZzAE4HEKPIuAKCmta8tzN5KOa8IUfuo',

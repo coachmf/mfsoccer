@@ -283,7 +283,7 @@ const PLAYER_PHOTOS = {
   'ARB|علي عبدالرسول': '/assets/players/arb/16',
   'ARB|علي الدوخي': '/assets/players/arb/9',
   'ARB|كينان ماليكو': '/assets/players/arb/18',
-  'ARB|شيلدون': '/assets/players/arb/23',
+  'SLB|شيلدون': '/assets/players/slb/33',   // انتقل من العربي (منصور 2026-09-22)
   'ARB|خادم رسول': '/assets/players/arb/95',
   'ARB|بندر السلامة': '/assets/players/arb/10',
   'ARB|علي خلف': '/assets/players/arb/17',
