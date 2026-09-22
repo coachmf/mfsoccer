@@ -974,7 +974,7 @@ function drawCrowd(cv, doc, bounce){
   const lv = LV.crowdOf(doc), home = teamColors(doc.home), away = teamColors(doc.away);
   const P = SEATS.p, t = bounce ? bounce.t : 0;
   for(let i=0, n=0; i<P.length; i+=3, n++){
-    const x = P[i]/10, y = P[i+1]/10, s = P[i+2]/10, side = (y < 420 && x >= MID) ? "a" : "h";   /* الضيف: يمين المنصة الرئيسية والمدرج المجاور لها — والباقي لصاحب الأرض (منصور) */
+    const x = P[i]/10, y = P[i+1]/10, s = P[i+2]/10, side = (y < 420 && x < MID) ? "a" : "h";   /* الضيف: يسار المنصة الرئيسية والمدرج المجاور لها، مثل جهته في اللوحة العلوية (RTL: صاحب الأرض يمين) — والباقي لصاحب الأرض (منصور) */
     const lvl = (side==="h" ? lv.h : lv.a) / 100;
     if(rnd(n) >= lvl) continue;
     const pal = side==="h" ? home : away, second = rnd(n+7777) < (pal.light ? .55 : .3);   /* لون أساسي فاتح (أبيض) يضيع على المقاعد: نُكثر الثاني */
