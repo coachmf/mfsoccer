@@ -2159,7 +2159,7 @@ main{padding-bottom:48px}
 <script src="admin-tabs.js?v=3" defer></script>
 <!-- كأس الخليج 27: قسم مستقل ببيانات منفصلة (seasons/gulf27) -->
 <link rel="stylesheet" href="gulf.css?v=14">
-<script src="gulf.js?v=27" defer></script>
+<script src="gulf.js?v=28" defer></script>
 <style>
 /* تبويب التحليل — التصميم الجديد (منصور 2026-09-17) */
 .an{--an-card:#0F1E35;--an-line:#213653;--an-txt:#EDF3FA;--an-mut:#8FA6C4;--an-track:rgba(143,166,196,.16);--an-acc:#2EB0F0;--an-acc2:#1878BE}
@@ -2823,7 +2823,7 @@ function extCardsHTML(evs, compName){
     if(!isMatch) return `${dayHead}<article class="mc soon"><div class="mc-stage">${esc(span?e.t:(parts.slice(0,-1).join(" - ")||e.t))}${e.n?`<em>${esc(e.n)}</em>`:""}</div></article>`;
     if(up) soon++; else done++;
     /* live:true = مباراة جارية تُحدَّث نتيجتها أثناء اللعب (المتابعة المباشرة من SofaScore) — تُزال عند صافرة النهاية */
-    const st=liveNow?'<span class="mc-st live"><i></i>جارية الآن</span>':up?'<span class="mc-st soon">لم تبدأ</span>':'<span class="mc-st done">انتهت</span>';
+    const st=liveNow?liveStHTML(gx&&gx.ph):up?'<span class="mc-st soon">لم تبدأ</span>':'<span class="mc-st done">انتهت</span>';
     const mid = played ? `<span class="mc-score" dir="ltr">${+ea} - ${+eh}</span>` : `<span class="mc-time" dir="ltr">${e.time?esc(e.time):"—"}</span>`;
     return `${dayHead}<article class="mc${up?" soon":liveNow?" live":" done"}"${gx&&gx.k?` data-mopen="${esc(gx.k)}"`:""}>
       <div class="mc-row">
@@ -2866,7 +2866,7 @@ function renderUpcomingMatches(){
     return `${dayHead}<article class="mc${live?" live":" soon"}"${key?` data-mopen="${key}"`:""}>
       <div class="mc-row">
         <div class="mc-team h">${crest(m.home)}<b>${esc(m.home)}</b></div>
-        <div class="mc-mid"><span class="mc-time" dir="ltr">${m.time?esc(m.time):"—"}</span>${live?'<span class="mc-st live"><i></i>جارية الآن</span>':'<span class="mc-st soon">لم تبدأ</span>'}${(()=>{ const tv=tvOf(m); return tv?`<span class="mc-tv${tv==="غير منقولة"?" off":""}">${TV_ICO}<span>${esc(tv)}</span></span>`:""; })()}</div>
+        <div class="mc-mid"><span class="mc-time" dir="ltr">${m.time?esc(m.time):"—"}</span>${live?liveStHTML(m.status):'<span class="mc-st soon">لم تبدأ</span>'}${(()=>{ const tv=tvOf(m); return tv?`<span class="mc-tv${tv==="غير منقولة"?" off":""}">${TV_ICO}<span>${esc(tv)}</span></span>`:""; })()}</div>
         <div class="mc-team a">${crest(m.away)}<b>${esc(m.away)}</b></div>
       </div>
       <div class="mc-foot"><span>${esc(compOf(m))}</span><span>الجولة ${m.round}</span>${m.venue?`<span>${esc(m.venue)}</span>`:""}</div>
@@ -2946,6 +2946,8 @@ function isUpcoming(m){
   return !(xiNames(m.round, comp, m.home).length || xiNames(m.round, comp, m.away).length);
 }
 /* انتهت المباراة: «انتهت» صراحة، أو أُقيمت وخرجت من نافذة اللعب (ساعتان) ولم تُعلَّم بمرحلة جارية */
+/* شارة المباراة الجارية في البطاقات: «استراحة» بين الشوطين كما في صفحة المباراة، وإلا «جارية الآن» (منصور 2026-09-23) */
+const liveStHTML = ph => ph==="ht" ? '<span class="mc-st ht">استراحة</span>' : '<span class="mc-st live"><i></i>جارية الآن</span>';
 function matchOver(m){
   if(!m) return false; if(m.status==="ft") return true;
   if(["pre","h1","ht","h2"].includes(m.status)) return false;
@@ -6901,8 +6903,8 @@ function renderMatches(){
     const gs=matchGoals(m);
     const mc=CARDS.filter(x=>x.r===m.round && compOf(x)===compOf(m) && (x.club===m.home||x.club===m.away));
     const y=mc.filter(x=>isYellow(x.type)).length, r=mc.filter(x=>isRed(x.type)).length;
-    const soon=isUpcoming(m), live=isLive(m);
-    const st = soon ? '<span class="mc-st soon">لم تبدأ</span>' : live ? '<span class="mc-st live"><i></i>جارية الآن</span>' : '<span class="mc-st done">انتهت</span>';
+    const soon=isUpcoming(m), live=!soon && !matchOver(m);
+    const st = soon ? '<span class="mc-st soon">لم تبدأ</span>' : live ? liveStHTML(m.status) : '<span class="mc-st done">انتهت</span>';
     const dayHead = m.date!==lastDay ? `<div class="mc-day"><span>${dayLabel(m.date)}</span></div>` : "";
     lastDay=m.date;
     return `${dayHead}<article class="mc${soon?" soon":live?" live":" done"}" data-mopen="${matchKey(m)}">
@@ -10058,6 +10060,7 @@ html[data-theme="dark"] .mc-score{background:#182C48}
 .mp-tv{display:inline-flex;align-items:center;gap:6px}
 .mc-st{font-size:.62rem;font-weight:600;color:var(--slate);letter-spacing:.01em;display:inline-flex;align-items:center;gap:4px}
 .mc-st.live{color:var(--win)}
+.mc-st.ht{color:#F5C518}
 .mc-st.live i{width:6px;height:6px;border-radius:50%;background:var(--win);animation:mcpulse 1.2s ease-in-out infinite}
 @keyframes mcpulse{0%,100%{opacity:1}50%{opacity:.35}}
 .mc-sc{display:grid;grid-template-columns:1fr 1fr;gap:4px 16px;padding:0 12px 8px;font-size:.7rem;color:var(--slate)}   /* هدافو البطولات الخارجية: نص فقط */
