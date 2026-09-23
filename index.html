@@ -6781,11 +6781,13 @@ function goalsTimeline(m,gs,mc){
   const xe=(typeof matchMev==="function")?matchMev(m):[];
   if(!gs.length && !subs.length && !mc.length && !xe.length) return "";
   const ORD={g:0,c:1,s:2,e:3};
+  /* تعليقات المراحل في نفس الدقيقة (منصور 2026-09-23): «بداية …» قبل أحداثها، و«نهاية …» بعدها */
+  const tlRank=e=>{ if(e.t==="e" && !e.v.club){ const t=String(e.v.note||"").trim(); if(/^بداية/.test(t)) return -1; if(/^نهاية/.test(t)) return 9; } return ORD[e.t]; };
   const ev=[...gs.map(g=>({t:"g",m:+g.m||0,x:+g.x||0,g})),
             ...subs.map(sb=>({t:"s",m:absMinute(sb.h,sb.m),x:0,sb,half:+sb.h||1})),
             ...mc.map(c=>({t:"c",m:+c.m||0,x:0,c})),
             ...xe.map(v=>({t:"e",m:+v.m||0,x:+v.x||0,v}))]
-    .sort((a,b)=>(a.m-b.m)||(a.x-b.x)||(ORD[a.t]-ORD[b.t]));
+    .sort((a,b)=>(a.m-b.m)||(a.x-b.x)||(tlRank(a)-tlRank(b)));
   let h=0,a=0; const rows=[]; let htDone=false;
   ev.forEach(e=>{
     const club = e.t==="g" ? e.g.sc : e.t==="c" ? e.c.club : e.t==="e" ? e.v.club : e.sb.club;
