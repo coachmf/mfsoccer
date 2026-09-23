@@ -2159,7 +2159,7 @@ main{padding-bottom:48px}
 <script src="admin-tabs.js?v=3" defer></script>
 <!-- كأس الخليج 27: قسم مستقل ببيانات منفصلة (seasons/gulf27) -->
 <link rel="stylesheet" href="gulf.css?v=14">
-<script src="gulf.js?v=25" defer></script>
+<script src="gulf.js?v=26" defer></script>
 <style>
 /* تبويب التحليل — التصميم الجديد (منصور 2026-09-17) */
 .an{--an-card:#0F1E35;--an-line:#213653;--an-txt:#EDF3FA;--an-mut:#8FA6C4;--an-track:rgba(143,166,196,.16);--an-acc:#2EB0F0;--an-acc2:#1878BE}
@@ -2815,17 +2815,17 @@ function extCardsHTML(evs, compName){
     const span=!!(e.to && e.to!==e.d);
     const a=parts.length>=2?evTeam(parts[0],e.k):null, b=parts.length>=2?evTeam(parts[1],e.k):null;
     const isMatch=!span && a && b && (a.t!=="other"||b.t!=="other") && !/نصف|نهائي|ربع|مباريات/.test(parts[0]);
-    const played = e.hg!=null && e.ag!=null;
-    const up = !played && e.d>=todayIso;
+    /* خليجي 27: القناة والحكم والحالة والنتيجة من سجل البطولة (gulf.js) — منصور 2026-09-23 */
+    const gx=(isMatch && extCompOf(e)==="gulf27" && window.GULF && GULF.extra) ? GULF.extra(e.d, a.n, b.n) : null;
+    let played = e.hg!=null && e.ag!=null, up = !played && e.d>=todayIso, liveNow = played && e.live, eh=e.hg, ea=e.ag;
+    if(gx && gx.st){ up = gx.st==="soon"; played = !up; liveNow = gx.st==="live"; eh = gx.hg; ea = gx.ag; }
     const dayHead=e.d!==lastDay?`<div class="mc-day"><span>${span?esc(evRange(e)):dayLabel(e.d)}</span></div>`:""; lastDay=e.d;
     if(!isMatch) return `${dayHead}<article class="mc soon"><div class="mc-stage">${esc(span?e.t:(parts.slice(0,-1).join(" - ")||e.t))}${e.n?`<em>${esc(e.n)}</em>`:""}</div></article>`;
     if(up) soon++; else done++;
     /* live:true = مباراة جارية تُحدَّث نتيجتها أثناء اللعب (المتابعة المباشرة من SofaScore) — تُزال عند صافرة النهاية */
-    const st=(played&&e.live)?'<span class="mc-st live"><i></i>جارية الآن</span>':up?'<span class="mc-st soon">لم تبدأ</span>':'<span class="mc-st done">انتهت</span>';
-    const mid = played ? `<span class="mc-score" dir="ltr">${+e.ag} - ${+e.hg}</span>` : `<span class="mc-time" dir="ltr">${e.time?esc(e.time):"—"}</span>`;
-    /* خليجي 27: القناة والحكم من سجل البطولة (gulf.js) — منصور 2026-09-23 */
-    const gx=(extCompOf(e)==="gulf27" && window.GULF && GULF.extra) ? GULF.extra(e.d, a.n, b.n) : null;
-    return `${dayHead}<article class="mc${up?" soon":" done"}"${gx&&gx.k?` data-mopen="${esc(gx.k)}"`:""}>
+    const st=liveNow?'<span class="mc-st live"><i></i>جارية الآن</span>':up?'<span class="mc-st soon">لم تبدأ</span>':'<span class="mc-st done">انتهت</span>';
+    const mid = played ? `<span class="mc-score" dir="ltr">${+ea} - ${+eh}</span>` : `<span class="mc-time" dir="ltr">${e.time?esc(e.time):"—"}</span>`;
+    return `${dayHead}<article class="mc${up?" soon":liveNow?" live":" done"}"${gx&&gx.k?` data-mopen="${esc(gx.k)}"`:""}>
       <div class="mc-row">
         <div class="mc-team h">${extTeamCell(a)}</div>
         <div class="mc-mid">${mid}${st}</div>
@@ -2849,6 +2849,7 @@ function upcomingItems(){
   EXT_COMPS.forEach(c=>extEvents(c.id).forEach(e=>{
     if(e.to && e.to!==e.d) return;
     const parts=evParts(e); if(parts.length<2 || /نصف|نهائي|ربع|مباريات/.test(parts[0])) return;
+    if(c.id==="gulf27" && window.GULF && GULF.extra){ const gx=GULF.extra(e.d, parts[0], parts[1]); if(gx && gx.st==="done") return; }   /* خليجي 27 انتهت: تخرج من القادمة */
     if(e.live || (e.hg==null && e.d>=todayIso)) ext.push({d:e.d, time:String(e.time||""), ts:new Date(e.d+"T"+(normTime(e.time)||"23:59")+":00").getTime(), e, c});
   }));
   return [...loc,...ext].sort((a,b)=>String(a.d).localeCompare(String(b.d))||((a.ts||0)-(b.ts||0)));

@@ -122,7 +122,11 @@ const TV_G = "الكويت الرياضية · الكأس · شاشا · أبو�
 /* القناة والحكم لبطاقات «المباريات القادمة» (index.html): من سجل البطولة، وقبل وصوله القناة وحدها من الجدول الثابت */
 G.extra = (d, h, a) => { const same = (x,y) => (x===h&&y===a)||(x===a&&y===h);
   const m = DATA && DATA.matches.find(x=>x.date===d && same(x.home,x.away));
-  if(m) return {tv:m.tv||"", ref:m.ref||"", v:(m.refs||{}).var||"", k:(typeof matchKey==="function" ? matchKey(m) : "")};   /* k: يفتح صفحة المباراة */
+  if(m){ /* st: حالة المباراة كما في صفحتها (لم تبدأ/جارية/انتهت)، والنتيجة بترتيب البطاقة (h أولاً) */
+    const st = withGulf(()=>{ if(m.status==="ft") return "done"; if(["h1","ht","h2"].includes(m.status)) return "live";
+      const up = typeof isUpcoming==="function" ? isUpcoming(m) : true; if(up) return "soon"; return (typeof isLive==="function" && isLive(m)) ? "live" : "done"; });
+    const same = m.home===h;
+    return {tv:m.tv||"", ref:m.ref||"", v:(m.refs||{}).var||"", k:(typeof matchKey==="function" ? matchKey(m) : ""), st, hg:same?+m.hg:+m.ag, ag:same?+m.ag:+m.hg}; }
   return FIXTURES.some(x=>x[1]===d && same(x[3],x[4])) ? {tv:TV_G, ref:"", v:""} : null; };
 function addFixtures(d){
   FIXTURES.forEach(([r,dt,tm,h,a,v])=>{
