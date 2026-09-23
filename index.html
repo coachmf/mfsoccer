@@ -12958,6 +12958,7 @@ function playerRating(m, club, name){
 }
 /* تقييمات فريق في مباراة، مرتبة من الأعلى */
 function matchRatings(m, club){
+  if(isUpcoming(m)) return [];                 /* تشكيلة معلنة قبل الانطلاق: لا تقييمات حتى تُقام المباراة */
   const comp=compOf(m), men=new Set(xiNames(m.round, comp, club));
   matchSubs(m).filter(s=>s.club===club && s.in).forEach(s=>men.add(s.in));
   return [...men].map(n=>({n, c:club, r:playerRating(m, club, n)})).filter(x=>x.r).sort((a,b)=>b.r.v-a.r.v);
@@ -13333,8 +13334,9 @@ function mpTeamSection(m){
   return `<div class="mp-card mpt" style="${accentVars(club)}">${seg}${coachHTML}${subsBlock}${benchBlock}</div>`;
 }
 function mpLineups(m){
-  if(isUpcoming(m)) return `<div class="mp-card mp-empty">تُنشر التشكيلة بعد انطلاق المباراة.</div>`;
+  /* التشكيلة تظهر فور حفظها من المحرّر، حتى قبل الانطلاق (منصور 2026-09-23) — التقييمات وحدها تنتظر إقامة المباراة (matchRatings) */
   const h=mpTeamXI(m, m.home), a=mpTeamXI(m, m.away);
+  if(isUpcoming(m) && !h && !a) return `<div class="mp-card mp-empty">تُنشر التشكيلة فور إعلانها.</div>`;
   if(!h && !a && !matchSubs(m).length) return `<div class="mp-card mp-empty">لم تُسجَّل تشكيلة هذه المباراة بعد.</div>`;
   const both=mpBothXI(m);   /* الفريقان على ملعب واحد؛ إن نقصت تشكيلة أحدهما يبقى الملعب المنفصل للآخر */
   return `${both || (h+a)}${mpTeamSection(m)}`;
