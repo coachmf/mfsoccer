@@ -118,17 +118,12 @@ const FIXTURES = [
 ];
 /* القنوات الناقلة لكل مباريات البطولة (ملصق «القنوات الناقلة لبطولة خليجي 27»، منصور 2026-09-23) */
 const TV_G = "الكويت الرياضية · الكأس · شاشا · أبوظبي الرياضية · عمان الرياضية";
-/* طواقم التحكيم (ملصقات «حكام المباريات» اليومية) — المفتاح: الجولة|المضيف|الضيف */
-const REFS_G = {
-  "1|السعودية|الكويت": {ref:"جواو بينيرو", ar1:"بيدرو ريبيرو", ar2:"لوسيانو مايا", fourth:"محمد أحمد الشمري", var:"فو مينغ", avar:"حمزة الفارق"},
-  "1|العراق|عمان":     {ref:"عمر العلي", ar1:"محمد الحمادي", ar2:"جاسم العلي", fourth:"عمار محفوظ", var:"محمد عبيد", avar:"مشاري الشمري"}
-};
-/* القناة والحكم لبطاقات «المباريات القادمة» (index.html): من سجل البطولة، وقبل وصوله من الجدول الثابت */
+/* طواقم التحكيم: من الإدارة وحدها (تبويب «حكام الخليج») — تُحفظ في وثيقة البطولة، لا في الدوري (منصور 2026-09-23) */
+/* القناة والحكم لبطاقات «المباريات القادمة» (index.html): من سجل البطولة، وقبل وصوله القناة وحدها من الجدول الثابت */
 G.extra = (d, h, a) => { const same = (x,y) => (x===h&&y===a)||(x===a&&y===h);
   const m = DATA && DATA.matches.find(x=>x.date===d && same(x.home,x.away));
   if(m) return {tv:m.tv||"", ref:m.ref||"", v:(m.refs||{}).var||""};
-  const f = FIXTURES.find(x=>x[1]===d && same(x[3],x[4])); if(!f) return null;
-  const b = REFS_G[`${f[0]}|${f[3]}|${f[4]}`] || {}; return {tv:TV_G, ref:b.ref||"", v:b.var||""}; };
+  return FIXTURES.some(x=>x[1]===d && same(x[3],x[4])) ? {tv:TV_G, ref:"", v:""} : null; };
 function addFixtures(d){
   FIXTURES.forEach(([r,dt,tm,h,a,v])=>{
     if(d.matches.some(m=>+m.round===r && ((m.home===h&&m.away===a)||(m.home===a&&m.away===h)))) return;
@@ -150,8 +145,8 @@ function normalize(d){
   d.matches.forEach(m=>{ m.comp = COMP_G; Object.defineProperty(m, "__gulf", {value:true, enumerable:false, configurable:true});
     /* ما يُحفظ من الإدارة يتقدّم، عدا «كويت سبورت» وحدها (أُدخلت قبل ملصق القنوات، وهي نفسها «الكويت الرياضية» ضمن القائمة) */
     const tv = String(m.tv||"").trim(); if(!tv || tv==="كويت سبورت") m.tv = TV_G;
-    const b = REFS_G[`${m.round}|${m.home}|${m.away}`];
-    if(b){ if(!String(m.ref||"").trim()) m.ref = b.ref; const r = m.refs || (m.refs = {}); Object.keys(b).forEach(k=>{ if(k!=="ref" && !String(r[k]||"").trim()) r[k] = b[k]; }); } });
+    if(!m.refs || typeof m.refs!=="object") m.refs = {}; });
+  if(!Array.isArray(d.refpool)) d.refpool = [];                   /* قائمة حكام البطولة — مستقلة عن ALL.refpool (الدوري) */
   return d;
 }
 
@@ -208,6 +203,8 @@ setTimeout(()=>store.watch(d=>{
   if(d===undefined) return;
   if(EDIT_OPEN()) { PENDING = d; return; }         /* لا نقاطع محرّراً مفتوحاً على مباراة من البطولة */
   DATA = normalize(d); firstLoad = false; repaint();
+  /* بطاقات «المباريات القادمة»/«خليجي 27» تقرأ الحكم والقناة من هنا — نعيد رسمها متى وصلت البيانات */
+  try{ if(document.querySelector("#v-matches.on") && typeof renderMatches==="function" && (MXC==="upcoming" || MXC==="gulf27")) renderMatches(); }catch(e){}
 }), 0);
 
 /* ───────────── الحسابات (من بيانات البطولة وحدها) ───────────── */
@@ -604,6 +601,127 @@ function adminHTML(){
     ${squadAdminHTML()}</div>`;
 }
 
+/* ───────────── تبويب «حكام الخليج» في الإدارة (منصور 2026-09-23) ─────────────
+   منفصل تماماً عن حكام الدوري: الطواقم في m.ref/m.refs لمباريات البطولة، والقائمة في DATA.refpool —
+   كلها في وثيقة seasons/gulf27. لا يقرأ ALL ولا يكتب فيه، ولا يظهر أي اسم هنا في قائمة حكام الدوري أو طواقمه.
+   الحفظ يقرأ آخر نسخة من السحابة أولاً ثم يطبّق التعديل عليها (لا يمسح ما أدخله غيرك أثناء المباراة). */
+const GREF_ROLES = [["ref","حكم الساحة","ref"],["ar1","المساعد الأول","ar"],["ar2","المساعد الثاني","ar"],["fourth","الحكم الرابع","fourth"],["var","حكم الفيديو (VAR)","var"],["avar","مساعد حكم الفيديو (AVAR)","avar"]];
+const GREF_CATS = [["ref","حكم ساحة"],["ar","حكم مساعد"],["fourth","حكم رابع"],["var","حكم فيديو VAR"],["avar","مساعد فيديو AVAR"]];
+const gKey = m => `${m.round}|${m.home}|${m.away}`;
+const gClean = v => String(v||"").trim().replace(/\s+/g," ");
+let GRE = null;   /* {round, crews:{key:{ref,ar1,…}}, pool:[{name,roles}], poolDirty} */
+function grePool(){           /* القائمة المحفوظة + أسماء مستنتجة من طواقم البطولة */
+  const map = new Map(), add = (n,c) => { n = gClean(n); if(!n || n==="لا يوجد") return; if(!map.has(n)) map.set(n, new Set()); if(c) map.get(n).add(c); };
+  DATA.matches.forEach(m=>{ add(m.ref,"ref"); GREF_ROLES.slice(1).forEach(([k,,c])=>add((m.refs||{})[k], c)); });
+  const out = new Map([...map].map(([n,set])=>[n,{name:n, roles:[...set]}]));
+  (DATA.refpool||[]).forEach(r=>{ const n = gClean(r.name); if(n) out.set(n, {name:n, roles:(r.roles||[]).filter(c=>GREF_CATS.some(([k])=>k===c))}); });
+  return [...out.values()].filter(r=>r.roles.length).sort((a,b)=>a.name.localeCompare(b.name,"ar"));   /* بلا فئات = محذوف من القائمة */
+}
+function greLoad(keepRound){
+  const ms = DATA.matches, rounds = [...new Set(ms.map(m=>+m.round))].sort((a,b)=>a-b);
+  let round = keepRound;
+  if(!rounds.includes(round)){ const up = ms.filter(m=>isUp(m)).map(m=>+m.round); round = up.length ? Math.min(...up) : (rounds[rounds.length-1]||1); }
+  const crews = {}; ms.forEach(m=>{ const c = {ref:m.ref||""}; GREF_ROLES.slice(1).forEach(([k])=>c[k] = (m.refs||{})[k]||""); crews[gKey(m)] = c; });
+  GRE = {round, crews, pool:grePool(), poolDirty:false, removed:[], dirty:new Set()};
+}
+/* وصلت نسخة جديدة من السحابة: نحدّث ما لم يُعدَّل هنا ولم يُحفظ بعد */
+function greRefresh(){
+  if(!GRE) return;
+  DATA.matches.forEach(m=>{ const k = gKey(m); if(GRE.dirty.has(k)) return; const c = {ref:m.ref||""}; GREF_ROLES.slice(1).forEach(([rk])=>c[rk] = (m.refs||{})[rk]||""); GRE.crews[k] = c; });
+  if(!GRE.poolDirty) GRE.pool = grePool();
+}
+function gulfRefAdminHTML(){
+  if(!DATA) DATA = normalize(null);
+  if(!GRE) greLoad();
+  const rounds = [...new Set(DATA.matches.map(m=>+m.round))].sort((a,b)=>a-b);
+  const L = DATA.matches.filter(m=>+m.round===GRE.round).sort((a,b)=>String(a.date).localeCompare(String(b.date))||String(a.time).localeCompare(String(b.time)));
+  const rl = r => r<=3 ? `ج${r}` : r===4 ? "نصف النهائي" : "النهائي";
+  const box = (c,on,attr) => `<label class="refcat${on?" on":""}"><input type="checkbox" ${attr} ${on?"checked":""}>${GREF_CATS.find(x=>x[0]===c)[1]}</label>`;
+  return `<div id="gulfRefAdmin"><h2 class="sec">حكام كأس الخليج</h2>
+    <div class="card pad">
+      <p class="hint" style="margin:0 0 12px">طواقم مباريات البطولة وقائمة حكامها — منفصلة تماماً عن حكام الدوري الكويتي: تُحفظ في وثيقة البطولة وحدها، فلا تظهر في قائمة حكام الدوري ولا طواقمه ولا إحصاءاته.</p>
+      <h3 class="gre-h">طواقم المباريات</h3>
+      <div class="crew-rounds">${rounds.map(r=>`<button class="seg" type="button" data-gre="round" data-r="${r}" aria-pressed="${r===GRE.round}">${rl(r)}</button>`).join("")}</div>
+      ${GREF_CATS.map(([c])=>`<datalist id="greL-${c}">${GRE.pool.filter(r=>r.roles.includes(c)).map(r=>`<option value="${H(r.name)}">`).join("")}</datalist>`).join("")}
+      ${L.length ? L.map(m=>{ const k = gKey(m), c = GRE.crews[k] || {}; return `<div class="crew-row">
+          <div class="crew-hd">${flagImg(m.home,"sm")}<b>${H(m.home)}</b><span>×</span><b>${H(m.away)}</b>${flagImg(m.away,"sm")}<small dir="ltr">${H(m.date||"")}${m.time?` · ${H(m.time)}`:""}</small></div>
+          <div class="crew-grid">${GREF_ROLES.map(([rk,t,cat])=>`<label><span>${t}</span><input class="refin" data-gre="crew" data-k="${H(k)}" data-rk="${rk}" list="greL-${cat}" value="${H(c[rk]||"")}" placeholder="—" autocomplete="off"></label>`).join("")}</div>
+          <button class="btn ghost" type="button" data-gre="savecrew" data-k="${H(k)}">حفظ طاقم المباراة</button></div>`; }).join("")
+        : `<p class="hint" style="margin:0">لا مباريات في هذه الجولة.</p>`}
+    </div>
+    <div class="card pad" style="margin-top:12px">
+      <h3 class="gre-h">قائمة حكام البطولة</h3>
+      <p class="hint" style="margin:0 0 10px">كل حكم يظهر اقتراحاً في خانة فئته بطواقم البطولة فقط. من أدار مباراة في البطولة يُضاف تلقائياً.</p>
+      <div class="refadd">
+        <input id="greNewName" class="refin" placeholder="اسم الحكم" autocomplete="off">
+        <div class="refcats">${GREF_CATS.map(([c])=>box(c,false,`data-grenew="${c}"`)).join("")}</div>
+        <button class="btn" type="button" data-gre="add">إضافة الحكم</button>
+      </div>
+      <div class="reflist">${GRE.pool.map((r,i)=>`<div class="refrow"><b>${H(r.name)}</b>
+          <div class="refcats">${GREF_CATS.map(([c])=>box(c,r.roles.includes(c),`data-gre="role" data-i="${i}" data-c="${c}"`)).join("")}</div>
+          <button class="dl" type="button" data-gre="del" data-i="${i}">حذف</button></div>`).join("") || `<p class="hint" style="margin:0">القائمة فارغة.</p>`}</div>
+      <div style="height:12px"></div>
+      <button class="btn" type="button" data-gre="savepool"${GRE.poolDirty?"":" disabled"}>حفظ قائمة الحكام</button>
+    </div></div>`;
+}
+function paintGulfRefAdmin(){
+  const box = document.getElementById("gulfRefAdmin"); if(!box) return;
+  if(box.contains(document.activeElement) && document.activeElement.tagName==="INPUT" && document.activeElement.type!=="checkbox") return;   /* لا نقاطع الكتابة */
+  const tmp = document.createElement("div"); tmp.innerHTML = gulfRefAdminHTML(); box.replaceWith(tmp.firstElementChild);
+}
+/* يقرأ آخر نسخة من السحابة، يطبّق التعديل عليها وحدها، ثم يحفظ */
+async function saveGulfFresh(mutate){
+  let fresh = null;
+  if(!TEST && typeof fbDb!=="undefined" && fbDb){ const s = await fbDb.collection("seasons").doc(DOC_ID).get(); fresh = s.exists ? s.data() : null; }
+  const d = normalize(fresh || JSON.parse(JSON.stringify(DATA)));
+  mutate(d); await store.save(d); DATA = d;
+}
+document.addEventListener("input", e=>{
+  const el = e.target.closest && e.target.closest('#gulfRefAdmin [data-gre="crew"]'); if(!el || !GRE) return;
+  (GRE.crews[el.dataset.k] ||= {})[el.dataset.rk] = el.value; GRE.dirty.add(el.dataset.k);
+}, true);
+document.addEventListener("change", e=>{
+  const el = e.target.closest && e.target.closest("#gulfRefAdmin input[type=checkbox]"); if(!el || !GRE) return;
+  el.parentElement.classList.toggle("on", el.checked);
+  if(el.dataset.gre==="role"){ const r = GRE.pool[+el.dataset.i]; if(!r) return; const c = el.dataset.c;
+    r.roles = el.checked ? [...new Set([...r.roles, c])] : r.roles.filter(x=>x!==c); GRE.poolDirty = true;
+    const sv = document.querySelector('#gulfRefAdmin [data-gre="savepool"]'); if(sv) sv.disabled = false; }
+}, true);
+document.addEventListener("click", async e=>{
+  const b = e.target.closest("#gulfRefAdmin [data-gre]"); if(!b || !GRE || b.tagName==="INPUT") return;
+  const a = b.dataset.gre;
+  if(a==="round"){ GRE.round = +b.dataset.r; paintGulfRefAdmin(); return; }
+  if(a==="savecrew"){
+    const k = b.dataset.k, c = GRE.crews[k] || {};
+    b.disabled = true; b.textContent = "جارٍ الحفظ…";
+    try{
+      let found = null;
+      await saveGulfFresh(d=>{ const m = d.matches.find(x=>gKey(x)===k); if(!m) return; found = m;
+        m.ref = gClean(c.ref); m.refs = {}; GREF_ROLES.slice(1).forEach(([rk])=>{ const v = gClean(c[rk]); if(v) m.refs[rk] = v; }); });
+      if(!found) throw new Error("لم تُعثر على المباراة");
+      toast(`حُفظ طاقم ${found.home} × ${found.away} ✅`,"ok"); GRE.dirty.delete(k);
+    }catch(x){ toast("تعذّر الحفظ: "+(x.code||x.message),"err"); }
+    repaint(); return;
+  }
+  if(a==="add"){
+    const inp = document.getElementById("greNewName"), n = gClean(inp && inp.value);
+    const roles = [...document.querySelectorAll("#gulfRefAdmin [data-grenew]:checked")].map(x=>x.dataset.grenew);
+    if(!n){ toast("اكتب اسم الحكم","err"); return; } if(!roles.length){ toast("اختر فئة واحدة على الأقل","err"); return; }
+    const ex = GRE.pool.find(r=>r.name===n); if(ex) ex.roles = [...new Set([...ex.roles, ...roles])]; else GRE.pool.push({name:n, roles});
+    GRE.pool.sort((p,q)=>p.name.localeCompare(q.name,"ar")); GRE.poolDirty = true;
+    toast(ex?"أُضيفت الفئات — اضغط «حفظ قائمة الحكام»":"أُضيف الحكم — اضغط «حفظ قائمة الحكام»","ok"); paintGulfRefAdmin(); return;
+  }
+  if(a==="del"){ const r = GRE.pool[+b.dataset.i]; if(!r || !confirm(`حذف «${r.name}» من قائمة حكام البطولة؟ (لا يغيّر الطواقم المحفوظة)`)) return;
+    GRE.removed.push(r.name); GRE.pool.splice(+b.dataset.i, 1); GRE.poolDirty = true; paintGulfRefAdmin(); return; }
+  if(a==="savepool"){
+    b.disabled = true; b.textContent = "جارٍ الحفظ…";
+    const pool = [...GRE.pool.map(r=>({name:r.name, roles:[...r.roles]})), ...GRE.removed.filter(n=>!GRE.pool.some(r=>r.name===n)).map(n=>({name:n, roles:[]}))];
+    try{ await saveGulfFresh(d=>{ d.refpool = pool; }); toast("حُفظت قائمة حكام البطولة ✅","ok"); GRE.poolDirty = false; GRE.removed = []; }
+    catch(x){ toast("تعذّر الحفظ: "+(x.code||x.message),"err"); }
+    repaint(); return;
+  }
+}, true);
+
 /* قوائم المنتخبات: الأرقام والأسماء والمراكز، إضافة وحذف — مسودة حتى الضغط على «حفظ القائمة» */
 let SQE = null;   /* {team, rows:[{n,s,p,o,f}], dirty, err} ؛ o = الاسم الأصلي لتتبّع إعادة التسمية */
 const SQ_POS = [["GK","حارس"],["D","دفاع"],["M","وسط"],["F","هجوم"],["","—"]];
@@ -680,6 +798,7 @@ function paintAdmin(){
   const box = document.getElementById("gulfAdmin"); if(!box) return;
   if(SQE && !SQE.dirty) sqeLoad(SQE.team);
   const tmp = document.createElement("div"); tmp.innerHTML = adminHTML(); box.replaceWith(tmp.firstElementChild);
+  greRefresh(); paintGulfRefAdmin();
 }
 function injectAdmin(){
   const v = document.getElementById("v-admin"); if(!v || document.getElementById("gulfAdmin")) return;
@@ -687,6 +806,7 @@ function injectAdmin(){
   const ma = document.getElementById("matchAdmin"); if(!ma) return;
   const wrap = document.createElement("div"); wrap.innerHTML = adminHTML();
   v.appendChild(wrap.firstElementChild);
+  if(!document.getElementById("gulfRefAdmin")){ greRefresh(); const w2 = document.createElement("div"); w2.innerHTML = gulfRefAdminHTML(); v.appendChild(w2.firstElementChild); }
 }
 document.addEventListener("click", async e=>{
   const b = e.target.closest("[data-gadm]"); if(!b) return;

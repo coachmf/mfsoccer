@@ -150,3 +150,6 @@ html[data-theme="dark"] .gsq-row input,html[data-theme="dark"] .gsq-row select{b
 .gc-cp-lg{display:flex;gap:16px;justify-content:center;margin-top:10px;font-size:.72rem;color:var(--slate)}
 .gc-cp-lg i{display:inline-block;width:9px;height:12px;border-radius:2px;margin-inline-end:5px;vertical-align:-2px}
 html[data-theme="dark"] .gc-cp-c .bar{background:#16294A}
+/* تبويب «حكام الخليج» في الإدارة */
+.gre-h{margin:0 0 6px;font:800 .95rem var(--display);color:var(--head)}
+#gulfRefAdmin .crew-hd .gc-flag{width:24px;height:auto;border-radius:3px}
