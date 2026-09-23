@@ -2945,6 +2945,12 @@ function isUpcoming(m){
   const comp=compOf(m);
   return !(xiNames(m.round, comp, m.home).length || xiNames(m.round, comp, m.away).length);
 }
+/* انتهت المباراة: «انتهت» صراحة، أو أُقيمت وخرجت من نافذة اللعب (ساعتان) ولم تُعلَّم بمرحلة جارية */
+function matchOver(m){
+  if(!m) return false; if(m.status==="ft") return true;
+  if(["pre","h1","ht","h2"].includes(m.status)) return false;
+  return !isUpcoming(m) && !isLive(m);
+}
 function isLive(m){
   if(isUpcoming(m)) return false;
   const k=kickoffTS(m);
@@ -6844,8 +6850,10 @@ function goalsTimeline(m,gs,mc){
       <div class="tl-side l">${isH?"":body}</div>
     </div>`);
   });
-  if(!htDone) rows.push(`<div class="tl-mark"><span>الشوط الأول <b dir="ltr">${h} - ${a}</b></span></div>`);
-  rows.push(`<div class="tl-mark end"><span>النهاية <b dir="ltr">${m.hg??h} - ${m.ag??a}</b></span></div>`);
+  /* الفواصل حسب حالة المباراة (منصور 2026-09-23): أثناء اللعب لا «النهاية»، ولا «الشوط الأول» قبل انتهائه */
+  const over=matchOver(m), pastHT=over || m.status==="ht" || m.status==="h2";
+  if(!htDone && pastHT) rows.push(`<div class="tl-mark"><span>الشوط الأول <b dir="ltr">${h} - ${a}</b></span></div>`);
+  if(over) rows.push(`<div class="tl-mark end"><span>النهاية <b dir="ltr">${m.hg??h} - ${m.ag??a}</b></span></div>`);
   return `<div class="tl"><div class="tl-head"><span>${esc(m.home)}</span><span>${esc(m.away)}</span></div>${rows.join("")}</div>`;
 }
 
@@ -12961,7 +12969,7 @@ function playerRating(m, club, name){
 }
 /* تقييمات فريق في مباراة، مرتبة من الأعلى */
 function matchRatings(m, club){
-  if(isUpcoming(m)) return [];                 /* تشكيلة معلنة قبل الانطلاق: لا تقييمات حتى تُقام المباراة */
+  if(!matchOver(m)) return [];                 /* لا تقييمات (ولا «أفضل لاعب») قبل صافرة النهاية — قبل الانطلاق ولا أثناء اللعب */
   const comp=compOf(m), men=new Set(xiNames(m.round, comp, club));
   matchSubs(m).filter(s=>s.club===club && s.in).forEach(s=>men.add(s.in));
   return [...men].map(n=>({n, c:club, r:playerRating(m, club, n)})).filter(x=>x.r).sort((a,b)=>b.r.v-a.r.v);
