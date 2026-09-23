@@ -77,6 +77,9 @@ G.flagUrl = flagUrl;
 const FACES = {};
 /* الكويت: وجوه بقميص المنتخب من ملصق «قائمة الأزرق — معسكر الدوحة» (لا صور الأندية) */
 FACES["الكويت"] = {"راكان السعيد": "assets/gulf/kw/1", "عبدالرحمن الفضلي": "assets/gulf/kw/2", "سعود الحوشان": "assets/gulf/kw/3", "خالد الرشيدي": "assets/gulf/kw/4", "فهد الهاجري": "assets/gulf/kw/5", "خالد صباح": "assets/gulf/kw/6", "يوسف الحقان": "assets/gulf/kw/7", "عبدالعزيز مهران": "assets/gulf/kw/8", "عبدالوهاب العوضي": "assets/gulf/kw/9", "راشد الدوسري": "assets/gulf/kw/10", "معاذ الظفيري": "assets/gulf/kw/11", "محسن فلاح": "assets/gulf/kw/12", "رضا هاني": "assets/gulf/kw/13", "خالد المرشد": "assets/gulf/kw/14", "جاسم المطر": "assets/gulf/kw/15", "أحمد الظفيري": "assets/gulf/kw/16", "عذبي شهاب": "assets/gulf/kw/17", "عبدالله القرزعي": "assets/gulf/kw/18", "ناصر فالح": "assets/gulf/kw/19", "مهدي دشتي": "assets/gulf/kw/20", "عيد الرشيدي": "assets/gulf/kw/21", "يوسف ماجد": "assets/gulf/kw/22", "محمد دحام": "assets/gulf/kw/23", "مبارك الفنيني": "assets/gulf/kw/24", "عبدالله العوضي": "assets/gulf/kw/25", "شبيب الخالدي": "assets/gulf/kw/26", "يوسف ناصر": "assets/gulf/kw/27"};
+/* العراق: لاعبان أُضيفا من الإدارة (قوائم المنتخبات) — صورتاهما من منصور 2026-09-23 */
+FACES["العراق"] = {"مصطفى قابيل": "assets/gulf/iq/27", "حسن عبدالكريم": "assets/gulf/iq/28"};
+FACES["عمان"] = {"عبدالسلام الشكيلي": "assets/gulf/om/29"};
 function defaultSquads(){
   const out = {};
   TEAMS.forEach(c=>{
