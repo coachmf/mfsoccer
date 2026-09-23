@@ -2158,7 +2158,7 @@ main{padding-bottom:48px}
 <script src="admin-tabs.js?v=3" defer></script>
 <!-- كأس الخليج 27: قسم مستقل ببيانات منفصلة (seasons/gulf27) -->
 <link rel="stylesheet" href="gulf.css?v=13">
-<script src="gulf.js?v=21" defer></script>
+<script src="gulf.js?v=22" defer></script>
 <style>
 /* تبويب التحليل — التصميم الجديد (منصور 2026-09-17) */
 .an{--an-card:#0F1E35;--an-line:#213653;--an-txt:#EDF3FA;--an-mut:#8FA6C4;--an-track:rgba(143,166,196,.16);--an-acc:#2EB0F0;--an-acc2:#1878BE}
@@ -2824,7 +2824,7 @@ function extCardsHTML(evs, compName){
     const mid = played ? `<span class="mc-score" dir="ltr">${+e.ag} - ${+e.hg}</span>` : `<span class="mc-time" dir="ltr">${e.time?esc(e.time):"—"}</span>`;
     /* خليجي 27: القناة والحكم من سجل البطولة (gulf.js) — منصور 2026-09-23 */
     const gx=(extCompOf(e)==="gulf27" && window.GULF && GULF.extra) ? GULF.extra(e.d, a.n, b.n) : null;
-    return `${dayHead}<article class="mc${up?" soon":" done"}">
+    return `${dayHead}<article class="mc${up?" soon":" done"}"${gx&&gx.k?` data-mopen="${esc(gx.k)}"`:""}>
       <div class="mc-row">
         <div class="mc-team h">${extTeamCell(a)}</div>
         <div class="mc-mid">${mid}${st}</div>

@@ -122,7 +122,7 @@ const TV_G = "الكويت الرياضية · الكأس · شاشا · أبو�
 /* القناة والحكم لبطاقات «المباريات القادمة» (index.html): من سجل البطولة، وقبل وصوله القناة وحدها من الجدول الثابت */
 G.extra = (d, h, a) => { const same = (x,y) => (x===h&&y===a)||(x===a&&y===h);
   const m = DATA && DATA.matches.find(x=>x.date===d && same(x.home,x.away));
-  if(m) return {tv:m.tv||"", ref:m.ref||"", v:(m.refs||{}).var||""};
+  if(m) return {tv:m.tv||"", ref:m.ref||"", v:(m.refs||{}).var||"", k:(typeof matchKey==="function" ? matchKey(m) : "")};   /* k: يفتح صفحة المباراة */
   return FIXTURES.some(x=>x[1]===d && same(x[3],x[4])) ? {tv:TV_G, ref:"", v:""} : null; };
 function addFixtures(d){
   FIXTURES.forEach(([r,dt,tm,h,a,v])=>{
