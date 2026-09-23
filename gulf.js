@@ -288,7 +288,7 @@ function gulfExtraHTML(){
   const tt = TEAMS.map(c=>{ const f = GOALS.filter(g=>g.sc===c), a = GOALS.filter(g=>g.cd===c);
     return {c, f:f.length, a:a.length, h1:f.filter(g=>first.includes(period(g))).length, h2:f.filter(g=>!first.includes(period(g))).length,
       lt:f.filter(g=>late.includes(period(g))).length, lta:a.filter(g=>late.includes(period(g))).length,
-      sp:f.filter(g=>isSetPiece(g)).length, hd:f.filter(g=>g.bp==="الرأس").length}; }).filter(x=>x.f||x.a).sort((a,b)=>b.f-a.f || a.a-b.a);
+      sp:f.filter(g=>isSetPiece(g)).length, hd:f.filter(g=>isHeader(g)).length}; }).filter(x=>x.f||x.a).sort((a,b)=>b.f-a.f || a.a-b.a);
   out += sec("توقيت أهداف المنتخبات وأسلوبها", "القاتلة = بعد الدقيقة 75. الثابتة = ركنية، ركلة حرة، ركلة جزاء، رمية.", tt.length
     ? `<div class="gc-tw"><table class="gc-tbl"><thead><tr><th class="tl">المنتخب</th><th>له</th><th>ش1</th><th>ش2</th><th>قاتلة له</th><th>قاتلة عليه</th><th>ثابتة</th><th>رأسية</th></tr></thead>
       <tbody>${tt.map(x=>`<tr><td class="tl"><span class="gc-tn">${flagImg(x.c)}${H(x.c)}</span></td><td><b>${x.f}</b></td><td>${x.h1}</td><td>${x.h2}</td><td>${x.lt}</td><td>${x.lta}</td><td>${x.sp}</td><td>${x.hd}</td></tr>`).join("")}</tbody></table></div>`
