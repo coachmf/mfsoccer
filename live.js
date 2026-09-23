@@ -672,7 +672,9 @@ LV.util = {H, clone, uid, tsMs, sortEvents, activeEvents, teamName, evTitle, sec
 (function(){
 const LV = window.LIVE, U = LV.util, H = U.H;
 LV.idx = {};                                     /* فهرس المباريات التي لها وثيقة مباشرة */
-const liveOf = m => m ? LV.idx[LV.idOf(LV.keyOf(m))] : null;
+/* كأس الخليج بالإدخال اليدوي فقط (منصور 2026-09-23): لا بث ولا تبويب «مباشر» لمبارياته حتى لو وُجدت وثيقة بث قديمة */
+const isGulfM = m => !!(m && (m.__gulf || String(m.comp||"")==="كأس الخليج"));
+const liveOf = m => (m && !isGulfM(m)) ? LV.idx[LV.idOf(LV.keyOf(m))] : null;
 LV.liveOf = liveOf;
 let PUB = null;                                  /* {id, m, doc, unsub, untick, seen, filter} */
 

@@ -570,14 +570,14 @@ function adminHTML(){
   const ms = DATA.matches.slice().sort((a,b)=>(a.round-b.round)||String(a.date).localeCompare(String(b.date)));
   return `<div id="gulfAdmin"><h2 class="sec">كأس الخليج 27</h2>
     <div class="card pad">
-      <p class="hint" style="margin:0 0 12px">مباريات البطولة وتشكيلاتها وأحداثها — بالإدخال اليدوي أو اللعب الفعلي. تُحفظ في وثيقة مستقلة، فلا تدخل إحصاءات الدوري ولا الفانتسي.</p>
+      <p class="hint" style="margin:0 0 12px">مباريات البطولة وتشكيلاتها وأحداثها — بالإدخال اليدوي فقط (لا لعب فعلي في هذه البطولة). تُحفظ في وثيقة مستقلة، فلا تدخل إحصاءات الدوري ولا الفانتسي.</p>
       <button class="btn" data-gadm="new">+ إضافة مباراة في البطولة</button>
       <div class="gadm-list">${ms.length?ms.map(m=>`<div class="gadm-row">
         <span class="t">${flagImg(m.home,"sm")}<b>${H(m.home)}</b></span>
         <span class="s">${(m.hg+m.ag)||m.status==="ft"?`${m.hg} - ${m.ag}`:(m.time?H(m.time):"—")}</span>
         <span class="t a"><b>${H(m.away)}</b>${flagImg(m.away,"sm")}</span>
         <span class="meta">${m.round<=3?`ج${m.round}`:m.round===4?"نصف النهائي":"النهائي"} · <bdi dir="ltr">${H(m.date||"")}</bdi>${m.rec==="live"?` · <b class="lvtag">مرتبطة باللعب الفعلي</b>`:""}</span>
-        <span class="btns"><button class="am-live" data-gadm="live" data-k="${H(LIVE?LIVE.keyOf(m):"")}">لعب فعلي</button><button data-gadm="edit" data-k="${H(LIVE?LIVE.keyOf(m):"")}">إدخال يدوي</button><button class="dl" data-gadm="rm" data-k="${H(LIVE?LIVE.keyOf(m):"")}">حذف</button></span>
+        <span class="btns"><button data-gadm="edit" data-k="${H(LIVE?LIVE.keyOf(m):"")}">إدخال يدوي</button><button class="dl" data-gadm="rm" data-k="${H(LIVE?LIVE.keyOf(m):"")}">حذف</button></span>
       </div>`).join(""):`<p class="hint">لا مباريات بعد.</p>`}</div>
       <p class="hint" style="margin:12px 0 0">الجولات 1–3 = دور المجموعات، 4 = نصف النهائي، 5 = النهائي. المنتخبات والقوائم من الملصقات الرسمية.</p>
     </div>
