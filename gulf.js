@@ -208,7 +208,8 @@ setTimeout(()=>store.watch(d=>{
 }), 0);
 
 /* ───────────── الحسابات (من بيانات البطولة وحدها) ───────────── */
-const isUp = m => typeof isUpcoming==="function" ? isUpcoming(m) : !(m.hg||m.ag);
+/* isUpcoming يقرأ الأهداف والتشكيلات من السياق الحالي — داخل withGulf حتى تُعدّ مباراة 0-0 مُدخلة تشكيلتها «مُقامة» (لا من بيانات الدوري) */
+const isUp = m => typeof isUpcoming==="function" ? withGulf(()=>isUpcoming(m)) : !(m.hg||m.ag);
 function played(){ return (DATA?DATA.matches:[]).filter(m=>!isUp(m) || m.status==="ft" || (m.hg+m.ag)>0); }
 function table(g){
   const rows = {}; TEAMS.filter(c=>T[c].g===g).forEach(c=>rows[c]={c, p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0});
@@ -236,9 +237,23 @@ function statsTabHTML(){
     <tbody>${teamRows.map(x=>`<tr><td class="tl"><span class="gc-tn">${flagImg(x.c)}${H(x.c)}</span></td><td>${x.p}</td><td>${x.gf}</td><td>${x.ga}</td><td>${x.cs}</td><td>${x.y}</td><td>${x.r}</td></tr>`).join("")}</tbody></table></div></section>`
     : `<section class="gc-card"><h3>الفرق</h3><div class="gc-empty">لم تُلعب مباريات بعد.</div></section>`;
   /* «من اللعب الفعلي» أُزيل (منصور 2026-09-23): البطولة كلها بالإدخال اليدوي */
-  return teamTbl + leadersHTML();
+  return teamTbl + leadersHTML() + `<section class="gc-card"><h3>الحكام</h3>${refTableHTML(true) || `<div class="gc-empty">لم يُدخل حكم أي مباراة مُقامة بعد.</div>`}</section>`;
 }
 const played_ = () => played();
+/* الحكام (منصور 2026-09-23): كل حكم ساحة على كل مبارياته المُقامة في البطولة — المباريات والإنذارات والطرد (الإنذار الثاني طرد).
+   من سجل البطولة وحده (DATA)، فيتطابق الرقم في «الإحصاءات» و«التحليل». */
+function refStats(){
+  const rf = {};
+  played().forEach(m=>{ const n = String(m.ref||"").trim(); if(!n || n==="لا يوجد") return; const e = rf[n] ||= {n, m:0, y:0, r:0, games:[]};
+    const cs = (DATA.cards||[]).filter(x=>+x.r===+m.round && (x.club===m.home||x.club===m.away));
+    e.m++; e.y += cs.filter(x=>!isRed(x.type)).length; e.r += cs.filter(x=>isRed(x.type)).length; e.games.push(`${m.home} × ${m.away}`); });
+  return Object.values(rf).sort((a,b)=>b.m-a.m || (b.y+b.r)-(a.y+a.r) || a.n.localeCompare(b.n,"ar"));
+}
+function refTableHTML(withGames){
+  const RF = refStats(); if(!RF.length) return "";
+  return `<div class="gc-tw"><table class="gc-tbl"><thead><tr><th class="tl">الحكم</th><th>مباريات</th><th>إنذار</th><th>طرد</th><th>بطاقات/مباراة</th></tr></thead>
+    <tbody>${RF.map(x=>`<tr><td class="tl"><b>${H(x.n)}</b>${withGames?`<small class="gc-rg">${x.games.map(H).join("، ")}</small>`:""}</td><td>${x.m}</td><td>${x.y}</td><td>${x.r}</td><td>${((x.y+x.r)/x.m).toFixed(1)}</td></tr>`).join("")}</tbody></table></div>`;
+}
 
 /* ───────────── تبويب «التحليل» (منصور 2026-09-23) ─────────────
    البطولة كلها بالإدخال اليدوي (بلا لعب فعلي)، فالتحليل كله من سجل البطولة اليدوي فقط:
@@ -303,13 +318,7 @@ function gulfExtraHTML(){
     : nil("لا بطاقات مسجّلة بعد."));
 
   /* الحكام */
-  const rf = {}; ms.forEach(m=>{ const n = String(m.ref||"").trim(); if(!n) return; const e = rf[n] ||= {n, m:0, y:0, r:0};
-    const cs = CARDS.filter(x=>x.r===m.round && (x.club===m.home||x.club===m.away)); e.m++; e.y += cs.filter(x=>!isRed(x.type)).length; e.r += cs.filter(x=>isRed(x.type)).length; });
-  const RF = Object.values(rf).sort((a,b)=>b.m-a.m || (b.y+b.r)-(a.y+a.r));
-  out += sec("الحكام", "حكم الساحة كما أُدخل في المباراة، وبطاقات مبارياته.", RF.length
-    ? `<div class="gc-tw"><table class="gc-tbl"><thead><tr><th class="tl">الحكم</th><th>مباريات</th><th>إنذار</th><th>طرد</th><th>بطاقات/مباراة</th></tr></thead>
-      <tbody>${RF.map(x=>`<tr><td class="tl">${H(x.n)}</td><td>${x.m}</td><td>${x.y}</td><td>${x.r}</td><td>${((x.y+x.r)/x.m).toFixed(1)}</td></tr>`).join("")}</tbody></table></div>`
-    : nil("لم يُدخل حكم أي مباراة بعد."));
+  out += sec("الحكام", "حكم الساحة كما أُدخل في المباراة، وبطاقات مبارياته.", refTableHTML() || nil("لم يُدخل حكم أي مباراة بعد."));
 
   /* الخطط المستخدمة */
   /* المباريات المُقامة فقط (الإدارة قد تُدخل الخطة قبل المباراة)، وصيغة خطة صحيحة، ومرة واحدة لكل منتخب في الجولة */

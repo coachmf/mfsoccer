@@ -153,3 +153,4 @@ html[data-theme="dark"] .gc-cp-c .bar{background:#16294A}
 /* تبويب «حكام الخليج» في الإدارة */
 .gre-h{margin:0 0 6px;font:800 .95rem var(--display);color:var(--head)}
 #gulfRefAdmin .crew-hd .gc-flag{width:24px;height:auto;border-radius:3px}
+.gc-rg{display:block;font-size:.64rem;color:var(--slate);font-weight:600;margin-top:2px}
