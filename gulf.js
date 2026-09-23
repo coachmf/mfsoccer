@@ -166,8 +166,8 @@ function withGulf(fn){
     ALL = DATA; SQUADS = DATA.squads; CLUBS = TEAMS.slice(); COMP = "الكل";
     const L = {}; TEAMS.forEach(c=>L[c]=flagUrl(c)); LOGOS = L; LSCALE = {};
     photoCut = (name, club) => { if(!name) return null;
+      const e = (DATA.squads[club]||[]).find(x=>x && x.n===name); if(e && e.f) return e.f;   /* الصورة المحفوظة مع اللاعب أولاً — للكويت أيضاً */
       if(club==="الكويت" && !(FACES[club]||{})[name]){ const lc = leagueClubOf(saved, name); return lc ? saved.pc(name, lc) : null; }
-      const e = (DATA.squads[club]||[]).find(x=>x && x.n===name); if(e && e.f) return e.f;
       return (FACES[club]||{})[name] || null; };
     natFlag = () => ""; window.CLUB_COLORS = NAT_COLORS;
     MATCHES = DATA.matches.slice(); GOALS = DATA.goals.slice(); PENS = DATA.pens.slice(); CARDS = DATA.cards.slice();
