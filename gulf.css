@@ -110,7 +110,7 @@ html[data-theme="dark"] .gc-tabs button[aria-selected="true"]{background:#0a4a9c
 .gc-ls-r{display:grid;grid-template-columns:110px 1fr 32px;align-items:center;gap:8px;padding:3px 0;font-size:.76rem;color:var(--head)}
 .gc-ls-r i{display:block;height:8px;border-radius:5px;background:linear-gradient(90deg,#1f6fd0,#5fb2e8)}
 .gc-ls-r b{text-align:center;font-variant-numeric:tabular-nums}
-@media (max-width:560px){ .gc-tabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px} .gc-tabs button{padding:9px 4px;font-size:.76rem} }
+@media (max-width:560px){ .gc-tabs{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:4px} .gc-tabs button{padding:9px 2px;font-size:.7rem} }
 /* الإدارة: قوائم المنتخبات */
 #gsqAdmin .gsq-teams{margin-bottom:10px}
 .gsq-hd{display:flex;align-items:baseline;gap:8px;margin:4px 0 8px}
@@ -127,3 +127,22 @@ html[data-theme="dark"] .gc-tabs button[aria-selected="true"]{background:#0a4a9c
 .gsq-err{margin:10px 0 0;color:var(--loss);font-weight:700;font-size:.8rem}
 .gsq-btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
 html[data-theme="dark"] .gsq-row input,html[data-theme="dark"] .gsq-row select{background:#0e1a2c;border-color:#213653}
+
+/* تبويب التحليل (2026-09-23): أقسام تحليل الموقع + إحصاءات جديدة من الإدخال اليدوي */
+.gc-an{display:flex;flex-direction:column;gap:12px;min-width:0}
+.gc-an>.sec,.gc-an section>.sec{margin:6px 0 8px}
+.gc-an .gc-card h3{margin:0 0 4px}
+.gc-an-new{margin-top:14px!important;padding-top:14px;border-top:1px solid var(--line)}
+.gc-lr .v .rtg{font-size:.8rem}
+.gc-u{font-size:.62rem;color:var(--slate);margin-inline-start:2px;font-weight:700}
+.gc-cp{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:6px;align-items:end;height:150px;padding-top:8px}
+.gc-cp-c{display:flex;flex-direction:column;align-items:center;height:100%;gap:4px;min-width:0}
+.gc-cp-c .v{font:800 .78rem var(--display);color:var(--head);min-height:1em}
+.gc-cp-c .bar{flex:1;width:70%;max-width:26px;display:flex;flex-direction:column-reverse;border-radius:6px 6px 2px 2px;background:var(--navy-800);overflow:hidden}
+.gc-cp-c .bar i{display:block;width:100%}
+.gc-cp-c .p{font-size:.58rem;color:var(--slate);white-space:nowrap}
+.gc-cp i.y,.gc-cp-lg i.y{background:#F5C518}
+.gc-cp i.r,.gc-cp-lg i.r{background:#E0443A}
+.gc-cp-lg{display:flex;gap:16px;justify-content:center;margin-top:10px;font-size:.72rem;color:var(--slate)}
+.gc-cp-lg i{display:inline-block;width:9px;height:12px;border-radius:2px;margin-inline-end:5px;vertical-align:-2px}
+html[data-theme="dark"] .gc-cp-c .bar{background:#16294A}

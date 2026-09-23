@@ -116,6 +116,19 @@ const FIXTURES = [
   [3,"2026-09-29","20:30","السعودية","العراق",KASC], [3,"2026-09-29","20:30","عمان","الكويت",PAF],
   [3,"2026-09-30","20:30","الامارات","قطر",KASC], [3,"2026-09-30","20:30","البحرين","اليمن",PAF]
 ];
+/* القنوات الناقلة لكل مباريات البطولة (ملصق «القنوات الناقلة لبطولة خليجي 27»، منصور 2026-09-23) */
+const TV_G = "الكويت الرياضية · الكأس · شاشا · أبوظبي الرياضية · عمان الرياضية";
+/* طواقم التحكيم (ملصقات «حكام المباريات» اليومية) — المفتاح: الجولة|المضيف|الضيف */
+const REFS_G = {
+  "1|السعودية|الكويت": {ref:"جواو بينيرو", ar1:"بيدرو ريبيرو", ar2:"لوسيانو مايا", fourth:"محمد أحمد الشمري", var:"فو مينغ", avar:"حمزة الفارق"},
+  "1|العراق|عمان":     {ref:"عمر العلي", ar1:"محمد الحمادي", ar2:"جاسم العلي", fourth:"عمار محفوظ", var:"محمد عبيد", avar:"مشاري الشمري"}
+};
+/* القناة والحكم لبطاقات «المباريات القادمة» (index.html): من سجل البطولة، وقبل وصوله من الجدول الثابت */
+G.extra = (d, h, a) => { const same = (x,y) => (x===h&&y===a)||(x===a&&y===h);
+  const m = DATA && DATA.matches.find(x=>x.date===d && same(x.home,x.away));
+  if(m) return {tv:m.tv||"", ref:m.ref||"", v:(m.refs||{}).var||""};
+  const f = FIXTURES.find(x=>x[1]===d && same(x[3],x[4])); if(!f) return null;
+  const b = REFS_G[`${f[0]}|${f[3]}|${f[4]}`] || {}; return {tv:TV_G, ref:b.ref||"", v:b.var||""}; };
 function addFixtures(d){
   FIXTURES.forEach(([r,dt,tm,h,a,v])=>{
     if(d.matches.some(m=>+m.round===r && ((m.home===h&&m.away===a)||(m.home===a&&m.away===h)))) return;
@@ -134,7 +147,11 @@ function normalize(d){
     d.squads = {}; TEAMS.forEach(c=>{ d.squads[c] = (ed[c] && keep[c]) ? keep[c] : def[c]; }); d.squadsVer = SQUADS_VER; }
   else { defaultSquads(); TEAMS.forEach(c=>{ if(!d.squads[c]) d.squads[c] = defaultSquads()[c]; }); }
   addFixtures(d);
-  d.matches.forEach(m=>{ m.comp = COMP_G; Object.defineProperty(m, "__gulf", {value:true, enumerable:false, configurable:true}); });
+  d.matches.forEach(m=>{ m.comp = COMP_G; Object.defineProperty(m, "__gulf", {value:true, enumerable:false, configurable:true});
+    /* ما يُحفظ من الإدارة يتقدّم، عدا «كويت سبورت» وحدها (أُدخلت قبل ملصق القنوات، وهي نفسها «الكويت الرياضية» ضمن القائمة) */
+    const tv = String(m.tv||"").trim(); if(!tv || tv==="كويت سبورت") m.tv = TV_G;
+    const b = REFS_G[`${m.round}|${m.home}|${m.away}`];
+    if(b){ if(!String(m.ref||"").trim()) m.ref = b.ref; const r = m.refs || (m.refs = {}); Object.keys(b).forEach(k=>{ if(k!=="ref" && !String(r[k]||"").trim()) r[k] = b[k]; }); } });
   return d;
 }
 
@@ -251,6 +268,125 @@ function statsTabHTML(){
 }
 const played_ = () => played();
 
+/* ───────────── تبويب «التحليل» (منصور 2026-09-23) ─────────────
+   البطولة كلها بالإدخال اليدوي (بلا لعب فعلي)، فالتحليل كله من سجل البطولة اليدوي فقط:
+   1) أقسام تبويب التحليل في الموقع نفسها (متوسط التقييم، فترات الأهداف، الخريطة الحرارية، الجزاءات، أثر الهدف الأول،
+      طريقة/منطقة/وضعية التسجيل) تُرسم بدوال الموقع داخل withGulf فتقرأ بيانات البطولة وحدها.
+   2) أقسام جديدة تُشتق من الحقول اليدوية نفسها (التشكيلة، التبديلات، البطاقات، الحكم، الخطة) — لا أرقام من البث. */
+let GHM = "الكل";                                   /* فلتر الخريطة الحرارية (منفصل عن فلتر الدوري HM_LEAGUE) */
+const noProfile = s => s.replace(/ data-player=/g, " data-gplayer=");   /* لا ملفات لاعبين في قسم البطولة */
+function anList(rows, val){
+  return `<div class="gc-lead">${rows.map((x,i)=>`<div class="gc-lr" data-gplayer="${H(x.n)}" data-gclub="${H(x.c)}">
+    <span class="rk">${i+1}</span><span class="ph" style="background:${KIT[x.c]||"transparent"}">${face(x.c,x.n)}</span>
+    <span class="nm"><b>${H(x.n)}</b><small>${flagImg(x.c,"sm")}${H(x.c)}${x.sub?` · ${H(x.sub)}`:""}</small></span><span class="v">${val(x)}</span></div>`).join("")}</div>`;
+}
+function gulfExtraHTML(){
+  const ms = playedMatches(), first = PERIODS.slice(0,4), late = ["76-90","90+"];
+  const sec = (t, hint, body) => `<section class="gc-card"><h3>${t}</h3>${hint?`<p class="gc-hint">${hint}</p>`:""}${body}</section>`;
+  const nil = t => `<div class="gc-empty">${t}</div>`;
+  let out = `<h2 class="sec gc-an-new">إحصاءات جديدة للبطولة<span class="sq-n">من الإدخال اليدوي</span></h2>`;
+
+  /* تقييم المنتخبات: متوسط تقييم لاعبي المنتخب في كل مباراة، ثم متوسطه على مبارياته */
+  const tr = {}; ms.forEach(m=>[m.home,m.away].forEach(c=>{ const L = matchRatings(m,c); if(!L.length) return;
+    const e = tr[c] ||= {c, n:0, s:0}; e.n++; e.s += L.reduce((a,x)=>a+x.r.v,0)/L.length; }));
+  const TR = Object.values(tr).map(e=>({...e, v:Math.round(e.s/e.n*100)/100})).sort((a,b)=>b.v-a.v);
+  out += sec("تقييم المنتخبات", "متوسط تقييم لاعبي كل منتخب في مبارياته (التقييم نفسه المحسوب للاعبين).", TR.length
+    ? `<div class="gc-tw"><table class="gc-tbl"><thead><tr><th>#</th><th class="tl">المنتخب</th><th>مباريات</th><th>المتوسط</th></tr></thead>
+      <tbody>${TR.map((e,i)=>`<tr><td>${i+1}</td><td class="tl"><span class="gc-tn">${flagImg(e.c)}${H(e.c)}</span></td><td>${e.n}</td><td>${ratingBadge(e.v)}</td></tr>`).join("")}</tbody></table></div>`
+    : nil("يظهر بعد إدخال تشكيلات المباريات."));
+
+  /* أفضل لاعب في كل مباراة: الأعلى تقييماً من الفريقين */
+  const motm = ms.map(m=>{ const b = [...matchRatings(m,m.home), ...matchRatings(m,m.away)].sort((a,b)=>b.r.v-a.r.v)[0];
+    return b ? {n:b.n, c:b.c, v:b.r.v, sub:`${m.home} ${+m.hg}-${+m.ag} ${m.away}`} : null; }).filter(Boolean);
+  out += sec("أفضل لاعب في كل مباراة", "صاحب أعلى تقييم في المباراة.", motm.length ? anList(motm, x=>ratingBadge(x.v)) : nil("يظهر بعد إدخال تشكيلات المباريات."));
+
+  /* الأكثر دقائق لعب: من التشكيلة الأساسية والتبديلات والطرد */
+  const mins = {}; ms.forEach(m=>[m.home,m.away].forEach(c=>{ const men = new Set(xiNames(m.round, compOf(m), c));
+    matchSubs(m).filter(s=>s.club===c && s.in).forEach(s=>men.add(s.in));
+    men.forEach(n=>{ const v = playerMatchMinutes(m,c,n); if(v>0){ const e = mins[n+"|"+c] ||= {n, c, v:0, apps:0}; e.v += v; e.apps++; } }); }));
+  const MN = Object.values(mins).sort((a,b)=>b.v-a.v || a.n.localeCompare(b.n,"ar")).slice(0,15).map(x=>({...x, sub:mw(x.apps)}));
+  out += sec("الأكثر دقائق لعب", "", MN.length ? anList(MN, x=>`${x.v}<small class="gc-u">د</small>`) : nil("يظهر بعد إدخال تشكيلات المباريات."));
+
+  /* أهداف البدلاء */
+  const sg = GOALS.filter(g=>!isOG(g)).map(g=>{ const m = ms.find(x=>x.round===g.r && (x.home===g.sc||x.away===g.sc)); if(!m) return null;
+    const s = matchSubs(m).find(s=>s.club===g.sc && s.in===g.p); return s ? {n:g.p, c:g.sc, v:minLabel(g), sub:`دخل ${s.m}′ · ${m.home} - ${m.away}`} : null; }).filter(Boolean);
+  out += sec("أهداف البدلاء", "أهداف سجّلها لاعبون دخلوا من دكة البدلاء.", sg.length ? anList(sg, x=>`<bdi dir="ltr">${H(x.v)}</bdi>`) : nil("لا أهداف من البدلاء بعد."));
+
+  /* توقيت أهداف المنتخبات وأسلوبها */
+  const tt = TEAMS.map(c=>{ const f = GOALS.filter(g=>g.sc===c), a = GOALS.filter(g=>g.cd===c);
+    return {c, f:f.length, a:a.length, h1:f.filter(g=>first.includes(period(g))).length, h2:f.filter(g=>!first.includes(period(g))).length,
+      lt:f.filter(g=>late.includes(period(g))).length, lta:a.filter(g=>late.includes(period(g))).length,
+      sp:f.filter(g=>isSetPiece(g)).length, hd:f.filter(g=>g.bp==="الرأس").length}; }).filter(x=>x.f||x.a).sort((a,b)=>b.f-a.f || a.a-b.a);
+  out += sec("توقيت أهداف المنتخبات وأسلوبها", "القاتلة = بعد الدقيقة 75. الثابتة = ركنية، ركلة حرة، ركلة جزاء، رمية.", tt.length
+    ? `<div class="gc-tw"><table class="gc-tbl"><thead><tr><th class="tl">المنتخب</th><th>له</th><th>ش1</th><th>ش2</th><th>قاتلة له</th><th>قاتلة عليه</th><th>ثابتة</th><th>رأسية</th></tr></thead>
+      <tbody>${tt.map(x=>`<tr><td class="tl"><span class="gc-tn">${flagImg(x.c)}${H(x.c)}</span></td><td><b>${x.f}</b></td><td>${x.h1}</td><td>${x.h2}</td><td>${x.lt}</td><td>${x.lta}</td><td>${x.sp}</td><td>${x.hd}</td></tr>`).join("")}</tbody></table></div>`
+    : nil("لا أهداف مسجّلة بعد."));
+
+  /* البطاقات على فترات المباراة */
+  const cp = PERIODS.map(p=>({p, y:CARDS.filter(x=>period({m:+x.m||0})===p && !isRed(x.type)).length, r:CARDS.filter(x=>period({m:+x.m||0})===p && isRed(x.type)).length}));
+  const cmx = Math.max(1, ...cp.map(x=>x.y+x.r));
+  out += sec("البطاقات على فترات المباراة", "", CARDS.length
+    ? `<div class="gc-cp">${cp.map(x=>`<div class="gc-cp-c"><span class="v">${x.y+x.r||""}</span><span class="bar"><i class="r" style="height:${(x.r/cmx*100).toFixed(1)}%"></i><i class="y" style="height:${(x.y/cmx*100).toFixed(1)}%"></i></span><span class="p"><bdi dir="ltr">${x.p}</bdi></span></div>`).join("")}</div>
+       <div class="gc-cp-lg"><span><i class="y"></i>إنذار · ${cp.reduce((a,x)=>a+x.y,0)}</span><span><i class="r"></i>طرد · ${cp.reduce((a,x)=>a+x.r,0)}</span></div>`
+    : nil("لا بطاقات مسجّلة بعد."));
+
+  /* الحكام */
+  const rf = {}; ms.forEach(m=>{ const n = String(m.ref||"").trim(); if(!n) return; const e = rf[n] ||= {n, m:0, y:0, r:0};
+    const cs = CARDS.filter(x=>x.r===m.round && (x.club===m.home||x.club===m.away)); e.m++; e.y += cs.filter(x=>!isRed(x.type)).length; e.r += cs.filter(x=>isRed(x.type)).length; });
+  const RF = Object.values(rf).sort((a,b)=>b.m-a.m || (b.y+b.r)-(a.y+a.r));
+  out += sec("الحكام", "حكم الساحة كما أُدخل في المباراة، وبطاقات مبارياته.", RF.length
+    ? `<div class="gc-tw"><table class="gc-tbl"><thead><tr><th class="tl">الحكم</th><th>مباريات</th><th>إنذار</th><th>طرد</th><th>بطاقات/مباراة</th></tr></thead>
+      <tbody>${RF.map(x=>`<tr><td class="tl">${H(x.n)}</td><td>${x.m}</td><td>${x.y}</td><td>${x.r}</td><td>${((x.y+x.r)/x.m).toFixed(1)}</td></tr>`).join("")}</tbody></table></div>`
+    : nil("لم يُدخل حكم أي مباراة بعد."));
+
+  /* الخطط المستخدمة */
+  /* المباريات المُقامة فقط (الإدارة قد تُدخل الخطة قبل المباراة)، وصيغة خطة صحيحة، ومرة واحدة لكل منتخب في الجولة */
+  const sh = {}, seenSh = new Set();
+  (ALL.shapes||[]).forEach(x=>{ const f = String(x.f||"").trim(); if(!/^\d(-\d){2,4}$/.test(f) || !T[x.club] || seenSh.has(x.r+"|"+x.club)) return;
+    if(!ms.some(m=>m.round===x.r && (m.home===x.club||m.away===x.club))) return;
+    seenSh.add(x.r+"|"+x.club); (sh[x.club] ||= {})[f] = (sh[x.club][f]||0) + 1; });
+  const SH = Object.keys(sh).sort((a,b)=>a.localeCompare(b,"ar"));
+  out += sec("الخطط المستخدمة", "", SH.length
+    ? `<div class="gc-tw"><table class="gc-tbl"><thead><tr><th class="tl">المنتخب</th><th class="tl">الخطة (عدد المباريات)</th></tr></thead>
+      <tbody>${SH.map(c=>`<tr><td class="tl"><span class="gc-tn">${flagImg(c)}${H(c)}</span></td><td class="tl">${Object.entries(sh[c]).sort((a,b)=>b[1]-a[1]).map(([f,n])=>`<bdi dir="ltr">${H(f)}</bdi> (${n})`).join("، ")}</td></tr>`).join("")}</tbody></table></div>`
+    : nil("لم تُحدَّد خطة أي منتخب بعد."));
+  return out;
+}
+function analysisTabHTML(){
+  PASS_MEMO.m = null;                                 /* مفاتيح ذاكرة التمرير تحمل COMP «الكل» مثل الدوري — لا نخلطها */
+  try{ return withGulf(()=>{
+    if(!playedMatches().length) return `<section class="gc-card"><h3>التحليل</h3><div class="gc-empty">يظهر التحليل بعد إدخال أول مباراة يدوياً من الإدارة.</div></section>`;
+    const cats = [...new Set(GOALS.map(g=>g.det))].map(d=>({l:d, n:GOALS.filter(g=>g.det===d).length})).sort((a,b)=>b.n-a.n);
+    const zones = [...new Set(GOALS.map(g=>g.zone))].map(z=>({l:z, n:GOALS.filter(g=>g.zone===z).length})).sort((a,b)=>b.n-a.n);
+    const goals = GOALS.length;
+    return noProfile(`<div class="an gc-an">
+      ${avgRatingSectionHTML()}
+      <h2 class="sec">توزيع الأهداف على فترات المباراة</h2>
+      ${anPeriods()}
+      ${goals ? `<div class="an-duo">
+        <section class="an-heat-sec"><h2 class="sec">الخريطة الحرارية لأماكن التسجيل</h2>
+          <p class="hint">من أين سُجّلت أهداف البطولة؟ بدّل بين اللعب المفتوح والكرات الثابتة.</p><div class="an-card" id="gHeat"></div></section>
+        <div class="an-side">
+          <section><h2 class="sec">ركلات الجزاء — خريطة المرمى</h2>${anPens()}</section>
+          <section><h2 class="sec">أثر الهدف الأول</h2>${anFirstGoal()}</section>
+        </div></div>
+      <h2 class="sec">طريقة التسجيل</h2><div class="an-card">${anRank(cats,"فئة")}</div>
+      <h2 class="sec">منطقة التسجيل</h2><div class="an-card">${anRank(zones,"منطقة")}</div>
+      <h2 class="sec">وضعية التسجيل</h2>${anBody()}` : `<section><h2 class="sec">ركلات الجزاء — خريطة المرمى</h2>${anPens()}</section>`}
+      ${gulfExtraHTML()}
+    </div>`); }); }
+  finally{ PASS_MEMO.m = null; }
+}
+function gulfHeat(){
+  const el = document.getElementById("gHeat"); if(!el) return;
+  withGulf(()=>{ const list = filterCat(GOALS, GHM);
+    el.innerHTML = `<div class="segbar">${CATS.map(c=>`<button class="seg" data-c="${c}" aria-pressed="${c===GHM}">${c}</button>`).join("")}</div>
+      ${heatStats(list)}${anHeatSVG(list)}${anZoneRows(list)}
+      <p class="hint" style="margin-top:10px">${list.length} هدفاً معروضاً · الاتجاه من أسفل إلى أعلى نحو المرمى · اليسار واليمين من زاوية المهاجم.</p>`; });
+  el.innerHTML = noProfile(el.innerHTML);
+  el.querySelectorAll(".seg").forEach(b=>b.onclick=()=>{ GHM = b.dataset.c; gulfHeat(); });
+}
+
 /* ───────────── الواجهة العامة: تبويب «كأس الخليج» ───────────── */
 let VIEW = {tab:"teams", team:"الكويت"};
 /* ألقاب كأس الخليج قبل النسخة 27 (26 نسخة: 1970–2024/25) */
@@ -315,13 +451,14 @@ function teamsHTML(){
 function render(){
   const v = document.getElementById("v-gulf"); if(!v) return;
   if(!DATA) DATA = normalize(null);
-  const tabs = [["teams","المنتخبات"],["squad","قائمة الفريق"],["matches","المباريات"],["stats","الإحصاءات"]];
+  const tabs = [["teams","المنتخبات"],["squad","قائمة الفريق"],["matches","المباريات"],["stats","الإحصاءات"],["analysis","التحليل"]];
   v.innerHTML = `<div class="gc">
     <div class="gc-hero"><img class="gc-logo" src="assets/gulf/khaleeji27.png?v=1" alt="خليجي 27"><div class="gc-hero-tx"><small>الديار العربية · السعودية 2026</small><h2>${NAME}</h2><div class="gc-hero-flags">${TEAMS.map(c=>flagImg(c)).join("")}</div></div></div>
     <p class="gc-note">إحصاءات البطولة منفصلة تماماً — لا تدخل في إحصاءات الدوري ولا ملفات اللاعبين ولا الفانتسي.</p>
     <nav class="gc-tabs">${tabs.map(([k,t])=>`<button type="button" data-gtab="${k}" aria-selected="${VIEW.tab===k}">${t}</button>`).join("")}</nav>
-    <div class="gc-body">${VIEW.tab==="squad"?teamsHTML():VIEW.tab==="matches"?groupsHTML():VIEW.tab==="stats"?statsTabHTML():profilesHTML()}</div></div>`;
+    <div class="gc-body">${VIEW.tab==="squad"?teamsHTML():VIEW.tab==="matches"?groupsHTML():VIEW.tab==="stats"?statsTabHTML():VIEW.tab==="analysis"?analysisTabHTML():profilesHTML()}</div></div>`;
   if(VIEW.tab==="stats") loadLiveStats();
+  if(VIEW.tab==="analysis") gulfHeat();
 }
 G.render = render;
 function repaint(){ if(document.querySelector("#v-gulf.on")) render(); paintAdmin(); }

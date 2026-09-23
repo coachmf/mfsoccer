@@ -2157,8 +2157,8 @@ main{padding-bottom:48px}
 <link rel="stylesheet" href="admin-tabs.css?v=1">
 <script src="admin-tabs.js?v=2" defer></script>
 <!-- كأس الخليج 27: قسم مستقل ببيانات منفصلة (seasons/gulf27) -->
-<link rel="stylesheet" href="gulf.css?v=10">
-<script src="gulf.js?v=15" defer></script>
+<link rel="stylesheet" href="gulf.css?v=11">
+<script src="gulf.js?v=17" defer></script>
 <style>
 /* تبويب التحليل — التصميم الجديد (منصور 2026-09-17) */
 .an{--an-card:#0F1E35;--an-line:#213653;--an-txt:#EDF3FA;--an-mut:#8FA6C4;--an-track:rgba(143,166,196,.16);--an-acc:#2EB0F0;--an-acc2:#1878BE}
@@ -2822,6 +2822,8 @@ function extCardsHTML(evs, compName){
     /* live:true = مباراة جارية تُحدَّث نتيجتها أثناء اللعب (المتابعة المباشرة من SofaScore) — تُزال عند صافرة النهاية */
     const st=(played&&e.live)?'<span class="mc-st live"><i></i>جارية الآن</span>':up?'<span class="mc-st soon">لم تبدأ</span>':'<span class="mc-st done">انتهت</span>';
     const mid = played ? `<span class="mc-score" dir="ltr">${+e.ag} - ${+e.hg}</span>` : `<span class="mc-time" dir="ltr">${e.time?esc(e.time):"—"}</span>`;
+    /* خليجي 27: القناة والحكم من سجل البطولة (gulf.js) — منصور 2026-09-23 */
+    const gx=(extCompOf(e)==="gulf27" && window.GULF && GULF.extra) ? GULF.extra(e.d, a.n, b.n) : null;
     return `${dayHead}<article class="mc${up?" soon":" done"}">
       <div class="mc-row">
         <div class="mc-team h">${extTeamCell(a)}</div>
@@ -2830,6 +2832,8 @@ function extCardsHTML(evs, compName){
       </div>
       ${extScorersHTML(e)}
       <div class="mc-foot"><span>${esc(compName)}</span>${e.n?`<span>${esc(e.n)}</span>`:""}${(played&&e.time)?`<span class="mc-date" dir="ltr">${esc(e.time)}</span>`:""}${e.venue?`<span>${esc(e.venue)}</span>`:""}</div>
+      ${gx&&(gx.ref||gx.v)?`<div class="mc-foot">${gx.ref?`<span class="mc-ref">${refRoleIco("ref","sm")}<span class="nm">${esc(gx.ref)}</span></span>`:""}${gx.v?`<span class="mc-ref">${refRoleIco("var","sm")}<span class="nm">${esc(gx.v)}</span></span>`:""}</div>`:""}
+      ${gx&&gx.tv?`<div class="mc-foot mc-gtv"><span class="mc-tv">${TV_ICO}<span>${esc(gx.tv)}</span></span></div>`:""}
     </article>`;
   }).join("");
   return {html, soon, done};
@@ -10038,6 +10042,8 @@ html[data-theme="dark"] .mc-score{background:#182C48}
 .mc[data-mopen]:hover .mc-go{transform:translateX(-3px)}
 .mc-tv{display:inline-flex;align-items:center;gap:4px;font-size:.62rem;font-weight:600;color:var(--slate);white-space:nowrap}   /* لون واحد لكل القنوات (منصور 2026-09-17) */
 .mc-tv .tv-ico{flex:none}
+.mc-gtv .mc-tv{white-space:normal;align-items:flex-start;line-height:1.5}   /* قنوات خليجي 27: سطر مستقل يلتف */
+.mc-gtv .mc-tv .tv-ico{margin-top:2px}
 .mc-tv.off,.mp-tv.off{color:var(--slate)}
 .mp-tv{display:inline-flex;align-items:center;gap:6px}
 .mc-st{font-size:.62rem;font-weight:600;color:var(--slate);letter-spacing:.01em;display:inline-flex;align-items:center;gap:4px}
