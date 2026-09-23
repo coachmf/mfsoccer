@@ -275,7 +275,7 @@ function gulfExtraHTML(){
   const ms = playedMatches(), first = PERIODS.slice(0,4), late = ["76-90","90+"];
   const sec = (t, hint, body) => `<section class="gc-card"><h3>${t}</h3>${hint?`<p class="gc-hint">${hint}</p>`:""}${body}</section>`;
   const nil = t => `<div class="gc-empty">${t}</div>`;
-  let out = `<h2 class="sec gc-an-new">إحصاءات جديدة للبطولة<span class="sq-n">من الإدخال اليدوي</span></h2>`;
+  let out = "";   /* بلا عنوان فاصل (منصور 2026-09-23) — الأقسام تكمل تحليل البطولة مباشرة */
 
   /* تقييم المنتخبات: متوسط تقييم لاعبي المنتخب في كل مباراة، ثم متوسطه على مبارياته */
   const tr = {}; ms.forEach(m=>[m.home,m.away].forEach(c=>{ const L = matchRatings(m,c); if(!L.length) return;
@@ -284,19 +284,20 @@ function gulfExtraHTML(){
   out += sec("تقييم المنتخبات", "متوسط تقييم لاعبي كل منتخب في مبارياته (التقييم نفسه المحسوب للاعبين).", TR.length
     ? `<div class="gc-tw"><table class="gc-tbl"><thead><tr><th>#</th><th class="tl">المنتخب</th><th>مباريات</th><th>المتوسط</th></tr></thead>
       <tbody>${TR.map((e,i)=>`<tr><td>${i+1}</td><td class="tl"><span class="gc-tn">${flagImg(e.c)}${H(e.c)}</span></td><td>${e.n}</td><td>${ratingBadge(e.v)}</td></tr>`).join("")}</tbody></table></div>`
-    : nil("يظهر بعد إدخال تشكيلات المباريات."));
+    : nil("يظهر بعد انتهاء أول مباراة."));
 
   /* أفضل لاعب في كل مباراة: الأعلى تقييماً من الفريقين */
   const motm = ms.map(m=>{ const b = [...matchRatings(m,m.home), ...matchRatings(m,m.away)].sort((a,b)=>b.r.v-a.r.v)[0];
     return b ? {n:b.n, c:b.c, v:b.r.v, sub:`${m.home} ${+m.hg}-${+m.ag} ${m.away}`} : null; }).filter(Boolean);
-  out += sec("أفضل لاعب في كل مباراة", "صاحب أعلى تقييم في المباراة.", motm.length ? anList(motm, x=>ratingBadge(x.v)) : nil("يظهر بعد إدخال تشكيلات المباريات."));
+  out += sec("أفضل لاعب في كل مباراة", "صاحب أعلى تقييم في المباراة.", motm.length ? anList(motm, x=>ratingBadge(x.v)) : nil("يظهر بعد انتهاء أول مباراة."));
 
   /* الأكثر دقائق لعب: من التشكيلة الأساسية والتبديلات والطرد */
-  const mins = {}; ms.forEach(m=>[m.home,m.away].forEach(c=>{ const men = new Set(xiNames(m.round, compOf(m), c));
+  /* الدقائق بعد انتهاء المباراة فقط (منصور 2026-09-23) — أثناء اللعب لا تُحسب */
+  const mins = {}; ms.filter(m=>matchOver(m)).forEach(m=>[m.home,m.away].forEach(c=>{ const men = new Set(xiNames(m.round, compOf(m), c));
     matchSubs(m).filter(s=>s.club===c && s.in).forEach(s=>men.add(s.in));
     men.forEach(n=>{ const v = playerMatchMinutes(m,c,n); if(v>0){ const e = mins[n+"|"+c] ||= {n, c, v:0, apps:0}; e.v += v; e.apps++; } }); }));
   const MN = Object.values(mins).sort((a,b)=>b.v-a.v || a.n.localeCompare(b.n,"ar")).slice(0,15).map(x=>({...x, sub:mw(x.apps)}));
-  out += sec("الأكثر دقائق لعب", "", MN.length ? anList(MN, x=>`${x.v}<small class="gc-u">د</small>`) : nil("يظهر بعد إدخال تشكيلات المباريات."));
+  out += sec("الأكثر دقائق لعب", "", MN.length ? anList(MN, x=>`${x.v}<small class="gc-u">د</small>`) : nil("يظهر بعد انتهاء أول مباراة."));
 
   /* أهداف البدلاء */
   const sg = GOALS.filter(g=>!isOG(g)).map(g=>{ const m = ms.find(x=>x.round===g.r && (x.home===g.sc||x.away===g.sc)); if(!m) return null;
