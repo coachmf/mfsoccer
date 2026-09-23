@@ -225,26 +225,7 @@ function leaders(){
   return {g:s(g), a:s(a), y:s(y), r:s(r)};
 }
 
-/* ───────────── تبويب «الإحصاءات»: السجل (يدوي + لعب فعلي) + أحداث البث (ركنيات، تسديدات…) ─────────────
-   اللاعبون والفرق من سجل البطولة (يكتبه الإدخال اليدوي واللعب الفعلي معاً)، وإحصاءات البث الإضافية
-   تُجمع من وثائق اللعب الفعلي لمباريات البطولة (لا تُخزَّن نسخة ثانية). */
-let LIVE_AGG = null, LIVE_AGG_AT = 0;
-async function loadLiveStats(){
-  if(!window.LIVE || !DATA || (LIVE_AGG && Date.now()-LIVE_AGG_AT < 60000)) return;
-  LIVE_AGG_AT = Date.now();
-  const agg = {}; let n = 0;
-  for(const m of DATA.matches){
-    const id = LIVE.idOf(LIVE.keyOf(m)); let d = null;
-    try{
-      if(LIVE.TEST) d = LIVE.store._read(id);
-      else if(typeof fbDb!=="undefined" && fbDb){ const x = await fbDb.collection("seasons").doc(id).get(); d = x.exists ? x.data() : null; }
-    }catch(e){}
-    if(!d || !d.events || !d.events.length) continue; n++;
-    LIVE.stats(d).forEach(r=>{ if(r.total!=null) return; const a = agg[r.t] ||= {}; a[d.home] = (a[d.home]||0) + (+r.h||0); a[d.away] = (a[d.away]||0) + (+r.a||0); });
-  }
-  LIVE_AGG = {agg, n};
-  if(VIEW.tab==="stats" && document.querySelector("#v-gulf.on")) render();
-}
+/* ───────────── تبويب «الإحصاءات»: من سجل البطولة وحده (الإدخال اليدوي) ───────────── */
 function statsTabHTML(){
   const L = leaders(), played = played_();
   const teamRows = TEAMS.map(c=>{ const ms = played.filter(m=>m.home===c||m.away===c); let gf=0, ga=0, y=0, r=0, cs=0;
@@ -254,14 +235,8 @@ function statsTabHTML(){
   const teamTbl = teamRows.length ? `<section class="gc-card"><h3>الفرق</h3><div class="gc-tw"><table class="gc-tbl"><thead><tr><th class="tl">المنتخب</th><th>لعب</th><th>له</th><th>عليه</th><th>شباك نظيفة</th><th>إنذار</th><th>طرد</th></tr></thead>
     <tbody>${teamRows.map(x=>`<tr><td class="tl"><span class="gc-tn">${flagImg(x.c)}${H(x.c)}</span></td><td>${x.p}</td><td>${x.gf}</td><td>${x.ga}</td><td>${x.cs}</td><td>${x.y}</td><td>${x.r}</td></tr>`).join("")}</tbody></table></div></section>`
     : `<section class="gc-card"><h3>الفرق</h3><div class="gc-empty">لم تُلعب مباريات بعد.</div></section>`;
-  let liveBlk = "";
-  if(LIVE_AGG && LIVE_AGG.n){
-    const rows = Object.entries(LIVE_AGG.agg).filter(([t])=>!["الأهداف","الإنذارات","الطرد"].includes(t));
-    liveBlk = `<section class="gc-card"><h3>من اللعب الفعلي <small class="gc-sub">${LIVE_AGG.n} مباراة مسجّلة مباشرة</small></h3>${rows.map(([t,o])=>{ const arr = Object.entries(o).filter(([,v])=>v>0).sort((a,b)=>b[1]-a[1]);
-      if(!arr.length) return ""; const mx = arr[0][1];
-      return `<div class="gc-ls"><div class="gc-ls-t">${H(t)}</div>${arr.map(([c,v])=>`<div class="gc-ls-r"><span class="gc-tn">${flagImg(c,"sm")}${H(c)}</span><i style="width:${(v/mx*100).toFixed(0)}%"></i><b>${v}</b></div>`).join("")}</div>`; }).join("")}</section>`;
-  } else liveBlk = `<section class="gc-card"><h3>من اللعب الفعلي</h3><div class="gc-empty">${LIVE_AGG?"لا مباريات مسجّلة باللعب الفعلي بعد.":"جارٍ التحميل…"} الركنيات والتسديدات والأخطاء والتسلل تظهر هنا من مباريات اللعب الفعلي.</div></section>`;
-  return teamTbl + leadersHTML() + liveBlk;
+  /* «من اللعب الفعلي» أُزيل (منصور 2026-09-23): البطولة كلها بالإدخال اليدوي */
+  return teamTbl + leadersHTML();
 }
 const played_ = () => played();
 
@@ -459,7 +434,6 @@ function render(){
     <p class="gc-note">إحصاءات البطولة منفصلة تماماً — لا تدخل في إحصاءات الدوري ولا ملفات اللاعبين ولا الفانتسي.</p>
     <nav class="gc-tabs">${tabs.map(([k,t])=>`<button type="button" data-gtab="${k}" aria-selected="${VIEW.tab===k}">${t}</button>`).join("")}</nav>
     <div class="gc-body">${VIEW.tab==="squad"?teamsHTML():VIEW.tab==="matches"?groupsHTML():VIEW.tab==="stats"?statsTabHTML():VIEW.tab==="analysis"?analysisTabHTML():profilesHTML()}</div></div>`;
-  if(VIEW.tab==="stats") loadLiveStats();
   if(VIEW.tab==="analysis") gulfHeat();
 }
 G.render = render;
