@@ -2158,8 +2158,8 @@ main{padding-bottom:48px}
 <link rel="stylesheet" href="admin-tabs.css?v=1">
 <script src="admin-tabs.js?v=3" defer></script>
 <!-- كأس الخليج 27: قسم مستقل ببيانات منفصلة (seasons/gulf27) -->
-<link rel="stylesheet" href="gulf.css?v=14">
-<script src="gulf.js?v=30" defer></script>
+<link rel="stylesheet" href="gulf.css?v=15">
+<script src="gulf.js?v=31" defer></script>
 <style>
 /* تبويب التحليل — التصميم الجديد (منصور 2026-09-17) */
 .an{--an-card:#0F1E35;--an-line:#213653;--an-txt:#EDF3FA;--an-mut:#8FA6C4;--an-track:rgba(143,166,196,.16);--an-acc:#2EB0F0;--an-acc2:#1878BE}
@@ -13038,7 +13038,9 @@ function motmPlayerHTML(n, c, extra){
 function mpMotmHTML(m){
   const all=[...matchRatings(m,m.home), ...matchRatings(m,m.away)].sort((a,b)=>b.r.v-a.r.v);
   if(!all.length) return "";
-  const top=all[0], fan=mpFanPick(m), f0=fan.list[0];
+  /* كأس الخليج: أفضل لاعب يختاره المحرّر (m.motm) إن وُجد — بلا رقم تقييم (منصور 2026-09-23) */
+  const man = isGulfMatch(m) && m.motm && m.motm.n ? m.motm : null;
+  const top=man ? {n:man.n, c:man.c, r:null} : all[0], fan=mpFanPick(m), f0=fan.list[0];
   const fanCol = fan.loading ? `<div class="motm-empty">جارٍ تحميل الأصوات…</div>`
     : f0 ? motmPlayerHTML(f0.n, f0.c, `<span class="motm-pct"><b>${f0.pct}%</b><small>${nVotes(f0.v)}</small></span>`)
     : `<div class="motm-empty">لا أصوات لأفضل لاعب من هذه المباراة بعد</div>`;
@@ -13049,7 +13051,7 @@ function mpMotmHTML(m){
   const hA=teamAvgRating(m,m.home), aA=teamAvgRating(m,m.away);
   return `<div class="mp-card mp-motm"><div class="mp-hd"><h3>أفضل لاعب في المباراة</h3></div>
     <div class="motm2">
-      <div class="motm-col"><span class="motm-lbl">تقييم mfsoccer</span>${motmPlayerHTML(top.n, top.c, ratingBadge(top.r.v,true))}</div>
+      <div class="motm-col"><span class="motm-lbl">${top.r?"تقييم mfsoccer":"اختيار mfsoccer"}</span>${motmPlayerHTML(top.n, top.c, top.r ? ratingBadge(top.r.v,true) : "")}</div>
       <div class="motm-col fan"><span class="motm-lbl">اختيار الجمهور</span>${fanCol}</div>
     </div>
     <div class="motm-lists">

@@ -280,9 +280,12 @@ function gulfExtraHTML(){
   /* لا متوسطات تقييم في كأس الخليج (منصور 2026-09-23) — لا «تقييم المنتخبات» ولا «أعلى متوسط تقييم» */
 
   /* أفضل لاعب في كل مباراة: الأعلى تقييماً من الفريقين */
-  const motm = ms.map(m=>{ const b = [...matchRatings(m,m.home), ...matchRatings(m,m.away)].sort((a,b)=>b.r.v-a.r.v)[0];
-    return b ? {n:b.n, c:b.c, v:b.r.v, sub:`${m.home} ${+m.hg}-${+m.ag} ${m.away}`} : null; }).filter(Boolean);
-  out += sec("أفضل لاعب في كل مباراة", "صاحب أعلى تقييم في المباراة.", motm.length ? anList(motm, x=>ratingBadge(x.v)) : nil("يظهر بعد انتهاء أول مباراة."));
+  /* أفضل لاعب: اختيار الإدارة (m.motm) أولاً، وإلا الأعلى تقييماً — بلا رقم التقييم (منصور 2026-09-23) */
+  const motm = ms.filter(m=>matchOver(m)).map(m=>{ const sub = `${m.home} ${+m.hg}-${+m.ag} ${m.away}`;
+    if(m.motm && m.motm.n) return {n:m.motm.n, c:m.motm.c, sub};
+    const b = [...matchRatings(m,m.home), ...matchRatings(m,m.away)].sort((a,b)=>b.r.v-a.r.v)[0];
+    return b ? {n:b.n, c:b.c, sub} : null; }).filter(Boolean);
+  out += sec("أفضل لاعب في كل مباراة", "", motm.length ? anList(motm, ()=>"") : nil("يظهر بعد انتهاء أول مباراة."));
 
   /* الأكثر دقائق لعب: من التشكيلة الأساسية والتبديلات والطرد */
   /* الدقائق بعد انتهاء المباراة فقط (منصور 2026-09-23) — أثناء اللعب لا تُحسب */
@@ -574,6 +577,7 @@ function adminHTML(){
         <span class="s">${(m.hg+m.ag)||m.status==="ft"?`${m.hg} - ${m.ag}`:(m.time?H(m.time):"—")}</span>
         <span class="t a"><b>${H(m.away)}</b>${flagImg(m.away,"sm")}</span>
         <span class="meta">${m.round<=3?`ج${m.round}`:m.round===4?"نصف النهائي":"النهائي"} · <bdi dir="ltr">${H(m.date||"")}</bdi>${m.rec==="live"?` · <b class="lvtag">مرتبطة باللعب الفعلي</b>`:""}</span>
+        ${motmSelectHTML(m)}
         <span class="btns"><button data-gadm="edit" data-k="${H(LIVE?LIVE.keyOf(m):"")}">إدخال يدوي</button><button class="dl" data-gadm="rm" data-k="${H(LIVE?LIVE.keyOf(m):"")}">حذف</button></span>
       </div>`).join(""):`<p class="hint">لا مباريات بعد.</p>`}</div>
       <p class="hint" style="margin:12px 0 0">الجولات 1–3 = دور المجموعات، 4 = نصف النهائي، 5 = النهائي. المنتخبات والقوائم من الملصقات الرسمية.</p>
@@ -700,6 +704,25 @@ document.addEventListener("click", async e=>{
     catch(x){ toast("تعذّر الحفظ: "+(x.code||x.message),"err"); }
     repaint(); return;
   }
+}, true);
+
+/* أفضل لاعب في المباراة يختاره المحرّر (m.motm = {n, c}) — لمن شارك فعلاً (التشكيلة + البدلاء الداخلون)، بعد انتهاء المباراة */
+function motmSelectHTML(m){
+  const over = withGulf(()=>typeof matchOver==="function" && matchOver(m)); if(!over) return "";
+  const men = c => withGulf(()=>{ const s = new Set(xiNames(m.round, compOf(m), c)); matchSubs(m).filter(x=>x.club===c && x.in).forEach(x=>s.add(x.in)); return [...s]; });
+  const cur = m.motm && m.motm.n ? m.motm.c+"|"+m.motm.n : "";
+  const opt = (c,n) => `<option value="${H(c+"|"+n)}"${cur===c+"|"+n?" selected":""}>${H(n)}</option>`;
+  return `<label class="gadm-motm"><span>أفضل لاعب</span><select data-gmotm="${H(gKey(m))}"><option value="">تلقائي (الأعلى تقييماً)</option>
+    ${[m.home,m.away].map(c=>`<optgroup label="${H(c)}">${men(c).map(n=>opt(c,n)).join("")}</optgroup>`).join("")}</select></label>`;
+}
+document.addEventListener("change", async e=>{
+  const sel = e.target.closest && e.target.closest("select[data-gmotm]"); if(!sel) return;
+  const k = sel.dataset.gmotm, v = sel.value, [c, ...rest] = v.split("|"), n = rest.join("|");
+  sel.disabled = true;
+  try{ await saveGulfFresh(d=>{ const m = d.matches.find(x=>gKey(x)===k); if(!m) throw new Error("لم تُعثر على المباراة"); if(v) m.motm = {n, c}; else delete m.motm; });
+    toast(v ? `أفضل لاعب: ${n} ✅` : "أفضل لاعب: تلقائي","ok"); }
+  catch(x){ toast("تعذّر الحفظ: "+(x.code||x.message),"err"); }
+  sel.disabled = false; repaint();
 }, true);
 
 /* قوائم المنتخبات: الأرقام والأسماء والمراكز، إضافة وحذف — مسودة حتى الضغط على «حفظ القائمة» */

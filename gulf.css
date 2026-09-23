@@ -154,3 +154,5 @@ html[data-theme="dark"] .gc-cp-c .bar{background:#16294A}
 .gre-h{margin:0 0 6px;font:800 .95rem var(--display);color:var(--head)}
 #gulfRefAdmin .crew-hd .gc-flag{width:24px;height:auto;border-radius:3px}
 .gc-rg{display:block;font-size:.64rem;color:var(--slate);font-weight:600;margin-top:2px}
+.gadm-motm{grid-column:1/-1;display:flex;align-items:center;gap:8px;font-size:.72rem;color:var(--slate)}
+.gadm-motm select{flex:1;min-width:0;background:var(--navy-900);color:var(--head);border:1px solid var(--line);border-radius:8px;padding:6px 8px;font:inherit;font-size:.78rem}
