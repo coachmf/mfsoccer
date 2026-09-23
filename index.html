@@ -721,6 +721,7 @@ details.squadbox summary label.lb{margin:0;cursor:pointer}
 .pp-card .pp-img{position:absolute;left:0;right:0;top:0;width:100%;height:78%;object-fit:contain;object-position:bottom center;
   border-radius:8px 8px 0 0;pointer-events:none}
 /* الاسم شريط داخل البطاقة من الأسفل — فلا يزيد ارتفاع العقدة ولا تتداخل الخطوط */
+.gk-tag{display:inline-block;margin-inline-start:4px;padding:0 4px;border-radius:4px;font:800 .62em/1.5 var(--body);font-style:normal;letter-spacing:.3px;background:rgba(245,197,24,.18);color:#F5C518;vertical-align:1px}
 .pp-card .pp-nm{position:absolute;left:0;right:0;bottom:0;height:23%;display:flex;align-items:center;justify-content:center;
   background:linear-gradient(180deg,rgba(6,16,34,.55),rgba(6,16,34,.92));backdrop-filter:blur(2px);color:#fff;
   font-size:clamp(7px,2.4cqw,10px);font-weight:700;padding:0 3px;letter-spacing:.1px;
@@ -10633,7 +10634,8 @@ html.mp-open{overflow:hidden}
 .mp-head>*{position:relative;z-index:1}
 .mp-top{display:flex;align-items:center;padding:12px 14px 0}
 .mp-back{width:40px;height:40px;display:grid;place-items:center;color:#fff;background:none;border:0}
-.mp-when{width:max-content;max-width:90%;margin:4px auto 0;padding:6px 14px;border-radius:99px;background:rgba(255,255,255,.1);font-size:.8rem;font-weight:600;color:rgba(255,255,255,.9)}
+.mp-when-tv{display:block;white-space:nowrap;font-size:clamp(.56rem,2.9vw,.74rem);font-weight:600;opacity:.85;margin-top:2px}
+.mp-when{width:max-content;max-width:94%;text-align:center;margin:4px auto 0;padding:6px 14px;border-radius:99px;background:rgba(255,255,255,.1);font-size:.8rem;font-weight:600;color:rgba(255,255,255,.9)}
 .mp-score{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:8px;padding:16px 14px 6px}
 .mp-team{display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center;cursor:pointer;min-width:0}
 .mp-team .crest{width:62px;height:62px}
@@ -13121,7 +13123,8 @@ function mpHeader(m){
   const MS={pre:"لم تبدأ", h1:"الشوط الأول", ht:"استراحة", h2:"الشوط الثاني", ft:"انتهت"};
   const stLive = m.status==="h1"||m.status==="h2" || (!m.status && live);
   const st = m.status ? MS[m.status]||"" : soon ? "لم تبدأ" : live ? "جارية الآن" : "انتهت";
-  const when=[mpDateLabel(m), m.time?`<span dir="ltr">${esc(m.time)}</span>`:"", tvOf(m)?esc(tvOf(m)):""].filter(Boolean).join(" · ");
+  /* القنوات في سطر مستقل تحت الموعد، كلها في صف واحد (منصور 2026-09-23) */
+  const tvH=tvOf(m), when=[mpDateLabel(m), m.time?`<span dir="ltr">${esc(m.time)}</span>`:""].filter(Boolean).join(" · ") + (tvH?`<span class="mp-when-tv">${esc(tvH)}</span>`:"");
   const team=c=>`<div class="mp-team" data-club-open="${esc(c)}">${crest(c,true)}<b>${esc(c)}</b></div>`;
   const hs=soon?"":mpScorers(m,m.home), as=soon?"":mpScorers(m,m.away);
   return `<div class="mp-top">
@@ -13250,7 +13253,7 @@ function mpTeamXI(m, club){
         ${spotBadges(playerMatchEvents(m, club, p.n))}${natFlag(p.n, club)}
         ${v!=null?`<span class="rtg mpx-r ${ratingCls(v)}">${v.toFixed(1)}</span>`:""}
       </span>
-      <span class="mpx-nm">${p.s?`<em>${p.s}</em>`:""}${esc(shortName(p.n))}</span>
+      <span class="mpx-nm">${p.s?`<em>${p.s}</em>`:""}${esc(shortName(p.n))}${gkTag(p.p||p.role||(p.line==="G"?"GK":""))}</span>
     </div>`;
   }).join("")).join("");
   const lineCol="var(--pitch-line,rgba(127,196,255,.24))";
@@ -13287,7 +13290,7 @@ function mpBothXI(m){
         ${spotBadges(playerMatchEvents(m, club, p.n))}${natFlag(p.n, club)}
         ${v!=null?`<span class="rtg mpx-r ${ratingCls(v)}">${v.toFixed(1)}</span>`:""}
       </span>
-      <span class="mpx-nm">${p.s?`<em>${p.s}</em>`:""}${esc(shortName(p.n))}</span>
+      <span class="mpx-nm">${p.s?`<em>${p.s}</em>`:""}${esc(shortName(p.n))}${gkTag(p.p||p.role||(p.line==="G"?"GK":""))}</span>
     </div>`;
     }).join("")).join("");
   };
@@ -13312,6 +13315,8 @@ function mpFacePh(n, c){
   const cut=photoCut(n, c);
   return `<span class="mpt-ph" style="${accentVars(c)}">${cut?`<img src="${cut}_f.webp?v=29" alt="" loading="lazy" decoding="async">`:`<img class="noph" src="${crestSrcOf(c)}" alt="" loading="lazy">`}</span>`;
 }
+/* وسم الحارس في صفحة المباراة (منصور 2026-09-23): «GK» بعد اسم الحارس في الملعب والاحتياط والتبديلات */
+const gkTag = pos => /^(GK|G)$/i.test(String(pos||"").trim()) ? `<i class="gk-tag" dir="ltr">GK</i>` : "";
 function mpTeamSection(m){
   const club = MP_LT==="away" ? m.away : m.home, comp=compOf(m);
   const seg=`<div class="mp-seg two mpt-seg">${[["home",m.home],["away",m.away]].map(([k,c])=>`<button type="button" data-mp-lt="${k}" aria-pressed="${(MP_LT==="away"?"away":"home")===k}">${crest(c)}<span>${esc(c)}</span>${tavgHTML(teamAvgRating(m,c))}</button>`).join("")}</div>`;
@@ -13324,13 +13329,13 @@ function mpTeamSection(m){
   const subs=matchSubs(m).filter(x=>x.club===club);
   const subsBlock = subs.length ? `<div class="mpt-hd">التبديلات<span class="sq-n">${subs.length}</span></div>${subs.map(x=>`<div class="mpt-row" data-player="${esc(x.in||"")}" data-club="${esc(club)}">
       ${mpFacePh(x.in, club)}
-      <span class="mpt-nm"><b>${numOf(x.in)?`<em>${numOf(x.in)}</em>`:""}${esc(x.in||"—")}</b>
+      <span class="mpt-nm"><b>${numOf(x.in)?`<em>${numOf(x.in)}</em>`:""}${esc(x.in||"—")}${gkTag((sq.find(e=>e.n===x.in)||{}).p)}</b>
         <small><i class="mpt-in"></i><span dir="ltr">${absMinute(x.h,x.m)}'</span><span class="mpt-out">خروج: ${esc(x.out||"—")}</span></small></span>
       ${R[x.in]!=null?ratingBadge(R[x.in]):""}</div>`).join("")}` : "";
   const played=new Set([...xiNames(m.round, comp, club), ...subs.flatMap(x=>[x.in, x.out]).filter(Boolean)]);   /* الخارج أيضاً: حتى لو سُجّل خطأً خارج التشكيلة */
   const bench=sq.filter(x=>!played.has(x.n));
   const benchBlock = bench.length ? `<div class="mpt-hd">الاحتياط<span class="sq-n">${bench.length}</span></div><div class="mpt-bench">${bench.map(x=>`<div class="mpt-b" data-player="${esc(x.n)}" data-club="${esc(club)}">
-      ${mpFacePh(x.n, club)}<span>${x.s?`<em>${x.s}</em>`:""}${esc(shortName(x.n))}</span></div>`).join("")}</div>` : "";
+      ${mpFacePh(x.n, club)}<span>${x.s?`<em>${x.s}</em>`:""}${esc(shortName(x.n))}${gkTag(x.p)}</span></div>`).join("")}</div>` : "";
   return `<div class="mp-card mpt" style="${accentVars(club)}">${seg}${coachHTML}${subsBlock}${benchBlock}</div>`;
 }
 function mpLineups(m){
