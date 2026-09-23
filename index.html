@@ -2159,7 +2159,7 @@ main{padding-bottom:48px}
 <script src="admin-tabs.js?v=3" defer></script>
 <!-- كأس الخليج 27: قسم مستقل ببيانات منفصلة (seasons/gulf27) -->
 <link rel="stylesheet" href="gulf.css?v=14">
-<script src="gulf.js?v=29" defer></script>
+<script src="gulf.js?v=30" defer></script>
 <style>
 /* تبويب التحليل — التصميم الجديد (منصور 2026-09-17) */
 .an{--an-card:#0F1E35;--an-line:#213653;--an-txt:#EDF3FA;--an-mut:#8FA6C4;--an-track:rgba(143,166,196,.16);--an-acc:#2EB0F0;--an-acc2:#1878BE}
@@ -2947,6 +2947,7 @@ function isUpcoming(m){
 }
 /* انتهت المباراة: «انتهت» صراحة، أو أُقيمت وخرجت من نافذة اللعب (ساعتان) ولم تُعلَّم بمرحلة جارية */
 /* شارة المباراة الجارية في البطاقات: «استراحة» بين الشوطين كما في صفحة المباراة، وإلا «جارية الآن» (منصور 2026-09-23) */
+const isGulfMatch = m => !!(m && (m.__gulf || String(m.comp||"")==="كأس الخليج"));
 const liveStHTML = ph => ph==="ht" ? '<span class="mc-st ht">استراحة</span>' : '<span class="mc-st live"><i></i>جارية الآن</span>';
 function matchOver(m){
   if(!m) return false; if(m.status==="ft") return true;
@@ -13007,6 +13008,7 @@ function ratingRowHTML(x, i){
 }
 /* متوسط تقييم الفريق (رأس بطاقة الفريق، مبدّل التشكيلة، التفاصيل) — شارة التقييم نفسها بمنزلتين */
 function teamAvgRating(m, club){
+  if(isGulfMatch(m)) return null;               /* كأس الخليج بلا متوسط تقييم للفريق (منصور 2026-09-23) */
   const R=matchRatings(m, club); if(!R.length) return null;
   return Math.round(R.reduce((a,x)=>a+x.r.v,0)/R.length*100)/100;
 }
@@ -13281,7 +13283,7 @@ function mpTeamXI(m, club){
     <rect x="22" y="2" width="56" height="17" vector-effect="non-scaling-stroke"/><rect x="36" y="2" width="28" height="6.5" vector-effect="non-scaling-stroke"/>
     <path d="M40 19a12 9 0 0 0 20 0" vector-effect="non-scaling-stroke"/><path d="M36 ${H}a14 14 0 0 1 28 0" vector-effect="non-scaling-stroke"/></g></svg>`;
   return `<div class="mp-card mpx" style="${accentVars(club)}">
-    <div class="mpx-hd">${crest(club)}<b>${esc(club)}</b>${tavgHTML(avg)}<span class="mpx-form">${esc(formLbl(S.form))}</span></div>
+    <div class="mpx-hd">${crest(club)}<b>${esc(club)}</b>${tavgHTML(isGulfMatch(m)?null:avg)}<span class="mpx-form">${esc(formLbl(S.form))}</span></div>
     <div class="mpx-pitch" style="aspect-ratio:100/${H}">${svg}${players}</div>
   </div>`;
 }
@@ -13321,7 +13323,7 @@ function mpBothXI(m){
     <rect x="22" y="2" width="56" height="17" ${V}/><rect x="36" y="2" width="28" height="6.5" ${V}/><path d="M40 19a12 9 0 0 0 20 0" ${V}/>
     <rect x="22" y="${H-19}" width="56" height="17" ${V}/><rect x="36" y="${H-8.5}" width="28" height="6.5" ${V}/><path d="M40 ${H-19}a12 9 0 0 1 20 0" ${V}/>
     <line x1="2" y1="${H/2}" x2="98" y2="${H/2}" ${V}/><ellipse cx="50" cy="${H/2}" rx="13" ry="13" ${V}/></g></svg>`;
-  const hd=(c,S)=>`<div class="mpx-hd">${crest(c)}<b>${esc(c)}</b>${tavgHTML(avgOf(c))}<span class="mpx-form">${esc(formLbl(S.form))}</span></div>`;
+  const hd=(c,S)=>`<div class="mpx-hd">${crest(c)}<b>${esc(c)}</b>${tavgHTML(isGulfMatch(m)?null:avgOf(c))}<span class="mpx-form">${esc(formLbl(S.form))}</span></div>`;
   return `<div class="mp-card mpx mpx-both" style="${accentVars(m.home)}">
     ${hd(m.home, SH)}
     <div class="mpx-pitch" style="aspect-ratio:100/${H}">${svg}${players}</div>

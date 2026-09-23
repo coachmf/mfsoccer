@@ -277,14 +277,7 @@ function gulfExtraHTML(){
   const nil = t => `<div class="gc-empty">${t}</div>`;
   let out = "";   /* بلا عنوان فاصل (منصور 2026-09-23) — الأقسام تكمل تحليل البطولة مباشرة */
 
-  /* تقييم المنتخبات: متوسط تقييم لاعبي المنتخب في كل مباراة، ثم متوسطه على مبارياته */
-  const tr = {}; ms.forEach(m=>[m.home,m.away].forEach(c=>{ const L = matchRatings(m,c); if(!L.length) return;
-    const e = tr[c] ||= {c, n:0, s:0}; e.n++; e.s += L.reduce((a,x)=>a+x.r.v,0)/L.length; }));
-  const TR = Object.values(tr).map(e=>({...e, v:Math.round(e.s/e.n*100)/100})).sort((a,b)=>b.v-a.v);
-  out += sec("تقييم المنتخبات", "متوسط تقييم لاعبي كل منتخب في مبارياته (التقييم نفسه المحسوب للاعبين).", TR.length
-    ? `<div class="gc-tw"><table class="gc-tbl"><thead><tr><th>#</th><th class="tl">المنتخب</th><th>مباريات</th><th>المتوسط</th></tr></thead>
-      <tbody>${TR.map((e,i)=>`<tr><td>${i+1}</td><td class="tl"><span class="gc-tn">${flagImg(e.c)}${H(e.c)}</span></td><td>${e.n}</td><td>${ratingBadge(e.v)}</td></tr>`).join("")}</tbody></table></div>`
-    : nil("يظهر بعد انتهاء أول مباراة."));
+  /* لا متوسطات تقييم في كأس الخليج (منصور 2026-09-23) — لا «تقييم المنتخبات» ولا «أعلى متوسط تقييم» */
 
   /* أفضل لاعب في كل مباراة: الأعلى تقييماً من الفريقين */
   const motm = ms.map(m=>{ const b = [...matchRatings(m,m.home), ...matchRatings(m,m.away)].sort((a,b)=>b.r.v-a.r.v)[0];
@@ -346,7 +339,6 @@ function analysisTabHTML(){
     const zones = [...new Set(GOALS.map(g=>g.zone))].map(z=>({l:z, n:GOALS.filter(g=>g.zone===z).length})).sort((a,b)=>b.n-a.n);
     const goals = GOALS.length;
     return noProfile(`<div class="an gc-an">
-      ${avgRatingSectionHTML()}
       <h2 class="sec">توزيع الأهداف على فترات المباراة</h2>
       ${anPeriods()}
       ${goals ? `<div class="an-duo">
