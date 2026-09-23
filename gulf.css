@@ -33,6 +33,10 @@
 .gc-m-s em{font-style:normal;font-size:.85rem;color:var(--slate)}
 .gc-m-s small.lv{width:100%;font-size:.62rem;color:#e0443a;font-weight:800}
 .gc-m-v{grid-area:v;font-size:.66rem;color:var(--slate)}
+.gc-m-x{grid-column:1/-1;display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:4px 12px;font-size:.64rem;color:var(--slate);line-height:1.5}
+.gc-m-x>span{display:inline-flex;align-items:center;gap:4px}
+.gc-m-x .ref-role.sm{width:14px;height:14px;flex:none}
+.gc-m-tv .tv-ico{flex:none}
 .gc-empty{padding:18px;text-align:center;color:var(--slate);font-size:.82rem}
 .gc-lead{display:flex;flex-direction:column}
 .gc-lr{display:grid;grid-template-columns:26px 40px minmax(0,1fr) 40px;align-items:center;gap:10px;padding:7px 0;border-top:1px solid var(--line);cursor:pointer}

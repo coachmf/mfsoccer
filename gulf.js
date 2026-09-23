@@ -48,11 +48,11 @@ const T = {
     pos:{"ايوب العلوي":"D","بوعلام خوخي":"D","همام الأمين":"D","عيسى لاي":"D","بيدرو ميغيل":"D","سلطان البريك":"D",
          "عاصم مادبو":"M","عبدالعزيز حاتم":"M","أحمد فتحي":"M","كريم بوضياف":"M","جاسم جابر":"M","محمد مناعي":"M",
          "أحمد الجانحي":"F","أحمد علاء":"F","أكرم عفيف":"F","المعز علي":"F","أديميلسون جونيور":"F","حسن الهيدوس":"F","تحسين محمد":"F","يوسف عبدالرزاق":"F"}},
-  "الامارات":{f:"ae", g:"B", c:["#C8102E","#FFFFFF"], coach:"", faces:"ae",
+  "الامارات":{f:"ae", g:"B", c:["#C8102E","#FFFFFF"], coach:"زلاتكو داليتش", faces:"ae",
     list:["خالد الظنحاني","زايد الزعابي","ماركوس ميلوني","فهد الظنحاني","حمد المقبالي","خالد عيسى","روبن فيليب","إيريك دي مينيزيس","لوكاس بيمنتا","ساشا إيفكوفيتش","علاء الدين زهير","خليفة الحمادي","حارب عبدالله",
           "نيكولاس خيمينيز","فابيو دي ليما","عصام فايز","مامادو كوليبالي","عبدالله حمد","لوان بيريرا","عثمان كامارا","سلطان عادل","جويلهرم دا سيلفا","ريتشارد أكونور","يوري سيزار","علي صالح","برونو دي أوليفيرا"],
     gkSet:["فهد الظنحاني","حمد المقبالي","خالد عيسى"]},
-  "البحرين": {f:"bh", g:"B", c:["#CE1126","#FFFFFF"], coach:"", faces:"bh",
+  "البحرين": {f:"bh", g:"B", c:["#CE1126","#FFFFFF"], coach:"دراغان تالاييتش", faces:"bh",
     list:["فنسنت إيمانويل","حمد الشمسان","عمر سالم","محمد الغرابلي","إبراهيم لطف الله","عبدالله الخلاصي","سيد مهدي باقر","وليد الحيام","أحمد ربيعه","أمين بنعدي","عمر صابر","علي مدن","عباس العصفور",
           "سيد ضياء سعيد","حسن الكراني","محمد عبدالقيوم","كميل الأسود","علي الدوسري","إبراهيم الختال","مهدي حميدان","حسين عبدالكريم","مهدي عبدالجبار","محمد الرميحي","هاشم سيد عيسى","محمد مرهون","جاسم الشيخ"],
     gkSet:["عمر سالم","محمد الغرابلي","إبراهيم لطف الله"]},
@@ -409,7 +409,10 @@ function matchCard(m){
     <span class="gc-m-t">${flagImg(m.home)}<b>${H(m.home)}</b></span>
     <span class="gc-m-s">${up&&!live?`<em>${m.time?H(m.time):"—"}</em>`:`<b>${hg}</b><i>-</i><b>${ag}</b>`}${live?`<small class="lv"><i class="lv-dot"></i>مباشر</small>`:""}</span>
     <span class="gc-m-t a"><b>${H(m.away)}</b>${flagImg(m.away)}</span>
-    ${m.venue?`<span class="gc-m-v">${H(m.venue)}</span>`:""}</button>`;
+    ${m.venue?`<span class="gc-m-v">${H(m.venue)}</span>`:""}
+    ${(()=>{ const v = (m.refs||{}).var, ico = k => typeof refRoleIco==="function" ? refRoleIco(k,"sm") : "";   /* الحكم والقناة (منصور 2026-09-23) */
+      return (m.ref||v ? `<span class="gc-m-x gc-m-rf">${m.ref?`<span>${ico("ref")}<bdi>${H(m.ref)}</bdi></span>`:""}${v&&v!=="لا يوجد"?`<span>${ico("var")}<bdi>${H(v)}</bdi></span>`:""}</span>` : "")
+        + (m.tv ? `<span class="gc-m-x gc-m-tv">${typeof TV_ICO!=="undefined"?TV_ICO:""}<bdi>${H(m.tv)}</bdi></span>` : ""); })()}</button>`;
 }
 function groupsHTML(){
   return GROUPS.map(([g,t])=>{ const rows = table(g), ms = (DATA.matches||[]).filter(m=>T[m.home]&&T[m.home].g===g&&m.round<=3).sort((a,b)=>String(a.date).localeCompare(String(b.date))||String(a.time).localeCompare(String(b.time)));
@@ -426,11 +429,13 @@ function leadersHTML(){
       <span class="rk">${i+1}</span><span class="ph" style="background:${KIT[x.c]||"transparent"}">${face(x.c,x.n)}</span><span class="nm"><b>${H(x.n)}</b><small>${flagImg(x.c,"sm")}${H(x.c)}</small></span><span class="v">${x.v}</span></div>`).join("")}</div>`:`<div class="gc-empty">لا ${unit} مسجّلة بعد.</div>`}</section>`;
   return blk("الهدافون", L.g, "أهداف") + blk("صناعة الأهداف", L.a, "تمريرات حاسمة") + blk("الإنذارات", L.y, "إنذارات") + blk("الطرد", L.r, "بطاقات حمراء");
 }
+/* «المجموعة A» داخل bdi: الحرف اللاتيني مع الرقم بعده («A · 27») كانا يقلبان ترتيب السطر (منصور 2026-09-23) */
+const grpLbl = g => `<bdi>المجموعة <span dir="ltr">${g==="A"?"A":"B"}</span></bdi>`;
 function profilesHTML(){
   const L = TEAMS.slice().sort((a,b)=>TITLES[b].length-TITLES[a].length || a.localeCompare(b,"ar"));
   return `<div class="gc-prof">${L.map(c=>{ const y = TITLES[c]||[];
     return `<button type="button" class="gc-pc" style="--tc:${T[c].c[0]}" data-gsq="${H(c)}">
-      <span class="gc-pc-hd">${flagImg(c,"lg")}<span><b>${H(c)}</b><small>${T[c].g==="A"?"المجموعة A":"المجموعة B"}${T[c].coach?` · ${H(T[c].coach)}`:""}</small></span></span>
+      <span class="gc-pc-hd">${flagImg(c,"lg")}<span><b>${H(c)}</b><small>${grpLbl(T[c].g)}${T[c].coach?` · <bdi>${H(T[c].coach)}</bdi>`:""}</small></span></span>
       <span class="gc-pc-n"><strong>${y.length}</strong><i>${y.length===1?"لقب":y.length===2?"لقبان":y.length>=3&&y.length<=10?"ألقاب":"لقباً"}</i></span>
       ${y.length?`<span class="gc-pc-y">${y.map(v=>`<em>${v}</em>`).join("")}</span>`:""}
       ${TITLE_NOTE[c]?`<span class="gc-pc-note">${H(TITLE_NOTE[c])}</span>`:""}
@@ -442,7 +447,7 @@ function teamsHTML(){
   const posG = p => { p = String(p||"").toUpperCase(); return p==="GK"||p==="G" ? "GK" : (typeof POS_MAIN==="object" && POS_MAIN[p]) || ""; };
   return `<div class="gc-teams">${TEAMS.map(x=>`<button type="button" class="gc-tb${x===c?" on":""}" data-gteam="${H(x)}">${flagImg(x)}<span>${H(x)}</span></button>`).join("")}</div>
     <section class="gc-card gc-sq" style="--tc:${t.c[0]}">
-      <div class="gc-sq-hd">${flagImg(c,"lg")}<div><h3>منتخب ${H(c)}</h3><span>${t.g==="A"?"المجموعة A":"المجموعة B"} · ${sq.length} لاعباً${t.coach?` · المدرب: ${H(t.coach)}`:""}</span></div></div>
+      <div class="gc-sq-hd">${flagImg(c,"lg")}<div><h3>منتخب ${H(c)}</h3><span>${grpLbl(t.g)} · <bdi>${sq.length} لاعباً</bdi>${t.coach?` · <bdi>المدرب: ${H(t.coach)}</bdi>`:""}</span></div></div>
       ${sq.length?groupsP.map(([k,lbl])=>{ const L = sq.filter(x=>posG(x.p)===k || (k==="" && !["GK","D","M","F"].includes(posG(x.p)))); if(!L.length) return "";
         return `<div class="gc-sq-g">${lbl}</div><div class="gc-sq-grid">${L.map(x=>`<div class="gc-pl" data-gplayer="${H(x.n)}" data-gclub="${H(c)}"><span class="ph" style="background:${KIT[c]}">${face(c,x.n)}</span><b>${H(x.n)}</b>${x.s?`<em>${x.s}</em>`:""}</div>`).join("")}</div>`; }).join("")
         :`<div class="gc-empty">لم تُضف قائمة هذا المنتخب بعد.</div>`}
