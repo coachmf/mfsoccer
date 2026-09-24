@@ -2159,7 +2159,7 @@ main{padding-bottom:48px}
 <script src="admin-tabs.js?v=3" defer></script>
 <!-- كأس الخليج 27: قسم مستقل ببيانات منفصلة (seasons/gulf27) -->
 <link rel="stylesheet" href="gulf.css?v=15">
-<script src="gulf.js?v=31" defer></script>
+<script src="gulf.js?v=32" defer></script>
 <style>
 /* تبويب التحليل — التصميم الجديد (منصور 2026-09-17) */
 .an{--an-card:#0F1E35;--an-line:#213653;--an-txt:#EDF3FA;--an-mut:#8FA6C4;--an-track:rgba(143,166,196,.16);--an-acc:#2EB0F0;--an-acc2:#1878BE}
@@ -3030,12 +3030,14 @@ function playerMatchMinutes(m, club, name){
   const subs = matchSubs(m).filter(s=>s.club===club);
   const inSub  = subs.find(s=>s.in===name);
   const outSub = subs.find(s=>s.out===name);
-  const LEN = matchLen(m);
+  /* كأس الخليج: المباراة 90 دقيقة بلا بدل ضائع (منصور 2026-09-24) — الوقت المحتسب يُعدّ على دقيقة 45/90 */
+  const G = isGulfMatch(m), LEN = G ? MATCH_MIN : matchLen(m);
+  const at = s => G ? capTo(LEN, absMinute(s.h, s.m, 0, 0)) : capTo(LEN, evAbs(m, s.h, s.m, s.x));
   let start;
   if(starter) start = 0;
-  else if(inSub) start = capTo(LEN, evAbs(m, inSub.h, inSub.m, inSub.x));
+  else if(inSub) start = at(inSub);
   else return 0;                                   /* لم يشارك */
-  const end = outSub ? capTo(LEN, evAbs(m, outSub.h, outSub.m, outSub.x)) : LEN;
+  const end = outSub ? at(outSub) : LEN;
   return Math.max(inSub ? 1 : 0, end - start);   /* بديل دخل في آخر لحظة يُحسب له ظهور بدقيقة واحدة */
 }
 /* هل اللاعب حارس مرمى؟ (من مركزه في الكشف) */
@@ -12975,7 +12977,9 @@ function playerRating(m, club, name){
   return {v: Math.round(Math.max(RATING.min, Math.min(RATING.max, raw))*10)/10, parts, ctx:c};
 }
 /* تقييمات فريق في مباراة، مرتبة من الأعلى */
-function matchRatings(m, club){
+/* كأس الخليج بلا تقييمات لاعبين في أي مكان (منصور 2026-09-24) — التقييم الداخلي يبقى لاختيار «أفضل لاعب» تلقائياً فقط */
+function matchRatings(m, club){ return isGulfMatch(m) ? [] : matchRatingsRaw(m, club); }
+function matchRatingsRaw(m, club){
   if(!matchOver(m)) return [];                 /* لا تقييمات (ولا «أفضل لاعب») قبل صافرة النهاية — قبل الانطلاق ولا أثناء اللعب */
   const comp=compOf(m), men=new Set(xiNames(m.round, comp, club));
   matchSubs(m).filter(s=>s.club===club && s.in).forEach(s=>men.add(s.in));
@@ -13036,10 +13040,12 @@ function motmPlayerHTML(n, c, extra){
     <b>${esc(n)}</b><small>${crest(c)}${esc(c)}</small>${extra}</div>`;
 }
 function mpMotmHTML(m){
-  const all=[...matchRatings(m,m.home), ...matchRatings(m,m.away)].sort((a,b)=>b.r.v-a.r.v);
-  if(!all.length) return "";
-  /* كأس الخليج: أفضل لاعب يختاره المحرّر (m.motm) إن وُجد — بلا رقم تقييم (منصور 2026-09-23) */
-  const man = isGulfMatch(m) && m.motm && m.motm.n ? m.motm : null;
+  const G=isGulfMatch(m);
+  const raw=[...matchRatingsRaw(m,m.home), ...matchRatingsRaw(m,m.away)].sort((a,b)=>b.r.v-a.r.v);
+  if(!raw.length) return "";
+  const all=G ? [] : raw;                       /* الخليج: لا قائمة تقييمات تحت أفضل لاعب */
+  /* كأس الخليج: أفضل لاعب يختاره المحرّر (m.motm) وإلا الأعلى داخلياً — بلا رقم تقييم (منصور 2026-09-23/24) */
+  const man = G ? (m.motm && m.motm.n ? m.motm : raw[0]) : null;
   const top=man ? {n:man.n, c:man.c, r:null} : all[0], fan=mpFanPick(m), f0=fan.list[0];
   const fanCol = fan.loading ? `<div class="motm-empty">جارٍ تحميل الأصوات…</div>`
     : f0 ? motmPlayerHTML(f0.n, f0.c, `<span class="motm-pct"><b>${f0.pct}%</b><small>${nVotes(f0.v)}</small></span>`)
@@ -13060,7 +13066,7 @@ function mpMotmHTML(m){
     </div>
     ${(hA!=null||aA!=null)?`<div class="motm-avg"><span>متوسط تقييم الفريقين</span>
       <div><b>${crest(m.home)}${esc(m.home)}</b>${tavgHTML(hA)}</div><div><b>${crest(m.away)}${esc(m.away)}</b>${tavgHTML(aA)}</div></div>`:""}
-    <p class="rt-note">تقييم mfsoccer محسوب من إحصاءات الموقع: ${RATING.rules.map(r=>r.label).join("، ")}. اختيار الجمهور من تصويت «أفضل لاعب» في تشكيلة الجمهور للجولة ${m.round}.</p></div>`;
+    <p class="rt-note">${G?"":`تقييم mfsoccer محسوب من إحصاءات الموقع: ${RATING.rules.map(r=>r.label).join("، ")}. `}اختيار الجمهور من تصويت «أفضل لاعب» في تشكيلة الجمهور للجولة ${m.round}.</p></div>`;
 }
 function mpRatingsHTML(m){
   const H=matchRatings(m,m.home), A=matchRatings(m,m.away);

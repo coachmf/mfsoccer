@@ -283,7 +283,7 @@ function gulfExtraHTML(){
   /* أفضل لاعب: اختيار الإدارة (m.motm) أولاً، وإلا الأعلى تقييماً — بلا رقم التقييم (منصور 2026-09-23) */
   const motm = ms.filter(m=>matchOver(m)).map(m=>{ const sub = `${m.home} ${+m.hg}-${+m.ag} ${m.away}`;
     if(m.motm && m.motm.n) return {n:m.motm.n, c:m.motm.c, sub};
-    const b = [...matchRatings(m,m.home), ...matchRatings(m,m.away)].sort((a,b)=>b.r.v-a.r.v)[0];
+    const b = [...matchRatingsRaw(m,m.home), ...matchRatingsRaw(m,m.away)].sort((a,b)=>b.r.v-a.r.v)[0];
     return b ? {n:b.n, c:b.c, sub} : null; }).filter(Boolean);
   out += sec("أفضل لاعب في كل مباراة", "", motm.length ? anList(motm, ()=>"") : nil("يظهر بعد انتهاء أول مباراة."));
 
