@@ -34,7 +34,7 @@ const SNAP={_p:{},
     const t=setTimeout(()=>ctl&&ctl.abort(), 8000);
     return this._p[id]=fetch('/api/doc/'+id, {cache:'no-cache', signal:ctl&&ctl.signal})
       .then(r=>r.ok?r.json():null).catch(()=>null).finally(()=>clearTimeout(t)); }};
-if(/^https?:$/.test(location.protocol)){ SNAP.get('2026-2027'); SNAP.get('assets'); }
+if(/^https?:$/.test(location.protocol)){ SNAP.get('2026-2027'); SNAP.get('assets'); SNAP.get('gulf27'); }
 /* بعد التحليل تكون الحالة interactive قبل تنفيذ سكربتات defer (Firebase) — فعلامة
    DOMContentLoaded هي الدليل الوحيد على جاهزيتها (انظر domReady) */
 var DCL_FIRED=false; document.addEventListener('DOMContentLoaded', ()=>{ DCL_FIRED=true; }, {once:true});
@@ -2161,7 +2161,7 @@ main{padding-bottom:48px}
 <script src="admin-tabs.js?v=3" defer></script>
 <!-- كأس الخليج 27: قسم مستقل ببيانات منفصلة (seasons/gulf27) -->
 <link rel="stylesheet" href="gulf.css?v=15">
-<script src="gulf.js?v=33" defer></script>
+<script src="gulf.js?v=34" defer></script>
 <style>
 /* تبويب التحليل — التصميم الجديد (منصور 2026-09-17) */
 .an{--an-card:#0F1E35;--an-line:#213653;--an-txt:#EDF3FA;--an-mut:#8FA6C4;--an-track:rgba(143,166,196,.16);--an-acc:#2EB0F0;--an-acc2:#1878BE}

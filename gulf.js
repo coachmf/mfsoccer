@@ -14,6 +14,7 @@ const G = window.GULF = {};
 const H = s => String(s==null?"":s).replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const TEST = /^(localhost|127\.0\.0\.1)$/.test(location.hostname) && /[?&]livetest=1\b/.test(location.search);
 const COMP_G = "كأس الخليج", DOC_ID = "gulf27", NAME = "كأس الخليج 27";
+const CACHE_K = "mfgulf27_cache";   /* آخر نسخة من وثيقة البطولة على الجهاز — للرسم الفوري عند الفتح */
 G.COMP = COMP_G;
 
 /* ───────────── المنتخبات (من القوائم الرسمية التي أرسلها منصور) ─────────────
@@ -188,8 +189,17 @@ function leagueClubOf(saved, name){
 const store = {
   watch(cb){
     if(TEST){ const r=()=>{ try{ const s=localStorage.getItem("mfgulf"); cb(s?JSON.parse(s):null); }catch(e){ cb(null); } }; r(); window.addEventListener("storage", e=>{ if(e.key==="mfgulf") r(); }); return; }
+    /* بداية فورية (منصور 2026-09-24): قناة Firestore في التطبيق تحتاج ثوانيَ، وخلالها كانت بطاقات «القادمة»
+       تُظهر «لم تبدأ» لمباراة جارية. نرسم أولاً آخر نسخة على الجهاز ثم لقطة CDN (/api/doc/gulf27) —
+       الأحدث منهما فقط (حسب updated) — ثم يتولى onSnapshot الحيّ ولا يُقبل بعده شيء أقدم. */
+    let live = false, last = "";
+    const early = d => { if(live || !d || typeof d!=="object" || !Array.isArray(d.matches)) return; const u = String(d.updated||""); if(last && u <= last) return; last = u; cb(d); };
+    try{ const c = localStorage.getItem(CACHE_K); if(c) early(JSON.parse(c)); }catch(e){}
+    if(typeof SNAP!=="undefined") SNAP.get(DOC_ID).then(early);
     const go = () => { if(typeof fbDb==="undefined" || !fbDb){ setTimeout(go, 400); return; }
-      fbDb.collection("seasons").doc(DOC_ID).onSnapshot(s=>cb(s.exists ? s.data() : null), ()=>cb(undefined)); };
+      fbDb.collection("seasons").doc(DOC_ID).onSnapshot(s=>{ live = true; const d = s.exists ? s.data() : null;
+        if(d) try{ localStorage.setItem(CACHE_K, JSON.stringify(d)); }catch(e){}
+        cb(d); }, ()=>cb(undefined)); };
     go();
   },
   async save(d){

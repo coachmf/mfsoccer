@@ -4,13 +4,13 @@
    تلك المدة — أو دائماً إن تعثّرت القناة. هذا المسار يعيد JSON عادياً مضغوطاً (~20 ك.ب
    للموسم) من ذاكرة CDN، ويُحدَّث من Firestore مرة كل دقيقة على الأكثر مهما كثر الزوار،
    فيوفّر قراءات أيضاً. التحديث الحيّ بعد الرسم يبقى على onSnapshot في الصفحة.
-   الاستخدام: /api/doc/2026-2027 ، /api/doc/assets */
+   الاستخدام: /api/doc/2026-2027 ، /api/doc/assets ، /api/doc/gulf27 */
 'use strict';
 const { accessToken } = require('./lib/google');
 
 const PROJECT = 'mfsoccer-c7ee4';
 const API_KEY = 'AIzaSyD_ZzAE4HEKPIuAKCmta8tzN5KOa8IUfuo';   /* نفس المفتاح العام في index.html */
-const ALLOWED = /^(\d{4}-\d{4}|assets)$/;
+const ALLOWED = /^(\d{4}-\d{4}|assets|gulf27)$/;   /* gulf27 = كأس الخليج 27 */
 
 /* قيمة Firestore المُنمَّطة ← قيمة JSON عادية كما يعيدها SDK للصفحة */
 function val(v){
