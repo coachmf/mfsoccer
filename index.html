@@ -6816,6 +6816,8 @@ function goalsTimeline(m,gs,mc){
     }
     if(e.t==="e"){
       const v=e.v, K=MEV_KIND[v.k]||MEV_KIND.note, mn=`${e.m}${e.x?"+"+e.x:""}'`;
+      /* تعليق عام بنص: النص والدقيقة فقط، بلا أيقونة ولا كلمة «تعليق» (منصور 2026-09-24) */
+      if(!v.club && K===MEV_KIND.note && String(v.note||"").trim()){ rows.push(`<div class="tl-xnote txt"><span dir="ltr">${mn}</span><em>${esc(v.note)}</em></div>`); return; }
       if(!v.club){ rows.push(`<div class="tl-xnote">${K.ico}<b>${K.t}</b><span dir="ltr">${mn}</span>${v.note?`<em>${esc(v.note)}</em>`:""}</div>`); return; }
       const body=`<div class="tl-ev xev${isH?" h":" a"}"><div class="tl-card">
           <div class="tl-name"${v.p?` data-player="${esc(v.p)}" data-club="${esc(v.club)}"`:""}>${K.ico}${v.p?esc(v.p):K.t}</div>
@@ -10567,6 +10569,7 @@ html[data-theme="light"] .hm{--bg-card:#FFFFFF;--border-card:#E2E8F0;--text-prim
 .tl-min.xev span{background:rgba(242,153,74,.16);color:#f2c94c}
 .tl-xnote{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:6px;margin:6px auto;padding:6px 12px;max-width:92%;border-radius:10px;background:rgba(127,196,255,.08);font-size:.76rem;color:var(--text-primary,#fff);position:relative;z-index:1}
 .tl-xnote span,.tl-xnote em{font-style:normal;color:var(--text-muted,#8fa6c4)}
+.tl-xnote.txt em{color:var(--text-primary,#fff);font-weight:600}
 /* بطاقة الملعب: الصورة الكاملة واقفة من بعيد، محاذاة أسفل بلا قصّ الرأس */
 .mpx-card .pp-img.mpx-stand{top:auto;bottom:0;height:100%;object-fit:contain;object-position:bottom center}
 .mpt{padding:10px 12px}
