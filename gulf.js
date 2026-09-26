@@ -180,6 +180,7 @@ function withGulf(fn){
   }
 }
 G.withGulf = withGulf;
+G.inCtx = () => depth > 0;   /* صفحة مباراة الخليج بلا بطاقة مدرب — CLUB_COACH للأندية («الكويت» النادي ≠ المنتخب) */
 function leagueClubOf(saved, name){
   for(const c of Object.keys(saved.SQUADS||{})) if((saved.SQUADS[c]||[]).some(x=>(typeof x==="string"?x:x&&x.n)===name)) return c;
   return null;

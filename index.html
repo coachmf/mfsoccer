@@ -2161,7 +2161,7 @@ main{padding-bottom:48px}
 <script src="admin-tabs.js?v=3" defer></script>
 <!-- كأس الخليج 27: قسم مستقل ببيانات منفصلة (seasons/gulf27) -->
 <link rel="stylesheet" href="gulf.css?v=15">
-<script src="gulf.js?v=35" defer></script>
+<script src="gulf.js?v=36" defer></script>
 <style>
 /* تبويب التحليل — التصميم الجديد (منصور 2026-09-17) */
 .an{--an-card:#0F1E35;--an-line:#213653;--an-txt:#EDF3FA;--an-mut:#8FA6C4;--an-track:rgba(143,166,196,.16);--an-acc:#2EB0F0;--an-acc2:#1878BE}
@@ -13360,7 +13360,7 @@ function mpTeamSection(m){
   const seg=`<div class="mp-seg two mpt-seg">${[["home",m.home],["away",m.away]].map(([k,c])=>`<button type="button" data-mp-lt="${k}" aria-pressed="${(MP_LT==="away"?"away":"home")===k}">${crest(c)}<span>${esc(c)}</span>${tavgHTML(teamAvgRating(m,c))}</button>`).join("")}</div>`;
   const sq=squadEntriesOf(club), numOf=n=>{ const e=sq.find(x=>x.n===n); return e&&e.s?e.s:""; };
   const R={}; matchRatings(m, club).forEach(x=>R[x.n]=x.r.v);
-  const coach=(typeof CLUB_COACH!=="undefined") && CLUB_COACH[club];
+  const coach=!(window.GULF && GULF.inCtx && GULF.inCtx()) && (typeof CLUB_COACH!=="undefined") && CLUB_COACH[club];
   const coachHTML = coach ? `<div class="mpt-hd">المدرب</div><div class="mpt-row nolink">
       <span class="mpt-ph" style="${accentVars(club)}">${coach.img?`<img src="${coach.img}_f.webp?v=29" alt="" loading="lazy">`:`<img class="noph" src="${crestSrcOf(club)}" alt="">`}</span>
       <span class="mpt-nm"><b>${esc(coach.n)}</b><small>المدرب${coachFlag(coach.nat,"inl")}</small></span></div>` : "";
