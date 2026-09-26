@@ -3032,9 +3032,9 @@ function playerMatchMinutes(m, club, name){
   const subs = matchSubs(m).filter(s=>s.club===club);
   const inSub  = subs.find(s=>s.in===name);
   const outSub = subs.find(s=>s.out===name);
-  /* كأس الخليج: المباراة 90 دقيقة بلا بدل ضائع (منصور 2026-09-24) — الوقت المحتسب يُعدّ على دقيقة 45/90 */
-  const G = isGulfMatch(m), LEN = G ? MATCH_MIN : matchLen(m);
-  const at = s => G ? capTo(LEN, absMinute(s.h, s.m, 0, 0)) : capTo(LEN, evAbs(m, s.h, s.m, s.x));
+  /* بدل الضائع محسوب في دقائق اللاعبين — للدوري وكأس الخليج معاً (منصور 2026-09-26، ألغى حدّ الـ90 للخليج) */
+  const LEN = matchLen(m);
+  const at = s => capTo(LEN, evAbs(m, s.h, s.m, s.x));
   let start;
   if(starter) start = 0;
   else if(inSub) start = at(inSub);
