@@ -343,17 +343,17 @@ function discHTML(){
     ${kpis([[y,"البطاقات الصفراء","y"],[r,"البطاقات الحمراء","r"],[n,"مباريات مُقامة"],[f2((y+r)/n),"بطاقات لكل مباراة","lead"]])}
     <p class="hint rf-note">من البطاقات المسجّلة في أحداث المباريات. الإنذار الثاني يُحتسب بطاقة حمراء.</p>
     ${sec("الفرق")}
-    ${table("discT", [["n","الفريق","tl"],["y","صفراء"],["r","حمراء"],["t","المجموع"]],
+    ${table("discT", [["n","الفريق","tl"],["y",rfCardL("y")],["r",rfCardL("r")],["t","المجموع"]],
       sortBy(T,"discT",{n:x=>x.c,y:x=>x.y,r:x=>x.r,t:x=>x.t}).map(x=>`<tr><td class="tl">${clubCell(x.c)}</td><td>${x.y}</td><td>${x.r}</td><td><b>${x.t}</b></td></tr>`).join(""))}
     <div class="ax-duo">
-      <div>${sec("الأكثر إنذاراً")}${PL.some(x=>x.y) ? table("discY", [["n","اللاعب","tl"],["c","الفريق","tl"],["y","صفراء"]],
+      <div>${sec("الأكثر إنذاراً")}${PL.some(x=>x.y) ? table("discY", [["n","اللاعب","tl"],["c","الفريق","tl"],["y",rfCardL("y")]],
         pr(sortBy(PL.filter(x=>x.y),"discY",{n:x=>x.n,c:x=>x.c,y:x=>x.y}),"y")) : empty("لا إنذارات مسجّلة.")}</div>
-      <div>${sec("الأكثر طرداً")}${PL.some(x=>x.r) ? table("discR", [["n","اللاعب","tl"],["c","الفريق","tl"],["r","حمراء"]],
+      <div>${sec("الأكثر طرداً")}${PL.some(x=>x.r) ? table("discR", [["n","اللاعب","tl"],["c","الفريق","tl"],["r",rfCardL("r")]],
         pr(sortBy(PL.filter(x=>x.r),"discR",{n:x=>x.n,c:x=>x.c,r:x=>x.r}),"r")) : empty("لا بطاقات حمراء مسجّلة.")}</div>
     </div>
     ${sec("الانضباط حسب الجولة")}
     ${typeof rfRoundChart==="function" ? rfRoundChart(rfRows("")) : ""}
-    ${table("discRd", [["r","الجولة","tl"],["y","صفراء"],["rr","حمراء"],["t","المجموع"]],
+    ${table("discRd", [["r","الجولة","tl"],["y",rfCardL("y")],["rr",rfCardL("r")],["t","المجموع"]],
       sortBy(RL,"discRd",{r:x=>x.rd,y:x=>x.y,rr:x=>x.r,t:x=>x.t}).map(x=>`<tr><td class="tl"><b>الجولة ${x.rd}</b></td><td>${x.y}</td><td>${x.r}</td><td><b>${x.t}</b></td></tr>`).join(""))}`;
 }
 
@@ -422,7 +422,7 @@ function perfTable(){
   const S=sortBy(L,"perf",{n:x=>x.n, apps:x=>x.apps, starts:x=>x.starts, subs:x=>x.subs, mins:x=>x.mins, g:x=>x.g, a:x=>x.a, y:x=>x.y, r:x=>x.r, cs:x=>x.gk?x.cs:-1, pk:x=>x.pk, og:x=>x.og});
   const lim=AX.perf.lim;
   return `<p class="hint rf-note">${L.length} لاعباً · اضغط عنوان العمود للترتيب واسم اللاعب لبطاقته.</p>
-    ${table("perf", [["n","اللاعب","tl sticky"],["apps","مباريات"],["starts","أساسي"],["subs","بديل"],["mins","دقائق"],["g","أهداف"],["a","صناعة"],["y","صفراء"],["r","حمراء"],["cs","شباك نظيفة"],["pk","جزاء (سجّل/نفّذ)"],["og","عكسي"]],
+    ${table("perf", [["n","اللاعب","tl sticky"],["apps","مباريات"],["starts","أساسي"],["subs","بديل"],["mins","دقائق"],["g","أهداف"],["a","صناعة"],["y",rfCardL("y")],["r",rfCardL("r")],["cs","شباك نظيفة"],["pk","جزاء (سجّل/نفّذ)"],["og","عكسي"]],
       S.slice(0,lim).map(p=>`<tr><td class="tl sticky">${pbtn(p.n,p.c,`${face(p.n,p.c,"sm")}<span class="ax-nc"><b>${H(p.n)}</b><small>${H(p.c)}</small></span>`)}</td>
         <td>${p.apps}</td><td>${p.starts}</td><td>${p.subs}</td><td>${p.mins}</td><td><b>${p.g}</b></td><td><b>${p.a}</b></td><td>${p.y}</td><td>${p.r}</td><td>${p.gk?p.cs:"—"}</td><td>${p.pk?`${p.pks}/${p.pk}`:"0"}</td><td>${p.og}</td></tr>`).join(""), "ax-wide")}
     ${more("perf", S.length-lim)}`;

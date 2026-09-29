@@ -2164,7 +2164,7 @@ main{padding-bottom:48px}
 <script src="gulf.js?v=36" defer></script>
 <!-- التحليل الموسّع + تقييم اللاعبين 0–100 + البحث العام (منصور 2026-09-29) -->
 <link rel="stylesheet" href="analysis.css?v=1">
-<script src="analysis.js?v=1" defer></script>
+<script src="analysis.js?v=2" defer></script>
 <style>
 /* تبويب التحليل — التصميم الجديد (منصور 2026-09-17) */
 .an{--an-card:#0F1E35;--an-line:#213653;--an-txt:#EDF3FA;--an-mut:#8FA6C4;--an-track:rgba(143,166,196,.16);--an-acc:#2EB0F0;--an-acc2:#1878BE}
@@ -2385,6 +2385,7 @@ html[data-theme="light"] .an .an-tabs{background:rgba(13,79,146,.06);border-colo
 html[data-theme="light"] .rf-kpis .y b{color:#B98A00}
 .rf-cd{display:inline-block;width:8px;height:11px;border-radius:2px;margin-inline-end:5px;vertical-align:-1px;flex:none}
 .rf-cd.y{background:#F5C518}.rf-cd.r{background:#E5383B}
+.rf-cd.lb{width:11px;height:15px;margin:0;border-radius:2.5px;vertical-align:middle}
 /* البطاقات حسب الجولة */
 .rf-chart{display:flex;align-items:stretch;gap:6px;height:170px}
 .rf-col{flex:1 1 0;min-width:0;max-width:64px;margin:0 auto;display:flex;flex-direction:column;justify-content:flex-end;align-items:center}
@@ -7936,6 +7937,8 @@ function rfAgg(rows){
 const RF_COLS = [["n","الحكم"],["m","المباريات"],["y","صفراء"],["r","حمراء"],["p","ركلات جزاء"],["v","العودة للـVAR"],["avg","متوسط البطاقات"]];
 const rfAvg = v => (Math.round(v*100)/100).toFixed(2);
 const rfCard = t => `<i class="rf-cd ${t}" aria-hidden="true"></i>`;
+/* بطاقة بلا كلمة (منصور 2026-09-29): الكلمة لقارئ الشاشة والتلميح فقط */
+const rfCardL = t => `<i class="rf-cd ${t} lb" role="img" aria-label="${t==="y"?"صفراء":"حمراء"}" title="${t==="y"?"صفراء":"حمراء"}"></i>`;
 function rfSorted(L){
   const {sort:k, dir}=RFA;
   return [...L].sort((a,b)=>{
@@ -7964,7 +7967,7 @@ function rfRoundChart(rows){
       <span class="v">${e.y+e.red}</span>
       <div class="rf-area"><div class="rf-stack" style="height:${Math.round((e.y+e.red)/max*100)}%">${e.red?`<i class="r" style="flex:${e.red}"></i>`:""}${e.y?`<i class="y" style="flex:${e.y}"></i>`:""}</div></div>
       <span class="p">ج${e.r}</span></div>`).join("")}</div>
-    <div class="rf-legend"><span>${rfCard("y")}صفراء</span><span>${rfCard("r")}حمراء</span></div></div>`;
+    <div class="rf-legend"><span>${rfCardL("y")}</span><span>${rfCardL("r")}</span></div></div>`;
 }
 function anRefsHTML(){
   const scope=rfRows("");
@@ -7989,7 +7992,7 @@ function rfOverviewHTML(rows){
     <h2 class="sec">ترتيب الحكام</h2>
     <p class="hint">اضغط عنوان أي عمود للترتيب، واسم الحكم لعرض تفاصيله. «العودة للـVAR» = مراجعات الفيديو المسجّلة في أحداث المباراة.</p>
     <div class="an-card rf-tcard"><div class="rf-tw"><table class="rf-tbl"><thead><tr>
-      ${RF_COLS.map(([k,t])=>{ const on=RFA.sort===k; return `<th class="${k==="n"?"tl":""}" aria-sort="${on?(RFA.dir>0?"ascending":"descending"):"none"}"><button type="button" data-rf-sort="${k}" class="${on?"on":""}">${k==="y"?rfCard("y"):k==="r"?rfCard("r"):""}${t}${on?`<i class="rf-ar">${RFA.dir>0?"▲":"▼"}</i>`:""}</button></th>`; }).join("")}
+      ${RF_COLS.map(([k,t])=>{ const on=RFA.sort===k; return `<th class="${k==="n"?"tl":""}" aria-sort="${on?(RFA.dir>0?"ascending":"descending"):"none"}"><button type="button" data-rf-sort="${k}" class="${on?"on":""}">${k==="y"?rfCardL("y"):k==="r"?rfCardL("r"):t}${on?`<i class="rf-ar">${RFA.dir>0?"▲":"▼"}</i>`:""}</button></th>`; }).join("")}
     </tr></thead><tbody>
       ${rfSorted(L).map((e,i)=>`<tr><td class="tl"><button type="button" class="rf-name" data-rf-ref="${esc(e.n)}"><span class="rk">${i+1}</span>${refFace(e.n,"sm")}<b>${esc(e.n)}</b></button></td>
         <td>${e.m}</td><td>${e.y}</td><td>${e.r}</td><td>${e.p}</td><td>${e.v}</td><td><b>${rfAvg(e.avg)}</b></td></tr>`).join("")}
@@ -8022,7 +8025,7 @@ function rfDetailHTML(name, rows){
       </button>`; }).join("")}</div>
     <h2 class="sec">الفرق التي أدار مبارياتها</h2>
     <div class="an-card rf-tcard"><div class="rf-tw"><table class="rf-tbl"><thead><tr>
-      <th class="tl"><span>الفريق</span></th><th><span>المباريات</span></th><th><span>فوز</span></th><th><span>تعادل</span></th><th><span>خسارة</span></th><th><span>${rfCard("y")}صفراء</span></th><th><span>${rfCard("r")}حمراء</span></th><th><span>ركلات جزاء له</span></th>
+      <th class="tl"><span>الفريق</span></th><th><span>المباريات</span></th><th><span>فوز</span></th><th><span>تعادل</span></th><th><span>خسارة</span></th><th><span>${rfCardL("y")}</span></th><th><span>${rfCardL("r")}</span></th><th><span>ركلات جزاء له</span></th>
     </tr></thead><tbody>
       ${TL.map(t=>`<tr><td class="tl"><span class="rf-club">${crest(t.c)}<b>${esc(t.c)}</b></span></td><td>${t.m}</td><td>${t.w}</td><td>${t.d}</td><td>${t.l}</td><td>${t.y}</td><td>${t.r}</td><td>${t.p}</td></tr>`).join("")}
     </tbody></table></div></div>
