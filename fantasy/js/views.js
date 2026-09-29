@@ -842,7 +842,7 @@ const VIEWS = {
           <div class="fx" style="flex-direction:column;align-items:stretch">
             <div class="row" style="width:100%">
               <div class="team">${UI.crest(f.h)} ${DB.club(f.h).name}</div>
-              <div class="score ${f.status==='L'?'live':''}">${f.status!=='U'? f.hs+' - '+f.as : '<span class="t">'+UI.fmtDateShort(f.date)+'</span>ضد'}
+              <div class="score ${f.status==='L'?'live':''}">${f.status==='P'? '<span class="t">مؤجلة</span>ضد' : f.status!=='U'? f.hs+' - '+f.as : '<span class="t">'+UI.fmtDateShort(f.date)+'</span>ضد'}
                 ${f.status==='L'?`<span class="t">${f.live.min}'</span>`:''}</div>
               <div class="team a">${UI.crest(f.a)} ${DB.club(f.a).name}</div>
             </div>
@@ -885,14 +885,14 @@ const VIEWS = {
         <div class="row" style="width:100%">
           <div class="team" style="flex:1;font-weight:700">${UI.crest(f.h,'lg')} ${DB.club(f.h).name}</div>
           <div class="score ${f.status==='L'?'live':''}" style="font-size:1.3rem;min-width:88px">
-            ${f.status!=='U'? f.hs+' - '+f.as : ''}
+            ${f.status==='P'? 'مؤجلة' : f.status!=='U'? f.hs+' - '+f.as : ''}
             <span class="t">${f.status==='L'? f.live.min+"'" : f.status==='F'?'انتهت':UI.fmtDateShort(f.date)}</span></div>
           <div class="team a" style="flex:1;font-weight:700">${UI.crest(f.a,'lg')} ${DB.club(f.a).name}</div>
         </div>
         ${this.goalSides(f, true)}
         ${f.status==='L'&&f.live.events.length? `<div style="margin-top:8px;max-height:150px;overflow:auto;border-top:1px solid var(--line);padding-top:6px">
           ${[...f.live.events].reverse().slice(0,10).map(e=>`<div class="goal-line">${e.min}' ${esc(e.text)}</div>`).join('')}</div>`:''}
-        ${f.status!=='U'? `<div class="tiny" style="margin-top:6px">${(f.hs===0)?UI.crest(f.a)+' شباك نظيفة حتى الآن · ':''}${(f.as===0)?UI.crest(f.h)+' شباك نظيفة حتى الآن':''}</div>`:''}
+        ${(f.status!=='U' && f.status!=='P')? `<div class="tiny" style="margin-top:6px">${(f.hs===0)?UI.crest(f.a)+' شباك نظيفة حتى الآن · ':''}${(f.as===0)?UI.crest(f.h)+' شباك نظيفة حتى الآن':''}</div>`:''}
       </div>`).join('')}
     </div>`;
   },

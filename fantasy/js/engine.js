@@ -386,7 +386,7 @@ function kwDate(v){
 function computeDeadlines(gws, fixtures){
   gws.forEach(g=>{
     if(g.status==='finished' || g.deadlineManual) return;
-    const dates=fixtures.filter(f=>f.gw===g.n && f.date).map(f=>kwDate(f.date)).filter(d=>!isNaN(d)).sort((a,b)=>a-b);
+    const dates=fixtures.filter(f=>f.gw===g.n && f.date && f.status!=='P').map(f=>kwDate(f.date)).filter(d=>!isNaN(d)).sort((a,b)=>a-b);   /* المؤجلة لا تحدد الموعد */
     if(!dates.length){ g.deadline=null; return; }
     g.deadline=new Date(dates[0]).toISOString();   /* مع بداية أول مباراة، بلا خصم 90 دقيقة */
   });
@@ -542,6 +542,17 @@ function genMatchStats(st, fx){
   scoreFixture(st, fx);
 }
 
+/* جولة مزدوجة (منصور 2026-09-30): فريق يلعب مباراتين في الجولة (مباراة مؤجلة نُقلت إليها).
+   نقاط كل مباراة تبقى في fx.stats، وصف اللاعب في الجولة = مجموع مبارياته فيها (كانت الثانية تمحو الأولى). */
+const PGW_SUM = ['min','g','a','cs','gc','ps','pm','og','yc','rc','bonus','pts'];
+function aggPGW(st, pid, gw){
+  const rows=[];
+  st.fixtures.forEach(f=>{ if(f.gw!==gw || !f.stats) return; for(const c in f.stats){ const r=f.stats[c] && f.stats[c][pid]; if(r && r.pts!=null) rows.push(r); } });
+  if(rows.length<=1) return rows[0]||null;
+  const o=Object.assign({}, rows[0], {fx:rows.length});
+  PGW_SUM.forEach(k=>{ o[k]=rows.reduce((s,r)=>s+(+r[k]||0),0); });
+  return o;
+}
 function scoreFixture(st, fx){
   const S = k => st.scoring[k] ? st.scoring[k].val : 0;
   for(const clubId of [fx.h, fx.a]){
@@ -553,7 +564,7 @@ function scoreFixture(st, fx){
       if(!(r.min > 0)){
         r.pts = 0;
         st.playerGW[pid] = st.playerGW[pid]||{};
-        st.playerGW[pid][fx.gw] = r;
+        st.playerGW[pid][fx.gw] = aggPGW(st, pid, fx.gw) || r;
         continue;
       }
       let pts = r.min>=60 ? S('appearance60') : S('appearance');
@@ -565,7 +576,7 @@ function scoreFixture(st, fx){
       pts += r.bonus||0;
       r.pts = pts;
       st.playerGW[pid] = st.playerGW[pid]||{};
-      st.playerGW[pid][fx.gw] = r;
+      st.playerGW[pid][fx.gw] = aggPGW(st, pid, fx.gw) || r;
     }
   }
 }
@@ -698,7 +709,8 @@ const TEAM = {
     const played = pid => { const r=DB.pgw(pid,gw); return r && r.min>0; };
     // مباشر: لاعب لم تُلعب مباراة ناديه بعد يبقى في التشكيلة (لا تبديل تلقائي ولا نقل شارة الكابتن)
     const fxOf = clubId => st.fixtures.find(f=>f.gw===gw && (f.h===clubId||f.a===clubId));
-    const pending = pid => { if(!opts.live) return false; const p=DB.player(pid); const f=p? fxOf(p.club) : null; return !!f && f.status!=='F'; };
+    const pending = pid => { if(!opts.live) return false; const p=DB.player(pid); if(!p) return false;
+      return st.fixtures.some(f=>f.gw===gw && (f.h===p.club||f.a===p.club) && f.status!=='F' && f.status!=='P'); };   /* جولة مزدوجة: أي مباراة لم تنتهِ */
 
     let xi=[...picks.xi].filter(pid=>DB.player(pid)), bench=[...picks.bench].filter(pid=>DB.player(pid));
     const chip = picks.chip;
@@ -1025,7 +1037,7 @@ const GWADMIN = {
     const fxs=st.fixtures.filter(f=>f.gw===gw);
     if(!fxs.length) return { ok:false, err:`لا يمكن إغلاق الجولة ${gw} — لم يصدر جدولها بعد (المباريات تُسحب من mfsoccer).` };
     // اللعبة واقعية: لا احتساب قبل إدخال كل النتائج الحقيقية
-    const pending=fxs.filter(f=>f.status!=='F' || f.over===false);   /* جارية = لم تنتهِ بعد */
+    const pending=fxs.filter(f=>f.status!=='P' && (f.status!=='F' || f.over===false));   /* جارية = لم تنتهِ بعد؛ المؤجلة (P) لا تمنع الإغلاق — تُنقل لجولة موعدها الجديد */
     if(pending.length){
       return { ok:false, err:`لا يمكن إغلاق الجولة — ${pending.length} مباريات بلا نتيجة. اسحبها من mfsoccer أو أدخلها من «النتائج والإحصاءات» أولاً.` };
     }

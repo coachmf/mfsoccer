@@ -49,6 +49,39 @@ const MFSYNC = {
     return v;
   },
 
+  /* ───── المباريات المؤجلة (منصور 2026-09-30: «المؤجلة تُحسب في جولة موعدها الفعلي») ─────
+     نافذة الجولة n = من أول مباراة «في موعدها» فيها حتى بداية الجولة التالية. مباراة نُقل موعدها بعيداً
+     عن بقية جولتها (أكثر من 4 أيام عن منتصف مواعيدها) تُحسب في الجولة التي يقع موعدها الجديد في نافذتها
+     — فيلعب الفريق مباراتين في تلك الجولة (جولة مزدوجة)، ولا تُنقل أبداً إلى جولة أُغلقت.
+     مباراة لم تُلعب ومضى على موعدها يوم (أو بلا موعد وقد بدأت جولتها قبل 3 أيام) = مؤجلة (P):
+     لا تمنع إغلاق جولتها، وتعود تلقائياً حين يُكتب لها موعد جديد. لا يعتمد على أي جدول مسبق. */
+  gwWindows(data){
+    const by={};
+    (data.matches||[]).filter(m=>(!m.comp||m.comp==='الدوري') && m.date).forEach(m=>{
+      const t=kwDate(m.date+'T'+(m.time||'18:00')).getTime(); if(isNaN(t)) return; (by[+m.round]=by[+m.round]||[]).push(t); });
+    const win={};
+    Object.keys(by).forEach(r=>{ const a=by[r].sort((x,y)=>x-y), med=a[Math.floor(a.length/2)];
+      const on=a.filter(t=>Math.abs(t-med)<=4*86400e3); win[r]={start:Math.min(...on), med}; });
+    return win;
+  },
+  gwOf(m, win, st){
+    st=st||DB.state; const r=+m.round, total=(st.rules&&st.rules.totalGWs)||22;
+    const fin=n=>((st.gws||[]).find(g=>g.n===n)||{}).status==='finished';
+    if(!m.date || !win) return r;
+    const t=kwDate(m.date+'T'+(m.time||'18:00')).getTime(); const w=win[r];
+    if(isNaN(t) || !w || Math.abs(t-w.med)<=4*86400e3) return r;          // في موعد جولته
+    let g=r; for(let n=1;n<=total;n++){ if(win[n] && win[n].start<=t) g=n; }   // آخر جولة بدأت قبل موعدها الجديد
+    if(fin(g) && !fin(r)) g=r;                                              // لا نقل إلى جولة أُغلقت
+    while(g<=total && fin(g)) g++;
+    return Math.min(total, Math.max(1, g));
+  },
+  postponed(m, win, data){
+    if(this.isPlayed(m, data)) return false;
+    if(!m.date){ const w=win&&win[+m.round]; return !!(w && Date.now() > w.start + 3*86400e3); }
+    const ko=kwDate(m.date+'T'+(m.time||'23:59')).getTime();
+    return !isNaN(ko) && Date.now() > ko + 24*3600e3;
+  },
+
   /* هل انتهت المباراة؟ (منصور 2026-09-30) — «لُعبت» تصير صحيحة من أول هدف أثناء اللعب، فكان إغلاق الجولة
      ممكناً والمباراة الأخيرة جارية. مثل matchOver في الموقع: «انتهت» صراحة، أو ليست في مرحلة جارية
      (قبل/شوط أول/استراحة/شوط ثانٍ) ومضى على انطلاقها ساعتان (بلا موعد: نهاية يوم المباراة). */
@@ -99,6 +132,11 @@ const MFSYNC = {
     return d;
   },
   async fetchSeasonRaw(){
+    /* الزائر: لقطة CDN (/api/doc) بلا أي قراءة من Firestore — تتجدد كل دقيقة (منصور 2026-09-30: حصة القراءة).
+       المدير يقرأ Firestore مباشرة (أحدث نسخة عند الاحتساب). */
+    if(!(typeof CLOUD!=='undefined' && CLOUD.admin)){
+      try{ const r=await fetch('/api/doc/2026-2027', {cache:'no-cache'}); if(r.ok){ const d=await r.json(); if(d && Array.isArray(d.matches)) return d; } }catch(e){}
+    }
     // الأفضل: نفس اتصال Firestore الذي تستعمله اللعبة (قراءة واحدة، بلا مفتاح REST الذي يُحدّ بـ429)
     if(typeof CLOUD!=='undefined' && CLOUD.ready && CLOUD.db){
       try{
@@ -199,11 +237,12 @@ const MFSYNC = {
     const rep={created:0, updated:0, removed:0, notes:[]};
     const total=(st.rules&&st.rules.totalGWs)||22;
     const ms=(data.matches||[]).filter(m=>(!m.comp||m.comp==='الدوري') && +m.round>=1 && +m.round<=total);
-    const seen=new Set();
+    const seen=new Set(), win=this.gwWindows(data);
     ms.forEach(m=>{
       const h=this.clubId(m.home), a=this.clubId(m.away);
       if(!h||!a){ rep.notes.push(`نادٍ غير معروف: ${m.home} × ${m.away}`); return; }
-      const gw=+m.round;
+      const gw=this.gwOf(m, win, st);
+      if(gw!==+m.round) rep.notes.push(`مؤجلة: ${m.home} × ${m.away} (ج${m.round}) تُحسب في الجولة ${gw} حسب موعدها`);
       const date = m.date ? (m.date+'T'+(m.time||'18:00')) : null;
       let f=st.fixtures.find(x=>x.gw===gw && !seen.has(x.id) && ((x.h===h&&x.a===a)||(x.h===a&&x.a===h)));
       if(!f){
@@ -216,12 +255,15 @@ const MFSYNC = {
         if(date && f.date!==date){ f.date=date; ch=true; }
         if(ch) rep.updated++;
       }
+      /* مؤجلة ↔ قادمة (النتيجة نفسها يضعها importRound) */
+      if(f.status==='U' || f.status==='P'){ const pp=this.postponed(m, win, data); const ns=pp?'P':'U'; if(f.status!==ns){ f.status=ns; rep.updated++; } }
       seen.add(f.id);
     });
     /* بيانات بلا مباريات دوري (خلل مؤقت في القراءة): لا نحذف شيئاً من الجدول (منصور 2026-09-30) */
     if(opts.removeMissing!==false && ms.length>0){
       const before=st.fixtures.length;
-      st.fixtures=st.fixtures.filter(f=>seen.has(f.id) || f.status==='F' || (DB.gw(f.gw)||{}).status==='finished');
+      /* مباراة مؤجلة (P) نُقلت لجولة أخرى تُحذف من جولتها الأصلية حتى لو أُغلقت — لا نقاط لها هناك */
+      st.fixtures=st.fixtures.filter(f=>seen.has(f.id) || f.status==='F' || (f.status!=='P' && ((st.gws||[]).find(g=>g.n===f.gw)||{}).status==='finished'));
       rep.removed=before-st.fixtures.length;
     }
     st.fixtures.sort((a,b)=>(a.gw-b.gw)||String(a.date||'').localeCompare(String(b.date||'')));
@@ -297,7 +339,8 @@ const MFSYNC = {
     // الجدول كله من الموقع أولاً: يُنشئ مباريات الجولة إن لم تكن عندنا ويحذف ما ليس على الموقع
     const fxRep=this.syncFixtures(data, st, {removeMissing:true});
     fxRep.notes.forEach(n=>report.notes.push(n));
-    const ms=(data.matches||[]).filter(m=>+m.round===gw && (!m.comp || m.comp==='الدوري'));
+    const win=this.gwWindows(data);
+    const ms=(data.matches||[]).filter(m=>(!m.comp || m.comp==='الدوري') && this.gwOf(m, win, st)===gw);   /* تشمل المؤجلة المنقولة إلى هذه الجولة */
     if(!ms.length){ if(quiet) return report; DB.save(); APP.render(); UI.toast(`الجولة ${gw} غير موجودة على الموقع بعد — تبقى فارغة`, true); return report; }
 
     const used=new Set();
@@ -318,14 +361,14 @@ const MFSYNC = {
       if(m.date) f.date=m.date+'T'+(m.time||'18:00');
       const played = this.isPlayed(m, data);
       if(played){ f.hs=+m.hg; f.as=+m.ag; f.status='F'; f.est=false; f.over=this.isOver(m, data); }
-      else { f.hs=null; f.as=null; f.status='U'; f.goals=[]; f.cards=[]; f.pens=[];
+      else { f.hs=null; f.as=null; f.status=this.postponed(m, win, data)?'P':'U'; f.goals=[]; f.cards=[]; f.pens=[];
              f.lineups=null; f.subs=[]; report.matches++; continue; }
 
       const pair=(sc,cd)=>{const s=this.clubId(sc),c=this.clubId(cd);return (s===h&&c===a)||(s===a&&c===h);};
 
       // الأهداف والصناعة (مع الأهداف العكسية وركلات الجزاء المسجلة)
       f.goals=[];
-      (data.goals||[]).filter(g=>+g.r===gw && (!g.comp||g.comp==='الدوري') && pair(g.sc,g.cd)).forEach(g=>{
+      (data.goals||[]).filter(g=>+g.r===+m.round && (!g.comp||g.comp==='الدوري') && pair(g.sc,g.cd)).forEach(g=>{
         const benefiting=this.clubId(g.sc);
         if(g.og){
           const ogClub = benefiting===h? a : h;
@@ -346,7 +389,7 @@ const MFSYNC = {
       // الكروت: إنذار = أصفر، إنذار ثانٍ/طرد مباشر = أحمر
       // (الطرد بإنذارين = -3 فقط، فنحذف الأصفر الأول مثل FPL)
       f.cards=[];
-      (data.cards||[]).filter(c=>+c.r===gw && (!c.comp||c.comp==='الدوري')).forEach(c=>{
+      (data.cards||[]).filter(c=>+c.r===+m.round && (!c.comp||c.comp==='الدوري')).forEach(c=>{
         const cid=this.clubId(c.club);
         if(cid!==h && cid!==a) return;
         const pl=this.resolvePlayer(c.p, cid, report); if(!pl) return;
@@ -362,7 +405,7 @@ const MFSYNC = {
       f.pens=[];
       const savedPens=[];
       /* «أعيدت» ليست إهداراً — الإعادة لها سجلها الخاص (منصور 2026-09-30) */
-      (data.pens||[]).filter(p=>+p.r===gw && (!p.comp||p.comp==='الدوري') && p.res!=='سجلت' && p.res!=='أعيدت').forEach(p=>{
+      (data.pens||[]).filter(p=>+p.r===+m.round && (!p.comp||p.comp==='الدوري') && p.res!=='سجلت' && p.res!=='أعيدت').forEach(p=>{
         const cid=this.clubId(p.by);
         if(cid!==h && cid!==a) return;
         if(p.res==='تصدى لها الحارس') savedPens.push({vs: cid===h?a:h, m:+p.m||0});
@@ -374,11 +417,11 @@ const MFSYNC = {
       // التشكيلة: الأساسيون من كشف الموقع (s)، ومن دخل بديلاً من تبديلات الموقع (b).
       // من لم يُذكر في الاثنين لا يُدرج أصلاً = لم يلعب (صفر دقيقة).
       const lu = {};
-      const anyXI = (data.lineups||[]).some(x=>+x.r===gw && (!x.comp||x.comp==='الدوري') &&
+      const anyXI = (data.lineups||[]).some(x=>+x.r===+m.round && (!x.comp||x.comp==='الدوري') &&
                                                [h,a].includes(this.clubId(x.club)));
       if(anyXI){
         lu[h]={}; lu[a]={};
-        (data.lineups||[]).filter(x=>+x.r===gw && (!x.comp||x.comp==='الدوري')).forEach(x=>{
+        (data.lineups||[]).filter(x=>+x.r===+m.round && (!x.comp||x.comp==='الدوري')).forEach(x=>{
           const cid=this.clubId(x.club); if(cid!==h && cid!==a) return;
           const pl=this.resolvePlayer(x.p, cid, report); if(!pl) return;
           lu[cid][pl.id]='s'; report.xi++;
@@ -392,7 +435,7 @@ const MFSYNC = {
       // وشباك نظيفة عند 60 كقاعدة FPL. راجع التعليق فوق absMinute في engine.js
       // قبل أي تغيير هنا. (منصور 2026-09-18)
       f.subs=[];
-      (data.subs||[]).filter(x=>+x.r===gw && (!x.comp||x.comp==='الدوري')).forEach(x=>{
+      (data.subs||[]).filter(x=>+x.r===+m.round && (!x.comp||x.comp==='الدوري')).forEach(x=>{
         const cid=this.clubId(x.club); if(cid!==h && cid!==a) return;
         const po = x.out? this.resolvePlayer(x.out, cid, report) : null;
         const pi = x.in ? this.resolvePlayer(x.in , cid, report) : null;

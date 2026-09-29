@@ -493,15 +493,26 @@ const CLOUD = {
   /* ---------- الجولة المباشرة ----------
      كان كل زائر يقرأ كل المشتركين كل دقيقة ليحسب المتوسط والترتيب الحي (382 قراءة × كل زائر × كل دقيقة).
      الآن جهاز المدير وحده يقرؤهم ويحسب ويكتب لقطة واحدة meta/live، وكل زائر يقرأ هذه اللقطة فقط (قراءة واحدة). */
+  /* فرق المشتركين لجولة بعد موعدها: مقفلة على الخادم فلا تتغيّر — تُقرأ مرة واحدة لكل جولة على الجهاز
+     بدل قراءة كل المشتركين كل 5 دقائق (≈800 قراءة × 12 في الساعة لكل جهاز مدير — منصور 2026-09-30: حصة القراءة) */
+  _liveTeams:null,
+  async liveTeams(gw){
+    const g=(typeof DB!=='undefined' && DB.gw) ? DB.gw(gw) : null, dl=g&&g.deadline ? Date.parse(g.deadline) : NaN;
+    const locked=!isNaN(dl) && Date.now()>dl;
+    if(locked && this._liveTeams && this._liveTeams.gw===gw && this._liveTeams.at>dl) return this._liveTeams.list;
+    const q=await this.managers().get(); const list=[];
+    q.forEach(d=>{ const v=d.data(); if(!v.team || !(v.team.squad||[]).length) return; list.push({id:d.id, name:v.username||'مشترك', teamName:v.teamName||'', total:+v.total||0, team:v.team}); });
+    this._liveTeams={gw, at:Date.now(), list};
+    return list;
+  },
   async publishLive(gw, calc){
     if(!this.admin) return {ok:false, err:'للمدير فقط'};
-    let q;
-    try{ q = await this.managers().get(); }
+    let L;
+    try{ L = await this.liveTeams(gw); }
     catch(e){ return {ok:false, err:'تعذّرت قراءة المشتركين'}; }
     const rows=[];
-    q.forEach(d=>{ const v=d.data(); const t=v.team; if(!t || !(t.squad||[]).length) return;
-      let live=0; try{ live=+calc(t, gw).total||0; }catch(e){ live=0; }
-      rows.push({ id:d.id, name:v.username||'مشترك', teamName:v.teamName||'', live, total:+v.total||0 }); });
+    L.forEach(v=>{ let live=0; try{ live=+calc(v.team, gw).total||0; }catch(e){ live=0; }
+      rows.push({ id:v.id, name:v.name, teamName:v.teamName, live, total:v.total }); });
     rows.sort((a,b)=>b.live-a.live);
     const at=new Date().toISOString();
     const r = await this.race(this.liveDoc().set({gw, at, rows, by:(this.user&&this.user.email)||''}));
@@ -558,6 +569,8 @@ const CLOUD = {
   },
 
   async managerCount(){
+    /* عدّ على الخادم (قراءة واحدة لكل 1000) بدل تنزيل كل المشتركين */
+    try{ const c=this.managers(); if(typeof c.count==='function'){ const s=await c.count().get(); return s.data().count; } }catch(e){}
     try{ const q=await this.managers().get(); return q.size; }catch(e){ return null; }
   },
 

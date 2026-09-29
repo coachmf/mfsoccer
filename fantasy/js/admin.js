@@ -164,7 +164,7 @@ const ADMIN = {
   sec_gws(){
     const st=DB.state;
     const cur=st.fixtures.filter(f=>f.gw===st.currentGW);
-    const pending=cur.filter(f=>f.status!=='F' || f.over===false).length;
+    const pending=cur.filter(f=>f.status!=='P' && (f.status!=='F' || f.over===false)).length;
     const noFx=!cur.length;
     const toLocal=iso=>{ if(!iso) return ''; const d=new Date(iso); const p=n=>String(n).padStart(2,'0');
       return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`; };
@@ -223,7 +223,7 @@ const ADMIN = {
     if(gw < (st.rules.scoringFromGW||1)){ UI.toast(`الاحتساب يبدأ من الجولة ${st.rules.scoringFromGW} — الجولة ${gw} لا تُحتسب`, true); return; }
     const fxs=st.fixtures.filter(f=>f.gw===gw);
     if(!fxs.length){ UI.toast(`الجولة ${gw} بلا جدول بعد — اسحب الجدول من mfsoccer أولاً`, true); return; }
-    if(fxs.some(f=>f.status!=='F' || f.over===false)){ UI.toast('بقيت مباريات بلا نتيجة — اسحب الجولة من mfsoccer أولاً', true); return; }
+    if(fxs.some(f=>f.status!=='P' && (f.status!=='F' || f.over===false))){ UI.toast('بقيت مباريات بلا نتيجة — اسحب الجولة من mfsoccer أولاً', true); return; }
 
     // ترتيب الجولة المرجعي لنقاط المدرب يُثبَّت قبل الاحتساب (تعديل لاحق لا يغيّره)
     if(typeof STANDINGS!=='undefined') STANDINGS.snapshot(st, gw);
@@ -287,7 +287,7 @@ const ADMIN = {
       <div class="tabs">${st.gws.slice(0,Math.max(3,st.currentGW)).map(g=>`<button class="${g.n===gw?'active':''}" onclick="VIEWS.ui.adminGw=${g.n};APP.render()">ج${g.n}</button>`).join('')}</div>
       ${fx.map(f=>`<div class="fx">
         <div class="team">${UI.crest(f.h)} ${DB.club(f.h).short}</div>
-        <div class="score">${f.status!=='U'? f.hs+' - '+f.as:'—'}</div>
+        <div class="score">${f.status==='P'?'مؤجلة':f.status!=='U'? f.hs+' - '+f.as:'—'}</div>
         <div class="team a">${UI.crest(f.a)} ${DB.club(f.a).short}</div>
         ${f.est?'<span class="pill gold">تقديرية</span>':''}
         <button class="btn sm sec" onclick="VIEWS.ui.editFx='${f.id}';APP.render()">تحرير</button>
