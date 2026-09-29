@@ -237,3 +237,55 @@ html[data-theme="light"] .gs-it .tx b{color:#0B1F3A}
 html.gs-open{overflow:hidden}
 @media (prefers-reduced-motion:reduce){.ax-body.in,.ax-pfc,.gs-scrim,.gs-sheet{animation:none!important}}
 @media print{.ax-subnav,.gs,.gs-btn{display:none!important}}
+
+/* ── بسيط وواضح (منصور 2026-09-29) ── */
+/* بطاقات المباريات: نتيجة ملوّنة + الأحداث بالكلمات */
+.ax-mts{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px}
+.ax-mt{display:flex;flex-direction:column;align-items:center;gap:5px;min-width:0;background:var(--an-track);border:0;border-radius:12px;
+  padding:0 2px 8px;font:inherit;color:var(--an-txt);cursor:pointer;overflow:hidden;transition:transform .18s}
+.ax-mt:hover{transform:translateY(-2px)}
+.ax-mt .rs{align-self:stretch;text-align:center;font-size:.7rem;font-weight:800;color:#fff;padding:4px 0}
+.ax-mt.w .rs{background:#16A34A}.ax-mt.d .rs{background:#CA8A04}.ax-mt.l .rs{background:#DC2626}
+.ax-mt .crest{width:26px;height:26px;border-radius:7px;margin-top:2px}
+.ax-mt .sc{font-size:.9rem;font-weight:800;font-variant-numeric:tabular-nums}
+.ax-mt .ev{display:flex;flex-direction:column;align-items:center;gap:2px;min-height:30px;justify-content:center}
+.ax-mt .ev i{font-style:normal;font-size:.68rem;font-weight:700;color:var(--an-acc);white-space:nowrap}
+.ax-mt .ev i.no{color:var(--an-mut);font-weight:500}
+.ax-mt .ev .rf-cd{margin:1px 0 0}
+.ax-mt small{font-size:.66rem;color:var(--an-mut);font-variant-numeric:tabular-nums}
+.ax-pfc .ax-mts{margin-top:2px}
+/* التقييم: رقم كبير + شريط واحد لكل فئة */
+.ax-rhead{display:flex;align-items:center;gap:14px;margin-bottom:10px}
+.ax-rhead .rtg.big{min-width:64px;height:48px;font-size:1.5rem;border-radius:12px}
+.ax-rhead b{display:block;font-size:1.05rem;font-weight:800;color:var(--an-txt)}
+.ax-rhead small{display:block;font-size:.76rem;color:var(--an-mut);margin-top:2px}
+.ax-break .ax-br{grid-template-columns:minmax(0,130px) 1fr 40px;padding:11px 0}
+.ax-br>b.r8{color:#1f9ed6}.ax-br>b.r7{color:#1fa64a}.ax-br>b.r65{color:#79b92f}.ax-br>b.r6{color:#d9a318}.ax-br>b.r5{color:#e0612b}
+.ax-rawd{border-top:1px solid var(--an-line);padding:10px 0 2px;font-size:.76rem;color:var(--an-mut)}
+.ax-rawd summary{cursor:pointer;font-weight:700;color:var(--an-txt)}
+.ax-rawd p{margin:8px 0;line-height:1.6}.ax-rawd p b{color:var(--an-txt)}
+/* الجداول: أول 4 صفوف + تتسع لعرض الهاتف */
+.ax-clip tbody tr:nth-child(n+5){display:none}
+.ax .ls{display:none}
+.ax-abbr{display:none}
+.ax .rf-tbl.ax-wide{min-width:0}
+@media(max-width:560px){
+  .ax .lf{display:none}.ax .ls{display:inline}
+  .ax-abbr{display:flex;flex-wrap:wrap;gap:4px 12px;margin:8px 2px 0;font-size:.68rem;color:var(--an-mut)}
+  .ax-abbr b{color:var(--an-txt)}
+  .ax .rf-tbl{font-size:.76rem}
+  .ax .rf-tbl th>button,.ax .rf-tbl th>span{padding:8px 2px;font-size:.64rem}
+  .ax .rf-tbl td{padding:9px 2px}
+  .ax .rf-tbl td.tl,.ax .rf-tbl th.tl>button,.ax .rf-tbl th.tl>span{padding-inline-start:8px}
+  .ax .rf-tbl .ax-face.sm{display:none}
+  .ax .ax-nc b{max-width:none;white-space:normal;font-size:.76rem;line-height:1.25}
+  .ax .ax-nc small{font-size:.62rem}
+  .ax .rf-tbl .rf-club{gap:5px}.ax .rf-tbl .rf-club .crest{width:20px;height:20px;border-radius:6px}
+  .ax .rf-tbl .rf-club b{white-space:normal;line-height:1.25}
+  .ax .rf-tbl .pillrow .pl{width:17px;height:17px;font-size:.58rem}
+  .ax .rf-tbl .ax-rt,.ax .rf-tbl .rtg{min-width:30px;padding:0 3px}
+  .ax .rf-tbl .rf-ar{margin-inline-start:1px}
+  .ax .ax-log .rf-club small{display:none}
+  .ax-mts{gap:4px}.ax-mt .ev i{font-size:.6rem}.ax-mt .rs{font-size:.62rem}
+  .ax-break .ax-br{grid-template-columns:minmax(0,110px) 1fr 34px}
+}

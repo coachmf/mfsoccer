@@ -271,12 +271,38 @@ function sortBy(L, scope, keys){
     const d=(typeof va==="string"||typeof vb==="string") ? byAr(va,vb) : (num(va)-num(vb));
     return d*s.d || byAr(a.n||a.c||"", b.n||b.c||""); });
 }
+/* الجداول تتسع لعرض الهاتف بلا تمرير أفقي (منصور 2026-09-29): على الهاتف عنوان مختصر + سطر يشرح الاختصارات.
+   الاختصار العربي، وفي الوضع الإنجليزي اختصاره الإنجليزي. */
+const SHORT = {"لعب":["ل","P"],"الفارق":["±","±"],"النقاط":["ن","Pts"],"لعب (أرض)":["ل.أ","HP"],"نقاط الأرض":["ن.أ","HPts"],"لعب (خارج)":["ل.خ","AP"],
+  "نقاط الخارج":["ن.خ","APts"],"المجموع":["مج","Tot"],"مباريات":["م","MP"],"أهداف":["هـ","G"],"المعدل":["مع","Avg"],"فوز المضيف":["ف.م","HW"],"فوز الضيف":["ف.ض","AW"],
+  "تعادل":["ت","D"],"أساسي":["أس","St"],"بديل":["بد","Sub"],"دقائق":["د","Min"],"صناعة":["ص","A"],"شباك نظيفة":["ش.ن","CS"],"جزاء (سجّل/نفّذ)":["ج","Pen"],"عكسي":["ع","OG"],
+  "استقبل":["است","GA"],"استقبل/مباراة":["است/م","GA/M"],"جزاءات واجهها":["ج.و","PF"],"تصدى لها":["تص","PS"],"المركز":["مركز","Pos"],"التقييم":["تقييم","Rtg"],
+  "النتيجة":["نتيجة","Res"],"بطاقة":["بطاقة","Card"],"المباريات":["م","MP"],"فوز":["ف","W"],"خسارة":["خ","L"],"ركلات جزاء له":["ج","Pen"],"ركلات جزاء":["ج","Pen"],"متوسط البطاقات":["مع","Avg"],"العودة للـVAR":["VAR","VAR"]};
+const isEn = () => typeof I18N!=="undefined" && I18N.isEn();
+const shortOf = t => { const x=SHORT[t]; return x ? x[isEn()?1:0] : ""; };
+window.axLbl = t => { const sh=shortOf(t); return sh && sh!==t ? `<span class="lf">${t}</span><span class="ls" data-i18n="off" aria-hidden="true">${sh}</span>` : t; };
+window.axAbbr = labels => { const L=[...new Set(labels)].filter(t=>{ const sh=shortOf(t); return sh && sh!==t; });
+  return L.length ? `<p class="ax-abbr">${L.map(t=>`<span><b data-i18n="off">${shortOf(t)}</b> <span>${t}</span></span>`).join("")}</p>` : ""; };
+/* أول 4 صفوف فقط، و«عرض المزيد» يُظهر الباقي (منصور 2026-09-29) — الحالة تبقى بعد الفرز */
+const OPEN = new Set();
+window.tblClip = scope => OPEN.has(scope) ? "" : " ax-clip";
+window.tblMore = (scope, n) => n>4 ? `<button type="button" class="ts-morebtn ax-more" data-tbl-more="${scope}" aria-expanded="${OPEN.has(scope)}"><span>${OPEN.has(scope)?"عرض أقل":"عرض المزيد"}</span>${OPEN.has(scope)?"":`<small>+${n-4}</small>`}</button>` : "";
+document.addEventListener("click", e=>{
+  const b=e.target.closest("[data-tbl-more]"); if(!b) return;
+  const k=b.dataset.tblMore, card=b.previousElementSibling && b.previousElementSibling.classList.contains("ax-abbr") ? b.previousElementSibling.previousElementSibling : b.previousElementSibling;
+  if(OPEN.has(k)) OPEN.delete(k); else OPEN.add(k);
+  if(card) card.classList.toggle("ax-clip", !OPEN.has(k));
+  const n=card ? card.querySelectorAll("tbody tr").length : 0;
+  b.outerHTML=tblMore(k, n);
+  if(!OPEN.has(k) && card){ const y=card.getBoundingClientRect().top; if(y<0) card.scrollIntoView({block:"start", behavior:"smooth"}); }
+});
 function thead(scope, cols){
   const s=AX.sorts[scope];
-  return `<thead><tr>${cols.map(([k,t,cls])=>{ if(!k) return `<th class="${cls||""}"><span>${t}</span></th>`;
-    const on=s.k===k; return `<th class="${cls||""}" aria-sort="${on?(s.d>0?"ascending":"descending"):"none"}"><button type="button" data-ax-sort="${scope}:${k}" class="${on?"on":""}">${t}${on?`<i class="rf-ar">${s.d>0?"▲":"▼"}</i>`:""}</button></th>`; }).join("")}</tr></thead>`;
+  return `<thead><tr>${cols.map(([k,t,cls])=>{ const lb=axLbl(t); if(!k) return `<th class="${cls||""}"><span>${lb}</span></th>`;
+    const on=s.k===k; return `<th class="${cls||""}" aria-sort="${on?(s.d>0?"ascending":"descending"):"none"}"><button type="button" data-ax-sort="${scope}:${k}" class="${on?"on":""}">${lb}${on?`<i class="rf-ar">${s.d>0?"▲":"▼"}</i>`:""}</button></th>`; }).join("")}</tr></thead>`;
 }
-const table = (scope, cols, body, cls) => `<div class="an-card rf-tcard${cls?" "+cls:""}"><div class="rf-tw"><table class="rf-tbl${cls?" "+cls:""}">${thead(scope, cols)}<tbody>${body}</tbody></table></div></div>`;
+const table = (scope, cols, body, cls) => { const n=(body.match(/<tr[\s>]/g)||[]).length;
+  return `<div class="an-card rf-tcard${cls?" "+cls:""}${tblClip(scope)}"><div class="rf-tw"><table class="rf-tbl${cls?" "+cls:""}">${thead(scope, cols)}<tbody>${body}</tbody></table></div></div>${axAbbr(cols.map(c=>c[1]))}${tblMore(scope, n)}`; };
 const kpis = items => `<div class="an-kpis rf-kpis ax-k${items.length}">${items.map(([v,t,c])=>`<div class="${c||""}"><b>${v}</b><span>${t}</span></div>`).join("")}</div>`;
 const sec = (t, hint) => `<h2 class="sec">${t}</h2>${hint?`<p class="hint">${hint}</p>`:""}`;
 const empty = t => `<div class="an-card rf-empty">${t}</div>`;
@@ -299,7 +325,7 @@ function formHTML(){
     return {c, L, p:L.length, gf:L.reduce((s,x)=>s+x.gf,0), ga:L.reduce((s,x)=>s+x.ga,0), pts:L.reduce((s,x)=>s+x.pts,0)}; }).filter(x=>x.p);
   const S=sortBy(rows,"form",{pts:x=>x.pts, gf:x=>x.gf, ga:x=>x.ga, p:x=>x.p, n:x=>x.c, gd:x=>x.gf-x.ga});
   return `<div class="rf-filters ax-f2">${seasonSel()}<label class="rf-f"><span>البطولة</span><select disabled><option>${H(compLabel(COMP))}</option></select></label></div>
-    ${sec("فورمة الفرق", "آخر 5 مباريات مُقامة لكل فريق (الأحدث أولاً). من لعب أقل من 5 تُعرض مبارياته المتوفرة فقط.")}
+    ${sec("فورمة الفرق", "آخر 5 مباريات لكل فريق، الأحدث أولاً.")}
     ${table("form", [["n","الفريق","tl"],["","آخر 5"],["p","لعب"],["gf","له"],["ga","عليه"],["gd","الفارق"],["pts","النقاط"]],
       S.map(x=>`<tr><td class="tl">${clubCell(x.c)}</td><td class="ax-fcell">${formPills(x.L.map(l=>l.res))}</td><td>${x.p}</td><td>${x.gf}</td><td>${x.ga}</td><td dir="ltr">${x.gf-x.ga>0?"+":""}${x.gf-x.ga}</td><td><b>${x.pts}</b></td></tr>`).join(""))}
     <div class="ax-legend"><span><i class="pl w">ف</i>فوز</span><span><i class="pl d">ت</i>تعادل</span><span><i class="pl l">خ</i>خسارة</span></div>`;
@@ -322,12 +348,12 @@ function haHTML(){
   const all=CLUBS.map(x=>{ const q=haOf(x); return {c:x, hp:q.h.p, hpts:q.h.pts, ap:q.a.p, apts:q.a.pts, hgd:q.h.gf-q.h.ga, agd:q.a.gf-q.a.ga, diff:q.h.pts-q.a.pts}; }).filter(x=>x.hp+x.ap);
   const S=sortBy(all,"ha",{n:x=>x.c, hp:x=>x.hp, hpts:x=>x.hpts, ap:x=>x.ap, apts:x=>x.apts, diff:x=>x.diff});
   return `<div class="rf-filters ax-f2">${seasonSel()}${clubSel("haClub", c)}</div>
-    ${sec(`${H(c)} — على أرضه وخارجها`, "من نتائج مباريات الفريق المُقامة في المسابقة المختارة.")}
+    ${sec(`${H(c)} — على أرضه وخارجها`)}
     <div class="an-card ax-ha">
       <div class="ax-ha-hd"><div><span>على أرضه</span><b>${ppm(o.h)}</b><small>نقطة/مباراة</small></div><div class="ax-ha-c">${crest(c,true)}</div><div><span>خارج أرضه</span><b>${ppm(o.a)}</b><small>نقطة/مباراة</small></div></div>
       <div class="ax-cmp">${rows.map(([k])=>bar(k,o.h[k],o.a[k])).join("")}</div>
     </div>
-    ${sec("كل الفرق", "مقارنة نقاط كل فريق على أرضه وخارجها.")}
+    ${sec("كل الفرق")}
     ${table("ha", [["n","الفريق","tl"],["hp","لعب (أرض)"],["hpts","نقاط الأرض"],["ap","لعب (خارج)"],["apts","نقاط الخارج"],["diff","الفارق"]],
       S.map(x=>`<tr><td class="tl"><button type="button" class="rf-name" data-ax-ha="${H(x.c)}">${crest(x.c)}<b>${H(x.c)}</b></button></td><td>${x.hp}</td><td><b>${x.hpts}</b></td><td>${x.ap}</td><td><b>${x.apts}</b></td><td dir="ltr">${x.diff>0?"+":""}${x.diff}</td></tr>`).join(""))}`;
 }
@@ -344,7 +370,7 @@ function discHTML(){
   const pr=(L,k)=>L.map(x=>`<tr><td class="tl">${pbtn(x.n,x.c,`${face(x.n,x.c,"sm")}<b>${H(x.n)}</b>`)}</td><td class="tl">${clubCell(x.c)}</td><td><b>${x[k]}</b></td></tr>`).join("");
   return `<div class="rf-filters ax-f1">${seasonSel()}</div>
     ${kpis([[y,"البطاقات الصفراء","y"],[r,"البطاقات الحمراء","r"],[n,"مباريات مُقامة"],[f2((y+r)/n),"بطاقات لكل مباراة","lead"]])}
-    <p class="hint rf-note">من البطاقات المسجّلة في أحداث المباريات. الإنذار الثاني يُحتسب بطاقة حمراء.</p>
+    <p class="hint rf-note">الإنذار الثاني يُحتسب بطاقة حمراء.</p>
     ${sec("الفرق")}
     ${table("discT", [["n","الفريق","tl"],["y",rfCardL("y")],["r",rfCardL("r")],["t","المجموع"]],
       sortBy(T,"discT",{n:x=>x.c,y:x=>x.y,r:x=>x.r,t:x=>x.t}).map(x=>`<tr><td class="tl">${clubCell(x.c)}</td><td>${x.y}</td><td>${x.r}</td><td><b>${x.t}</b></td></tr>`).join(""))}
@@ -387,7 +413,7 @@ function stadHTML(){
   if(AX.stad.sel){ const s=L.find(x=>x.k===AX.stad.sel); if(s) return stadDetail(s); AX.stad.sel=""; }
   if(!L.length) return empty("لم يُسجَّل ملعب لأي مباراة مُقامة بعد.");
   return `<div class="rf-filters ax-f1">${seasonSel()}</div>
-    ${sec("الملاعب", "من الملعب المسجّل في كل مباراة مُقامة. اضغط اسم الملعب لعرض مبارياته.")}
+    ${sec("الملاعب", "اضغط الملعب لعرض مبارياته.")}
     ${none?`<p class="hint rf-note">${none} مباراة مُقامة بلا ملعب مسجّل — لا تدخل هنا.</p>`:""}
     ${table("stad", [["n","الملعب","tl"],["m","مباريات"],["g","أهداف"],["avg","المعدل"],["hw","فوز المضيف"],["aw","فوز الضيف"],["d","تعادل"]],
       sortBy(L,"stad",{n:x=>x.n,m:x=>x.m,g:x=>x.g,avg:x=>x.avg,hw:x=>x.hw,aw:x=>x.aw,d:x=>x.d}).map(x=>`<tr><td class="tl"><button type="button" class="rf-name" data-ax-stad="${H(x.k)}"><b>${H(x.n)}</b></button></td><td>${x.m}</td><td>${x.g}</td><td><b>${f2(x.avg)}</b></td><td>${x.hw}</td><td>${x.aw}</td><td>${x.d}</td></tr>`).join(""))}`;
@@ -423,17 +449,14 @@ function perfRows(){
 function perfTable(){
   const L=perfRows(); if(!L.length) return empty("لا يوجد لاعب مطابق.");
   const S=sortBy(L,"perf",{n:x=>x.n, apps:x=>x.apps, starts:x=>x.starts, subs:x=>x.subs, mins:x=>x.mins, g:x=>x.g, a:x=>x.a, y:x=>x.y, r:x=>x.r, cs:x=>x.gk?x.cs:-1, pk:x=>x.pk, og:x=>x.og});
-  const lim=AX.perf.lim;
-  return `<p class="hint rf-note">${L.length} لاعباً · اضغط عنوان العمود للترتيب واسم اللاعب لبطاقته.</p>
-    ${table("perf", [["n","اللاعب","tl sticky"],["apps","مباريات"],["starts","أساسي"],["subs","بديل"],["mins","دقائق"],["g","أهداف"],["a","صناعة"],["y",rfCardL("y")],["r",rfCardL("r")],["cs","شباك نظيفة"],["pk","جزاء (سجّل/نفّذ)"],["og","عكسي"]],
-      S.slice(0,lim).map(p=>`<tr><td class="tl sticky">${pbtn(p.n,p.c,`${face(p.n,p.c,"sm")}<span class="ax-nc"><b>${H(p.n)}</b><small>${H(p.c)}</small></span>`)}</td>
-        <td>${p.apps}</td><td>${p.starts}</td><td>${p.subs}</td><td>${p.mins}</td><td><b>${p.g}</b></td><td><b>${p.a}</b></td><td>${p.y}</td><td>${p.r}</td><td>${p.gk?p.cs:"—"}</td><td>${p.pk?`${p.pks}/${p.pk}`:"0"}</td><td>${p.og}</td></tr>`).join(""), "ax-wide")}
-    ${more("perf", S.length-lim)}`;
+  return `    ${table("perf", [["n","اللاعب","tl"],["apps","مباريات"],["starts","أساسي"],["subs","بديل"],["mins","دقائق"],["g","أهداف"],["a","صناعة"],["y",rfCardL("y")],["r",rfCardL("r")],["cs","شباك نظيفة"],["pk","جزاء (سجّل/نفّذ)"],["og","عكسي"]],
+      S.map(p=>`<tr><td class="tl">${pbtn(p.n,p.c,`${face(p.n,p.c,"sm")}<span class="ax-nc"><b>${H(p.n)}</b><small>${H(p.c)}</small></span>`)}</td>
+        <td>${p.apps}</td><td>${p.starts}</td><td>${p.subs}</td><td>${p.mins}</td><td><b>${p.g}</b></td><td><b>${p.a}</b></td><td>${p.y}</td><td>${p.r}</td><td>${p.gk?p.cs:"—"}</td><td>${p.pk?`${p.pks}/${p.pk}`:"0"}</td><td>${p.og}</td></tr>`).join(""))}`;
 }
 function perfHTML(){
   if(AX.sel) return playerCard(AX.sel.n, AX.sel.c);
   if(!played().length) return noPlayed();
-  return `${sec("أداء اللاعبين", "كل لاعب شارك أو سجّل حدثاً في المسابقة المختارة. الشباك النظيفة للحرّاس فقط (لعب ثلثي المباراة ولم يستقبل فريقه).")}
+  return `${sec("أداء اللاعبين", "اضغط اسم اللاعب لعرض بطاقته.")}
     ${perfFilters()}<div id="axPerfT">${perfTable()}</div>`;
 }
 
@@ -455,30 +478,43 @@ function playerCard(n, c){
         <button type="button" class="ax-open" data-player="${H(n)}" data-club="${H(c)}">الملف الكامل</button></div>
     </div>
     ${kpis(K)}
-    ${last.length?`${sec("آخر 5 مباريات")}<div class="ax-last5">${last.map(l=>`<button type="button" class="ax-l5 ${l.k}" data-mopen="${H(matchKey(l.m))}">
-        <span class="op">${crest(l.opp)}</span><b dir="ltr">${H(l.res)}</b><small>${l.home?"أرضه":"خارج"} · ج${H(l.m.round)}</small>
-        <span class="ev">${l.g?`<i class="g">${l.g}</i>`:""}${l.a?`<i class="a">${l.a}</i>`:""}${l.r?`<i class="cr"></i>`:l.y?`<i class="cy"></i>`:""}</span>
-        <em>${l.mins}′</em></button>`).join("")}</div>`:""}
+    ${last.length?`${sec("آخر 5 مباريات", "الأحدث أولاً.")}<div class="ax-mts">${last.map(l=>matchTile(l.m, l.opp, l.k, l.res, l.g, l.a, l.y, l.r, l.mins)).join("")}</div>`:""}
     ${R?ratingBlock(R, hist):`<div class="an-card rf-empty" id="axRate">${grp?`لا تقييم: لعب ${D.mins} دقيقة وأقل عيّنة للتقييم ${RATING_MODEL.minMinutes} دقيقة.`:"لا تقييم: لا مركز محفوظ لهذا اللاعب في كشف ناديه."}</div>`}
     ${D.log.length?`${sec("مباراة بمباراة")}
-    <div class="an-card rf-tcard"><div class="rf-tw"><table class="rf-tbl ax-wide ax-log"><thead><tr><th class="tl"><span>المباراة</span></th><th><span>النتيجة</span></th><th><span>دقائق</span></th><th><span>أهداف</span></th><th><span>صناعة</span></th><th><span>بطاقة</span></th>${gk?`<th><span>استقبل</span></th>`:""}</tr></thead><tbody>
+    <div class="an-card rf-tcard"><div class="rf-tw"><table class="rf-tbl ax-log"><thead><tr><th class="tl"><span>المباراة</span></th>${["النتيجة","دقائق","أهداف","صناعة","بطاقة"].concat(gk?["استقبل"]:[]).map(t=>`<th><span>${axLbl(t)}</span></th>`).join("")}</tr></thead><tbody>
       ${D.log.map(l=>`<tr class="ax-lr" data-mopen="${H(matchKey(l.m))}"><td class="tl"><span class="rf-club">ج${H(l.m.round)} ${crest(l.opp)}<b>${H(l.opp)}</b><small>${l.home?"أرضه":"خارج أرضه"}</small></span></td>
         <td><span class="ax-res ${l.k}" dir="ltr">${H(l.res)}</span></td><td>${l.sub?`↑${l.on}′ `:""}${l.mins}′${l.off?` ↓`:""}</td><td>${l.g||"—"}</td><td>${l.a||"—"}</td><td>${l.r?'<i class="rf-cd r"></i>':l.y?'<i class="rf-cd y"></i>':"—"}</td>${gk?`<td>${l.con}</td>`:""}</tr>`).join("")}
-    </tbody></table></div></div>`:""}
+    </tbody></table></div></div>${axAbbr(["دقائق","أهداف","صناعة"].concat(gk?["استقبل"]:[]))}`:""}
   </div>`;
+}
+/* بطاقة مباراة واحدة — بسيطة وواضحة (منصور 2026-09-29): نتيجة ملوّنة (ف أخضر / ت أصفر / خ أحمر)،
+   شعار الخصم، النتيجة، وما فعله اللاعب بالكلمات بدل الأرقام في دوائر، ودقائقه. */
+const RES_T = {w:"فوز", d:"تعادل", l:"خسارة"};
+const cnt = (n, one, two, many) => n===1 ? one : n===2 ? two : `${n} ${many}`;
+function matchTile(m, opp, k, score, g, a, y, r, mins){
+  const ev=[g?cnt(g,"هدف","هدفان","أهداف"):"", a?cnt(a,"صناعة","صناعتان","صناعات"):""].filter(Boolean);
+  return `<button type="button" class="ax-mt ${k}" data-mopen="${H(matchKey(m))}" aria-label="${H(opp)}">
+    <span class="rs">${RES_T[k]}</span>
+    ${crest(opp)}
+    <b class="sc" dir="ltr">${H(score)}</b>
+    <span class="ev">${ev.length?ev.map(t=>`<i>${t}</i>`).join(""):`<i class="no">—</i>`}${r?rfCardL("r"):y?rfCardL("y"):""}</span>
+    <small>${mins}′</small></button>`;
 }
 function ratingBlock(R, hist){
   const G=RATING_MODEL.groups[R.grp];
   const line = hist && hist.length>1 ? histSVG(hist) : "";
-  return `<section id="axRate">${sec(`التقييم — ${R.v.toFixed(1)}`, `${rateLbl(R.v)} كـ${G.label} · مقارنةً بـ${R.poolN} ${R.poolN===1?"لاعب":"لاعباً"} في مركزه لعبوا ${RATING_MODEL.minMinutes} دقيقة فأكثر.`)}
-    <div class="an-card ax-break">${R.cats.map(c=>`<div class="ax-br${c.v==null?" off":""}">
-        <span class="l">${H(c.label)}<small>${c.w}%</small></span>
-        <span class="b"><i style="width:${c.v==null?0:catVal(c.v)*10}%" class="${c.v==null?"":rateCls(catVal(c.v))}"></i></span>
-        <b>${c.v==null?"—":catVal(c.v).toFixed(1)}</b>
-        ${c.raw.length?`<em>${c.raw.map(x=>`${H(x.label)}: <bdi>${x.k==="avail"?x.v+"%":f2(x.v)}</bdi>`).join(" · ")}</em>`:`<em>لا بيانات تميّز لاعبي المركز — مستبعدة من الحساب</em>`}
-      </div>`).join("")}
+  const on=R.cats.filter(c=>c.v!=null);
+  return `<section id="axRate">${sec("التقييم")}
+    <div class="an-card ax-rhead">${rateBadge(R.v, true)}<div><b>${rateLbl(R.v)}</b><small>مقارنةً بلاعبي ${H(G.label==="حارس مرمى"?"حراسة المرمى":G.label==="مدافع"?"الدفاع":G.label==="لاعب وسط"?"الوسط":"الهجوم")} فقط</small></div></div>
+    <div class="an-card ax-break">${on.map(c=>{ const v=catVal(c.v); return `<div class="ax-br">
+        <span class="l">${H(c.label)}</span>
+        <span class="b"><i style="width:${v*10}%" class="${rateCls(v)}"></i></span>
+        <b class="${rateCls(v)}">${v.toFixed(1)}</b></div>`; }).join("")}
+      <details class="ax-rawd"><summary>أرقام اللاعب في كل فئة</summary>
+        ${on.map(c=>`<p><b>${H(c.label)}</b> <small>(${c.w}% من التقييم)</small><br>${c.raw.map(x=>`${H(x.label)}: <bdi>${x.k==="avail"?x.v+"%":f2(x.v)}</bdi>`).join(" · ")}</p>`).join("")}
+      </details>
     </div>
-    ${line?`${sec("تطور التقييم", "التقييم محسوباً ببيانات كل جولة وما قبلها.")}<div class="an-card ax-hist">${line}</div>`:""}
+    ${line?`${sec("تطور التقييم")}<div class="an-card ax-hist">${line}</div>`:""}
     ${modelNote(R.grp)}</section>`;
 }
 function histSVG(h){
@@ -525,11 +561,7 @@ function pformGrid(){
   return `<div class="ax-pf">${L.slice(0,st.lim).map((x,i)=>`<article class="ax-pfc" style="--d:${Math.min(i,12)*30}ms">
       <header>${pbtn(x.n,x.c,`${face(x.n,x.c)}<span class="ax-nc"><b>${H(x.n)}</b><small>${crest(x.c)}${H(x.c)}</small></span>`)}<span class="ax-pf-m">آخر ${x.m===1?"مباراة":x.m===2?"مباراتين":x.m+" مباريات"}</span></header>
       <div class="ax-pf-big"><div><b>${x.g}</b><span>أهداف</span></div><div><b>${x.a}</b><span>صناعة</span></div><div><b>${x.mins}′</b><span>دقائق</span></div></div>
-      <div class="ax-pf-strip">${x.L.map(e=>{ const opp=e.club===e.m.home?e.m.away:e.m.home; return `<button type="button" class="ax-pfs ${e.res}" data-mopen="${H(matchKey(e.m))}" title="${H(opp)}">
-        <span class="bar"><i style="height:${Math.round(e.mins/e.LEN*100)}%"></i></span>
-        <span class="ev">${e.g?`<i class="g">${e.g}</i>`:""}${e.a?`<i class="a">${e.a}</i>`:""}${e.r?'<i class="cr"></i>':e.y?'<i class="cy"></i>':""}</span>
-        ${crest(opp)}</button>`; }).join("")}</div>
-      ${x.y||x.r?`<footer>${x.y?`<span>${rfCard("y")}${x.y}</span>`:""}${x.r?`<span>${rfCard("r")}${x.r}</span>`:""}</footer>`:""}
+      <div class="ax-mts">${x.L.map(e=>matchTile(e.m, e.club===e.m.home?e.m.away:e.m.home, e.res, `${e.gf} - ${e.ga}`, e.g, e.a, e.y, e.r, e.mins)).join("")}</div>
     </article>`).join("")}</div>${more("pform", L.length-st.lim)}`;
 }
 const rfCard = t => `<i class="rf-cd ${t}" aria-hidden="true"></i>`;
@@ -537,7 +569,7 @@ function pformHTML(){
   if(AX.sel) return playerCard(AX.sel.n, AX.sel.c);
   if(!played().length) return noPlayed();
   const st=AX.pform;
-  return `${sec("فورمة اللاعبين", "آخر 5 مشاركات لكل لاعب (الأحدث أولاً): الأهداف والصناعة والدقائق والبطاقات. ارتفاع العمود = دقائقه في المباراة.")}
+  return `${sec("فورمة اللاعبين", "آخر 5 مباريات لكل لاعب، الأحدث أولاً.")}
     <div class="rf-filters ax-f3">${seasonSel()}${clubSel("pfClub", st.club, true)}<label class="rf-f ax-q"><span>بحث</span><input type="search" data-ax-q="pform" value="${H(st.q)}" placeholder="اسم اللاعب" autocomplete="off" spellcheck="false"></label></div>
     <div class="segbar ax-pills" role="group" aria-label="ترتيب حسب">${PF_BY.map(([k,t])=>`<button type="button" class="seg" data-ax-pfby="${k}" aria-pressed="${st.by===k}">${t}</button>`).join("")}</div>
     <div id="axPfG">${pformGrid()}</div>`;
@@ -550,10 +582,10 @@ function gkHTML(){
   const L=playersAgg().filter(p=>p.gk && p.apps);
   if(!L.length) return empty("لا يوجد حارس بدقائق لعب مسجّلة.");
   const S=sortBy(L,"gk",{n:x=>x.n, apps:x=>x.apps, starts:x=>x.starts, mins:x=>x.mins, cs:x=>x.cs, ga:x=>x.gaOn, gpm:x=>x.gaOn/x.apps, f:x=>x.faced, s:x=>x.saved});
-  return `${sec("تحليل الحراس", "الحارس من مركزه في كشف ناديه. الأهداف المستقبَلة وركلات الجزاء التي واجهها = أثناء وجوده في الملعب. التصديات غير مسجّلة في الموقع فلا تظهر.")}
-    ${table("gk", [["n","الحارس","tl sticky"],["apps","مباريات"],["starts","أساسي"],["mins","دقائق"],["cs","شباك نظيفة"],["ga","استقبل"],["gpm","استقبل/مباراة"],["f","جزاءات واجهها"],["s","تصدى لها"]],
-      S.map(p=>`<tr><td class="tl sticky">${pbtn(p.n,p.c,`${face(p.n,p.c,"sm")}<span class="ax-nc"><b>${H(p.n)}</b><small>${H(p.c)}</small></span>`)}</td>
-        <td>${p.apps}</td><td>${p.starts}</td><td>${p.mins}</td><td><b>${p.cs}</b></td><td>${p.gaOn}</td><td>${f2(p.gaOn/p.apps)}</td><td>${p.faced}</td><td>${p.saved}</td></tr>`).join(""), "ax-wide")}`;
+  return `${sec("الحراس", "الأهداف وركلات الجزاء أثناء وجوده في الملعب.")}
+    ${table("gk", [["n","الحارس","tl"],["apps","مباريات"],["starts","أساسي"],["mins","دقائق"],["cs","شباك نظيفة"],["ga","استقبل"],["gpm","استقبل/مباراة"],["f","جزاءات واجهها"],["s","تصدى لها"]],
+      S.map(p=>`<tr><td class="tl">${pbtn(p.n,p.c,`${face(p.n,p.c,"sm")}<span class="ax-nc"><b>${H(p.n)}</b><small>${H(p.c)}</small></span>`)}</td>
+        <td>${p.apps}</td><td>${p.starts}</td><td>${p.mins}</td><td><b>${p.cs}</b></td><td>${p.gaOn}</td><td>${f2(p.gaOn/p.apps)}</td><td>${p.faced}</td><td>${p.saved}</td></tr>`).join(""))}`;
 }
 
 /* ───────────── اللاعبون: التقييم ───────────── */
@@ -562,11 +594,11 @@ function rateHTML(){
   if(!played().length) return noPlayed();
   const st=AX.rate, all=[...PRATING.all().values()].filter(x=>!st.grp || x.grp===st.grp);
   const S=sortBy(all,"rate",{v:x=>x.v, n:x=>x.n, mins:x=>x.mins, apps:x=>x.apps});
-  return `${sec("تقييم اللاعبين", `تقييم من 10 حسب المركز: كل لاعب يُقارن بلاعبي مركزه فقط. يظهر لمن لعب ${RATING_MODEL.minMinutes} دقيقة فأكثر.`)}
+  return `${sec("تقييم اللاعبين", "من 10 — كل لاعب يُقارَن بلاعبي مركزه فقط.")}
     <div class="segbar ax-pills" role="group" aria-label="المركز">${POS_F.map(([k,t])=>`<button type="button" class="seg" data-ax-grp="${k}" aria-pressed="${st.grp===k}">${t}</button>`).join("")}</div>
     ${S.length ? table("rate", [["n","اللاعب","tl"],["","المركز"],["apps","مباريات"],["mins","دقائق"],["v","التقييم"]],
-      S.slice(0,st.lim).map(x=>`<tr><td class="tl">${pbtn(x.n,x.c,`${face(x.n,x.c,"sm")}<span class="ax-nc"><b>${H(x.n)}</b><small>${H(x.c)}</small></span>`)}</td>
-        <td><span class="ax-pos">${H(x.pos)}</span></td><td>${x.apps}</td><td>${x.mins}</td><td>${rateBadge(x.v)}</td></tr>`).join("")) + more("rate", S.length-st.lim)
+      S.map(x=>`<tr><td class="tl">${pbtn(x.n,x.c,`${face(x.n,x.c,"sm")}<span class="ax-nc"><b>${H(x.n)}</b><small>${H(x.c)}</small></span>`)}</td>
+        <td><span class="ax-pos">${H(x.pos)}</span></td><td>${x.apps}</td><td>${x.mins}</td><td>${rateBadge(x.v)}</td></tr>`).join(""))
       : empty("لا يوجد لاعب بعيّنة كافية في هذا المركز.")}
     ${modelNote(null)}`;
 }
@@ -639,9 +671,8 @@ document.addEventListener("click", e=>{
   const st=t.closest("[data-ax-stad]"); if(st){ AX.stad.sel=st.dataset.axStad; paint(true); scrollTopOfPanel(); return; }
   const ha=t.closest("[data-ax-ha]"); if(ha){ AX.ha.club=ha.dataset.axHa; paint(true); scrollTopOfPanel(); return; }
   const mo=t.closest("[data-ax-more]");
-  if(mo){ const k=mo.dataset.axMore; ({perf:()=>{AX.perf.lim+=30; const b=$a("#axPerfT"); if(b) b.innerHTML=perfTable();},
-      pform:()=>{AX.pform.lim+=12; const b=$a("#axPfG"); if(b) b.innerHTML=pformGrid();},
-      rate:()=>{AX.rate.lim+=30; paint(false);}}[k]||(()=>{}))(); return; }
+  if(mo){ const k=mo.dataset.axMore; ({      pform:()=>{AX.pform.lim+=12; const b=$a("#axPfG"); if(b) b.innerHTML=pformGrid();},
+}[k]||(()=>{}))(); return; }
   const pb=t.closest("[data-ax-pfby]"); if(pb){ AX.pform.by=pb.dataset.axPfby; AX.pform.lim=12; paint(false); return; }
   const gp=t.closest("[data-ax-grp]"); if(gp){ AX.rate.grp=gp.dataset.axGrp; AX.rate.lim=30; paint(false); return; }
   const rl=t.closest(".ax-rt-link"); if(rl){ e.preventDefault(); const r=$a("#axRate"); if(r) r.scrollIntoView({behavior:"smooth", block:"start"}); return; }
