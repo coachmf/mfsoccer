@@ -289,3 +289,18 @@ html.gs-open{overflow:hidden}
   .ax-mts{gap:4px}.ax-mt .ev i{font-size:.6rem}.ax-mt .rs{font-size:.62rem}
   .ax-break .ax-br{grid-template-columns:minmax(0,110px) 1fr 34px}
 }
+
+/* أيقونات عناوين الأعمدة (بدل الحروف) */
+.ax-ic{display:inline-grid;place-items:center;color:inherit;line-height:0}
+.ax-ic svg{width:18px;height:18px}
+.ax-var{display:inline-block;font-size:.58rem;font-weight:900;letter-spacing:.02em;border:1.5px solid currentColor;border-radius:4px;padding:1px 3px;line-height:1.2}
+.ax-abbr{display:flex!important;flex-wrap:wrap;justify-content:center;gap:6px 14px;margin:10px 4px 0;font-size:.7rem;color:var(--an-mut)}
+.ax-abbr>span{display:inline-flex;align-items:center;gap:5px}
+.ax-abbr .ax-ic svg{width:15px;height:15px}
+.ax .ls,.ax .lf{display:inline!important}
+.ax-gg{font-weight:700;font-variant-numeric:tabular-nums}.ax-gg i{font-style:normal;color:var(--an-mut);margin:0 2px}
+.ax-pts{display:inline-grid;place-items:center;min-width:30px;height:26px;border-radius:8px;background:var(--an-track);font-weight:800}
+.ax-diff.up{color:#1fa64a;font-weight:700}.ax-diff.dn{color:#e0612b;font-weight:700}
+.ax-per{display:block;font-size:.6rem;color:var(--an-mut);margin-top:1px}
+.ax .rf-tbl td{vertical-align:middle}
+@media(max-width:560px){.ax-ic svg{width:16px;height:16px}}
