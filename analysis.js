@@ -33,7 +33,7 @@ function face(n, c, cls){
 const pbtn = (n,c,inner) => `<button type="button" class="rf-name ax-pl" data-ax-p="${H(n)}" data-ax-c="${H(c)}">${inner}</button>`;
 
 /* ذاكرة مؤقتة: تُبطَل تلقائياً عند أي تغيّر في البيانات أو المسابقة */
-const stamp = () => [COMP, (ALL&&ALL.updated)||"", MATCHES.length, GOALS.length, CARDS.length, PENS.length,
+const stamp = () => [COMP, (ALL&&ALL.updated)||"", typeof DATA_UPDATED!=="undefined"?DATA_UPDATED:"", MATCHES.length, GOALS.length, CARDS.length, PENS.length,
   (ALL&&ALL.lineups||[]).length, (ALL&&ALL.subs||[]).length, typeof CUR_STAMP!=="undefined"?CUR_STAMP:""].join("|");
 const MEMO = {k:"", m:new Map()};
 function memo(key, fn){
@@ -673,6 +673,16 @@ function renderAnalysisX(){
   paint(false);
 }
 if(typeof RENDER==="object") RENDER.analysis=renderAnalysisX;
+/* تحديث حيّ (منصور 2026-09-29): renderAll في الموقع يعيد رسم الصفحة الظاهرة إلا التحليل — فكانت أرقامه تبقى قديمة
+   حتى تبديل التبويب عند وصول مباراة أو حدث جديد. الآن يُعاد رسم لوحة التحليل الحالية نفسها (بلا إعادة تمرير)،
+   إلا إن كان المستخدم يكتب في خانة بحث داخلها. */
+if(typeof renderAll==="function" && !renderAll.__ax){
+  const _ra=renderAll;
+  renderAll=function(){ const r=_ra.apply(this, arguments);
+    try{ if(document.querySelector("#v-analysis.on .ax") && !(document.activeElement && document.activeElement.closest && document.activeElement.closest("#v-analysis input"))) paint(false); }catch(e){ console.error(e); }
+    return r; };
+  renderAll.__ax=true;
+}
 window.renderAnalysis=renderAnalysisX;
 if(document.querySelector("#v-analysis.on")) renderAnalysisX();
 
