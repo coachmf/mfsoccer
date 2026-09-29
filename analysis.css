@@ -304,3 +304,13 @@ html.gs-open{overflow:hidden}
 .ax-per{display:block;font-size:.6rem;color:var(--an-mut);margin-top:1px}
 .ax .rf-tbl td{vertical-align:middle}
 @media(max-width:560px){.ax-ic svg{width:16px;height:16px}}
+
+/* الكرة الواقعية في عناوين الأعمدة والشرح */
+.ax-ic .ax-ball{width:20px;height:20px;display:block;object-fit:contain;filter:drop-shadow(0 1px 1px rgba(0,0,0,.35))}
+.ax-abbr .ax-ic .ax-ball{width:16px;height:16px}
+@media(max-width:560px){.ax-ic .ax-ball{width:18px;height:18px}}
+
+/* الشفافية على الآيفون (منصور 2026-09-29): حركة التمرير moRise (animation-timeline: view) تتوقف في منتصفها
+   على البطاقات الطويلة فتبقى الجداول باهتة — نفس ما حدث مع قوائم «عرض المزيد» (2026-09-19). بطاقات التحليل
+   بلا حركة تمرير؛ دخول التبويب له حركته الخاصة (.ax-body.in). */
+.view .ax :is(.an-card,.card,.rf-tcard){animation:none!important;opacity:1!important;transform:none!important}

@@ -119,13 +119,18 @@ function playersAgg(){
       85 = أفضل من 85% من لاعبي مركزه. فالحارس يُقارَن بالحرّاس والمهاجم بالمهاجمين.
       المقياس الذي لا تختلف قيمه بين لاعبي المركز (لا بيانات له) يُستبعد وتُوزَّع أوزانه على الباقي.
    5) الفئة = متوسط مئينات مقاييسها؛ النتيجة = مجموع الفئات بأوزانها ÷ مجموع الأوزان المتاحة.
-   6) التقييم من 10 (بلون تقييمات الموقع، منصور 2026-09-29): (30 + 0.65 × النتيجة) ÷ 10
-      ⇒ لاعب في منتصف مركزه ≈ 6.2، الأفضل في كل شيء ≈ 9.5.
+   6) توازن المراكز (منصور 2026-09-29: «الحراس وايد عالي»): فئات الحارس كلها تقيس دفاع فريقه فتتحرك معاً،
+      فكان مدى الحراس ضعف مدى لاعبي الوسط. لذلك تُوحَّد كل المراكز على نفس المتوسط ونفس المدى:
+      z = (نتيجة اللاعب − متوسط مركزه) ÷ انحراف مركزه المعياري
+      التقييم من 10 = 6.4 + 0.9 × z  (بين 4.0 و9.7، بلون تقييمات الموقع)
+      ⇒ متوسط كل مركز 6.4، والمتميّز في مركزه (أعلى 10% تقريباً) فوق 7.5 — أياً كان مركزه.
    ========================================================================= */
 const RATING_MODEL = {
   K: 3,               /* عيّنة افتراضية بوحدة «مباراة كاملة» */
   minMinutes: 90,     /* أقل من 90 دقيقة = عيّنة غير كافية، بلا تقييم */
-  scale: c => Math.round(30 + 0.65*c)/10,   /* من 10 بمنزلة عشرية واحدة */
+  mean: 6.4, spread: 0.9, lo: 4.0, hi: 9.7,
+  scale: z => Math.round(Math.max(4.0, Math.min(9.7, 6.4 + 0.9*z))*10)/10,   /* z داخل المركز ← من 10 */
+  catScale: v => Math.round(30 + 0.65*v)/10,                                 /* عرض الفئة (مئين 0–100) على مقياس من 10 */
   /* المقاييس — كلها من entries (بيانات الموقع). dir: 1 الأعلى أفضل، -1 الأقل أفضل */
   metrics: {
     csRate:  {label:"شباك نظيفة لكل مباراة كاملة", dir:1,  x:p=>p.cs,  d:p=>p.full, unit:"/مباراة"},
@@ -145,8 +150,8 @@ const RATING_MODEL = {
       {k:"cs",      label:"الشباك النظيفة",  w:30, m:["csRate"]},
       {k:"prevent", label:"منع الأهداف",     w:30, m:["gaOn90"]},
       {k:"pens",    label:"ركلات الجزاء",    w:10, m:["penSave"]},
-      {k:"results", label:"نتائج الفريق",    w:10, m:["ptsRate"]},
-      {k:"avail",   label:"الحضور",          w:20, m:["avail"]} ]},
+      {k:"results", label:"نتائج الفريق",    w:15, m:["ptsRate"]},
+      {k:"avail",   label:"الحضور",          w:15, m:["avail"]} ]},
     DEF: {label:"مدافع", cats:[
       {k:"solid",   label:"الصلابة الدفاعية", w:30, m:["gaOn90"]},
       {k:"cs",      label:"الشباك النظيفة",   w:20, m:["csRate"]},
@@ -154,19 +159,18 @@ const RATING_MODEL = {
       {k:"results", label:"نتائج الفريق",     w:15, m:["ptsRate"]},
       {k:"avail",   label:"الحضور",           w:15, m:["avail"]},
       {k:"disc",    label:"الانضباط",         w:5,  m:["disc90"]} ]},
-    MID: {label:"لاعب وسط", cats:[
-      {k:"goals",   label:"الأهداف",           w:15, m:["goals90"]},
-      {k:"create",  label:"صناعة اللعب",       w:15, m:["ast90"]},
-      {k:"attack",  label:"هجوم الفريق بوجوده", w:10, m:["gfOn90"]},
-      {k:"defend",  label:"دفاع الفريق بوجوده", w:15, m:["gaOn90"]},
+    MID: {label:"لاعب وسط", cats:[     /* الأهداف والصناعة فئة واحدة: من سجّل 3 ولم يصنع لا يُعاقَب على الصناعة وحدها */
+      {k:"attack",  label:"الأهداف والصناعة",  w:35, m:["ga90"]},
+      {k:"teamAtt", label:"هجوم الفريق بوجوده", w:10, m:["gfOn90"]},
+      {k:"defend",  label:"دفاع الفريق بوجوده", w:10, m:["gaOn90"]},
       {k:"results", label:"نتائج الفريق",      w:20, m:["ptsRate"]},
       {k:"avail",   label:"الحضور",            w:20, m:["avail"]},
       {k:"disc",    label:"الانضباط",          w:5,  m:["disc90"]} ]},
     ATT: {label:"مهاجم", cats:[
-      {k:"finish",  label:"إنهاء الهجمات",     w:30, m:["goals90"]},
-      {k:"create",  label:"صناعة اللعب",       w:20, m:["ast90"]},
-      {k:"attack",  label:"هجوم الفريق بوجوده", w:15, m:["gfOn90"]},
-      {k:"results", label:"نتائج الفريق",      w:15, m:["ptsRate"]},
+      {k:"finish",  label:"إنهاء الهجمات",     w:35, m:["goals90"]},
+      {k:"create",  label:"صناعة اللعب",       w:15, m:["ast90"]},
+      {k:"attack",  label:"هجوم الفريق بوجوده", w:10, m:["gfOn90"]},
+      {k:"results", label:"نتائج الفريق",      w:20, m:["ptsRate"]},
       {k:"avail",   label:"الحضور",            w:15, m:["avail"]},
       {k:"disc",    label:"الانضباط",          w:5,  m:["disc90"]} ]},
   }
@@ -214,6 +218,7 @@ function computeRatings(cut){
         pool.forEach(q=>{ const u=val[mk].get(q); if(Math.abs(u-v)<1e-9) eq++; else if(dir>0 ? u<v : u>v) below++; });
         if(!pool.includes(p)) eq++;                              /* لاعب خارج العيّنة يُقارَن بها دون أن يُحسب منها */
         return 100*(below+0.5*(eq-1))/Math.max(1,pool.length-(pool.includes(p)?1:0)); };
+      const rows=[];
       all.forEach(p=>{
         if(p.mins<RATING_MODEL.minMinutes) return;
         const cats=G.cats.map(c=>{ const ms=c.m.filter(mk=>avail[mk]);
@@ -224,8 +229,12 @@ function computeRatings(cut){
         });
         const on=cats.filter(c=>c.v!=null), W=on.reduce((s,c)=>s+c.w,0);
         const comp=W ? on.reduce((s,c)=>s+c.w*c.v,0)/W : 50;
-        out.set(p.n+"|"+p.c, {n:p.n, c:p.c, grp:gk, pos:posOf(p.c,p.n), mins:p.mins, apps:p.apps, comp, v:RATING_MODEL.scale(comp), cats, poolN:pool.length});
+        rows.push({n:p.n, c:p.c, grp:gk, pos:posOf(p.c,p.n), mins:p.mins, apps:p.apps, comp, cats, poolN:pool.length});
       });
+      /* توحيد المراكز: نفس المتوسط والمدى لكل مركز */
+      const mu=rows.reduce((s,x)=>s+x.comp,0)/rows.length;
+      const sd=Math.sqrt(rows.reduce((s,x)=>s+(x.comp-mu)**2,0)/rows.length) || 1;
+      rows.forEach(x=>{ x.z=(x.comp-mu)/sd; x.v=RATING_MODEL.scale(x.z); out.set(x.n+"|"+x.c, x); });
     });
     return out;
   });
@@ -239,7 +248,7 @@ function ratingHistory(n, c){
 const rateCls = v => ratingCls(v);
 const rateLbl = v => v>=9?"أداء استثنائي":v>=8?"أداء ممتاز":v>=7?"أداء جيد":v>=6?"متوسط":"أقل من المتوسط";
 const rateBadge = (v, big) => ratingBadge(v, big);
-const catVal = v => RATING_MODEL.scale(v);          /* الفئة على مقياس التقييم نفسه */
+const catVal = v => RATING_MODEL.catScale(v);          /* الفئة على مقياس التقييم نفسه */
 window.PRATING = {
   model: RATING_MODEL,
   all: () => computeRatings(null),
@@ -277,7 +286,7 @@ const SV = p => `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" str
 const ICONS = {
   match:  SV('<rect x="2.5" y="5" width="19" height="14" rx="2"/><path d="M12 5v14"/><circle cx="12" cy="12" r="2.6"/><path d="M2.5 9.5h2.3v5H2.5M21.5 9.5h-2.3v5h2.3"/>'),
   clock:  SV('<circle cx="12" cy="13" r="8"/><path d="M12 9v4.2l2.6 1.6M9.5 2.5h5"/>'),
-  goal:   SV('<circle cx="12" cy="12" r="9"/><path d="m12 7.3 3.3 2.4-1.2 3.9H9.9L8.7 9.7z" fill="currentColor"/><path d="M12 7.3V3.2M15.3 9.7l3.9-1.3M14.1 13.6l2.4 3.3M9.9 13.6l-2.4 3.3M8.7 9.7 4.8 8.4"/>'),
+  goal:   `<img class="ax-ball" src="assets/icons/ball-3d.webp?v=2" alt="" width="20" height="20" decoding="async" aria-hidden="true">`,   /* الكرة الواقعية نفسها في تفاصيل المباريات (منصور 2026-09-29) */
   assist: SV('<path d="M3.2 15.6c-.1-3 .5-5.9 2.3-7.2.5-.4 1-.5 1.6-.5h2.4c.8 0 1.5.5 1.8 1.2l.8 1.9c.4 1 1.3 1.7 2.4 1.8l4.4.6c2.1.3 3.3 1.5 3.3 2.9 0 .9-.6 1.5-1.6 1.5H4.8c-.9 0-1.6-.8-1.6-2.2z"/><path d="M6.5 18v1.8M10.5 18v1.8M15 18v1.8M19 18v1.8"/>'),
   cs:     SV('<path d="M12 3 5 6v5.5c0 4.4 3 8 7 9.5 4-1.5 7-5.1 7-9.5V6z"/><path d="m9 12 2.2 2.2L15.5 10"/>'),
   conc:   SV('<path d="M2.5 19V6h19v13"/><path d="M2.5 10.5h19M2.5 14.8h19M7.3 6v13M12 6v13M16.7 6v13" stroke-width="1" opacity=".45"/><circle cx="15.5" cy="14.5" r="2.8" fill="currentColor" stroke="none"/>'),
@@ -554,7 +563,7 @@ function modelNote(only){
       <li>العيّنة الصغيرة: يُضاف لكل لاعب ${RATING_MODEL.K} مباريات افتراضية بمستوى متوسط مركزه، فتستقر الأرقام دون معاقبة المتألق.</li>
       <li>كل مقياس يُقارن بلاعبي المركز نفسه فقط (مئين 0–100)، ولا يدخل التقييم إلا من لعب ${RATING_MODEL.minMinutes} دقيقة فأكثر.</li>
       <li>مقياس بلا بيانات تميّز اللاعبين يُستبعد وتُوزّع أوزانه.</li>
-      <li>التقييم من 10 = (30 + 0.65 × مجموع الفئات بأوزانها من 100) ÷ 10، بنفس ألوان تقييمات المباريات.</li>
+      <li>توازن المراكز: كل مركز له نفس المتوسط (6.4) ونفس المدى، فلا يتفوّق الحراس أو المهاجمون تلقائياً. التقييم = 6.4 + 0.9 × بُعد اللاعب عن متوسط مركزه.</li>
       <li>غير مسجّل في الموقع فلا يدخل: التصديات، المساهمات الدفاعية، التسديدات والتمريرات.</li>
     </ol>
     ${gs.map(g=>{ const G=RATING_MODEL.groups[g]; return `<div class="ax-mg"><b>${G.label}</b><ul>${G.cats.map(c=>`<li><span>${H(c.label)} <em>${c.w}%</em></span><small>${c.m.map(mk=>H(M[mk].label)).join("، ")}</small></li>`).join("")}</ul></div>`; }).join("")}
