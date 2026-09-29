@@ -205,9 +205,16 @@ const store = {
   },
   async save(d){
     const obj = JSON.parse(JSON.stringify(d)); obj.updated = new Date().toISOString(); obj.updatedBy = (typeof FBUSER!=="undefined" && FBUSER && FBUSER.email) || "";
-    if(TEST){ localStorage.setItem("mfgulf", JSON.stringify(obj)); return true; }
+    if(TEST){ localStorage.setItem("mfgulf", JSON.stringify(obj)); return obj; }
     if(typeof fbDb==="undefined" || !fbDb) throw new Error("السحابة غير متاحة");
-    await fbDb.collection("seasons").doc(DOC_ID).set(obj); return true;
+    await fbDb.collection("seasons").doc(DOC_ID).set(obj); return obj;
+  },
+  /* أحدث نسخة من الخادم نفسه (لا من ذاكرة الجهاز) — عند تعذّرها: null */
+  async fresh(){
+    if(TEST){ try{ const s=localStorage.getItem("mfgulf"); return s?JSON.parse(s):null; }catch(e){ return null; } }
+    if(typeof fbDb==="undefined" || !fbDb) return null;
+    try{ const s = await fbDb.collection("seasons").doc(DOC_ID).get({source:"server"}); return s.exists ? s.data() : null; }
+    catch(e){ return null; }
   }
 };
 G.save = async () => { await store.save(DATA); };
@@ -563,10 +570,18 @@ function hookEditor(){
       FORMERR = withGulf(()=>validateEdit());
       if(FORMERR){ renderMatchAdmin(); return; }
       const key = {round:+EDIT.match.round, home:EDIT.match.home, away:EDIT.match.away}, linked = EDIT.match.rec==="live";
+      /* الحفظ يُبنى على أحدث نسخة (منصور 2026-09-29): كان التبديل/الاستراحة يحتاج حفظين — لقطة وصلت أثناء فتح المحرّر
+         (PENDING، أقدم من حفظنا) كانت تُطبَّق بعد الحفظ فتُرجع الشاشة للنسخة القديمة، والحفظ التالي يكتبها فوق السحابة.
+         الآن: نقرأ أحدث نسخة من الخادم (أو PENDING إن تعذّر)، نطبّق تعديل المباراة عليها وحدها، ونُسقط PENDING. */
+      toast("جارٍ حفظ مباراة البطولة…","busy",true);
+      const E0 = EDIT;
+      const base = (await store.fresh()) || PENDING;
+      if(base) DATA = normalize(JSON.parse(JSON.stringify(base)));   /* لا مقارنة ساعات بين الأجهزة: نسخة الخادم هي المرجع */
+      PENDING = null;
       withGulf(()=>applyEdit(EDIT));
       DATA = normalize(DATA);
-      const E0 = EDIT; EDIT = null; FORMERR = "";
-      try{ toast("جارٍ حفظ مباراة البطولة…","busy",true); await store.save(DATA); toast(`حُفظت: ${key.home} ضد ${key.away} ✅`,"ok"); }
+      EDIT = null; FORMERR = "";
+      try{ const w = await store.save(DATA); if(w && w.updated){ DATA.updated = w.updated; DATA.updatedBy = w.updatedBy; } toast(`حُفظت: ${key.home} ضد ${key.away} ✅`,"ok"); }
       catch(e){ toast("تعذّر الحفظ: "+(e.code||e.message),"err"); EDIT = E0; }
       if(linked && window.LIVE && LIVE.rec){ try{ const m = findGulf(LIVE.keyOf({comp:COMP_G, ...key})); if(m){ const d = await LIVE.rec.pull(m); if(d && !d.detached) await LIVE.rec.push(d); } }catch(e){ console.error(e); } }
       repaint(); renderMatchAdmin();
