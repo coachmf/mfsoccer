@@ -297,10 +297,15 @@ const MFSYNC = {
     try{ data=await this.fetchSeason(); }catch(e){ return cached; }
     const rep=this.syncFixtures(data, DB.state, {removeMissing:true});
     // النتائج والتشكيلات والتبديلات والأهداف: من الموقع مباشرة على كل جهاز — لا تنتظر المدير
-    const played=new Set((data.matches||[]).filter(m=>(!m.comp||m.comp==='الدوري') && this.isPlayed(m, data)).map(m=>+m.round));
+    const win=this.gwWindows(data);   /* المؤجلة المنقولة تُسحب في جولتها الجديدة */
+    const played=new Set((data.matches||[]).filter(m=>(!m.comp||m.comp==='الدوري') && this.isPlayed(m, data)).map(m=>this.gwOf(m, win, DB.state)));
     let ev=0;
     for(const gw of [...played].sort((a,b)=>a-b)){ const r=await this.importRound(gw,{quiet:true,data}); if(r) ev+=r.goals+r.subs+r.xi; }
     rep.events=ev; rep.rounds=played.size;
+    /* قفل الخادم يتبع الموعد الحقيقي (منصور 2026-09-30): كان يُكتب عند النشر فقط، فإن عُدّل موعد المباراة الأولى
+       في الموقع (18:00 ← 18:40) بقي الخادم يرفض التعديلات من 18:00 والواجهة تسمح حتى 18:40 */
+    try{ if(typeof CLOUD!=='undefined' && CLOUD.admin){ const st=DB.state, g=(st.gws||[]).find(x=>x.n===st.currentGW), lk=await CLOUD.readLock();
+      if(g && g.status!=='finished' && lk && lk.gw===st.currentGW && (lk.deadlineISO||null)!==(g.deadline||null)) await CLOUD.publishLock(st); } }catch(e){ console.warn('lock sync', e); }
     try{ localStorage.setItem(this.KEYF, String(Date.now())); }catch(e){}
     try{ localStorage.setItem(this.CACHE, JSON.stringify({at:Date.now(), matches:(data.matches||[]).map(m=>({round:m.round,home:m.home,away:m.away,date:m.date,time:m.time,comp:m.comp}))})); }catch(e){}
     try{ localStorage.setItem(DB.KEY, JSON.stringify(DB.state)); }catch(e){}

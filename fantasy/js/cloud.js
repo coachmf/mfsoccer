@@ -656,8 +656,17 @@ const CLOUD = {
     }catch(e){ return null; }
   },
 
+  /* نسخة أحدث نُشرت من جهاز مدير آخر منذ تحميل هذا الجهاز؟ (منصور 2026-09-30) — النشر فوقها يعيد
+     الجولة الحالية والأسعار وتصحيحات الآخرين للوراء */
+  async newerElsewhere(){
+    try{ const s=await this.root().get({source:'server'}); const u=s.exists ? (s.data()||{}).updated : null;
+      const mine=(typeof DB!=='undefined') ? (DB.cloudUpdated || (DB.state&&DB.state.cloudUpdated) || null) : null;
+      return !!(u && mine && u!==mine); }catch(e){ return false; }
+  },
+  markPublished(st, u){ if(typeof DB!=='undefined') DB.cloudUpdated=u; if(st) st.cloudUpdated=u; },
   async publishGame(st){
     if(!this.admin) return {ok:false, err:'الاحتساب والنشر للمدير فقط'};
+    if(await this.newerElsewhere()) return {ok:false, err:'نُشرت نسخة أحدث من جهاز مدير آخر — أعد تحميل الصفحة ثم انشر'};
     const meta = {
       rules: st.rules, scoring: st.scoring, currentGW: st.currentGW,
       gws: st.gws, news: st.news, liveSpeed: st.liveSpeed,
@@ -669,6 +678,7 @@ const CLOUD = {
       updatedBy: (this.user && this.user.email) || ''
     };
     let r = await this.race(this.root().set(meta, {merge:true}));
+    if(r.ok) this.markPublished(st, meta.updated);
     if(!r.ok) return {ok:false, err: r.timeout ? 'الاتصال بطيء — لم يكتمل النشر' : this.errAr(r.err)};
 
     r = await this.race(this.playersDoc().set({list: st.players, priceVer: (typeof SEED_PRICE_VER!=='undefined'? SEED_PRICE_VER : 1), updated: meta.updated}));
@@ -693,6 +703,7 @@ const CLOUD = {
   /* نشر نتائج جولة واحدة فقط — أسرع من نشر الموسم كله */
   async publishRound(st, gw){
     if(!this.admin) return {ok:false, err:'النشر للمدير فقط'};
+    if(await this.newerElsewhere()) return {ok:false, err:'نُشرت نسخة أحدث من جهاز مدير آخر — أعد تحميل الصفحة ثم انشر'};
     const fixtures = st.fixtures.filter(f=>f.gw===gw);
     const pg = {};
     for(const pid in st.playerGW){ const row=st.playerGW[pid][gw]; if(row) pg[pid]=row; }
@@ -700,6 +711,7 @@ const CLOUD = {
     let r = await this.race(this.round(gw).set({fixtures, playerGW:pg, updated:now}));
     if(!r.ok) return {ok:false, err:'تعذّر نشر الجولة'};
     r = await this.race(this.root().set({gws:st.gws, currentGW:st.currentGW, updated:now}, {merge:true}));
+    if(r.ok) this.markPublished(st, now);
     if(!r.ok) return {ok:false, err:'نُشرت المباريات لكن تعذّر تحديث حالة الجولات'};
     await this.publishLock(st);
     return {ok:true};
@@ -712,7 +724,18 @@ const CLOUD = {
      والاختيارات المحتسبة وترحيل الفريق (انتقالات مجانية، تصفير الكرت والخصومات،
      إرجاع فريق الضربة الحرة). ويعيد خلاصة: المتوسط والأعلى والتملّك والصفقات.
      المدير وحده. يمكن تكراره بأمان (لا يُحتسب أحد مرتين). */
+  validPicks(p, st){
+    if(!p) return false;
+    const xi=p.xi||[], bench=p.bench||[], sq=[...xi, ...bench];
+    if(xi.length!==11 || bench.length!==(st.rules.squadSize||15)-11 || new Set(sq).size!==sq.length) return false;
+    if(sq.some(pid=>!DB.player(pid))) return false;
+    if(!TEAM.validateXI(xi, st).ok) return false;
+    if(!p.cap || !xi.includes(p.cap) || (p.vice && !xi.includes(p.vice))) return false;
+    if(p.chip && !Object.keys((st.rules&&st.rules.chips)||{benchboost:1,triplecap:1,freehit:1,wildcard:1}).includes(p.chip)) return false;
+    return true;
+  },
   async finalizeForAll(st, gw, computeFn, opts){
+    this._badPicks=0;
     opts=opts||{};                       // {recompute:true} = إعادة احتساب جولة محتسبة بعد تصحيح نتيجة
     if(!this.admin) return {ok:false, err:'الاحتساب والنشر للمدير فقط'};
     if(!st.fromCloud) return {ok:false, err:'قائمة اللاعبين على هذا الجهاز ليست النسخة المنشورة — أعد تحميل الصفحة ثم حاول'};
@@ -750,6 +773,9 @@ const CLOUD = {
       const prev=(v.history||[]).find(h=>h.gw===gw);
       if(prev && (team.rolledGW||0)>=gw && !opts.recompute){ board.push(this.boardRow(d.id, v)); return; }   // محتسبة ومرحَّلة مسبقاً
       team.gwPicks = team.gwPicks||{};
+      /* لقطة تشكيلة غير صالحة (عُدّلت من المتصفح: 15 لاعباً في التشكيلة، كابتن من خارجها، كرت غير معروف…)
+         لا تُعتمد — تُبنى من الفريق المقفل على الخادم عند الموعد (منصور 2026-09-30) */
+      if(team.gwPicks[gw] && !this.validPicks(team.gwPicks[gw], st)){ team.gwPicks[gw]=null; this._badPicks=(this._badPicks||0)+1; }
       if(!team.gwPicks[gw]){
         team.gwPicks[gw] = TEAM.picksFrom(team);
         // احتساب جولة سابقة بلا لقطة: الكرت المفعّل الآن يخص الجولة الجارية لا هذه — لا يُحسب ولا يُستهلك
