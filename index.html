@@ -2152,7 +2152,7 @@ main{padding-bottom:48px}
 <!-- اللغة الإنجليزية والوضع الداكن -->
 <link rel="stylesheet" href="site-theme.css?v=5">
 <script src="fantasy/js/i18n-more.js?v=12" defer></script>
-<script src="site-i18n.js?v=20" defer></script>
+<script src="site-i18n.js?v=21" defer></script>
 <!-- مركز المباراة المباشر: صفحة الجمهور + الربط (غرفة التحكم live-admin.js تُحمَّل عند فتحها فقط) -->
 <link rel="stylesheet" href="live.css?v=9">
 <script src="live.js?v=16" defer></script>
@@ -2162,6 +2162,9 @@ main{padding-bottom:48px}
 <!-- كأس الخليج 27: قسم مستقل ببيانات منفصلة (seasons/gulf27) -->
 <link rel="stylesheet" href="gulf.css?v=15">
 <script src="gulf.js?v=36" defer></script>
+<!-- التحليل الموسّع + تقييم اللاعبين 0–100 + البحث العام (منصور 2026-09-29) -->
+<link rel="stylesheet" href="analysis.css?v=1">
+<script src="analysis.js?v=1" defer></script>
 <style>
 /* تبويب التحليل — التصميم الجديد (منصور 2026-09-17) */
 .an{--an-card:#0F1E35;--an-line:#213653;--an-txt:#EDF3FA;--an-mut:#8FA6C4;--an-track:rgba(143,166,196,.16);--an-acc:#2EB0F0;--an-acc2:#1878BE}
@@ -7863,49 +7866,13 @@ function anBody(){
   return `<div class="an-card an-fg an-body">${anDonut(parts, tot, "هدفاً")}
     <div class="an-legend">${parts.map((p,k)=>`<div class="an-lg"><i style="background:${p.col}"></i><span>${esc(p.l||"غير محدد")}</span><b>${p.n}</b><em>${pct(p.n,tot)}%</em></div>`).join("")}</div></div>`;
 }
-/* ===== صفحة التحليل: ثلاثة تبويبات (منصور 2026-09-29) — تحليل الفرق · تحليل اللاعبين · تحليل الحكام =====
-   نفس مكوّن تبويبات صفحة النادي (.ctabs). أقسام التحليل الموجودة لم تتغير، توزّعت فقط:
-   الفرق = الأهداف والجزاءات وأثر الهدف الأول، اللاعبون = أعلى متوسط تقييم، الحكام = anRefsHTML (من بيانات الموقع وحدها). */
-let AN_TAB = "teams";
-const AN_TABS = [
-  ["teams","تحليل الفرق",'<path d="M12 3 4.5 6v5.5c0 4.6 3.2 8.2 7.5 9.5 4.3-1.3 7.5-4.9 7.5-9.5V6z"/>'],
-  ["players","تحليل اللاعبين",'<circle cx="12" cy="8" r="3.8"/><path d="M4.5 20.5c.6-4 3.6-6.3 7.5-6.3s6.9 2.3 7.5 6.3"/>'],
-  ["refs","تحليل الحكام",'<circle cx="9" cy="14" r="5"/><path d="M13.5 11.5 21 8V5l-9.5 4.2"/>']
-];
-function wireAnTabs(){
-  const w=$("#v-analysis .an"); if(!w) return;
-  const bs=[...w.querySelectorAll(".an-tabs button")], ind=w.querySelector(".an-tabs .ctab-ind");
-  const set=k=>{
-    if(!bs.some(b=>b.dataset.at===k)) k="teams";
-    AN_TAB=k; const i=bs.findIndex(b=>b.dataset.at===k);
-    bs.forEach(b=>{ b.setAttribute("aria-selected", b.dataset.at===k); b.tabIndex = b.dataset.at===k ? 0 : -1; });
-    w.querySelectorAll(".ctab-panel[data-ap]").forEach(p=>p.classList.toggle("on", p.dataset.ap===k));
-    const rtl=getComputedStyle(w).direction!=="ltr";
-    ind.style.transform=`translateX(${(rtl?-100:100)*i}%)`;
-  };
-  bs.forEach(b=>b.onclick=()=>set(b.dataset.at));
-  /* أول رسم: المؤشر في مكانه مباشرة بلا انزلاق (قاعدة الحركة العامة تفرض transition بـ !important) */
-  const bar=w.querySelector(".an-tabs"); bar.classList.add("no-tr"); set(AN_TAB);
-  requestAnimationFrame(()=>requestAnimationFrame(()=>bar.classList.remove("no-tr")));
-}
-function renderAnalysis(){
+/* ===== صفحة التحليل (منصور 2026-09-29) =====
+   الهيكل والتبويبات (نظرة عامة · الفرق · اللاعبون · الحكام) في analysis.js، وهو يستبدل RENDER.analysis.
+   هنا «نظرة عامة» = أقسام الأهداف الأصلية بلا تغيير، وrenderAnalysis احتياطي لو لم يُحمَّل analysis.js. */
+function anOverviewHTML(){
   const cats=[...new Set(GOALS.map(g=>g.det))].map(d=>({l:d,n:GOALS.filter(g=>g.det===d).length})).sort((a,b)=>b.n-a.n);
   const zones=[...new Set(GOALS.map(g=>g.zone))].map(z=>({l:z,n:GOALS.filter(g=>g.zone===z).length})).sort((a,b)=>b.n-a.n);
-  $("#v-analysis").innerHTML=`<div class="an">
-    ${compChips(true)}
-    <div class="ctabs an-tabs" role="tablist" aria-label="أقسام التحليل">
-      <span class="ctab-ind" aria-hidden="true"></span>
-      ${AN_TABS.map(([k,t,ic])=>`<button type="button" role="tab" data-at="${k}"><svg class="at-ic" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ic}</svg><span>${t}</span></button>`).join("")}
-    </div>
-
-    <div class="ctab-panel" data-ap="players">
-    ${avgRatingSectionHTML() || `<div class="an-card rf-empty">لا توجد تقييمات لاعبين في ${esc(compLabel(COMP))} بعد.</div>`}
-    </div>
-
-    <div class="ctab-panel" data-ap="refs"><div id="anRefs">${anRefsHTML()}</div></div>
-
-    <div class="ctab-panel" data-ap="teams">
-    <h2 class="sec">توزيع الأهداف على فترات المباراة</h2>
+  return `<h2 class="sec">توزيع الأهداف على فترات المباراة</h2>
     ${anPeriods()}
     <p class="hint">أكثر ما يميّز هذا الموقع عن مواقع النتائج — لا أحد يوفّر هذا التفصيل للدوري الكويتي.</p>
 
@@ -7935,12 +7902,12 @@ function renderAnalysis(){
     <div class="an-card">${anRank(zones,"منطقة")}</div>
 
     <h2 class="sec">وضعية التسجيل</h2>
-    ${anBody()}
-    </div>
-  </div>`;
+    ${anBody()}`;
+}
+function renderAnalysis(){
+  $("#v-analysis").innerHTML=`<div class="an">${compChips(true)}${anOverviewHTML()}</div>`;
   renderLeagueHeat();
   wireComp($("#v-analysis"));
-  wireAnTabs();
 }
 
 /* ===== تحليل الحكام (منصور 2026-09-29) =====
@@ -12339,8 +12306,9 @@ function playerProfileHTML(D){
     : [st(D.goals,"أهداف",true), st(D.assists,"صناعة",true), st(D.apps,"مباريات"), st(D.mins+"′","دقائق اللعب"),
        st(D.y,"إنذارات"), D.rd?st(D.rd,"طرد"):"", D.pens?st(D.pens,"ركلات جزاء"):"", D.ownG?st(D.ownG,"أهداف عكسية"):""];
   /* متوسط التقييم (منصور 2026-09-17) — بطاقة ضمن الأرقام، يتبع المسابقة المختارة */
-  const rtAvg = (()=>{ try{ const e=averageRatings().find(x=>x.n===D.name && x.c===D.club); return e&&e.apps? e : null; }catch(err){ return null; } })();
-  if(rtAvg) cards.push(`<div class="pstat rt"><b>${ratingBadge(rtAvg.avg, true)}</b><small>التقييم</small></div>`);
+  /* التقييم الموسمي 0–100 حسب المركز (analysis.js — منصور 2026-09-29) بدل متوسط تقييم المباريات */
+  const rtNew = (()=>{ try{ return window.PRATING ? PRATING.of(D.name, D.club) : null; }catch(err){ return null; } })();
+  if(rtNew) cards.push(`<div class="pstat rt"><b>${PRATING.badge(rtNew.v, true)}</b><small>التقييم</small></div>`);
   const played = D.apps>0 || D.goals>0 || D.assists>0 || D.y>0 || D.rd>0;
   const badge=(n,cls,inner)=> n?`<span class="pp-b ${cls}">${inner}${n>1?`<em>${n}</em>`:""}</span>`:"";
   const logHTML = D.log.length ? `<div class="pprof-log"><h4>مباراة بمباراة</h4><div class="plog">${D.log.map(l=>`
