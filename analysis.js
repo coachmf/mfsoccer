@@ -119,12 +119,13 @@ function playersAgg(){
       85 = أفضل من 85% من لاعبي مركزه. فالحارس يُقارَن بالحرّاس والمهاجم بالمهاجمين.
       المقياس الذي لا تختلف قيمه بين لاعبي المركز (لا بيانات له) يُستبعد وتُوزَّع أوزانه على الباقي.
    5) الفئة = متوسط مئينات مقاييسها؛ النتيجة = مجموع الفئات بأوزانها ÷ مجموع الأوزان المتاحة.
-   6) التقييم = 30 + 0.65 × النتيجة  ⇒  لاعب في منتصف مركزه ≈ 62، الأفضل في كل شيء ≈ 95.
+   6) التقييم من 10 (بلون تقييمات الموقع، منصور 2026-09-29): (30 + 0.65 × النتيجة) ÷ 10
+      ⇒ لاعب في منتصف مركزه ≈ 6.2، الأفضل في كل شيء ≈ 9.5.
    ========================================================================= */
 const RATING_MODEL = {
   K: 3,               /* عيّنة افتراضية بوحدة «مباراة كاملة» */
   minMinutes: 90,     /* أقل من 90 دقيقة = عيّنة غير كافية، بلا تقييم */
-  scale: c => 30 + 0.65*c,
+  scale: c => Math.round(30 + 0.65*c)/10,   /* من 10 بمنزلة عشرية واحدة */
   /* المقاييس — كلها من entries (بيانات الموقع). dir: 1 الأعلى أفضل، -1 الأقل أفضل */
   metrics: {
     csRate:  {label:"شباك نظيفة لكل مباراة كاملة", dir:1,  x:p=>p.cs,  d:p=>p.full, unit:"/مباراة"},
@@ -223,7 +224,7 @@ function computeRatings(cut){
         });
         const on=cats.filter(c=>c.v!=null), W=on.reduce((s,c)=>s+c.w,0);
         const comp=W ? on.reduce((s,c)=>s+c.w*c.v,0)/W : 50;
-        out.set(p.n+"|"+p.c, {n:p.n, c:p.c, grp:gk, pos:posOf(p.c,p.n), mins:p.mins, apps:p.apps, comp, v:Math.round(RATING_MODEL.scale(comp)), cats, poolN:pool.length});
+        out.set(p.n+"|"+p.c, {n:p.n, c:p.c, grp:gk, pos:posOf(p.c,p.n), mins:p.mins, apps:p.apps, comp, v:RATING_MODEL.scale(comp), cats, poolN:pool.length});
       });
     });
     return out;
@@ -234,9 +235,11 @@ function ratingHistory(n, c){
   const rounds=[...new Set(playedMatches().map(m=>+m.round))].sort((a,b)=>a-b);
   return rounds.map(r=>{ const x=computeRatings(r).get(n+"|"+c); return x?{r, v:x.v}:null; }).filter(Boolean);
 }
-const rateCls = v => v>=90?"x9":v>=80?"x8":v>=70?"x7":v>=60?"x6":"x5";
-const rateLbl = v => v>=90?"أداء استثنائي":v>=80?"أداء ممتاز":v>=70?"أداء جيد":v>=60?"متوسط":"أقل من المتوسط";
-const rateBadge = (v, big) => `<span class="ax-rt ${rateCls(v)}${big?" big":""}">${v}</span>`;
+/* نفس ألوان تقييمات المباريات في الموقع (ratingCls/ratingBadge): أخضر جيد، أصفر متوسط 6.0، برتقالي/أحمر ضعيف */
+const rateCls = v => ratingCls(v);
+const rateLbl = v => v>=9?"أداء استثنائي":v>=8?"أداء ممتاز":v>=7?"أداء جيد":v>=6?"متوسط":"أقل من المتوسط";
+const rateBadge = (v, big) => ratingBadge(v, big);
+const catVal = v => RATING_MODEL.scale(v);          /* الفئة على مقياس التقييم نفسه */
 window.PRATING = {
   model: RATING_MODEL,
   all: () => computeRatings(null),
@@ -467,11 +470,11 @@ function playerCard(n, c){
 function ratingBlock(R, hist){
   const G=RATING_MODEL.groups[R.grp];
   const line = hist && hist.length>1 ? histSVG(hist) : "";
-  return `<section id="axRate">${sec(`التقييم — ${R.v}`, `${rateLbl(R.v)} كـ${G.label} · مقارنةً بـ${R.poolN} ${R.poolN===1?"لاعب":"لاعباً"} في مركزه لعبوا ${RATING_MODEL.minMinutes} دقيقة فأكثر.`)}
+  return `<section id="axRate">${sec(`التقييم — ${R.v.toFixed(1)}`, `${rateLbl(R.v)} كـ${G.label} · مقارنةً بـ${R.poolN} ${R.poolN===1?"لاعب":"لاعباً"} في مركزه لعبوا ${RATING_MODEL.minMinutes} دقيقة فأكثر.`)}
     <div class="an-card ax-break">${R.cats.map(c=>`<div class="ax-br${c.v==null?" off":""}">
         <span class="l">${H(c.label)}<small>${c.w}%</small></span>
-        <span class="b"><i style="width:${c.v==null?0:c.v}%" class="${c.v==null?"":rateCls(30+0.65*c.v)}"></i></span>
-        <b>${c.v==null?"—":c.v}</b>
+        <span class="b"><i style="width:${c.v==null?0:catVal(c.v)*10}%" class="${c.v==null?"":rateCls(catVal(c.v))}"></i></span>
+        <b>${c.v==null?"—":catVal(c.v).toFixed(1)}</b>
         ${c.raw.length?`<em>${c.raw.map(x=>`${H(x.label)}: <bdi>${x.k==="avail"?x.v+"%":f2(x.v)}</bdi>`).join(" · ")}</em>`:`<em>لا بيانات تميّز لاعبي المركز — مستبعدة من الحساب</em>`}
       </div>`).join("")}
     </div>
@@ -480,12 +483,12 @@ function ratingBlock(R, hist){
 }
 function histSVG(h){
   const W=320, Hh=120, px=24, py=18, n=h.length;
-  const X=i=>px+(n===1?0:i*(W-2*px)/(n-1)), Y=v=>Hh-py-(Math.max(30,Math.min(100,v))-30)/70*(Hh-2*py);
+  const X=i=>px+(n===1?0:i*(W-2*px)/(n-1)), Y=v=>Hh-py-(Math.max(3,Math.min(10,v))-3)/7*(Hh-2*py);
   const pts=h.map((x,i)=>`${X(i)},${Y(x.v)}`).join(" ");
   return `<svg class="ax-hsvg" viewBox="0 0 ${W} ${Hh}" role="img" aria-label="تطور التقييم">
-    ${[40,60,80,100].map(v=>`<line x1="${px}" x2="${W-px}" y1="${Y(v)}" y2="${Y(v)}" class="gl"/>`).join("")}
+    ${[4,6,8,10].map(v=>`<line x1="${px}" x2="${W-px}" y1="${Y(v)}" y2="${Y(v)}" class="gl"/>`).join("")}
     <polyline points="${pts}" class="ln"/>
-    ${h.map((x,i)=>`<circle cx="${X(i)}" cy="${Y(x.v)}" r="4" class="dt"/><text x="${X(i)}" y="${Y(x.v)-9}" class="vl">${x.v}</text><text x="${X(i)}" y="${Hh-3}" class="rl">ج${x.r}</text>`).join("")}
+    ${h.map((x,i)=>`<circle cx="${X(i)}" cy="${Y(x.v)}" r="4" class="dt"/><text x="${X(i)}" y="${Y(x.v)-9}" class="vl">${x.v.toFixed(1)}</text><text x="${X(i)}" y="${Hh-3}" class="rl">ج${x.r}</text>`).join("")}
   </svg>`;
 }
 function modelNote(only){
@@ -498,11 +501,11 @@ function modelNote(only){
       <li>العيّنة الصغيرة: يُضاف لكل لاعب ${RATING_MODEL.K} مباريات افتراضية بمستوى متوسط مركزه، فتستقر الأرقام دون معاقبة المتألق.</li>
       <li>كل مقياس يُقارن بلاعبي المركز نفسه فقط (مئين 0–100)، ولا يدخل التقييم إلا من لعب ${RATING_MODEL.minMinutes} دقيقة فأكثر.</li>
       <li>مقياس بلا بيانات تميّز اللاعبين يُستبعد وتُوزّع أوزانه.</li>
-      <li>التقييم = 30 + 0.65 × مجموع الفئات بأوزانها (من 100).</li>
+      <li>التقييم من 10 = (30 + 0.65 × مجموع الفئات بأوزانها من 100) ÷ 10، بنفس ألوان تقييمات المباريات.</li>
       <li>غير مسجّل في الموقع فلا يدخل: التصديات، المساهمات الدفاعية، التسديدات والتمريرات.</li>
     </ol>
     ${gs.map(g=>{ const G=RATING_MODEL.groups[g]; return `<div class="ax-mg"><b>${G.label}</b><ul>${G.cats.map(c=>`<li><span>${H(c.label)} <em>${c.w}%</em></span><small>${c.m.map(mk=>H(M[mk].label)).join("، ")}</small></li>`).join("")}</ul></div>`; }).join("")}
-    <div class="ax-scale">${[["x9","90–100 أداء استثنائي"],["x8","80–89 ممتاز"],["x7","70–79 جيد"],["x6","60–69 متوسط"],["x5","أقل من 60 دون المتوسط"]].map(([c,t])=>`<span><i class="ax-rt ${c}"></i>${t}</span>`).join("")}</div>
+    <div class="ax-scale">${[[8,"8.0 فأكثر ممتاز"],[7,"7.0–7.9 جيد"],[6.5,"6.5–6.9 فوق المتوسط"],[6,"6.0–6.4 متوسط"],[5,"أقل من 6.0 ضعيف"]].map(([v,t])=>`<span><i class="rtg ${ratingCls(v)}"></i>${t}</span>`).join("")}</div>
   </details>`;
 }
 
@@ -559,7 +562,7 @@ function rateHTML(){
   if(!played().length) return noPlayed();
   const st=AX.rate, all=[...PRATING.all().values()].filter(x=>!st.grp || x.grp===st.grp);
   const S=sortBy(all,"rate",{v:x=>x.v, n:x=>x.n, mins:x=>x.mins, apps:x=>x.apps});
-  return `${sec("تقييم اللاعبين", `تقييم من 0 إلى 100 حسب المركز: كل لاعب يُقارن بلاعبي مركزه فقط. يظهر لمن لعب ${RATING_MODEL.minMinutes} دقيقة فأكثر.`)}
+  return `${sec("تقييم اللاعبين", `تقييم من 10 حسب المركز: كل لاعب يُقارن بلاعبي مركزه فقط. يظهر لمن لعب ${RATING_MODEL.minMinutes} دقيقة فأكثر.`)}
     <div class="segbar ax-pills" role="group" aria-label="المركز">${POS_F.map(([k,t])=>`<button type="button" class="seg" data-ax-grp="${k}" aria-pressed="${st.grp===k}">${t}</button>`).join("")}</div>
     ${S.length ? table("rate", [["n","اللاعب","tl"],["","المركز"],["apps","مباريات"],["mins","دقائق"],["v","التقييم"]],
       S.slice(0,st.lim).map(x=>`<tr><td class="tl">${pbtn(x.n,x.c,`${face(x.n,x.c,"sm")}<span class="ax-nc"><b>${H(x.n)}</b><small>${H(x.c)}</small></span>`)}</td>

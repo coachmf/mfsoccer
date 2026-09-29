@@ -135,7 +135,8 @@
 .ax-br .l small{font-size:.66rem;color:var(--an-mut);font-weight:600}
 .ax-br .b{height:10px;border-radius:6px;background:var(--an-track);overflow:hidden}
 .ax-br .b i{display:block;height:100%;border-radius:6px;transition:width .7s var(--mo-out,ease)}
-.ax-br .b i.x9{background:#22C55E}.ax-br .b i.x8{background:#2EB0F0}.ax-br .b i.x7{background:#2DD4BF}.ax-br .b i.x6{background:#E0B23C}.ax-br .b i.x5{background:#E5383B}
+.ax-br .b i.r8{background:#1f9ed6}.ax-br .b i.r7{background:#1fa64a}.ax-br .b i.r65{background:#79b92f}.ax-br .b i.r6{background:#d9a318}.ax-br .b i.r5{background:#e0612b}   /* ألوان .rtg في الموقع */
+.ax-rt-link .rtg.big,.ax .rtg.big{min-width:48px;height:34px;font-size:1.05rem;border-radius:9px}
 .ax-br>b{font-weight:800;text-align:center;color:var(--an-txt);font-variant-numeric:tabular-nums}
 .ax-br em{grid-column:1/-1;font-style:normal;font-size:.68rem;color:var(--an-mut);line-height:1.5}
 .ax-br.off{opacity:.55}
@@ -161,7 +162,7 @@
 .ax-mg li small{font-size:.7rem;color:var(--an-mut)}
 .ax-scale{display:flex;flex-wrap:wrap;gap:8px 14px;border-top:1px solid var(--an-line);padding:12px 0 14px;font-size:.72rem;color:var(--an-mut)}
 .ax-scale span{display:inline-flex;align-items:center;gap:6px}
-.ax-scale .ax-rt{min-width:14px;height:14px;border-radius:4px;padding:0}
+.ax-scale .rtg{min-width:14px;height:14px;border-radius:4px;padding:0}
 
 /* ── فورمة اللاعبين ── */
 .ax-pf{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px}
