@@ -2152,7 +2152,7 @@ main{padding-bottom:48px}
 <!-- اللغة الإنجليزية والوضع الداكن -->
 <link rel="stylesheet" href="site-theme.css?v=5">
 <script src="fantasy/js/i18n-more.js?v=12" defer></script>
-<script src="site-i18n.js?v=18" defer></script>
+<script src="site-i18n.js?v=19" defer></script>
 <!-- مركز المباراة المباشر: صفحة الجمهور + الربط (غرفة التحكم live-admin.js تُحمَّل عند فتحها فقط) -->
 <link rel="stylesheet" href="live.css?v=9">
 <script src="live.js?v=16" defer></script>
@@ -2353,6 +2353,112 @@ html[data-theme="light"] .an-goal .gn{fill:#0B1F3A;stroke:rgba(255,255,255,.7)}
   :is(#heatLeague,#heatClub).an-card .hstats{grid-template-columns:repeat(2,1fr)}
 }
 @media print{.an-card,.an-row,.an-lg{break-inside:avoid;page-break-inside:avoid}}
+
+/* تبويبات التحليل (منصور 2026-09-29): مكوّن .ctabs نفسه في صفحة النادي، بلون الموقع */
+.an .an-tabs{--ca:#1878BE;--cb:#0B1F3A;--ca-rgb:24,120,190;--ctab-fg:#fff;margin:4px 0 6px}
+html[data-theme="light"] .an .an-tabs{background:rgba(13,79,146,.06);border-color:rgba(13,79,146,.16)}
+.an .an-tabs button{display:flex;align-items:center;justify-content:center;gap:7px;padding:12px 4px}
+.an .an-tabs button span{min-width:0;overflow:hidden;text-overflow:ellipsis}
+.an .an-tabs .at-ic{flex:none;opacity:.85}
+.an .an-tabs.no-tr .ctab-ind{transition:none!important}
+.an .ctab-panel[data-ap]>h2.sec:first-child,.an #anRefs>h2.sec:first-child{margin-top:18px}
+@media(max-width:420px){.an .an-tabs .at-ic{display:none}}
+@media print{.an .ctab-panel[data-ap]{display:block!important}.an .an-tabs{display:none}}
+
+/* تحليل الحكام */
+.rf-body{animation:moPanelIn .42s var(--mo-out,cubic-bezier(.2,.8,.2,1)) both}
+.rf-empty{text-align:center;color:var(--an-mut);font-size:.86rem;padding:26px 16px}
+.rf-note{margin:-2px 0 10px}
+.rf-filters{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:0 0 14px}
+.rf-f{display:flex;flex-direction:column;gap:4px;min-width:0}
+.rf-f span{font-size:.7rem;color:var(--an-mut);font-weight:600}
+.rf-f select{width:100%;min-width:0;appearance:none;-webkit-appearance:none;font:inherit;font-size:.84rem;font-weight:600;color:var(--an-txt);
+  background:var(--an-card) no-repeat left 10px center/10px url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%238FA6C4' stroke-width='1.6' stroke-linecap='round'/%3E%3C/svg%3E");
+  border:1px solid var(--an-line);border-radius:12px;padding:9px 12px 9px 28px;cursor:pointer;text-overflow:ellipsis}
+.rf-f select:focus-visible{outline:2px solid var(--an-acc);outline-offset:1px}
+.rf-kpis{grid-template-columns:repeat(5,minmax(0,1fr))}
+.rf-kpis span{white-space:normal;line-height:1.3}
+.rf-kpis .y b{color:#E8B400}.rf-kpis .r b{color:#E5383B}
+html[data-theme="light"] .rf-kpis .y b{color:#B98A00}
+.rf-cd{display:inline-block;width:8px;height:11px;border-radius:2px;margin-inline-end:5px;vertical-align:-1px;flex:none}
+.rf-cd.y{background:#F5C518}.rf-cd.r{background:#E5383B}
+/* البطاقات حسب الجولة */
+.rf-chart{display:flex;align-items:stretch;gap:6px;height:170px}
+.rf-col{flex:1 1 0;min-width:0;max-width:64px;margin:0 auto;display:flex;flex-direction:column;justify-content:flex-end;align-items:center}
+.rf-col .v{font-size:.9rem;font-weight:800;color:var(--an-txt);margin-bottom:4px;font-variant-numeric:tabular-nums}
+.rf-area{flex:1 1 0;min-height:0;width:100%;display:flex;align-items:flex-end;justify-content:center}
+.rf-stack{width:100%;max-width:46px;min-height:4px;display:flex;flex-direction:column;border-radius:8px 8px 3px 3px;overflow:hidden}
+.rf-stack i{display:block;min-height:3px}.rf-stack i.y{background:linear-gradient(180deg,#FFD84D,#E8B400)}.rf-stack i.r{background:linear-gradient(180deg,#F05252,#B42323)}
+.rf-col .p{height:22px;line-height:22px;font-size:.7rem;color:var(--an-mut);white-space:nowrap}
+.rf-legend{display:flex;justify-content:center;gap:18px;margin-top:10px;font-size:.72rem;color:var(--an-mut)}
+/* جدول الترتيب */
+.rf-tcard{padding:6px 0 0}
+.rf-tw{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.an .rf-tbl{min-width:0}
+.rf-tbl{width:100%;border-collapse:collapse;font-size:.84rem;color:var(--an-txt)}
+.rf-tbl th{padding:0;border-bottom:1px solid var(--an-line);white-space:nowrap}
+.rf-tbl th>button,.rf-tbl th>span{display:inline-flex;align-items:center;justify-content:center;gap:2px;width:100%;background:none;border:0;font:inherit;
+  font-size:.7rem;font-weight:600;color:inherit;padding:10px 8px;cursor:pointer}
+.rf-tbl th>span{cursor:default}
+.rf-tbl th.tl>button,.rf-tbl th.tl>span{justify-content:flex-start;padding-inline-start:14px}
+.rf-tbl th>button:hover{opacity:.8}
+.rf-tbl th>button.on{font-weight:800;text-decoration:underline;text-underline-offset:4px;text-decoration-thickness:2px}
+.rf-tbl th>button:focus-visible{outline:2px solid currentColor;outline-offset:-3px;border-radius:6px}
+.rf-ar{font-style:normal;font-size:.55rem;margin-inline-start:4px}
+.rf-tbl td{padding:9px 8px;text-align:center;border-bottom:1px solid var(--an-line);font-variant-numeric:tabular-nums;white-space:nowrap}
+.rf-tbl tr:last-child td{border-bottom:0}
+.rf-tbl td.tl{text-align:start;padding-inline-start:14px}
+.rf-tbl td b{font-weight:800}
+.rf-name{display:inline-flex;align-items:center;gap:8px;background:none;border:0;padding:0;font:inherit;color:var(--an-txt);cursor:pointer;text-align:start}
+.rf-name b{font-weight:700;border-bottom:1px dashed transparent;transition:color .18s,border-color .18s}
+.rf-name:hover b,.rf-name:focus-visible b{color:var(--an-acc);border-bottom-color:currentColor}
+.rf-name .rk{font-size:.7rem;color:var(--an-mut);min-width:14px;text-align:center}
+.rf-name .ref-face.sm{width:24px;height:24px}
+.rf-club{display:inline-flex;align-items:center;gap:8px}.rf-club .crest{width:24px;height:24px;border-radius:7px}
+/* بطاقة الحكم */
+.rf-hero{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}
+.rf-id{display:flex;align-items:center;gap:12px;min-width:0}
+.rf-id b{display:block;font-size:1.15rem;font-weight:800;color:var(--an-txt)}
+.rf-id small{display:block;font-size:.74rem;color:var(--an-mut);margin-top:2px}
+.rf-id .ref-face.lg{width:54px;height:54px}
+.rf-back{order:2;flex:none;background:var(--an-track);border:1px solid var(--an-line);color:var(--an-txt);font:inherit;font-size:.76rem;font-weight:600;
+  padding:8px 14px;border-radius:999px;cursor:pointer}
+.rf-back::after{content:"";display:inline-block;width:6px;height:6px;border:solid currentColor;border-width:0 1.6px 1.6px 0;transform:rotate(-45deg);margin-inline-start:8px;vertical-align:1px}
+/* سجل المباريات */
+.rf-log{padding:4px 12px}
+.rf-mrow{display:grid;grid-template-columns:62px minmax(0,1fr) auto;align-items:center;gap:10px;width:100%;background:none;border:0;border-bottom:1px solid var(--an-line);
+  padding:11px 2px;font:inherit;color:var(--an-txt);cursor:pointer;text-align:start;transition:background .18s}
+.rf-mrow:last-child{border-bottom:0}
+.rf-mrow:hover{background:var(--an-track)}
+.rf-mr{font-size:.78rem;font-weight:700;display:flex;flex-direction:column;line-height:1.3}
+.rf-mr small{font-size:.66rem;font-weight:500;color:var(--an-mut)}
+.rf-mt{display:grid;grid-template-columns:minmax(0,1fr) auto auto auto minmax(0,1fr);align-items:center;gap:7px;font-size:.84rem;min-width:0}
+.rf-mt .h{text-align:end;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rf-mt .a{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rf-mt .crest{width:22px;height:22px;border-radius:6px}
+.rf-mt .sc{font-weight:800;font-variant-numeric:tabular-nums;background:var(--an-track);border-radius:7px;padding:3px 8px;white-space:nowrap}
+.rf-mc{display:flex;align-items:center;gap:2px;font-size:.78rem;white-space:nowrap}
+.rf-mc b{font-weight:800;margin-inline-end:8px;font-variant-numeric:tabular-nums}
+.rf-mc em{font-style:normal;color:var(--an-mut);font-size:.72rem}.rf-mc em b{color:var(--an-txt);margin:0}
+@media(max-width:560px){
+  .rf-filters{gap:6px}.rf-f select{font-size:.78rem;padding:8px 10px 8px 24px;background-position:left 8px center}
+  .rf-kpis{grid-template-columns:repeat(6,minmax(0,1fr))}
+  .rf-kpis>div{grid-column:span 2}.rf-kpis>div:nth-child(n+4){grid-column:span 3}
+  .rf-chart{height:150px;gap:3px}
+  .rf-tbl{font-size:.8rem}
+  .rf-tbl th{white-space:normal}
+  .rf-tbl th>button,.rf-tbl th>span{padding:8px 4px;font-size:.64rem;line-height:1.25;flex-wrap:wrap}
+  .rf-tbl td{padding:9px 4px}
+  .rf-tbl th.tl>button,.rf-tbl th.tl>span,.rf-tbl td.tl{padding-inline-start:10px}
+  .rf-name{gap:6px}.rf-name .ref-face{display:none}
+  .rf-name b{white-space:normal;line-height:1.3}
+  .rf-tbl td.tl{white-space:normal}
+  .rf-mrow{grid-template-columns:44px minmax(0,1fr);row-gap:6px}
+  .rf-mc{grid-column:2;justify-content:center}
+  .rf-mt{font-size:.78rem;gap:5px}.rf-mt .crest{width:20px;height:20px}
+  .rf-hero{align-items:flex-start}.rf-id b{font-size:1rem}.rf-id .ref-face.lg{width:44px;height:44px}
+}
+@media (prefers-reduced-motion:reduce){.rf-body{animation:none!important}}
 </style>
 </head>
 <body>
@@ -7756,12 +7862,48 @@ function anBody(){
   return `<div class="an-card an-fg an-body">${anDonut(parts, tot, "هدفاً")}
     <div class="an-legend">${parts.map((p,k)=>`<div class="an-lg"><i style="background:${p.col}"></i><span>${esc(p.l||"غير محدد")}</span><b>${p.n}</b><em>${pct(p.n,tot)}%</em></div>`).join("")}</div></div>`;
 }
+/* ===== صفحة التحليل: ثلاثة تبويبات (منصور 2026-09-29) — تحليل الفرق · تحليل اللاعبين · تحليل الحكام =====
+   نفس مكوّن تبويبات صفحة النادي (.ctabs). أقسام التحليل الموجودة لم تتغير، توزّعت فقط:
+   الفرق = الأهداف والجزاءات وأثر الهدف الأول، اللاعبون = أعلى متوسط تقييم، الحكام = anRefsHTML (من بيانات الموقع وحدها). */
+let AN_TAB = "teams";
+const AN_TABS = [
+  ["teams","تحليل الفرق",'<path d="M12 3 4.5 6v5.5c0 4.6 3.2 8.2 7.5 9.5 4.3-1.3 7.5-4.9 7.5-9.5V6z"/>'],
+  ["players","تحليل اللاعبين",'<circle cx="12" cy="8" r="3.8"/><path d="M4.5 20.5c.6-4 3.6-6.3 7.5-6.3s6.9 2.3 7.5 6.3"/>'],
+  ["refs","تحليل الحكام",'<circle cx="9" cy="14" r="5"/><path d="M13.5 11.5 21 8V5l-9.5 4.2"/>']
+];
+function wireAnTabs(){
+  const w=$("#v-analysis .an"); if(!w) return;
+  const bs=[...w.querySelectorAll(".an-tabs button")], ind=w.querySelector(".an-tabs .ctab-ind");
+  const set=k=>{
+    if(!bs.some(b=>b.dataset.at===k)) k="teams";
+    AN_TAB=k; const i=bs.findIndex(b=>b.dataset.at===k);
+    bs.forEach(b=>{ b.setAttribute("aria-selected", b.dataset.at===k); b.tabIndex = b.dataset.at===k ? 0 : -1; });
+    w.querySelectorAll(".ctab-panel[data-ap]").forEach(p=>p.classList.toggle("on", p.dataset.ap===k));
+    const rtl=getComputedStyle(w).direction!=="ltr";
+    ind.style.transform=`translateX(${(rtl?-100:100)*i}%)`;
+  };
+  bs.forEach(b=>b.onclick=()=>set(b.dataset.at));
+  /* أول رسم: المؤشر في مكانه مباشرة بلا انزلاق (قاعدة الحركة العامة تفرض transition بـ !important) */
+  const bar=w.querySelector(".an-tabs"); bar.classList.add("no-tr"); set(AN_TAB);
+  requestAnimationFrame(()=>requestAnimationFrame(()=>bar.classList.remove("no-tr")));
+}
 function renderAnalysis(){
   const cats=[...new Set(GOALS.map(g=>g.det))].map(d=>({l:d,n:GOALS.filter(g=>g.det===d).length})).sort((a,b)=>b.n-a.n);
   const zones=[...new Set(GOALS.map(g=>g.zone))].map(z=>({l:z,n:GOALS.filter(g=>g.zone===z).length})).sort((a,b)=>b.n-a.n);
   $("#v-analysis").innerHTML=`<div class="an">
     ${compChips(true)}
-    ${avgRatingSectionHTML()}
+    <div class="ctabs an-tabs" role="tablist" aria-label="أقسام التحليل">
+      <span class="ctab-ind" aria-hidden="true"></span>
+      ${AN_TABS.map(([k,t,ic])=>`<button type="button" role="tab" data-at="${k}"><svg class="at-ic" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ic}</svg><span>${t}</span></button>`).join("")}
+    </div>
+
+    <div class="ctab-panel" data-ap="players">
+    ${avgRatingSectionHTML() || `<div class="an-card rf-empty">لا توجد تقييمات لاعبين في ${esc(compLabel(COMP))} بعد.</div>`}
+    </div>
+
+    <div class="ctab-panel" data-ap="refs"><div id="anRefs">${anRefsHTML()}</div></div>
+
+    <div class="ctab-panel" data-ap="teams">
     <h2 class="sec">توزيع الأهداف على فترات المباراة</h2>
     ${anPeriods()}
     <p class="hint">أكثر ما يميّز هذا الموقع عن مواقع النتائج — لا أحد يوفّر هذا التفصيل للدوري الكويتي.</p>
@@ -7793,10 +7935,148 @@ function renderAnalysis(){
 
     <h2 class="sec">وضعية التسجيل</h2>
     ${anBody()}
+    </div>
   </div>`;
   renderLeagueHeat();
   wireComp($("#v-analysis"));
+  wireAnTabs();
 }
+
+/* ===== تحليل الحكام (منصور 2026-09-29) =====
+   كل رقم يُحسب لحظة العرض من بيانات الموقع المسجّلة يدوياً، بلا مصدر خارجي ولا حقل جديد:
+   - الحكم = حكم الساحة من crewOf(m) (m.ref المحفوظ من الإدارة، وإلا الطاقم الرسمي المضمّن REF_BOOK) — «لا يوجد» يُتجاهل.
+   - المباريات = المُقامة فقط (playedMatches) ضمن المسابقة المختارة (COMP) والجولة المختارة.
+   - البطاقات = CARDS لفريقي المباراة في جولتها ومسابقتها؛ الحمراء = طرد مباشر أو إنذار ثانٍ (isRed) كبقية الموقع، والباقي صفراء.
+   - ركلات الجزاء = سجلات PENS للمباراة (المحتسبة، سُجّلت أو أُهدرت). */
+let RFA = {round:"", ref:"", sort:"m", dir:-1};
+const rfRefOf = m => { const n=String(crewOf(m).ref||"").trim(); return n==="لا يوجد" ? "" : n; };
+const rfCards = m => CARDS.filter(x=>+x.r===+m.round && compOf(x)===compOf(m) && (x.club===m.home||x.club===m.away));
+const rfPens  = m => PENS.filter(x=>+x.r===+m.round && compOf(x)===compOf(m) &&
+  ((x.by===m.home&&x.vs===m.away)||(x.by===m.away&&x.vs===m.home)));
+function rfRows(round){
+  return playedMatches().filter(m=>round===""||String(m.round)===String(round)).map(m=>{
+    const cs=rfCards(m), ps=rfPens(m);
+    return {m, ref:rfRefOf(m), cs, ps, y:cs.filter(x=>!isRed(x.type)).length, r:cs.filter(x=>isRed(x.type)).length, p:ps.length};
+  }).sort((a,b)=>(+a.m.round)-(+b.m.round) || String(a.m.date||"").localeCompare(String(b.m.date||"")));
+}
+function rfAgg(rows){
+  const o={};
+  rows.forEach(x=>{ if(!x.ref) return; const e=o[x.ref] ||= {n:x.ref, m:0, y:0, r:0, p:0}; e.m++; e.y+=x.y; e.r+=x.r; e.p+=x.p; });
+  return Object.values(o).map(e=>({...e, avg:(e.y+e.r)/e.m}));
+}
+const RF_COLS = [["n","الحكم"],["m","المباريات"],["y","صفراء"],["r","حمراء"],["p","ركلات جزاء"],["avg","متوسط البطاقات"]];
+const rfAvg = v => (Math.round(v*100)/100).toFixed(2);
+const rfCard = t => `<i class="rf-cd ${t}" aria-hidden="true"></i>`;
+function rfSorted(L){
+  const {sort:k, dir}=RFA;
+  return [...L].sort((a,b)=>{
+    const d = k==="n" ? a.n.localeCompare(b.n,"ar") : (a[k]-b[k]);
+    return d*dir || b.m-a.m || (b.y+b.r)-(a.y+a.r) || a.n.localeCompare(b.n,"ar");
+  });
+}
+function rfFiltersHTML(refs){
+  const rounds=[...new Set(playedMatches().map(m=>m.round))].sort((a,b)=>a-b);
+  const opt=(v,t,sel)=>`<option value="${esc(String(v))}"${sel?" selected":""}>${esc(t)}</option>`;
+  return `<div class="rf-filters">
+    <label class="rf-f"><span>الموسم</span><select data-rf-f="season">${opt(SEASON,SEASON,true)}</select></label>
+    <label class="rf-f"><span>الجولة</span><select data-rf-f="round">${opt("","كل الجولات",RFA.round==="")}${rounds.map(r=>opt(r,`الجولة ${r}`,String(r)===RFA.round)).join("")}</select></label>
+    <label class="rf-f"><span>الحكم</span><select data-rf-f="ref">${opt("","كل الحكام",RFA.ref==="")}${refs.map(n=>opt(n,n,n===RFA.ref)).join("")}</select></label>
+  </div>`;
+}
+function rfKpis(items){
+  return `<div class="an-kpis rf-kpis">${items.map(([v,t,c])=>`<div class="${c||""}"><b>${v}</b><span>${t}</span></div>`).join("")}</div>`;
+}
+/* البطاقات حسب الجولة: عمود لكل جولة (أصفر فوق أحمر) */
+function rfRoundChart(rows){
+  const by={}; rows.forEach(x=>{ const e=by[x.m.round] ||= {r:x.m.round, y:0, red:0}; e.y+=x.y; e.red+=x.r; });
+  const L=Object.values(by).sort((a,b)=>a.r-b.r); if(!L.length) return "";
+  const max=Math.max(1,...L.map(e=>e.y+e.red));
+  return `<div class="an-card rf-chart-card"><div class="rf-chart">${L.map(e=>`<div class="rf-col">
+      <span class="v">${e.y+e.red}</span>
+      <div class="rf-area"><div class="rf-stack" style="height:${Math.round((e.y+e.red)/max*100)}%">${e.red?`<i class="r" style="flex:${e.red}"></i>`:""}${e.y?`<i class="y" style="flex:${e.y}"></i>`:""}</div></div>
+      <span class="p">ج${e.r}</span></div>`).join("")}</div>
+    <div class="rf-legend"><span>${rfCard("y")}صفراء</span><span>${rfCard("r")}حمراء</span></div></div>`;
+}
+function anRefsHTML(){
+  const scope=rfRows("");
+  const refsAll=[...new Set(scope.map(x=>x.ref).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"ar"));
+  if(RFA.round && !scope.some(x=>String(x.m.round)===RFA.round)) RFA.round="";
+  if(RFA.ref && !refsAll.includes(RFA.ref)) RFA.ref="";
+  const rows=rfRows(RFA.round);
+  const head=`<h2 class="sec">تحليل الحكام</h2>
+    <p class="hint">حكم الساحة في كل مباراة مُقامة، وما سُجّل في مبارياته من بطاقات وركلات جزاء — ${esc(compLabel(COMP))}. الإنذار الثاني يُحتسب بطاقة حمراء.</p>
+    ${rfFiltersHTML(refsAll)}`;
+  if(!scope.length) return head+`<div class="an-card rf-empty">لا توجد مباريات مُقامة في ${esc(compLabel(COMP))} بعد.</div>`;
+  return head + (RFA.ref ? rfDetailHTML(RFA.ref, rows) : rfOverviewHTML(rows));
+}
+function rfOverviewHTML(rows){
+  const withRef=rows.filter(x=>x.ref), L=rfAgg(rows), none=rows.length-withRef.length;
+  const sum=k=>withRef.reduce((s,x)=>s+x[k],0);
+  let out=`<div class="rf-body">
+    ${rfKpis([[L.length,"إجمالي الحكام"],[withRef.length,"مباريات التحكيم"],[sum("y"),"البطاقات الصفراء","y"],[sum("r"),"البطاقات الحمراء","r"],[sum("p"),"ركلات الجزاء المحتسبة"]])}
+    ${none?`<p class="hint rf-note">${none===1?"مباراة واحدة مُقامة":`${none} مباريات مُقامة`} بلا حكم ساحة مسجّل — لا تدخل في أرقام الحكام.</p>`:""}`;
+  if(!L.length) return out+`<div class="an-card rf-empty">لم يُسجَّل حكم ساحة لأي مباراة مُقامة ضمن هذا الاختيار.</div></div>`;
+  out+=`<h2 class="sec">البطاقات حسب الجولة</h2>${rfRoundChart(withRef)}
+    <h2 class="sec">ترتيب الحكام</h2>
+    <p class="hint">اضغط عنوان أي عمود للترتيب، واسم الحكم لعرض تفاصيله.</p>
+    <div class="an-card rf-tcard"><div class="rf-tw"><table class="rf-tbl"><thead><tr>
+      ${RF_COLS.map(([k,t])=>{ const on=RFA.sort===k; return `<th class="${k==="n"?"tl":""}" aria-sort="${on?(RFA.dir>0?"ascending":"descending"):"none"}"><button type="button" data-rf-sort="${k}" class="${on?"on":""}">${k==="y"?rfCard("y"):k==="r"?rfCard("r"):""}${t}${on?`<i class="rf-ar">${RFA.dir>0?"▲":"▼"}</i>`:""}</button></th>`; }).join("")}
+    </tr></thead><tbody>
+      ${rfSorted(L).map((e,i)=>`<tr><td class="tl"><button type="button" class="rf-name" data-rf-ref="${esc(e.n)}"><span class="rk">${i+1}</span>${refFace(e.n,"sm")}<b>${esc(e.n)}</b></button></td>
+        <td>${e.m}</td><td>${e.y}</td><td>${e.r}</td><td>${e.p}</td><td><b>${rfAvg(e.avg)}</b></td></tr>`).join("")}
+    </tbody></table></div></div></div>`;
+  return out;
+}
+function rfDetailHTML(name, rows){
+  const mine=rows.filter(x=>x.ref===name), e=rfAgg(mine)[0];
+  const top=`<div class="an-card rf-hero">
+      <button type="button" class="rf-back" data-rf-back>كل الحكام</button>
+      <div class="rf-id">${refFace(name,"lg")}<div><b>${esc(name)}</b><small>حكم ساحة · ${esc(compLabel(COMP))}${RFA.round?` · الجولة ${esc(RFA.round)}`:""}</small></div></div>
+    </div>`;
+  if(!e) return `<div class="rf-body">${top}<div class="an-card rf-empty">لم يُدِر ${esc(name)} أي مباراة مُقامة ضمن هذا الاختيار.</div></div>`;
+  /* الفرق التي أدار مبارياتها: من زاوية كل فريق */
+  const teams={};
+  mine.forEach(x=>{ const m=x.m; [m.home,m.away].forEach(c=>{
+    const t=teams[c] ||= {c, m:0, w:0, d:0, l:0, y:0, r:0, p:0};
+    const res=mpResult(m,c); t.m++; if(res) t[res]++;
+    x.cs.filter(k=>k.club===c).forEach(k=>isRed(k.type)?t.r++:t.y++);
+    t.p+=x.ps.filter(k=>k.by===c).length; }); });
+  const TL=Object.values(teams).sort((a,b)=>b.m-a.m || (b.y+b.r)-(a.y+a.r) || a.c.localeCompare(b.c,"ar"));
+  return `<div class="rf-body">${top}
+    ${rfKpis([[e.m,"المباريات"],[e.y,"البطاقات الصفراء","y"],[e.r,"البطاقات الحمراء","r"],[e.p,"ركلات الجزاء"],[rfAvg(e.avg),"متوسط البطاقات لكل مباراة","lead"]])}
+    <h2 class="sec">سجل المباريات</h2>
+    <div class="an-card rf-log">${mine.map(x=>{ const m=x.m;
+      return `<button type="button" class="rf-mrow" data-mopen="${esc(matchKey(m))}">
+        <span class="rf-mr">ج${esc(String(m.round))}${m.date?`<small>${esc(mpDateLabel(m))}</small>`:""}</span>
+        <span class="rf-mt"><span class="h">${esc(m.home)}</span>${crest(m.home)}<b class="sc" dir="ltr">${+m.ag} - ${+m.hg}</b>${crest(m.away)}<span class="a">${esc(m.away)}</span></span>
+        <span class="rf-mc">${rfCard("y")}<b>${x.y}</b>${rfCard("r")}<b>${x.r}</b><em>جزاء <b>${x.p}</b></em></span>
+      </button>`; }).join("")}</div>
+    <h2 class="sec">الفرق التي أدار مبارياتها</h2>
+    <div class="an-card rf-tcard"><div class="rf-tw"><table class="rf-tbl"><thead><tr>
+      <th class="tl"><span>الفريق</span></th><th><span>المباريات</span></th><th><span>فوز</span></th><th><span>تعادل</span></th><th><span>خسارة</span></th><th><span>${rfCard("y")}صفراء</span></th><th><span>${rfCard("r")}حمراء</span></th><th><span>ركلات جزاء له</span></th>
+    </tr></thead><tbody>
+      ${TL.map(t=>`<tr><td class="tl"><span class="rf-club">${crest(t.c)}<b>${esc(t.c)}</b></span></td><td>${t.m}</td><td>${t.w}</td><td>${t.d}</td><td>${t.l}</td><td>${t.y}</td><td>${t.r}</td><td>${t.p}</td></tr>`).join("")}
+    </tbody></table></div></div>
+  </div>`;
+}
+function paintAnRefs(){
+  const b=$("#anRefs"); if(!b) return;
+  b.innerHTML=anRefsHTML();
+}
+document.addEventListener("click", e=>{
+  const box=e.target.closest("#anRefs"); if(!box) return;
+  const s=e.target.closest("[data-rf-sort]");
+  if(s){ const k=s.dataset.rfSort; if(RFA.sort===k) RFA.dir*=-1; else { RFA.sort=k; RFA.dir = k==="n" ? 1 : -1; } paintAnRefs(); return; }
+  const r=e.target.closest("[data-rf-ref]");
+  if(r){ RFA.ref=r.dataset.rfRef; paintAnRefs(); box.scrollIntoView({behavior:"smooth", block:"start"}); return; }
+  if(e.target.closest("[data-rf-back]")){ RFA.ref=""; paintAnRefs(); return; }
+});
+document.addEventListener("change", e=>{
+  const f=e.target.closest("#anRefs [data-rf-f]"); if(!f) return;
+  if(f.dataset.rfF==="round") RFA.round=f.value;
+  if(f.dataset.rfF==="ref") RFA.ref=f.value;
+  paintAnRefs();
+});
 
 /* ================= لوحة المدير ================= */
 /* ================= الكشوفات وفريق العمل — أقسام مشتركة ================= */
