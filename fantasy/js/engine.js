@@ -72,7 +72,7 @@ const DB = {
       }
     }
     /* سياسة التغييرات الحرة من الكود دائماً (تسري فوراً بلا إعادة نشر) */
-    if(st.rules && typeof SEED_RULES!=='undefined'){ st.rules.freeChanges = SEED_RULES.freeChanges; st.rules.scoringFromGW = SEED_RULES.scoringFromGW; }
+    if(st.rules && typeof SEED_RULES!=='undefined'){ st.rules.scoringFromGW = SEED_RULES.scoringFromGW; }
     if(game.scoring) st.scoring = game.scoring;
     if(game.clubs)   st.clubs   = game.clubs;
     if(game.coaches) st.coaches = game.coaches;                    // المدربون وأسعارهم — ينشرها المدير مع اللعبة
@@ -80,6 +80,7 @@ const DB = {
     if(game.news)    st.news    = game.news;
     if(game.gws)     st.gws     = game.gws;
     if(game.currentGW) st.currentGW = game.currentGW;
+    applyFreeRule(st);
     if(game.own)            st.own = game.own;                     // تملّك اللاعبين — يحسبه المدير عند الاحتساب
     if(Array.isArray(game.board)) st.board = game.board;           // لقطة الترتيب العام — ينشرها المدير مع التملّك
     if(game.managerCount!=null) st.managerCount = +game.managerCount;
@@ -383,6 +384,13 @@ function kwDate(v){
 }
 /* موعد الإغلاق = بداية أول مباراة بالجولة (التغييرات مفتوحة حتى انطلاقها)؛
    جولة بلا مباريات = بلا موعد (مفتوحة) */
+/* التغييرات الحرة بلا حدود حتى موعد أول جولة تُحتسب (الجولة 4) فقط — منصور 2026-09-30: «ما تكون بلا حدود
+   بعد ما تبدأ الجولة 4». من الجولة 5: انتقال مجاني واحد أسبوعياً و−4 لكل إضافي. (بين موعد الجولة 4 واحتسابها
+   قفل الخادم يمنع أي تعديل أصلاً.) */
+function applyFreeRule(st){
+  if(!st || !st.rules || typeof SEED_RULES==='undefined') return;
+  st.rules.freeChanges = !!SEED_RULES.freeChanges && (+st.currentGW||1) <= (+SEED_RULES.scoringFromGW||1);
+}
 function computeDeadlines(gws, fixtures){
   gws.forEach(g=>{
     if(g.status==='finished' || g.deadlineManual) return;
@@ -1084,6 +1092,7 @@ const GWADMIN = {
     // الجولة التالية (وفي آخر جولة بالموسم تبقى الحالية منتهية)
     const ng=st.gws.find(x=>x.n===gw+1);
     if(ng){ st.currentGW=gw+1; ng.status='next'; }
+    applyFreeRule(st);
     this.refreshDeadlines(st);
     DB.save();
     return { ok:true, changes:changes.length };
@@ -1101,10 +1110,12 @@ const GWADMIN = {
     }
     team.fhBackup=null;
     // الكرت يُحسب مستخدماً هنا فقط (بعد احتساب الجولة) — قبلها يمكن إلغاؤه بلا خسارة
-    if(picks && picks.chip){ team.usedChips=team.usedChips||{}; team.usedChips[picks.chip]=(team.usedChips[picks.chip]||0)+1; }
+    const freeGW = typeof SEED_RULES!=='undefined' && !!SEED_RULES.freeChanges && gw <= (+SEED_RULES.scoringFromGW||1);   /* جولة التغييرات الحرة */
+    if(picks && picks.chip && !(freeGW && picks.chip==='wildcard')){ team.usedChips=team.usedChips||{}; team.usedChips[picks.chip]=(team.usedChips[picks.chip]||0)+1; }   /* الوايلد كارد بلا أثر في جولة حرة — لا يُستهلك */
     team.activeChip=null;
     team.pendingHits=0;
-    team.ft=Math.min(st.rules.maxSavedTransfers, (+team.ft||0)+st.rules.freeTransfers);
+    /* نهاية الفترة الحرة: الجميع يبدأ بانتقال مجاني واحد (كـFPL بعد الجولة الأولى) — لا رصيد متراكم من فترة بلا حدود */
+    team.ft = freeGW ? st.rules.freeTransfers : Math.min(st.rules.maxSavedTransfers, (+team.ft||0)+st.rules.freeTransfers);
     team.rolledGW=gw;
     return team;
   },

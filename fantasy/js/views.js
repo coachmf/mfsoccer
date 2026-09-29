@@ -561,6 +561,7 @@ const VIEWS = {
   toggleChip(key){
     const team=DB.myTeam(); const st=DB.state;
     if(GWADMIN.deadlinePassed(st.currentGW)){ UI.toast('أُغلقت الجولة — لا يمكن تفعيل الكروت بعد انطلاق المباراة',true); return; }
+    if(key==='wildcard' && team.activeChip!==key && st.rules.freeChanges){ UI.toast('الانتقالات بلا حدود حتى موعد الجولة الحالية — الوايلد كارد متاح من الجولة التالية',true); return; }   /* منصور 2026-09-30 */
     if(team.activeChip===key){
       const since=team.chipAt||'';
       const madeUnder=(team.transfers||[]).filter(t=>t.gw===st.currentGW && (t.date||'')>=since).length;
