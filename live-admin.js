@@ -402,9 +402,12 @@ async function flushRec(){
   const doc = (S && S.doc) || recDoc; if(!doc || (S && S.wiping)) return;
   recBusy = true; const bk = recBackup; recBackup = false;
   try{ const c = doc.clock||{}; recKey = JSON.stringify([LV.rec.liveToRows(doc), c.phase, c.added||{}]); }catch(e){}
-  try{ const r = await LV.rec.push(doc, {backup:bk}); setRec(r.ok||r.test ? "ok" : r.pending ? "wait" : r.skipped ? "off" : "err"); }
-  catch(e){ console.error(e); setRec("err", e.message); }
+  let failed = false;
+  try{ const r = await LV.rec.push(doc, {backup:bk}); failed = !(r.ok||r.test||r.skipped); setRec(r.ok||r.test ? "ok" : r.pending ? "wait" : r.skipped ? "off" : "err"); }
+  catch(e){ console.error(e); setRec("err", e.message); failed = true; }
   finally{ recBusy = false; }
+  /* فشلت المزامنة (اتصال): نعيدها تلقائياً — كانت تبقى ناقصة حتى حدث جديد (منصور 2026-09-29) */
+  if(failed && !(S && S.wiping)){ recKey = null; recDoc = doc; clearTimeout(recTimer); recTimer = setTimeout(flushRec, 4000); }
 }
 A.flushRec = flushRec;
 function setRec(k, msg){
@@ -412,6 +415,10 @@ function setRec(k, msg){
   el.className = "lvc-rec "+k;
   el.innerHTML = k==="wait" ? "<i></i>مزامنة الإحصاءات…" : k==="ok" ? "<i></i>الإحصاءات محدّثة" : k==="off" ? "<i></i>غير مرتبطة بالسجل" : `<i></i>تعذّرت مزامنة الإحصاءات${msg?` — ${H(msg)}`:""}`;
 }
+/* معاملة فشلت في الخلفية بعد عرضها «محفوظ» (منصور 2026-09-29): كانت تُبلع بصمت (onError فارغ) فيختفي الحدث
+   ويُعاد إدخاله. الآن: تنبيه واضح وحالة خطأ، ثم يُعاد رسم الغرفة من الخادم. */
+if(typeof LV!=="undefined" && LV.store && !LV.store.onError) LV.store.onError = e => { console.error(e);
+  try{ setStatus("err", (e && (e.code||e.message)) || ""); toast("لم يُحفظ آخر إدخال في السحابة — تحقّق من الاتصال وأعد إدخاله", "err"); }catch(_){} };
 function setStatus(k, msg){
   const el = S.root && S.root.querySelector("#lvcStatus"); if(!el) return;
   el.className = "lvc-status "+k;

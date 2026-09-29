@@ -211,7 +211,7 @@ const store = {
   },
   /* أحدث نسخة من الخادم نفسه (لا من ذاكرة الجهاز) — عند تعذّرها: null */
   async fresh(){
-    if(TEST){ try{ const s=localStorage.getItem("mfgulf"); return s?JSON.parse(s):null; }catch(e){ return null; } }
+    if(TEST){ try{ const s=localStorage.getItem("mfgulf"); return s?JSON.parse(s):(DATA?JSON.parse(JSON.stringify(DATA)):null); }catch(e){ return null; } }
     if(typeof fbDb==="undefined" || !fbDb) return null;
     try{ const s = await fbDb.collection("seasons").doc(DOC_ID).get({source:"server"}); return s.exists ? s.data() : null; }
     catch(e){ return null; }
@@ -525,6 +525,7 @@ function hookLive(){
   LV.gulfRec = {
     find: doc => DATA ? DATA.matches.find(x=>+x.round===+doc.round && x.home===doc.home && x.away===doc.away) || null : null,
     async push(doc, opt, R){
+      { const base = await store.fresh(); if(!base) return {ok:false, pending:true}; DATA = normalize(JSON.parse(JSON.stringify(base))); }   /* أحدث نسخة من الخادم (منصور 2026-09-29) */
       const m = LV.gulfRec.find(doc); if(!m) throw new Error("المباراة غير موجودة في بيانات البطولة");
       withGulf(()=>{
         const E = loadEdit(m); E.gulf = true;
@@ -540,6 +541,7 @@ function hookLive(){
       return {ok:true};
     },
     async wipe(doc, keepRecord){
+      { const base = await store.fresh(); if(base) DATA = normalize(JSON.parse(JSON.stringify(base))); }
       const m = LV.gulfRec.find(doc); if(!m || m.rec!=="live") return;
       withGulf(()=>{ const E = loadEdit(m); E.match.rec = ""; E.match.comp = COMP_G;
         if(!keepRecord){ E.goals = []; E.cards = []; E.pens = []; E.subs = []; E.mev = []; E.match.status = ""; E.match.add1 = 0; E.match.add2 = 0; }
@@ -547,6 +549,7 @@ function hookLive(){
       DATA = normalize(DATA); await store.save(DATA); repaint();
     },
     async detach(doc){
+      { const base = await store.fresh(); if(base) DATA = normalize(JSON.parse(JSON.stringify(base))); }
       const m = LV.gulfRec.find(doc); if(!m || m.rec!=="live") return;
       withGulf(()=>{ const E = loadEdit(m); E.match.rec = ""; E.match.comp = COMP_G; applyEdit(E); });
       DATA = normalize(DATA); await store.save(DATA);
@@ -578,6 +581,7 @@ function hookEditor(){
       const base = (await store.fresh()) || PENDING;
       if(base) DATA = normalize(JSON.parse(JSON.stringify(base)));   /* لا مقارنة ساعات بين الأجهزة: نسخة الخادم هي المرجع */
       PENDING = null;
+      if(typeof mergeEdit==="function"){ const EG = withGulf(()=>mergeEdit(EDIT)); EG.gulf = true; EDIT = EG; }   /* ما غيّره هذا المحرّر فقط */
       withGulf(()=>applyEdit(EDIT));
       DATA = normalize(DATA);
       EDIT = null; FORMERR = "";

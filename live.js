@@ -290,7 +290,7 @@ const store = {
       n.updatedAt = firebase.firestore.FieldValue.serverTimestamp();
       n.updatedBy = (typeof FBUSER!=="undefined" && FBUSER && FBUSER.email) || "";
       t.set(ref, n); return n;
-    })).finally(()=>{ this._inflight[id]--; if(!this._inflight[id]) ref.get().then(x=>{ if(x.exists && !this._inflight[id]){ const d=x.data({serverTimestamps:"estimate"}); this.cache[id]=d; (this._loc[id]||[]).forEach(f=>f(d,{})); } }).catch(()=>{}); });
+    })).finally(()=>{ this._inflight[id]--; if(!this._inflight[id]) ref.get({source:"server"}).then(x=>{ if(x.exists && !this._inflight[id]){ const d=x.data({serverTimestamps:"estimate"}); this.cache[id]=d; (this._loc[id]||[]).forEach(f=>f(d,{})); } }).catch(()=>{}); });
     this._q[id] = p;
     if(local){ p.catch(e=>{ if(this.onError) this.onError(e); }); return local; }
     return p;
@@ -835,7 +835,7 @@ function startIdx(){
   });
 }
 /* ───── غرفة التحكم: تُحمَّل عند الحاجة فقط (live-admin.js) ───── */
-LV.VER = 7;
+LV.VER = 8;
 LV.loadAdmin = function(){
   if(window.LIVE_ADMIN) return Promise.resolve(window.LIVE_ADMIN);
   return new Promise((res, rej)=>{ const s=document.createElement("script"); s.src="live-admin.js?v="+LV.VER; s.onload=()=>res(window.LIVE_ADMIN); s.onerror=rej; document.head.appendChild(s); });
@@ -1172,7 +1172,8 @@ REC.push = async function(doc, opt){
   if(!doc || doc.detached) return {skipped:true};
   if(doc.gulf && LV.gulfRec) return LV.gulfRec.push(doc, opt, liveToRows(doc));
   if(typeof applyEdit!=="function" || typeof loadEdit!=="function") return {skipped:true};
-  if(!LV.TEST && typeof rebaseOnCloud==="function") await rebaseOnCloud();
+  if(!LV.TEST && typeof rebaseOnCloud==="function"){ const rb = await rebaseOnCloud();
+    if(rb && rb.ok===false) return {ok:false, pending:true};   /* لا نكتب الموسم فوق نسخة قديمة — يُعاد تلقائياً (منصور 2026-09-29) */ }
   const m = recMatch(doc); if(!m) throw new Error("المباراة غير موجودة في سجل الموسم");
   const E = loadEdit(m), R = liveToRows(doc);
   E.goals = R.goals; E.cards = R.cards; E.pens = R.pens; E.subs = R.subs; E.mev = R.mev;

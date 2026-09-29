@@ -2155,13 +2155,13 @@ main{padding-bottom:48px}
 <script src="site-i18n.js?v=24" defer></script>
 <!-- مركز المباراة المباشر: صفحة الجمهور + الربط (غرفة التحكم live-admin.js تُحمَّل عند فتحها فقط) -->
 <link rel="stylesheet" href="live.css?v=9">
-<script src="live.js?v=16" defer></script>
+<script src="live.js?v=17" defer></script>
 <!-- تبويبات لوحة الإدارة: إعادة تنظيم للأقسام الموجودة فقط -->
 <link rel="stylesheet" href="admin-tabs.css?v=1">
 <script src="admin-tabs.js?v=3" defer></script>
 <!-- كأس الخليج 27: قسم مستقل ببيانات منفصلة (seasons/gulf27) -->
 <link rel="stylesheet" href="gulf.css?v=15">
-<script src="gulf.js?v=37" defer></script>
+<script src="gulf.js?v=38" defer></script>
 <!-- التحليل الموسّع + تقييم اللاعبين 0–100 + البحث العام (منصور 2026-09-29) -->
 <link rel="stylesheet" href="analysis.css?v=6">
 <script src="analysis.js?v=11" defer></script>
@@ -3737,12 +3737,15 @@ function downloadJSON(){
   a.href=u; a.download="data.json"; document.body.appendChild(a); a.click(); a.remove();
   setTimeout(()=>URL.revokeObjectURL(u),4000);
 }
+let LAST_BACKUP_AT = 0;
 async function persistData(opt){
   const obj=dataObject();
   CUR_STAMP = LASTSTAMP = stampOf(obj);   /* v27:rebase — النسخة المكتوبة هي المرجع الآن */
   await localSet("zain_data", JSON.stringify(obj));
   const r = await fbSaveSeason(obj);
-  if(r===true && !(opt&&opt.noBackup)) pushBackup();     /* بلا انتظار حتى لا يبطئ الحفظ — حفظ اللعب الفعلي يخفّف النسخ (مرة كل 15 دقيقة) */
+  /* نسخة احتياطية كاملة مرة كل 15 دقيقة على الأكثر (منصور 2026-09-29): كانت بعد كل حفظ يدوي (≈143 ك.ب + تنزيل كل النسخ للتقليم)
+     فتزاحم الحفظ التالي على اتصال الهاتف أثناء رصد المباريات */
+  if(r===true && !(opt&&opt.noBackup) && (opt&&opt.forceBackup || Date.now()-LAST_BACKUP_AT > 15*60*1000)){ LAST_BACKUP_AT=Date.now(); pushBackup(); }
   return r;
 }
 
@@ -4462,9 +4465,9 @@ function withTimeout(p, ms){
                         new Promise(r=>setTimeout(()=>r("timeout"), ms)) ]);
 }
 
-async function fbLoad(docId){
+async function fbLoad(docId, opts){
   if(!fbDb) return null;
-  try{ const d=await fbDb.collection("seasons").doc(docId).get(); return d.exists?d.data():null; }
+  try{ const d=await fbDb.collection("seasons").doc(docId).get(opts||undefined); return d.exists?d.data():null; }
   catch(e){ FBSTATE="تعذّرت القراءة من السحابة"; return null; }
 }
 async function fbSaveSeason(obj){
@@ -4485,18 +4488,21 @@ function stampOf(d){ return ((d&&d.updated)||"")+"|"+((d&&d.updatedBy)||""); }
    (مثل كشوفات يُحرَّرها المستخدم الآن) ويعيد دالة لاسترجاعه. */
 async function rebaseOnCloud(keep){
   let d = PENDING_REMOTE; PENDING_REMOTE=null;
+  let fresh = null;
   if(fbDb){
-    const fresh = await Promise.race([ fbLoad(seasonId()), new Promise(r=>setTimeout(()=>r(null), 6000)) ]);
+    /* من الخادم نفسه (منصور 2026-09-29): get() العادية قد تجيب من نسخة المستمع المتأخرة */
+    fresh = await Promise.race([ fbLoad(seasonId(), {source:"server"}), new Promise(r=>setTimeout(()=>r(null), 8000)) ]);
     if(fresh) d = fresh;
   }
-  if(!d || !d.clubs || !d.matches) return {ok:true, changed:false};
+  const ok = !fbDb || !!fresh;   /* ok=false: لم نصل لأحدث نسخة — الحفظ فوق نسخة الجهاز قد يمحو عمل غيرنا */
+  if(!d || !d.clubs || !d.matches) return {ok, changed:false};
   const st = stampOf(d);
-  if(st===CUR_STAMP) return {ok:true, changed:false};
+  if(st===CUR_STAMP) return {ok, changed:false};
   const restore = keep ? keep() : null;
   applyData(d, "السحابة (قبل الحفظ)");
   if(restore) restore();
-  LASTSTAMP = st;
-  return {ok:true, changed:true, by:d.updatedBy||""};
+  LASTSTAMP = CUR_STAMP = st;
+  return {ok, changed:true, by:d.updatedBy||""};
 }
 /* استماع حيّ لوثيقة الموسم: أي حفظ من أي عضو يظهر عند الجميع فوراً بلا تحديث للصفحة */
 function watchSeason(){
@@ -5210,7 +5216,7 @@ function newEdit(){
   return {orig:null, match:{round:"", comp:(compsPresent()[0]||"الدوري"), home:"", away:"",
           venue:"", date:"", time:"", note:"", ref:"", refs:{}, tv:"", status:"", add1:"", add2:""}, goals:[], cards:[], pens:[], lineup:[], subs:[], shapes:{}, mev:[]};
 }
-function loadEdit(m){
+function loadEditRaw(m){
   const gs=(ALL.goals||[]).filter(g=>g.r===m.round && compOf(g)===compOf(m) &&
       ((g.sc===m.home&&g.cd===m.away)||(g.sc===m.away&&g.cd===m.home)));
   const cs=(ALL.cards||[]).filter(x=>x.r===m.round && compOf(x)===compOf(m) && (x.club===m.home||x.club===m.away));
@@ -5231,6 +5237,33 @@ function loadEdit(m){
     cards:cs.map(x=>({club:x.club,p:x.p,m:x.m,type:x.type,lid:x.lid||""})),
     pens:ps.map(x=>({by:x.by,p:x.p,m:x.m,res:x.res,place:x.place||"",lid:x.lid||""}))};
   /* lid = معرّف الحدث في اللعب الفعلي: يربط صف السجل بحدثه فيُعدَّل الحدث نفسه من أي واجهة بلا تكرار */
+}
+function loadEdit(m){ const E=loadEditRaw(m); try{ E.base=JSON.parse(JSON.stringify(E)); }catch(e){} return E; }
+/* حفظ آمن مع أكثر من محرّر (منصور 2026-09-29: «ساعات لازم احطه مرتين»):
+   كان الحفظ يحذف كل صفوف المباراة ويعيد كتابتها من نسخة النموذج التي فُتحت قبل دقائق، فيمحو ما أدخله محرّر
+   آخر في الأثناء (هدف، بطاقة، تبديل، استراحة) ويضطر هو لإدخاله مرة ثانية فيمحو هذا بدوره.
+   الآن: نقارن النموذج بنسخته عند الفتح (E.base) ونطبّق الفرق فقط — ما أُضيف وما حُذف وما تغيّر من حقول
+   المباراة — على أحدث صفوف المباراة من السحابة. ما أدخله غيرنا يبقى. */
+const ROW_KINDS=["goals","cards","pens","lineup","subs","mev"];
+const rowSig=r=>JSON.stringify(Object.keys(r||{}).sort().map(k=>[k, r[k]==null?"":String(r[k])]));
+function mergeEdit(E){
+  if(!E || !E.orig || !E.base) return E;
+  const fm=(ALL.matches||[]).find(x=>mkey(x)===E.orig); if(!fm) return E;
+  const F=loadEditRaw(fm), B=E.base;
+  Object.keys(E.match||{}).forEach(k=>{ if(JSON.stringify(E.match[k])!==JSON.stringify(B.match&&B.match[k])) F.match[k]=E.match[k]; });
+  ROW_KINDS.forEach(kind=>{
+    const base=(B[kind]||[]).map(rowSig), cur=(E[kind]||[]).map(rowSig);
+    const left=[...base]; const added=[];
+    (E[kind]||[]).forEach((r,i)=>{ const j=left.indexOf(cur[i]); if(j>=0) left.splice(j,1); else added.push(r); });
+    const rows=[...(F[kind]||[])];
+    left.forEach(sig=>{ const j=rows.findIndex(r=>rowSig(r)===sig); if(j>=0) rows.splice(j,1); });   /* حذفه هذا المحرّر */
+    added.forEach(r=>{ if(!rows.some(x=>rowSig(x)===rowSig(r))) rows.push(r); });                      /* أضافه أو عدّله */
+    F[kind]=rows;
+  });
+  Object.keys(E.shapes||{}).concat(Object.keys(B.shapes||{})).forEach(c=>{
+    if(JSON.stringify((E.shapes||{})[c])!==JSON.stringify((B.shapes||{})[c])){ if((E.shapes||{})[c]) F.shapes[c]=E.shapes[c]; else delete F.shapes[c]; } });
+  Object.keys(E).forEach(k=>{ if(!(k in F) && k!=="base") F[k]=E[k]; });   /* علامات مثل gulf */
+  return F;
 }
 
 /* ---------- أرقام ومراكز اللاعبين ----------
@@ -5996,13 +6029,19 @@ function applyEdit(E){
   if(COMP!=="الكل" && !COMPS.includes(COMP)) COMP="الدوري";
 }
 let ADM_MCOMP = "الكل";   /* فلتر البطولة في قائمة مباريات الإدارة */
+let SAVING_MATCH = false;
 async function saveMatch(){
+  if(SAVING_MATCH || !EDIT) return;          /* ضغطة ثانية أثناء الحفظ لا تبدأ حفظاً آخر */
   toast("جارٍ حفظ المباراة…","busy",true);
   FORMERR = validateEdit();
   if(FORMERR){ renderMatchAdmin(); return; }
+  SAVING_MATCH = true; document.documentElement.classList.add("mx-saving");
+  try{
   /* نبني على أحدث نسخة سحابية حتى لا نمحو ما أدخله محرّر آخر بيننا */
   const reb = await rebaseOnCloud();
+  if(!reb.ok){ toast("الاتصال ضعيف — لم يُحفظ بعد. تعديلاتك باقية، اضغط «حفظ» مرة ثانية","err"); setTimeout(()=>renderMatchAdmin(),0); return; }
   if(reb.changed) toast(`وصل تحديث من ${reb.by||"محرّر آخر"} — دُمج قبل الحفظ`,"busy");
+  EDIT = mergeEdit(EDIT);                     /* ما غيّرناه فقط، فوق أحدث صفوف المباراة */
   const m=EDIT.match;
   applyEdit(EDIT);
   applyComp(); DATA_SOURCE="إدخال يدوي في الموقع"; DATA_UPDATED=new Date().toISOString();
@@ -6016,6 +6055,7 @@ async function saveMatch(){
   /* أي لقطة وصلت أثناء التحرير أقدم من حفظنا — تطبيقها يتراجع عنه */
   dropStaleRemote();
   paintRail(); renderAll(); renderMatchAdmin();
+  } finally { SAVING_MATCH = false; document.documentElement.classList.remove("mx-saving"); }
 }
 
 /* أزرار المزامنة والشعارات — كانت مدفونة داخل معالج «إضافة هدف» فلا تُربط أبداً */
@@ -14164,6 +14204,7 @@ html[data-theme="dark"] .mx select option{color:#E6EEF8;background:#0F1E35}   /*
 @keyframes mxUp{from{transform:translateY(24px);opacity:.6}to{transform:none;opacity:1}}
 @media(prefers-reduced-motion:reduce){.mx-sheet,.mx-sheet .box{animation:none}}
 html.mx-open,html.mx-open body{overflow:hidden}
+html.mx-saving #matchAdmin,html.mx-saving .mx-sheet{pointer-events:none;opacity:.6;transition:opacity .2s}   /* أثناء الحفظ: لا إدخال يضيع */
 html.mx-editing #waFab{display:none!important}   /* زر واتساب كان يغطي «حفظ المباراة» */
 </style>
 <script>
