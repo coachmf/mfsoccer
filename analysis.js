@@ -286,7 +286,7 @@ const SV = p => `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" str
 const ICONS = {
   match:  SV('<rect x="2.5" y="5" width="19" height="14" rx="2"/><path d="M12 5v14"/><circle cx="12" cy="12" r="2.6"/><path d="M2.5 9.5h2.3v5H2.5M21.5 9.5h-2.3v5h2.3"/>'),
   clock:  SV('<circle cx="12" cy="13" r="8"/><path d="M12 9v4.2l2.6 1.6M9.5 2.5h5"/>'),
-  goal:   `<img class="ax-ball" src="assets/icons/ball-3d.webp?v=2" alt="" width="20" height="20" decoding="async" aria-hidden="true">`,   /* الكرة الواقعية نفسها في تفاصيل المباريات (منصور 2026-09-29) */
+  goal:   SV('<circle cx="12" cy="12" r="9"/><path d="m12 7.3 3.3 2.4-1.2 3.9H9.9L8.7 9.7z" fill="currentColor"/><path d="M12 7.3V3.2M15.3 9.7l3.9-1.3M14.1 13.6l2.4 3.3M9.9 13.6l-2.4 3.3M8.7 9.7 4.8 8.4"/>'),   /* بلون الأيقونات المجاورة (منصور 2026-09-29) */
   assist: SV('<path d="M3.2 15.6c-.1-3 .5-5.9 2.3-7.2.5-.4 1-.5 1.6-.5h2.4c.8 0 1.5.5 1.8 1.2l.8 1.9c.4 1 1.3 1.7 2.4 1.8l4.4.6c2.1.3 3.3 1.5 3.3 2.9 0 .9-.6 1.5-1.6 1.5H4.8c-.9 0-1.6-.8-1.6-2.2z"/><path d="M6.5 18v1.8M10.5 18v1.8M15 18v1.8M19 18v1.8"/>'),
   cs:     SV('<path d="M12 3 5 6v5.5c0 4.4 3 8 7 9.5 4-1.5 7-5.1 7-9.5V6z"/><path d="m9 12 2.2 2.2L15.5 10"/>'),
   conc:   SV('<path d="M2.5 19V6h19v13"/><path d="M2.5 10.5h19M2.5 14.8h19M7.3 6v13M12 6v13M16.7 6v13" stroke-width="1" opacity=".45"/><circle cx="15.5" cy="14.5" r="2.8" fill="currentColor" stroke="none"/>'),
