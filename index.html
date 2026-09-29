@@ -2152,7 +2152,7 @@ main{padding-bottom:48px}
 <!-- اللغة الإنجليزية والوضع الداكن -->
 <link rel="stylesheet" href="site-theme.css?v=5">
 <script src="fantasy/js/i18n-more.js?v=12" defer></script>
-<script src="site-i18n.js?v=19" defer></script>
+<script src="site-i18n.js?v=20" defer></script>
 <!-- مركز المباراة المباشر: صفحة الجمهور + الربط (غرفة التحكم live-admin.js تُحمَّل عند فتحها فقط) -->
 <link rel="stylesheet" href="live.css?v=9">
 <script src="live.js?v=16" defer></script>
@@ -2376,7 +2376,7 @@ html[data-theme="light"] .an .an-tabs{background:rgba(13,79,146,.06);border-colo
   background:var(--an-card) no-repeat left 10px center/10px url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%238FA6C4' stroke-width='1.6' stroke-linecap='round'/%3E%3C/svg%3E");
   border:1px solid var(--an-line);border-radius:12px;padding:9px 12px 9px 28px;cursor:pointer;text-overflow:ellipsis}
 .rf-f select:focus-visible{outline:2px solid var(--an-acc);outline-offset:1px}
-.rf-kpis{grid-template-columns:repeat(5,minmax(0,1fr))}
+.rf-kpis{grid-template-columns:repeat(6,minmax(0,1fr))}
 .rf-kpis span{white-space:normal;line-height:1.3}
 .rf-kpis .y b{color:#E8B400}.rf-kpis .r b{color:#E5383B}
 html[data-theme="light"] .rf-kpis .y b{color:#B98A00}
@@ -2440,10 +2440,11 @@ html[data-theme="light"] .rf-kpis .y b{color:#B98A00}
 .rf-mc{display:flex;align-items:center;gap:2px;font-size:.78rem;white-space:nowrap}
 .rf-mc b{font-weight:800;margin-inline-end:8px;font-variant-numeric:tabular-nums}
 .rf-mc em{font-style:normal;color:var(--an-mut);font-size:.72rem}.rf-mc em b{color:var(--an-txt);margin:0}
+.rf-mc em.rf-v{margin-inline-start:10px;padding-inline-start:10px;border-inline-start:1px solid var(--an-line)}
 @media(max-width:560px){
   .rf-filters{gap:6px}.rf-f select{font-size:.78rem;padding:8px 10px 8px 24px;background-position:left 8px center}
   .rf-kpis{grid-template-columns:repeat(6,minmax(0,1fr))}
-  .rf-kpis>div{grid-column:span 2}.rf-kpis>div:nth-child(n+4){grid-column:span 3}
+  .rf-kpis>div{grid-column:span 2}
   .rf-chart{height:150px;gap:3px}
   .rf-tbl{font-size:.8rem}
   .rf-tbl th{white-space:normal}
@@ -7947,7 +7948,8 @@ function renderAnalysis(){
    - الحكم = حكم الساحة من crewOf(m) (m.ref المحفوظ من الإدارة، وإلا الطاقم الرسمي المضمّن REF_BOOK) — «لا يوجد» يُتجاهل.
    - المباريات = المُقامة فقط (playedMatches) ضمن المسابقة المختارة (COMP) والجولة المختارة.
    - البطاقات = CARDS لفريقي المباراة في جولتها ومسابقتها؛ الحمراء = طرد مباشر أو إنذار ثانٍ (isRed) كبقية الموقع، والباقي صفراء.
-   - ركلات الجزاء = سجلات PENS للمباراة (المحتسبة، سُجّلت أو أُهدرت). */
+   - ركلات الجزاء = سجلات PENS للمباراة (المحتسبة، سُجّلت أو أُهدرت).
+   - العودة لتقنية الفيديو = أحداث «مراجعة VAR» (mev بنوع var) المسجّلة في محرّر المباراة (منصور 2026-09-29). */
 let RFA = {round:"", ref:"", sort:"m", dir:-1};
 const rfRefOf = m => { const n=String(crewOf(m).ref||"").trim(); return n==="لا يوجد" ? "" : n; };
 const rfCards = m => CARDS.filter(x=>+x.r===+m.round && compOf(x)===compOf(m) && (x.club===m.home||x.club===m.away));
@@ -7955,16 +7957,16 @@ const rfPens  = m => PENS.filter(x=>+x.r===+m.round && compOf(x)===compOf(m) &&
   ((x.by===m.home&&x.vs===m.away)||(x.by===m.away&&x.vs===m.home)));
 function rfRows(round){
   return playedMatches().filter(m=>round===""||String(m.round)===String(round)).map(m=>{
-    const cs=rfCards(m), ps=rfPens(m);
-    return {m, ref:rfRefOf(m), cs, ps, y:cs.filter(x=>!isRed(x.type)).length, r:cs.filter(x=>isRed(x.type)).length, p:ps.length};
+    const cs=rfCards(m), ps=rfPens(m), vs=matchMev(m).filter(x=>x.k==="var");
+    return {m, ref:rfRefOf(m), cs, ps, y:cs.filter(x=>!isRed(x.type)).length, r:cs.filter(x=>isRed(x.type)).length, p:ps.length, v:vs.length};
   }).sort((a,b)=>(+a.m.round)-(+b.m.round) || String(a.m.date||"").localeCompare(String(b.m.date||"")));
 }
 function rfAgg(rows){
   const o={};
-  rows.forEach(x=>{ if(!x.ref) return; const e=o[x.ref] ||= {n:x.ref, m:0, y:0, r:0, p:0}; e.m++; e.y+=x.y; e.r+=x.r; e.p+=x.p; });
+  rows.forEach(x=>{ if(!x.ref) return; const e=o[x.ref] ||= {n:x.ref, m:0, y:0, r:0, p:0, v:0}; e.m++; e.y+=x.y; e.r+=x.r; e.p+=x.p; e.v+=x.v; });
   return Object.values(o).map(e=>({...e, avg:(e.y+e.r)/e.m}));
 }
-const RF_COLS = [["n","الحكم"],["m","المباريات"],["y","صفراء"],["r","حمراء"],["p","ركلات جزاء"],["avg","متوسط البطاقات"]];
+const RF_COLS = [["n","الحكم"],["m","المباريات"],["y","صفراء"],["r","حمراء"],["p","ركلات جزاء"],["v","العودة للـVAR"],["avg","متوسط البطاقات"]];
 const rfAvg = v => (Math.round(v*100)/100).toFixed(2);
 const rfCard = t => `<i class="rf-cd ${t}" aria-hidden="true"></i>`;
 function rfSorted(L){
@@ -8013,17 +8015,17 @@ function rfOverviewHTML(rows){
   const withRef=rows.filter(x=>x.ref), L=rfAgg(rows), none=rows.length-withRef.length;
   const sum=k=>withRef.reduce((s,x)=>s+x[k],0);
   let out=`<div class="rf-body">
-    ${rfKpis([[L.length,"إجمالي الحكام"],[withRef.length,"مباريات التحكيم"],[sum("y"),"البطاقات الصفراء","y"],[sum("r"),"البطاقات الحمراء","r"],[sum("p"),"ركلات الجزاء المحتسبة"]])}
+    ${rfKpis([[L.length,"إجمالي الحكام"],[withRef.length,"مباريات التحكيم"],[sum("y"),"البطاقات الصفراء","y"],[sum("r"),"البطاقات الحمراء","r"],[sum("p"),"ركلات الجزاء المحتسبة"],[sum("v"),"العودة لتقنية الفيديو VAR"]])}
     ${none?`<p class="hint rf-note">${none===1?"مباراة واحدة مُقامة":`${none} مباريات مُقامة`} بلا حكم ساحة مسجّل — لا تدخل في أرقام الحكام.</p>`:""}`;
   if(!L.length) return out+`<div class="an-card rf-empty">لم يُسجَّل حكم ساحة لأي مباراة مُقامة ضمن هذا الاختيار.</div></div>`;
   out+=`<h2 class="sec">البطاقات حسب الجولة</h2>${rfRoundChart(withRef)}
     <h2 class="sec">ترتيب الحكام</h2>
-    <p class="hint">اضغط عنوان أي عمود للترتيب، واسم الحكم لعرض تفاصيله.</p>
+    <p class="hint">اضغط عنوان أي عمود للترتيب، واسم الحكم لعرض تفاصيله. «العودة للـVAR» = مراجعات الفيديو المسجّلة في أحداث المباراة.</p>
     <div class="an-card rf-tcard"><div class="rf-tw"><table class="rf-tbl"><thead><tr>
       ${RF_COLS.map(([k,t])=>{ const on=RFA.sort===k; return `<th class="${k==="n"?"tl":""}" aria-sort="${on?(RFA.dir>0?"ascending":"descending"):"none"}"><button type="button" data-rf-sort="${k}" class="${on?"on":""}">${k==="y"?rfCard("y"):k==="r"?rfCard("r"):""}${t}${on?`<i class="rf-ar">${RFA.dir>0?"▲":"▼"}</i>`:""}</button></th>`; }).join("")}
     </tr></thead><tbody>
       ${rfSorted(L).map((e,i)=>`<tr><td class="tl"><button type="button" class="rf-name" data-rf-ref="${esc(e.n)}"><span class="rk">${i+1}</span>${refFace(e.n,"sm")}<b>${esc(e.n)}</b></button></td>
-        <td>${e.m}</td><td>${e.y}</td><td>${e.r}</td><td>${e.p}</td><td><b>${rfAvg(e.avg)}</b></td></tr>`).join("")}
+        <td>${e.m}</td><td>${e.y}</td><td>${e.r}</td><td>${e.p}</td><td>${e.v}</td><td><b>${rfAvg(e.avg)}</b></td></tr>`).join("")}
     </tbody></table></div></div></div>`;
   return out;
 }
@@ -8043,13 +8045,13 @@ function rfDetailHTML(name, rows){
     t.p+=x.ps.filter(k=>k.by===c).length; }); });
   const TL=Object.values(teams).sort((a,b)=>b.m-a.m || (b.y+b.r)-(a.y+a.r) || a.c.localeCompare(b.c,"ar"));
   return `<div class="rf-body">${top}
-    ${rfKpis([[e.m,"المباريات"],[e.y,"البطاقات الصفراء","y"],[e.r,"البطاقات الحمراء","r"],[e.p,"ركلات الجزاء"],[rfAvg(e.avg),"متوسط البطاقات لكل مباراة","lead"]])}
+    ${rfKpis([[e.m,"المباريات"],[e.y,"البطاقات الصفراء","y"],[e.r,"البطاقات الحمراء","r"],[e.p,"ركلات الجزاء"],[e.v,"العودة لتقنية الفيديو VAR"],[rfAvg(e.avg),"متوسط البطاقات لكل مباراة","lead"]])}
     <h2 class="sec">سجل المباريات</h2>
     <div class="an-card rf-log">${mine.map(x=>{ const m=x.m;
       return `<button type="button" class="rf-mrow" data-mopen="${esc(matchKey(m))}">
         <span class="rf-mr">ج${esc(String(m.round))}${m.date?`<small>${esc(mpDateLabel(m))}</small>`:""}</span>
         <span class="rf-mt"><span class="h">${esc(m.home)}</span>${crest(m.home)}<b class="sc" dir="ltr">${+m.ag} - ${+m.hg}</b>${crest(m.away)}<span class="a">${esc(m.away)}</span></span>
-        <span class="rf-mc">${rfCard("y")}<b>${x.y}</b>${rfCard("r")}<b>${x.r}</b><em>جزاء <b>${x.p}</b></em></span>
+        <span class="rf-mc">${rfCard("y")}<b>${x.y}</b>${rfCard("r")}<b>${x.r}</b><em>جزاء <b>${x.p}</b></em><em class="rf-v">VAR <b>${x.v}</b></em></span>
       </button>`; }).join("")}</div>
     <h2 class="sec">الفرق التي أدار مبارياتها</h2>
     <div class="an-card rf-tcard"><div class="rf-tw"><table class="rf-tbl"><thead><tr>

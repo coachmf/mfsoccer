@@ -171,6 +171,7 @@ const I18N = {
     'البطاقات الصفراء':'Yellow cards', 'البطاقات الحمراء':'Red cards', 'ركلات الجزاء المحتسبة':'Penalties awarded', 'البطاقات حسب الجولة':'Cards by round',
     'ترتيب الحكام':'Referee ranking', 'اضغط عنوان أي عمود للترتيب، واسم الحكم لعرض تفاصيله.':'Tap any column header to sort, and a referee’s name for details.',
     'صفراء':'Yellow', 'حمراء':'Red', 'ركلات جزاء':'Penalties', 'متوسط البطاقات':'Avg cards', 'متوسط البطاقات لكل مباراة':'Avg cards per match',
+    'العودة للـVAR':'VAR reviews', 'العودة لتقنية الفيديو VAR':'VAR reviews', 'اضغط عنوان أي عمود للترتيب، واسم الحكم لعرض تفاصيله. «العودة للـVAR» = مراجعات الفيديو المسجّلة في أحداث المباراة.':'Tap any column header to sort, and a referee’s name for details. “VAR reviews” = video reviews recorded in the match events.',
     'الفرق التي أدار مبارياتها':'Teams in his matches', 'ركلات جزاء له':'Penalties for', 'جزاء':'Pens', 'ج⟨x⟩':'R⟨x⟩', 'حكم ساحة · ⟨x⟩':'Referee · ⟨x⟩', 'حكم ساحة · ⟨x⟩ · الجولة ⟨x⟩':'Referee · ⟨x⟩ · Round ⟨x⟩',
     'مباراة واحدة مُقامة بلا حكم ساحة مسجّل — لا تدخل في أرقام الحكام.':'1 played match has no referee recorded — not counted in referee stats.',
     '⟨x⟩ مباريات مُقامة بلا حكم ساحة مسجّل — لا تدخل في أرقام الحكام.':'⟨x⟩ played matches have no referee recorded — not counted in referee stats.',
