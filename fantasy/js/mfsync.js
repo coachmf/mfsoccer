@@ -49,6 +49,18 @@ const MFSYNC = {
     return v;
   },
 
+  /* هل انتهت المباراة؟ (منصور 2026-09-30) — «لُعبت» تصير صحيحة من أول هدف أثناء اللعب، فكان إغلاق الجولة
+     ممكناً والمباراة الأخيرة جارية. مثل matchOver في الموقع: «انتهت» صراحة، أو ليست في مرحلة جارية
+     (قبل/شوط أول/استراحة/شوط ثانٍ) ومضى على انطلاقها ساعتان (بلا موعد: نهاية يوم المباراة). */
+  isOver(m, data){
+    if(!this.isPlayed(m, data)) return false;
+    if(m.status==='ft') return true;
+    if(['pre','h1','ht','h2'].includes(m.status)) return false;
+    if(!m.date) return false;
+    const ko = kwDate(m.date+'T'+(m.time||'23:59'));
+    return !isNaN(ko) && Date.now() > ko.getTime() + 2*3600e3;
+  },
+
   /* هل لُعبت المباراة فعلاً؟ الموقع يخزّن 0-0 كقيمة افتراضية للمباريات القادمة،
      فلا تُعدّ نتيجةً إلا إذا مضى موعد الانطلاق (أو سُجّلت أهداف). بلا موعد: لا. */
   isPlayed(m, data){
@@ -106,6 +118,7 @@ const MFSYNC = {
   norm(s){
     return (s||'')
       .replace(/^[\s\d]+\s*-?\s*/,'')
+      .replace(/[ً-ٰٟـ]/g,'')   /* التشكيل والتطويل (محمود الأســود) — منصور 2026-09-30 */
       .replace(/[أإآ]/g,'ا').replace(/ى/g,'ي').replace(/ة/g,'ه')
       .replace(/ؤ/g,'و').replace(/ئ/g,'ي').replace(/ء/g,'').replace(/ث/g,'ت')
       .replace(/\s+/g,'');
@@ -205,7 +218,8 @@ const MFSYNC = {
       }
       seen.add(f.id);
     });
-    if(opts.removeMissing!==false){
+    /* بيانات بلا مباريات دوري (خلل مؤقت في القراءة): لا نحذف شيئاً من الجدول (منصور 2026-09-30) */
+    if(opts.removeMissing!==false && ms.length>0){
       const before=st.fixtures.length;
       st.fixtures=st.fixtures.filter(f=>seen.has(f.id) || f.status==='F' || (DB.gw(f.gw)||{}).status==='finished');
       rep.removed=before-st.fixtures.length;
@@ -303,7 +317,7 @@ const MFSYNC = {
       f.h=h; f.a=a; f.venue=DB.club(h).stadium;
       if(m.date) f.date=m.date+'T'+(m.time||'18:00');
       const played = this.isPlayed(m, data);
-      if(played){ f.hs=+m.hg; f.as=+m.ag; f.status='F'; f.est=false; }
+      if(played){ f.hs=+m.hg; f.as=+m.ag; f.status='F'; f.est=false; f.over=this.isOver(m, data); }
       else { f.hs=null; f.as=null; f.status='U'; f.goals=[]; f.cards=[]; f.pens=[];
              f.lineups=null; f.subs=[]; report.matches++; continue; }
 
@@ -316,14 +330,15 @@ const MFSYNC = {
         if(g.og){
           const ogClub = benefiting===h? a : h;
           const pl=this.resolvePlayer(g.og, ogClub, report);
-          if(pl){ f.goals.push({min:+g.m||0, scorer:pl.name, club:benefiting, assist:null, pen:false, og:true}); report.goals++; }
+          /* لاعب غير معروف: الهدف يبقى (لتوقيت الأهداف المستقبلة) بلا مسجّل (منصور 2026-09-30) */
+          f.goals.push({min:+g.m||0, scorer:pl?pl.name:null, club:benefiting, assist:null, pen:false, og:true}); if(pl) report.goals++;
           return;
         }
         const pl=this.resolvePlayer(g.p, benefiting, report);
-        if(!pl) return;
         let assist=null;
         if(g.a){ const ap=this.resolvePlayer(g.a, benefiting, report); if(ap) assist=ap.name; }
-        f.goals.push({min:+g.m||0, scorer:pl.name, club:benefiting, assist, pen:(g.det==='ركلة جزاء')});
+        /* مسجّل غير معروف لا يُسقط الهدف كله: الصناعة تُحتسب وتوقيت الأهداف المستقبلة يبقى صحيحاً */
+        f.goals.push({min:+g.m||0, scorer:pl?pl.name:null, club:benefiting, assist, pen:(g.det==='ركلة جزاء')});
         report.goals++;
       });
       f.goals.sort((x,y)=>x.min-y.min);
@@ -335,19 +350,22 @@ const MFSYNC = {
         const cid=this.clubId(c.club);
         if(cid!==h && cid!==a) return;
         const pl=this.resolvePlayer(c.p, cid, report); if(!pl) return;
-        if(c.type==='إنذار ثانٍ'){
-          const yi=f.cards.findIndex(x=>x.name===pl.name && x.type==='y');
-          if(yi>=0) f.cards.splice(yi,1);
-        }
-        f.cards.push({name:pl.name, club:cid, type: c.type==='إنذار'?'y':'r'});
+        const red = c.type!=='إنذار';
+        f.cards.push({name:pl.name, club:cid, type: red?'r':'y', ...(red && +c.m>0 ? {min:+c.m} : {}), ...(c.type==='إنذار ثانٍ'?{second:true}:{})});
         report.cards++;
       });
+      /* الطرد بإنذارين = -3 فقط (يُحذف الإنذار الأول) — أياً كان ترتيب إدخال البطاقتين (منصور 2026-09-30) */
+      f.cards.filter(x=>x.second).forEach(r=>{ const yi=f.cards.findIndex(x=>x.name===r.name && x.club===r.club && x.type==='y'); if(yi>=0) f.cards.splice(yi,1); });
+      f.cards.forEach(x=>{ delete x.second; });
 
       // ركلات الجزاء غير المسجلة = إهدار (المسجلة محسوبة ضمن الأهداف)
       f.pens=[];
-      (data.pens||[]).filter(p=>+p.r===gw && (!p.comp||p.comp==='الدوري') && p.res!=='سجلت').forEach(p=>{
+      const savedPens=[];
+      /* «أعيدت» ليست إهداراً — الإعادة لها سجلها الخاص (منصور 2026-09-30) */
+      (data.pens||[]).filter(p=>+p.r===gw && (!p.comp||p.comp==='الدوري') && p.res!=='سجلت' && p.res!=='أعيدت').forEach(p=>{
         const cid=this.clubId(p.by);
         if(cid!==h && cid!==a) return;
+        if(p.res==='تصدى لها الحارس') savedPens.push({vs: cid===h?a:h, m:+p.m||0});
         const pl=this.resolvePlayer(p.p, cid, report); if(!pl) return;
         f.pens.push({name:pl.name, club:cid, type:'miss'});
         report.pens++;
@@ -389,6 +407,15 @@ const MFSYNC = {
         report.subs++;
       });
       f.subs.sort((p,q)=>absMinute(p.h,p.m)-absMinute(q.h,q.m));
+      /* ركلة جزاء تصدّى لها الحارس: نقاط التصدّي لحارس الفريق المنفَّذ عليه الموجود في الملعب لحظتها (منصور 2026-09-30) */
+      savedPens.forEach(sp=>{
+        const lu=(f.lineups||{})[sp.vs]||{};
+        const on=pl=>{ const inS=f.subs.find(x=>x.club===sp.vs && x.in===pl.name), outS=f.subs.find(x=>x.club===sp.vs && x.out===pl.name);
+          const start = lu[pl.id]==='s' ? 0 : inS ? absMinute(inS.h,inS.m) : null; if(start==null) return false;
+          const end = outS ? absMinute(outS.h,outS.m) : 999; return start<=sp.m && sp.m<=end; };
+        const gk=st.players.find(x=>x.club===sp.vs && x.pos==='G' && on(x));
+        if(gk) f.pens.push({name:gk.name, club:sp.vs, type:'save'});
+      });
 
       genMatchStats(st,f);
       if(f.lineups){ for(const cid of [h,a]){ const nS=Object.values(f.lineups[cid]||{}).filter(v=>v==='s').length; if(nS!==11) report.notes.push(`${DB.club(cid).name} (${DB.club(f.h).short} × ${DB.club(f.a).short}): عدد الأساسيين بعد التصحيح ${nS} وليس 11 — راجع تشكيلة الموقع`); } }

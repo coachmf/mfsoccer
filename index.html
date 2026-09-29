@@ -2164,7 +2164,7 @@ main{padding-bottom:48px}
 <script src="gulf.js?v=38" defer></script>
 <!-- التحليل الموسّع + تقييم اللاعبين 0–100 + البحث العام (منصور 2026-09-29) -->
 <link rel="stylesheet" href="analysis.css?v=6">
-<script src="analysis.js?v=11" defer></script>
+<script src="analysis.js?v=12" defer></script>
 <style>
 /* تبويب التحليل — التصميم الجديد (منصور 2026-09-17) */
 .an{--an-card:#0F1E35;--an-line:#213653;--an-txt:#EDF3FA;--an-mut:#8FA6C4;--an-track:rgba(143,166,196,.16);--an-acc:#2EB0F0;--an-acc2:#1878BE}
@@ -2651,7 +2651,7 @@ const isOG = g => !!g && g.bp==="هدف عكسي";
 const ogLabel = g => (g && g.bp==="هدف عكسي")
   ? ` <span style="color:var(--loss);font-size:.72rem">هدف عكسي${g.og?" · ارتدت عن "+esc(g.og):""}</span>`
   : "";
-const isYellow = t => /إنذار/.test(t||"");
+const isYellow = t => /إنذار/.test(t||"") && !isRed(t);   /* الإنذار الثاني = طرد فقط، لا إنذار وطرد معاً (منصور 2026-09-30 — كان يُعدّ مرتين في صفحة اللاعبين والملف) */
 const isRed    = t => /طرد/.test(t||"") || /إنذار\s*ثان/.test(t||"");
 /* ترقية آلية: الإنذار الثاني لنفس اللاعب في نفس المباراة يصير «إنذار ثانٍ» */
 /* هل هذه البطاقة هي الإنذار الثاني لنفس اللاعب في نفس المباراة؟ */
@@ -3082,7 +3082,8 @@ const matchGoals = m => GOALS.filter(g=>g.r===m.round && compOf(g)===compOf(m) &
 function standings(){
   const t = {};
   CLUBS.forEach(c=>t[c]={c,P:0,W:0,D:0,L:0,GF:0,GA:0,Pts:0,form:[],hP:0,hPts:0,aP:0,aPts:0,cs:0,fts:0});
-  playedMatches().forEach(m=>{
+  /* «إجمالي البطولات المحلية»: جدول الترتيب للدوري وحده — نتائج الكؤوس لا تدخل النقاط (منصور 2026-09-30) */
+  playedMatches().filter(m=>COMP!=="الكل" || compOf(m)==="الدوري").forEach(m=>{
     const H=t[m.home], A=t[m.away]; if(!H||!A) return;
     H.P++;A.P++;H.GF+=m.hg;H.GA+=m.ag;A.GF+=m.ag;A.GA+=m.hg;
     H.hP++;A.aP++;
@@ -3099,7 +3100,9 @@ function scorers(){
   const p={};
   GOALS.forEach(g=>{ if(g.bp==="هدف عكسي") return; const k=g.p+"|"+g.sc; (p[k]??={n:g.p,c:g.sc,g:0,a:0}).g++; });   /* الهدف العكسي ليس للمسجّل — نفس تعريف ملف اللاعب */
   GOALS.forEach(g=>{ if(!g.a || isOG(g)) return; const k=g.a+"|"+g.sc; (p[k]??={n:g.a,c:g.sc,g:0,a:0}).a++; });
-  return Object.values(p).sort((a,b)=>b.g-a.g||b.a-a.a);
+  /* عند التساوي: الأقل دقائق أولاً ثم الصناعة — نفس قاعدة صفحة اللاعبين في كل مكان (منصور 2026-09-17، وُحّدت 2026-09-30) */
+  const PP=(typeof playerPlay==="function")?playerPlay():[], mins=x=>{ const e=PP.find(q=>q.n===x.n && q.c===x.c); return e?e.mins:0; };
+  return Object.values(p).sort((a,b)=>b.g-a.g || mins(a)-mins(b) || b.a-a.a);
 }
 function firstGoals(){
   return playedMatches().map(m=>{
@@ -3150,7 +3153,8 @@ function playerMatchMinutes(m, club, name){
   if(starter) start = 0;
   else if(inSub) start = at(inSub);
   else return 0;                                   /* لم يشارك */
-  const end = outSub ? at(outSub) : LEN;
+  let end = outSub ? at(outSub) : LEN;
+  const rc = redCardAt(m, club, name); if(rc!=null && rc<end) end = Math.max(start, capTo(LEN, rc));   /* طُرد (منصور 2026-09-30) */
   return Math.max(inSub ? 1 : 0, end - start);   /* بديل دخل في آخر لحظة يُحسب له ظهور بدقيقة واحدة */
 }
 /* هل اللاعب حارس مرمى؟ (من مركزه في الكشف) */
@@ -5134,6 +5138,14 @@ const matchLen = m => 90 + add1Of(m) + add2Of(m);
 const csLimit = m => Math.round(matchLen(m) * 2 / 3);
 /* الدقيقة المطلقة لحدث داخل مباراة بعينها — تراعي بدل ضائع الشوط الأول */
 const evAbs = (m, h, mn, x) => absMinute(h, mn, x, add1Of(m));
+/* دقيقة هدف/بطاقة/جزاء على ساعة التبديلات نفسها (منصور 2026-09-30): الهدف يُخزَّن بدقيقة المباراة (60)
+   والتبديل يُحسب 45 + بدل الشوط الأول + … فكان الهدف يُنسب لمن خرج قبله أو لا يُنسب لمن كان في الملعب */
+const goalAbs = (m, g) => { const mm=+(g&&g.m)||0, x=+(g&&g.x)||0; return mm>45 ? 45+add1Of(m)+(mm-45)+x : mm+x; };
+/* بطاقة حمراء (طرد/إنذار ثانٍ) تنهي دقائق اللاعب */
+function redCardAt(m, club, name){
+  const c=(ALL&&ALL.cards||[]).find(x=>+x.r===+m.round && compOf(x)===compOf(m) && x.club===club && x.p===name && isRed(x.type));
+  return c && +c.m>0 ? goalAbs(m, c) : null;
+}
 /* تسمية الدقيقة كما تُقرأ: 45+3 لا 48 */
 const halfLabel = (h, mn, x) => {
   const base = (+h === 2 && +mn < 45) ? 45 + (+mn||0) : (+mn||0);
@@ -5971,6 +5983,18 @@ function validateEdit(){
   for(const [i,x] of EDIT.pens.entries()){
     if(!x.by) return `ركلة الجزاء ${i+1}: اختر الفريق المنفّذ.`;
     if(!x.res) return `ركلة الجزاء ${i+1}: اختر النتيجة.`;
+  }
+  /* التبديلات (منصور 2026-09-30 — من فحص البيانات: لاعب في التشكيلة ودخل بديلاً، خروج لاعب ليس في الملعب، دخول بلا اسم) */
+  for(const [i,x] of (EDIT.subs||[]).entries()){
+    if(!x.club) return `التبديل ${i+1}: اختر النادي.`;
+    if(!String(x.in||"").trim() || !String(x.out||"").trim()) return `التبديل ${i+1}: اكتب اسم الداخل والخارج.`;
+    if(x.in===x.out) return `التبديل ${i+1}: الداخل والخارج نفس اللاعب.`;
+    const xi=(EDIT.lineup||[]).filter(l=>l.club===x.club).map(l=>l.p);
+    if(xi.length){
+      if(xi.includes(x.in)) return `التبديل ${i+1}: «${x.in}» في التشكيلة الأساسية — لا يدخل بديلاً.`;
+      const cameOn=(EDIT.subs||[]).some(s=>s.club===x.club && s.in===x.out);   /* أي ترتيب إدخال */
+      if(!xi.includes(x.out) && !cameOn) return `التبديل ${i+1}: «${x.out}» ليس في الملعب (لا في التشكيلة ولا دخل بديلاً).`;
+    }
   }
   return "";
 }
@@ -6941,6 +6965,7 @@ function goalsTimeline(m,gs,mc){
   /* ترتيب زمني حقيقي (منصور 2026-09-24): 90+4 بعد بطاقة مسجّلة 93، و«نهاية المباراة» آخر شيء دائماً.
      بدل الشوط الأول (45+x) يبقى قبل 46 */
   const tlKey=e=>{ if(e.t==="e" && !e.v.club && /^نهاية المباراة/.test(String(e.v.note||"").trim())) return 1e6;
+    if(e.t==="s" && e.half>=2 && e.m<=45) return 45.999;   /* تبديل بين الشوطين بعد كل أحداث 45+x (منصور 2026-09-30) */
     return e.m===45 ? 45+(e.x||0)/100 : e.m+(e.x||0); };
   const tlRank=e=>{ if(e.t==="e" && !e.v.club){ const t=String(e.v.note||"").trim(); if(/^بداية/.test(t)) return -1; if(/^نهاية/.test(t)) return 9; } return ORD[e.t]; };
   const ev=[...gs.map(g=>({t:"g",m:+g.m||0,x:+g.x||0,g})),
@@ -12291,6 +12316,7 @@ function playerWindow(m, club, name){
   const LEN=matchLen(m);
   let start; if(starter) start=0; else if(inSub) start=capTo(LEN, evAbs(m,inSub.h,inSub.m,inSub.x)); else return null;
   let end = outSub ? capTo(LEN, evAbs(m,outSub.h,outSub.m,outSub.x)) : LEN;
+  const rc = redCardAt(m, club, name); if(rc!=null && rc<end) end = Math.max(start, capTo(LEN, rc));   /* طُرد: نافذته تنتهي عند البطاقة */
   if(inSub && end<=start) end=start+1;           /* بديل الدقيقة 90+: نافذة بدقيقة واحدة حتى يظهر في السجل */
   return {start, end};
 }
@@ -12319,6 +12345,7 @@ function playerProfileData(name, club){
   const y = sum(c=>CARDS.filter(x=>x.p===name && x.club===c && isYellow(x.type)).length);
   const rd= sum(c=>CARDS.filter(x=>x.p===name && x.club===c && isRed(x.type)).length);
   const pens = sum(c=>PENS.filter(x=>x.p===name && x.by===c).length);
+  const pensS = sum(c=>PENS.filter(x=>x.p===name && x.by===c && x.res==="سجلت").length);
   const pp=clubs.reduce((t,c)=>{ const e=PP.find(x=>x.n===name && x.c===c); return e?{apps:t.apps+e.apps, mins:t.mins+e.mins, cs:t.cs+e.cs}:t; }, {apps:0,mins:0,cs:0});
   const log=[]; let conceded=0;
   clubs.forEach(cl=>{
@@ -12327,7 +12354,7 @@ function playerProfileData(name, club){
       const gs=matchGoals(m);
       const g=gs.filter(x=>x.sc===cl && x.p===name && x.bp!=="هدف عكسي").length;
       const a=gs.filter(x=>x.sc===cl && x.a===name && !isOG(x)).length;
-      const con=gs.filter(x=>x.sc!==cl && abs(x)>=w.start && (w.end>=matchLen(m) || abs(x)<=w.end)).length; conceded+=con;   /* ما لم يُستبدل، أهداف الوقت المحتسب عليه أيضاً */
+      const con=gs.filter(x=>x.sc!==cl && goalAbs(m,x)>=w.start && (w.end>=matchLen(m) || goalAbs(m,x)<=w.end)).length; conceded+=con;   /* ما لم يُستبدل، أهداف الوقت المحتسب عليه أيضاً */
       const cd=CARDS.filter(x=>x.r===m.round && compOf(x)===compOf(m) && x.club===cl && x.p===name);
       const home=m.home===cl, opp=home?m.away:m.home;
       const gf=home?+m.hg:+m.ag, ga=home?+m.ag:+m.hg;
@@ -12338,8 +12365,10 @@ function playerProfileData(name, club){
   /* في الإجمالي تختلط جولات المسابقات (ج1 كأس بعد ج3 دوري)، فالترتيب بالتاريخ؛ داخل مسابقة واحدة كما كان */
   log.sort((a,b)=>(COMP==="الكل" && a.m.date && b.m.date && a.m.date!==b.m.date) ? String(b.m.date).localeCompare(String(a.m.date))
     : (b.m.round-a.m.round)||String(b.m.date).localeCompare(String(a.m.date)));
-  return {name, club, former, pos, num, gk, goals, assists, ownG, y, rd, pens, apps:pp.apps, mins:pp.mins, cs:pp.cs, conceded, log};
+  return {name, club, former, pos, num, gk, goals, assists, ownG, y, rd, pens, pensS, apps:pp.apps, mins:pp.mins, cs:pp.cs, conceded, log};
 }
+/* دقيقة مطلقة (بعد إضافة بدل الشوط الأول) ← كما تظهر في أحداث المباراة: 45+3′، 67′، 90+4′ */
+function clockLabel(m, t){ const a1=add1Of(m); if(t<=45) return t+"′"; if(t<=45+a1) return "45+"+(t-45)+"′"; const c=t-a1; return c>90 ? "90+"+(c-90)+"′" : c+"′"; }
 function playerProfileHTML(D){
   const cut=(PHOTOSON && typeof LOCAL_PHOTOS!=="undefined") ? photoCut(D.name, D.club) : null;
   const st=(v,t,hi)=>`<div class="pstat${hi?" hi":""}"><b>${v}</b><small>${t}</small></div>`;
@@ -12347,7 +12376,7 @@ function playerProfileHTML(D){
     ? [st(D.cs,"شباك نظيفة",true), st(D.conceded,"أهداف استقبلها"), st(D.apps,"مباريات"), st(D.mins+"′","دقائق اللعب"),
        D.goals?st(D.goals,"أهداف"):"", D.assists?st(D.assists,"صناعة"):"", st(D.y,"إنذارات"), D.rd?st(D.rd,"طرد"):""]
     : [st(D.goals,"أهداف",true), st(D.assists,"صناعة",true), st(D.apps,"مباريات"), st(D.mins+"′","دقائق اللعب"),
-       st(D.y,"إنذارات"), D.rd?st(D.rd,"طرد"):"", D.pens?st(D.pens,"ركلات جزاء"):"", D.ownG?st(D.ownG,"أهداف عكسية"):""];
+       st(D.y,"إنذارات"), D.rd?st(D.rd,"طرد"):"", D.pens?st(`${D.pensS}/${D.pens}`,"ركلات جزاء (سجّل/نفّذ)"):"", D.ownG?st(D.ownG,"أهداف عكسية"):""];
   /* متوسط التقييم (منصور 2026-09-17) — بطاقة ضمن الأرقام، يتبع المسابقة المختارة */
   /* التقييم الموسمي 0–100 حسب المركز (analysis.js — منصور 2026-09-29) بدل متوسط تقييم المباريات */
   const rtNew = (()=>{ try{ return window.PRATING ? PRATING.of(D.name, D.club) : null; }catch(err){ return null; } })();
@@ -12359,7 +12388,7 @@ function playerProfileHTML(D){
       <span class="rd">ج${l.m.round}${compOf(l.m)!=="الدوري"?" · "+esc(compOf(l.m)):""}</span>
       <span class="op">${crest(l.opp)}<span>${esc(l.opp)}<i> · ${l.home?"أرضه":"خارج أرضه"}</i>${l.wc&&l.wc!==D.club?`<i class="wth"> · مع ${esc(l.wc)}</i>`:""}</span></span>
       <span class="ev">${badge(l.g,"goal",ICO_BALL)}${badge(l.a,"assist",ICO_BOOT)}${l.r?`<span class="pp-b card r"></span>`:l.y?`<span class="pp-b card y"></span>`:""}
-        ${(!l.sub&&!l.off)?`<span class="mn full" title="لعب المباراة كاملة"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.2"/><path d="M5.2 8.2l1.9 1.9 3.8-4"/></svg>90′</span>`:""}${l.sub?`<span class="mn in">↑${l.on}′</span>`:""}${l.off?`<span class="mn out">↓${l.offAt}′</span>`:""}<span class="rs ${l.k}">${l.res}</span></span>
+        ${(!l.sub&&!l.off)?`<span class="mn full" title="لعب المباراة كاملة"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.2"/><path d="M5.2 8.2l1.9 1.9 3.8-4"/></svg>${l.mins}′</span>`:""}${l.sub?`<span class="mn in">↑${clockLabel(l.m,l.on)}</span>`:""}${l.off?`<span class="mn out">↓${clockLabel(l.m,l.offAt)}</span>`:""}<span class="rs ${l.k}">${l.res}</span></span>
     </div>`).join("")}</div></div>` : "";
   return `<div class="pprof-sheet" style="${accentVars(D.club)}">
     <span class="pprof-grab"></span>
@@ -12593,7 +12622,7 @@ function topPlayersHTML(){
   /* الترتيب نفسه المستعمل في جدول الهدافين: المعيار، ثم المعيار المقابل،
      ثم الأقل دقائق. كان هنا «الأكثر دقائق» فيظهر على الرئيسية هدّاف
      يخالف صدارة الجدول عند تساوي الأهداف (منصور 2026-09-17). */
-  const rank=(k,k2)=>[...all].sort((x,y)=> k(y)-k(x) || (k2? k2(y)-k2(x) : 0) || (x.mins-y.mins));
+  const rank=(k,k2)=>[...all].sort((x,y)=> k(y)-k(x) || (x.mins-y.mins) || (k2? k2(y)-k2(x) : 0));   /* الأقل دقائق أولاً عند التساوي (موحّدة) */
   const picks=[
     {t:"الهدّاف",        sub:"أكثر اللاعبين تسجيلاً",           L:rank(p=>p.g, p=>p.a)},
     {t:"صانع الألعاب",   sub:"أكثر اللاعبين صناعةً للأهداف",    L:rank(p=>p.a, p=>p.g)},
@@ -12727,7 +12756,7 @@ function hmKpiHTML(){
   const tiles=[
     {v:tg, l:"هدف"}, {v:played?(tg/played).toFixed(2):"—", l:"هدف / مباراة"},
     top?{v:top.g, l:"الهدّاف", sub:top.n, player:top}:null,
-    {v:T[0]?T[0].Pts:"—", l:"المتصدر", sub:T[0]?T[0].c:""},
+    {v:T[0]&&T[0].P?T[0].Pts:"—", l:"المتصدر", sub:T[0]&&T[0].P?T[0].c:""},
     {v:pct(sp,tg)+"%", l:"كرات ثابتة"}, {v:cards, l:"بطاقة"},
   ].filter(Boolean);
   const hs=headlines().slice(0,2);
@@ -13255,7 +13284,7 @@ function ratingCtx(m, club, name){
   const w=playerWindow(m, club, name) || {start:0, end:matchLen(m)};
   const gf = club===m.home ? +m.hg : +m.ag, ga = club===m.home ? +m.ag : +m.hg;
   const gs=matchGoals(m);
-  const on = g => { const t=Math.min(matchLen(m), abs(g)); return t>=w.start && t<=w.end; };
+  const on = g => { const t=Math.min(matchLen(m), goalAbs(m,g)); return t>=w.start && t<=w.end; };
   const mine=gs.filter(g=>g.p===name && g.sc===club && g.bp!=="هدف عكسي");
   const pens=(PENS||[]).filter(p=>p.r===m.round && compOf(p)===compOf(m) && p.p===name && p.by===club);
   const cards=CARDS.filter(x=>x.r===m.round && compOf(x)===compOf(m) && x.club===club && x.p===name);
@@ -13413,7 +13442,8 @@ document.addEventListener("click", e=>{
 const matchKey = m => [compOf(m), m.round, m.home, m.away].map(v=>encodeURIComponent(String(v))).join("/");
 function matchByKey(k){
   const [c,r,h,a]=String(k||"").split("/").map(v=>decodeURIComponent(v));
-  return MATCHES.find(m=>compOf(m)===c && String(m.round)===r && m.home===h && m.away===a) || null;
+  const f=m=>compOf(m)===c && String(m.round)===r && m.home===h && m.away===a;
+  return MATCHES.find(f) || (ALL&&ALL.matches||[]).find(f) || null;   /* مباراة من مسابقة غير المختارة (بحث/شريط/رابط) */
 }
 let MP={m:null, tab:"details"};
 function mpDateLabel(m){
@@ -13721,7 +13751,13 @@ function mpMatches(m){
     ${pick.length?mpSplitList(pick,club)
                  :`<div class="mp-empty">${MP_MX==="h2h"?"لا مواجهات أخرى بين الفريقين هذا الموسم.":"لا مباريات أخرى."}</div>`}</div>`;
 }
+/* صفحة المباراة ترسم في مسابقتها هي (منصور 2026-09-30): مباراة دوري تُفتح والكأس مختارة كانت بلا أهداف ولا بطاقات */
 function renderMatchPage(){
+  const m=MP.m;
+  if(m && !isGulfMatch(m) && COMP!=="الكل" && compOf(m)!==COMP) return withComp(compOf(m), ()=>renderMatchPageRaw());
+  return renderMatchPageRaw();
+}
+function renderMatchPageRaw(){
   const box=$("#mpage"), m=MP.m; if(!box||!m) return;
   const body = MP.tab==="lineups" ? mpLineups(m) : MP.tab==="squad" ? mpSquad(m) : MP.tab==="table" ? mpTable(m) : MP.tab==="matches" ? mpMatches(m) : mpDetails(m);
   box.innerHTML=`<div class="mp-sheet" style="--hc:${clubAccent(m.home).a};--ac:${clubAccent(m.away).a}">

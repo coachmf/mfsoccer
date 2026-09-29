@@ -64,15 +64,15 @@ function entries(){
           const myC=cs.filter(x=>x.club===club && x.p===n);
           const myP=ps.filter(x=>x.by===club && x.p===n);
           const gk=isGoalkeeper(club, n);
-          const faced=gk ? ps.filter(x=>x.vs===club && inW(x.m)) : [];
+          const faced=gk ? ps.filter(x=>x.vs===club && inW(goalAbs(m,x))) : [];
           out.push({m, club, n, mins, LEN, start:xi.includes(n), share:Math.min(1, mins/LEN),
             g:mine.length, pg:mine.filter(g=>g.det==="ركلة جزاء").length,
             a:gs.filter(g=>g.sc===club && g.a===n && !isOG(g)).length,
             og:gs.filter(g=>isOG(g) && g.cd===club && (g.og||g.p)===n).length,
             y:myC.filter(x=>isYel(x.type)).length, r:myC.filter(x=>isRed(x.type)).length,
             pk:myP.length, pks:myP.filter(x=>x.res==="سجلت").length,
-            gfOn:gs.filter(g=>g.sc===club && inW(abs(g))).length,
-            gaOn:gs.filter(g=>g.cd===club && inW(abs(g))).length,
+            gfOn:gs.filter(g=>g.sc===club && inW(goalAbs(m,g))).length,     /* نفس ساعة التبديلات */
+            gaOn:gs.filter(g=>g.cd===club && inW(goalAbs(m,g))).length,
             gf, ga, pts: gf>ga?3:gf===ga?1:0, res: gf>ga?"w":gf===ga?"d":"l",
             csOK: ga===0 && mins>=csLimit(m), full: mins>=csLimit(m), gk,
             faced:faced.length, saved:faced.filter(x=>x.res==="تصدى لها الحارس").length});
@@ -176,7 +176,9 @@ const RATING_MODEL = {
   }
 };
 const POS_GROUP = {GK:"GK", CB:"DEF",LB:"DEF",RB:"DEF",LWB:"DEF",RWB:"DEF", CDM:"MID",CM:"MID",CAM:"MID",LM:"MID",RM:"MID", ST:"ATT",CF:"ATT",LW:"ATT",RW:"ATT"};
-function posOf(club, n){ const e=(SQUADS[club]||[]).find(x=>sqName(x)===n); return String(e?sqPos(e):"").toUpperCase(); }
+function posOf(club, n){ let e=(SQUADS[club]||[]).find(x=>sqName(x)===n);
+  if(!e) for(const c of Object.keys(SQUADS||{})){ e=(SQUADS[c]||[]).find(x=>sqName(x)===n); if(e) break; }   /* انتقل لنادٍ آخر (شيلدون) */
+  return String(e?sqPos(e):"").toUpperCase(); }
 const groupOf = (club, n) => POS_GROUP[posOf(club,n)] || "";
 
 /* التقييم لكل لاعب حتى جولة معيّنة (cut) — cut=null: كل الجولات */
@@ -680,9 +682,19 @@ if(typeof renderAll==="function" && !renderAll.__ax){
   const _ra=renderAll;
   renderAll=function(){ const r=_ra.apply(this, arguments);
     try{ if(document.querySelector("#v-analysis.on .ax") && !(document.activeElement && document.activeElement.closest && document.activeElement.closest("#v-analysis input"))) paint(false); }catch(e){ console.error(e); }
+    /* ملف لاعب أو صفحة مباراة مفتوحة تتحدّث أيضاً (منصور 2026-09-30) — بنفس موضع التمرير */
+    try{ const pp=document.getElementById("pprof");
+      if(pp && !pp.hidden && LAST_PROF){ const sh=pp.querySelector(".pprof-sheet"), y=sh?sh.scrollTop:0;
+        openPlayer(LAST_PROF.n, LAST_PROF.c, {noHistory:true, keepComp:true}); const s2=pp.querySelector(".pprof-sheet"); if(s2) s2.scrollTop=y; } }catch(e){ console.error(e); }
+    try{ const mp=document.getElementById("mpage");
+      if(mp && !mp.hidden && typeof MP!=="undefined" && MP.m){ const m2=matchByKey(matchKey(MP.m));
+        if(m2){ const sh=mp.querySelector(".mp-sheet"), y=sh?sh.scrollTop:0; MP.m=m2; renderMatchPage(); const s2=mp.querySelector(".mp-sheet"); if(s2) s2.scrollTop=y; } } }catch(e){ console.error(e); }
     return r; };
   renderAll.__ax=true;
 }
+let LAST_PROF=null;
+if(typeof openPlayer==="function" && !openPlayer.__ax){ const _op=openPlayer;
+  openPlayer=function(n, c){ LAST_PROF={n, c}; return _op.apply(this, arguments); }; openPlayer.__ax=true; }
 window.renderAnalysis=renderAnalysisX;
 if(document.querySelector("#v-analysis.on")) renderAnalysisX();
 
@@ -747,7 +759,7 @@ function gsIndex(){
     const pm=new Map(), addP=(n,c)=>{ n=String(n||"").trim(); c=String(c||"").trim(); if(!n||!c||n.length<2) return; const k=n+"|"+c; if(!pm.has(k)) pm.set(k,{t:"p", n, c}); };
     Object.keys(SQUADS||{}).forEach(c=>(SQUADS[c]||[]).forEach(x=>addP(sqName(x), c)));
     const A=ALL||{};
-    (A.goals||[]).forEach(g=>{ if(!isOG(g)) addP(g.p,g.sc); addP(g.a,g.sc); }); (A.lineups||[]).forEach(x=>addP(x.p,x.club)); (A.cards||[]).forEach(x=>addP(x.p,x.club));
+    (A.goals||[]).forEach(g=>{ if(!isOG(g)) addP(g.p,g.sc); addP(g.a,g.sc); }); (A.lineups||[]).forEach(x=>addP(x.p,x.club)); (A.cards||[]).forEach(x=>addP(x.p,x.club)); (A.subs||[]).forEach(x=>{ addP(x.in,x.club); addP(x.out,x.club); });
     pm.forEach(p=>out.push({...p, key:norm(p.n)+" "+norm(en(p.n))}));
     CLUBS.forEach(c=>out.push({t:"c", n:c, key:norm(c)+" "+norm(en(c))}));
     try{ refPool().forEach(r=>out.push({t:"r", n:r.name, key:norm(r.name)})); }catch(e){}

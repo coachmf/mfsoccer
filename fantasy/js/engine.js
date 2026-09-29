@@ -512,7 +512,11 @@ function genMatchStats(st, fx){
   });
   // كرت لمن ليس في التشكيلة ولا التبديلات (والتشكيلة معروفة): كرت من الدكة — لا مشاركة ولا خصم
   const listed=(name,clubId)=>{ const lu=(fx.lineups||{})[clubId]; if(!lu) return true; const p=find(name,clubId); return !!(p && (lu[p.id] || fx.stats[clubId][p.id])); };
-  (fx.cards||[]).forEach(c=>{ if(!listed(c.name,c.club)) return; const r=rowFor(c.name,c.club); if(!r) return; if(c.type==='r') r.rc++; else r.yc++; });
+  (fx.cards||[]).forEach(c=>{ if(!listed(c.name,c.club)) return; const r=rowFor(c.name,c.club); if(!r) return;
+    if(c.type==='r'){ r.rc++;
+      /* الطرد ينهي دقائقه (منصور 2026-09-30): كان المطرود في الدقيقة 10 يأخذ 90 دقيقة وشباكاً نظيفة */
+      const cm=Math.min(FPL_MATCH_MIN, +c.min||0); if(cm>0 && (r.off==null || cm<r.off)){ r.off=cm; r.min=Math.max(1, cm-(r.on||0)); } }
+    else r.yc++; });
   (fx.pens||[]).forEach(pn=>{ const r=rowFor(pn.name,pn.club); if(!r) return; if(pn.type==='save') r.ps++; else r.pm++; });
   (fx.bonus||[]).forEach(b=>{ const r=rowFor(b.name,b.club); if(r) r.bonus=(+b.pts||0); });
   // بديل له هدف/كرت/جزاء لكن بلا تبديل مسجَّل: شارك فعلاً — دقيقة واحدة على الأقل (لا يُصفَّر)
@@ -1021,7 +1025,7 @@ const GWADMIN = {
     const fxs=st.fixtures.filter(f=>f.gw===gw);
     if(!fxs.length) return { ok:false, err:`لا يمكن إغلاق الجولة ${gw} — لم يصدر جدولها بعد (المباريات تُسحب من mfsoccer).` };
     // اللعبة واقعية: لا احتساب قبل إدخال كل النتائج الحقيقية
-    const pending=fxs.filter(f=>f.status!=='F');
+    const pending=fxs.filter(f=>f.status!=='F' || f.over===false);   /* جارية = لم تنتهِ بعد */
     if(pending.length){
       return { ok:false, err:`لا يمكن إغلاق الجولة — ${pending.length} مباريات بلا نتيجة. اسحبها من mfsoccer أو أدخلها من «النتائج والإحصاءات» أولاً.` };
     }
