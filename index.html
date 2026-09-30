@@ -2160,8 +2160,8 @@ main{padding-bottom:48px}
 <link rel="stylesheet" href="admin-tabs.css?v=1">
 <script src="admin-tabs.js?v=3" defer></script>
 <!-- كأس الخليج 27: قسم مستقل ببيانات منفصلة (seasons/gulf27) -->
-<link rel="stylesheet" href="gulf.css?v=16">
-<script src="gulf.js?v=39" defer></script>
+<link rel="stylesheet" href="gulf.css?v=17">
+<script src="gulf.js?v=40" defer></script>
 <!-- التحليل الموسّع + تقييم اللاعبين 0–100 + البحث العام (منصور 2026-09-29) -->
 <link rel="stylesheet" href="analysis.css?v=6">
 <script src="analysis.js?v=13" defer></script>
@@ -14267,6 +14267,8 @@ html[data-theme="dark"] .mx select option{color:#E6EEF8;background:#0F1E35}   /*
 @keyframes mxFade{from{opacity:0}to{opacity:1}}
 @keyframes mxUp{from{transform:translateY(24px);opacity:.6}to{transform:none;opacity:1}}
 @media(prefers-reduced-motion:reduce){.mx-sheet,.mx-sheet .box{animation:none}}
+.mx-sheet.keep,.mx-sheet.keep .box{animation:none}
+.mx-more{margin-top:8px;width:100%;padding:10px;border-radius:12px;border:1px dashed var(--mx-ln);background:transparent;color:var(--mx-mute,#9fb3cf);font:700 .8rem var(--display);cursor:pointer}
 html.mx-open,html.mx-open body{overflow:hidden}
 html.mx-saving #matchAdmin,html.mx-saving .mx-sheet{pointer-events:none;opacity:.6;transition:opacity .2s}   /* أثناء الحفظ: لا إدخال يضيع */
 html.mx-editing #waFab{display:none!important}   /* زر واتساب كان يغطي «حفظ المباراة» */
@@ -14518,9 +14520,18 @@ html.mx-editing #waFab{display:none!important}   /* زر واتساب كان ي�
     if(opt.only==="xi") ent=ent.filter(e=>xi.includes(e.n)||(EDIT.subs||[]).some(s=>s.club===club&&s.in===e.n));
     if(opt.only==="bench") ent=ent.filter(e=>!xi.includes(e.n));
     ent.sort((a,b)=>(xi.includes(b.n)-xi.includes(a.n))||((a.s||999)-(b.s||999)));
+    /* قائمة قصيرة (المحررون 2026-09-30: التمرير في نافذة الهدف/الإنذار غير مريح): اللاعبون في الملعب أولاً،
+       والاحتياط خلف زر — إلا إن كان المختار منهم أو لم تُدخل التشكيلة بعد */
+    let more="";
+    if(!opt.only && xi.length){
+      const onP=n=>xi.includes(n)||(EDIT.subs||[]).some(s=>s.club===club&&s.in===n);
+      const bench=ent.filter(e=>!onP(e.n));
+      const open=(MX.sheet&&MX.sheet.bench&&MX.sheet.bench[key]) || bench.some(e=>e.n===cur);
+      if(bench.length && !open){ ent=ent.filter(e=>onP(e.n)); more=`<button class="mx-more" data-mbench="${key}">عرض الاحتياط (${bench.length})</button>`; }
+    }
     return `<div class="mx-roster">${opt.none?`<button class="mx-pl${!cur?" picked":""}" data-mpick="${key}" data-mname=""><span class="mx-face">—</span><span class="tx"><b>${esc(opt.none)}</b></span></button>`:""}
       ${ent.map(e=>`<button class="mx-pl${cur===e.n?" picked":""}${opt.exclude&&opt.exclude===e.n?" dim":""}" data-mpick="${key}" data-mname="${esc(e.n)}" style="--srgb:${rgbOf(club)}">
-        ${face(e.n,club)}<span class="tx"><b>${esc(e.n)}</b><small>${xi.includes(e.n)?"أساسي":"احتياط"}</small></span>${e.s?`<span class="num">${e.s}</span>`:""}</button>`).join("")}</div>`;
+        ${face(e.n,club)}<span class="tx"><b>${esc(e.n)}</b><small>${xi.includes(e.n)?"أساسي":"احتياط"}</small></span>${e.s?`<span class="num">${e.s}</span>`:""}</button>`).join("")}</div>${more}`;
   }
   const chips=(key,list,cur,cls)=>`<div class="mx-chips">${list.map(v=>`<button class="mx-chip${cls?" "+cls(v):""}${cur===v?" on":""}" data-mset="${key}" data-mval="${esc(v)}">${esc(v)}</button>`).join("")}</div>`;
   const rangeHint=v=>{ const st=EDIT.match.status, m=+v||0; if(!m) return "";
@@ -14629,7 +14640,12 @@ html.mx-editing #waFab{display:none!important}   /* زر واتساب كان ي�
     /* النافذة على مستوى body: داخل المحتوى تبقى تحت شريط التنقل السفلي مهما ارتفع z-index */
     let host=document.getElementById("mxSheetHost");
     if(!host){ host=document.createElement("div"); host.id="mxSheetHost"; host.className="mx"; document.body.appendChild(host); }
+    /* نفس النافذة مفتوحة وتُعاد رسمها (زيادة بدل الضائع، اختيار المسجّل…): تبقى في موضع التمرير نفسه وبلا حركة فتح جديدة —
+       كانت ترجع لأعلى النافذة وتعيد حركة الظهور فيبدو كأنها أُغلقت وفُتحت (المحررون 2026-09-30) */
+    const oldBx=host.querySelector(".mx-sheet .box"), keepTop=oldBx?oldBx.scrollTop:0, same=!!(MX.sheet && MX._shown===MX.sheet);
     host.innerHTML=sheetHTML();
+    if(same){ const sh=host.querySelector(".mx-sheet"); if(sh){ sh.classList.add("keep"); const bx=sh.querySelector(".box"); if(bx) bx.scrollTop=keepTop; } }
+    MX._shown=MX.sheet;
     document.documentElement.classList.toggle("mx-open", !!MX.sheet);
     document.documentElement.classList.add("mx-editing");
     const nav=document.querySelector("nav.tabs"); const cs=nav?getComputedStyle(nav):null;
@@ -14709,6 +14725,7 @@ html.mx-editing #waFab{display:none!important}   /* زر واتساب كان ي�
       q("[data-mset]",b=>b.onclick=()=>{ const key=b.dataset.mset, v=b.dataset.mval;
         if(key===CLUBKEY[MX.sheet.k] && d[key]!==v){ ["p","a","og","out","in"].forEach(f=>{ if(f in d) d[f]=""; }); }
         d[key]=v; if(key==="bp"&&v!=="هدف عكسي") d.og=""; rerender(); });
+      q("[data-mbench]",b=>b.onclick=()=>{ const S=MX.sheet; S.bench=S.bench||{}; S.bench[b.dataset.mbench]=true; rerender(); });
       q("[data-mpick]",b=>b.onclick=()=>{ const key=b.dataset.mpick, v=b.dataset.mname; d[key]=(d[key]===v&&key==="a")?"":v; rerender(); });
       q("[data-msf]",el=>{ el.oninput=()=>{ d[el.dataset.msf]=el.value; }; el.onchange=()=>{ d[el.dataset.msf]=el.value; }; });
       q("[data-mstep]",b=>b.onclick=()=>{ const key=b.dataset.mstep; d[key]=String(Math.max(0,(+d[key]||0)+(+b.dataset.mby))); rerender(); });

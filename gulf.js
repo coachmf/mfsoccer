@@ -399,14 +399,16 @@ function face(c, n){
 }
 function matchCard(m){
   const up = isUp(m) && !(m.hg+m.ag) && m.status!=="ft", L = window.LIVE && LIVE.liveOf ? LIVE.liveOf(m) : null;
-  const live = L && LIVE.isLivePh(L.phase);
+  /* البطولة إدخال يدوي: الحالة من مرحلة المحرّر (الشوط الأول/استراحة/الشوط الثاني) — liveOf لا يعمل لمباريات الخليج (المحررون 2026-09-30) */
+  const live = (L && LIVE.isLivePh(L.phase)) || admState(m)==="live";
+  const phLbl = PH_AR[m.status] || "مباشر";
   const hg = L ? L.hg : m.hg, ag = L ? L.ag : m.ag;
   const d = m.date ? new Date(m.date+"T12:00:00") : null;
   const dl = d && !isNaN(d) ? `${d.getDate()} ${typeof AR_MON!=="undefined"?AR_MON[d.getMonth()]:""}` : "";
   return `<button type="button" class="gc-m${live?" live":""}" data-gopen="${H(LIVE?LIVE.keyOf(m):"")}">
     <span class="gc-m-meta">${m.round<=3?`الجولة ${m.round}`:m.round===4?"نصف النهائي":"النهائي"}${dl?` · ${dl}`:""}${m.time&&up?` · <bdi dir="ltr">${H(m.time)}</bdi>`:""}</span>
     <span class="gc-m-t">${flagImg(m.home)}<b>${H(m.home)}</b></span>
-    <span class="gc-m-s">${up&&!live?`<em>${m.time?H(m.time):"—"}</em>`:`<b>${hg}</b><i>-</i><b>${ag}</b>`}${live?`<small class="lv"><i class="lv-dot"></i>مباشر</small>`:""}</span>
+    <span class="gc-m-s">${up&&!live?`<em>${m.time?H(m.time):"—"}</em>`:`<b>${hg}</b><i>-</i><b>${ag}</b>`}${live?`<small class="lv${m.status==="ht"?" ht":""}"><i class="lv-dot"></i>${phLbl}</small>`:""}</span>
     <span class="gc-m-t a"><b>${H(m.away)}</b>${flagImg(m.away)}</span>
     ${m.venue?`<span class="gc-m-v">${H(m.venue)}</span>`:""}
     ${(()=>{ const v = (m.refs||{}).var, ico = k => typeof refRoleIco==="function" ? refRoleIco(k,"sm") : "";   /* الحكم والقناة (منصور 2026-09-23) */
