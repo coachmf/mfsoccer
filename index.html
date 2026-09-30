@@ -5256,7 +5256,8 @@ function loadEdit(m){ const E=loadEditRaw(m); try{ E.base=JSON.parse(JSON.string
    الآن: نقارن النموذج بنسخته عند الفتح (E.base) ونطبّق الفرق فقط — ما أُضيف وما حُذف وما تغيّر من حقول
    المباراة — على أحدث صفوف المباراة من السحابة. ما أدخله غيرنا يبقى. */
 const ROW_KINDS=["goals","cards","pens","lineup","subs","mev"];
-const rowSig=r=>JSON.stringify(Object.keys(r||{}).sort().map(k=>[k, r[k]==null?"":String(r[k])]));
+/* الحقول الفارغة لا تدخل في التوقيع: حدث «بداية المباراة» التلقائي بلا lid وصفّ المحفوظ بـ lid:"" كانا يُعدّان حدثين فيتكرر (المحررون 2026-09-30) */
+const rowSig=r=>JSON.stringify(Object.keys(r||{}).sort().filter(k=>r[k]!=null && String(r[k])!=="").map(k=>[k, String(r[k])]));
 function mergeEdit(E){
   if(!E || !E.orig || !E.base) return E;
   const fm=(ALL.matches||[]).find(x=>mkey(x)===E.orig); if(!fm) return E;
@@ -14644,8 +14645,14 @@ html.mx-editing #waFab{display:none!important}   /* زر واتساب كان ي�
         if(a==="save"){ saveMatch(); return; }
         /* حفظ ومتابعة: يحفظ ثم يعيد فتح المباراة نفسها في التبويب نفسه — للإدخال المباشر أثناء المباراة */
         const mm=EDIT.match, key={round:+mm.round, comp:mm.comp, home:mm.home, away:mm.away}, tab=MX.tab, side=MX.side;
-        saveMatch().then(()=>{ if(EDIT) return; const x=(ALL.matches||[]).find(z=>z.round===key.round && compOf(z)===key.comp && z.home===key.home && z.away===key.away);
-          if(!x) return; EDIT=loadEdit(x); MX._edit=EDIT; MX.tab=tab; MX.side=side; renderMatchAdmin(); }); }
+        const gulf=!!EDIT.gulf;
+        saveMatch().then(()=>{ if(EDIT) return;
+          /* مباراة كأس الخليج في وثيقتها الخاصة: البحث في ALL (الدوري) لا يجدها فكان المحرّر يُغلق بدل أن يبقى مفتوحاً (المحررون 2026-09-30) */
+          const find=()=>(ALL.matches||[]).find(z=>z.round===key.round && compOf(z)===key.comp && z.home===key.home && z.away===key.away);
+          const G=gulf && window.GULF && GULF.withGulf;
+          const x=G ? GULF.withGulf(find) : find();
+          if(!x) return; EDIT=G ? GULF.withGulf(()=>loadEdit(x)) : loadEdit(x); if(gulf) EDIT.gulf=true;
+          MX._edit=EDIT; MX.tab=tab; MX.side=side; renderMatchAdmin(); }); }
     });
     q("[data-mlive]",b=>b.onclick=()=>{ const k=b.dataset.mlive; if(!confirm("فتح غرفة التحكم؟ التعديلات غير المحفوظة هنا ستضيع.")) return; EDIT=null; renderMatchAdmin(); try{ history.pushState({lv:1},"","#livectl/"+k); }catch(e){} LIVE.openControl(k); });
     q("[data-mtab]",b=>b.onclick=()=>{ MX.tab=b.dataset.mtab; MX.sel=null; rerender(); window.scrollTo({top:box.getBoundingClientRect().top+scrollY-80,behavior:"smooth"}); });
