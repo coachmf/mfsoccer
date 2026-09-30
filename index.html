@@ -14486,7 +14486,8 @@ html.mx-editing #waFab{display:none!important}   /* زر واتساب كان ي�
     (EDIT.goals||[]).forEach((r,i)=>out.push({k:"goal",i,r,t:(+r.m||0)+(+r.x||0)/100}));
     (EDIT.cards||[]).forEach((r,i)=>out.push({k:"card",i,r,t:(+r.m||0)+(+r.x||0)/100}));
     (EDIT.pens||[]).forEach((r,i)=>out.push({k:"pen",i,r,t:+r.m||0}));
-    (EDIT.subs||[]).forEach((r,i)=>out.push({k:"sub",i,r,t:absMinute(r.h,r.m,r.x,(EDIT.match&&EDIT.match.add1))}));
+    /* نفس مقياس بقية الأحداث (الدقيقة المكتوبة): absMinute مع بدل ضائع الشوط الأول كان يجعل تبديل 58' = 63 فيسبقه إنذار 63' (المحررون 2026-09-30) */
+    (EDIT.subs||[]).forEach((r,i)=>out.push({k:"sub",i,r,t:(+r.h===2 && (+r.m||0)<=45) ? 45.999 : (+r.m||0)+(+r.x||0)/100}));
     (EDIT.mev||[]).forEach((r,i)=>out.push({k:r.k,i,r,t:(+r.m||0)+(+r.x||0)/100}));
     /* قائمة المحرّر بنفس ترتيب صفحة المباراة: «نهاية الشوط الأول» بعد كل 45+x، و«نهاية المباراة» آخراً */
     out.forEach(o=>{ if(o.k==="note" && !o.r.club){ const t=String(o.r.note||"").trim();
