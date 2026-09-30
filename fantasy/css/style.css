@@ -401,7 +401,7 @@ tr:hover .btn-view{background:var(--accent);color:#fff;}
 .plist-item{display:flex;align-items:center;gap:10px;padding:9px 10px;border-bottom:1px solid color-mix(in srgb,var(--line) 55%,transparent);cursor:pointer;transition:.12s;border-radius:8px;}
 .plist-item:hover{background:var(--surface2);}
 .plist-item .info{flex:1;min-width:0;}
-.plist-item .info .n{font-weight:700;font-size:.88rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.plist-item .info .n{font-weight:700;font-size:.88rem;line-height:1.3;white-space:normal;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow-wrap:anywhere;}
 .plist-item .info .m{font-size:.72rem;color:var(--text2);}
 .plist-item .pr{font-weight:800;font-family:'Vazirmatn';font-size:.88rem;}
 .plist-item .tp{font-weight:800;color:var(--accent);min-width:34px;text-align:center;}
@@ -853,7 +853,7 @@ body.addp-open{overflow:hidden;}
 .addp-i:hover{background:var(--surface2);}
 .addp-warn{width:20px;height:20px;border-radius:50%;background:var(--red);color:#fff;font-weight:900;font-size:.72rem;display:grid;place-items:center;}
 .addp-name{flex:1;min-width:0;display:flex;flex-direction:column;}
-.addp-name b{font-size:.86rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.addp-name b{font-size:.86rem;line-height:1.3;white-space:normal;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow-wrap:anywhere;}   /* الاسم كاملاً على سطرين بدل «…» (منصور 2026-09-30) */
 .addp-name span{font-size:.7rem;color:var(--text2);}
 .addp-name span i{font-style:normal;color:var(--red);font-weight:700;}
 .addp-c{width:46px;text-align:center;font-family:'Vazirmatn';font-weight:700;font-size:.86rem;flex:none;display:flex;flex-direction:column;}
@@ -1410,3 +1410,13 @@ html.lang-en .pp-actions{justify-content:flex-start;}
 /* سطر العقد في شريط المدرب (منصور): يتحدّث مع تقدم الجولات */
 .coach-bar .cb-ct{font-size:.66rem;opacity:.9;line-height:1.5;display:block;}
 @media (max-width:600px){ .coach-bar .cb-ct{font-size:.62rem;} }
+
+/* جدول إضافة لاعب على الهاتف (منصور 2026-09-30: «أسماء ماكولة»): الصورة أصغر والأعمدة أضيق فيأخذ الاسم المساحة */
+.addp-row .avatar.photo-cut{width:44px !important;height:52px !important;}
+@media (max-width:430px){
+  .addp-row{gap:4px;padding:8px 6px;}
+  .addp-i{width:22px;height:22px;}
+  .addp-c{width:36px;font-size:.78rem;}
+  .addp-head{gap:4px;}
+  .addp-head .addp-name{padding-right:66px;}
+}
