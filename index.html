@@ -5650,7 +5650,10 @@ function spotBadges(ev){
   if(ev.off)     b+=`<span class="pp-b off" title="خرج"></span>`;
   return b;
 }
-const shortName = s => { const w=String(s||"").trim().split(/\s+/); return w.length>1 ? w[w.length-1] : (w[0]||""); };
+/* الاسم المختصر = آخر كلمة، إلا الأسماء المركبة: «لطف الله»، «نور الدين»، «بن عجاج»، «أبو ندى»، «آل حجي» تبقى كلمتين */
+const shortName = s => { const w=String(s||"").trim().split(/\s+/); if(w.length<2) return w[0]||"";
+  const last=w[w.length-1], prev=w[w.length-2];
+  return (/^(الله|الدين|الرحمن|الرحيم)$/.test(last) || /^(بن|ابن|أبو|ابو|آل|عبد|ولد|بو)$/.test(prev)) ? prev+" "+last : last; };
 /* أطقم الحراس كما في صور جلسات الأندية (منصور 2026-09-15) — تُستخدم لبطاقة الحارس على الملعب.
    by: لون بحسب رقم الحارس حين يختلف الطقم بين حراس النادي نفسه. الأندية غير المذكورة تبقى بلون الفريق. */
 const GK_KITS = {
