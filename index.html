@@ -6993,6 +6993,7 @@ function goalsTimeline(m,gs,mc){
   /* ترتيب زمني حقيقي (منصور 2026-09-24): 90+4 بعد بطاقة مسجّلة 93، و«نهاية المباراة» آخر شيء دائماً.
      بدل الشوط الأول (45+x) يبقى قبل 46 */
   const tlKey=e=>{ if(e.t==="e" && !e.v.club && /^نهاية المباراة/.test(String(e.v.note||"").trim())) return 1e6;
+    if(e.t==="e" && !e.v.club && /^نهاية الشوط الأول/.test(String(e.v.note||"").trim())) return 45.99;   /* بعد كل أحداث 45+x (هدف 45+5، إنذار 45+1) — المحررون 2026-09-30 */
     if(e.t==="s" && e.half>=2 && e.m<=45) return 45.999;   /* تبديل بين الشوطين بعد كل أحداث 45+x (منصور 2026-09-30) */
     return e.m===45 ? 45+(e.x||0)/100 : e.m+(e.x||0); };
   const tlRank=e=>{ if(e.t==="e" && !e.v.club){ const t=String(e.v.note||"").trim(); if(/^بداية/.test(t)) return -1; if(/^نهاية/.test(t)) return 9; } return ORD[e.t]; };
@@ -14451,6 +14452,9 @@ html.mx-editing #waFab{display:none!important}   /* زر واتساب كان ي�
     (EDIT.pens||[]).forEach((r,i)=>out.push({k:"pen",i,r,t:+r.m||0}));
     (EDIT.subs||[]).forEach((r,i)=>out.push({k:"sub",i,r,t:absMinute(r.h,r.m,r.x,(EDIT.match&&EDIT.match.add1))}));
     (EDIT.mev||[]).forEach((r,i)=>out.push({k:r.k,i,r,t:(+r.m||0)+(+r.x||0)/100}));
+    /* قائمة المحرّر بنفس ترتيب صفحة المباراة: «نهاية الشوط الأول» بعد كل 45+x، و«نهاية المباراة» آخراً */
+    out.forEach(o=>{ if(o.k==="note" && !o.r.club){ const t=String(o.r.note||"").trim();
+      if(/^نهاية الشوط الأول/.test(t)) o.t=45.99; else if(/^نهاية المباراة/.test(t)) o.t=1e6; } });
     return out.sort((a,b)=>a.t-b.t);
   }
   function evRow({k,i,r}){
