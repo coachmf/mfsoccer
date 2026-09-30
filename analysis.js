@@ -301,7 +301,7 @@ const ICONS = {
   var:    `<span class="ax-var">VAR</span>`
 };
 const LABEL_ICON = {"مباريات":"match","المباريات":"match","دقائق":"clock","أهداف":"goal","صناعة":"assist","شباك نظيفة":"cs","استقبل":"conc",
-  "جزاءات واجهها":"pen","ركلات جزاء":"pen","ركلات جزاء له":"pen","تصدى لها":"save","أساسي":"start","بديل":"sub","أهداف عكسية":"og","بطاقة":"cards","العودة للـVAR":"var"};
+  "جزاءات واجهها":"pen","ركلات جزاء":"pen","ركلات جزاء له":"pen","تصدى لها":"save","أساسي":"start","بديل":"sub","أهداف عكسية":"og","بطاقة":"cards"};
 window.axIcon = k => ICONS[k] || "";
 window.axLbl = t => { const k=LABEL_ICON[t]; return k ? `<span class="ax-ic" role="img" aria-label="${t}" title="${t}">${ICONS[k]}</span>` : t; };
 window.axAbbr = labels => { const L=[...new Set(labels)].filter(t=>LABEL_ICON[t]);
