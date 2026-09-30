@@ -5245,7 +5245,7 @@ function loadEditRaw(m){
     lineup:lus.map(x=>({club:x.club, p:x.p})),
     subs:sbs.map(x=>({club:x.club, out:x.out||"", in:x.in||"", h:x.h||1, m:x.m||"", x:x.x||0, lid:x.lid||""})),
     goals:gs.map(g=>({sc:g.sc,p:g.p,a:g.a||"",m:g.m,x:g.x||0,det:g.det||"",bp:g.bp||"",zone:g.zone||"",og:g.og||"",lid:g.lid||""})),   /* og كان يضيع عند إعادة التحرير */
-    cards:cs.map(x=>({club:x.club,p:x.p,m:x.m,type:x.type,lid:x.lid||""})),
+    cards:cs.map(x=>({club:x.club,p:x.p,m:x.m,x:+x.x||0,type:x.type,lid:x.lid||""})),
     pens:ps.map(x=>({by:x.by,p:x.p,m:x.m,res:x.res,place:x.place||"",lid:x.lid||""}))};
   /* lid = معرّف الحدث في اللعب الفعلي: يربط صف السجل بحدثه فيُعدَّل الحدث نفسه من أي واجهة بلا تكرار */
 }
@@ -6052,7 +6052,7 @@ function applyEdit(E){
       m:+g.m, x:+g.x||0, cat:catOf(g.det), det:g.det, bp:g.bp||"", zone:g.zone||"",
       og: g.bp==="هدف عكسي" ? (g.og||"") : "", ...(g.lid?{lid:g.lid}:{})}));
   upgradeSecondYellows(E.cards).forEach(x=>ALL.cards.push(
-      {r:round, comp:m.comp, club:x.club, p:x.p, m:+x.m||0, type:x.type, ...(x.lid?{lid:x.lid}:{})}));
+      {r:round, comp:m.comp, club:x.club, p:x.p, m:+x.m||0, ...(+x.x?{x:+x.x}:{}), type:x.type, ...(x.lid?{lid:x.lid}:{})}));   /* x = وقت بدل ضائع (45+1) */
   E.pens.forEach(x=>ALL.pens.push({r:round, comp:m.comp, by:x.by, vs:other(x.by), p:x.p,
       m:+x.m||0, res:x.res, place:x.place||"", ...(x.lid?{lid:x.lid}:{})}));
   ALL.mev = ALL.mev || [];
@@ -6998,7 +6998,7 @@ function goalsTimeline(m,gs,mc){
   const tlRank=e=>{ if(e.t==="e" && !e.v.club){ const t=String(e.v.note||"").trim(); if(/^بداية/.test(t)) return -1; if(/^نهاية/.test(t)) return 9; } return ORD[e.t]; };
   const ev=[...gs.map(g=>({t:"g",m:+g.m||0,x:+g.x||0,g})),
             ...subs.map(sb=>({t:"s",m:absMinute(sb.h,sb.m),x:0,sb,half:+sb.h||1})),
-            ...mc.map(c=>({t:"c",m:+c.m||0,x:0,c})),
+            ...mc.map(c=>({t:"c",m:+c.m||0,x:+c.x||0,c})),
             ...xe.map(v=>({t:"e",m:+v.m||0,x:+v.x||0,v}))]
     .sort((a,b)=>(tlKey(a)-tlKey(b))||(tlRank(a)-tlRank(b)));
   let h=0,a=0; const rows=[]; let htDone=false;
@@ -7047,7 +7047,7 @@ function goalsTimeline(m,gs,mc){
         </div></div>`;
       rows.push(`<div class="tl-row card${isH?" home":" away"}">
         <div class="tl-side r">${isH?cbody:""}</div>
-        <div class="tl-min card"><span>${e.m}'</span></div>
+        <div class="tl-min card"><span>${e.m}${e.x?"+"+e.x:""}'</span></div>
         <div class="tl-side l">${isH?"":cbody}</div>
       </div>`);
       return;
@@ -14447,7 +14447,7 @@ html.mx-editing #waFab{display:none!important}   /* زر واتساب كان ي�
   function evItems(){
     const out=[];
     (EDIT.goals||[]).forEach((r,i)=>out.push({k:"goal",i,r,t:(+r.m||0)+(+r.x||0)/100}));
-    (EDIT.cards||[]).forEach((r,i)=>out.push({k:"card",i,r,t:+r.m||0}));
+    (EDIT.cards||[]).forEach((r,i)=>out.push({k:"card",i,r,t:(+r.m||0)+(+r.x||0)/100}));
     (EDIT.pens||[]).forEach((r,i)=>out.push({k:"pen",i,r,t:+r.m||0}));
     (EDIT.subs||[]).forEach((r,i)=>out.push({k:"sub",i,r,t:absMinute(r.h,r.m,r.x,(EDIT.match&&EDIT.match.add1))}));
     (EDIT.mev||[]).forEach((r,i)=>out.push({k:r.k,i,r,t:(+r.m||0)+(+r.x||0)/100}));
@@ -14457,7 +14457,7 @@ html.mx-editing #waFab{display:none!important}   /* زر واتساب كان ي�
     let club="", who="", sub="", ic="", mn="";
     if(k==="goal"){ club=r.sc; who=r.p; ic=ICO_BALL; mn=r.m?`${r.m}${+r.x?`+${r.x}`:""}'`:"—";
       sub=[r.bp==="هدف عكسي"?"هدف عكسي":"", r.a?`صناعة: ${r.a}`:"", r.det||""].filter(Boolean).join(" · "); }
-    if(k==="card"){ club=r.club; who=r.p; mn=r.m?`${r.m}'`:"—";
+    if(k==="card"){ club=r.club; who=r.p; mn=r.m?`${r.m}${+r.x?`+${r.x}`:""}'`:"—";
       const t=r.type||""; ic=`<span class="ic-card ${/ثان/.test(t)?"yr":isRed(t)?"r":"y"}"></span>`; sub=t; }
     if(k==="pen"){ club=r.by; who=r.p; ic=SV.pen; mn=r.m?`${r.m}'`:"—"; sub=`ركلة جزاء · ${r.res||""}`; }
     if(k==="sub"){ club=r.club; who=r.in||"—"; ic=SV.swap; mn=r.m?`${halfLabel(r.h,r.m,r.x)}'`:"—"; sub=`خرج: ${r.out||"—"}`; }
@@ -14550,8 +14550,8 @@ html.mx-editing #waFab{display:none!important}   /* زر واتساب كان ي�
     }
     if(k==="card"){
       body+=`<div><span class="mx-lbl">نوع البطاقة</span>${chips("type",LIST.cardtype,d.type,v=>isRed(v)&&!/ثان/.test(v)?"red":"warn")}</div>
-        <div><span class="mx-lbl">اللاعب</span>${pickGrid(club,"p",d.p)}</div>
-        <div class="mx-grid">${stepper("m",d.m,"الدقيقة",130)}</div>`;
+        <div class="mx-grid">${stepper("m",d.m,"الدقيقة",130)}${stepper("x",d.x||0,"وقت بدل ضائع +",20)}</div>
+        <div><span class="mx-lbl">اللاعب</span>${pickGrid(club,"p",d.p)}</div>`;   /* الدقيقة فوق قائمة اللاعبين (كانت تختفي تحت 26 لاعباً) + بدل الضائع 45+1 (المحررون 2026-09-30) */
     }
     if(k==="pen"){
       body+=`<div><span class="mx-lbl">المنفّذ</span>${pickGrid(club,"p",d.p)}</div>
