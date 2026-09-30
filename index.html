@@ -14302,6 +14302,8 @@ html[data-theme="dark"] .mx select option{color:#E6EEF8;background:#0F1E35}   /*
 @keyframes mxUp{from{transform:translateY(24px);opacity:.6}to{transform:none;opacity:1}}
 @media(prefers-reduced-motion:reduce){.mx-sheet,.mx-sheet .box{animation:none}}
 .mx-sheet.keep,.mx-sheet.keep .box{animation:none}
+.mx-grp{display:flex;flex-direction:column;gap:6px}.mx-grp+.mx-grp,.mx-grp+.mx-more{margin-top:10px}
+.mx-sheet .mx-glbl{display:block;align-self:stretch;text-align:right!important;font:800 .74rem var(--display);color:var(--mx-mute,#9fb3cf);letter-spacing:.02em;padding-inline-start:2px}
 .mx-more{margin-top:8px;width:100%;padding:10px;border-radius:12px;border:1px dashed var(--mx-ln);background:transparent;color:var(--mx-mute,#9fb3cf);font:700 .8rem var(--display);cursor:pointer}
 html.mx-open,html.mx-open body{overflow:hidden}
 html.mx-saving #matchAdmin,html.mx-saving .mx-sheet{pointer-events:none;opacity:.6;transition:opacity .2s}   /* أثناء الحفظ: لا إدخال يضيع */
@@ -14548,25 +14550,49 @@ html.mx-editing #waFab{display:none!important}   /* زر واتساب كان ي�
     if(!d[CLUBKEY[k]]) d[CLUBKEY[k]]=sideClub(MX.tab==="lineup"?MX.side:"home")||"";
     MX.sheet={kind:"ev",k,i,d,err:""}; renderMatchAdmin();
   }
+  /* من في الملعب الآن مرتّباً حسب الرسم التكتيكي (المحررون 2026-09-30: «رتّب اللاعبين حسب الرسم»):
+     موضع كل أساسي من الملعب في تبويب التشكيلة، والبديل يأخذ موضع من خرج مكانه، ومن خرج يُنقل إلى الاحتياط */
+  function onPitchGroups(club){
+    const xi=starters(club); if(!xi.length) return null;
+    const pos={}; slotsFor(club).spots.forEach(({p,x,y})=>{ pos[p.n]={x,y,line:p.line}; });
+    const off=new Set();
+    (EDIT.subs||[]).filter(sb=>sb.club===club).slice()
+      .sort((a,b)=>((+a.h||1)-(+b.h||1))||((+a.m||0)+(+a.x||0)/100-((+b.m||0)+(+b.x||0)/100)))
+      .forEach(sb=>{ if(sb.out){ if(pos[sb.out] && sb.in && !pos[sb.in]) pos[sb.in]=pos[sb.out]; off.add(sb.out); }
+                     else if(sb.in && !pos[sb.in]) pos[sb.in]={x:50,y:45,line:"M"}; });
+    const band=q=>q.line==="G"||q.y>82?"G":q.y>=58?"D":q.y>=24?"M":"F";
+    const G={F:[],M:[],D:[],G:[]};
+    Object.keys(pos).filter(n=>!off.has(n)).forEach(n=>G[band(pos[n])].push({n,x:pos[n].x,y:pos[n].y}));
+    /* داخل الخط: الصف الأكثر تقدماً أولاً (صانع اللعب قبل المحور)، ثم يمين الملعب أولاً كما يُرى */
+    Object.values(G).forEach(a=>a.sort((u,v)=>(Math.round(u.y/8)-Math.round(v.y/8))||(v.x-u.x)));
+    return {G, onP:new Set(Object.values(G).flat().map(o=>o.n)), off};
+  }
   function pickGrid(club, key, cur, opt){
     opt=opt||{};
     if(!club) return `<div class="mx-none">اختر الفريق أولاً</div>`;
     const xi=starters(club); let ent=roster(club);
+    const btn=e=>`<button class="mx-pl${cur===e.n?" picked":""}${opt.exclude&&opt.exclude===e.n?" dim":""}" data-mpick="${key}" data-mname="${esc(e.n)}" style="--srgb:${rgbOf(club)}">
+        ${face(e.n,club)}<span class="tx"><b>${esc(e.n)}</b><small>${e.tag||(xi.includes(e.n)?"أساسي":"احتياط")}</small></span>${e.s?`<span class="num">${e.s}</span>`:""}</button>`;
+    const none=opt.none?`<div class="mx-roster"><button class="mx-pl${!cur?" picked":""}" data-mpick="${key}" data-mname=""><span class="mx-face">—</span><span class="tx"><b>${esc(opt.none)}</b></span></button></div>`:"";
+    const PG=opt.only==="bench" ? null : onPitchGroups(club);
+    if(PG){
+      const byN={}; ent.forEach(e=>{ byN[e.n]=e; });
+      const LBL={F:"الهجوم",M:"الوسط",D:"الدفاع",G:"الحارس"};
+      /* كل صف تكتيكي في سطر مستقل داخل خطه (صنّاع اللعب ثم المحور) */
+      const rowsOf=a=>{ const r=[]; a.forEach(o=>{ const k=Math.round(o.y/8); const last=r[r.length-1]; if(last&&last.k===k) last.a.push(o); else r.push({k,a:[o]}); }); return r; };
+      const groups=["F","M","D","G"].filter(k=>PG.G[k].length).map(k=>`<div class="mx-grp"><span class="mx-glbl">${LBL[k]}</span>${
+        rowsOf(PG.G[k]).map(r=>`<div class="mx-roster">${r.a.map(o=>btn({...(byN[o.n]||{n:o.n}), tag:xi.includes(o.n)?"أساسي":"دخل بديلاً"})).join("")}</div>`).join("")}</div>`).join("");
+      if(opt.only==="xi") return none+groups;   /* «خرج» في التبديل: من في الملعب فقط */
+      const rest=ent.filter(e=>!PG.onP.has(e.n)).map(e=>({...e, tag:PG.off.has(e.n)?"خرج":"احتياط"}));
+      const open=(MX.sheet&&MX.sheet.bench&&MX.sheet.bench[key]) || rest.some(e=>e.n===cur);
+      const more=!rest.length ? "" : open ? `<div class="mx-grp"><span class="mx-glbl">الاحتياط ومن خرج</span><div class="mx-roster">${rest.map(btn).join("")}</div></div>`
+        : `<button class="mx-more" data-mbench="${key}">عرض الاحتياط ومن خرج (${rest.length})</button>`;
+      return none+groups+more;
+    }
     if(opt.only==="xi") ent=ent.filter(e=>xi.includes(e.n)||(EDIT.subs||[]).some(s=>s.club===club&&s.in===e.n));
     if(opt.only==="bench") ent=ent.filter(e=>!xi.includes(e.n));
     ent.sort((a,b)=>(xi.includes(b.n)-xi.includes(a.n))||((a.s||999)-(b.s||999)));
-    /* قائمة قصيرة (المحررون 2026-09-30: التمرير في نافذة الهدف/الإنذار غير مريح): اللاعبون في الملعب أولاً،
-       والاحتياط خلف زر — إلا إن كان المختار منهم أو لم تُدخل التشكيلة بعد */
-    let more="";
-    if(!opt.only && xi.length){
-      const onP=n=>xi.includes(n)||(EDIT.subs||[]).some(s=>s.club===club&&s.in===n);
-      const bench=ent.filter(e=>!onP(e.n));
-      const open=(MX.sheet&&MX.sheet.bench&&MX.sheet.bench[key]) || bench.some(e=>e.n===cur);
-      if(bench.length && !open){ ent=ent.filter(e=>onP(e.n)); more=`<button class="mx-more" data-mbench="${key}">عرض الاحتياط (${bench.length})</button>`; }
-    }
-    return `<div class="mx-roster">${opt.none?`<button class="mx-pl${!cur?" picked":""}" data-mpick="${key}" data-mname=""><span class="mx-face">—</span><span class="tx"><b>${esc(opt.none)}</b></span></button>`:""}
-      ${ent.map(e=>`<button class="mx-pl${cur===e.n?" picked":""}${opt.exclude&&opt.exclude===e.n?" dim":""}" data-mpick="${key}" data-mname="${esc(e.n)}" style="--srgb:${rgbOf(club)}">
-        ${face(e.n,club)}<span class="tx"><b>${esc(e.n)}</b><small>${xi.includes(e.n)?"أساسي":"احتياط"}</small></span>${e.s?`<span class="num">${e.s}</span>`:""}</button>`).join("")}</div>${more}`;
+    return `${none}<div class="mx-roster">${ent.map(btn).join("")}</div>`;
   }
   const chips=(key,list,cur,cls)=>`<div class="mx-chips">${list.map(v=>`<button class="mx-chip${cls?" "+cls(v):""}${cur===v?" on":""}" data-mset="${key}" data-mval="${esc(v)}">${esc(v)}</button>`).join("")}</div>`;
   const rangeHint=v=>{ const st=EDIT.match.status, m=+v||0; if(!m) return "";
@@ -14588,8 +14614,8 @@ html.mx-editing #waFab{display:none!important}   /* زر واتساب كان ي�
       ${[h,a].filter(Boolean).map(c=>`<button class="mx-side${club===c?" on":""}" data-mset="${ck}" data-mval="${esc(c)}" style="--srgb:${rgbOf(c)}">${crest(c)}<div><b>${esc(c)}</b></div></button>`).join("")}</div></div>`;
     let body=team;
     if(k==="goal"){
-      body+=`<div><span class="mx-lbl">المسجّل</span>${pickGrid(club,"p",d.p)}</div>
-        <div class="mx-grid">${stepper("m",d.m,"الدقيقة",130)}${stepper("x",d.x||0,"وقت بدل ضائع +",20)}</div>${minChips("m")}${rangeHint(d.m)}
+      body+=`<div class="mx-grid">${stepper("m",d.m,"الدقيقة",130)}${stepper("x",d.x||0,"وقت بدل ضائع +",20)}</div>${minChips("m")}${rangeHint(d.m)}
+        <div><span class="mx-lbl">المسجّل</span>${pickGrid(club,"p",d.p)}</div>
         <div><span class="mx-lbl">طريقة التسجيل</span>${chips("bp",LIST.bp,d.bp)}</div>
         ${d.bp==="هدف عكسي"?`<div><span class="mx-lbl">ارتدت عن (لاعب ${esc(opp||"الخصم")})</span>${pickGrid(opp,"og",d.og)}</div>`:""}
         <div><span class="mx-lbl">صانع الهدف</span>${pickGrid(club,"a",d.a,{none:"بدون صناعة",exclude:d.p})}</div>
@@ -14604,8 +14630,8 @@ html.mx-editing #waFab{display:none!important}   /* زر واتساب كان ي�
         <div><span class="mx-lbl">اللاعب</span>${pickGrid(club,"p",d.p)}</div>`;   /* الدقيقة فوق قائمة اللاعبين (كانت تختفي تحت 26 لاعباً) + بدل الضائع 45+1 (المحررون 2026-09-30) */
     }
     if(k==="pen"){
-      body+=`<div><span class="mx-lbl">المنفّذ</span>${pickGrid(club,"p",d.p)}</div>
-        <div class="mx-grid">${stepper("m",d.m,"الدقيقة",130)}</div>
+      body+=`<div class="mx-grid">${stepper("m",d.m,"الدقيقة",130)}</div>
+        <div><span class="mx-lbl">المنفّذ</span>${pickGrid(club,"p",d.p)}</div>
         <div><span class="mx-lbl">النتيجة</span>${chips("res",LIST.penres,d.res,v=>v==="سجلت"?"ok":"")}</div>
         <div><span class="mx-lbl">مكان التسديد</span>${chips("place",PZONES,d.place)}</div>
         <p class="mx-hint">ركلة الجزاء المسجّلة تُضاف أيضاً كهدف من تبويب الأحداث (هدف ← تفصيل «ركلة جزاء»).</p>`;
@@ -14735,7 +14761,8 @@ html.mx-editing #waFab{display:none!important}   /* زر واتساب كان ي�
       EDIT.match[s]=nw;
       if(s==="home" && !EDIT.match.venue && typeof CLUB_INFO!=="undefined" && CLUB_INFO[nw]) EDIT.match.venue=CLUB_INFO[nw].st||"";
       MX.sheet=null; rerender(); });
-    q("[data-mclose]",el=>el.onclick=e=>{ if(el.dataset.mclose==="bg" && e.target!==el) return; MX.sheet=null; rerender(); });
+    /* نافذة الحدث لا تُغلق بلمسة على الخلفية — لمسة على الحافة أثناء التمرير كانت تُخرج المحرّر من الحدث فجأة (المحررون 2026-09-30) */
+    q("[data-mclose]",el=>el.onclick=e=>{ if(el.dataset.mclose==="bg" && (e.target!==el || (MX.sheet&&MX.sheet.kind==="ev"))) return; MX.sheet=null; rerender(); });
     q("[data-mside]",b=>b.onclick=()=>{ MX.side=b.dataset.mside; MX.sel=null; MX.q=""; rerender(); });
     q("[data-mq]",el=>el.oninput=()=>{ MX.q=el.value; const pos=el.selectionStart; rerender(); const n=box.querySelector("[data-mq]"); if(n){ n.focus(); try{ n.setSelectionRange(pos,pos); }catch(_){} } });
     q("[data-mform]",b=>b.onclick=()=>{ const cl=sideClub(MX.side); EDIT.shapes[cl]={f:b.dataset.mform,pos:{}}; rerender(); });
