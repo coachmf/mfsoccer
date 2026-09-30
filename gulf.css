@@ -156,3 +156,19 @@ html[data-theme="dark"] .gc-cp-c .bar{background:#16294A}
 .gc-rg{display:block;font-size:.64rem;color:var(--slate);font-weight:600;margin-top:2px}
 .gadm-motm{grid-column:1/-1;display:flex;align-items:center;gap:8px;font-size:.72rem;color:var(--slate)}
 .gadm-motm select{flex:1;min-width:0;background:var(--navy-900);color:var(--head);border:1px solid var(--line);border-radius:8px;padding:6px 8px;font:inherit;font-size:.78rem}
+/* قائمة الإدارة: الأيام مفصولة + حالة كل مباراة (2026-09-30) */
+.gadm-day{display:flex;flex-direction:column;gap:6px}
+.gadm-day+.gadm-day{margin-top:14px;padding-top:14px;border-top:1px solid var(--line)}
+.gadm-dh{display:flex;align-items:baseline;gap:8px;margin:0 2px 2px;font:800 .9rem var(--display);color:var(--head)}
+.gadm-dh span{font-size:.72rem;font-weight:600;color:var(--slate)}
+.gadm-dh em{margin-inline-start:auto;font-style:normal;font-size:.68rem;font-weight:700;color:var(--slate);padding:2px 8px;border:1px solid var(--line);border-radius:999px}
+.gadm-dh em.live{color:#fff;background:#b91c1c;border-color:#b91c1c}
+.gadm-day.today .gadm-dh b{color:var(--gold,#F5C518)}
+.gadm-st{display:inline-flex;align-items:center;gap:5px;font-weight:700}
+.gadm-st.live{color:#e0443a}
+.gadm-st.live i{width:7px;height:7px;border-radius:50%;background:#e0443a;animation:mcpulse 1.2s ease-in-out infinite}
+.gadm-st.done{color:var(--slate)}
+.gadm-st.soon{color:var(--head)}
+.gadm-row.live{border-color:#b91c1c;box-shadow:inset 3px 0 0 #b91c1c}
+html[data-theme="dark"] .gadm-row.live{border-color:#b91c1c}
+.gadm-row.done{opacity:.86}

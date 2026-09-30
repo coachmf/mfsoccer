@@ -595,21 +595,58 @@ function hookEditor(){
 }
 
 /* ───────────── الإدارة: قسم «كأس الخليج» ───────────── */
+/* حالة المباراة في قائمة الإدارة: جارية / لم تبدأ / انتهت (المحررون 2026-09-30: «حط جارية على المباراة وافصل الأيام») */
+const PH_AR = {h1:"الشوط الأول", ht:"استراحة", h2:"الشوط الثاني"};
+function admState(m){
+  return withGulf(()=>{
+    if(m.status==="ft" || matchOver(m)) return "done";
+    if(["h1","ht","h2"].includes(m.status) || isLive(m)) return "live";
+    return "soon";
+  });
+}
+function admRowHTML(m){
+  const st = admState(m), k = H(LIVE ? LIVE.keyOf(m) : "");
+  const badge = st==="live" ? `<span class="gadm-st live"><i></i>جارية${PH_AR[m.status]?` · ${PH_AR[m.status]}`:""}</span>`
+              : st==="done" ? `<span class="gadm-st done">انتهت</span>` : `<span class="gadm-st soon">لم تبدأ</span>`;
+  const score = st==="soon" ? (m.time ? `<bdi dir="ltr">${H(m.time)}</bdi>` : "—") : `<bdi dir="ltr">${m.ag} - ${m.hg}</bdi>`;   /* LTR: الضيف يساراً والمضيف يميناً تحت اسمه */
+  return `<div class="gadm-row ${st}">
+        <span class="t">${flagImg(m.home,"sm")}<b>${H(m.home)}</b></span>
+        <span class="s">${score}</span>
+        <span class="t a"><b>${H(m.away)}</b>${flagImg(m.away,"sm")}</span>
+        <span class="meta">${badge}${st!=="soon"&&m.time?` · <bdi dir="ltr">${H(m.time)}</bdi>`:""}${m.rec==="live"?` · <b class="lvtag">مرتبطة باللعب الفعلي</b>`:""}</span>
+        ${motmSelectHTML(m)}
+        <span class="btns"><button data-gadm="edit" data-k="${k}">إدخال يدوي</button><button class="dl" data-gadm="rm" data-k="${k}">حذف</button></span>
+      </div>`;
+}
+/* الأيام مفصولة: اليوم أولاً، ثم القادمة من الأقرب، ثم المنتهية من الأحدث */
+function admDaysHTML(ms){
+  const today = new Date().toLocaleDateString("en-CA", {timeZone:"Asia/Kuwait"});
+  const days = {};
+  ms.forEach(m=>{ (days[m.date||""] = days[m.date||""] || []).push(m); });
+  const keys = Object.keys(days).sort((a,b)=>{
+    const rank = d => d===today ? 0 : d>today ? 1 : 2;
+    return rank(a)-rank(b) || (rank(a)===2 ? b.localeCompare(a) : a.localeCompare(b));
+  });
+  const rl = r => r<=3 ? `الجولة ${r}` : r===4 ? "نصف النهائي" : "النهائي";
+  return keys.map(d=>{
+    const list = days[d].slice().sort((a,b)=>String(a.time||"").localeCompare(String(b.time||"")));
+    const rounds = [...new Set(list.map(m=>m.round))].map(rl).join(" · ");
+    const live = list.some(m=>admState(m)==="live");
+    const when = d===today ? "اليوم" : d>today ? "قادمة" : "منتهية";
+    return `<section class="gadm-day${d===today?" today":""}">
+      <h4 class="gadm-dh"><b>${d ? dayLabel(d) : "بلا تاريخ"}</b><span>${rounds}</span><em class="${live?"live":""}">${live?"جارية الآن":when}</em></h4>
+      ${list.map(admRowHTML).join("")}
+    </section>`;
+  }).join("");
+}
 function adminHTML(){
   if(!DATA) DATA = normalize(null);
-  const ms = DATA.matches.slice().sort((a,b)=>(a.round-b.round)||String(a.date).localeCompare(String(b.date)));
+  const ms = DATA.matches.slice();
   return `<div id="gulfAdmin"><h2 class="sec">كأس الخليج 27</h2>
     <div class="card pad">
       <p class="hint" style="margin:0 0 12px">مباريات البطولة وتشكيلاتها وأحداثها — بالإدخال اليدوي فقط (لا لعب فعلي في هذه البطولة). تُحفظ في وثيقة مستقلة، فلا تدخل إحصاءات الدوري ولا الفانتسي.</p>
       <button class="btn" data-gadm="new">+ إضافة مباراة في البطولة</button>
-      <div class="gadm-list">${ms.length?ms.map(m=>`<div class="gadm-row">
-        <span class="t">${flagImg(m.home,"sm")}<b>${H(m.home)}</b></span>
-        <span class="s">${(m.hg+m.ag)||m.status==="ft"?`${m.hg} - ${m.ag}`:(m.time?H(m.time):"—")}</span>
-        <span class="t a"><b>${H(m.away)}</b>${flagImg(m.away,"sm")}</span>
-        <span class="meta">${m.round<=3?`ج${m.round}`:m.round===4?"نصف النهائي":"النهائي"} · <bdi dir="ltr">${H(m.date||"")}</bdi>${m.rec==="live"?` · <b class="lvtag">مرتبطة باللعب الفعلي</b>`:""}</span>
-        ${motmSelectHTML(m)}
-        <span class="btns"><button data-gadm="edit" data-k="${H(LIVE?LIVE.keyOf(m):"")}">إدخال يدوي</button><button class="dl" data-gadm="rm" data-k="${H(LIVE?LIVE.keyOf(m):"")}">حذف</button></span>
-      </div>`).join(""):`<p class="hint">لا مباريات بعد.</p>`}</div>
+      <div class="gadm-list">${ms.length ? admDaysHTML(ms) : `<p class="hint">لا مباريات بعد.</p>`}</div>
       <p class="hint" style="margin:12px 0 0">الجولات 1–3 = دور المجموعات، 4 = نصف النهائي، 5 = النهائي. المنتخبات والقوائم من الملصقات الرسمية.</p>
     </div>
     ${squadAdminHTML()}</div>`;
