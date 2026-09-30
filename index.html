@@ -5506,6 +5506,9 @@ function shapeSlots(men, form){
   });
   return out;
 }
+/* المواضع المسحوبة تُعتمد فقط إذا غطّت كل الأساسيين. لاعب جديد بلا موضع بين مواضع قديمة كان ينزل في خانة
+   تلقائية فوق لاعب مثبّت فتصير التشكيلة «معفوسة» ولا تتضبط (المحررون 2026-09-30) — حينها يُرتَّب الجميع تلقائياً من مراكزهم */
+function fullPos(pos, men){ pos=pos||{}; return men.length && men.every(p=>pos[p.n]) ? pos : {}; }
 function drawShape(club){
   const box=document.querySelector(`[data-pitchfor="${cssq(club)}"]`);
   if(!box) return;
@@ -5513,8 +5516,9 @@ function drawShape(club){
   const form=normForm(st.f||autoFormation(club));
   const kit=kitOf(club);
   box.innerHTML=`<div class="xip-lines"></div>`;
-  shapeSlots(shapeMen(club),form).forEach(({p,x,y,n})=>{
-    const ov=st.pos[p.n];
+  const menD=shapeMen(club), posD=fullPos(st.pos, menD);
+  shapeSlots(menD,form).forEach(({p,x,y,n})=>{
+    const ov=posD[p.n];
     const el=document.createElement("div");
     el.className="pp-spot"; el.dataset.pn=p.n; el.dataset.pc=club;
     el.style.right=(ov?ov.x:x)+"%"; el.style.top=(ov?ov.y:y)+"%";
@@ -5642,7 +5646,7 @@ function pitchSpots(round, comp, club){
   const men=shapeMenFrom(names, club);
   const row=shapeRowOf(round, comp, club);
   const form=normForm((row&&row.f) || autoForm(men));
-  const pos =(row&&row.f==="4-2-4") ? {} : ((row&&row.pos) || {});   /* مواضع مسحوبة على خطة 4-2-4 لا تناسب 4-4-2 */
+  const pos =(row&&row.f==="4-2-4") ? {} : fullPos(row&&row.pos, men);   /* مواضع مسحوبة على خطة 4-2-4 لا تناسب 4-4-2 */
   const spots=shapeSlots(men, form).map(({p,x,y,n})=>{
     const ov=pos[p.n];
     return {p, x: ov?ov.x:x, y: ov?ov.y:y, n};
@@ -14332,7 +14336,8 @@ html.mx-editing #waFab{display:none!important}   /* زر واتساب كان ي�
     const st=(EDIT.shapes||{})[club]||{f:"",pos:{}};
     const men=shapeMenFrom(starters(club), club);
     const form=normForm(st.f||autoForm(men));
-    return {form, spots:shapeSlots(men, form).map(({p,x,y,n})=>{ const ov=(st.pos||{})[p.n]; return {p, x:ov?ov.x:x, y:ov?ov.y:y, n}; })};
+    const pos=fullPos(st.pos, men);
+    return {form, spots:shapeSlots(men, form).map(({p,x,y,n})=>{ const ov=pos[p.n]; return {p, x:ov?ov.x:x, y:ov?ov.y:y, n}; })};
   }
   function pitchHTML(club){
     const S=slotsFor(club), kit=kitOf(club);
@@ -14681,7 +14686,10 @@ html.mx-editing #waFab{display:none!important}   /* زر واتساب كان ي�
       if(xi.includes(n)){ if(MX.sel===n){ MX.sel=null; } else { removeStarter(cl,n); } rerender(); return; }
       if(MX.sel){ swapStarter(cl, MX.sel, n); MX.sel=null; rerender(); return; }
       if(xi.length>=11){ toast("التشكيلة مكتملة (11) — اضغط لاعباً على الملعب ثم اختر بديله","err"); return; }
-      EDIT.lineup=EDIT.lineup.filter(x=>!(x.club===cl&&!x.p)); EDIT.lineup.push({club:cl,p:n}); rerender(); });
+      EDIT.lineup=EDIT.lineup.filter(x=>!(x.club===cl&&!x.p)); EDIT.lineup.push({club:cl,p:n});
+      /* الداخل يأخذ مكان آخر من أُخرج، فتبقى المواضع المضبوطة كاملة */
+      const st=EDIT.shapes[cl], vac=(MX.vac||{})[cl]; if(st&&st.pos&&vac&&vac.length&&!st.pos[n]) st.pos[n]=vac.pop();
+      rerender(); });
     q("[data-mnew]",b=>b.onclick=()=>{ const k=b.dataset.mnew, preset={}; if(b.dataset.mtype) preset.type=b.dataset.mtype; if(b.dataset.mclub) preset[CLUBKEY[k]]=b.dataset.mclub; openEv(k,-1,preset); });
     q("[data-medit]",b=>b.onclick=()=>{ const [k,i]=b.dataset.medit.split("."); openEv(k,+i); });
     q("[data-mdel]",b=>b.onclick=()=>{ const [k,i]=b.dataset.mdel.split("."); if(!confirm(`حذف ${TITLE[k]}؟`)) return; EDIT[ARR[k]].splice(+i,1); MX.sheet=null; rerender(); });
@@ -14709,6 +14717,7 @@ html.mx-editing #waFab{display:none!important}   /* زر واتساب كان ي�
       const up=()=>{ if(!cur) return; const n=cur.dataset.sp, cl=pitch.dataset.mxpitch;
         if(moved){ const S=slotsFor(cl), st=EDIT.shapes[cl]=EDIT.shapes[cl]||{f:"",pos:{}};
           if(!st.f) st.f=S.form;
+          if(!Object.keys(fullPos(st.pos, S.spots.map(z=>z.p))).length) st.pos={};   /* مواضع ناقصة: نثبّت الترتيب الظاهر كله من جديد */
           /* أول سحب يثبّت مواضع الجميع كما تُرى، فلا يقفز الباقون عند تغيّر العدد */
           S.spots.forEach(({p,x,y})=>{ if(!st.pos[p.n]) st.pos[p.n]={x:+x.toFixed(1),y:+y.toFixed(1)}; });
           st.pos[n]={x:+parseFloat(cur.style.right).toFixed(1), y:+parseFloat(cur.style.top).toFixed(1)};
@@ -14719,7 +14728,7 @@ html.mx-editing #waFab{display:none!important}   /* زر واتساب كان ي�
   }
   function removeStarter(cl,n){
     EDIT.lineup=EDIT.lineup.filter(x=>!(x.club===cl&&x.p===n));
-    const st=EDIT.shapes[cl]; if(st&&st.pos) delete st.pos[n];
+    const st=EDIT.shapes[cl]; if(st&&st.pos&&st.pos[n]){ MX.vac=MX.vac||{}; (MX.vac[cl]=MX.vac[cl]||[]).push(st.pos[n]); delete st.pos[n]; }
   }
   function swapStarter(cl,outN,inN){
     const row=EDIT.lineup.find(x=>x.club===cl&&x.p===outN); if(row) row.p=inN; else EDIT.lineup.push({club:cl,p:inN});
@@ -14733,7 +14742,7 @@ html.mx-editing #waFab{display:none!important}   /* زر واتساب كان ي�
     MX.busy=true;
     try{
     if(!EDIT){ MX.sheet=null; MX.sel=null; MX.q=""; document.documentElement.classList.remove("mx-open","mx-editing"); const h=document.getElementById("mxSheetHost"); if(h) h.innerHTML=""; return baseRender(); }
-    if(EDIT!==MX._edit){ MX._edit=EDIT; MX.tab=FORMERR?errTab(FORMERR):"match"; MX.side="home"; MX.sel=null; MX.q=""; MX.sheet=null; }
+    if(EDIT!==MX._edit){ MX._edit=EDIT; MX.tab=FORMERR?errTab(FORMERR):"match"; MX.side="home"; MX.sel=null; MX.q=""; MX.sheet=null; MX.vac={}; }
     else if(FORMERR) MX.tab=errTab(FORMERR);
     render(box);
     } finally { MX.busy=false; }
