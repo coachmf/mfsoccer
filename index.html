@@ -2244,6 +2244,21 @@ html[data-theme="light"] .ah{filter:drop-shadow(0 18px 18px rgba(11,31,58,.22))}
 .ahb text{font-family:var(--body);font-weight:800;font-size:4.2px;fill:#fff;text-anchor:middle;dominant-baseline:central}
 .ahb.nil .dot{fill:rgba(8,21,39,.5);stroke:rgba(143,166,196,.45)}
 .ahb.nil text{fill:rgba(220,230,245,.6)}
+/* نقطة قابلة للضغط + قائمة أهدافها تحت الخريطة (2026-09-30) */
+.ahb[data-ahz]{cursor:pointer}
+.ahb[data-ahz]:hover .dot,.ahb.sel .dot{stroke:#F5C518;stroke-width:.8}
+.ah-goals{margin:10px 0 4px;border:1px solid var(--line);border-radius:14px;background:var(--navy-800,#0f1d33);overflow:hidden}
+.ah-gh{display:flex;align-items:center;gap:8px;padding:10px 12px;border-bottom:1px solid var(--line)}
+.ah-gh b{font-family:var(--display);font-weight:800;font-size:.86rem;color:var(--head)}
+.ah-gh span{font-size:.72rem;color:var(--slate)}
+.ah-gx{margin-inline-start:auto;width:28px;height:28px;border-radius:50%;border:1px solid var(--line);background:transparent;color:var(--head);font-size:1rem;line-height:1;cursor:pointer}
+.ah-gl{list-style:none;margin:0;padding:4px 0;max-height:320px;overflow:auto}
+.ah-gl li{display:flex;align-items:center;gap:10px;padding:8px 12px}
+.ah-gl li+li{border-top:1px solid rgba(143,166,196,.12)}
+.ah-gl .m{min-width:42px;text-align:center;font-weight:800;font-size:.8rem;color:var(--head);direction:ltr}
+.ah-gl .p{display:flex;flex-direction:column;min-width:0}
+.ah-gl .p b{font-size:.84rem;color:var(--head)}
+.ah-gl .p small{font-size:.7rem;color:var(--slate)}
 .ahb.top .dot{fill:#0B3A66;stroke:#7FE0FF;stroke-width:.8}
 .ahb.top text{font-size:5.2px}
 .ahb.top .ring{fill:none;stroke:rgba(127,224,255,.55);stroke-width:.5;stroke-dasharray:1 .8}
@@ -3368,12 +3383,13 @@ function anBadgePos(z){ return AN_BADGE_POS[z.k] || [z.lx ?? (z.t==="c"? z.cx : 
 function anHeatSVG(list){
   const {counts, alias, extra}=zoneCounts(list);
   const mx=Math.max(1,...Object.values(counts)), u="ah"+(++AN_HEAT_UID);
+  (window.AH_LISTS=window.AH_LISTS||{})[u]=list;   /* الضغط على نقطة يعرض أهدافها (منصور 2026-09-30) */
   const ctr=z=>[z.lx ?? (z.t==="c"? z.cx : z.x+z.w/2), z.ly ?? (z.t==="c"? z.cy : z.y+z.h/2)];
   const blob=z=>{ const n=counts[z.k]; if(!n) return ""; const k=n/mx, [cx,cy]=ctr(z);
     const r=(z.t==="c"?10:Math.min(18,Math.max(10,Math.min(z.w,z.h)*.6)))*(0.9+0.5*k);
     return `<circle cx="${cx}" cy="${cy}" r="${r.toFixed(1)}" fill="url(#${u}g)" opacity="${(0.22+0.78*k).toFixed(2)}"/>`; };
   const badge=z=>{ const n=counts[z.k], [cx,cy]=anBadgePos(z), top=n===mx&&n>0, R=top?5:(n>=10?4.6:4);
-    const al=[...alias[z.k]]; return `<g class="ahb${n?"":" nil"}${top?" top":""}"><title>${esc(z.k)}${al.length?" + "+al.map(esc).join("، "):""}: ${n}</title>
+    const al=[...alias[z.k]]; return `<g class="ahb${n?"":" nil"}${top?" top":""}"${n?` data-ahz="${esc(z.k)}" data-ahu="${u}" role="button" tabindex="0"`:""}><title>${esc(z.k)}${al.length?" + "+al.map(esc).join("، "):""}: ${n}</title>
       ${top?`<circle class="ring" cx="${cx}" cy="${cy}" r="${R+1.5}"/>`:""}
       <circle class="dot" cx="${cx}" cy="${cy}" r="${R}"/><text x="${cx}" y="${cy}">${n}</text></g>`; };
   /* عشب واقعي (منصور 2026-09-17): شرائط قصّ بدرجتين + ملمس خفيف + إضاءة من جهة المرمى */
@@ -3423,9 +3439,27 @@ function anHeatSVG(list){
     <text class="ah-sm out" x="50" y="-3.6">المرمى</text>
     <g class="ah-tag"><rect x="1.4" y="59.4" width="20" height="5.4" rx="2.7"/><text x="11.4" y="62.15">الثلث الأخير</text></g>
     <text class="ah-sm" x="50" y="68.5">مسافة بعيدة</text>
-  </svg></div><div class="ah-lanes"><div>${laneLb}</div></div>${extraNote(extra)}
+  </svg></div><div class="ah-lanes"><div>${laneLb}</div></div><div class="ah-goals" data-ahbox="${u}" hidden></div>${extraNote(extra)}
   <div class="ah-legend"><span>أقل</span><i></i><span>أكثر</span></div>`;
 }
+/* الضغط على نقطة في الخريطة: قائمة الأهداف المسجّلة من تلك المنطقة تحت الرسم (ضغطة ثانية تغلقها) */
+function ahGoalsHTML(k, list){
+  const gs=list.filter(g=>zoneKeyOf(g.zone)===k).sort((a,b)=>(a.r-b.r)||((+a.m||0)+(+a.x||0)/100-((+b.m||0)+(+b.x||0)/100)));
+  return `<div class="ah-gh"><b>${esc(k)}</b><span>${gs.length===1?"هدف واحد":gs.length===2?"هدفان":gs.length<=10?gs.length+" أهداف":gs.length+" هدفاً"}</span><button type="button" class="ah-gx" data-ahclose aria-label="إغلاق">×</button></div>
+    <ol class="ah-gl">${gs.map(g=>`<li><span class="m">${esc(minLabel(g))}</span><span class="p"><b>${esc(g.p||"—")}</b><small>${esc(g.sc||"")}${g.cd?` ضد ${esc(g.cd)}`:""} · الجولة ${esc(g.r)}${g.bp==="هدف عكسي"?" · هدف عكسي":""}</small></span></li>`).join("")}</ol>`;
+}
+document.addEventListener("click", e=>{
+  const x=e.target.closest("[data-ahclose]");
+  if(x){ const box=x.closest(".ah-goals"); if(box){ box.hidden=true; box.innerHTML=""; box.dataset.k=""; } return; }
+  const b=e.target.closest(".ahb[data-ahz]"); if(!b) return;
+  const u=b.dataset.ahu, k=b.dataset.ahz, box=document.querySelector(`.ah-goals[data-ahbox="${u}"]`), list=(window.AH_LISTS||{})[u];
+  if(!box || !list) return;
+  if(!box.hidden && box.dataset.k===k){ box.hidden=true; box.innerHTML=""; box.dataset.k=""; return; }
+  box.innerHTML=ahGoalsHTML(k, list); box.dataset.k=k; box.hidden=false;
+  document.querySelectorAll(".ahb.sel").forEach(g=>g.classList.remove("sel")); b.classList.add("sel");
+  box.scrollIntoView({block:"nearest", behavior:"smooth"});
+});
+document.addEventListener("keydown", e=>{ if((e.key==="Enter"||e.key===" ") && e.target.closest && e.target.closest(".ahb[data-ahz]")){ e.preventDefault(); e.target.closest(".ahb[data-ahz]").dispatchEvent(new MouseEvent("click",{bubbles:true})); } });
 function anZoneRows(list){
   const c={}; list.forEach(g=>{ if(g.zone) c[g.zone]=(c[g.zone]||0)+1; });
   ZONES.forEach(z=>{ if(c[z.k]===undefined) c[z.k]=0; });
