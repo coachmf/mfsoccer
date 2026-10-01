@@ -103,7 +103,7 @@ function defaultSquads(){
 /* المباريات الأولية: مباريات الكويت الثابتة في EXT_FIXTURES (خليجي 27) — لا نضيف مباريات غير معلنة */
 function defaultMatches(){
   const L = (typeof EXT_FIXTURES!=="undefined" ? EXT_FIXTURES : []).filter(e=>/خليجي 27/.test(e.t||""));
-  return L.map((e,i)=>{ const pr = String(e.t).split(/\s*-\s*/); const rd = +((/الجولة\s*(\d+)/.exec(e.n||"")||[])[1]) || (i+1);
+  return L.map((e,i)=>{ const pr = String(e.t).split(/\s*-\s*/); const rd = +((/الجولة\s*(\d+)/.exec(e.n||"")||[])[1]) || (/نصف النهائي/.test(e.n||"") ? 4 : /النهائي/.test(e.n||"") ? 5 : (i+1));
     return {n:i+1, round:rd, comp:COMP_G, date:e.d, time:e.time||"", venue:e.venue||"", home:pr[0], away:pr[1], note:"", ref:"", refs:{}, tv:"", status:"",
             add1:0, add2:0, hg:(e.hg!=null?+e.hg:0), ag:(e.ag!=null?+e.ag:0)}; }).filter(m=>T[m.home] && T[m.away]);
 }
