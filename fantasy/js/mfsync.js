@@ -77,7 +77,11 @@ const MFSYNC = {
   },
   postponed(m, win, data){
     if(this.isPlayed(m, data)) return false;
-    if(!m.date){ const w=win&&win[+m.round]; return !!(w && Date.now() > w.start + 3*86400e3); }
+    if(!m.date){
+      /* بلا تاريخ وباقي مباريات جولتها لها مواعيد = مؤجلة رسمياً (جدول الاتحاد 2026-10-02: «يحدد لاحقا») */
+      const ms=(data&&data.matches)||[];
+      if(ms.some(x=>x!==m && +x.round===+m.round && (!x.comp||x.comp===(m.comp||'الدوري')) && x.date)) return true;
+      const w=win&&win[+m.round]; return !!(w && Date.now() > w.start + 3*86400e3); }
     const ko=kwDate(m.date+'T'+(m.time||'23:59')).getTime();
     return !isNaN(ko) && Date.now() > ko + 24*3600e3;
   },
@@ -253,6 +257,7 @@ const MFSYNC = {
         let ch=false;
         if(f.status==='U' && (f.h!==h||f.a!==a)){ f.h=h; f.a=a; f.venue=DB.club(h).stadium; ch=true; }
         if(date && f.date!==date){ f.date=date; ch=true; }
+        if(!date && f.date && f.status!=='F'){ f.date=null; ch=true; }   /* أُلغي موعدها على الموقع (مؤجلة) — لا نُبقي الموعد القديم */
         if(ch) rep.updated++;
       }
       /* مؤجلة ↔ قادمة (النتيجة نفسها يضعها importRound) */
