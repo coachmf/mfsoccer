@@ -2937,7 +2937,7 @@ function extScorersHTML(e){
 }
 function extCardsHTML(evs, compName){
   const t=new Date(); const todayIso=`${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,"0")}-${String(t.getDate()).padStart(2,"0")}`;
-  const dayLabel=iso=>{ const d=new Date(iso+"T00:00:00"); if(isNaN(d)) return esc(iso); return `${AR_DOW[d.getDay()]} ${d.getDate()} ${AR_MON[d.getMonth()]}`; };
+  const dayLabel=iso=>{ if(!iso) return "مؤجلة — يُحدَّد موعدها لاحقاً"; const d=new Date(iso+"T00:00:00"); if(isNaN(d)) return esc(iso); return `${AR_DOW[d.getDay()]} ${d.getDate()} ${AR_MON[d.getMonth()]}`; };
   let lastDay=null, soon=0, done=0;
   const html=evs.map(e=>{
     const parts=evParts(e);
@@ -2986,7 +2986,7 @@ function upcomingItems(){
 function matchGoalsAll(m){ return (ALL?.goals||[]).some(g=>compOf(g)===compOf(m) && +g.r===+m.round && (g.sc===m.home||g.sc===m.away)); }
 function renderUpcomingMatches(){
   const items=upcomingItems();
-  const dayLabel=iso=>{ const d=new Date(iso+"T00:00:00"); if(isNaN(d)) return esc(iso); return `${AR_DOW[d.getDay()]} ${d.getDate()} ${AR_MON[d.getMonth()]}`; };
+  const dayLabel=iso=>{ if(!iso) return "مؤجلة — يُحدَّد موعدها لاحقاً"; const d=new Date(iso+"T00:00:00"); if(isNaN(d)) return esc(iso); return `${AR_DOW[d.getDay()]} ${d.getDate()} ${AR_MON[d.getMonth()]}`; };
   let lastDay=null;
   const html=items.map(it=>{
     const dayHead=it.d!==lastDay?`<div class="mc-day"><span>${dayLabel(it.d)}</span></div>`:""; lastDay=it.d;
@@ -7127,7 +7127,7 @@ function renderMatches(){
   list.sort((a,b)=>{
     const ua=isUpcoming(a), ub=isUpcoming(b);
     if(ua!==ub) return ua?-1:1;                                   /* القادم أولاً */
-    if(ua) return (kickoffTS(a)||0)-(kickoffTS(b)||0);            /* الأقرب موعداً */
+    if(ua) return (kickoffTS(a)??Infinity)-(kickoffTS(b)??Infinity);   /* الأقرب موعداً، والمؤجلة (بلا تاريخ) آخراً */
     return (b.round-a.round) || String(b.date).localeCompare(String(a.date));
   });
 
@@ -7155,14 +7155,14 @@ function renderMatches(){
       <div class="mdet" hidden>${xi}${tl}</div>`;
   }
 
-  const dayLabel=iso=>{ const d=new Date(iso+"T00:00:00"); if(isNaN(d)) return esc(iso); return `${AR_DOW[d.getDay()]} ${d.getDate()} ${AR_MON[d.getMonth()]}`; };
+  const dayLabel=iso=>{ if(!iso) return "مؤجلة — يُحدَّد موعدها لاحقاً"; const d=new Date(iso+"T00:00:00"); if(isNaN(d)) return esc(iso); return `${AR_DOW[d.getDay()]} ${d.getDate()} ${AR_MON[d.getMonth()]}`; };
   let lastDay=null;
   const matchCards = list.map(m=>{
     const gs=matchGoals(m);
     const mc=CARDS.filter(x=>x.r===m.round && compOf(x)===compOf(m) && (x.club===m.home||x.club===m.away));
     const y=mc.filter(x=>isYellow(x.type)).length, r=mc.filter(x=>isRed(x.type)).length;
     const soon=isUpcoming(m), live=!soon && !matchOver(m);
-    const st = soon ? '<span class="mc-st soon">لم تبدأ</span>' : live ? liveStHTML(m.status) : '<span class="mc-st done">انتهت</span>';
+    const st = soon ? (m.date ? '<span class="mc-st soon">لم تبدأ</span>' : '<span class="mc-st soon">مؤجلة</span>') : live ? liveStHTML(m.status) : '<span class="mc-st done">انتهت</span>';   /* بلا تاريخ = مؤجلة (جدول الاتحاد 2026-10-02) */
     const dayHead = m.date!==lastDay ? `<div class="mc-day"><span>${dayLabel(m.date)}</span></div>` : "";
     lastDay=m.date;
     return `${dayHead}<article class="mc${soon?" soon":live?" live":" done"}" data-mopen="${matchKey(m)}">
