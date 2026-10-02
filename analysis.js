@@ -721,25 +721,55 @@ function advPlace(P, x0, x1, y0, y1){
     if(!moved) break; }
   return P;
 }
+/* خريطة فرق عامة (منصور 2026-10-03: «سو جذي خريطة للإحصاءات المهمة»): شعار كل فريق على محورين + خطا متوسط الدوري،
+   والربع الأفضل مظلّل. c = {aria, x, y, up (الأعلى = قيمة أكبر؟), xs, ys (خطوة المحاور), fx, fy (تنسيق), q:{tr,tl,br,bl}, ax, ay, tip} */
+function advMap(T, c){
+  const X=T.map(c.x), Y=T.map(c.y), xs=c.xs, ys=c.ys;
+  const pad=(v,st)=>[Math.floor(Math.min(...v)/st)*st-st/2, Math.ceil(Math.max(...v)/st)*st+st/2];
+  const [x0,x1]=pad(X,xs), [y0,y1]=pad(Y,ys), W=340, Hh=300, L=38, R=10, Tp=12, B=30;
+  const sx=v=>L+(v-x0)/(x1-x0)*(W-L-R);
+  const sy=v=>c.up ? Tp+(y1-v)/(y1-y0)*(Hh-Tp-B) : Tp+(v-y0)/(y1-y0)*(Hh-Tp-B);
+  const ax=X.reduce((s,v)=>s+v,0)/T.length, ay=Y.reduce((s,v)=>s+v,0)/T.length;
+  const ticks=(a,b,st)=>{ const o=[]; for(let v=Math.ceil(a/st)*st; v<=b+1e-9; v+=st) o.push(+v.toFixed(4)); return o; };
+  const dec=st=>st<.1?2:st<1?1:0;
+  const q=(x,y,t,anchor)=>t?`<text x="${x}" y="${y}" text-anchor="${anchor}" class="adv-q">${t}</text>`:"";
+  const Q=c.q||{};
+  return `<div class="an-card adv-sc"><svg viewBox="0 0 ${W} ${Hh}" role="img" aria-label="${H(c.aria)}">
+    <rect x="${sx(ax)}" y="${Tp}" width="${W-R-sx(ax)}" height="${sy(ay)-Tp}" class="adv-best"/>
+    ${ticks(x0,x1,xs).map(v=>`<line x1="${sx(v)}" x2="${sx(v)}" y1="${Tp}" y2="${Hh-B}" class="adv-grid"/><text x="${sx(v)}" y="${Hh-B+14}" text-anchor="middle" class="adv-tk">${v.toFixed(dec(xs))}</text>`).join("")}
+    ${ticks(y0,y1,ys).map(v=>`<line x1="${L}" x2="${W-R}" y1="${sy(v)}" y2="${sy(v)}" class="adv-grid"/><text x="${L-6}" y="${sy(v)+3.5}" text-anchor="end" class="adv-tk">${v.toFixed(dec(ys))}</text>`).join("")}
+    <line x1="${sx(ax)}" x2="${sx(ax)}" y1="${Tp}" y2="${Hh-B}" class="adv-avg"/><line x1="${L}" x2="${W-R}" y1="${sy(ay)}" y2="${sy(ay)}" class="adv-avg"/>
+    ${q(W-R-4, Tp+12, Q.tr, "end")}${q(L+4, Tp+12, Q.tl, "start")}${q(W-R-4, Hh-B-6, Q.br, "end")}${q(L+4, Hh-B-6, Q.bl, "start")}
+    ${advPlace(T.map((t,i)=>({t, i, x0:sx(X[i]), y0:sy(Y[i])})), L+13, W-R-13, Tp+13, Hh-B-13).map(({t,i,x0,y0,x,y})=>`<g class="adv-pt"><title>${H(t.c)}: ${H(c.tip(t, X[i], Y[i]))}</title>${Math.hypot(x-x0,y-y0)>3?`<line x1="${x0.toFixed(1)}" y1="${y0.toFixed(1)}" x2="${x.toFixed(1)}" y2="${y.toFixed(1)}" class="adv-lk"/><circle cx="${x0.toFixed(1)}" cy="${y0.toFixed(1)}" r="2.2" class="adv-dot"/>`:""}<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="13"/><image href="${H(crestSrcOf(t.c))}" x="${(x-10).toFixed(1)}" y="${(y-10).toFixed(1)}" width="20" height="20" preserveAspectRatio="xMidYMid meet"/></g>`).join("")}
+  </svg>
+  <div class="adv-axes"><span>الأفقي: ${H(c.ax)}</span><span>الرأسي: ${H(c.ay)}</span></div></div>`;
+}
+const pm = t => t.mp || 1;
 function advScatter(T){
   /* هجوم (xG لكل مباراة، يميناً أكثر) × دفاع (xG ضدّه لكل مباراة، الأعلى = أقل استقبالاً) */
-  const X=T.map(t=>t.xg/t.mp), Y=T.map(t=>t.oxg/t.mp);
-  const pad=v=>[Math.floor(Math.min(...v)*2)/2-.25, Math.ceil(Math.max(...v)*2)/2+.25];
-  const [x0,x1]=pad(X), [y0,y1]=pad(Y), W=340, Hh=300, L=34, R=10, Tp=12, B=30;
-  const sx=v=>L+(v-x0)/(x1-x0)*(W-L-R), sy=v=>Tp+(v-y0)/(y1-y0)*(Hh-Tp-B);
-  const ax=X.reduce((s,v)=>s+v,0)/T.length, ay=Y.reduce((s,v)=>s+v,0)/T.length;
-  const ticks=(a,b)=>{ const o=[]; for(let v=Math.ceil(a*2)/2; v<=b+1e-9; v+=.5) o.push(+v.toFixed(1)); return o; };
-  const q=(x,y,t,anchor)=>`<text x="${x}" y="${y}" text-anchor="${anchor}" class="adv-q">${t}</text>`;
-  return `<div class="an-card adv-sc"><svg viewBox="0 0 ${W} ${Hh}" role="img" aria-label="الهجوم مقابل الدفاع">
-    <rect x="${sx(ax)}" y="${Tp}" width="${W-R-sx(ax)}" height="${sy(ay)-Tp}" class="adv-best"/>
-    ${ticks(x0,x1).map(v=>`<line x1="${sx(v)}" x2="${sx(v)}" y1="${Tp}" y2="${Hh-B}" class="adv-grid"/><text x="${sx(v)}" y="${Hh-B+14}" text-anchor="middle" class="adv-tk">${v.toFixed(1)}</text>`).join("")}
-    ${ticks(y0,y1).map(v=>`<line x1="${L}" x2="${W-R}" y1="${sy(v)}" y2="${sy(v)}" class="adv-grid"/><text x="${L-6}" y="${sy(v)+3.5}" text-anchor="end" class="adv-tk">${v.toFixed(1)}</text>`).join("")}
-    <line x1="${sx(ax)}" x2="${sx(ax)}" y1="${Tp}" y2="${Hh-B}" class="adv-avg"/><line x1="${L}" x2="${W-R}" y1="${sy(ay)}" y2="${sy(ay)}" class="adv-avg"/>
-    ${q(W-R-4, Tp+12, "هجوم قوي · دفاع صلب", "end")}${q(L+4, Hh-B-6, "هجوم أضعف · دفاع أضعف", "start")}
-    ${advPlace(T.map(t=>({t, x0:sx(t.xg/t.mp), y0:sy(t.oxg/t.mp)})), L+13, W-R-13, Tp+13, Hh-B-13).map(({t,x0,y0,x,y})=>`<g class="adv-pt"><title>${H(t.c)} — xG ${f2(t.xg/t.mp)} · ضدّه ${f2(t.oxg/t.mp)}</title>${Math.hypot(x-x0,y-y0)>3?`<line x1="${x0.toFixed(1)}" y1="${y0.toFixed(1)}" x2="${x.toFixed(1)}" y2="${y.toFixed(1)}" class="adv-lk"/><circle cx="${x0.toFixed(1)}" cy="${y0.toFixed(1)}" r="2.2" class="adv-dot"/>`:""}<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="13"/><image href="${H(crestSrcOf(t.c))}" x="${(x-10).toFixed(1)}" y="${(y-10).toFixed(1)}" width="20" height="20" preserveAspectRatio="xMidYMid meet"/></g>`).join("")}
-  </svg>
-  <div class="adv-axes"><span>الأفقي: xG له في المباراة (يميناً أكثر)</span><span>الرأسي: xG ضدّه (الأعلى أقل)</span></div></div>`;
+  return advMap(T, {aria:"الهجوم مقابل الدفاع", x:t=>t.xg/pm(t), y:t=>t.oxg/pm(t), up:false, xs:.5, ys:.5,
+    q:{tr:"هجوم قوي · دفاع صلب", bl:"هجوم أضعف · دفاع أضعف"}, ax:"xG له في المباراة (يميناً أكثر)", ay:"xG ضدّه (الأعلى أقل)",
+    tip:(t,x,y)=>`xG ${f2(x)} · ضدّه ${f2(y)}`});
 }
+/* الخرائط الإضافية: كل واحدة تجيب عن سؤال واحد واضح، ومن أرقام الملف نفسه فقط */
+const ADV_MAPS = [
+  {k:"style", t:"الاستحواذ مقابل الخطورة", hint:"هل يتحول الاستحواذ إلى فرص؟ المظلّل: استحواذ أعلى وخطورة أعلى من متوسط الدوري.",
+   aria:"الاستحواذ مقابل الخطورة", x:t=>t.poss, y:t=>t.xg/pm(t), up:true, xs:5, ys:.5,
+   q:{tr:"يسيطر ويصنع الفرص", tl:"خطير بلا استحواذ", br:"استحواذ بلا خطورة", bl:"أقل في الاثنين"},
+   ax:"الاستحواذ % (يميناً أكثر)", ay:"xG في المباراة (الأعلى أخطر)", tip:(t,x,y)=>`استحواذ ${x.toFixed(1)}% · xG ${f2(y)}`},
+  {k:"shots", t:"كمية التسديد مقابل جودته", hint:"الأفقي عدد التسديدات في المباراة، والرأسي خطورة التسديدة الواحدة (xG لكل تسديدة).",
+   aria:"كمية التسديد مقابل جودته", x:t=>t.sh/pm(t), y:t=>t.sh?t.xg/t.sh:0, up:true, xs:2, ys:.05,
+   q:{tr:"يسدد كثيراً ومن أماكن خطرة", tl:"قليل التسديد لكن فرصه جيدة", br:"يسدد كثيراً من مسافات صعبة", bl:"تسديد أقل وفرص أضعف"},
+   ax:"تسديدات في المباراة", ay:"xG لكل تسديدة", tip:(t,x,y)=>`${x.toFixed(1)} تسديدة · ${y.toFixed(2)} لكل تسديدة`},
+  {k:"press", t:"الضغط واستعادة الكرة", hint:"الأفقي استعادة الكرة في المباراة، والرأسي نسبة نجاح الضغط على حامل الكرة.",
+   aria:"الضغط واستعادة الكرة", x:t=>t.rec/pm(t), y:t=>t.prsA, up:true, xs:5, ys:10,
+   q:{tr:"يستعيد كثيراً وضغطه ناجح", tl:"ضغط ناجح واستعادة أقل", br:"يستعيد كثيراً وضغطه أقل نجاحاً", bl:"أقل في الاثنين"},
+   ax:"استعادة في المباراة", ay:"نجاح الضغط %", tip:(t,x,y)=>`${x.toFixed(1)} استعادة · ضغط ${y.toFixed(1)}%`},
+  {k:"duels", t:"الالتحامات أرضاً وجواً", hint:"نسبة الفوز بالالتحامات الأرضية والهوائية. المظلّل: أقوى من متوسط الدوري في الاثنين.",
+   aria:"الالتحامات أرضاً وجواً", x:t=>t.chW, y:t=>t.aerW, up:true, xs:5, ys:10,
+   q:{tr:"قوي أرضاً وجواً", tl:"أقوى في الهواء", br:"أقوى على الأرض", bl:"يخسر الالتحامات أكثر"},
+   ax:"الفوز بالالتحامات %", ay:"الفوز بالهوائية %", tip:(t,x,y)=>`التحامات ${x.toFixed(1)}% · هوائية ${y.toFixed(1)}%`},
+];
 function advDuo(T, a, b, la, lb, sub){
   /* الفعلي مقابل المتوقع: شريطان لكل فريق + الفارق */
   const S=[...T].sort((p,q)=>((q[a]-q[b])-(p[a]-p[b]))||byAr(p.c,q.c)), mx=Math.max(...T.map(t=>Math.max(t[a],t[b])),1);
@@ -768,6 +798,7 @@ function advHTML(){
     ${kpis([[f2(avg("xg")),"xG للفريق في المباراة","lead"],[avg("sh").toFixed(1),"تسديدات للفريق"],[avgP("pasA").toFixed(1)+"%","متوسط دقة التمرير"],[avg("rec").toFixed(1),"استعادة للكرة"]])}
     ${sec("الهجوم مقابل الدفاع", "مكان كل شعار حسب الأهداف المتوقعة له وعليه في المباراة. المنطقة المظلّلة أفضل من متوسط الدوري في الاثنين.")}
     ${advScatter(T)}
+    ${ADV_MAPS.map(m=>sec(m.t, m.hint)+advMap(T, m)).join("")}
     <div class="ax-duo">
       <div>${sec("الأهداف مقابل المتوقع (xG)", "موجب = إنهاء أفضل من نوعية الفرص.")}${advDuo(T,"g","xg","الأهداف","xG","مجموع الجولات")}</div>
       <div>${sec("النقاط مقابل المتوقع (xPts)", "موجب = نقاط أكثر مما يستحقه الأداء.")}${advDuo(T,"pts","xpts","النقاط","xPts","مجموع الجولات")}</div>

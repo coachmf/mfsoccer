@@ -35,7 +35,8 @@
 .ax .rf-tbl.ax-wide{min-width:640px}
 .ax .rf-tw:has(.ax-wide .sticky){scroll-padding-inline-start:190px}   /* عمود مثبّت: التمرير إلى عنوان لا يُخفيه تحته */
 .ax .rf-tbl .sticky{position:sticky;inset-inline-start:0;z-index:1;background:var(--an-card)}
-.ax .rf-tbl thead th.sticky{z-index:2}
+.ax .rf-tbl thead th.sticky{z-index:2;background:var(--zain-deep);color:#fff}   /* كان أبيض فوق أبيض في الوضع الفاتح */
+.ax .rf-tbl td.sticky>*{position:relative;z-index:1}   /* WebKit: محتوى الخلية المثبّتة فوق خلفيتها عند التمرير الأفقي */
 .ax .rf-tbl td.tl{white-space:normal}
 .ax-nc{display:flex;flex-direction:column;min-width:0;line-height:1.25}
 .ax-nc b{font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:170px}
