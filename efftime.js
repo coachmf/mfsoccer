@@ -30,7 +30,7 @@ EFF.idOf = idOf;
 
 const REASONS = [
   ["foul","خطأ (فاول)"], ["corner","ركنية"], ["throw","رمية تماس"], ["gk","ركلة مرمى"], ["var","مراجعة VAR"],
-  ["goal","هدف"], ["sub","تبديل"], ["injury","إصابة"], ["offside","تسلل"], ["other","أخرى"]
+  ["goal","هدف"], ["sub","تبديل"], ["injury","إصابة"], ["offside","تسلل"], ["water","استراحة ماء"], ["other","أخرى"]
 ];
 const RN = Object.fromEntries(REASONS);
 const PHS = [["h1","الشوط الأول"],["h2","الشوط الثاني"],["e1","الإضافي الأول"],["e2","الإضافي الثاني"]];

@@ -36,6 +36,7 @@ html.eff-open{overflow:hidden}
 .eff-r{min-height:56px;border-radius:12px;border:1px solid #2a4467;background:#132238;color:#e6eef8;font-weight:700;font-size:.95rem;font-family:inherit;cursor:pointer}
 .eff-r:active{background:#1d3a5f}
 .eff-rgrid.stopping .eff-r{min-height:46px;font-size:.85rem;opacity:.8}
+.eff-rgrid .eff-r:last-child:nth-child(odd){grid-column:1/-1}   /* «أخرى» بعرض الصف حين يكون العدد فردياً */
 .eff-r.on{opacity:1!important;border-color:#fbbf24;background:#3a2c0f;color:#fde68a}
 .eff-hint{margin:0;font-size:.74rem;color:#8ea3bf;text-align:center;line-height:1.6}
 .eff-done{padding:14px;border-radius:12px;background:#0f1b2e;border:1px solid #1f3350;text-align:center;font-size:.9rem}
@@ -61,7 +62,7 @@ html.eff-open{overflow:hidden}
 .eff-rs span{color:#8ea3bf} .eff-rs em{font-style:normal;font-weight:700;font-variant-numeric:tabular-nums}
 .eff-foot{margin:14px 0 0;font-size:.68rem;color:#64748b;text-align:center;line-height:1.6}
 @media (max-width:360px){ .eff-clocks .eff-main b{font-size:1.6rem} .eff-clocks b{font-size:1.05rem} .eff-r{font-size:.85rem} }
-@media (min-width:700px){ .eff-rgrid{grid-template-columns:repeat(5,minmax(0,1fr))} }
+@media (min-width:700px){ .eff-rgrid{grid-template-columns:repeat(4,minmax(0,1fr))} .eff-rgrid .eff-r:last-child:nth-child(odd){grid-column:auto} }
 
 /* بطاقة صفحة المباراة (تبويب التفاصيل) */
 .effp{margin-top:12px}
