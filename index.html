@@ -1426,14 +1426,15 @@ h2.sec{--sec-font:"Rubik",var(--display);--sec-acc:var(--zain);--sec-line:color-
   font-family:var(--sec-font)!important;position:relative;display:grid!important;grid-template-columns:minmax(18px,1fr) auto minmax(18px,1fr);
   align-items:center;gap:14px;text-align:center;font-size:clamp(1.15rem,1rem + .55vw,1.45rem);font-weight:800;letter-spacing:-.005em;line-height:1.25;
   color:var(--head);margin:36px 0 12px;padding:0;min-height:0;background:none}
-h2.sec::before,h2.sec::after{content:"";position:static;display:block;width:auto;height:1px;border-radius:0;transform:none;z-index:auto;inset:auto}
+h2.sec::before,h2.sec::after{content:"";position:static;display:block;width:auto;height:1px;border-radius:0;transform:none;z-index:auto;inset:auto;align-self:start;margin-top:.62em}   /* الخطّان على مستوى سطر العنوان نفسه */
 h2.sec::before{background:linear-gradient(to right,var(--sec-line),transparent)}   /* RTL: الخط الأيمن، أقوى قرب العنوان */
 h2.sec::after{background:linear-gradient(to left,var(--sec-line),transparent)}
 html[dir="ltr"] h2.sec::before{background:linear-gradient(to left,var(--sec-line),transparent)}
 html[dir="ltr"] h2.sec::after{background:linear-gradient(to right,var(--sec-line),transparent)}
 html[data-theme="light"] h2.sec{--sec-acc:var(--zain-deep);--sec-line:color-mix(in srgb,var(--zain-deep) 70%,transparent)}
 h2.sec .sec-c{display:flex;flex-direction:column;align-items:center;gap:4px;max-width:min(82vw,640px);text-wrap:balance}
-h2.sec .sec-t{display:inline-flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:4px 10px}
+h2.sec .sec-t{display:inline-flex;flex-direction:column;align-items:center;justify-content:center;gap:6px}   /* العدد تحت العنوان حتى يبقى العنوان في الوسط تماماً (منصور 2026-10-03) */
+h2.sec .sec-t .sq-n{margin:0}
 h2.sec .sec-s{display:block;font-size:.62em;font-weight:500;letter-spacing:0;color:var(--slate);line-height:1.35}
 h2.sec .sec-n{font-size:.6em;font-weight:700;font-variant-numeric:tabular-nums;line-height:1;padding:5px 10px;border-radius:999px;
   color:var(--head);background:color-mix(in srgb,var(--sec-acc) 16%,transparent);border:1px solid color-mix(in srgb,var(--sec-acc) 34%,transparent)}
