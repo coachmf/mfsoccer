@@ -1,0 +1,91 @@
+/* ===== الوقت الفعلي للعب — ساعة إيقاف مستقلة (2026-10-02) ===== */
+/* غرفة المشغّل: شاشة كاملة، للجوال أولاً، أزرار كبيرة بحجم الإصبع */
+html.eff-open{overflow:hidden}
+.eff-ov{position:fixed;inset:0;z-index:9000;background:#070d18;color:#e6eef8;overflow-y:auto;-webkit-overflow-scrolling:touch;
+  font-family:'Vazirmatn',system-ui,sans-serif;direction:rtl}
+.eff-wrap{max-width:560px;margin:0 auto;padding:max(10px,env(safe-area-inset-top)) 14px calc(24px + env(safe-area-inset-bottom))}
+.eff-load{padding:60px 0;text-align:center;color:#8ea3bf}
+.eff-top{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:10px;margin-bottom:10px}
+.eff-ttl{text-align:center;min-width:0}
+.eff-ttl b{display:block;font-size:1rem;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.eff-ttl small{display:block;font-size:.72rem;color:#8ea3bf;margin-top:2px}
+.eff-close,.eff-undo{min-height:40px;padding:0 12px;border-radius:10px;border:1px solid #2a4467;background:#0f1b2e;color:#e6eef8;font-weight:700;font-size:.82rem;font-family:inherit;cursor:pointer}
+.eff-undo:disabled{opacity:.4;cursor:default}
+.eff-seg{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;background:#0b1424;border:1px solid #1f3350;border-radius:12px;padding:4px;margin-bottom:12px}
+.eff-seg button{min-height:44px;border:0;border-radius:9px;background:transparent;color:#8ea3bf;font-weight:700;font-size:.76rem;line-height:1.2;font-family:inherit;cursor:pointer;padding:4px 2px}
+.eff-seg button small{display:block;font-size:.62rem;font-weight:400;opacity:.85}
+.eff-seg button[aria-pressed="true"]{background:#1d3a5f;color:#fff}
+.eff-clocks{display:grid;grid-template-columns:1fr 1.35fr 1fr;gap:8px;align-items:stretch}
+.eff-clocks>div{background:#0f1b2e;border:1px solid #1f3350;border-radius:14px;padding:10px 6px;text-align:center;display:flex;flex-direction:column;justify-content:center;gap:2px}
+.eff-clocks span{font-size:.7rem;color:#8ea3bf}
+.eff-clocks b{font-size:1.25rem;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:.5px}
+.eff-clocks .eff-main{border-color:#22c55e55;background:linear-gradient(180deg,#10261c,#0f1b2e)}
+.eff-clocks .eff-main b{font-size:2rem;color:#4ade80}
+.eff-clocks .eff-main i{font-style:normal;font-size:.78rem;color:#86efac;font-weight:700}
+.eff-clocks.st-stop .eff-main{border-color:#f5a52466;background:linear-gradient(180deg,#2a1f0c,#0f1b2e)}
+.eff-clocks.st-stop .eff-main b{color:#fbbf24}
+.eff-status{margin:10px 0;text-align:center;font-weight:800;font-size:.95rem;padding:8px;border-radius:10px;background:#0b1424;border:1px solid #1f3350}
+.eff-status.st-play{color:#4ade80;border-color:#22c55e55}
+.eff-status.st-stop{color:#fbbf24;border-color:#f5a52466}
+.eff-status [data-effc]{font-variant-numeric:tabular-nums;margin-inline-start:6px}
+.eff-act{display:flex;flex-direction:column;gap:10px}
+.eff-big{min-height:64px;border-radius:14px;border:0;font-weight:800;font-size:1.15rem;font-family:inherit;cursor:pointer;color:#fff;background:#1d3a5f}
+.eff-big.go{background:#16a34a;box-shadow:0 6px 20px rgba(22,163,74,.35)}
+.eff-big:active{transform:scale(.985)}
+.eff-rgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.eff-r{min-height:56px;border-radius:12px;border:1px solid #2a4467;background:#132238;color:#e6eef8;font-weight:700;font-size:.95rem;font-family:inherit;cursor:pointer}
+.eff-r:active{background:#1d3a5f}
+.eff-rgrid.stopping .eff-r{min-height:46px;font-size:.85rem;opacity:.8}
+.eff-r.on{opacity:1!important;border-color:#fbbf24;background:#3a2c0f;color:#fde68a}
+.eff-hint{margin:0;font-size:.74rem;color:#8ea3bf;text-align:center;line-height:1.6}
+.eff-done{padding:14px;border-radius:12px;background:#0f1b2e;border:1px solid #1f3350;text-align:center;font-size:.9rem}
+.eff-done b{color:#4ade80;font-variant-numeric:tabular-nums}
+.eff-row{display:flex;gap:8px;margin-top:12px}
+.eff-row.tools{justify-content:center;flex-wrap:wrap}
+.eff-end{flex:1;min-height:48px;border-radius:12px;border:1px solid #ef444466;background:#2a1215;color:#fca5a5;font-weight:800;font-size:.95rem;font-family:inherit;cursor:pointer}
+.eff-ghost{min-height:40px;padding:0 14px;border-radius:10px;border:1px solid #2a4467;background:transparent;color:#8ea3bf;font-weight:700;font-size:.78rem;font-family:inherit;cursor:pointer}
+.eff-ghost.danger{color:#fca5a5;border-color:#ef444455}
+.eff-card{margin-top:12px;background:#0f1b2e;border:1px solid #1f3350;border-radius:14px;padding:12px}
+.eff-card h4{margin:0 0 8px;font-size:.85rem;font-weight:800}
+.eff-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px;max-height:260px;overflow-y:auto}
+.eff-list li{display:grid;grid-template-columns:minmax(0,1fr) auto auto auto;align-items:center;gap:8px;padding:6px 8px;border-radius:8px;background:#132238;font-size:.8rem}
+.eff-list li.open{outline:1px solid #f5a52488}
+.eff-list span,.eff-list em{font-variant-numeric:tabular-nums;color:#8ea3bf;font-style:normal}
+.eff-list em{color:#e6eef8;font-weight:700}
+.eff-x{border:0;background:transparent;color:#fca5a5;font-weight:700;font-size:.72rem;font-family:inherit;cursor:pointer;padding:6px 4px}
+.eff-sum{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;text-align:center}
+.eff-sum span{display:block;font-size:.66rem;color:#8ea3bf}
+.eff-sum b{font-size:.95rem;font-variant-numeric:tabular-nums}
+.eff-rs{list-style:none;margin:10px 0 0;padding:0;display:grid;gap:4px}
+.eff-rs li{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:10px;font-size:.8rem;padding:4px 2px;border-bottom:1px dashed #1f3350}
+.eff-rs span{color:#8ea3bf} .eff-rs em{font-style:normal;font-weight:700;font-variant-numeric:tabular-nums}
+.eff-foot{margin:14px 0 0;font-size:.68rem;color:#64748b;text-align:center;line-height:1.6}
+@media (max-width:360px){ .eff-clocks .eff-main b{font-size:1.6rem} .eff-clocks b{font-size:1.05rem} .eff-r{font-size:.85rem} }
+@media (min-width:700px){ .eff-rgrid{grid-template-columns:repeat(5,minmax(0,1fr))} }
+
+/* بطاقة صفحة المباراة (تبويب التفاصيل) */
+.effp{margin-top:12px}
+.effp-top{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:4px 10px}
+.effp-top>b{grid-row:span 2;font-family:var(--display,inherit);font-size:1.7rem;font-weight:800;color:var(--text-primary,#fff);font-variant-numeric:tabular-nums}
+.effp-top>span{font-size:.74rem;color:var(--text-muted,#8ea3bf)}
+.effp-top>em{grid-row:span 2;font-style:normal;font-weight:800;font-size:1.05rem;color:#22c55e}
+.effp-bar{height:8px;border-radius:5px;background:rgba(143,166,196,.18);overflow:hidden}
+.effp-bar i{display:block;height:100%;background:linear-gradient(90deg,#16a34a,#4ade80);border-radius:5px}
+.effp-hs{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin-top:12px}
+.effp-h{border:1px solid var(--border-card,rgba(143,166,196,.18));border-radius:10px;padding:8px 10px;display:flex;flex-direction:column;gap:2px}
+.effp-h>span{font-size:.72rem;color:var(--text-muted,#8ea3bf);display:flex;align-items:center;gap:6px}
+.effp-h b{font-size:1.1rem;font-weight:800;color:var(--text-primary,#fff);font-variant-numeric:tabular-nums}
+.effp-h small{font-size:.68rem;color:var(--text-muted,#8ea3bf)}
+.effp-live{font-style:normal;font-size:.62rem;font-weight:800;color:#ef4444}
+.effp-rh{display:flex;justify-content:space-between;margin:14px 0 6px;font-size:.8rem;font-weight:700;color:var(--text-primary,#fff)}
+.effp-rh>span{font-weight:400;color:var(--text-muted,#8ea3bf)}
+.effp-rs{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+.effp-rs li{display:grid;grid-template-columns:92px 26px minmax(0,1fr) 46px;align-items:center;gap:8px;font-size:.78rem}
+.effp-rs .n{color:var(--text-primary,#fff);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.effp-rs .c{color:var(--text-muted,#8ea3bf);text-align:center;font-variant-numeric:tabular-nums}
+.effp-rs .b{height:6px;border-radius:4px;background:rgba(143,166,196,.14);overflow:hidden}
+.effp-rs .b i{display:block;height:100%;background:#f5a524;border-radius:4px}
+.effp-rs .t{text-align:left;color:var(--text-primary,#fff);font-variant-numeric:tabular-nums;font-weight:700}
+.effp-note{margin:10px 0 0;font-size:.72rem;color:var(--text-muted,#8ea3bf)}
+/* زر «الوقت الفعلي» في قوائم الإدارة */
+.am-btns .am-eff,.btns .am-eff{border-color:#22c55e66;color:#4ade80}

@@ -208,6 +208,9 @@ a{color:var(--blue); text-decoration:none;}
 .card h3{margin-bottom:12px;font-size:1.02rem;display:flex;align-items:center;gap:8px;}
 .grid{display:grid;gap:16px;}
 .g2{grid-template-columns:1fr 1fr;} .g3{grid-template-columns:repeat(3,1fr);} .g4{grid-template-columns:repeat(4,1fr);}
+/* أبناء الشبكة لا يتمددون بعرض محتواهم: جدول «صعوبة المباريات القادمة» (5 خانات × 84px) كان يوسّع العمود
+   على الجوال فتنقصّ بطاقات «المباريات والنتائج» من اليسار رغم .scroll-x */
+.grid>*{min-width:0;}
 .row{display:flex;align-items:center;gap:10px;}
 .spread{justify-content:space-between;}
 .muted{color:var(--text2);font-size:.85rem;}
@@ -548,7 +551,7 @@ tr:hover .btn-view{background:var(--accent);color:#fff;}
 @media (max-width:860px){
   html{font-size:14px;}
   #navlinks{display:none;}
-  .g2,.g3,.g4{grid-template-columns:1fr;}
+  .g2,.g3,.g4{grid-template-columns:minmax(0,1fr);}
   .admin-grid{grid-template-columns:minmax(0,1fr);}
   /* الشريط العلوي على الجوال: كان أعرض من الشاشة (شعار 130px + «العودة للموقع» + 5 أزرار) فتُقصّ
      أزرار الوضع الداكن والإشعارات والملف عن يسار الشاشة وتنزلق الصفحة أفقياً */

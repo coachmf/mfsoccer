@@ -2161,7 +2161,9 @@ main{padding-bottom:48px}
 <script src="admin-tabs.js?v=3" defer></script>
 <!-- كأس الخليج 27: قسم مستقل ببيانات منفصلة (seasons/gulf27) -->
 <link rel="stylesheet" href="gulf.css?v=17">
-<script src="gulf.js?v=42" defer></script>
+<script src="gulf.js?v=43" defer></script>
+<link rel="stylesheet" href="efftime.css?v=1">
+<script src="efftime.js?v=1" defer></script>
 <!-- التحليل الموسّع + تقييم اللاعبين 0–100 + البحث العام (منصور 2026-09-29) -->
 <link rel="stylesheet" href="analysis.css?v=6">
 <script src="analysis.js?v=13" defer></script>
@@ -6263,7 +6265,7 @@ function renderMatchAdmin(){
           <span class="am-t a">${crest(m.away)}<b>${esc(m.away)}</b></span>
         </div>
         <div class="am-meta">${isUpcoming(m)?'<span class="mstat soon">لم تبدأ</span>':""}${m.rec==="live"?'<span class="mstat live">مرتبطة باللعب الفعلي</span>':""}<span>${esc(compOf(m))}</span><span dir="ltr">${esc(m.date||"بلا تاريخ")}</span>${m.venue?`<span>${esc(m.venue)}</span>`:""}${m.tv?`<span class="am-tv">${esc(m.tv)}</span>`:""}</div>
-        <div class="am-btns">${window.LIVE?`<button class="am-live" data-live-open="${esc(matchKey(m))}" title="تسجيل الأحداث أثناء المباراة">لعب فعلي</button>`:""}<button data-edit="${esc(mkey(m))}" title="إدخال الأحداث يدوياً بعد المباراة">${window.LIVE?"إدخال يدوي":"تعديل"}</button><button class="dl" data-rm="${esc(mkey(m))}">حذف</button></div>
+        <div class="am-btns"><button class="am-eff" data-eff-open="${esc(matchKey(m))}" title="ساعة الوقت الفعلي للعب — مستقلة عن الأحداث والإحصاءات">الوقت الفعلي</button>${window.LIVE?`<button class="am-live" data-live-open="${esc(matchKey(m))}" title="تسجيل الأحداث أثناء المباراة">لعب فعلي</button>`:""}<button data-edit="${esc(mkey(m))}" title="إدخال الأحداث يدوياً بعد المباراة">${window.LIVE?"إدخال يدوي":"تعديل"}</button><button class="dl" data-rm="${esc(mkey(m))}">حذف</button></div>
       </div>`;
     const cc={}; ms.forEach(m=>{ const c=compOf(m); cc[c]=(cc[c]||0)+1; });
     const mf = (typeof ADM_MCOMP!=="undefined" && ADM_MCOMP) || "الكل";

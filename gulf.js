@@ -618,7 +618,7 @@ function admRowHTML(m){
         <span class="t a"><b>${H(m.away)}</b>${flagImg(m.away,"sm")}</span>
         <span class="meta">${badge}${st!=="soon"&&m.time?` · <bdi dir="ltr">${H(m.time)}</bdi>`:""}${m.rec==="live"?` · <b class="lvtag">مرتبطة باللعب الفعلي</b>`:""}</span>
         ${motmSelectHTML(m)}
-        <span class="btns"><button data-gadm="edit" data-k="${k}">إدخال يدوي</button><button class="dl" data-gadm="rm" data-k="${k}">حذف</button></span>
+        <span class="btns"><button class="am-eff" data-eff-open="${k}" title="ساعة الوقت الفعلي للعب — مستقلة عن الأحداث والإحصاءات">الوقت الفعلي</button><button data-gadm="edit" data-k="${k}">إدخال يدوي</button><button class="dl" data-gadm="rm" data-k="${k}">حذف</button></span>
       </div>`;
 }
 /* الأيام مفصولة: اليوم أولاً، ثم القادمة من الأقرب، ثم المنتهية من الأحدث */
