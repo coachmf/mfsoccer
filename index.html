@@ -1420,31 +1420,25 @@ body{background:
 .crestbar button img{width:36px;height:36px;object-fit:contain;filter:drop-shadow(0 1px 1px rgba(0,0,0,.15))}
 .crestbar button:hover{transform:translateY(-3px);background:var(--blue-bg)}
 /* ---- headings: عنوان قسم مسطّح بلا شريط مائل — خط تأكيد قصير تحت النص يمتد كخط فاصل رفيع ---- */
-/* ---- عناوين الأقسام v2 (منصور 2026-10-03: «إعادة تصميم كاملة… لازم يكون بروفشنال»): لوحة بأسلوب الجرافيكس التلفزيوني —
-   شريطا تأكيد عند بداية السطر (عريض + رفيع)، لوحة لونية تتلاشى نحو نهاية السطر، خط شعري أسفلها.
-   «أ — ب» تُقسم لعنوان + عنوان فرعي، و«(3)» في آخر العنوان تصير كبسولة رقم (secEnhance في السكربت). */
-h2.sec{--sec-font:"Rubik",var(--display);font-family:var(--sec-font)!important;--sec-acc:var(--zain);--sec-acc2:var(--zain-ice);--sec-plate:rgba(46,176,240,.22);--sec-rule:rgba(95,178,232,.55);
-  position:relative;isolation:isolate;display:flex;align-items:center;flex-wrap:wrap;gap:4px 12px;
-  font-family:var(--display);font-size:clamp(1.12rem,1rem + .5vw,1.4rem);font-weight:800;letter-spacing:-.005em;line-height:1.25;
-  color:var(--head);margin:34px 0 14px;padding:11px 22px 12px 14px;min-height:50px;
-  background:linear-gradient(var(--sec-acc),var(--sec-acc)) right top/4px 100% no-repeat,
-             linear-gradient(var(--sec-acc2),var(--sec-acc2)) right 8px top/2px 100% no-repeat}
-h2.sec::before{content:"";position:absolute;inset:0;z-index:-1;width:auto;height:auto;border-radius:0;transform:none;
-  background:linear-gradient(to left,var(--sec-plate) 0,color-mix(in srgb,var(--sec-plate) 45%,transparent) 42%,transparent 88%)}
-h2.sec::after{content:"";position:absolute;inset-inline:0;bottom:0;height:1px;
-  background:linear-gradient(to left,var(--sec-rule) 0,color-mix(in srgb,var(--sec-rule) 35%,transparent) 55%,transparent)}
-html[dir="ltr"] h2.sec{padding:11px 14px 12px 22px;
-  background:linear-gradient(var(--sec-acc),var(--sec-acc)) left top/4px 100% no-repeat,
-             linear-gradient(var(--sec-acc2),var(--sec-acc2)) left 8px top/2px 100% no-repeat}
-html[dir="ltr"] h2.sec::before{background:linear-gradient(to right,var(--sec-plate) 0,color-mix(in srgb,var(--sec-plate) 45%,transparent) 42%,transparent 88%)}
-html[dir="ltr"] h2.sec::after{background:linear-gradient(to right,var(--sec-rule) 0,color-mix(in srgb,var(--sec-rule) 35%,transparent) 55%,transparent)}
-html[data-theme="light"] h2.sec{--sec-acc:var(--zain-deep);--sec-acc2:var(--zain);--sec-plate:rgba(13,79,146,.11);--sec-rule:rgba(13,79,146,.34)}
-h2.sec .sec-t{min-width:0}
-h2.sec .sec-s{font-size:.66em;font-weight:500;letter-spacing:0;color:var(--slate);padding-inline-start:12px;
-  border-inline-start:1px solid color-mix(in srgb,var(--slate) 45%,transparent);line-height:1.3}
-h2.sec .sec-n{font-size:.62em;font-weight:800;font-variant-numeric:tabular-nums;line-height:1;padding:5px 10px;border-radius:999px;
-  color:var(--head);background:color-mix(in srgb,var(--sec-acc) 18%,transparent);border:1px solid color-mix(in srgb,var(--sec-acc) 38%,transparent)}
-@media (max-width:520px){ h2.sec{margin:28px 0 12px;padding-block:10px 11px;min-height:46px} h2.sec .sec-s{flex-basis:100%;padding-inline-start:0;border:0} }
+/* ---- عناوين الأقسام v3 (منصور 2026-10-03 اختار التصميم C من 4 نماذج، بخط Rubik): العنوان في الوسط وخطّان رفيعان
+   يتلاشيان نحو الطرفين، والعنوان الفرعي تحته في الوسط، والعدد كبسولة صغيرة بجانب العنوان. المحتوى ملفوف في .sec-c (secEnhance). */
+h2.sec{--sec-font:"Rubik",var(--display);--sec-acc:var(--zain);--sec-line:color-mix(in srgb,var(--zain) 75%,transparent);
+  font-family:var(--sec-font)!important;position:relative;display:grid!important;grid-template-columns:minmax(18px,1fr) auto minmax(18px,1fr);
+  align-items:center;gap:14px;text-align:center;font-size:clamp(1.15rem,1rem + .55vw,1.45rem);font-weight:800;letter-spacing:-.005em;line-height:1.25;
+  color:var(--head);margin:36px 0 12px;padding:0;min-height:0;background:none}
+h2.sec::before,h2.sec::after{content:"";position:static;display:block;width:auto;height:1px;border-radius:0;transform:none;z-index:auto;inset:auto}
+h2.sec::before{background:linear-gradient(to right,var(--sec-line),transparent)}   /* RTL: الخط الأيمن، أقوى قرب العنوان */
+h2.sec::after{background:linear-gradient(to left,var(--sec-line),transparent)}
+html[dir="ltr"] h2.sec::before{background:linear-gradient(to left,var(--sec-line),transparent)}
+html[dir="ltr"] h2.sec::after{background:linear-gradient(to right,var(--sec-line),transparent)}
+html[data-theme="light"] h2.sec{--sec-acc:var(--zain-deep);--sec-line:color-mix(in srgb,var(--zain-deep) 70%,transparent)}
+h2.sec .sec-c{display:flex;flex-direction:column;align-items:center;gap:4px;max-width:min(82vw,640px);text-wrap:balance}
+h2.sec .sec-t{display:inline-flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:4px 10px}
+h2.sec .sec-s{display:block;font-size:.62em;font-weight:500;letter-spacing:0;color:var(--slate);line-height:1.35}
+h2.sec .sec-n{font-size:.6em;font-weight:700;font-variant-numeric:tabular-nums;line-height:1;padding:5px 10px;border-radius:999px;
+  color:var(--head);background:color-mix(in srgb,var(--sec-acc) 16%,transparent);border:1px solid color-mix(in srgb,var(--sec-acc) 34%,transparent)}
+h2.sec + .hint{text-align:center;margin-top:0}
+@media (max-width:520px){ h2.sec{margin:30px 0 10px;gap:10px} }
 .hint{font-size:.8rem}
 /* ---- cards ---- */
 .card,.match,.calbar{border-radius:14px}
@@ -6584,12 +6578,14 @@ function pav(name, size, placeholder, club){
 function secEnhance(root){
   (root||document).querySelectorAll("h2.sec:not([data-sx])").forEach(h=>{
     h.dataset.sx="1";
-    if(h.children.length) return;                       /* عنوان فيه عناصر خاصة: يُترك كما هو */
+    if(h.children.length){                              /* عنوان فيه عناصر خاصة (أزرار/أرقام): تُلف كما هي في الخانة الوسطى */
+      if(h.querySelector(":scope>.sec-c")) return;
+      const c=document.createElement("span"), t=document.createElement("span"); c.className="sec-c"; t.className="sec-t"; while(h.firstChild) t.appendChild(h.firstChild); c.appendChild(t); h.appendChild(c); return;
+    }
     let t=(h.textContent||"").trim(); if(!t) return;
     let n=""; const mN=t.match(/^(.*\S)\s*\((\d+)\)$/); if(mN){ t=mN[1]; n=mN[2]; }
     const i=t.indexOf(" — "); const main=i>0?t.slice(0,i):t, sub=i>0?t.slice(i+3):"";
-    if(!sub && !n) return;
-    h.innerHTML=`<span class="sec-t">${esc(main)}</span>${n?`<span class="sec-n">${esc(n)}</span>`:""}${sub?`<span class="sec-s">${esc(sub)}</span>`:""}`;
+    h.innerHTML=`<span class="sec-c"><span class="sec-t">${esc(main)}${n?`<span class="sec-n">${esc(n)}</span>`:""}</span>${sub?`<span class="sec-s">${esc(sub)}</span>`:""}</span>`;
   });
 }
 (function(){
