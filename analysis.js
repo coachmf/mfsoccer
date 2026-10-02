@@ -765,7 +765,7 @@ function advHTML(){
   const S=sortBy(T,"adv",keys);
   const mx=Math.max(...T.map(x=>x.mp)), short=T.filter(t=>t.mp<mx).map(t=>t.c);
   return `<div class="rf-filters ax-f2">${seasonSel()}<label class="rf-f"><span>العرض</span><select data-ax-f="advPer"><option value="1"${per?" selected":""}>لكل مباراة</option><option value="0"${per?"":" selected"}>مجموع الجولات</option></select></label></div>
-    ${sec("الأرقام المتقدمة", `بيانات ${H(D.src)} للجولات ${H(D.rounds)} (حتى ${H(fmtAsOf(D.asOf))}).${short.length?` ${short.map(H).join(" و")}: مباراتان فقط في البيانات.`:""}`)}
+    ${sec("الأرقام المتقدمة", `المصدر: ${H(D.src)} · الجولات ${H(String(D.rounds).replace(/\s*[–-]\s*/," إلى "))} · آخر تحديث ${H(fmtAsOf(D.asOf))}.${short.length?`<br>${short.map(H).join(" و")}: ${short.length>1?"أرقامهما":"أرقامه"} من مباراتين فقط (بقية الفرق من ${mx} مباريات)، فالمقارنة الأدق لهما في عرض «لكل مباراة».`:""}`)}
     ${kpis([[f2(avg("xg")),"xG للفريق في المباراة","lead"],[avg("sh").toFixed(1),"تسديدات للفريق"],[avgP("pasA").toFixed(1)+"%","متوسط دقة التمرير"],[avg("rec").toFixed(1),"استعادة للكرة"]])}
     ${sec("الهجوم مقابل الدفاع", "مكان كل شعار حسب الأهداف المتوقعة له وعليه في المباراة. المنطقة المظلّلة أفضل من متوسط الدوري في الاثنين.")}
     ${advScatter(T)}

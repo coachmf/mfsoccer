@@ -1419,9 +1419,31 @@ body{background:
 .crestbar button img{width:36px;height:36px;object-fit:contain;filter:drop-shadow(0 1px 1px rgba(0,0,0,.15))}
 .crestbar button:hover{transform:translateY(-3px);background:var(--blue-bg)}
 /* ---- headings: عنوان قسم مسطّح بلا شريط مائل — خط تأكيد قصير تحت النص يمتد كخط فاصل رفيع ---- */
-h2.sec{position:relative;font-size:1.3rem;font-weight:800;letter-spacing:-.01em;line-height:1.25;color:var(--head);margin:30px 0 16px;padding-bottom:10px;gap:10px;align-items:baseline}
-h2.sec::before{content:"";position:absolute;inset-inline-start:0;bottom:-1px;width:30px;height:3px;border-radius:3px;background:linear-gradient(to left,var(--zain),var(--zain-ice));transform:none;z-index:1}
-h2.sec::after{content:"";position:absolute;inset-inline:0;bottom:0;height:1px;background:linear-gradient(to left,var(--line2) 0,var(--line2) 55%,transparent)}
+/* ---- عناوين الأقسام v2 (منصور 2026-10-03: «إعادة تصميم كاملة… لازم يكون بروفشنال»): لوحة بأسلوب الجرافيكس التلفزيوني —
+   شريطا تأكيد عند بداية السطر (عريض + رفيع)، لوحة لونية تتلاشى نحو نهاية السطر، خط شعري أسفلها.
+   «أ — ب» تُقسم لعنوان + عنوان فرعي، و«(3)» في آخر العنوان تصير كبسولة رقم (secEnhance في السكربت). */
+h2.sec{--sec-acc:var(--zain);--sec-acc2:var(--zain-ice);--sec-plate:rgba(46,176,240,.22);--sec-rule:rgba(95,178,232,.55);
+  position:relative;isolation:isolate;display:flex;align-items:center;flex-wrap:wrap;gap:4px 12px;
+  font-family:var(--display);font-size:clamp(1.12rem,1rem + .5vw,1.4rem);font-weight:800;letter-spacing:-.005em;line-height:1.25;
+  color:var(--head);margin:34px 0 14px;padding:11px 22px 12px 14px;min-height:50px;
+  background:linear-gradient(var(--sec-acc),var(--sec-acc)) right top/4px 100% no-repeat,
+             linear-gradient(var(--sec-acc2),var(--sec-acc2)) right 8px top/2px 100% no-repeat}
+h2.sec::before{content:"";position:absolute;inset:0;z-index:-1;width:auto;height:auto;border-radius:0;transform:none;
+  background:linear-gradient(to left,var(--sec-plate) 0,color-mix(in srgb,var(--sec-plate) 45%,transparent) 42%,transparent 88%)}
+h2.sec::after{content:"";position:absolute;inset-inline:0;bottom:0;height:1px;
+  background:linear-gradient(to left,var(--sec-rule) 0,color-mix(in srgb,var(--sec-rule) 35%,transparent) 55%,transparent)}
+html[dir="ltr"] h2.sec{padding:11px 14px 12px 22px;
+  background:linear-gradient(var(--sec-acc),var(--sec-acc)) left top/4px 100% no-repeat,
+             linear-gradient(var(--sec-acc2),var(--sec-acc2)) left 8px top/2px 100% no-repeat}
+html[dir="ltr"] h2.sec::before{background:linear-gradient(to right,var(--sec-plate) 0,color-mix(in srgb,var(--sec-plate) 45%,transparent) 42%,transparent 88%)}
+html[dir="ltr"] h2.sec::after{background:linear-gradient(to right,var(--sec-rule) 0,color-mix(in srgb,var(--sec-rule) 35%,transparent) 55%,transparent)}
+html[data-theme="light"] h2.sec{--sec-acc:var(--zain-deep);--sec-acc2:var(--zain);--sec-plate:rgba(13,79,146,.11);--sec-rule:rgba(13,79,146,.34)}
+h2.sec .sec-t{min-width:0}
+h2.sec .sec-s{font-size:.66em;font-weight:600;letter-spacing:0;color:var(--slate);padding-inline-start:12px;
+  border-inline-start:1px solid color-mix(in srgb,var(--slate) 45%,transparent);line-height:1.3}
+h2.sec .sec-n{font-size:.62em;font-weight:800;font-variant-numeric:tabular-nums;line-height:1;padding:5px 10px;border-radius:999px;
+  color:var(--head);background:color-mix(in srgb,var(--sec-acc) 18%,transparent);border:1px solid color-mix(in srgb,var(--sec-acc) 38%,transparent)}
+@media (max-width:520px){ h2.sec{margin:28px 0 12px;padding-block:10px 11px;min-height:46px} h2.sec .sec-s{flex-basis:100%;padding-inline-start:0;border:0} }
 .hint{font-size:.8rem}
 /* ---- cards ---- */
 .card,.match,.calbar{border-radius:14px}
@@ -2167,7 +2189,7 @@ main{padding-bottom:48px}
 <!-- التحليل الموسّع + تقييم اللاعبين 0–100 + البحث العام (منصور 2026-09-29) -->
 <link rel="stylesheet" href="analysis.css?v=7">
 <script src="tstats-data.js?v=1" defer></script>
-<script src="analysis.js?v=14" defer></script>
+<script src="analysis.js?v=15" defer></script>
 <style>
 /* تبويب التحليل — التصميم الجديد (منصور 2026-09-17) */
 .an{--an-card:#0F1E35;--an-line:#213653;--an-txt:#EDF3FA;--an-mut:#8FA6C4;--an-track:rgba(143,166,196,.16);--an-acc:#2EB0F0;--an-acc2:#1878BE}
@@ -2250,6 +2272,13 @@ html[data-theme="light"] .ah{filter:drop-shadow(0 18px 18px rgba(11,31,58,.22))}
 /* نقطة قابلة للضغط + قائمة أهدافها تحت الخريطة (2026-09-30) */
 .ahb[data-ahz]{cursor:pointer}
 .ahb[data-ahz]:hover .dot,.ahb.sel .dot{stroke:#F5C518;stroke-width:.8}
+.an-goal .pz{cursor:pointer;transition:filter .15s,stroke .15s}
+.an-goal .pz:hover{filter:brightness(1.18)}
+.an-goal .pz.sel{stroke:#fff;stroke-width:1.1}
+.pz-hint{margin:6px 0 0;text-align:center;font-size:.7rem;color:var(--slate)}
+.pz-res{margin-inline-start:auto;flex:none;font-size:.68rem;font-weight:800;padding:3px 9px;border-radius:999px}
+.pz-res.ok{color:#22C55E;background:rgba(34,197,94,.12)}
+.pz-res.no{color:#EF4444;background:rgba(239,68,68,.12)}
 .ah-goals{margin:10px 0 4px;border:1px solid var(--line);border-radius:14px;background:var(--navy-800,#0f1d33);overflow:hidden}
 .ah-gh{display:flex;align-items:center;gap:8px;padding:10px 12px;border-bottom:1px solid var(--line)}
 .ah-gh b{font-family:var(--display);font-weight:800;font-size:.86rem;color:var(--head)}
@@ -6550,6 +6579,25 @@ function pav(name, size, placeholder, club){
   return `<span class="pavph" style="width:${S}px;height:${S}px;font-size:${Math.round(S*0.34)}px">${esc(ini||"؟")}</span>`;
 }
 
+/* ===== عناوين الأقسام (منصور 2026-10-03): «أ — ب» → عنوان + فرعي، «… (12)» → كبسولة رقم. تُطبق مرة واحدة لكل عنوان. ===== */
+function secEnhance(root){
+  (root||document).querySelectorAll("h2.sec:not([data-sx])").forEach(h=>{
+    h.dataset.sx="1";
+    if(h.children.length) return;                       /* عنوان فيه عناصر خاصة: يُترك كما هو */
+    let t=(h.textContent||"").trim(); if(!t) return;
+    let n=""; const mN=t.match(/^(.*\S)\s*\((\d+)\)$/); if(mN){ t=mN[1]; n=mN[2]; }
+    const i=t.indexOf(" — "); const main=i>0?t.slice(0,i):t, sub=i>0?t.slice(i+3):"";
+    if(!sub && !n) return;
+    h.innerHTML=`<span class="sec-t">${esc(main)}</span>${n?`<span class="sec-n">${esc(n)}</span>`:""}${sub?`<span class="sec-s">${esc(sub)}</span>`:""}`;
+  });
+}
+(function(){
+  let q=false; const run=()=>{ q=false; try{ secEnhance(document); }catch(e){} };
+  const mo=new MutationObserver(()=>{ if(!q){ q=true; requestAnimationFrame(run); } });
+  const go=()=>{ run(); mo.observe(document.body,{childList:true,subtree:true}); };
+  if(document.readyState==="loading") document.addEventListener("DOMContentLoaded",go); else go();
+})();
+
 /* ================= خريطة المرمى لركلات الجزاء ================= */
 const PZ_GEO = {
  "يسار أعلى":  {x:8,  y:8,  w:34, h:20},
@@ -7946,7 +7994,8 @@ function anPeriods(){
   </div>`;
 }
 /* خريطة مرمى الجزاءات للتحليل (منصور 2026-09-17): «خارج المرمى» شريط يحيط بالقائم والعارضة بدل صندوق تحت المرمى */
-function anGoalSVG(list){
+let AN_PEN_UID=0;
+function anGoalSVG(list, u){
   const {c}=penCounts(list);
   const mx=Math.max(1,...Object.values(c));
   const fill=n=>{ if(!n) return "var(--an-cell0)"; const t=n/mx;
@@ -7955,14 +8004,15 @@ function anGoalSVG(list){
   const cells=[["يسار أعلى",0,0],["وسط أعلى",1,0],["يمين أعلى",2,0],["يسار أسفل",0,1],["وسط أسفل",1,1],["يمين أسفل",2,1]];
   const out=c["خارج المرمى"]||0;
   const cellSVG=([z,i,j])=>{ const x=X0+i*CW, y=Y0+j*CH, n=c[z];
-    return `<rect class="gc" x="${x}" y="${y}" width="${CW}" height="${CH}" fill="${fill(n)}"><title>${z}: ${n}</title></rect>`
+    const tap = u && n ? ` data-pz="${esc(z)}" data-pzu="${u}" role="button" tabindex="0"` : "";
+    return `<rect class="gc${tap?" pz":""}" x="${x}" y="${y}" width="${CW}" height="${CH}" fill="${fill(n)}"${tap}><title>${z}: ${n}</title></rect>`
       + (n?`<text class="gn" x="${x+CW/2}" y="${y+CH/2}">${n}</text>`:""); };
   const net=[]; for(let x=X0+5;x<X0+3*CW;x+=5) net.push(`<line x1="${x}" y1="${Y0}" x2="${x}" y2="${GY}"/>`); for(let y=Y0+5;y<GY;y+=5) net.push(`<line x1="${X0}" y1="${y}" x2="${X0+3*CW}" y2="${y}"/>`);
   /* الشريط الخارجي: مستطيل كبير ناقص المرمى (evenodd) */
   const O={x:6,y:4,w:130,h:GY-4};
   const band=`M${O.x} ${GY} V${O.y} H${O.x+O.w} V${GY} Z M${X0} ${GY} V${Y0} H${X0+3*CW} V${GY} Z`;
   return `<div class="an-goal"><svg viewBox="0 0 142 ${GY+12}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="خريطة مرمى ركلات الجزاء">
-    <path class="gband" d="${band}" fill-rule="evenodd" fill="${out?`rgba(239,68,68,${(0.10+0.22*out/mx).toFixed(2)})`:"var(--an-cell0)"}"><title>خارج المرمى: ${out}</title></path>
+    <path class="gband${u&&out?" pz":""}" d="${band}" fill-rule="evenodd" fill="${out?`rgba(239,68,68,${(0.10+0.22*out/mx).toFixed(2)})`:"var(--an-cell0)"}"${u&&out?` data-pz="خارج المرمى" data-pzu="${u}" role="button" tabindex="0"`:""}><title>خارج المرمى: ${out}</title></path>
     <g class="gnet">${net.join("")}</g>
     ${cells.map(cellSVG).join("")}
     <g class="ggrid"><line x1="${X0+CW}" y1="${Y0}" x2="${X0+CW}" y2="${GY}"/><line x1="${X0+2*CW}" y1="${Y0}" x2="${X0+2*CW}" y2="${GY}"/><line x1="${X0}" y1="${Y0+CH}" x2="${X0+3*CW}" y2="${Y0+CH}"/></g>
@@ -7971,14 +8021,38 @@ function anGoalSVG(list){
     <text class="glab" x="71" y="${(O.y+Y0)/2}">خارج إطار المرمى${out?` · ${out}`:""}</text>
   </svg></div>`;
 }
+function pzListHTML(k, list){
+  const ps=list.filter(x=>penPlaceOf((x.place||"").trim())===k)
+    .sort((a,b)=>((+a.r||0)-(+b.r||0))||((+a.m||0)-(+b.m||0)));
+  const n=ps.length, ok=ps.filter(x=>/سجل/.test(x.res||"")).length;
+  const cnt=n===1?"ركلة واحدة":n===2?"ركلتان":n<=10?n+" ركلات":n+" ركلة";
+  return `<div class="ah-gh"><b>${esc(k)}</b><span>${cnt}${n?` · سُجّلت ${ok}`:""}</span><button type="button" class="ah-gx" data-pzclose aria-label="إغلاق">×</button></div>
+    <ol class="ah-gl">${ps.map(x=>{ const sc=/سجل/.test(x.res||"");
+      return `<li><span class="m">${x.m?esc(x.m)+"′":"—"}</span><span class="p"><b>${esc(x.p||"—")}</b><small>${esc(x.by||"")}${x.vs?` ضد ${esc(x.vs)}`:""}${x.r?` · الجولة ${esc(x.r)}`:""}</small></span><span class="pz-res ${sc?"ok":"no"}">${esc(x.res||"—")}</span></li>`; }).join("")}</ol>`;
+}
+document.addEventListener("click", e=>{
+  const x=e.target.closest("[data-pzclose]");
+  if(x){ const box=x.closest(".pz-box"); if(box){ box.hidden=true; box.innerHTML=""; box.dataset.k=""; document.querySelectorAll(`.pz.sel[data-pzu="${box.dataset.pzbox}"]`).forEach(g=>g.classList.remove("sel")); } return; }
+  const b=e.target.closest(".pz[data-pz]"); if(!b) return;
+  const u=b.dataset.pzu, k=b.dataset.pz, box=document.querySelector(`.pz-box[data-pzbox="${u}"]`), list=(window.PZ_LISTS||{})[u];
+  if(!box || !list) return;
+  document.querySelectorAll(`.pz.sel[data-pzu="${u}"]`).forEach(g=>g.classList.remove("sel"));
+  if(!box.hidden && box.dataset.k===k){ box.hidden=true; box.innerHTML=""; box.dataset.k=""; return; }
+  box.innerHTML=pzListHTML(k, list); box.dataset.k=k; box.hidden=false; b.classList.add("sel");
+  box.scrollIntoView({block:"nearest", behavior:"smooth"});
+});
+document.addEventListener("keydown", e=>{ const t=e.target.closest && e.target.closest(".pz[data-pz]"); if(t && (e.key==="Enter"||e.key===" ")){ e.preventDefault(); t.dispatchEvent(new MouseEvent("click",{bubbles:true})); } });
 function anPens(list){
   const L=list||PENS, has=L.some(x=>x.place);
   const scored=L.filter(x=>/سجل/.test(x.res||"")).length;
   const raw={}; L.forEach(x=>{ const pl=(x.place||"").trim(); if(pl) raw[pl]=(raw[pl]||0)+1; });
   const common=has?Object.entries(raw).sort((a,b)=>b[1]-a[1])[0][0]:"—";
   const {extra}=penCounts(L);
+  const u="pz"+(++AN_PEN_UID);
+  (window.PZ_LISTS=window.PZ_LISTS||{})[u]=L;   /* الضغط على مكان في المرمى يعرض من سدّدها وضد من (منصور 2026-10-03) */
   return `<div class="an-card an-pens">
-    ${anGoalSVG(L)}${extraNote(extra)}
+    ${anGoalSVG(L, u)}${has?`<p class="pz-hint">اضغط على أي مكان في المرمى لترى من سدّد ركلاته هناك</p>`:""}
+    <div class="ah-goals pz-box" data-pzbox="${u}" hidden></div>${extraNote(extra)}
     <div class="an-tiles t3">
       <div><b>${L.length}</b><span>مجموع الركلات</span></div>
       <div><b>${scored}</b><span>سُجّلت${L.length?` · ${pct(scored,L.length)}%`:""}</span></div>
