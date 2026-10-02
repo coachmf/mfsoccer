@@ -37,6 +37,10 @@
 .ax .rf-tbl .sticky{position:sticky;inset-inline-start:0;z-index:1;background:var(--an-card)}
 .ax .rf-tbl thead th.sticky{z-index:2;background:var(--zain-deep);color:#fff}   /* كان أبيض فوق أبيض في الوضع الفاتح */
 .ax .rf-tbl td.sticky>*{position:relative;z-index:1}   /* WebKit: محتوى الخلية المثبّتة فوق خلفيتها عند التمرير الأفقي */
+/* iPhone (منصور 2026-10-03: «الأندية تختفي فجأة»): Safari يُسقط أحياناً رسم الخلايا المثبّتة (اسم الفريق + رأس العمود)
+   → لكل خلية مثبّتة طبقة رسم خاصة بها، وحاوية التمرير معزولة */
+.ax .rf-tbl .sticky{-webkit-transform:translate3d(0,0,0);transform:translate3d(0,0,0);will-change:transform;-webkit-backface-visibility:hidden;backface-visibility:hidden}
+.ax .rf-tw:has(.sticky){isolation:isolate;-webkit-overflow-scrolling:touch}
 .ax .rf-tbl td.tl{white-space:normal}
 .ax-nc{display:flex;flex-direction:column;min-width:0;line-height:1.25}
 .ax-nc b{font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:170px}
