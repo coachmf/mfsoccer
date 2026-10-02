@@ -327,6 +327,11 @@ function thead(scope, cols){
 }
 const table = (scope, cols, body, cls) => { const n=(body.match(/<tr[\s>]/g)||[]).length;
   return `<div class="an-card rf-tcard${cls?" "+cls:""}${tblClip(scope)}"><div class="rf-tw"><table class="rf-tbl${cls?" "+cls:""}">${thead(scope, cols)}<tbody>${body}</tbody></table></div></div>${axAbbr(cols.map(c=>c[1]))}${tblMore(scope, n)}`; };
+/* جدول بعمود ثابت حقيقي (منصور 2026-10-03: «الأندية تختفي فجأة» على الآيفون): Safari يُسقط رسم خلايا position:sticky
+   داخل حاوية تمرير أفقي، فالعمود الأول جدول مستقل لا يتحرك والأرقام جدول ثانٍ يتمرر بجانبه — صفوف بارتفاع ثابت متطابق. */
+const splitTable = (scope, head, cols, fixBody, body, cls) =>
+  `<div class="an-card rf-tcard ax-split${cls?" "+cls+"-card":""}"><table class="rf-tbl ax-fix">${thead(scope, [head])}<tbody>${fixBody}</tbody></table>`
+  + `<div class="rf-tw ax-scroll"><table class="rf-tbl${cls?" "+cls:""}">${thead(scope, cols)}<tbody>${body}</tbody></table></div></div>${axAbbr(cols.map(c=>c[1]))}`;
 const kpis = items => `<div class="an-kpis rf-kpis ax-k${items.length}">${items.map(([v,t,c])=>`<div class="${c||""}"><b>${v}</b><span>${t}</span></div>`).join("")}</div>`;
 const sec = (t, hint) => `<h2 class="sec">${t}</h2>${hint?`<p class="hint">${hint}</p>`:""}`;
 const empty = t => `<div class="an-card rf-empty">${t}</div>`;
@@ -806,7 +811,8 @@ function advHTML(){
     ${sec("المتصدّرون", per?"لكل مباراة؛ النسب كما هي.":"مجموع الجولات؛ النسب كما هي.")}
     ${advLeaders(T)}
     ${sec("مقارنة كل الفرق", "اضغط عنوان أي عمود للترتيب.")}
-    ${table("adv", cols, S.map(x=>`<tr><td class="tl sticky">${clubCell(x.c)}</td>${ADV_M.map(([k])=>`<td${k===AX.sorts.adv.k?' class="adv-on"':""} dir="ltr">${advF(k, advV(x,k))}</td>`).join("")}</tr>`).join(""), "ax-wide adv-tbl")}`;
+    ${splitTable("adv", [cols[0][0], cols[0][1], "tl"], cols.slice(1), S.map(x=>`<tr><td class="tl">${clubCell(x.c)}</td></tr>`).join(""),
+      S.map(x=>`<tr>${ADV_M.map(([k])=>`<td${k===AX.sorts.adv.k?' class="adv-on"':""} dir="ltr">${advF(k, advV(x,k))}</td>`).join("")}</tr>`).join(""), "adv-tbl")}`;
 }
 
 /* ───────────── الأحداث (تفويض واحد على صفحة التحليل) ───────────── */

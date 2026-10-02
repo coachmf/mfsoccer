@@ -370,3 +370,25 @@ html.gs-open{overflow:hidden}
 .ax .rf-tbl.adv-tbl td{font-variant-numeric:tabular-nums}
 .ax .rf-tbl.adv-tbl td.adv-on{font-weight:800;color:var(--an-acc)}
 @media(max-width:380px){.adv-row{grid-template-columns:86px minmax(0,1fr) 40px;gap:8px}.adv-tm b{font-size:.74rem}}
+
+/* ───── جدول بعمود ثابت (splitTable) ───── */
+.ax .ax-split{display:grid;grid-template-columns:auto minmax(0,1fr);padding:0;overflow:hidden}
+.ax .ax-split .ax-fix{width:auto;min-width:0;border-inline-end:1px solid var(--an-line);box-shadow:-6px 0 12px -10px rgba(0,0,0,.45)}
+.ax .ax-split .ax-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.ax .ax-split .rf-tbl thead tr{height:46px}
+.ax .ax-split .rf-tbl tbody tr{height:52px}
+.ax .ax-split .rf-tbl th,.ax .ax-split .rf-tbl td{white-space:nowrap}
+.ax .ax-split .rf-tbl th>button,.ax .ax-split .rf-tbl th>span{flex-wrap:nowrap}
+.ax .ax-split .ax-fix td.tl{max-width:150px;overflow:hidden;text-overflow:ellipsis}
+.ax .ax-split .ax-fix .rf-club b{white-space:nowrap}
+.ax .rf-tbl.adv-tbl{min-width:1040px}
+.ax .ax-split .rf-tbl tbody td{height:52px;padding-top:0;padding-bottom:0;vertical-align:middle;box-sizing:border-box;line-height:1.2}
+.ax .ax-split .rf-tbl thead th{height:46px;box-sizing:border-box}
+.ax .ax-split .ax-fix .rf-club{display:inline-flex;align-items:center;gap:8px;line-height:1.2;max-height:44px}
+.ax .ax-split .ax-fix .rf-club img{width:24px;height:24px;flex:none}
+/* WebKit: في border-collapse يُقسم حد الجدول نصفين فتصير صفوف العمود الثابت 52.5px — الجدولان separate بلا تباعد، والفاصل ظل داخلي */
+.ax .ax-split .rf-tbl{border-collapse:separate;border-spacing:0}
+.ax .ax-split .ax-fix{border:0;box-shadow:inset -1px 0 0 var(--an-line),-6px 0 12px -10px rgba(0,0,0,.45)}
+html[dir="ltr"] .ax .ax-split .ax-fix{box-shadow:inset 1px 0 0 var(--an-line),6px 0 12px -10px rgba(0,0,0,.45)}
+.ax .ax-split .ax-fix .rf-club{display:flex}   /* inline-flex على خط النص يضيف فراغ الخط الأساسي (52.5px في WebKit) */
+.ax .ax-split{align-items:start}   /* السبب الحقيقي للإزاحة: الشبكة كانت تمطّ الجدول الثابت لارتفاع جانب الأرقام (+ شريط التمرير 6px) فتتوزع على الصفوف */
