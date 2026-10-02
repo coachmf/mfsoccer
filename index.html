@@ -78,6 +78,7 @@ var DCL_FIRED=false; document.addEventListener('DOMContentLoaded', ()=>{ DCL_FIR
 <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
 <noscript><link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"></noscript>
 <link href="https://fonts.googleapis.com/css2?family=Changa:wght@600;700;800&family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+<link href="https://fonts.googleapis.com/css2?family=Rubik:wght@500;800&display=swap" rel="stylesheet" media="print" onload="this.media='all'">   <!-- خط عناوين الأقسام (منصور 2026-10-03 اختار Rubik) -->
 <noscript><link href="https://fonts.googleapis.com/css2?family=Changa:wght@600;700;800&family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet"></noscript>
 
 
@@ -1422,7 +1423,7 @@ body{background:
 /* ---- عناوين الأقسام v2 (منصور 2026-10-03: «إعادة تصميم كاملة… لازم يكون بروفشنال»): لوحة بأسلوب الجرافيكس التلفزيوني —
    شريطا تأكيد عند بداية السطر (عريض + رفيع)، لوحة لونية تتلاشى نحو نهاية السطر، خط شعري أسفلها.
    «أ — ب» تُقسم لعنوان + عنوان فرعي، و«(3)» في آخر العنوان تصير كبسولة رقم (secEnhance في السكربت). */
-h2.sec{--sec-acc:var(--zain);--sec-acc2:var(--zain-ice);--sec-plate:rgba(46,176,240,.22);--sec-rule:rgba(95,178,232,.55);
+h2.sec{--sec-font:"Rubik",var(--display);font-family:var(--sec-font)!important;--sec-acc:var(--zain);--sec-acc2:var(--zain-ice);--sec-plate:rgba(46,176,240,.22);--sec-rule:rgba(95,178,232,.55);
   position:relative;isolation:isolate;display:flex;align-items:center;flex-wrap:wrap;gap:4px 12px;
   font-family:var(--display);font-size:clamp(1.12rem,1rem + .5vw,1.4rem);font-weight:800;letter-spacing:-.005em;line-height:1.25;
   color:var(--head);margin:34px 0 14px;padding:11px 22px 12px 14px;min-height:50px;
@@ -1439,7 +1440,7 @@ html[dir="ltr"] h2.sec::before{background:linear-gradient(to right,var(--sec-pla
 html[dir="ltr"] h2.sec::after{background:linear-gradient(to right,var(--sec-rule) 0,color-mix(in srgb,var(--sec-rule) 35%,transparent) 55%,transparent)}
 html[data-theme="light"] h2.sec{--sec-acc:var(--zain-deep);--sec-acc2:var(--zain);--sec-plate:rgba(13,79,146,.11);--sec-rule:rgba(13,79,146,.34)}
 h2.sec .sec-t{min-width:0}
-h2.sec .sec-s{font-size:.66em;font-weight:600;letter-spacing:0;color:var(--slate);padding-inline-start:12px;
+h2.sec .sec-s{font-size:.66em;font-weight:500;letter-spacing:0;color:var(--slate);padding-inline-start:12px;
   border-inline-start:1px solid color-mix(in srgb,var(--slate) 45%,transparent);line-height:1.3}
 h2.sec .sec-n{font-size:.62em;font-weight:800;font-variant-numeric:tabular-nums;line-height:1;padding:5px 10px;border-radius:999px;
   color:var(--head);background:color-mix(in srgb,var(--sec-acc) 18%,transparent);border:1px solid color-mix(in srgb,var(--sec-acc) 38%,transparent)}
