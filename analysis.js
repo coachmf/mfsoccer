@@ -262,16 +262,16 @@ window.PRATING = {
 const AX = window.AX = {
   tab:"overview", sub:{teams:"form", players:"perf"}, sel:null, anim:false,
   sorts:{perf:{k:"mins",d:-1}, gk:{k:"mins",d:-1}, form:{k:"pts",d:-1}, ha:{k:"hpts",d:-1}, discT:{k:"y",d:-1},
-         discY:{k:"y",d:-1}, discR:{k:"r",d:-1}, discRd:{k:"r",d:1}, stad:{k:"m",d:-1}, rate:{k:"v",d:-1}},
+         discY:{k:"y",d:-1}, discR:{k:"r",d:-1}, discRd:{k:"r",d:1}, stad:{k:"m",d:-1}, rate:{k:"v",d:-1}, adv:{k:"xg",d:-1}},
   perf:{q:"", club:"", pos:"", x:"", lim:30}, pform:{q:"", club:"", by:"ga", lim:12},
-  ha:{club:""}, stad:{sel:""}, rate:{grp:"", lim:30}
+  ha:{club:""}, stad:{sel:""}, rate:{grp:"", lim:30}, adv:{per:true}
 };
 const TABS=[["overview","نظرة عامة",'<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>'],
   ["teams","الفرق",'<path d="M12 3 4.5 6v5.5c0 4.6 3.2 8.2 7.5 9.5 4.3-1.3 7.5-4.9 7.5-9.5V6z"/>'],
   ["players","اللاعبون",'<circle cx="12" cy="8" r="3.8"/><path d="M4.5 20.5c.6-4 3.6-6.3 7.5-6.3s6.9 2.3 7.5 6.3"/>'],
   ["refs","الحكام",'<circle cx="9" cy="14" r="5"/><path d="M13.5 11.5 21 8V5l-9.5 4.2"/>']];
 const SUBS={
-  teams:[["form","الفورمة"],["ha","الأرض والخارج"],["disc","الانضباط"],["stad","الملاعب"]],
+  teams:[["form","الفورمة"],["adv","الأرقام المتقدمة"],["ha","الأرض والخارج"],["disc","الانضباط"],["stad","الملاعب"]],
   players:[["perf","أداء اللاعبين"],["pform","فورمة اللاعبين"],["gk","الحراس"],["rate","التقييم"]]
 };
 
@@ -307,8 +307,8 @@ window.axLbl = t => { const k=LABEL_ICON[t]; return k ? `<span class="ax-ic" rol
 window.axAbbr = labels => { const L=[...new Set(labels)].filter(t=>LABEL_ICON[t]);
   return L.length ? `<p class="ax-abbr">${L.map(t=>`<span><i class="ax-ic">${ICONS[LABEL_ICON[t]]}</i><span>${t}</span></span>`).join("")}</p>` : ""; };
 /* أول 4 صفوف فقط، و«عرض المزيد» يُظهر الباقي (منصور 2026-09-29) — الحالة تبقى بعد الفرز */
-const OPEN = new Set(["form","ha"]);   /* جدولا الفرق (الفورمة وكل الفرق) كاملان دائماً بلا «عرض المزيد» (منصور 2026-09-29) */
-const NO_MORE = new Set(["form","ha"]);
+const OPEN = new Set(["form","ha","adv"]);   /* جدولا الفرق (الفورمة وكل الفرق) كاملان دائماً بلا «عرض المزيد» (منصور 2026-09-29) */
+const NO_MORE = new Set(["form","ha","adv"]);
 window.tblClip = scope => OPEN.has(scope) ? "" : " ax-clip";
 window.tblMore = (scope, n) => n>4 && !NO_MORE.has(scope) ? `<button type="button" class="ts-morebtn ax-more" data-tbl-more="${scope}" aria-expanded="${OPEN.has(scope)}"><span>${OPEN.has(scope)?"عرض أقل":"عرض المزيد"}</span>${OPEN.has(scope)?"":`<small>+${n-4}</small>`}</button>` : "";
 document.addEventListener("click", e=>{
@@ -641,7 +641,7 @@ function panelHTML(){
   if(t==="overview") return typeof anOverviewHTML==="function" ? anOverviewHTML() : "";
   if(t==="refs") return `<div id="anRefs">${anRefsHTML()}</div>`;
   const s=AX.sub[t];
-  const body = t==="teams" ? ({form:formHTML, ha:haHTML, disc:discHTML, stad:stadHTML}[s]||formHTML)()
+  const body = t==="teams" ? ({form:formHTML, adv:advHTML, ha:haHTML, disc:discHTML, stad:stadHTML}[s]||formHTML)()
                            : ({perf:perfHTML, pform:pformHTML, gk:gkHTML, rate:rateHTML}[s]||perfHTML)();
   return subnav(t) + `<div class="ax-sp">${body}</div>`;
 }
@@ -698,6 +698,87 @@ if(typeof openPlayer==="function" && !openPlayer.__ax){ const _op=openPlayer;
 window.renderAnalysis=renderAnalysisX;
 if(document.querySelector("#v-analysis.on")) renderAnalysisX();
 
+/* ───────────── الفرق: الأرقام المتقدمة (InStat — منصور 2026-10-03) ─────────────
+   بيانات ملف خارجي ثابت (tstats-data.js): مجاميع الجولات 1–3 حتى 29 سبتمبر. تُعرض لكل مباراة افتراضياً
+   (قسمة على المباريات المشمولة لكل فريق) لأن العربي والصليبخات بمباراتين فقط في الملف. */
+const ADV_M = [   /* k · العنوان · per: يُقسم على المباريات · pct: نسبة · منازل عشرية */
+  ["poss","الاستحواذ",0,1,1], ["xg","xG",1,0,2], ["oxg","xG ضدّه",1,0,2], ["sh","تسديدات",1,0,1], ["sot","على المرمى",1,0,1],
+  ["pas","تمريرات",1,0,0], ["pasA","دقة التمرير",0,1,1], ["kp","مفتاحية",1,0,1], ["box","دخول المنطقة",1,0,1],
+  ["rec","استعادة",1,0,1], ["int","اعتراض",1,0,1], ["prsA","نجاح الضغط",0,1,1], ["chW","التحامات",0,1,1],
+  ["aerW","هوائية",0,1,1], ["ca","مرتدات",1,0,1], ["cor","ركنيات",1,0,1], ["fl","أخطاء",1,0,1]
+];
+const ADV_MK = Object.fromEntries(ADV_M.map(x=>[x[0],x]));
+const advV = (t, k) => { const m=ADV_MK[k]; const v=+t[k]||0; return m && m[2] && AX.adv.per ? v/(t.mp||1) : v; };
+const advF = (k, v) => { const m=ADV_MK[k]||[k,"",0,0,1]; const d = (m[2] && !AX.adv.per) ? (Number.isInteger(v)?0:m[4]) : m[4]; return (+v).toFixed(d) + (m[3]?"%":""); };
+const fmtAsOf = iso => { const d=new Date(iso+"T00:00:00"); const M=(typeof AR_MON!=="undefined"&&AR_MON)||[]; return isNaN(d) ? iso : `${d.getDate()} ${M[d.getMonth()]||(d.getMonth()+1)} ${d.getFullYear()}`; };
+/* تباعد الشعارات المتقاربة: دفع متبادل حتى ~27px بين المراكز، داخل حدود الرسم (النقطة الحقيقية تبقى بنقطة صغيرة وخط) */
+function advPlace(P, x0, x1, y0, y1){
+  P.forEach(p=>{ p.x=p.x0; p.y=p.y0; });
+  for(let it=0; it<120; it++){ let moved=false;
+    for(let i=0;i<P.length;i++) for(let j=i+1;j<P.length;j++){ const a=P[i], b=P[j]; let dx=b.x-a.x, dy=b.y-a.y, d=Math.hypot(dx,dy);
+      if(d<27){ if(d<.01){ dx=1; dy=.3; d=1.04; } const k=(27-d)/2/d; a.x-=dx*k; a.y-=dy*k; b.x+=dx*k; b.y+=dy*k; moved=true; } }
+    P.forEach(p=>{ p.x=Math.min(x1,Math.max(x0,p.x)); p.y=Math.min(y1,Math.max(y0,p.y)); });
+    if(!moved) break; }
+  return P;
+}
+function advScatter(T){
+  /* هجوم (xG لكل مباراة، يميناً أكثر) × دفاع (xG ضدّه لكل مباراة، الأعلى = أقل استقبالاً) */
+  const X=T.map(t=>t.xg/t.mp), Y=T.map(t=>t.oxg/t.mp);
+  const pad=v=>[Math.floor(Math.min(...v)*2)/2-.25, Math.ceil(Math.max(...v)*2)/2+.25];
+  const [x0,x1]=pad(X), [y0,y1]=pad(Y), W=340, Hh=300, L=34, R=10, Tp=12, B=30;
+  const sx=v=>L+(v-x0)/(x1-x0)*(W-L-R), sy=v=>Tp+(v-y0)/(y1-y0)*(Hh-Tp-B);
+  const ax=X.reduce((s,v)=>s+v,0)/T.length, ay=Y.reduce((s,v)=>s+v,0)/T.length;
+  const ticks=(a,b)=>{ const o=[]; for(let v=Math.ceil(a*2)/2; v<=b+1e-9; v+=.5) o.push(+v.toFixed(1)); return o; };
+  const q=(x,y,t,anchor)=>`<text x="${x}" y="${y}" text-anchor="${anchor}" class="adv-q">${t}</text>`;
+  return `<div class="an-card adv-sc"><svg viewBox="0 0 ${W} ${Hh}" role="img" aria-label="الهجوم مقابل الدفاع">
+    <rect x="${sx(ax)}" y="${Tp}" width="${W-R-sx(ax)}" height="${sy(ay)-Tp}" class="adv-best"/>
+    ${ticks(x0,x1).map(v=>`<line x1="${sx(v)}" x2="${sx(v)}" y1="${Tp}" y2="${Hh-B}" class="adv-grid"/><text x="${sx(v)}" y="${Hh-B+14}" text-anchor="middle" class="adv-tk">${v.toFixed(1)}</text>`).join("")}
+    ${ticks(y0,y1).map(v=>`<line x1="${L}" x2="${W-R}" y1="${sy(v)}" y2="${sy(v)}" class="adv-grid"/><text x="${L-6}" y="${sy(v)+3.5}" text-anchor="end" class="adv-tk">${v.toFixed(1)}</text>`).join("")}
+    <line x1="${sx(ax)}" x2="${sx(ax)}" y1="${Tp}" y2="${Hh-B}" class="adv-avg"/><line x1="${L}" x2="${W-R}" y1="${sy(ay)}" y2="${sy(ay)}" class="adv-avg"/>
+    ${q(W-R-4, Tp+12, "هجوم قوي · دفاع صلب", "end")}${q(L+4, Hh-B-6, "هجوم أضعف · دفاع أضعف", "start")}
+    ${advPlace(T.map(t=>({t, x0:sx(t.xg/t.mp), y0:sy(t.oxg/t.mp)})), L+13, W-R-13, Tp+13, Hh-B-13).map(({t,x0,y0,x,y})=>`<g class="adv-pt"><title>${H(t.c)} — xG ${f2(t.xg/t.mp)} · ضدّه ${f2(t.oxg/t.mp)}</title>${Math.hypot(x-x0,y-y0)>3?`<line x1="${x0.toFixed(1)}" y1="${y0.toFixed(1)}" x2="${x.toFixed(1)}" y2="${y.toFixed(1)}" class="adv-lk"/><circle cx="${x0.toFixed(1)}" cy="${y0.toFixed(1)}" r="2.2" class="adv-dot"/>`:""}<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="13"/><image href="${H(crestSrcOf(t.c))}" x="${(x-10).toFixed(1)}" y="${(y-10).toFixed(1)}" width="20" height="20" preserveAspectRatio="xMidYMid meet"/></g>`).join("")}
+  </svg>
+  <div class="adv-axes"><span>الأفقي: xG له في المباراة (يميناً أكثر)</span><span>الرأسي: xG ضدّه (الأعلى أقل)</span></div></div>`;
+}
+function advDuo(T, a, b, la, lb, sub){
+  /* الفعلي مقابل المتوقع: شريطان لكل فريق + الفارق */
+  const S=[...T].sort((p,q)=>((q[a]-q[b])-(p[a]-p[b]))||byAr(p.c,q.c)), mx=Math.max(...T.map(t=>Math.max(t[a],t[b])),1);
+  return `<div class="an-card adv-duo">
+    <div class="adv-lg"><span><i class="act"></i>${la}</span><span><i class="exp"></i>${lb}</span><small>${sub}</small></div>
+    ${S.map(t=>{ const d=t[a]-t[b]; return `<div class="adv-row"><span class="adv-tm">${crest(t.c)}<b>${H(t.c)}</b></span>
+      <span class="adv-bars"><span><i class="act" style="width:${(t[a]/mx*100).toFixed(1)}%"></i><em dir="ltr">${t[a]}</em></span><span><i class="exp" style="width:${(t[b]/mx*100).toFixed(1)}%"></i><em dir="ltr">${(+t[b]).toFixed(1)}</em></span></span>
+      <span class="adv-d ${d>=.05?"up":d<=-.05?"dn":""}" dir="ltr">${d>0?"+":""}${d.toFixed(1)}</span></div>`; }).join("")}</div>`;
+}
+function advLeaders(T){
+  const L=[["poss","أعلى استحواذ"],["pasA","أدق تمرير"],["sh","الأكثر تسديداً"],["box","الأكثر دخولاً لمنطقة الجزاء"],["kp","تمريرات مفتاحية"],["rec","استعادة الكرة"],["prsA","أنجح ضغط"],["aerW","سيطرة هوائية"],["ca","هجمات مرتدة"],["fl","الأقل أخطاءً",1]];
+  return `<div class="adv-lead">${L.map(([k,t,lo])=>{ const S=[...T].sort((p,q)=>lo ? advV(p,k)-advV(q,k) : advV(q,k)-advV(p,k)).slice(0,3);
+    return `<div class="an-card adv-lc"><span class="adv-lt">${t}</span>
+      <div class="adv-l1">${crest(S[0].c)}<b>${H(S[0].c)}</b><em dir="ltr">${advF(k, advV(S[0],k))}</em></div>
+      ${S.slice(1).map((x,i)=>`<div class="adv-l2"><i>${i+2}</i><span>${H(x.c)}</span><em dir="ltr">${advF(k, advV(x,k))}</em></div>`).join("")}</div>`; }).join("")}</div>`;
+}
+function advHTML(){
+  const D=window.TSTATS; if(!D || !D.teams || !D.teams.length) return empty("لا توجد أرقام متقدمة بعد.");
+  const T=D.teams.filter(t=>t.mp>0), per=AX.adv.per, n=T.length;
+  const avg=k=>T.reduce((s,t)=>s+t[k]/t.mp,0)/n, avgP=k=>T.reduce((s,t)=>s+t[k],0)/n;
+  const cols=[["n","الفريق","tl sticky"]].concat(ADV_M.map(([k,t])=>[k,t]));
+  const keys={n:x=>x.c}; ADV_M.forEach(([k])=>keys[k]=x=>advV(x,k));
+  const S=sortBy(T,"adv",keys);
+  const mx=Math.max(...T.map(x=>x.mp)), short=T.filter(t=>t.mp<mx).map(t=>t.c);
+  return `<div class="rf-filters ax-f2">${seasonSel()}<label class="rf-f"><span>العرض</span><select data-ax-f="advPer"><option value="1"${per?" selected":""}>لكل مباراة</option><option value="0"${per?"":" selected"}>مجموع الجولات</option></select></label></div>
+    ${sec("الأرقام المتقدمة", `بيانات ${H(D.src)} للجولات ${H(D.rounds)} (حتى ${H(fmtAsOf(D.asOf))}).${short.length?` ${short.map(H).join(" و")}: مباراتان فقط في البيانات.`:""}`)}
+    ${kpis([[f2(avg("xg")),"xG للفريق في المباراة","lead"],[avg("sh").toFixed(1),"تسديدات للفريق"],[avgP("pasA").toFixed(1)+"%","متوسط دقة التمرير"],[avg("rec").toFixed(1),"استعادة للكرة"]])}
+    ${sec("الهجوم مقابل الدفاع", "مكان كل شعار حسب الأهداف المتوقعة له وعليه في المباراة. المنطقة المظلّلة أفضل من متوسط الدوري في الاثنين.")}
+    ${advScatter(T)}
+    <div class="ax-duo">
+      <div>${sec("الأهداف مقابل المتوقع (xG)", "موجب = إنهاء أفضل من نوعية الفرص.")}${advDuo(T,"g","xg","الأهداف","xG","مجموع الجولات")}</div>
+      <div>${sec("النقاط مقابل المتوقع (xPts)", "موجب = نقاط أكثر مما يستحقه الأداء.")}${advDuo(T,"pts","xpts","النقاط","xPts","مجموع الجولات")}</div>
+    </div>
+    ${sec("المتصدّرون", per?"لكل مباراة؛ النسب كما هي.":"مجموع الجولات؛ النسب كما هي.")}
+    ${advLeaders(T)}
+    ${sec("مقارنة كل الفرق", "اضغط عنوان أي عمود للترتيب.")}
+    ${table("adv", cols, S.map(x=>`<tr><td class="tl sticky">${clubCell(x.c)}</td>${ADV_M.map(([k])=>`<td${k===AX.sorts.adv.k?' class="adv-on"':""} dir="ltr">${advF(k, advV(x,k))}</td>`).join("")}</tr>`).join(""), "ax-wide adv-tbl")}`;
+}
+
 /* ───────────── الأحداث (تفويض واحد على صفحة التحليل) ───────────── */
 function scrollTopOfPanel(){ const p=$a("#axPanel"); if(p){ const y=p.getBoundingClientRect().top+scrollY-90; if(y<scrollY) scrollTo({top:y, behavior:"smooth"}); } }
 document.addEventListener("click", e=>{
@@ -733,6 +814,7 @@ document.addEventListener("change", e=>{
   if(k==="perfPos"){ AX.perf.pos=v; AX.perf.lim=30; }
   if(k==="perfX"){ AX.perf.x=v; if(v){ AX.sorts.perf.k=v; AX.sorts.perf.d=-1; } }
   if(k==="pfClub"){ AX.pform.club=v; AX.pform.lim=12; }
+  if(k==="advPer") AX.adv.per = v==="1";
   paint(false);
 });
 document.addEventListener("input", e=>{

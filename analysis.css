@@ -314,3 +314,54 @@ html.gs-open{overflow:hidden}
    على البطاقات الطويلة فتبقى الجداول باهتة — نفس ما حدث مع قوائم «عرض المزيد» (2026-09-19). بطاقات التحليل
    بلا حركة تمرير؛ دخول التبويب له حركته الخاصة (.ax-body.in). */
 .view .ax :is(.an-card,.card,.rf-tcard){animation:none!important;opacity:1!important;transform:none!important}
+
+/* ── الأرقام المتقدمة (InStat — 2026-10-03) ── */
+.adv-sc{padding:12px 10px 10px}
+.adv-sc svg{display:block;width:100%;height:auto;max-height:420px;direction:ltr}
+.adv-sc .adv-grid{stroke:var(--an-line);stroke-width:1}
+.adv-sc .adv-avg{stroke:var(--an-mut);stroke-width:1;stroke-dasharray:4 4;opacity:.7}
+.adv-sc .adv-best{fill:var(--an-acc);opacity:.07}
+.adv-sc .adv-tk{font-size:9px;fill:var(--an-mut);font-variant-numeric:tabular-nums}
+.adv-sc .adv-q{font-size:9.5px;font-weight:700;fill:var(--an-mut)}
+.adv-sc .adv-pt circle{fill:var(--an-card);stroke:var(--an-line);stroke-width:1.2}
+.adv-sc .adv-pt:hover circle{stroke:var(--an-acc);stroke-width:2}
+.adv-sc .adv-pt .adv-lk{stroke:var(--an-mut);stroke-width:1;opacity:.6}
+.adv-sc .adv-pt circle.adv-dot{fill:var(--an-mut);stroke:none}
+.adv-axes{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-top:6px;font-size:.68rem;color:var(--an-mut)}
+.adv-duo{padding:12px 14px}
+.adv-lg{display:flex;align-items:center;gap:14px;flex-wrap:wrap;font-size:.72rem;color:var(--an-mut);margin-bottom:8px}
+.adv-lg span{display:inline-flex;align-items:center;gap:6px}
+.adv-lg i{width:12px;height:6px;border-radius:3px;display:inline-block}
+.adv-lg small{margin-inline-start:auto;font-size:.66rem}
+.adv-lg i.act,.adv-bars i.act{background:var(--an-acc)}
+.adv-lg i.exp,.adv-bars i.exp{background:var(--an-mut);opacity:.45}
+.adv-row{display:grid;grid-template-columns:104px minmax(0,1fr) 44px;align-items:center;gap:10px;padding:6px 0;border-top:1px solid var(--an-line)}
+.adv-row:first-of-type{border-top:0}
+.adv-tm{display:flex;align-items:center;gap:7px;min-width:0}
+.adv-tm b{font-size:.8rem;font-weight:700;color:var(--an-txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.adv-tm .crest{width:20px;height:20px;flex:none}
+.adv-bars{display:flex;flex-direction:column;gap:3px;min-width:0}
+.adv-bars>span{display:flex;align-items:center;gap:6px;min-width:0}
+.adv-bars i{display:block;height:7px;border-radius:4px;min-width:2px;transition:width .5s var(--mo-out,cubic-bezier(.2,.8,.2,1))}
+.adv-bars em{font-style:normal;font-size:.68rem;font-weight:700;color:var(--an-mut);font-variant-numeric:tabular-nums}
+.adv-bars>span:first-child em{color:var(--an-txt)}
+.adv-d{justify-self:end;font-size:.74rem;font-weight:800;font-variant-numeric:tabular-nums;color:var(--an-mut);padding:2px 6px;border-radius:7px;background:var(--an-track)}
+.adv-d.up{color:#16a34a;background:rgba(22,163,74,.12)}
+.adv-d.dn{color:#dc2626;background:rgba(220,38,38,.1)}
+.adv-lead{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+@media(min-width:700px){.adv-lead{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(min-width:1000px){.adv-lead{grid-template-columns:repeat(5,minmax(0,1fr))}}
+.adv-lc{padding:12px;display:flex;flex-direction:column;gap:6px}
+.adv-lt{font-size:.7rem;font-weight:700;color:var(--an-mut)}
+.adv-l1{display:grid;grid-template-columns:auto minmax(0,1fr);grid-template-rows:auto auto;column-gap:8px;align-items:center}
+.adv-l1 .crest{grid-row:span 2;width:30px;height:30px}
+.adv-l1 b{font-size:.84rem;font-weight:800;color:var(--an-txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.adv-l1 em{font-style:normal;font-size:1.15rem;font-weight:800;color:var(--an-acc);font-variant-numeric:tabular-nums;justify-self:start}
+.adv-l2{display:grid;grid-template-columns:16px minmax(0,1fr) auto;gap:6px;align-items:center;font-size:.72rem;color:var(--an-mut);border-top:1px dashed var(--an-line);padding-top:5px}
+.adv-l2 i{font-style:normal;font-weight:700;text-align:center}
+.adv-l2 span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--an-txt)}
+.adv-l2 em{font-style:normal;font-weight:700;font-variant-numeric:tabular-nums}
+.ax .rf-tbl.adv-tbl{min-width:1180px}
+.ax .rf-tbl.adv-tbl td{font-variant-numeric:tabular-nums}
+.ax .rf-tbl.adv-tbl td.adv-on{font-weight:800;color:var(--an-acc)}
+@media(max-width:380px){.adv-row{grid-template-columns:86px minmax(0,1fr) 40px;gap:8px}.adv-tm b{font-size:.74rem}}
