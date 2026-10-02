@@ -764,7 +764,7 @@ function advHTML(){
   const keys={n:x=>x.c}; ADV_M.forEach(([k])=>keys[k]=x=>advV(x,k));
   const S=sortBy(T,"adv",keys);
   return `<div class="rf-filters ax-f2">${seasonSel()}<label class="rf-f"><span>العرض</span><select data-ax-f="advPer"><option value="1"${per?" selected":""}>لكل مباراة</option><option value="0"${per?"":" selected"}>مجموع الجولات</option></select></label></div>
-    ${sec("الأرقام المتقدمة", "الإحصائيات من الجولة 1 إلى الجولة 3.")}
+    ${sec("الأرقام المتقدمة", "الإحصائيات من الجولة 1 إلى الجولة 3، ولا تشمل مباراة العربي والصليبيخات في الجولة 3 لعدم نقلها.")}
     ${kpis([[f2(avg("xg")),"xG للفريق في المباراة","lead"],[avg("sh").toFixed(1),"تسديدات للفريق"],[avgP("pasA").toFixed(1)+"%","متوسط دقة التمرير"],[avg("rec").toFixed(1),"استعادة للكرة"]])}
     ${sec("الهجوم مقابل الدفاع", "مكان كل شعار حسب الأهداف المتوقعة له وعليه في المباراة. المنطقة المظلّلة أفضل من متوسط الدوري في الاثنين.")}
     ${advScatter(T)}
