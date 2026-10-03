@@ -2169,6 +2169,8 @@ main{padding-bottom:48px}
 .tl .tl-row.card,.tl .tl-ev.card{background:none;border:0;border-radius:0;box-shadow:none;overflow:visible;padding:0;animation:none}
 .tl .tl-row.card .tl-name{overflow:visible;padding-inline:2px}
 .tl-min.card span{background:#fff;color:var(--head);border:1.5px solid var(--line2)}
+/* حاوية دقيقة البطاقة تحمل الصنف «card» فيرث إطار البطاقات العام (خلفية/حدود/ظل) → حلقة ثانية حول الدقيقة (منصور 2026-10-03) */
+.tl .tl-min.card{background:none;border:0;border-radius:0;box-shadow:none;padding:0;width:auto;min-height:0;overflow:visible}
 .tl-ev.sub.a .tl-card{align-items:flex-start}
 /* ===== /v25 ===== */
 </style>
@@ -13957,7 +13959,9 @@ function renderMatchPage(){
 function renderMatchPageRaw(){
   const box=$("#mpage"), m=MP.m; if(!box||!m) return;
   const body = MP.tab==="lineups" ? mpLineups(m) : MP.tab==="squad" ? mpSquad(m) : MP.tab==="table" ? mpTable(m) : MP.tab==="matches" ? mpMatches(m) : mpDetails(m);
-  box.innerHTML=`<div class="mp-sheet" style="--hc:${clubAccent(m.home).a};--ac:${clubAccent(m.away).a}">
+  /* توهج رأس صفحة المباراة بلون القميص الأساسي: الأبيض يبقى أبيض (الإمارات/العراق كانا يظهران بالأحمر/الأخضر — منصور 2026-10-03) */
+  const glowOf=c=>{ const cc=(window.CLUB_COLORS||{})[c]; return cc && lumOf(cc[0])>.85 ? "#FFFFFF" : clubAccent(c).a; };
+  box.innerHTML=`<div class="mp-sheet" style="--hc:${glowOf(m.home)};--ac:${glowOf(m.away)}">
     <header class="mp-head">${mpHeader(m)}</header>
     <nav class="mp-tabs">${MP_TABS.map(([k,l])=>`<button type="button" data-mp-tab="${k}" aria-pressed="${MP.tab===k}">${l}</button>`).join("")}</nav>
     <div class="mp-body">${body}</div></div>`;
