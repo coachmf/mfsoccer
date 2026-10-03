@@ -3108,7 +3108,9 @@ function isUpcoming(m){
 /* انتهت المباراة: «انتهت» صراحة، أو أُقيمت وخرجت من نافذة اللعب (ساعتان) ولم تُعلَّم بمرحلة جارية */
 /* شارة المباراة الجارية في البطاقات: «استراحة» بين الشوطين كما في صفحة المباراة، وإلا «جارية الآن» (منصور 2026-09-23) */
 const isGulfMatch = m => !!(m && (m.__gulf || String(m.comp||"")==="كأس الخليج"));
-const liveStHTML = ph => ph==="ht" ? '<span class="mc-st ht">استراحة</span>' : '<span class="mc-st live"><i></i>جارية الآن</span>';
+/* اسم المرحلة بدل «جارية الآن» حين تُحدَّد (منصور 2026-10-03: «ابي الحالة تطلع هني بدال جارية») */
+const LIVE_PH_AR = {h1:"الشوط الأول", h2:"الشوط الثاني", e1:"الشوط الإضافي الأول", e2:"الشوط الإضافي الثاني", pso:"ركلات الترجيح"};
+const liveStHTML = ph => ph==="ht" ? '<span class="mc-st ht">استراحة</span>' : `<span class="mc-st live"><i></i>${LIVE_PH_AR[ph]||"جارية الآن"}</span>`;
 function matchOver(m){
   if(!m) return false; if(m.status==="ft") return true;
   if(["pre","h1","ht","h2","e1","e2","pso"].includes(m.status)) return false;
