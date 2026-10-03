@@ -14662,7 +14662,17 @@ html.mx-editing #waFab{display:none!important}   /* زر واتساب كان ي�
   const TV_LIST=["كويت سبورت","كويت سبورت بلس","الكويت الأولى","غير منقولة"];
   const stadiums=()=>{ const set=new Set(); if(typeof CLUB_INFO!=="undefined") Object.values(CLUB_INFO).forEach(i=>i&&i.st&&set.add(i.st)); (ALL.matches||[]).forEach(x=>x.venue&&set.add(String(x.venue).trim())); return [...set].filter(Boolean).slice(0,16); };
   /* اختصارات الدقائق حسب المرحلة */
-  const minChips=key=>{ const st=EDIT.match.status; const L=st==="h1"?[1,15,30,45]:st==="h2"?[46,60,75,90]:st==="e1"?[91,95,100,105]:st==="e2"?[106,110,115,120]:
+  /* اختيار الشوط في كل حدث (منصور 2026-10-03: التبديلات والأهداف والإنذارات بلا خيار للإضافي): أربعة أشواط في مباريات
+     خروج المغلوب. للتبديل يُحفظ في h (3/4 = الإضافيان)؛ لبقية الأحداث يضبط الدقيقة على مدى الشوط فقط. */
+  const PERS=[["1","الشوط الأول",1,45],["2","الشوط الثاني",46,90],["3","الإضافي الأول",91,105],["4","الإضافي الثاني",106,120]];
+  const perOf=(k,d)=>{ if(k==="sub") return String(d.h||"1"); if(d._per) return d._per; const m=+d.m||0;
+    if(!m){ const st=EDIT.match.status; return st==="h2"?"2":st==="e1"?"3":st==="e2"?"4":"1"; }
+    return m<=45?"1":m<=90?"2":m<=105?"3":"4"; };
+  const perChips=(k,d)=>{ const ko=isKO(EDIT.match); if(!ko && k!=="sub") return "";
+    const L=ko?PERS:PERS.slice(0,2), cur=perOf(k,d);
+    return `<div class="mx-span"><span class="mx-lbl">الشوط</span><div class="mx-chips">${L.map(([v,t])=>`<button class="mx-chip${cur===v?" on":""}" data-mper="${v}">${t}</button>`).join("")}</div></div>`; };
+  const PER_MIN={"1":[1,15,30,45],"2":[46,60,75,90],"3":[91,95,100,105],"4":[106,110,115,120]};
+  const minChips=(key,per)=>{ const st=EDIT.match.status; const L=per&&isKO(EDIT.match)?PER_MIN[per]:st==="h1"?[1,15,30,45]:st==="h2"?[46,60,75,90]:st==="e1"?[91,95,100,105]:st==="e2"?[106,110,115,120]:
       hasET(EDIT.match)?[1,15,30,45,60,75,90,105,120]:[1,15,30,45,60,75,90];
     return `<div class="mx-chips" style="margin-top:8px">${L.map(v=>`<button class="mx-chip" data-mset="${key}" data-mval="${v}">${v}'</button>`).join("")}</div>`; };
   function openEv(k,i,preset){
@@ -14738,7 +14748,7 @@ html.mx-editing #waFab{display:none!important}   /* زر واتساب كان ي�
       ${[h,a].filter(Boolean).map(c=>`<button class="mx-side${club===c?" on":""}" data-mset="${ck}" data-mval="${esc(c)}" style="--srgb:${rgbOf(c)}">${crest(c)}<div><b>${esc(c)}</b></div></button>`).join("")}</div></div>`;
     let body=team;
     if(k==="goal"){
-      body+=`<div class="mx-grid">${stepper("m",d.m,"الدقيقة",130)}${stepper("x",d.x||0,"وقت بدل ضائع +",20)}</div>${minChips("m")}${rangeHint(d.m)}
+      body+=`${perChips(k,d)}<div class="mx-grid">${stepper("m",d.m,"الدقيقة",130)}${stepper("x",d.x||0,"وقت بدل ضائع +",20)}</div>${minChips("m",perOf(k,d))}${rangeHint(d.m)}
         <div><span class="mx-lbl">المسجّل</span>${pickGrid(club,"p",d.p)}</div>
         <div><span class="mx-lbl">طريقة التسجيل</span>${chips("bp",LIST.bp,d.bp)}</div>
         ${d.bp==="هدف عكسي"?`<div><span class="mx-lbl">ارتدت عن (لاعب ${esc(opp||"الخصم")})</span>${pickGrid(opp,"og",d.og)}</div>`:""}
@@ -14750,11 +14760,11 @@ html.mx-editing #waFab{display:none!important}   /* زر واتساب كان ي�
     }
     if(k==="card"){
       body+=`<div><span class="mx-lbl">نوع البطاقة</span>${chips("type",LIST.cardtype,d.type,v=>isRed(v)&&!/ثان/.test(v)?"red":"warn")}</div>
-        <div class="mx-grid">${stepper("m",d.m,"الدقيقة",130)}${stepper("x",d.x||0,"وقت بدل ضائع +",20)}</div>
+        ${perChips(k,d)}<div class="mx-grid">${stepper("m",d.m,"الدقيقة",130)}${stepper("x",d.x||0,"وقت بدل ضائع +",20)}</div>${isKO(EDIT.match)?minChips("m",perOf(k,d)):""}
         <div><span class="mx-lbl">اللاعب</span>${pickGrid(club,"p",d.p)}</div>`;   /* الدقيقة فوق قائمة اللاعبين (كانت تختفي تحت 26 لاعباً) + بدل الضائع 45+1 (المحررون 2026-09-30) */
     }
     if(k==="pen"){
-      body+=`<div class="mx-grid">${stepper("m",d.m,"الدقيقة",130)}</div>
+      body+=`${perChips(k,d)}<div class="mx-grid">${stepper("m",d.m,"الدقيقة",130)}</div>
         <div><span class="mx-lbl">المنفّذ</span>${pickGrid(club,"p",d.p)}</div>
         <div><span class="mx-lbl">النتيجة</span>${chips("res",LIST.penres,d.res,v=>v==="سجلت"?"ok":"")}</div>
         <div><span class="mx-lbl">مكان التسديد</span>${chips("place",PZONES,d.place)}</div>
@@ -14763,12 +14773,11 @@ html.mx-editing #waFab{display:none!important}   /* زر واتساب كان ي�
     if(MEV[k]){
       if(k==="chance") body+=`<div><span class="mx-lbl">اللاعب</span>${pickGrid(club,"p",d.p)}</div>`;
       else if(club) body+=`<div><span class="mx-lbl">اللاعب المعني (اختياري)</span>${pickGrid(club,"p",d.p,{none:"بدون لاعب"})}</div>`;
-      body+=`<div class="mx-grid">${stepper("m",d.m,"الدقيقة",130)}${stepper("x",d.x||0,"وقت بدل ضائع +",20)}</div>${minChips("m")}
+      body+=`${perChips(k,d)}<div class="mx-grid">${stepper("m",d.m,"الدقيقة",130)}${stepper("x",d.x||0,"وقت بدل ضائع +",20)}</div>${minChips("m",perOf(k,d))}
         <div><span class="mx-lbl">${k==="note"?"نص التعليق":"وصف قصير (اختياري)"}</span><input data-msf="note" value="${esc(d.note||"")}" placeholder="${k==="var"?"مثال: مراجعة ركلة جزاء — أُلغيت":k==="chance"?"مثال: تسديدة من خارج المنطقة":"مثال: بداية الشوط الثاني"}"></div>`;
     }
     if(k==="sub"){
-      body+=`<div class="mx-grid">
-          <div><span class="mx-lbl">الشوط</span>${chips("h",["1","2"],String(d.h||"1"))}</div>${stepper("m",d.m,"الدقيقة",130)}${stepper("x",d.x||0,"وقت بدل ضائع +",20)}</div>
+      body+=`${perChips(k,d)}<div class="mx-grid">${stepper("m",d.m,"الدقيقة",130)}${stepper("x",d.x||0,"وقت بدل ضائع +",20)}</div>${isKO(EDIT.match)?minChips("m",perOf(k,d)):""}
         <div><span class="mx-lbl">خرج</span>${pickGrid(club,"out",d.out,{only:"xi"})}</div>
         <div><span class="mx-lbl">دخل</span>${pickGrid(club,"in",d.in,{only:"bench",exclude:d.out})}</div>`;
     }
@@ -14790,6 +14799,10 @@ html.mx-editing #waFab{display:none!important}   /* زر واتساب كان ي�
     if(k==="var"){ if(!need(+d.m>=1,"أدخل الدقيقة")) return; }
     if(k==="note"){ if(!need((d.note||"").trim(),"اكتب نص التعليق")) return; }
     if(k==="goal" && d.a===d.p) d.a="";
+    { const per=perOf(k,d), mm=+d.m||0;      /* «الإضافي الأول، الدقيقة 5» = 95 */
+      if(per==="3" && mm>=1 && mm<=15) d.m=String(90+mm);
+      if(per==="4" && mm>=1 && mm<=15) d.m=String(105+mm);
+      if(+per>=3) EDIT.match.et=true; delete d._per; }
     const arr=EDIT[ARR[k]];
     if(S.i>=0) arr[S.i]=d; else arr.push(d);
     MX.sheet=null; FORMERR=""; renderMatchAdmin();
@@ -14913,6 +14926,11 @@ html.mx-editing #waFab{display:none!important}   /* زر واتساب كان ي�
       q("[data-mset]",b=>b.onclick=()=>{ const key=b.dataset.mset, v=b.dataset.mval;
         if(key===CLUBKEY[MX.sheet.k] && d[key]!==v){ ["p","a","og","out","in"].forEach(f=>{ if(f in d) d[f]=""; }); }
         d[key]=v; if(key==="bp"&&v!=="هدف عكسي") d.og=""; rerender(); });
+      q("[data-mper]",b=>b.onclick=()=>{ const v=b.dataset.mper, row=PERS.find(r=>r[0]===v), m=+d.m||0;
+        if(MX.sheet.k==="sub") d.h=v; else d._per=v;
+        /* الدقيقة خارج مدى الشوط المختار → بداية الشوط (التبديل في الشوطين الأصليين يحتفظ بطريقة الإدخال القديمة) */
+        if(!(MX.sheet.k==="sub" && +v<=2) && ((m && (m<row[2] || m>row[3])) || (!m && +v>=3))) d.m=String(row[2]);
+        if(+v>=3) EDIT.match.et=true; rerender(); });
       q("[data-mbench]",b=>b.onclick=()=>{ const S=MX.sheet; S.bench=S.bench||{}; S.bench[b.dataset.mbench]=true; rerender(); });
       q("[data-mpick]",b=>b.onclick=()=>{ const key=b.dataset.mpick, v=b.dataset.mname; d[key]=(d[key]===v&&key==="a")?"":v; rerender(); });
       q("[data-msf]",el=>{ el.oninput=()=>{ d[el.dataset.msf]=el.value; }; el.onchange=()=>{ d[el.dataset.msf]=el.value; }; });
