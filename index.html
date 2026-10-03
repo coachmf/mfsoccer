@@ -1923,6 +1923,11 @@ main{padding-bottom:48px}
 .tl-mark span{position:relative;background:#E8EFF7;color:#34517A;font-family:var(--display);font-weight:700;font-size:.72rem;padding:4px 14px;border-radius:999px;box-shadow:0 0 0 4px #FAFCFE}
 .tl-mark span b{color:var(--head);font-weight:800;direction:ltr;unicode-bidi:isolate}
 .tl-mark.end span{background:var(--head);color:#fff} .tl-mark.end span b{color:#FFD97A}
+/* ركلات الترجيح في الخط الزمني (للعرض فقط) */
+.tl-min.pk span{background:#E8EFF7;color:#34517A;box-shadow:0 0 0 4px #FAFCFE}
+.tl-ev.pk .pk-ico{flex:none;display:grid;place-items:center;width:24px;height:24px;border-radius:50%;color:#fff}
+.tl-ev.pk.ok .pk-ico{background:#12B76A}.tl-ev.pk.no .pk-ico{background:#D92D20}
+.tl-ev.pk.no .tl-name{color:#6B7F9A}
 .tl-mark.end::before{bottom:50%}
 @media(max-width:640px){.tl{padding:8px 10px 12px}.tl-row{grid-template-columns:1fr 52px 1fr;min-height:48px}.tl-name{font-size:.82rem}.tl-score{display:none}.tl-min span{min-width:38px;height:24px;font-size:.72rem}}
 /* ===== /v15 ===== */
@@ -5198,9 +5203,13 @@ const add2Of = m => Math.max(0, Math.min(30, +((m||{}).add2) || 0));
 const ET_PH = ["e1","e2","pso"];
 const add3Of = m => Math.max(0, Math.min(30, +((m||{}).add3) || 0));
 const add4Of = m => Math.max(0, Math.min(30, +((m||{}).add4) || 0));
-const hasET = m => !!(m && (m.et || ET_PH.includes(m.status)));
+const hasET = m => !!(m && (m.et || m.status==="e1" || m.status==="e2"));
 const etAbs = (m, mm, x) => 90 + add1Of(m) + add2Of(m) + (mm - 90) + (mm > 105 ? add3Of(m) : 0) + (+x || 0);
-const psoOf = m => { const p=(m||{}).pso; return p && p.h!=null && p.a!=null && p.h!=="" && p.a!=="" ? {h:+p.h, a:+p.a} : null; };
+/* ركلات الترجيح للعرض فقط (منصور 2026-10-03): m.psk = [{t:"h"|"a", p:اسم, ok:سجّل؟}] بالترتيب — لا تدخل أهدافاً ولا ركلات جزاء
+   ولا أي إحصاء؛ النتيجة تُحسب من الركلات، أو من m.pso إن أُدخلت النتيجة وحدها */
+const pskOf = m => Array.isArray((m||{}).psk) ? m.psk.filter(k=>k && (k.t==="h"||k.t==="a")) : [];
+const psoOf = m => { const K=pskOf(m); if(K.length) return {h:K.filter(k=>k.t==="h"&&k.ok).length, a:K.filter(k=>k.t==="a"&&k.ok).length};
+  const p=(m||{}).pso; return p && p.h!=null && p.a!=null && p.h!=="" && p.a!=="" ? {h:+p.h, a:+p.a} : null; };
 const matchLen = m => 90 + add1Of(m) + add2Of(m) + (hasET(m) ? 30 + add3Of(m) + add4Of(m) : 0);
 /* حدّ الشباك النظيفة ودقائق اللعب: ثلثا المباراة (67٪) بدل رقم ثابت —
    يعطي 60 في مباراة 90، و68 في مباراة 102، فيبقى الشرط عادلاً مهما طالت. */
@@ -5295,7 +5304,7 @@ function crewOf(m){ const b=REF_BOOK[`${m.round}|${m.home}|${m.away}`]||{}, save
   return {ref:m.ref||b.ref||"", refs}; }
 function newEdit(){
   return {orig:null, match:{round:"", comp:(compsPresent()[0]||"الدوري"), home:"", away:"",
-          venue:"", date:"", time:"", note:"", ref:"", refs:{}, tv:"", status:"", add1:"", add2:"", et:false, add3:"", add4:"", pso:{h:"",a:""}}, goals:[], cards:[], pens:[], lineup:[], subs:[], shapes:{}, mev:[]};
+          venue:"", date:"", time:"", note:"", ref:"", refs:{}, tv:"", status:"", add1:"", add2:"", et:false, add3:"", add4:"", pso:{h:"",a:""}, psk:[]}, goals:[], cards:[], pens:[], lineup:[], subs:[], shapes:{}, mev:[]};
 }
 function loadEditRaw(m){
   const gs=(ALL.goals||[]).filter(g=>g.r===m.round && compOf(g)===compOf(m) &&
@@ -5310,7 +5319,7 @@ function loadEditRaw(m){
   (ALL.shapes||[]).filter(x=>x.r===m.round && compOf(x)===compOf(m) && (x.club===m.home||x.club===m.away))
     .forEach(x=>{ shp[x.club]={f:x.f||"", pos:JSON.parse(JSON.stringify(x.pos||{}))}; });
   return {orig:mkey(m), shapes:shp,
-    match:{round:m.round, comp:compOf(m), home:m.home, away:m.away, venue:m.venue||"", date:m.date||"", time:m.time||"", note:m.note||"", ref:crewOf(m).ref, refs:crewOf(m).refs, tv:m.tv||"", status:m.status||"", add1:(m.add1??""), add2:(m.add2??""), et:!!m.et, add3:(m.add3??""), add4:(m.add4??""), pso:{h:(m.pso&&m.pso.h!=null?m.pso.h:""), a:(m.pso&&m.pso.a!=null?m.pso.a:"")}, rec:m.rec||""},
+    match:{round:m.round, comp:compOf(m), home:m.home, away:m.away, venue:m.venue||"", date:m.date||"", time:m.time||"", note:m.note||"", ref:crewOf(m).ref, refs:crewOf(m).refs, tv:m.tv||"", status:m.status||"", add1:(m.add1??""), add2:(m.add2??""), et:!!m.et, add3:(m.add3??""), add4:(m.add4??""), pso:{h:(m.pso&&m.pso.h!=null?m.pso.h:""), a:(m.pso&&m.pso.a!=null?m.pso.a:"")}, psk:pskOf(m).map(k=>({t:k.t, p:k.p||"", ok:!!k.ok})), rec:m.rec||""},
     mev:(ALL.mev||[]).filter(x=>x.r===m.round && compOf(x)===compOf(m) && x.home===m.home && x.away===m.away).map(x=>({k:x.k, club:x.club||"", p:x.p||"", m:x.m||"", x:x.x||0, note:x.note||"", lid:x.lid||""})),
     lineup:lus.map(x=>({club:x.club, p:x.p})),
     subs:sbs.map(x=>({club:x.club, out:x.out||"", in:x.in||"", h:x.h||1, m:x.m||"", x:x.x||0, lid:x.lid||""})),
@@ -6118,8 +6127,9 @@ function applyEdit(E){
   const other = t => t===m.home ? m.away : m.home;
   ALL.matches.push({n:ALL.matches.length+1, round, comp:m.comp, date:m.date, time:m.time,
                     venue:m.venue, home:m.home, away:m.away, note:(m.note||"").trim(), ref:(m.ref||"").trim(), refs:REF_ROLES.reduce((o,[k])=>{ const v=String((m.refs||{})[k]||"").trim(); if(v) o[k]=v; return o; },{}), tv:(m.tv||"").trim(), status:m.status||"", ...(m.rec?{rec:m.rec}:{}), add1:+m.add1||0, add2:+m.add2||0,
-                    ...((m.et || ["e1","e2","pso"].includes(m.status)) ? {et:true, add3:+m.add3||0, add4:+m.add4||0} : {}),
-                    ...(m.pso && m.pso.h!=="" && m.pso.a!=="" && m.pso.h!=null && m.pso.a!=null ? {pso:{h:+m.pso.h, a:+m.pso.a}} : {}), hg:0, ag:0});   /* ref = حكم الساحة، refs = بقية الطاقم */
+                    ...((m.et || ["e1","e2"].includes(m.status)) ? {et:true, add3:+m.add3||0, add4:+m.add4||0} : {}),
+                    ...(pskOf(m).length ? {psk:pskOf(m).map(k=>({t:k.t, p:String(k.p||""), ok:!!k.ok})), pso:psoOf({psk:m.psk})}
+                        : m.pso && m.pso.h!=="" && m.pso.a!=="" && m.pso.h!=null && m.pso.a!=null ? {pso:{h:+m.pso.h, a:+m.pso.a}} : {}), hg:0, ag:0});   /* ref = حكم الساحة، refs = بقية الطاقم */
   E.goals.forEach(g=>ALL.goals.push({r:round, comp:m.comp, sc:g.sc, cd:other(g.sc), p:g.p, a:g.a||"",
       m:+g.m, x:+g.x||0, cat:catOf(g.det), det:g.det, bp:g.bp||"", zone:g.zone||"",
       og: g.bp==="هدف عكسي" ? (g.og||"") : "", ...(g.lid?{lid:g.lid}:{})}));
@@ -7083,7 +7093,7 @@ function goalsTimeline(m,gs,mc){
   mc = mc || [];
   const subs=(typeof matchSubs==="function")?matchSubs(m):[];
   const xe=(typeof matchMev==="function")?matchMev(m):[];
-  if(!gs.length && !subs.length && !mc.length && !xe.length) return "";
+  if(!gs.length && !subs.length && !mc.length && !xe.length && !(typeof psoOf==="function" && psoOf(m))) return "";   /* 0-0 حُسمت بالترجيح تُعرض ركلاتها */
   const ORD={g:0,c:1,s:2,e:3}, ET=hasET(m);
   /* تعليقات المراحل في نفس الدقيقة (منصور 2026-09-23): «بداية …» قبل أحداثها، و«نهاية …» بعدها */
   /* ترتيب زمني حقيقي (منصور 2026-09-24): 90+4 بعد بطاقة مسجّلة 93، و«نهاية المباراة» آخر شيء دائماً.
@@ -7176,7 +7186,16 @@ function goalsTimeline(m,gs,mc){
   if(!htDone && pastHT) rows.push(`<div class="tl-mark"><span>الشوط الأول <b dir="ltr">${h} - ${a}</b></span></div>`);
   if(ET && !etDone && (over || ["e1","e2","pso"].includes(m.status))) rows.push(`<div class="tl-mark"><span>الوقت الأصلي <b dir="ltr">${h} - ${a}</b></span></div>`);
   const P=psoOf(m);
-  if(P && (over || m.status==="pso")) rows.push(`<div class="tl-mark"><span>ركلات الترجيح <b dir="ltr">${P.h} - ${P.a}</b></span></div>`);
+  if(P && (over || m.status==="pso")){
+    rows.push(`<div class="tl-mark"><span>ركلات الترجيح <b dir="ltr">${P.h} - ${P.a}</b></span></div>`);
+    let ph=0, pa=0;
+    pskOf(m).forEach(k=>{ const isH=k.t==="h"; if(k.ok){ if(isH) ph++; else pa++; }
+      const body=`<div class="tl-ev pk${isH?" h":" a"}${k.ok?" ok":" no"}"><i class="pk-ico" aria-hidden="true">${k.ok
+          ?'<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>'
+          :'<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M7 7l10 10M17 7L7 17"/></svg>'}</i>
+        <div class="tl-card"><div class="tl-name">${esc(k.p||"—")}</div><div class="tl-sub">${k.ok?"سجّل":"أضاع"}</div></div></div>`;
+      rows.push(`<div class="tl-row pk${isH?" home":" away"}"><div class="tl-side r">${isH?body:""}</div><div class="tl-min pk"><span>${ph}-${pa}</span></div><div class="tl-side l">${isH?"":body}</div></div>`); });
+  }
   if(over) rows.push(`<div class="tl-mark end"><span>${ET?"النهاية بعد الأشواط الإضافية":"النهاية"} <b dir="ltr">${m.hg??h} - ${m.ag??a}</b></span></div>`);
   return `<div class="tl"><div class="tl-head"><span>${esc(m.home)}</span><span>${esc(m.away)}</span></div>${rows.join("")}</div>`;
 }
@@ -7234,6 +7253,7 @@ function renderMatches(){
         <div class="mc-team h">${crest(m.home)}<b>${esc(m.home)}</b></div>
         <div class="mc-mid">
           ${soon ? `<span class="mc-time" dir="ltr">${m.time?esc(m.time):"—"}</span>` : `<span class="mc-score" dir="ltr">${m.ag} - ${m.hg}</span>`   /* الصف RTL: المستضيف يميناً، فرقمه يمين العلامة (منصور 2026-09-16) */}
+          ${!soon && psoOf(m) ? `<span class="mc-pso">ركلات الترجيح <span dir="ltr">${psoOf(m).a} - ${psoOf(m).h}</span></span>` : !soon && hasET(m) && matchOver(m) ? `<span class="mc-pso">بعد الأشواط الإضافية</span>` : ""}
           ${st}
           ${(()=>{ const tv=tvOf(m); return tv?`<span class="mc-tv${tv==="غير منقولة"?" off":""}">${TV_ICO}<span>${esc(tv)}</span></span>`:""; })()}
           <span class="mc-go"><em>التفاصيل</em><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg></span>
@@ -10533,6 +10553,7 @@ html[data-theme="dark"] .mc{background:#0F1E35;border-color:#213653;box-shadow:n
 .mc-team .crest{width:32px;height:32px;border-radius:9px;flex:none}
 .mc-team b{font-family:var(--display);font-weight:700;font-size:.88rem;color:var(--head,#fff);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
 .mc-mid{display:flex;flex-direction:column;align-items:center;gap:4px;min-width:74px}
+.mc-pso{font-size:.66rem;font-weight:700;color:var(--slate);white-space:nowrap}.mc-pso span{font-family:var(--display);font-weight:800}
 .mc-score{font-family:var(--display);font-weight:800;font-size:1.05rem;letter-spacing:.02em;color:var(--head,#fff);font-variant-numeric:tabular-nums;
   padding:3px 12px;border-radius:9px;background:rgba(143,166,196,.12)}
 html[data-theme="dark"] .mc-score{background:#182C48}
@@ -14272,6 +14293,13 @@ html[data-theme="dark"] .mx select option{color:#E6EEF8;background:#0F1E35}   /*
 .mx-step button{height:46px;border-radius:12px;background:var(--mx-soft)!important;border:1px solid var(--mx-ln)!important;font-size:1.3rem;font-weight:800}
 .mx-step input{text-align:center;font-family:var(--display);font-weight:800;font-size:1.25rem;padding:8px 4px}
 .mx-et{display:flex;align-items:center;gap:10px;font-weight:600;cursor:pointer}
+.mx-psk{display:flex;flex-direction:column;gap:8px;margin-top:6px}
+.mx-pkr{display:grid;grid-template-columns:22px 26px minmax(0,1fr) auto auto 36px;gap:6px;align-items:center}
+.mx-pkr .n{font-weight:800;text-align:center;opacity:.7}.mx-pkr .c img{width:22px;height:22px}
+.mx-pkr select{min-width:0}.mx-pkr .mx-chip{padding:6px 10px}
+.mx-pkr .mx-chip.on.ok{background:#12B76A;border-color:#12B76A;color:#fff}.mx-pkr .mx-chip.on.red{background:#D92D20;border-color:#D92D20;color:#fff}
+.mx-pkdel{display:grid;place-items:center;width:36px;height:36px;border-radius:8px;border:1px solid rgba(255,255,255,.15);background:none;color:inherit;cursor:pointer}
+.mx-pkdel svg{width:16px;height:16px}
 .mx-et input{width:20px;height:20px;accent-color:#ffb547}
 .mx-phase{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:6px}
 @media(max-width:620px){.mx-phase{grid-template-columns:repeat(3,minmax(0,1fr))}}
@@ -14534,13 +14562,25 @@ html.mx-editing #waFab{display:none!important}   /* زر واتساب كان ي�
       ${isKO(m)?`<div class="mx-card"><h3>الأشواط الإضافية وركلات الترجيح<small>لمباريات خروج المغلوب</small></h3>
         <label class="mx-et"><input type="checkbox" data-met ${hasET(m)?"checked":""}> امتدت المباراة للأشواط الإضافية (30 دقيقة)</label>
         <p class="mx-hint">بعد التفعيل تُسجَّل أحداث الأشواط الإضافية بدقيقتها الحقيقية: 91 إلى 120 (مثلاً هدف في الدقيقة 100). وبدل ضائع الإضافي على 105 أو 120.</p>
-        <div class="mx-grid" style="margin-top:10px">
-          <div><span class="mx-lbl">ركلات الترجيح: ${esc(m.home||"المضيف")}</span>
+        <span class="mx-lbl" style="margin-top:14px">ركلات الترجيح بالترتيب${pskOf(m).length?` — النتيجة <b dir="ltr">${psoOf(m).h} - ${psoOf(m).a}</b>`:""}</span>
+        <div class="mx-psk">${pskOf(m).map((k,i)=>{ const club=k.t==="h"?m.home:m.away;
+          const names=(typeof roster==="function"?roster(club):[]).map(e=>e.n);
+          if(k.p && !names.includes(k.p)) names.unshift(k.p);
+          return `<div class="mx-pkr"><span class="n">${i+1}</span><span class="c">${club?crest(club):""}</span>
+            <select data-mpsk-p="${i}" aria-label="المنفّذ">${opt(names,k.p,"اختر اللاعب")}</select>
+            <button class="mx-chip${k.ok?" on ok":""}" data-mpsk-ok="${i}" data-v="1">سجّل</button>
+            <button class="mx-chip${!k.ok?" on red":""}" data-mpsk-ok="${i}" data-v="0">أضاع</button>
+            <button class="mx-pkdel" data-mpsk-del="${i}" aria-label="حذف الركلة">${SV.trash}</button></div>`; }).join("")}</div>
+        <div class="mx-chips" style="margin-top:8px">
+          <button class="mx-chip" data-mpsk-add="h">+ ركلة ${esc(m.home||"المضيف")}</button>
+          <button class="mx-chip" data-mpsk-add="a">+ ركلة ${esc(m.away||"الضيف")}</button></div>
+        ${pskOf(m).length?"":`<div class="mx-grid" style="margin-top:10px">
+          <div><span class="mx-lbl">أو النتيجة فقط: ${esc(m.home||"المضيف")}</span>
             <input data-mpso="h" type="number" min="0" max="30" inputmode="numeric" value="${esc(String((m.pso||{}).h??""))}" placeholder="—"></div>
-          <div><span class="mx-lbl">ركلات الترجيح: ${esc(m.away||"الضيف")}</span>
+          <div><span class="mx-lbl">${esc(m.away||"الضيف")}</span>
             <input data-mpso="a" type="number" min="0" max="30" inputmode="numeric" value="${esc(String((m.pso||{}).a??""))}" placeholder="—"></div>
-        </div>
-        <p class="mx-hint">اتركهما فارغين إن لم تُلعب ركلات ترجيح. النتيجة الأصلية لا تتغير (أهداف المباراة فقط)، وتظهر ركلات الترجيح تحتها.</p></div>`:""}
+        </div>`}
+        <p class="mx-hint">للعرض فقط: تظهر للمتابع في صفحة المباراة بالترتيب (من سدّد، سجّل أو أضاع). لا تُحسب أهدافاً ولا ركلات جزاء ولا مكان تسديد في أي إحصاء بالموقع. النتيجة الأصلية للمباراة لا تتغير.</p></div>`:""}
       <div class="mx-card"><h3>الملعب والحكم</h3>
         <div class="mx-grid">
           <div class="mx-span"><span class="mx-lbl">الملعب</span>
@@ -14882,8 +14922,12 @@ html.mx-editing #waFab{display:none!important}   /* زر واتساب كان ي�
     q("[data-mvenue]",b=>b.onclick=()=>{ EDIT.match.venue=b.dataset.mvenue; rerender(); });
     q("[data-mref]",el=>{ el.oninput=()=>{ EDIT.match.refs=EDIT.match.refs||{}; EDIT.match.refs[el.dataset.mref]=el.value; }; });
     q("[data-met]",el=>el.onchange=()=>{ EDIT.match.et=el.checked; rerender(); });
+    q("[data-mpsk-add]",b=>b.onclick=()=>{ EDIT.match.psk=EDIT.match.psk||[]; EDIT.match.psk.push({t:b.dataset.mpskAdd, p:"", ok:true}); rerender(); });
+    q("[data-mpsk-p]",el=>el.onchange=()=>{ const k=(EDIT.match.psk||[])[+el.dataset.mpskP]; if(k){ k.p=el.value; rerender(); } });
+    q("[data-mpsk-ok]",b=>b.onclick=()=>{ const k=(EDIT.match.psk||[])[+b.dataset.mpskOk]; if(k){ k.ok=b.dataset.v==="1"; rerender(); } });
+    q("[data-mpsk-del]",b=>b.onclick=()=>{ (EDIT.match.psk||[]).splice(+b.dataset.mpskDel,1); rerender(); });
     q("[data-mpso]",el=>{ el.oninput=()=>{ EDIT.match.pso=EDIT.match.pso||{h:"",a:""}; EDIT.match.pso[el.dataset.mpso]=el.value; }; });
-    q("[data-mstatus]",b=>b.onclick=()=>{ const st=b.dataset.mstatus; EDIT.match.status=st; if(["e1","e2","pso"].includes(st)) EDIT.match.et=true;
+    q("[data-mstatus]",b=>b.onclick=()=>{ const st=b.dataset.mstatus; EDIT.match.status=st; if(["e1","e2"].includes(st)) EDIT.match.et=true;
       /* تغيير المرحلة يسجّل حدثاً محايداً مرة واحدة: بداية المباراة/نهاية الشوط الأول/بداية الشوط الثاني/نهاية المباراة */
       const auto=PHASE_NOTE[st];
       if(auto){ EDIT.mev=EDIT.mev||[];
