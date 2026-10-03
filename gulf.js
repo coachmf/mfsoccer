@@ -125,7 +125,7 @@ const TV_G = "الكويت الرياضية · الكأس · شاشا · أبو�
 G.extra = (d, h, a) => { const same = (x,y) => (x===h&&y===a)||(x===a&&y===h);
   const m = DATA && DATA.matches.find(x=>x.date===d && same(x.home,x.away));
   if(m){ /* st: حالة المباراة كما في صفحتها (لم تبدأ/جارية/انتهت)، والنتيجة بترتيب البطاقة (h أولاً) */
-    const st = withGulf(()=>{ if(m.status==="ft") return "done"; if(["h1","ht","h2"].includes(m.status)) return "live";
+    const st = withGulf(()=>{ if(m.status==="ft") return "done"; if(["h1","ht","h2","e1","e2","pso"].includes(m.status)) return "live";
       const up = typeof isUpcoming==="function" ? isUpcoming(m) : true; if(up) return "soon"; return (typeof isLive==="function" && isLive(m)) ? "live" : "done"; });
     const same = m.home===h;
     return {tv:m.tv||"", ref:m.ref||"", v:(m.refs||{}).var||"", k:(typeof matchKey==="function" ? matchKey(m) : ""), st, ph:m.status||"", hg:same?+m.hg:+m.ag, ag:same?+m.ag:+m.hg}; }
@@ -409,7 +409,11 @@ function matchCard(m){
   return `<button type="button" class="gc-m${live?" live":""}" data-gopen="${H(LIVE?LIVE.keyOf(m):"")}">
     <span class="gc-m-meta">${m.round<=3?`الجولة ${m.round}`:m.round===4?"نصف النهائي":"النهائي"}${dl?` · ${dl}`:""}${m.time&&up?` · <bdi dir="ltr">${H(m.time)}</bdi>`:""}</span>
     <span class="gc-m-t">${flagImg(m.home)}<b>${H(m.home)}</b></span>
-    <span class="gc-m-s">${up&&!live?`<em>${m.time?H(m.time):"—"}</em>`:`<b>${hg}</b><i>-</i><b>${ag}</b>`}${live?`<small class="lv${m.status==="ht"?" ht":""}"><i class="lv-dot"></i>${phLbl}</small>`:""}</span>
+    <span class="gc-m-s">${up&&!live?`<em>${m.time?H(m.time):"—"}</em>`:`<b>${hg}</b><i>-</i><b>${ag}</b>`}${live?`<small class="lv${m.status==="ht"?" ht":""}"><i class="lv-dot"></i>${phLbl}</small>`:""}${(()=>{
+      /* الأشواط الإضافية وركلات الترجيح تحت النتيجة (منصور 2026-10-03) */
+      const P = m.pso && m.pso.h!=null && m.pso.a!=null ? m.pso : null;
+      /* نفس اتجاه النتيجة الرئيسية: رقم المضيف بجانب المضيف (يمين) */
+      return P ? `<small class="gc-pso">ركلات الترجيح <span class="n"><b>${+P.h}</b><i>-</i><b>${+P.a}</b></span></small>` : (m.et && !up && !live ? `<small class="gc-pso">بعد الأشواط الإضافية</small>` : ""); })()}</span>
     <span class="gc-m-t a"><b>${H(m.away)}</b>${flagImg(m.away)}</span>
     ${m.venue?`<span class="gc-m-v">${H(m.venue)}</span>`:""}
     ${(()=>{ const v = (m.refs||{}).var, ico = k => typeof refRoleIco==="function" ? refRoleIco(k,"sm") : "";   /* الحكم والقناة (منصور 2026-09-23) */
@@ -599,11 +603,11 @@ function hookEditor(){
 
 /* ───────────── الإدارة: قسم «كأس الخليج» ───────────── */
 /* حالة المباراة في قائمة الإدارة: جارية / لم تبدأ / انتهت (المحررون 2026-09-30: «حط جارية على المباراة وافصل الأيام») */
-const PH_AR = {h1:"الشوط الأول", ht:"استراحة", h2:"الشوط الثاني"};
+const PH_AR = {h1:"الشوط الأول", ht:"استراحة", h2:"الشوط الثاني", e1:"الإضافي الأول", e2:"الإضافي الثاني", pso:"ركلات الترجيح"};
 function admState(m){
   return withGulf(()=>{
     if(m.status==="ft" || matchOver(m)) return "done";
-    if(["h1","ht","h2"].includes(m.status) || isLive(m)) return "live";
+    if(["h1","ht","h2","e1","e2","pso"].includes(m.status) || isLive(m)) return "live";
     return "soon";
   });
 }

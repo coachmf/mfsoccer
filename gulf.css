@@ -177,3 +177,8 @@ html[data-theme="dark"] .gadm-row.live{border-color:#b91c1c}
 .gc-m-s small.lv .lv-dot{width:6px;height:6px;border-radius:50%;background:#e0443a;animation:mcpulse 1.2s ease-in-out infinite}
 .gc-m-s small.lv.ht{color:#F5C518}
 .gc-m-s small.lv.ht .lv-dot{background:#F5C518;animation:none}
+
+/* الأشواط الإضافية وركلات الترجيح تحت النتيجة (2026-10-03) */
+.gc-m-s small.gc-pso{width:100%;font-weight:700;font-size:.66rem;font-family:inherit;color:var(--slate);text-align:center;white-space:nowrap}
+.gc-m-s small.gc-pso .n{display:inline-flex;gap:4px;margin-inline-start:4px;font-family:var(--display);font-weight:900;font-size:.78rem}
+.gc-m-s small.gc-pso .n b{font-weight:900}.gc-m-s small.gc-pso .n i{font-style:normal}

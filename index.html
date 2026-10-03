@@ -2178,8 +2178,8 @@ main{padding-bottom:48px}
 <link rel="stylesheet" href="admin-tabs.css?v=1">
 <script src="admin-tabs.js?v=3" defer></script>
 <!-- كأس الخليج 27: قسم مستقل ببيانات منفصلة (seasons/gulf27) -->
-<link rel="stylesheet" href="gulf.css?v=17">
-<script src="gulf.js?v=43" defer></script>
+<link rel="stylesheet" href="gulf.css?v=18">
+<script src="gulf.js?v=44" defer></script>
 <link rel="stylesheet" href="efftime.css?v=2">
 <script src="efftime.js?v=2" defer></script>
 <!-- التحليل الموسّع + تقييم اللاعبين 0–100 + البحث العام (منصور 2026-09-29) -->
@@ -3106,7 +3106,7 @@ const isGulfMatch = m => !!(m && (m.__gulf || String(m.comp||"")==="كأس ال�
 const liveStHTML = ph => ph==="ht" ? '<span class="mc-st ht">استراحة</span>' : '<span class="mc-st live"><i></i>جارية الآن</span>';
 function matchOver(m){
   if(!m) return false; if(m.status==="ft") return true;
-  if(["pre","h1","ht","h2"].includes(m.status)) return false;
+  if(["pre","h1","ht","h2","e1","e2","pso"].includes(m.status)) return false;
   return !isUpcoming(m) && !isLive(m);
 }
 function isLive(m){
@@ -5193,15 +5193,23 @@ function absMinute(h, m, x, add1){
 /* بدل الضائع المسجّل للمباراة، وطول المباراة الحقيقي المبني عليه */
 const add1Of = m => Math.max(0, Math.min(30, +((m||{}).add1) || 0));
 const add2Of = m => Math.max(0, Math.min(30, +((m||{}).add2) || 0));
-const matchLen = m => 90 + add1Of(m) + add2Of(m);
+/* الأشواط الإضافية (منصور 2026-10-03، نصف نهائي ونهائي كأس الخليج): مرحلتا e1/e2 كغرفة التحكم، وpso لركلات الترجيح.
+   الدقيقة 91–120 في مباراة امتدت (m.et) تأتي بعد بدل ضائع الشوط الثاني؛ 105+x بدل الإضافي الأول؛ 106+ يبدأ بعد add3. */
+const ET_PH = ["e1","e2","pso"];
+const add3Of = m => Math.max(0, Math.min(30, +((m||{}).add3) || 0));
+const add4Of = m => Math.max(0, Math.min(30, +((m||{}).add4) || 0));
+const hasET = m => !!(m && (m.et || ET_PH.includes(m.status)));
+const etAbs = (m, mm, x) => 90 + add1Of(m) + add2Of(m) + (mm - 90) + (mm > 105 ? add3Of(m) : 0) + (+x || 0);
+const psoOf = m => { const p=(m||{}).pso; return p && p.h!=null && p.a!=null && p.h!=="" && p.a!=="" ? {h:+p.h, a:+p.a} : null; };
+const matchLen = m => 90 + add1Of(m) + add2Of(m) + (hasET(m) ? 30 + add3Of(m) + add4Of(m) : 0);
 /* حدّ الشباك النظيفة ودقائق اللعب: ثلثا المباراة (67٪) بدل رقم ثابت —
    يعطي 60 في مباراة 90، و68 في مباراة 102، فيبقى الشرط عادلاً مهما طالت. */
 const csLimit = m => Math.round(matchLen(m) * 2 / 3);
 /* الدقيقة المطلقة لحدث داخل مباراة بعينها — تراعي بدل ضائع الشوط الأول */
-const evAbs = (m, h, mn, x) => absMinute(h, mn, x, add1Of(m));
+const evAbs = (m, h, mn, x) => (hasET(m) && +mn > 90) ? etAbs(m, +mn, x) : absMinute(h, mn, x, add1Of(m));
 /* دقيقة هدف/بطاقة/جزاء على ساعة التبديلات نفسها (منصور 2026-09-30): الهدف يُخزَّن بدقيقة المباراة (60)
    والتبديل يُحسب 45 + بدل الشوط الأول + … فكان الهدف يُنسب لمن خرج قبله أو لا يُنسب لمن كان في الملعب */
-const goalAbs = (m, g) => { const mm=+(g&&g.m)||0, x=+(g&&g.x)||0; return mm>45 ? 45+add1Of(m)+(mm-45)+x : mm+x; };
+const goalAbs = (m, g) => { const mm=+(g&&g.m)||0, x=+(g&&g.x)||0; if(mm>90 && hasET(m)) return etAbs(m, mm, x); return mm>45 ? 45+add1Of(m)+(mm-45)+x : mm+x; };
 /* بطاقة حمراء (طرد/إنذار ثانٍ) تنهي دقائق اللاعب */
 function redCardAt(m, club, name){
   const c=(ALL&&ALL.cards||[]).find(x=>+x.r===+m.round && compOf(x)===compOf(m) && x.club===club && x.p===name && isRed(x.type));
@@ -5287,7 +5295,7 @@ function crewOf(m){ const b=REF_BOOK[`${m.round}|${m.home}|${m.away}`]||{}, save
   return {ref:m.ref||b.ref||"", refs}; }
 function newEdit(){
   return {orig:null, match:{round:"", comp:(compsPresent()[0]||"الدوري"), home:"", away:"",
-          venue:"", date:"", time:"", note:"", ref:"", refs:{}, tv:"", status:"", add1:"", add2:""}, goals:[], cards:[], pens:[], lineup:[], subs:[], shapes:{}, mev:[]};
+          venue:"", date:"", time:"", note:"", ref:"", refs:{}, tv:"", status:"", add1:"", add2:"", et:false, add3:"", add4:"", pso:{h:"",a:""}}, goals:[], cards:[], pens:[], lineup:[], subs:[], shapes:{}, mev:[]};
 }
 function loadEditRaw(m){
   const gs=(ALL.goals||[]).filter(g=>g.r===m.round && compOf(g)===compOf(m) &&
@@ -5302,7 +5310,7 @@ function loadEditRaw(m){
   (ALL.shapes||[]).filter(x=>x.r===m.round && compOf(x)===compOf(m) && (x.club===m.home||x.club===m.away))
     .forEach(x=>{ shp[x.club]={f:x.f||"", pos:JSON.parse(JSON.stringify(x.pos||{}))}; });
   return {orig:mkey(m), shapes:shp,
-    match:{round:m.round, comp:compOf(m), home:m.home, away:m.away, venue:m.venue||"", date:m.date||"", time:m.time||"", note:m.note||"", ref:crewOf(m).ref, refs:crewOf(m).refs, tv:m.tv||"", status:m.status||"", add1:(m.add1??""), add2:(m.add2??""), rec:m.rec||""},
+    match:{round:m.round, comp:compOf(m), home:m.home, away:m.away, venue:m.venue||"", date:m.date||"", time:m.time||"", note:m.note||"", ref:crewOf(m).ref, refs:crewOf(m).refs, tv:m.tv||"", status:m.status||"", add1:(m.add1??""), add2:(m.add2??""), et:!!m.et, add3:(m.add3??""), add4:(m.add4??""), pso:{h:(m.pso&&m.pso.h!=null?m.pso.h:""), a:(m.pso&&m.pso.a!=null?m.pso.a:"")}, rec:m.rec||""},
     mev:(ALL.mev||[]).filter(x=>x.r===m.round && compOf(x)===compOf(m) && x.home===m.home && x.away===m.away).map(x=>({k:x.k, club:x.club||"", p:x.p||"", m:x.m||"", x:x.x||0, note:x.note||"", lid:x.lid||""})),
     lineup:lus.map(x=>({club:x.club, p:x.p})),
     subs:sbs.map(x=>({club:x.club, out:x.out||"", in:x.in||"", h:x.h||1, m:x.m||"", x:x.x||0, lid:x.lid||""})),
@@ -6109,7 +6117,9 @@ function applyEdit(E){
   if(E.orig) removeMatchByKey(E.orig);
   const other = t => t===m.home ? m.away : m.home;
   ALL.matches.push({n:ALL.matches.length+1, round, comp:m.comp, date:m.date, time:m.time,
-                    venue:m.venue, home:m.home, away:m.away, note:(m.note||"").trim(), ref:(m.ref||"").trim(), refs:REF_ROLES.reduce((o,[k])=>{ const v=String((m.refs||{})[k]||"").trim(); if(v) o[k]=v; return o; },{}), tv:(m.tv||"").trim(), status:m.status||"", ...(m.rec?{rec:m.rec}:{}), add1:+m.add1||0, add2:+m.add2||0, hg:0, ag:0});   /* ref = حكم الساحة، refs = بقية الطاقم */
+                    venue:m.venue, home:m.home, away:m.away, note:(m.note||"").trim(), ref:(m.ref||"").trim(), refs:REF_ROLES.reduce((o,[k])=>{ const v=String((m.refs||{})[k]||"").trim(); if(v) o[k]=v; return o; },{}), tv:(m.tv||"").trim(), status:m.status||"", ...(m.rec?{rec:m.rec}:{}), add1:+m.add1||0, add2:+m.add2||0,
+                    ...((m.et || ["e1","e2","pso"].includes(m.status)) ? {et:true, add3:+m.add3||0, add4:+m.add4||0} : {}),
+                    ...(m.pso && m.pso.h!=="" && m.pso.a!=="" && m.pso.h!=null && m.pso.a!=null ? {pso:{h:+m.pso.h, a:+m.pso.a}} : {}), hg:0, ag:0});   /* ref = حكم الساحة، refs = بقية الطاقم */
   E.goals.forEach(g=>ALL.goals.push({r:round, comp:m.comp, sc:g.sc, cd:other(g.sc), p:g.p, a:g.a||"",
       m:+g.m, x:+g.x||0, cat:catOf(g.det), det:g.det, bp:g.bp||"", zone:g.zone||"",
       og: g.bp==="هدف عكسي" ? (g.og||"") : "", ...(g.lid?{lid:g.lid}:{})}));
@@ -7074,22 +7084,26 @@ function goalsTimeline(m,gs,mc){
   const subs=(typeof matchSubs==="function")?matchSubs(m):[];
   const xe=(typeof matchMev==="function")?matchMev(m):[];
   if(!gs.length && !subs.length && !mc.length && !xe.length) return "";
-  const ORD={g:0,c:1,s:2,e:3};
+  const ORD={g:0,c:1,s:2,e:3}, ET=hasET(m);
   /* تعليقات المراحل في نفس الدقيقة (منصور 2026-09-23): «بداية …» قبل أحداثها، و«نهاية …» بعدها */
   /* ترتيب زمني حقيقي (منصور 2026-09-24): 90+4 بعد بطاقة مسجّلة 93، و«نهاية المباراة» آخر شيء دائماً.
      بدل الشوط الأول (45+x) يبقى قبل 46 */
   const tlKey=e=>{ if(e.t==="e" && !e.v.club && /^نهاية المباراة/.test(String(e.v.note||"").trim())) return 1e6;
     if(e.t==="e" && !e.v.club && /^نهاية الشوط الأول/.test(String(e.v.note||"").trim())) return 45.99;   /* بعد كل أحداث 45+x (هدف 45+5، إنذار 45+1) — المحررون 2026-09-30 */
     if(e.t==="s" && e.half>=2 && e.m<=45) return 45.999;   /* تبديل بين الشوطين بعد كل أحداث 45+x (منصور 2026-09-30) */
+    /* الأشواط الإضافية: الدقيقة 91+ بعد كل بدل ضائع الشوط الثاني (90+12 قبل 91)، و105+x قبل 106 */
+    const raw = e.t==="s" ? e.raw : e.m;
+    if(ET && raw>90) return 1000 + (raw===105 ? 105+(e.x||0)/100 : raw+(e.x||0));
     return e.m===45 ? 45+(e.x||0)/100 : e.m+(e.x||0); };
   const tlRank=e=>{ if(e.t==="e" && !e.v.club){ const t=String(e.v.note||"").trim(); if(/^بداية/.test(t)) return -1; if(/^نهاية/.test(t)) return 9; } return ORD[e.t]; };
   const ev=[...gs.map(g=>({t:"g",m:+g.m||0,x:+g.x||0,g})),
-            ...subs.map(sb=>({t:"s",m:absMinute(sb.h,sb.m),x:0,sb,half:+sb.h||1})),
+            ...subs.map(sb=>({t:"s",m:absMinute(sb.h,sb.m),x:0,sb,half:+sb.h||1,raw:+sb.m||0})),
             ...mc.map(c=>({t:"c",m:+c.m||0,x:+c.x||0,c})),
             ...xe.map(v=>({t:"e",m:+v.m||0,x:+v.x||0,v}))]
     .sort((a,b)=>(tlKey(a)-tlKey(b))||(tlRank(a)-tlRank(b)));
-  let h=0,a=0; const rows=[]; let htDone=false;
+  let h=0,a=0; const rows=[]; let htDone=false, etDone=false;
   ev.forEach(e=>{
+    if(ET && !etDone && tlKey(e)>=1000 && tlKey(e)<1e6){ etDone=true; rows.push(`<div class="tl-mark"><span>الوقت الأصلي <b dir="ltr">${h} - ${a}</b></span></div>`); }
     const club = e.t==="g" ? e.g.sc : e.t==="c" ? e.c.club : e.t==="e" ? e.v.club : e.sb.club;
     const isH = club===m.home;
     const afterHT = e.t==="g" ? (e.m>45 && !(e.m===45 && e.x))
@@ -7158,9 +7172,12 @@ function goalsTimeline(m,gs,mc){
     </div>`);
   });
   /* الفواصل حسب حالة المباراة (منصور 2026-09-23): أثناء اللعب لا «النهاية»، ولا «الشوط الأول» قبل انتهائه */
-  const over=matchOver(m), pastHT=over || m.status==="ht" || m.status==="h2";
+  const over=matchOver(m), pastHT=over || ["ht","h2","e1","e2","pso"].includes(m.status);
   if(!htDone && pastHT) rows.push(`<div class="tl-mark"><span>الشوط الأول <b dir="ltr">${h} - ${a}</b></span></div>`);
-  if(over) rows.push(`<div class="tl-mark end"><span>النهاية <b dir="ltr">${m.hg??h} - ${m.ag??a}</b></span></div>`);
+  if(ET && !etDone && (over || ["e1","e2","pso"].includes(m.status))) rows.push(`<div class="tl-mark"><span>الوقت الأصلي <b dir="ltr">${h} - ${a}</b></span></div>`);
+  const P=psoOf(m);
+  if(P && (over || m.status==="pso")) rows.push(`<div class="tl-mark"><span>ركلات الترجيح <b dir="ltr">${P.h} - ${P.a}</b></span></div>`);
+  if(over) rows.push(`<div class="tl-mark end"><span>${ET?"النهاية بعد الأشواط الإضافية":"النهاية"} <b dir="ltr">${m.hg??h} - ${m.ag??a}</b></span></div>`);
   return `<div class="tl"><div class="tl-head"><span>${esc(m.home)}</span><span>${esc(m.away)}</span></div>${rows.join("")}</div>`;
 }
 
@@ -11129,6 +11146,9 @@ html.mp-open{overflow:hidden}
 .mp-res i{font-style:normal;opacity:.55;font-size:1.8rem}
 .mp-time{font-family:var(--display);font-weight:800;font-size:1.9rem;line-height:1}
 .mp-st{font-size:.9rem;font-weight:600;color:rgba(255,255,255,.88);display:inline-flex;align-items:center;gap:6px}
+.mp-pso{font-size:.82rem;font-weight:600;color:rgba(255,255,255,.8);white-space:nowrap}
+.mp-pso .n{display:inline-flex;gap:5px;margin-inline-start:4px;font-family:var(--display);font-weight:800;font-size:1rem;color:#fff}
+.mp-pso .n i{font-style:normal;opacity:.6}
 .mp-st.live{color:#ff8a80}
 .mp-st.live i{width:7px;height:7px;border-radius:50%;background:#ff5252;animation:pulse 1.4s infinite}
 .mp-scorers{display:grid;grid-template-columns:minmax(0,1fr) 28px minmax(0,1fr);gap:10px;align-items:start;padding:10px 14px 8px}
@@ -13617,8 +13637,8 @@ function tvOf(m){
 }
 function mpHeader(m){
   const soon=isUpcoming(m), live=isLive(m);
-  const MS={pre:"لم تبدأ", h1:"الشوط الأول", ht:"استراحة", h2:"الشوط الثاني", ft:"انتهت"};
-  const stLive = m.status==="h1"||m.status==="h2" || (!m.status && live);
+  const MS={pre:"لم تبدأ", h1:"الشوط الأول", ht:"استراحة", h2:"الشوط الثاني", e1:"الشوط الإضافي الأول", e2:"الشوط الإضافي الثاني", pso:"ركلات الترجيح", ft:"انتهت"};
+  const stLive = ["h1","h2","e1","e2","pso"].includes(m.status) || (!m.status && live);
   const st = m.status ? MS[m.status]||"" : soon ? "لم تبدأ" : live ? "جارية الآن" : "انتهت";
   /* القنوات في سطر مستقل تحت الموعد، كلها في صف واحد (منصور 2026-09-23) */
   const tvH=tvOf(m), when=[mpDateLabel(m), m.time?`<span dir="ltr">${esc(m.time)}</span>`:""].filter(Boolean).join(" · ") + (tvH?`<span class="mp-when-tv">${esc(tvH)}</span>`:"");
@@ -13633,6 +13653,8 @@ function mpHeader(m){
       <div class="mp-mid">
         ${soon ? `<span class="mp-time">${m.time?`<span dir="ltr">${esc(m.time)}</span>`:"—"}</span>`
                : `<span class="mp-res"><b>${m.hg}</b><i>-</i><b>${m.ag}</b></span>`}
+        ${!soon && psoOf(m) ? `<span class="mp-pso">ركلات الترجيح <span class="n"><b>${psoOf(m).h}</b><i>-</i><b>${psoOf(m).a}</b></span></span>`
+          : !soon && hasET(m) && matchOver(m) ? `<span class="mp-pso">بعد الأشواط الإضافية</span>` : ""}
         <span class="mp-st${stLive?" live":m.status==="ht"?" ht":soon?" soon":""}">${stLive?"<i></i>":""}${st}</span>
       </div>
       ${team(m.away)}
@@ -14249,6 +14271,8 @@ html[data-theme="dark"] .mx select option{color:#E6EEF8;background:#0F1E35}   /*
 .mx-step{display:grid;grid-template-columns:44px minmax(0,1fr) 44px;gap:6px;align-items:center}
 .mx-step button{height:46px;border-radius:12px;background:var(--mx-soft)!important;border:1px solid var(--mx-ln)!important;font-size:1.3rem;font-weight:800}
 .mx-step input{text-align:center;font-family:var(--display);font-weight:800;font-size:1.25rem;padding:8px 4px}
+.mx-et{display:flex;align-items:center;gap:10px;font-weight:600;cursor:pointer}
+.mx-et input{width:20px;height:20px;accent-color:#ffb547}
 .mx-phase{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:6px}
 @media(max-width:620px){.mx-phase{grid-template-columns:repeat(3,minmax(0,1fr))}}
 .mx-ph{padding:11px 4px;border-radius:12px;border:1px solid var(--mx-ln)!important;background:var(--mx-soft)!important;font-weight:800;font-size:.8rem;color:var(--slate)}
@@ -14485,6 +14509,7 @@ html.mx-editing #waFab{display:none!important}   /* زر واتساب كان ي�
         </div></div>
       <div class="mx-card"><h3>مرحلة المباراة<small>تظهر للجمهور كحالة المباراة</small></h3>
         <div class="mx-phase">${PHASES.map(([k,t])=>`<button class="mx-ph${(m.status||"")===k?" on":""}" data-mstatus="${k}">${t}</button>`).join("")}</div>
+        ${isKO(m)?`<div class="mx-phase" style="margin-top:8px">${PHASES_KO.map(([k,t])=>`<button class="mx-ph${(m.status||"")===k?" on":""}" data-mstatus="${k}">${t}</button>`).join("")}</div>`:""}
         <p class="mx-hint">«تلقائي» يحدد الحالة من موعد المباراة ونتيجتها. اختر المرحلة يدوياً أثناء النقل المباشر.</p></div>
       <div class="mx-card"><h3>البث</h3>
         <span class="mx-lbl">القناة الناقلة</span>
@@ -14498,10 +14523,24 @@ html.mx-editing #waFab{display:none!important}   /* زر واتساب كان ي�
           <div><span class="mx-lbl">الشوط الثاني +</span>
             <input data-mf="add2" type="number" min="0" max="30" inputmode="numeric"
                    value="${esc(String(m.add2??""))}" placeholder="0"></div>
+          ${hasET(m)?`<div><span class="mx-lbl">الإضافي الأول +</span>
+            <input data-mf="add3" type="number" min="0" max="30" inputmode="numeric" value="${esc(String(m.add3??""))}" placeholder="0"></div>
+          <div><span class="mx-lbl">الإضافي الثاني +</span>
+            <input data-mf="add4" type="number" min="0" max="30" inputmode="numeric" value="${esc(String(m.add4??""))}" placeholder="0"></div>`:""}
         </div>
         <p class="mx-hint">ما أعلنه الحكم لكل شوط. تُحتسب في دقائق اللعب:
           مباراة بها ٧+٥ طولها ١٠٢ دقيقة، والبديل الذي دخل ٤٥+٣ تُحسب له دقائق الوقت المحتسب.
           اتركها فارغة إن لم تُسجّل.</p></div>
+      ${isKO(m)?`<div class="mx-card"><h3>الأشواط الإضافية وركلات الترجيح<small>لمباريات خروج المغلوب</small></h3>
+        <label class="mx-et"><input type="checkbox" data-met ${hasET(m)?"checked":""}> امتدت المباراة للأشواط الإضافية (30 دقيقة)</label>
+        <p class="mx-hint">بعد التفعيل تُسجَّل أحداث الأشواط الإضافية بدقيقتها الحقيقية: 91 إلى 120 (مثلاً هدف في الدقيقة 100). وبدل ضائع الإضافي على 105 أو 120.</p>
+        <div class="mx-grid" style="margin-top:10px">
+          <div><span class="mx-lbl">ركلات الترجيح: ${esc(m.home||"المضيف")}</span>
+            <input data-mpso="h" type="number" min="0" max="30" inputmode="numeric" value="${esc(String((m.pso||{}).h??""))}" placeholder="—"></div>
+          <div><span class="mx-lbl">ركلات الترجيح: ${esc(m.away||"الضيف")}</span>
+            <input data-mpso="a" type="number" min="0" max="30" inputmode="numeric" value="${esc(String((m.pso||{}).a??""))}" placeholder="—"></div>
+        </div>
+        <p class="mx-hint">اتركهما فارغين إن لم تُلعب ركلات ترجيح. النتيجة الأصلية لا تتغير (أهداف المباراة فقط)، وتظهر ركلات الترجيح تحتها.</p></div>`:""}
       <div class="mx-card"><h3>الملعب والحكم</h3>
         <div class="mx-grid">
           <div class="mx-span"><span class="mx-lbl">الملعب</span>
@@ -14615,12 +14654,16 @@ html.mx-editing #waFab{display:none!important}   /* زر واتساب كان ي�
   const ARR={goal:"goals",card:"cards",pen:"pens",sub:"subs",chance:"mev",var:"mev",note:"mev"};
   const CLUBKEY={goal:"sc",card:"club",pen:"by",sub:"club",chance:"club",var:"club",note:"club"};
   const TITLE={goal:"هدف",card:"بطاقة",pen:"ركلة جزاء",sub:"تبديل",chance:"فرصة خطيرة",var:"مراجعة VAR",note:"تعليق"};
-  const PHASE_NOTE={h1:[1,"بداية المباراة"],ht:[45,"نهاية الشوط الأول"],h2:[46,"بداية الشوط الثاني"],ft:[90,"نهاية المباراة"]};
+  const PHASE_NOTE={h1:[1,"بداية المباراة"],ht:[45,"نهاية الشوط الأول"],h2:[46,"بداية الشوط الثاني"],e1:[91,"بداية الشوط الإضافي الأول"],e2:[106,"بداية الشوط الإضافي الثاني"],pso:[120,"ركلات الترجيح"],ft:[90,"نهاية المباراة"]};
   const PHASES=[["","تلقائي"],["pre","قبل البداية"],["h1","الشوط الأول"],["ht","استراحة"],["h2","الشوط الثاني"],["ft","انتهت"]];
+  /* مباريات خروج المغلوب فقط (نصف نهائي ونهائي الخليج، والكؤوس): أشواط إضافية وركلات ترجيح (منصور 2026-10-03) */
+  const isKO=m=>EDIT && EDIT.gulf ? +m.round>=4 : String(m.comp||"")!=="الدوري";
+  const PHASES_KO=[["e1","الشوط الإضافي الأول"],["e2","الشوط الإضافي الثاني"],["pso","ركلات الترجيح"]];
   const TV_LIST=["كويت سبورت","كويت سبورت بلس","الكويت الأولى","غير منقولة"];
   const stadiums=()=>{ const set=new Set(); if(typeof CLUB_INFO!=="undefined") Object.values(CLUB_INFO).forEach(i=>i&&i.st&&set.add(i.st)); (ALL.matches||[]).forEach(x=>x.venue&&set.add(String(x.venue).trim())); return [...set].filter(Boolean).slice(0,16); };
   /* اختصارات الدقائق حسب المرحلة */
-  const minChips=key=>{ const st=EDIT.match.status; const L=st==="h1"?[1,15,30,45]:st==="h2"?[46,60,75,90]:[1,15,30,45,60,75,90];
+  const minChips=key=>{ const st=EDIT.match.status; const L=st==="h1"?[1,15,30,45]:st==="h2"?[46,60,75,90]:st==="e1"?[91,95,100,105]:st==="e2"?[106,110,115,120]:
+      hasET(EDIT.match)?[1,15,30,45,60,75,90,105,120]:[1,15,30,45,60,75,90];
     return `<div class="mx-chips" style="margin-top:8px">${L.map(v=>`<button class="mx-chip" data-mset="${key}" data-mval="${v}">${v}'</button>`).join("")}</div>`; };
   function openEv(k,i,preset){
     EDIT.mev=EDIT.mev||[];
@@ -14676,6 +14719,9 @@ html.mx-editing #waFab{display:none!important}   /* زر واتساب كان ي�
   const rangeHint=v=>{ const st=EDIT.match.status, m=+v||0; if(!m) return "";
     if(st==="h1"&&m>45) return `<p class="mx-hint" style="color:#ffb547">المباراة في الشوط الأول — الدقيقة عادة بين 1 و45 (استخدم «وقت بدل ضائع» بعد 45).</p>`;
     if(st==="h2"&&m<46) return `<p class="mx-hint" style="color:#ffb547">المباراة في الشوط الثاني — الدقيقة عادة بين 46 و90.</p>`;
+    if(st==="e1"&&(m<91||m>105)) return `<p class="mx-hint" style="color:#ffb547">الشوط الإضافي الأول — الدقيقة بين 91 و105 (بعدها «وقت بدل ضائع» على 105).</p>`;
+    if(st==="e2"&&(m<106||m>120)) return `<p class="mx-hint" style="color:#ffb547">الشوط الإضافي الثاني — الدقيقة بين 106 و120 (بعدها «وقت بدل ضائع» على 120).</p>`;
+    if(m>90 && !hasET(EDIT.match)) return `<p class="mx-hint" style="color:#ffb547">الدقيقة بعد 90 تُحسب وقتاً إضافياً فقط إذا امتدت المباراة للأشواط الإضافية (فعّلها في تبويب المباراة). لبدل الضائع اكتب 90 و«وقت بدل ضائع +».</p>`;
     return ""; };
   const stepper=(key,val,label,max)=>`<div><span class="mx-lbl">${label}</span><div class="mx-step"><button data-mstep="${key}" data-mby="-1" aria-label="أنقص">−</button>
     <input type="number" min="0" max="${max||130}" inputmode="numeric" data-msf="${key}" value="${esc(val)}"><button data-mstep="${key}" data-mby="1" aria-label="زد">+</button></div></div>`;
@@ -14822,7 +14868,9 @@ html.mx-editing #waFab{display:none!important}   /* زر واتساب كان ي�
     q("[data-mround]",b=>b.onclick=()=>{ EDIT.match.round=String(Math.max(1,(+EDIT.match.round||0)+(+b.dataset.mround))); rerender(); });
     q("[data-mvenue]",b=>b.onclick=()=>{ EDIT.match.venue=b.dataset.mvenue; rerender(); });
     q("[data-mref]",el=>{ el.oninput=()=>{ EDIT.match.refs=EDIT.match.refs||{}; EDIT.match.refs[el.dataset.mref]=el.value; }; });
-    q("[data-mstatus]",b=>b.onclick=()=>{ const st=b.dataset.mstatus; EDIT.match.status=st;
+    q("[data-met]",el=>el.onchange=()=>{ EDIT.match.et=el.checked; rerender(); });
+    q("[data-mpso]",el=>{ el.oninput=()=>{ EDIT.match.pso=EDIT.match.pso||{h:"",a:""}; EDIT.match.pso[el.dataset.mpso]=el.value; }; });
+    q("[data-mstatus]",b=>b.onclick=()=>{ const st=b.dataset.mstatus; EDIT.match.status=st; if(["e1","e2","pso"].includes(st)) EDIT.match.et=true;
       /* تغيير المرحلة يسجّل حدثاً محايداً مرة واحدة: بداية المباراة/نهاية الشوط الأول/بداية الشوط الثاني/نهاية المباراة */
       const auto=PHASE_NOTE[st];
       if(auto){ EDIT.mev=EDIT.mev||[];
