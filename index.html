@@ -2173,7 +2173,7 @@ main{padding-bottom:48px}
 /* ===== /v25 ===== */
 </style>
 <!-- اللغة الإنجليزية والوضع الداكن -->
-<link rel="stylesheet" href="site-theme.css?v=5">
+<link rel="stylesheet" href="site-theme.css?v=6">
 <script src="fantasy/js/i18n-more.js?v=12" defer></script>
 <script src="site-i18n.js?v=24" defer></script>
 <!-- مركز المباراة المباشر: صفحة الجمهور + الربط (غرفة التحكم live-admin.js تُحمَّل عند فتحها فقط) -->
@@ -2184,7 +2184,7 @@ main{padding-bottom:48px}
 <script src="admin-tabs.js?v=3" defer></script>
 <!-- كأس الخليج 27: قسم مستقل ببيانات منفصلة (seasons/gulf27) -->
 <link rel="stylesheet" href="gulf.css?v=18">
-<script src="gulf.js?v=44" defer></script>
+<script src="gulf.js?v=45" defer></script>
 <link rel="stylesheet" href="efftime.css?v=2">
 <script src="efftime.js?v=2" defer></script>
 <!-- التحليل الموسّع + تقييم اللاعبين 0–100 + البحث العام (منصور 2026-09-29) -->
@@ -2929,18 +2929,26 @@ function extTableHTML(c, evs){
   return groups.map(g=>{
     const rows=g.teams.map(n=>{ const x=evTeam(n,c.kind); return {x, key:_norm(x.n), P:0,W:0,D:0,L:0,GF:0,GA:0,Pts:0,form:[]}; });
     const byKey={}; rows.forEach(r=>{ byKey[r.key]=r; });
-    evs.forEach(e=>{
-      if(e.hg==null || e.ag==null || e.live || (e.to && e.to!==e.d)) return;   /* المباراة الجارية لا تدخل الجدول حتى تنتهي */
-      const parts=evParts(e); if(parts.length<2) return;
-      const a=evTeam(parts[0],e.k), b=evTeam(parts[1],e.k); if(!a||!b) return;
-      const ra=byKey[_norm(a.n)], rb=byKey[_norm(b.n)]; if(!ra||!rb) return;
-      const hg=+e.hg, ag=+e.ag;
+    /* خليجي 27: النتائج الحقيقية في قاعدة بيانات قسم «كأس الخليج» (seasons/gulf27) لا في EXT_FIXTURES التي بلا نتائج —
+       كان الجدول كله أصفاراً (منصور 2026-10-03). دور المجموعات فقط (الجولات 1–3) والمنتهية فقط. */
+    const GD = c.id==="gulf27" && window.GULF && typeof GULF.data==="function" ? GULF.data() : null;
+    const res = GD ? (GD.matches||[]).filter(m=>+m.round<=3 && (m.status==="ft" || GULF.withGulf(()=>matchOver(m))))
+                      .map(m=>({an:m.home, bn:m.away, hg:+m.hg||0, ag:+m.ag||0}))
+                   : evs.map(e=>{
+      if(e.hg==null || e.ag==null || e.live || (e.to && e.to!==e.d)) return null;   /* المباراة الجارية لا تدخل الجدول حتى تنتهي */
+      const parts=evParts(e); if(parts.length<2) return null;
+      const a=evTeam(parts[0],e.k), b=evTeam(parts[1],e.k); if(!a||!b) return null;
+      return {an:a.n, bn:b.n, hg:+e.hg, ag:+e.ag}; }).filter(Boolean);
+    res.forEach(({an,bn,hg,ag})=>{
+      const ra=byKey[_norm(an)], rb=byKey[_norm(bn)]; if(!ra||!rb) return;
       ra.P++; rb.P++; ra.GF+=hg; ra.GA+=ag; rb.GF+=ag; rb.GA+=hg;
       if(hg>ag){ ra.W++; rb.L++; ra.Pts+=3; ra.form.push("w"); rb.form.push("l"); }
       else if(hg<ag){ rb.W++; ra.L++; rb.Pts+=3; ra.form.push("l"); rb.form.push("w"); }
       else { ra.D++; rb.D++; ra.Pts++; rb.Pts++; ra.form.push("d"); rb.form.push("d"); }
     });
-    rows.sort((p,q)=>q.Pts-p.Pts||((q.GF-q.GA)-(p.GF-p.GA))||q.GF-p.GF||p.x.n.localeCompare(q.x.n,"ar"));
+    /* تعادل تام (نقاط وفارق وأهداف وبطاقات): العراق وعمان 2026 — حُسم خارج الملعب، فالمتأهل لنصف النهائي يتقدّم */
+    const koSet = new Set(GD ? (GD.matches||[]).filter(m=>+m.round===4).flatMap(m=>[_norm(m.home),_norm(m.away)]) : []);
+    rows.sort((p,q)=>q.Pts-p.Pts||((q.GF-q.GA)-(p.GF-p.GA))||q.GF-p.GF||(koSet.has(q.key)-koSet.has(p.key))||p.x.n.localeCompare(q.x.n,"ar"));
     /* نفس جدول الرئيسية (hm-tbl داخل .hm لترث الخطوط والألوان)؛ الأول والثاني بالأصفر (التأهل) */
     return `<div class="hm xt-hm"><section class="hm-std xt">
       <h2 class="sec">جدول الترتيب<span class="sq-n">${esc(g.name)}</span></h2>
@@ -7138,7 +7146,11 @@ function goalsTimeline(m,gs,mc){
       return;
     }
     if(e.t==="e"){
-      const v=e.v, K=MEV_KIND[v.k]||MEV_KIND.note, mn=`${e.m}${e.x?"+"+e.x:""}'`;
+      const v=e.v, K=MEV_KIND[v.k]||MEV_KIND.note, nt=String(v.note||"").trim();
+      /* مباراة امتدت (منصور 2026-10-03): «نهاية المباراة» تُقرأ 120 لا 90 (زر المرحلة كان يحفظ 90)،
+         و«ركلات الترجيح» العامة لا تُكرَّر بجانب فاصل الترجيح ونتيجته */
+      if(!v.club && nt==="ركلات الترجيح" && psoOf(m)) return;
+      const mn = (!v.club && ET && /^نهاية المباراة/.test(nt) && e.m<=90) ? "120'" : `${e.m}${e.x?"+"+e.x:""}'`;
       /* تعليق عام بنص: النص والدقيقة فقط، بلا أيقونة ولا كلمة «تعليق» (منصور 2026-09-24) */
       if(!v.club && K===MEV_KIND.note && String(v.note||"").trim()){ rows.push(`<div class="tl-xnote txt"><span dir="ltr">${mn}</span><em>${esc(v.note)}</em></div>`); return; }
       if(!v.club){ rows.push(`<div class="tl-xnote">${K.ico}<b>${K.t}</b><span dir="ltr">${mn}</span>${v.note?`<em>${esc(v.note)}</em>`:""}</div>`); return; }
@@ -14931,7 +14943,7 @@ html.mx-editing #waFab{display:none!important}   /* زر واتساب كان ي�
     q("[data-mpso]",el=>{ el.oninput=()=>{ EDIT.match.pso=EDIT.match.pso||{h:"",a:""}; EDIT.match.pso[el.dataset.mpso]=el.value; }; });
     q("[data-mstatus]",b=>b.onclick=()=>{ const st=b.dataset.mstatus; EDIT.match.status=st; if(["e1","e2"].includes(st)) EDIT.match.et=true;
       /* تغيير المرحلة يسجّل حدثاً محايداً مرة واحدة: بداية المباراة/نهاية الشوط الأول/بداية الشوط الثاني/نهاية المباراة */
-      const auto=PHASE_NOTE[st];
+      const auto=st==="ft" && hasET(EDIT.match) ? [120,"نهاية المباراة"] : st==="pso" ? null : PHASE_NOTE[st];
       if(auto){ EDIT.mev=EDIT.mev||[];
         if(!EDIT.mev.some(x=>x.k==="note"&&x.note===auto[1])){ EDIT.mev.push({k:"note",club:"",p:"",m:String(auto[0]),x:0,note:auto[1]}); toast(auto[1],"ok"); } }
       rerender(); });

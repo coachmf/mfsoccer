@@ -239,7 +239,9 @@ function table(g){
   played().forEach(m=>{ if(!rows[m.home]||!rows[m.away]||T[m.home].g!==g||T[m.away].g!==g) return; if(m.round>3) return;
     const h=rows[m.home], a=rows[m.away]; h.p++; a.p++; h.gf+=+m.hg; h.ga+=+m.ag; a.gf+=+m.ag; a.ga+=+m.hg;
     if(m.hg>m.ag){ h.w++; a.l++; h.pts+=3; } else if(m.hg<m.ag){ a.w++; h.l++; a.pts+=3; } else { h.d++; a.d++; h.pts++; a.pts++; } });
-  return Object.values(rows).sort((x,y)=>y.pts-x.pts || (y.gf-y.ga)-(x.gf-x.ga) || y.gf-x.gf || x.c.localeCompare(y.c,"ar"));
+  /* تعادل تام (العراق وعمان 2026: نقاط وفارق وأهداف وبطاقات): المتأهل فعلاً لنصف النهائي يتقدّم */
+  const ko = new Set((DATA?DATA.matches:[]).filter(m=>+m.round===4).flatMap(m=>[m.home,m.away]));
+  return Object.values(rows).sort((x,y)=>y.pts-x.pts || (y.gf-y.ga)-(x.gf-x.ga) || y.gf-x.gf || (ko.has(y.c)-ko.has(x.c)) || x.c.localeCompare(y.c,"ar"));
 }
 function leaders(){
   const g = {}, a = {}, y = {}, r = {};
