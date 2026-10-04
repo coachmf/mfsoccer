@@ -186,15 +186,23 @@ Object.assign(TEAM, {
 
 /* ---------- ترقية الميزانية إلى 105 (مرة واحدة لكل فريق) ---------- */
 const COACH_UPGRADE = {
-  BANK_VER: 2,
-  /* +5 لكل فريق مكوَّن لم يُرقَّ بعد؛ يعيد true إذا تغيّر شيء */
+  BANK_VER: 3,
+  /* ترقية الميزانية تدريجية: كل فريق يحفظ الميزانية التي بُني عليها رصيده (bankBase)، والترقية تضيف الفرق
+     فقط (110 − bankBase) مرة واحدة. فريق بلا bankBase = 105: كل الفرق المكوَّنة على الخادم كانت 105 بالضبط
+     عند رفع الميزانية إلى 110 (تدقيق 2026-10-04: 842 فريقاً). خفض الميزانية لا ينقص أي رصيد. */
+  baseOf(team){ return +team.bankBase || 105; },
+  pending(team, st){
+    st=st||DB.state;
+    if(!team || !(team.squad||[]).length) return 0;
+    return Math.max(0, Math.round(((+st.rules.budget||100) - this.baseOf(team))*10)/10);
+  },
   bumpTeam(team, st){
     st=st||DB.state;
     if(!team || !(team.squad||[]).length) return false;
-    if((+team.bankVer||0) >= this.BANK_VER) return false;
-    const delta = Math.round(((+st.rules.budget||100) - 100)*10)/10;
-    if(delta>0) team.bank = Math.round(((+team.bank||0)+delta)*10)/10;
-    team.bankVer=this.BANK_VER;
+    const B = +st.rules.budget||100, delta = this.pending(team, st);
+    if(delta<=0) return false;
+    team.bank = Math.round(((+team.bank||0)+delta)*10)/10;
+    team.bankBase = B; team.bankVer = this.BANK_VER;
     return true;
   },
   /* فرق هذا الجهاز */

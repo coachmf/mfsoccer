@@ -656,6 +656,7 @@ const VIEWS = {
     const sorted=[...team.xi].sort((a,b)=>DB.player(b).price-DB.player(a).price);
     team.cap=sorted[0]; team.vice=sorted[1];
     team.bank=Math.round((st.rules.budget-v.cost)*10)/10;
+    team.bankBase=+st.rules.budget;   // الرصيد مبني على الميزانية الحالية — لا ترقية لاحقة له
     this.ui.pickerSquad=[]; this.ui.pickerCoach=null;
     DB.save(); UI.toast('تم اعتماد فريقك! '); APP.render();
   },

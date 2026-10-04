@@ -257,7 +257,7 @@ const DB = {
   },
 
   /* المدربون وقواعدهم: المفاتيح الجديدة من الكود، والأسعار/التعديلات من المدير تبقى.
-     الميزانية 105 تُرفع لكل فريق مرة واحدة (bankVer) بدل أن يظهر الجميع فوق الميزانية. */
+     رفع الميزانية (105 ثم 110) يُضاف لرصيد كل فريق مرة واحدة حسب bankBase — انظر COACH_UPGRADE. */
   syncCoaches(){
     const st=this.state; if(!st || typeof COACH_RULES==='undefined') return;
     st.rules = st.rules||{};

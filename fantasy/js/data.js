@@ -231,7 +231,7 @@ const SEED_COACHES = [
 ];
 
 const SEED_RULES = {
-  budget: 105.0,        /* 100 للاعبين + خانة المدرب (متوسط سعره 5.9) */
+  budget: 110.0,        /* 100 للاعبين + خانة المدرب 5 (2026-09-20) + زيادة 5 بطلب منصور (2026-10-04) */
   coach: COACH_RULES,
   squadSize: 15,
   maxPerClub: 3,

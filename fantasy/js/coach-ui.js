@@ -396,7 +396,7 @@ const COACH_ADMIN = {
     const arr=(k,label)=>`<div class="field"><label>${label}</label>
       <input value="${(R[k]||[]).join(',')}" style="direction:ltr" onchange="DB.state.rules.coach['${k}']=this.value.split(',').map(x=>+x.trim()||0);DB.save();UI.toast('حُفظ')"></div>`;
     const up = typeof CLOUD!=='undefined' && CLOUD.ready && CLOUD.admin;
-    const local = Object.values(st.teams||{}).filter(t=>(t.squad||[]).length && (+t.bankVer||0)<COACH_UPGRADE.BANK_VER).length;
+    const local = Object.values(st.teams||{}).filter(t=>COACH_UPGRADE.pending(t, st)>0).length;
     return `<div class="card"><h3>المدربون</h3>
       <div class="tiny" style="margin-bottom:10px">الاسم والصورة من الموقع. السعر ثابت حسب قوة النادي — عدّله هنا ثم «نشر حالة اللعبة». عند تغيير مدرب النادي: اكتب الاسم الجديد وحدّد جولة التغيير، فتنتقل خانة كل مشترك للمدرب الجديد تلقائياً ويحصل على تغيير مجاني.</div>
       <div class="scroll-x"><table class="tbl"><tr><th>النادي</th><th>المدرب</th><th>الجنسية</th><th>السعر</th><th>الحالة</th><th>تغيّر في ج</th><th>ملف الصورة</th></tr>
@@ -420,16 +420,16 @@ const COACH_ADMIN = {
       <label class="pill" style="cursor:pointer;margin-top:8px;display:inline-block"><input type="checkbox" ${R.enabled?'checked':''} style="width:auto" onchange="DB.state.rules.coach.enabled=this.checked;DB.save();APP.render()"> خانة المدرب مفعّلة</label>
     </div>
     <div class="card" style="margin-top:12px"><h3>ترقية الميزانية إلى ${fmtK(st.rules.budget)}</h3>
-      <div class="tiny" style="margin-bottom:10px">تضيف الفرق (${fmtM(Math.round(((+st.rules.budget||100)-100)*10)/10)}) لرصيد كل فريق مكوَّن مرة واحدة فقط، على الخادم ولهذا الجهاز. بدونها تظهر الفرق القديمة بلا رصيد للمدرب.</div>
+      <div class="tiny" style="margin-bottom:10px">تضيف لكل فريق مكوَّن الفرق بين الميزانية الحالية والميزانية التي بُني عليها رصيده (مرة واحدة فقط)، على الخادم ولهذا الجهاز. بدونها تبقى الفرق القديمة على ميزانيتها السابقة.</div>
       <div class="row" style="gap:8px;flex-wrap:wrap">
-        <button class="btn" ${up?'':'disabled'} onclick="ADMIN.coachUpgrade()">ترقية كل المشتركين (+${fmtM(Math.round(((+st.rules.budget||100)-100)*10)/10)})</button>
+        <button class="btn" ${up?'':'disabled'} onclick="ADMIN.coachUpgrade()">ترقية كل المشتركين إلى ${fmtK(st.rules.budget)}</button>
         ${local? `<span class="pill">${local} فريقاً على هذا الجهاز بانتظار الترقية</span>`:''}
       </div>
     </div>`;
   },
   async coachUpgrade(){
     const st=DB.state;
-    if(!confirm(`إضافة ${fmtM(Math.round(((+st.rules.budget||100)-100)*10)/10)} لرصيد كل فريق مكوَّن (مرة واحدة)؟`)) return;
+    if(!confirm(`رفع رصيد كل فريق مكوَّن إلى ميزانية ${fmtK(st.rules.budget)} (مرة واحدة لكل فريق)؟`)) return;
     UI.toast('جارٍ الترقية…');
     const r=await CLOUD.bumpBudget(st);
     if(!r.ok){ UI.toast(r.err,true); return; }
