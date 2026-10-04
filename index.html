@@ -2754,11 +2754,17 @@ const LEAGUE_DEFAULT = "assets/hero/kpl-dark.webp";
 let LEAGUE = LEAGUE_DEFAULT;
 const BRAND_DEFAULT = "assets/hero/brand-mf.png";
 let BRAND = BRAND_DEFAULT;
-const HANDLES = "@coachmf  ·  @coach_mf";
-const IG_URL = "https://instagram.com/coachmf";
-const X_URL  = "https://x.com/coach_mf";
+/* حسابات العلامة — معرّف موحّد على المنصات الثلاث (منصور 2026-10-04).
+   الحسابات الشخصية محفوظة أدناه إن أُريد عرضها مرة أخرى. */
+const HANDLES = "@mfsoccerkw";
+const IG_URL = "https://instagram.com/mfsoccerkw";
+const X_URL  = "https://x.com/mfsoccerkw";
+const TT_URL = "https://tiktok.com/@mfsoccerkw";
+const IG_PERSONAL = "https://instagram.com/coachmf";
+const X_PERSONAL  = "https://x.com/coach_mf";
 const IG_SVG = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><rect x="2.6" y="2.6" width="18.8" height="18.8" rx="5.4"/><circle cx="12" cy="12" r="4.1"/><circle cx="17.5" cy="6.5" r="1.15" fill="currentColor" stroke="none"/></svg>`;
 const X_SVG  = `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.53 3H20.5l-6.49 7.42L21.75 21h-5.96l-4.67-6.1L5.75 21H2.78l6.94-7.93L2.5 3h6.1l4.22 5.58L17.53 3Zm-1.04 16.2h1.65L7.6 4.71H5.83l10.66 14.49Z"/></svg>`;
+const TT_SVG = `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M16.6 5.82A4.28 4.28 0 0 1 15.54 3h-3.09v12.4a2.59 2.59 0 0 1-2.59 2.5 2.59 2.59 0 1 1 .77-5.06V9.7a5.68 5.68 0 0 0-.77-.05A5.65 5.65 0 1 0 15.54 15.3V8.9a7.33 7.33 0 0 0 4.28 1.38V7.19a4.29 4.29 0 0 1-3.22-1.37Z"/></svg>`;
 const OWNER = "Mohammed Alfailakawi";
 
 /* ===== واتساب التواصل والاقتراحات =====
@@ -6441,7 +6447,65 @@ function cardData(mode, club){
 
 /* صورة التصدير بتصميم الموقع الحالي (منصور 2026-09-17): 1080×1350، خلفية داكنة بلون النادي، الشعار، بطاقات أرقام،
    الفورمة بنقاط ملوّنة، الهدّاف بصورته، وللملخص أعلى 5 بالترتيب. كانت بطاقة ذهبية قديمة ورقم الجولة يُحسب من المباريات القادمة */
-async function exportImage(mode, club){
+/* ===================== مشاركة البطاقة (منصور 2026-10-04) =====================
+   navigator.share يحتاج نقرة المستخدم، والبطاقة تُرسم بعد await (خطوط وصور) فينتهي
+   «إذن النقرة» في سفاري. الحل: نعرض البطاقة في ورقة، وزر «مشاركة» فيها نقرة جديدة. */
+let SHARE = {blob:null, url:"", name:"", text:""};
+function shareSheet(canvas, filename, text){
+  canvas.toBlob(b=>{
+    if(!b){ if(typeof toast==="function") toast("تعذّر توليد البطاقة","bad"); return; }
+    if(SHARE.url) URL.revokeObjectURL(SHARE.url);
+    SHARE = {blob:b, url:URL.createObjectURL(b), name:filename, text:text||""};
+    const box=$("#sharebox"); if(!box) return;
+    box.innerHTML = `<div class="sh-sheet">
+      <button type="button" class="sh-x" aria-label="إغلاق" onclick="closeShare()">✕</button>
+      <img src="${SHARE.url}" alt="">
+      <div class="sh-act">
+        <button type="button" class="btn" onclick="doShare()">مشاركة</button>
+        <button type="button" class="btn ghost" onclick="doDownload()">تنزيل</button>
+      </div>
+      <p class="sh-hint">واتساب · إنستقرام · X — الرابط يُرفق مع الصورة</p>
+    </div>`;
+    box.hidden=false; requestAnimationFrame(()=>box.classList.add("on"));
+  }, "image/png");
+}
+function closeShare(){
+  const box=$("#sharebox"); if(!box) return;
+  box.classList.remove("on"); box.hidden=true; box.innerHTML="";
+  const u=SHARE.url; SHARE.url=""; if(u) setTimeout(()=>URL.revokeObjectURL(u), 5000);
+}
+async function doShare(){
+  if(!SHARE.blob) return;
+  const body = (SHARE.text ? SHARE.text+"\n" : "") + "mfsoccer.com";
+  try{
+    const f = new File([SHARE.blob], SHARE.name, {type:"image/png"});
+    if(navigator.canShare && navigator.canShare({files:[f]})){
+      await navigator.share({files:[f], text:body}); closeShare(); return; }
+    if(navigator.share){ await navigator.share({text:body, url:"https://mfsoccer.com/"}); closeShare(); return; }
+  }catch(e){ if(e && e.name==="AbortError") return; }
+  doDownload();
+}
+function doDownload(){
+  if(!SHARE.url) return;
+  const a=document.createElement("a"); a.href=SHARE.url; a.download=SHARE.name;
+  document.body.appendChild(a); a.click(); a.remove();
+  if(typeof toast==="function") toast("نُزّلت البطاقة");
+  closeShare();
+}
+window.closeShare=closeShare; window.doShare=doShare; window.doDownload=doDownload;
+/* أزرار المشاركة في ملف اللاعب وصفحة المباراة — تُلتقط قبل بقية مستمعي النقر */
+document.addEventListener("click", e=>{
+  const p=e.target.closest && e.target.closest("[data-share-player]");
+  if(p){ e.preventDefault(); e.stopImmediatePropagation();
+         exportImage("player", p.dataset.shareClub||"", p.dataset.sharePlayer); return; }
+  const mm=e.target.closest && e.target.closest("[data-share-match]");
+  if(mm){ e.preventDefault(); e.stopImmediatePropagation();
+          exportImage("match", null, mm.dataset.shareMatch); return; }
+  const b=$("#sharebox"); if(b && !b.hidden && e.target===b) closeShare();
+});
+document.addEventListener("keydown", e=>{ if(e.key==="Escape"){ const b=$("#sharebox"); if(b && !b.hidden) closeShare(); } });
+
+async function exportImage(mode, club, arg){
   const W=1080, H=1350, c=document.createElement("canvas"); c.width=W; c.height=H;
   const x=c.getContext("2d");
   try{ await document.fonts.ready; }catch(e){}
@@ -6450,7 +6514,13 @@ async function exportImage(mode, club){
   const rgba=(rgb,a)=>`rgba(${rgb},${a})`;
   const played=playedMatches(), round=played.length?Math.max(...played.map(m=>m.round)):0;
   const T=standings();
-  const acc = mode==="club" ? clubAccent(club) : {a:"#1878BE", b:"#0B1F3A", rgb:"24,120,190"};
+  const DEFACC={a:"#1878BE", b:"#0B1F3A", rgb:"24,120,190"};
+  const safeAcc=c=>{ try{ return c ? (clubAccent(c)||null) : null; }catch(e){ return null; } };
+  const acc = (mode==="club"||mode==="player") ? (safeAcc(club)||DEFACC)
+            : mode==="match" ? (safeAcc((matchByKey(arg)||{}).home)||DEFACC) : DEFACC;
+  /* يصغّر الخط حتى يتسع النص في العرض المتاح — أسماء اللاعبين والأندية تتفاوت كثيراً */
+  const fit=(t,maxW,wt,sz,min)=>{ let n=sz; x.font=F(wt,n);
+    while(n>min && x.measureText(String(t)).width>maxW){ n-=3; x.font=F(wt,n); } return n; };
 
   /* الخلفية */
   x.fillStyle="#081527"; x.fillRect(0,0,W,H);
@@ -6462,16 +6532,18 @@ async function exportImage(mode, club){
   x.direction="rtl"; x.textAlign="right"; x.textBaseline="alphabetic";
   const M=64;
 
-  /* الرأس: الشعار + العنوان */
-  const crestImg = await load(mode==="club" ? crestSrcOf(club) : "assets/hero/kpl-light.png");
-  const cs=168;
-  if(crestImg){ const sw = mode==="club" ? crestImg.width : crestImg.height, sh=crestImg.height;   /* للملخص: كرة شعار الدوري فقط من يسار الشعار العريض */
-    const r=Math.min(cs/sw, cs/sh), w=sw*r, h=sh*r;
-    x.save(); x.shadowColor="rgba(0,0,0,.45)"; x.shadowBlur=24; x.drawImage(crestImg, 0, 0, sw, sh, W-M-cs+(cs-w)/2, 72+(cs-h)/2, w, h); x.restore(); }
-  const tx=W-M-cs-34;
-  x.fillStyle="#FFFFFF"; x.font=F(800,76); x.fillText(mode==="club"?club:"ملخص الدوري", tx, 158);
-  x.fillStyle="#B3C4D9"; x.font=F(500,30); x.fillText(`الدوري الكويتي الممتاز · الجولة ${round} · ${SEASON}`, tx, 212);
-  x.fillStyle=acc.a; rr(x, tx-120, 238, 120, 7, 4); x.fill();
+  /* الرأس: الشعار + العنوان — للنادي والملخص فقط (اللاعب والمباراة لهما رأس خاص) */
+  if(mode==="club" || mode==="league"){
+    const crestImg = await load(mode==="club" ? crestSrcOf(club) : "assets/hero/kpl-light.png");
+    const cs=168;
+    if(crestImg){ const sw = mode==="club" ? crestImg.width : crestImg.height, sh=crestImg.height;   /* للملخص: كرة شعار الدوري فقط من يسار الشعار العريض */
+      const r=Math.min(cs/sw, cs/sh), w=sw*r, h=sh*r;
+      x.save(); x.shadowColor="rgba(0,0,0,.45)"; x.shadowBlur=24; x.drawImage(crestImg, 0, 0, sw, sh, W-M-cs+(cs-w)/2, 72+(cs-h)/2, w, h); x.restore(); }
+    const tx=W-M-cs-34;
+    x.fillStyle="#FFFFFF"; x.font=F(800,76); x.fillText(mode==="club"?club:"ملخص الدوري", tx, 158);
+    x.fillStyle="#B3C4D9"; x.font=F(500,30); x.fillText(`الدوري الكويتي الممتاز · الجولة ${round} · ${SEASON}`, tx, 212);
+    x.fillStyle=acc.a; rr(x, tx-120, 238, 120, 7, 4); x.fill();
+  }
 
   /* بطاقة رقم */
   const tile=(X,Y,w,h,val,label,opt={})=>{
@@ -6521,6 +6593,102 @@ async function exportImage(mode, club){
     tile(W-M-w2, y3, w2, h2, r.GF?`${pct(st.sp,r.GF)}%`:"—", "نصيب الكرات الثابتة");
     tile(gx, y3, w2, h2, String(r.cs??0), "شباك نظيفة");
     await scorerRow(y3+h2+gap, st.top, "هدّاف الفريق");
+  } else if(mode==="player"){
+    const D = playerProfileData(arg, club);
+    const cut = (PHOTOSON && typeof photoCut==="function") ? photoCut(D.name, D.club) : null;
+    const ph  = await load(cut ? cut+"_f.webp?v=29" : crestSrcOf(D.club));
+    const ci  = await load(crestSrcOf(D.club));
+    /* صورة اللاعب دائرية أعلى اليمين */
+    const R=104, pcx=W-M-R, pcy=76+R;
+    x.save(); x.beginPath(); x.arc(pcx,pcy,R,0,Math.PI*2); x.fillStyle=rgba(acc.rgb,.28); x.fill(); x.clip();
+    if(ph){ const r=Math.max(2*R/ph.width,2*R/ph.height)*(cut?1:.70), w=ph.width*r, hh=ph.height*r;
+            x.drawImage(ph, pcx-w/2, cut?pcy-R:pcy-hh/2, w, hh); }
+    x.restore();
+    x.strokeStyle=rgba(acc.rgb,.65); x.lineWidth=5; x.beginPath(); x.arc(pcx,pcy,R+3,0,Math.PI*2); x.stroke();
+    const tx=W-M-2*R-34;
+    fit(D.name, tx-M, 800, 68, 34); x.fillStyle="#FFFFFF"; x.fillText(D.name, tx, 148);
+    if(ci){ const s2=40, r=Math.min(s2/ci.width,s2/ci.height); x.drawImage(ci, tx-ci.width*r, 170, ci.width*r, ci.height*r); }
+    x.fillStyle="#EDF3FA"; x.font=F(600,30);
+    x.fillText([D.club, D.pos?posLabel(D.pos):"", D.num?("#"+D.num):""].filter(Boolean).join(" · "), tx-50, 200);
+    x.fillStyle="#B3C4D9"; x.font=F(500,26);
+    x.fillText(`الدوري الكويتي الممتاز · الجولة ${round} · ${SEASON}`, tx, 246);
+    x.fillStyle=acc.a; rr(x, tx-120, 270, 120, 7, 4); x.fill();
+
+    const w3=(gw-2*gap)/3, y1=330, h1=210, w2=(gw-gap)/2, h2=190;
+    if(D.gk){
+      tile(W-M-w3, y1, w3, h1, String(D.cs), "شباك نظيفة", {hi:true, sz:86});
+      tile(W-M-2*w3-gap, y1, w3, h1, String(D.conceded), "أهداف استقبلها", {sz:86});
+      tile(gx, y1, w3, h1, String(D.apps), "مباريات", {sz:86});
+    }else{
+      tile(W-M-w3, y1, w3, h1, String(D.goals), "أهداف", {hi:true, sz:86});
+      tile(W-M-2*w3-gap, y1, w3, h1, String(D.assists), "صناعة", {hi:true, sz:86});
+      tile(gx, y1, w3, h1, String(D.apps), "مباريات", {sz:86});
+    }
+    const y2=y1+h1+gap;
+    tile(W-M-w2, y2, w2, h2, D.mins+"′", "دقائق اللعب");
+    tile(gx, y2, w2, h2, `${D.y} / ${D.rd}`, "إنذارات / طرد");
+
+    /* آخر أربع مباريات */
+    const rows=(D.log||[]).slice(0,4), ty=y2+h2+gap, rh=76, th=rows.length*rh+70;
+    if(rows.length){
+      x.fillStyle="#0F1E35"; rr(x,gx,ty,gw,th,26); x.fill(); x.strokeStyle="#213653"; x.lineWidth=2; x.stroke();
+      x.textAlign="right"; x.fillStyle="#B3C4D9"; x.font=F(600,26); x.fillText("آخر المباريات", W-M-36, ty+48);
+      x.textAlign="left"; x.fillText("النتيجة", gx+36, ty+48); x.textAlign="right";
+      const cr = await Promise.all(rows.map(l=>load(crestSrcOf(l.opp))));
+      rows.forEach((l,i)=>{ const yy=ty+70+i*rh;
+        if(i){ x.strokeStyle="rgba(143,166,196,.14)"; x.lineWidth=1; x.beginPath(); x.moveTo(gx+30,yy); x.lineTo(W-M-30,yy); x.stroke(); }
+        x.textAlign="center"; x.fillStyle="#B3C4D9"; x.font=F(600,25); x.fillText("ج"+l.m.round, W-M-54, yy+rh/2+9);
+        const q=cr[i]; if(q){ const s2=42, r=Math.min(s2/q.width,s2/q.height);
+          x.drawImage(q, W-M-134+(s2-q.width*r)/2, yy+(rh-q.height*r)/2, q.width*r, q.height*r); }
+        x.textAlign="right"; x.fillStyle="#FFFFFF"; fit(l.opp, 330, 700, 31, 20); x.fillText(l.opp, W-M-158, yy+rh/2+10);
+        const bits=[]; if(l.g) bits.push(l.g+" هدف"); if(l.a) bits.push(l.a+" صناعة"); bits.push(l.mins+"′");
+        x.textAlign="left"; x.fillStyle="#B3C4D9"; x.font=F(600,25); x.fillText(bits.join("  ·  "), gx+128, yy+rh/2+9);
+        const col=l.k==="w"?"#16A34A":l.k==="l"?"#DC2626":"#64748B";
+        x.fillStyle=col; rr(x, gx+28, yy+rh/2-19, 86, 38, 12); x.fill();
+        x.textAlign="center"; x.fillStyle="#fff"; x.font=F(800,25); x.fillText(l.res, gx+71, yy+rh/2+9);
+        x.textAlign="right"; });
+    }
+  } else if(mode==="match"){
+    const m = matchByKey(arg);
+    if(!m){ if(typeof toast==="function") toast("تعذّر إيجاد المباراة","bad"); return; }
+    const gs = matchGoals(m), soon = isUpcoming(m);
+    const hc = await load(crestSrcOf(m.home)), aw = await load(crestSrcOf(m.away));
+    x.textAlign="center";
+    x.fillStyle="#B3C4D9"; x.font=F(600,30);
+    x.fillText(`${compLabel(compOf(m))} · الجولة ${m.round}`, W/2, 112);
+    const sub=[(typeof mpDateLabel==="function"?mpDateLabel(m):(m.date||"")), m.venue||""].filter(Boolean).join(" · ");
+    if(sub){ x.fillStyle="#8FA6C4"; x.font=F(500,26); x.fillText(sub, W/2, 158); }
+    /* الشعارات والنتيجة — المضيف يميناً */
+    const cy=330, cs2=180;
+    const dc=(img,cx)=>{ if(!img) return; const r=Math.min(cs2/img.width,cs2/img.height);
+      x.drawImage(img, cx-img.width*r/2, cy-img.height*r/2, img.width*r, img.height*r); };
+    dc(hc, W-M-140); dc(aw, M+140);
+    x.fillStyle="#FFFFFF";
+    fit(m.home, 320, 700, 34, 20); x.fillText(m.home, W-M-140, cy+152);
+    fit(m.away, 320, 700, 34, 20); x.fillText(m.away, M+140, cy+152);
+    if(soon){ x.fillStyle="#FFFFFF"; x.font=F(800,58); x.fillText(m.time||"—", W/2, cy+16); }
+    else { x.fillStyle="#FFFFFF"; x.font=F(800,116);
+           x.fillText(String(m.hg), W/2+78, cy+34); x.fillText(String(m.ag), W/2-78, cy+34);
+           x.fillStyle=acc.a; x.font=F(800,76); x.fillText("-", W/2, cy+26); }
+    /* الأهداف */
+    const nm = g => isOG(g) ? (g.og||g.p) : g.p;
+    const lst = c => gs.filter(g=>g.sc===c).sort((a,b)=>goalAbs(m,a)-goalAbs(m,b)).slice(0,6)
+                       .map(g=>`${nm(g)} ${clockLabel(m, goalAbs(m,g))}${isOG(g)?" (ه.ع)":""}`);
+    const hl=lst(m.home), al=lst(m.away), nr=Math.max(hl.length, al.length);
+    const ly=cy+212, lh=Math.max(nr*46+96, 148);
+    x.fillStyle="#0F1E35"; rr(x,gx,ly,gw,lh,26); x.fill(); x.strokeStyle="#213653"; x.lineWidth=2; x.stroke();
+    x.textAlign="center"; x.fillStyle="#B3C4D9"; x.font=F(600,26);
+    x.fillText(soon ? "لم تبدأ بعد" : (nr?"الأهداف":"بلا أهداف"), W/2, ly+48);
+    x.font=F(600,30); x.fillStyle="#EDF3FA";
+    x.textAlign="right"; hl.forEach((t,i)=>x.fillText(t, W-M-40, ly+100+i*46));
+    x.textAlign="left";  al.forEach((t,i)=>x.fillText(t, gx+40,  ly+100+i*46));
+    x.textAlign="right";
+    /* البطاقات والوقت المحتسب */
+    const sy=ly+lh+gap, w2=(gw-gap)/2, h2=160;
+    const cds=CARDS.filter(q=>q.r===m.round && compOf(q)===compOf(m) && (q.club===m.home||q.club===m.away));
+    tile(W-M-w2, sy, w2, h2, `${cds.filter(q=>isYellow(q.type)).length} / ${cds.filter(q=>isRed(q.type)).length}`, "إنذارات / طرد", {sz:60});
+    const addT=add1Of(m)+add2Of(m);
+    tile(gx, sy, w2, h2, addT?("+"+addT+"′"):"—", "الوقت بدل الضائع", {sz:60});
   } else {
     const tg=GOALS.length, pl=played.length, top=scorers()[0];
     const w3=(gw-2*gap)/3, y1=300, h1=200;
@@ -6552,10 +6720,17 @@ async function exportImage(mode, club){
   x.fillStyle="#FFFFFF"; x.font=F(700,34); x.fillText("mfsoccer.com", M, H-86);
   x.fillStyle="#B3C4D9"; x.font=F(500,26); x.fillText(HANDLES, M, H-46);
 
-  const name = (mode==="club" ? club : "ملخص-الدوري") + "-الجولة-" + round + ".png";
-  c.toBlob(b=>{ const u=URL.createObjectURL(b); const a=document.createElement("a");
-    a.href=u; a.download=name; document.body.appendChild(a); a.click(); a.remove();
-    setTimeout(()=>URL.revokeObjectURL(u),4000); }, "image/png");
+  /* اسم الملف ونص المشاركة — ثم الورقة التي فيها زر المشاركة الأصلية */
+  let fname, ftext;
+  if(mode==="club"){ fname=club; ftext=`${club} — الجولة ${round}`; }
+  else if(mode==="player"){ const D=playerProfileData(arg, club); fname=D.name;
+    ftext = D.gk ? `${D.name} · ${D.club} — ${D.cs} شباك نظيفة في ${mw(D.apps)}`
+                 : `${D.name} · ${D.club} — ${D.goals>=3&&D.goals<=10 ? D.goals+' أهداف' : D.goals+' هدفاً'} و${D.assists} صناعة في ${mw(D.apps)}`; }
+  else if(mode==="match"){ const m=matchByKey(arg)||{}; fname=`${m.home}-${m.away}`;
+    ftext = isUpcoming(m) ? `${m.home} × ${m.away} — الجولة ${m.round}`
+                          : `${m.home} ${m.hg} - ${m.ag} ${m.away} — الجولة ${m.round}`; }
+  else { fname="ملخص-الدوري"; ftext=`ملخص الدوري الكويتي الممتاز — الجولة ${round}`; }
+  shareSheet(c, `${fname}-${round}.png`, ftext);
 }
 
 function exportPDF(title){
@@ -6580,7 +6755,7 @@ function exportPDF(title){
 
 function exportBar(mode, club, title){
   return `<div class="exportbar">
-    <button class="btn" onclick="exportImage('${mode}',${club?`'${club}'`:"null"})">⬇ تصدير صورة</button>
+    <button class="btn" onclick="exportImage('${mode}',${club?`'${club}'`:"null"})">↗ مشاركة بطاقة</button>
     <button class="btn ghost" onclick="exportPDF('${esc(title)}')">🖨 تقرير PDF</button>
   </div>`;
 }
@@ -7063,8 +7238,9 @@ function renderHomeLegacy(){
     <div class="bt">
       <b>${esc(OWNER)}</b>
       <div class="handles">
-        <a class="hchip" href="${IG_URL}" target="_blank" rel="noopener">${IG_SVG}@coachmf</a>
-        <a class="hchip" href="${X_URL}" target="_blank" rel="noopener">${X_SVG}@coach_mf</a>
+        <a class="hchip" href="${IG_URL}" target="_blank" rel="noopener">${IG_SVG}@mfsoccerkw</a>
+        <a class="hchip" href="${X_URL}" target="_blank" rel="noopener" aria-label="X">${X_SVG}</a>
+        <a class="hchip" href="${TT_URL}" target="_blank" rel="noopener" aria-label="تيك توك">${TT_SVG}</a>
         <a class="hchip wa" href="${WA_URL}" target="_blank" rel="noopener">${WA_SVG}اقتراحاتكم</a>
       </div>
     </div>
@@ -9763,8 +9939,9 @@ function paintFoot(){
   if(fab){ fab.href=WA_URL; fab.querySelector(".waic").innerHTML=WA_SVG; }
   $("#siteFoot").innerHTML = `<img src="${BRAND}" alt="${esc(OWNER)}">
     <div class="handles">
-      <a class="hchip" href="${IG_URL}" target="_blank" rel="noopener">${IG_SVG}@coachmf</a>
-      <a class="hchip" href="${X_URL}" target="_blank" rel="noopener">${X_SVG}@coach_mf</a>
+      <a class="hchip" href="${IG_URL}" target="_blank" rel="noopener">${IG_SVG}@mfsoccerkw</a>
+      <a class="hchip" href="${X_URL}" target="_blank" rel="noopener" aria-label="X">${X_SVG}</a>
+      <a class="hchip" href="${TT_URL}" target="_blank" rel="noopener" aria-label="تيك توك">${TT_SVG}</a>
         <a class="hchip wa" href="${WA_URL}" target="_blank" rel="noopener">${WA_SVG}اقتراحاتكم</a>
     </div>`;
 }
@@ -9996,8 +10173,9 @@ const domParsed = () => new Promise(r => document.readyState!=="loading" ? r() :
       const fb=document.querySelector("#footBottom");
       if(fb) setHTML(fb,`<img src="${BRAND}" alt="${esc(OWNER)}">
         <div class="handles">
-          <a class="hchip" href="${IG_URL}" target="_blank" rel="noopener">${IG_SVG}@coachmf</a>
-          <a class="hchip" href="${X_URL}" target="_blank" rel="noopener">${X_SVG}@coach_mf</a>
+          <a class="hchip" href="${IG_URL}" target="_blank" rel="noopener">${IG_SVG}@mfsoccerkw</a>
+          <a class="hchip" href="${X_URL}" target="_blank" rel="noopener" aria-label="X">${X_SVG}</a>
+          <a class="hchip" href="${TT_URL}" target="_blank" rel="noopener" aria-label="تيك توك">${TT_SVG}</a>
           <a class="hchip wa" href="${WA_URL}" target="_blank" rel="noopener">${WA_SVG}اقتراحاتكم</a>
         </div>
         <div class="legal" style="margin-top:12px;font-size:.78rem;opacity:.75;text-align:center">
@@ -11005,6 +11183,25 @@ html[data-theme="light"] .hm{--bg-card:#FFFFFF;--border-card:#E2E8F0;--text-prim
 }
 </style>
 <div class="pprof" id="pprof" hidden role="dialog" aria-modal="true" aria-label="ملف اللاعب"></div>
+<div class="sharebox" id="sharebox" hidden role="dialog" aria-modal="true" aria-label="مشاركة البطاقة"></div>
+<style>
+.sharebox{position:fixed;inset:0;z-index:120;background:rgba(4,12,24,.86);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);
+  display:grid;place-items:center;padding:20px;opacity:0;transition:opacity .18s ease}
+.sharebox.on{opacity:1}
+.sh-sheet{width:min(400px,100%);display:flex;flex-direction:column;align-items:center;gap:14px;position:relative}
+.sh-sheet img{width:100%;max-height:60vh;object-fit:contain;border-radius:18px;border:1px solid rgba(143,166,196,.22);box-shadow:0 24px 60px rgba(0,0,0,.55)}
+.sh-act{display:flex;gap:10px;width:100%}
+.sh-act .btn{flex:1;display:flex;align-items:center;justify-content:center}
+.sh-x{position:absolute;top:-44px;left:0;width:36px;height:36px;border-radius:50%;border:1px solid rgba(255,255,255,.22);
+  background:rgba(10,34,66,.92);color:#EDF3FA;font-size:1rem;cursor:pointer;display:grid;place-items:center}
+.sh-hint{font-size:.74rem;color:#8FA6C4;text-align:center;margin:0}
+.pprof-share{position:absolute;top:10px;right:10px;z-index:3;width:34px;height:34px;border-radius:50%;
+  border:1px solid rgba(255,255,255,.2);background:rgba(6,21,41,.55);color:#fff;display:grid;place-items:center;cursor:pointer;
+  -webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
+.mp-share{margin-inline-start:auto;width:40px;height:40px;display:grid;place-items:center;color:#fff;background:none;border:0;cursor:pointer}
+.pprof-share svg{width:17px;height:17px}
+.mp-share svg{width:21px;height:21px}
+</style>
 <div class="imgview" id="imgview" hidden role="dialog" aria-modal="true" aria-label="عرض الصورة"></div>
 <div class="mpage" id="mpage" hidden role="dialog" aria-modal="true" aria-label="صفحة المباراة"></div>
 <style>
@@ -12592,6 +12789,7 @@ function playerProfileHTML(D){
   return `<div class="pprof-sheet" style="${accentVars(D.club)}">
     <span class="pprof-grab"></span>
     <button type="button" class="pprof-close" aria-label="إغلاق" onclick="closePlayer()">✕</button>
+    <button type="button" class="pprof-share" data-share-player="${esc(D.name)}" data-share-club="${esc(D.club||"")}" aria-label="مشاركة بطاقة اللاعب" title="مشاركة"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="2.6"/><circle cx="6" cy="12" r="2.6"/><circle cx="18" cy="19" r="2.6"/><path d="M8.6 13.4l6.9 4.1M15.5 6.5l-6.9 4.1"/></svg></button>
     <div class="pprof-hero">
       <div class="wm" style="background-image:url('${crestSrcOf(D.club)}')"></div>
       <div class="ph">${cut?`<img src="${cut}.webp?v=29" alt="" decoding="async" onload="fitNatFlag(this)" onerror="var f=this.parentNode.querySelector('.natf');if(f)f.classList.add('placed')">`:`<img class="noph" src="${crestSrcOf(D.club)}" alt="">`}${natFlag(D.name, D.club, "pprof-flag")}</div>
@@ -13685,6 +13883,7 @@ function mpHeader(m){
   const hs=soon?"":mpScorers(m,m.home), as=soon?"":mpScorers(m,m.away);
   return `<div class="mp-top">
       <button type="button" class="mp-back" data-mp-close aria-label="رجوع"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+      <button type="button" class="mp-share" data-share-match="${esc(matchKey(m))}" aria-label="مشاركة بطاقة المباراة" title="مشاركة"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="2.6"/><circle cx="6" cy="12" r="2.6"/><circle cx="18" cy="19" r="2.6"/><path d="M8.6 13.4l6.9 4.1M15.5 6.5l-6.9 4.1"/></svg></button>
     </div>
     ${when?`<div class="mp-when">${when}</div>`:""}
     <div class="mp-score">
