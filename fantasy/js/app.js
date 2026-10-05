@@ -170,10 +170,10 @@ const APP = {
   },
 
   /* ---------- المظهر ---------- */
-  savedTheme(){ try{ return localStorage.getItem('kwf_theme')==='dark' ? 'dark' : 'light'; }catch(e){ return 'light'; } },
+  savedTheme(){ try{ return localStorage.getItem('kwf_theme')==='light' ? 'light' : 'dark'; }catch(e){ return 'dark'; } },   /* الداكن افتراضي مثل الموقع (منصور 2026-10-05) */
   applyTheme(t){ const dark=t==='dark'; document.documentElement.setAttribute('data-theme', dark?'dark':'light');
     /* لون شريط الحالة في تطبيق iOS/PWA يتبع الوضع: نفس لون الشريط العلوي (--surface) */
-    const mc=document.querySelector('meta[name="theme-color"]'); if(mc) mc.setAttribute('content', dark?'#10305c':'#ffffff');
+    const mc=document.querySelector('meta[name="theme-color"]'); if(mc) mc.setAttribute('content', dark?'#00061A':'#F2F4F8');   /* = خلفية الشريط العلوي في هوية MF */
     try{ localStorage.setItem('kwf_theme', t); }catch(e){} },
   toggleTheme(){ const t=this.savedTheme()==='dark'?'light':'dark'; this.applyTheme(t); this.renderTopbar(); UI.toast(t==='dark'?'الوضع الداكن':'الوضع الفاتح'); },
 

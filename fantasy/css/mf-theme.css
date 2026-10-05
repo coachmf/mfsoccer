@@ -1,0 +1,175 @@
+/* =========================================================
+   الفانتسي — هوية عائلة MF SOCCER (منصور 2026-10-05، اختار «الأزرق المنظّف»)
+   كحلي الشعار #00061A للخلفيات + أزرق اللعبة #4FA8FF للإبراز؛ الملعب أخضر كما هو،
+   والذهبي للإنجاز فقط. البيانات والمنطق لا تُلمس — ألوان وشكل.
+   1) brand: الرموز للوضعين   2) fan:auto مولَّد (gen_fan.py)   3) العناصر الأساسية
+   ========================================================= */
+
+/* ---------- 1) الرموز ---------- */
+html.mff[data-theme="dark"]{
+  --bg:#00061A; --bg2:#030B22; --surface:#07112B; --surface2:#0B1736; --line:rgba(255,255,255,.08);
+  --text:#F6F3EA; --text2:#C5CAD8; --text3:#8C93A8;
+  --accent:#4FA8FF; --blue:#4FA8FF; --kpl1:#4FA8FF; --kpl2:#1F5FBF;
+  --shadow:0 8px 24px rgba(0,2,10,.35);
+  --ff-ink:#03112A; --ff-hero:linear-gradient(160deg,#0E1A3D 0%,#07112B 70%);
+}
+html.mff[data-theme="light"]{
+  --bg:#F2F4F8; --bg2:#EBEEF4; --surface:#FFFFFF; --surface2:#F6F7FA; --line:rgba(0,6,26,.09);
+  --text:#00061A; --text2:#363E55; --text3:#646C82;
+  --accent:#1F6FE0; --blue:#1F6FE0; --kpl1:#1F6FE0; --kpl2:#1452B0;
+  --shadow:0 1px 2px rgba(0,6,26,.05),0 6px 18px rgba(0,6,26,.06);
+  --ff-ink:#FFFFFF; --ff-hero:linear-gradient(160deg,#0E1A3D 0%,#00061A 80%);
+}
+
+/* fan:auto — مولَّد بـ gen_fan.py، لا تعدّله يدوياً */
+/* ── style.css ── */
+html.mff{--bg:#F2F4F8;--bg2:#E8EAF1;--surface2:#F5F6F9;--line:#C6DFFB;--text:#0D1532;--text2:#4E5677;--text3:#8188A4;--blue:#3F93F3;--accent:#1E65B7;--kpl1:#206CC2;--kpl2:#162355;--shadow:0 2px 10px rgba(22,34,83,0.048);--fdr3:#9EA1AD}
+html.mff[data-theme="dark"]{--bg:#0A1027;--bg2:#0D1532;--surface:#0F183A;--surface2:#121B42;--line:rgba(155,161,184,.22);--text:#F1F2F6;--text2:#91C1F8;--text3:#8C93AE;--accent:#539EF4;--blue:#539EF4}
+html.mff[data-theme="dark"] .big-pill.primary{color:#162253}
+html.mff[data-theme="dark"] .pt-toggle button.active{color:#0A1027}
+html.mff[data-theme="light"]{--bg:#F2F3F7;--bg2:#E7E9F0;--surface2:#F6F7F9;--line:#C5DEFB;--text:#0D1532;--text2:#4E5677;--text3:#8188A4;--accent:#1D63B4;--shadow:0 2px 10px rgba(22,34,83,0.048)}
+html.mff body{background-image:linear-gradient(155deg, rgba(44,136,242,.07) 0%, transparent 35%, transparent 60%, rgba(30,102,184,.10) 100%),
+    radial-gradient(1200px 500px at 80% -10%, rgba(44,136,242,.12), transparent),
+    radial-gradient(900px 400px at 10% 110%, rgba(30,102,184,.14), transparent)}
+html.mff #splash .splash-card{box-shadow:0 18px 50px rgba(13,20,48,0.21)}
+html.mff #splash .s2{background:linear-gradient(105deg, rgba(0,0,0,0) 0%, rgba(11,16,40,.028) 50%, rgba(0,0,0,0) 100%)}
+html.mff #splash .splash-logo{filter:drop-shadow(0 10px 30px rgba(30,101,183,.18))}
+html.mff #splash .splash-glow{background:radial-gradient(42% 62% at 4% 96%,  rgba(70,205,75,.95),  transparent 72%),
+    radial-gradient(36% 55% at 28% 104%, rgba(80,225,215,.85), transparent 72%),
+    radial-gradient(44% 60% at 52% 100%, rgba(133,186,247,.7), transparent 72%),
+    radial-gradient(38% 56% at 74% 104%, rgba(240,105,190,.85), transparent 72%),
+    radial-gradient(42% 62% at 98% 96%, rgba(255,110,80,.95), transparent 72%)}
+html.mff .home-hero{background:linear-gradient(165deg, var(--kpl1) 0%, var(--kpl2) 70%, #121C45 100%);box-shadow:0 6px 20px rgba(18,28,69,0.132)}
+html.mff .home-hero::before{background:radial-gradient(60% 45% at 85% -5%, rgba(128,184,247,.35), transparent 70%),
+    radial-gradient(50% 40% at 0% 105%, rgba(44,136,242,.28), transparent 70%),
+    linear-gradient(120deg, transparent 55%, rgba(255,255,255,.06) 56%, rgba(255,255,255,.06) 70%, transparent 71%)}
+html.mff .pill.new{color:#0D142F}
+html.mff .fdr.l3{color:#141825}
+html.mff .chip-card.on .cp{color:#0C122C}
+html.mff .pt-toggle button.active{color:#0D1532}
+html.mff .pitch{box-shadow:inset 0 0 60px rgba(0,60,20,.15), 0 10px 30px rgba(9,14,33,0.15)}
+html.mff .pslot .nm{color:#0D1532}
+html.mff .pslot .pt{background:#E7EAF1;color:#464A5A}
+html.mff .pslot .badge{background:#0D1532}
+html.mff .pslot .badge.v{background:#666B81}
+html.mff #modalBack{background:rgba(8,12,29,.7)}
+html.mff #sheetBack{background:rgba(8,12,30,.6)}
+html.mff .ps-head{background:linear-gradient(115deg,#4C9AF4 0%,var(--kpl1) 55%,var(--kpl2) 100%)}
+html.mff .ps-head .ps-kit .kit{filter:drop-shadow(0 4px 8px rgba(10,15,36,.35))}
+html.mff .ps-photo{background:#EFF1F6;box-shadow:0 4px 12px rgba(10,15,36,0.18)}
+html.mff .ptschip.mid{background:#9EA1AD;color:#161928}
+html.mff .ptschip.fdr-l3{color:#141825}
+html.mff .club-tag{background:#0F1738}
+html.mff .tf-bar-in{box-shadow:0 12px 34px rgba(22,34,83,0.168)}
+html.mff .squad-hero{background:linear-gradient(115deg,#4C9AF4 0%,var(--kpl1) 45%,var(--kpl2) 100%);box-shadow:0 4px 14px rgba(22,34,83,0.108)}
+html.mff .pitch{box-shadow:inset 0 -40px 80px rgba(0,50,20,.18), 0 10px 30px rgba(22,34,83,0.108)}
+html.mff .club-tag{background:rgba(11,17,41,.72)}
+html.mff #bottomnav button.active{background:rgba(22,35,85,.09)}
+html.mff .pitch-frame{box-shadow:0 8px 26px rgba(22,34,83,0.132)}
+html.mff{--line:#E7E9F0;--shadow:0 1px 3px rgba(22,34,83,0.042)}
+html.mff .home-hero{box-shadow:0 6px 20px rgba(18,28,69,0.132);background:linear-gradient(to left, #2C88F2 0%, #1E66B8 38%, #162253 70%, #0E1637 100%)}
+html.mff .pt-toggle{background:#EBEDF3}
+html.mff .pt-toggle button.active{box-shadow:0 1px 3px rgba(22,34,83,0.072)}
+html.mff .tabs{background:#EBEDF3}
+html.mff .tabs button.active{box-shadow:0 1px 3px rgba(22,34,83,0.072)}
+html.mff .chip-card .ci{background:#F2F3F7}
+html.mff .pslot .pt{background:#F0F2F6;color:#5B6075}
+html.mff .club-tag{color:#121D45}
+html.mff .tf-bar-in{box-shadow:0 6px 20px rgba(22,34,83,0.108)}
+html.mff .lu{background:#EFF1F6;color:#757A8E}
+html.mff .addp-bank{background:linear-gradient(90deg,#4C9AF4,var(--kpl1) 60%,var(--kpl2))}
+html.mff .avatar.kit-av .kit{filter:drop-shadow(0 2px 3px rgba(10,15,36,.25))}
+html.mff .dev-card{background:linear-gradient(115deg,#4C9AF4 0%,var(--kpl1) 55%,var(--kpl2) 100%);box-shadow:0 8px 24px rgba(22,34,83,0.132)}
+html.mff[data-theme="dark"]{--bg:#0B122B;--bg2:#0D1532;--surface:#111A3F;--surface2:#131D47;--line:rgba(128,184,247,.28);--text:#F6F7FA;--text2:#C8E0FB;--text3:#B2B7CD;--accent:#6EADF6;--blue:#6EADF6;--kpl1:#4295F3;--kpl2:#2377D7}
+html.mff[data-theme="dark"] .tabs button.active{color:#0B122B}
+html.mff[data-theme="dark"] .pt-toggle button.active{color:#0B122B}
+html.mff[data-theme="dark"] .fdr.l3,html.mff[data-theme="dark"] .ptschip.fdr-l3{color:#0B122B}
+html.mff[data-theme="dark"] .big-pill.primary{color:#162253}
+html.mff[data-theme="dark"] .pt-toggle button.active{color:#0B122B}
+html.mff .pts-hero{background:linear-gradient(115deg,#4C9AF4 0%,var(--kpl1) 45%,var(--kpl2) 100%);box-shadow:0 4px 14px rgba(22,34,83,0.108)}
+html.mff .pts-stats .big em{background:#0D1532}
+html.mff .pts-slot .pt.score{background:#0D1532}
+html.mff .pts-slot .pt.score.zero{background:#666B81}
+html.mff .pts-slot .pt.score.bn{background:#9397A7}
+html.mff .pts-slot .pt.score.pend{background:#E7EAF1;color:#464A5A}
+html.mff .pts-slot .sub{color:#0D1532}
+html.mff .card.pp-head .pill.blue{color:#121C43}
+html.mff .card.pp-head .btn.sec,html.mff .card.pp-head .btn.ghost{color:#121C43}
+html.mff .pslot .badge{background:linear-gradient(145deg,#131E49,#0D142F)!important;box-shadow:0 3px 8px rgba(10,15,36,0.21)!important}
+html.mff .pslot .badge.v{background:linear-gradient(145deg,#F1F3F7,#B7D6FA)!important;color:#0D142F!important}
+html.mff .pslot .badge,html.mff .pslot .badge.v{color:#0D142F!important;border:1.5px solid rgba(13,20,47,0.108)!important;box-shadow:0 2px 5px rgba(10,15,36,0.168)!important}
+html.mff .cform.d{background:#A1A4B1}
+html.mff .coach-bar{background:linear-gradient(115deg,#4C9AF4 0%,var(--kpl1) 45%,var(--kpl2) 100%);box-shadow:0 4px 14px rgba(22,34,83,0.132)}
+html.mff .pitch-brand{background:linear-gradient(90deg,#4C9AF4,var(--kpl1) 50%,var(--kpl2))}
+html.mff .pitch-brand{background:linear-gradient(180deg,#6CACF6 0%,#1079F0 38%,#1D61AF 70%,#162355 100%);box-shadow:0 3px 0 #111B40, 0 6px 0 #0E1635, 0 14px 22px rgba(10,15,36,0.27), inset 0 1px 0 rgba(255,255,255,.55), inset 0 -2px 0 rgba(0,0,0,.25)}
+html.mff .pitch-brand{box-shadow:0 3px 0 #0F183A, 0 10px 18px rgba(10,15,36,0.24)}
+html.mff .pitch-brand{box-shadow:0 8px 16px rgba(10,15,36,0.21)}
+html.mff .pitch-board{box-shadow:0 6px 12px rgba(10,15,36,0.21)}
+html.mff .pitch-board{box-shadow:0 3px 7px rgba(10,15,36,0.21)}
+html.mff .pitch-board{box-shadow:0 2px 0 #1a1a1a,0 6px 8px rgba(10,15,36,0.24)}
+html.mff .pitch-board,html.mff .pitch-board.l,html.mff .pitch-board.r{box-shadow:0 2px 0 #1a1a1a,0 4px 8px rgba(10,15,36,0.21)}
+html.mff .pitch-board,html.mff .pitch-board.l,html.mff .pitch-board.r{box-shadow:0 1px 0 #1a1a1a,0 2px 5px rgba(10,15,36,0.21)}
+/* ── motion.css ── */
+html.mff{--mo-shadow-2:0 12px 28px -14px rgba(13,20,47,0.168),0 2px 6px -2px rgba(13,20,47,0.06)}
+html.mff .mo-sheet-ghost{background:rgba(8,12,30,.6)}
+html.mff .mo-progress{background:linear-gradient(270deg,var(--accent),#87BBF7 60%,#F9E64A)}
+/* /fan:auto */
+
+/* ---------- 3) العناصر الأساسية (بعد المولَّد فتغلبه) ---------- */
+html.mff body{background:var(--bg);background-image:none}
+html.mff #topbar,html.mff #bottomnav{background:var(--bg)!important;border-color:var(--line)!important}
+html.mff[data-theme="dark"] #topbar,html.mff[data-theme="dark"] #bottomnav{border-color:rgba(231,208,147,.10)!important}
+html.mff #bottomnav button{color:var(--text3)}
+html.mff #bottomnav button.active{background:color-mix(in srgb,var(--accent) 14%,transparent)!important;color:var(--text)}
+html.mff #bottomnav button.active .ic{color:var(--accent)}
+html.mff .card{background:var(--surface);border-color:var(--line);border-radius:16px}
+
+/* البطاقات الرئيسية (الرئيسية / فريقي / النقاط): كحلي بخط أزرق رفيع — في الوضعين */
+html.mff .squad-hero,html.mff .home-hero,html.mff .pts-hero,html.mff .ps-head{
+  background:var(--ff-hero)!important;color:#F6F3EA;border:1px solid rgba(255,255,255,.08)!important;position:relative;overflow:hidden}
+html.mff .squad-hero::before,html.mff .home-hero::before,html.mff .pts-hero::before{
+  content:"";position:absolute;inset:0 0 auto 0;height:3px;background:linear-gradient(90deg,#4FA8FF,#1F5FBF);pointer-events:none}
+
+/* الأزرار: حبّة، الأساسي أزرق اللعبة، الثانوي إطار */
+html.mff .btn,html.mff .big-pill.primary{background:var(--accent)!important;color:var(--ff-ink)!important;border-color:transparent!important;border-radius:999px}
+html.mff .btn.ghost,html.mff .btn.sec,html.mff .big-pill:not(.primary){background:transparent!important;color:var(--text)!important;border:1px solid var(--line)!important;border-radius:999px}
+html.mff .home-hero .big-pill:not(.primary),html.mff .squad-hero .btn.ghost{color:#F6F3EA!important;border-color:rgba(255,255,255,.16)!important}
+html.mff .home-hero .big-pill.primary{background:#4FA8FF!important;color:#03112A!important}
+
+/* التبويبات والمفاتيح */
+html.mff .pt-toggle,html.mff .tabs{background:var(--surface2);border-color:var(--line)}
+html.mff .pt-toggle button.active,html.mff .tabs button.active{background:var(--accent)!important;color:var(--ff-ink)!important;box-shadow:none}
+
+/* الكروت (Wildcard…) */
+html.mff .chip-card{background:var(--surface);border-color:var(--line)}
+html.mff .chip-card .ci{background:color-mix(in srgb,var(--accent) 14%,transparent)!important;color:var(--accent)!important}
+html.mff .chip-card .cp{border-color:var(--line)!important;color:var(--text)!important;border-radius:999px}
+html.mff .chip-card.on{border-color:var(--accent)!important;background:color-mix(in srgb,var(--accent) 10%,var(--surface))!important}
+html.mff .chip-card.on .cp{background:var(--accent)!important;color:var(--ff-ink)!important}
+
+/* الملعب: الإطار كحلي/أبيض، والعشب أخضر كما هو */
+html.mff .pitch-frame{background:var(--surface)!important;border:1px solid var(--line);box-shadow:none}
+html.mff[data-theme="dark"] .pitch-frame .bench-strip{background:var(--surface2)!important;color:var(--text2)}
+
+/* القوائم والجداول */
+html.mff .link-list{background:var(--surface);border-color:var(--line)}
+html.mff .link-row .ic,html.mff .link-list .ic{color:var(--accent)}
+html.mff .tbl th{color:var(--text3)}
+html.mff .tbl th.th-sort.on{color:var(--accent)}
+
+/* «العودة للموقع» مكتوبة دائماً (منصور 2026-10-05) — الأزرار المجاورة تتصغّر قليلاً لتتسع */
+html.mff #toSite span{display:inline!important}
+html.mff #toSite{width:auto!important;padding:0 10px!important;height:34px;gap:4px;border-radius:999px!important;
+  color:var(--accent);background:color-mix(in srgb,var(--accent) 10%,transparent);border-color:color-mix(in srgb,var(--accent) 28%,transparent)}
+@media (max-width:430px){
+  html.mff #toSite{font-size:.7rem;padding:0 8px!important}
+  html.mff #toSite svg{display:none}
+  html.mff #topbar{gap:6px!important}
+  html.mff #topbar .iconbtn{width:32px!important;height:32px!important}
+}
+@media (max-width:380px){
+  html.mff #topbar{gap:4px!important;padding-inline:8px!important}
+  html.mff #topbar .iconbtn{width:30px!important;height:30px!important}
+  html.mff #toSite{font-size:.66rem;padding:0 7px!important;height:30px}
+  html.mff #brand img{max-height:26px;width:auto}
+}
