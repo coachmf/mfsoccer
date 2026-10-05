@@ -569,6 +569,34 @@
     safe(()=>{ card.insertAdjacentHTML("beforeend", periodClubsHTML(p.trim())); });
   });
 
+  /* ---------- كأس الخليج: «البطاقات على فترات المباراة» — الضغط على فترة يُظهر المنتخبات واللاعبين (منصور 2026-10-05) ----------
+     نفس المصدر والتقسيم الذي يرسم العمود: بطاقات البطولة (GULF.withGulf → CARDS) + period({m}) */
+  function gulfCardsHTML(p){
+    return GULF.withGulf(()=>{
+      const cs=CARDS.filter(x=>period({m:+x.m||0})===p);
+      const by={}; cs.forEach(x=>{ (by[x.club] ??= []).push(x); });
+      const rows=Object.entries(by).sort((a,b)=>b[1].length-a[1].length || a[0].localeCompare(b[0],"ar"));
+      const pill=x=>`<i class="mf-cd ${isRed(x.type)?"r":"y"}" aria-label="${isRed(x.type)?"طرد":"إنذار"}"></i>`;
+      const who=list=>list.sort((a,b)=>(+a.m||0)-(+b.m||0)).map(x=>`<span class="mf-pl">${pill(x)}${esc(x.p||"")} <span class="mn" dir="ltr">${(+x.m||0)}${x.x?"+"+x.x:""}'</span></span>`).join("");
+      const y=cs.filter(x=>!isRed(x.type)).length, r=cs.length-y;
+      return `<div class="mf-per mf-gcp" role="region">
+        <div class="mf-per-hd"><b>الدقائق <bdi dir="ltr">${esc(p)}</bdi></b><span>${y} إنذار${r?` · ${r} طرد`:""}</span></div>
+        ${rows.map(([c,list])=>`<div class="mf-per-r">${crest(c)}<span class="nm"><b>${esc(c)}</b><small>${who(list)}</small></span><span class="n">${list.length}</span></div>`).join("")}
+      </div>`;
+    });
+  }
+  D.addEventListener("click", e=>{
+    const col=e.target.closest("#v-gulf .gc-cp .gc-cp-c"); if(!col || !window.GULF) return;
+    const wrap=col.closest(".gc-cp"), p=((col.querySelector(".p")||{}).textContent||"").trim();
+    const was=col.classList.contains("mf-sel");
+    wrap.querySelectorAll(".gc-cp-c.mf-sel").forEach(x=>x.classList.remove("mf-sel"));
+    const host=wrap.parentNode; host.querySelectorAll(".mf-gcp").forEach(x=>x.remove());
+    const v=col.querySelector(".v"); if(was || !p || !(v && v.textContent.trim())) return;
+    col.classList.add("mf-sel");
+    const after=wrap.nextElementSibling && wrap.nextElementSibling.classList.contains("gc-cp-lg") ? wrap.nextElementSibling : wrap;
+    safe(()=>after.insertAdjacentHTML("afterend", gulfCardsHTML(p)));
+  });
+
   function wrapRender(name, after){
     safe(()=>{
       const o=window[name]; if(typeof o!=="function" || o.__mfc) return;

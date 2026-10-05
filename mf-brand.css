@@ -1420,3 +1420,14 @@ html.mf #v-analysis .an-per .an-col.mf-sel .p{color:var(--mf-tx);font-weight:700
 .mf-per-r .n{font-family:'Rubik',var(--mf-f);font-weight:800;font-size:1.2rem;color:var(--mf-tx)}
 .mf-per-hd+.mf-per-r .n{color:var(--mf-gold)}
 .mf-per-r .mn{display:inline-block;direction:ltr;unicode-bidi:isolate;font-variant-numeric:tabular-nums}
+
+/* كأس الخليج: البطاقات على الفترات — الفترة قابلة للضغط */
+html.mf #v-gulf .gc-cp-c{cursor:pointer}
+html.mf #v-gulf .gc-cp-c.mf-sel .bar{outline:2px solid var(--mf-gold-hi);outline-offset:2px}
+html.mf #v-gulf .gc-cp-c.mf-sel .p{color:var(--mf-tx);font-weight:700}
+.mf-gcp .crest{width:28px;height:28px}
+.mf-gcp .nm small{display:flex;flex-wrap:wrap;gap:4px 12px}
+.mf-gcp .mf-pl{display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
+.mf-cd{display:inline-block;width:9px;height:12px;border-radius:2px;flex:none}
+.mf-cd.y{background:#F5C518} .mf-cd.r{background:#E5484D}
+.mf-gcp .mn{display:inline-block;direction:ltr;unicode-bidi:isolate;font-variant-numeric:tabular-nums}
