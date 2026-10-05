@@ -9,14 +9,15 @@
 
    عند كل نشر: ارفع رقم VER فتُبنى ذاكرة جديدة وتُحذف القديمة.
    ========================================================= */
-const VER   = 'mf-2026-10-04-326';
+const VER   = 'mf-2026-10-05-327';
 const SHELL = 'shell-' + VER;
 const RUN   = 'run-'   + VER;
 
 /* الحد الأدنى ليفتح التطبيق بلا إنترنت */
 const PRECACHE = [
   '/', '/index.html', '/site.webmanifest',
-  '/favicon.svg', '/apple-touch-icon.png', '/icon-192.png', '/icon-512.png',
+  '/favicon.svg', '/favicon.ico', '/favicon-32.png', '/apple-touch-icon.png',
+  '/icon-192.png', '/icon-512.png', '/icon-maskable-192.png', '/icon-maskable-512.png',
   '/assets/crests/sq/qadsia.png',  '/assets/crests/sq/kuwait.png',
   '/assets/crests/sq/arabi.png',   '/assets/crests/sq/kazma.png',
   '/assets/crests/sq/salmiya.png', '/assets/crests/sq/nasr.png',
