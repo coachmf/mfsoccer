@@ -9952,7 +9952,8 @@ function paintFoot(){
     </div>`;
 }
 /* لمسة حقيقية من المستخدم على التنقل أثناء الإقلاع: نهاية الإقلاع لا تُرجعه للرئيسية */
-let USER_NAV = false;
+/* var لا let: شريط التنقل الذهبي (mf-shell.js) يضبط window.USER_NAV — مع let كان يضبط متغيراً آخر فيُعاد المستخدم للرئيسية بعد الإقلاع */
+var USER_NAV = false;
 /* الصفحة الأولى بعد تحميل البيانات: الرئيسية، إلا إذا فُتح الرابط بـ #admin فشاشة الإدارة */
 function goStart(){ go(location.hash==="#admin" ? "admin" : "home"); }
 document.addEventListener('click', e=>{ if(e.isTrusted && e.target.closest('nav.tabs, .hero-sub')) USER_NAV=true; }, true);
