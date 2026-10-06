@@ -9,7 +9,7 @@
 
    عند كل نشر: ارفع رقم VER فتُبنى ذاكرة جديدة وتُحذف القديمة.
    ========================================================= */
-const VER   = 'mf-2026-10-07-335-efftool';
+const VER   = 'mf-2026-10-07-336-div1';
 const SHELL = 'shell-' + VER;
 const RUN   = 'run-'   + VER;
 
@@ -29,7 +29,7 @@ const PRECACHE = [
   '/assets/hero/salmiya_9.webp', '/assets/hero/kazma_10.webp',
   '/assets/hero/stadium.jpg', '/assets/hero/stadium_dark.jpg',
   '/site-theme.css', '/site-i18n.js', '/fantasy/js/i18n-more.js',
-  '/live.css', '/live.js', '/admin-tabs.css', '/admin-tabs.js', '/gulf.css', '/gulf.js', '/analysis.css', '/analysis.js', '/efftime.css', '/efftime.js', '/tstats-data.js', '/mf-brand.css', '/mf-shell.js', '/assets/brand/mf-mark.webp', '/assets/brand/mf-emblem.webp'
+  '/live.css', '/live.js', '/admin-tabs.css', '/admin-tabs.js', '/gulf.css', '/gulf.js', '/analysis.css', '/analysis.js', '/efftime.css', '/efftime.js', '/div1.css', '/div1.js', '/tstats-data.js', '/mf-brand.css', '/mf-shell.js', '/assets/brand/mf-mark.webp', '/assets/brand/mf-emblem.webp'
 ];
 
 /* نطاقات تُخزَّن عند أول استعمال: الخطوط ثابتة فلا داعي لإعادة جلبها */

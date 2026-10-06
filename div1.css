@@ -1,0 +1,67 @@
+/* ===== دوري الدرجة الأولى (2026-10-07): الترتيب والمباريات فقط ===== */
+.d1{display:flex;flex-direction:column;gap:14px;padding-bottom:12px}
+.d1-hero{padding:6px 2px 0}
+.d1-hero h2{margin:0;font-family:var(--mf-fh,inherit);font-weight:800;font-size:1.45rem;color:var(--mf-tx,inherit)}
+.d1-hero p{margin:4px 0 0;font-size:.82rem;color:var(--mf-tx3,#8C93A8)}
+.d1-tabs{display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:4px;border-radius:999px;background:var(--mf-c1,#07112B);border:1px solid var(--mf-ln,rgba(231,208,147,.1))}
+.d1-tabs button{min-height:40px;border:0;border-radius:999px;background:transparent;color:var(--mf-tx2,#C5CAD8);font:inherit;font-weight:700;font-size:.9rem;cursor:pointer}
+.d1-tabs button[aria-selected="true"]{background:var(--mf-grad,#E7D093);color:var(--mf-gold-ink,#1A1306)}
+.d1-tabs button:focus-visible{outline:2px solid var(--mf-gold,#E7D093);outline-offset:2px}
+.d1-card{background:var(--mf-c1,#07112B);border:1px solid var(--mf-ln,rgba(231,208,147,.1));border-radius:16px;overflow:hidden}
+.d1-cr{width:28px;height:28px;object-fit:contain;flex:none}
+.d1-cr-x{display:grid;place-items:center;border-radius:50%;background:var(--mf-c3,#112044);color:var(--mf-tx2,#C5CAD8);font-size:.7rem;font-weight:700}
+
+/* الجدول */
+.d1 table.d1-tbl{width:100%;min-width:0;border-collapse:collapse;font-size:.86rem;font-variant-numeric:tabular-nums;background:none}
+.d1 .d1-tbl thead th{background:none;position:static}
+.d1-tbl th{padding:10px 4px;font-size:.72rem;font-weight:700;color:var(--mf-tx3,#8C93A8);text-align:center;border-bottom:1px solid var(--mf-ln,rgba(231,208,147,.1))}
+.d1-tbl td{padding:9px 4px;text-align:center;color:var(--mf-tx2,#C5CAD8);border-bottom:1px solid var(--mf-ln,rgba(231,208,147,.08))}
+.d1-tbl tbody tr:last-child td{border-bottom:0}
+.d1-tbl .cl{text-align:right;padding-inline-start:6px}
+.d1-tbl .rk{width:26px;color:var(--mf-tx3,#8C93A8);font-weight:700}
+.d1-tbl .pt{font-weight:800;color:var(--mf-tx,#F6F3EA);font-size:.95rem}
+.d1-tbl tbody tr:first-child .rk{color:var(--mf-gold,#E7D093)}
+.d1-tm{display:flex;align-items:center;gap:8px;min-width:0}
+.d1-tm b{font-weight:700;color:var(--mf-tx,#F6F3EA);white-space:nowrap}
+@media (max-width:420px){ .d1-tbl .gl{display:none} .d1-tbl{font-size:.82rem} .d1-cr{width:24px;height:24px} }
+
+/* المباريات */
+.d1-rnd{display:flex;flex-direction:column;gap:8px}
+.d1-rh{display:flex;align-items:baseline;justify-content:space-between;gap:10px;padding:0 2px}
+.d1-rh h3{margin:0;font-family:var(--mf-fh,inherit);font-size:1.05rem;font-weight:800;color:var(--mf-tx,#F6F3EA)}
+.d1-rh span{font-size:.78rem;color:var(--mf-tx3,#8C93A8)}
+.d1-m{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:6px 10px;padding:12px 14px;border-bottom:1px solid var(--mf-ln,rgba(231,208,147,.08))}
+.d1-ml .d1-m:last-child{border-bottom:0}
+.d1-mt{display:flex;align-items:center;gap:8px;min-width:0}
+.d1-mt b{font-weight:700;font-size:.92rem;color:var(--mf-tx2,#C5CAD8);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.d1-mt.a{justify-content:flex-end}
+.d1-m.done .d1-mt.win b{color:var(--mf-tx,#F6F3EA)}
+.d1-ms{display:flex;flex-direction:column;align-items:center;gap:2px;min-width:72px}
+.d1-ms .sc{font-family:var(--mf-fh,inherit);font-weight:800;font-size:1.25rem;color:var(--mf-tx,#F6F3EA);font-variant-numeric:tabular-nums}
+.d1-ms .tm{font-weight:700;font-size:.95rem;color:var(--mf-gold,#E7D093);direction:rtl}
+.d1-ms small{font-size:.66rem;color:var(--mf-tx3,#8C93A8)}
+.d1-mv{grid-column:1/-1;text-align:center;font-size:.72rem;color:var(--mf-tx3,#8C93A8)}
+.d1-bye{margin:0;padding:0 2px;font-size:.76rem;color:var(--mf-tx3,#8C93A8)}
+.d1-empty{margin:0;padding:14px;text-align:center;font-size:.82rem;color:var(--mf-tx3,#8C93A8)}
+.d1-note{margin:0;text-align:center;font-size:.72rem;color:var(--mf-tx3,#8C93A8)}
+
+/* الإدارة */
+.d1a .rndbox{margin-bottom:8px}
+.d1a-list{display:flex;flex-direction:column;gap:10px;padding-top:8px}
+.d1a-row{display:grid;grid-template-columns:minmax(0,1fr) 54px 10px 54px minmax(0,1fr);align-items:center;gap:6px;padding:10px;border-radius:12px;border:1px solid var(--mf-ln,rgba(231,208,147,.12))}
+.d1a-row .t{font-weight:700;font-size:.88rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.d1a-row .t.a{text-align:left}
+.d1a-row .x{text-align:center;color:var(--mf-tx3,#8C93A8)}
+.d1a-row .sc{width:100%;min-height:44px;text-align:center;font-size:1.1rem;font-weight:800;border-radius:10px}
+.d1a-row .meta{grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.d1a-row .meta input[type=text]{grid-column:1/-1}
+.d1a-row .meta .dl{grid-column:1/-1;justify-self:start}
+.d1a-row input{min-height:38px;box-sizing:border-box;font:inherit}
+.d1a-add{margin-top:12px;padding-top:12px;border-top:1px dashed var(--mf-ln2,rgba(231,208,147,.2))}
+.d1a-add h4{margin:0 0 8px;font-size:.9rem}
+.d1a-addf{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
+.d1a-addf label{display:flex;flex-direction:column;gap:4px;font-size:.74rem;color:var(--mf-tx3,#8C93A8)}
+.d1a-addf input,.d1a-addf select{min-height:40px;font:inherit;box-sizing:border-box}
+.d1a-save{display:flex;align-items:center;gap:12px;margin-top:14px}
+.d1a-save span{font-size:.78rem;color:var(--mf-tx3,#8C93A8)}
+.d1a-save button:disabled{opacity:.5}

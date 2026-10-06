@@ -127,6 +127,7 @@
       const n=e.target.closest("[data-hub]"); if(n){ const it=hubItems().find(x=>x.k===n.dataset.hub); closeHub(true); if(it) setTimeout(it.go,0); return; }
       const c=e.target.closest("[data-hub-club]"); if(c){ closeHub(true); const k=c.dataset.hubClub; setTimeout(()=>safe(()=>openClub(k)),0); return; }
       const g=e.target.closest("[data-hub-gulf]"); if(g){ closeHub(true); setTimeout(()=>nav("gulf"),0); }
+      const d1=e.target.closest("[data-hub-div1]"); if(d1){ closeHub(true); setTimeout(()=>nav("div1"),0); }
     });
     D.addEventListener("keydown", e=>{
       if(hub.hidden) return;
@@ -155,6 +156,7 @@
         <button type="button" data-hub-club="${esc(kfa)}">${kfaImg?`<img src="${kfaImg}" alt="" width="40" height="40">`:""}<span>الاتحاد الكويتي</span></button>
         ${shown("gulf")?`<button type="button" data-hub-gulf>${IC.cups}<span>كأس الخليج</span></button>`:""}
       </div></div>`:""}
+      ${shown("div1")?`<div class="mf-hub-sec"><h3>دوري الدرجة الأولى</h3><div class="mf-nt"><button type="button" data-hub-div1>${IC.cups}<span>الترتيب والمباريات</span></button></div></div>`:""}
       ${clubs.length?`<div class="mf-hub-sec"><h3>الأندية</h3><div class="mf-crests">${clubs.map(c=>{ const s=crestSrc(c);
         return `<button type="button" data-hub-club="${esc(c)}" aria-label="${esc(c)}" title="${esc(c)}">${s?`<img src="${s}" alt="" width="40" height="40" loading="lazy">`:`<span>${esc(c.slice(0,2))}</span>`}<small>${esc(c)}</small></button>`; }).join("")}</div></div>`:""}
       ${soc.length?`<div class="mf-hub-ft"><span>تابعنا</span>${soc.map(([u,t])=>`<a href="${u}" target="_blank" rel="noopener">${t}</a>`).join("")}<span class="mf-handle">@mfsoccerkw</span></div>`:""}
@@ -196,7 +198,7 @@
   /* ---------- الحالة النشطة ---------- */
   function paintActive(){
     const v=curView(), hubOpen=hub && !hub.hidden;
-    const hubViews=["clubs","predict","fans","gulf"];
+    const hubViews=["clubs","predict","fans","gulf","div1"];
     D.querySelectorAll(".mf-bar [data-mf], .mf-dnav [data-mf]").forEach(b=>{
       const k=b.dataset.mf;
       const kv = k==="stats" ? (v==="players" ? "players" : "analysis") : k;
