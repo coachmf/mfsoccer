@@ -13,6 +13,10 @@
    وفهرس seasons/effidx {m:{key:{eff, dur, n, live, upd}}} لتعرف صفحة المباراة
    وجود السجل دون قراءة وثيقة لكل مباراة. قواعد seasons/{doc} الحالية تكفي.
 
+   الأداة الحرّة (منصور 2026-10-07): «أداة الوقت الفعلي» تُشغَّل بلا مباراة،
+     مسودتها في seasons/eff_tool (لا تدخل الفهرس)، وبعد الانتهاء «حفظ على مباراة»
+     يختار أي مباراة (الدوري والكؤوس وكأس الخليج) فتُنقل المسودة إلى eff_<hash>
+     وتُفرَّغ الأداة.
    الإحصاءات تُشتق من الوثيقة لحظة العرض (لا مجاميع مخزّنة تتعارض معها).
    وضع الاختبار: ‏?livetest=1 على localhost — تخزين محلي فقط.
    ===================================================================== */
@@ -27,6 +31,8 @@ const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,6
 function hashId(s){ let h=0x811c9dc5; for(const ch of String(s)){ h^=ch.codePointAt(0); h=Math.imul(h,0x01000193)>>>0; } return h.toString(36); }
 const idOf = key => "eff_" + hashId(key);
 EFF.idOf = idOf;
+const TOOL_ID = "eff_tool";   /* مسودة الأداة الحرّة — بلا مباراة */
+const blankTool = () => ({tool:1, key:"", home:"", away:"", comp:"", halves:{}, stops:[], v:1});
 
 const REASONS = [
   ["foul","خطأ (فاول)"], ["corner","ركنية"], ["throw","رمية تماس"], ["gk","ركلة مرمى"], ["var","مراجعة VAR"],
@@ -171,6 +177,83 @@ EFF.open = async function(key){
   try{ if(navigator.wakeLock) S.lock = await navigator.wakeLock.request("screen"); }catch(e){}
   try{ if(!/^#effctl\//.test(location.hash)) history.pushState({eff:1}, "", "#effctl/"+key); }catch(e){}
 };
+EFF.openTool = async function(){
+  if(!canEdit()){ say("الوقت الفعلي للمحرّرين فقط", "err"); return; }
+  if(!store.ready()){ say("لم يكتمل الاتصال بعد — حاول بعد لحظات", "err"); return; }
+  EFF.close(true);
+  S = {key:"", id:TOOL_ID, tool:true, m:null, doc:null, undo:[], ph:null, root:null, lock:null, pick:false};
+  mount();
+  let d = null;
+  try{ d = await store.get(TOOL_ID); }catch(e){ console.error(e); }
+  if(!S || S.id!==TOOL_ID) return;
+  S.doc = d && d.tool ? d : blankTool();
+  S.ph = curPhase(S.doc);
+  paint();
+  S.unsub = store.watch(TOOL_ID, nd=>{ if(!S || S.id!==TOOL_ID || !nd || !nd.tool) return;
+    if(S.saving) return;
+    if(nd.updatedAt && S.doc && S.doc.updatedAt && nd.updatedAt < S.doc.updatedAt) return;
+    S.doc = nd; if(!S.pick) paint(); });
+  S.tick = setInterval(paintClock, 250);
+  try{ if(navigator.wakeLock) S.lock = await navigator.wakeLock.request("screen"); }catch(e){}
+  try{ if(!/^#effctl\//.test(location.hash)) history.pushState({eff:1}, "", "#effctl/tool"); }catch(e){}
+};
+
+/* ───────────── الأداة: حفظ على مباراة ───────────── */
+function allMatches(){
+  const out = [], seen = new Set();
+  const add = (m, gulf) => { if(!m || !m.home || !m.away) return; const k = keyOf(m); if(seen.has(k)) return; seen.add(k);
+    const comp = gulf ? "كأس الخليج" : ((typeof compOf==="function" ? compOf(m) : m.comp) || "الدوري");
+    out.push({m, k, gulf, comp}); };
+  try{ ((typeof ALL!=="undefined" && ALL && ALL.matches) || []).forEach(m=>add(m, false)); }catch(e){}
+  try{ if(window.GULF && GULF.data){ const D = GULF.data(); (D && D.matches || []).forEach(m=>add(m, true)); } }catch(e){}
+  /* اليوم وما قبله أولاً (الأحدث فالأقدم)، ثم القادمة (الأقرب فالأبعد) */
+  const t = new Date(), today = `${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,"0")}-${String(t.getDate()).padStart(2,"0")}`;
+  const past = x => !x.m.date || String(x.m.date) <= today;
+  return out.sort((a,b)=>{ const pa = past(a), pb = past(b); if(pa!==pb) return pa ? -1 : 1;
+    const c = pa ? String(b.m.date||"").localeCompare(String(a.m.date||"")) : String(a.m.date||"").localeCompare(String(b.m.date||""));
+    return c || (+b.m.round||0)-(+a.m.round||0); });
+}
+function pickComps(){
+  const n = {}; allMatches().forEach(x=>{ n[x.comp] = (n[x.comp]||0) + 1; });
+  const order = ["الدوري","كأس الخليج"];
+  return Object.keys(n).sort((a,b)=>{ const ia = order.indexOf(a), ib = order.indexOf(b); return (ia<0?9:ia)-(ib<0?9:ib) || a.localeCompare(b,"ar"); }).map(c=>[c, n[c]]);
+}
+function pickRows(q){
+  q = String(q||"").trim();
+  const cf = S && S.pickComp || "";
+  const list = allMatches().filter(x=>(!cf || x.comp===cf) && (!q || [x.m.home, x.m.away, x.comp, x.m.date||""].join(" ").includes(q)));
+  if(!list.length) return `<p class="eff-hint">لا مباريات بهذا الاسم.</p>`;
+  return list.slice(0, 150).map(({m,k,gulf,comp})=>{
+    const has = IDX.m && IDX.m[k];
+    const rl = gulf && +m.round===4 ? "نصف النهائي" : gulf && +m.round===5 ? "النهائي" : `الجولة ${m.round}`;
+    return `<button type="button" class="eff-pk" data-eff="pickm" data-v="${H(k)}">
+      <b>${H(m.home)} × ${H(m.away)}</b>
+      <small>${H(comp)} · ${H(rl)}${m.date ? ` · <bdi dir="ltr">${H(m.date)}</bdi>` : ""}</small>
+      ${has ? `<i>فيها وقت فعلي <bdi dir="ltr">${fmt((has.eff||0)*1000)}</bdi></i>` : ""}</button>`; }).join("");
+}
+async function saveToMatch(k){
+  if(!S || !S.tool || !S.doc) return;
+  const hit = allMatches().find(x=>x.k===k);
+  const m = findMatch(k) || (hit && hit.m);
+  if(!m){ say("لم تُعثر على المباراة", "err"); return; }
+  const has = IDX.m && IDX.m[k];
+  const msg = has
+    ? `مباراة ${m.home} × ${m.away} فيها وقت فعلي مسجّل (${fmt((has.eff||0)*1000)}).\nاستبداله بتسجيل الأداة؟`
+    : `حفظ الوقت الفعلي على مباراة ${m.home} × ${m.away}؟`;
+  if(!confirm(msg)) return;
+  const d = Object.assign(blank(m, k), {halves:clone(S.doc.halves||{}), stops:clone(S.doc.stops||[]), from:"tool"});
+  if(hit && hit.gulf) d.gulf = true;
+  S.saving = (S.saving||0) + 1;
+  try{
+    await store.set(idOf(k), d);
+    await store.idxSet(k, summary(d));
+    await store.set(TOOL_ID, blankTool());
+  }catch(e){ console.error(e); say("تعذّر الحفظ: "+(e.code||e.message), "err"); if(S) S.saving--; return; }
+  say(`حُفظ الوقت الفعلي على ${m.home} × ${m.away}`, "ok");
+  try{ history.replaceState({eff:1}, "", "#effctl/"+k); }catch(e){}
+  EFF.open(k);   /* تكمل على المباراة نفسها (وإن كان الشوط جارياً) */
+}
+
 EFF.close = function(silent){
   if(!S) return;
   if(S.unsub) S.unsub(); if(S.tick) clearInterval(S.tick);
@@ -199,7 +282,7 @@ async function commit(mut){
 async function save(d){
   S.saving = (S.saving||0) + 1;
   const id = S.id, key = S.key;
-  try{ await store.set(id, d); await store.idxSet(key, summary(d)); }
+  try{ await store.set(id, d); if(!S || !S.tool) await store.idxSet(key, summary(d)); }
   catch(e){ console.error(e); say("تعذّر الحفظ: "+(e.code||e.message), "err"); }
   finally{ if(S && S.id===id) S.saving--; }
 }
@@ -236,6 +319,11 @@ function act(a, arg){
     if(!confirm(`مسح ${PHN[p]} بالكامل (بدايته ونهايته وكل توقفاته)؟`)) return;
     commit(d=>{ delete d.halves[p]; d.stops = (d.stops||[]).filter(y=>y.ph!==p); }); return;
   }
+  if(a==="newsess"){
+    if(!S.tool) return;
+    if(!confirm("مسح تسجيل الأداة بالكامل والبدء من جديد؟")) return;
+    commit(d=>{ d.halves = {}; d.stops = []; }); S.ph = "h1"; return;
+  }
   if(a==="reopen"){
     if(!h || !h.e) return;
     if(!confirm(`إعادة فتح ${PHN[p]}؟ (نهايته تُلغى والساعة تكمل من الآن)`)) return;
@@ -246,6 +334,21 @@ function act(a, arg){
 function paint(){
   if(!S || !S.root) return;
   const d = S.doc; if(!d){ return; }
+  if(S.pick){
+    S.root.innerHTML = `<div class="eff-wrap">
+      <header class="eff-top">
+        <button type="button" class="eff-close" data-eff="pickx">رجوع</button>
+        <div class="eff-ttl"><b>حفظ على مباراة</b><small>اختر المباراة التي سجّلت وقتها الفعلي</small></div>
+        <span></span>
+      </header>
+      <nav class="eff-pkc" aria-label="البطولة">${[["","الكل"]].concat(pickComps().map(([c])=>[c,c])).map(([v,t])=>`<button type="button" data-eff="pickc" data-v="${H(v)}" aria-pressed="${(S.pickComp||"")===v}">${H(t)}</button>`).join("")}</nav>
+      <input class="eff-q" type="search" placeholder="ابحث باسم الفريق أو التاريخ" aria-label="بحث عن مباراة" autocomplete="off">
+      <div class="eff-pklist">${pickRows("")}</div>
+    </div>`;
+    const q = S.root.querySelector(".eff-q"), lst = S.root.querySelector(".eff-pklist");
+    q.oninput = () => { lst.innerHTML = pickRows(q.value); };
+    return;
+  }
   const p = S.ph, h = (d.halves||{})[p], c = calc(d), ph = c.ph[p];
   const open = (d.stops||[]).find(x=>x.ph===p && !x.e);
   const state = !h || !h.s ? "pre" : h.e ? "done" : open ? "stop" : "play";
@@ -270,9 +373,12 @@ function paint(){
   S.root.innerHTML = `<div class="eff-wrap">
     <header class="eff-top">
       <button type="button" class="eff-close" data-eff="close">إغلاق</button>
-      <div class="eff-ttl"><b>${H(d.home)} × ${H(d.away)}</b><small>الوقت الفعلي للعب · ${H(d.comp||"")} · ${H(rndLbl(d))}</small></div>
+      ${S.tool
+        ? `<div class="eff-ttl"><b>أداة الوقت الفعلي</b><small>بدون مباراة — احفظها على أي مباراة متى ما خلصت</small></div>`
+        : `<div class="eff-ttl"><b>${H(d.home)} × ${H(d.away)}</b><small>الوقت الفعلي للعب · ${H(d.comp||"")} · ${H(rndLbl(d))}</small></div>`}
       <button type="button" class="eff-undo" data-eff="undo"${S.undo.length ? "" : " disabled"}>تراجع</button>
     </header>
+    ${S.tool && c.started ? `<div class="eff-row"><button type="button" class="eff-save" data-eff="pick">حفظ على مباراة</button></div>` : ""}
     <nav class="eff-seg">${seg}</nav>
     <section class="eff-clocks st-${state}">
       <div><span>زمن ${PHN[p]}</span><b data-effc="dur" dir="ltr">${fmt(ph ? ph.dur : 0)}</b></div>
@@ -286,12 +392,12 @@ function paint(){
     ${c.started ? `<section class="eff-card"><h4>المباراة كلها</h4>
       <div class="eff-sum"><div><span>اللعب الفعلي</span><b dir="ltr" data-effc="teff">${fmt(c.eff)}</b></div><div><span>الزمن الكلي</span><b dir="ltr" data-effc="tdur">${fmt(c.dur)}</b></div><div><span>النسبة</span><b data-effc="tpct">${pct(c.eff, c.dur)}%</b></div><div><span>عدد التوقفات</span><b>${c.n}</b></div></div>
       ${rs.length ? `<ul class="eff-rs">${rs.map(([k,v])=>`<li><b>${H(RN[k]||k)}</b><span>${v.n} مرة</span><em dir="ltr">${fmt(v.t)}</em></li>`).join("")}</ul>` : ""}</section>` : ""}
-    <div class="eff-row tools">${h ? (h.e ? `<button type="button" class="eff-ghost" data-eff="reopen">إعادة فتح ${PHN[p]}</button>` : "") + `<button type="button" class="eff-ghost danger" data-eff="reset">مسح ${PHN[p]}</button>` : ""}</div>
+    <div class="eff-row tools">${h ? (h.e ? `<button type="button" class="eff-ghost" data-eff="reopen">إعادة فتح ${PHN[p]}</button>` : "") + `<button type="button" class="eff-ghost danger" data-eff="reset">مسح ${PHN[p]}</button>` : ""}${S.tool && c.started ? `<button type="button" class="eff-ghost danger" data-eff="newsess">تسجيل جديد</button>` : ""}</div>
     <p class="eff-foot">مستقلة عن أحداث المباراة: لا تُسجَّل هنا أهداف ولا بطاقات، ولا تدخل في الإحصاءات أو الترتيب أو الفانتسي.</p>
   </div>`;
 }
 function paintClock(){
-  if(!S || !S.root || !S.doc) return;
+  if(!S || !S.root || !S.doc || S.pick) return;
   const c = calc(S.doc), ph = c.ph[S.ph]; if(!ph || !ph.live) return;
   const set = (k, v) => { const el = S.root.querySelector(`[data-effc="${k}"]`); if(el) el.textContent = v; };
   set("dur", fmt(ph.dur)); set("eff", fmt(ph.eff)); set("stop", fmt(ph.stop)); set("pct", pct(ph.eff, ph.dur)+"%");
@@ -301,17 +407,26 @@ function paintClock(){
 document.addEventListener("click", e=>{
   const o = e.target.closest && e.target.closest("[data-eff-open]");
   if(o){ e.preventDefault(); EFF.open(o.dataset.effOpen); return; }
+  const t = e.target.closest && e.target.closest("[data-eff-tool]");
+  if(t){ e.preventDefault(); EFF.openTool(); return; }
   if(!S || !S.root || !S.root.contains(e.target)) return;
   const b = e.target.closest("[data-eff]"); if(!b || b.disabled) return;
   const a = b.dataset.eff, v = b.dataset.v;
   if(a==="close"){ EFF.close(); return; }
   if(a==="ph"){ S.ph = v; paint(); return; }
+  if(a==="pick"){ S.pick = true; paint(); const q = S.root.querySelector(".eff-q"); if(q) q.focus(); return; }
+  if(a==="pickx"){ S.pick = false; paint(); return; }
+  if(a==="pickc"){ S.pickComp = v || ""; const q = S.root.querySelector(".eff-q"), val = q ? q.value : "";
+    S.root.querySelectorAll("[data-eff=pickc]").forEach(x=>x.setAttribute("aria-pressed", String((x.dataset.v||"")===S.pickComp)));
+    S.root.querySelector(".eff-pklist").innerHTML = pickRows(val); return; }
+  if(a==="pickm"){ saveToMatch(v); return; }
   act(a, v);
 });
 document.addEventListener("keydown", e=>{
-  if(!S || !S.doc || e.target.closest("input,textarea,select")) return;
+  if(!S || !S.doc) return;
+  if(e.target.closest("input,textarea,select")){ if(e.key==="Escape" && S.pick){ S.pick = false; paint(); } return; }
   if(e.key===" "){ const open = (S.doc.stops||[]).find(x=>x.ph===S.ph && !x.e); if(open){ e.preventDefault(); act("go"); } }
-  if(e.key==="Escape") EFF.close();
+  if(e.key==="Escape"){ if(S.pick){ S.pick = false; paint(); } else EFF.close(); }
 });
 
 /* ───────────── صفحة المباراة: بطاقة «الوقت الفعلي للعب» في تبويب التفاصيل ───────────── */
@@ -372,7 +487,7 @@ function boot(){
   EFF.onIdx(()=>mpInject());
   startIdx();
   if(/^#effctl\//.test(location.hash)){ const k = location.hash.slice(8); let n = 0;
-    const w = ()=>{ if(canEdit() && findMatch(k) && store.ready()) EFF.open(k); else if(++n < 80) setTimeout(w, 250); }; setTimeout(w, 400); }
+    const w = ()=>{ if(k==="tool" && canEdit() && store.ready()) EFF.openTool(); else if(k!=="tool" && canEdit() && findMatch(k) && store.ready()) EFF.open(k); else if(++n < 80) setTimeout(w, 250); }; setTimeout(w, 400); }
 }
 if(document.readyState==="loading") document.addEventListener("DOMContentLoaded", ()=>setTimeout(boot, 0)); else setTimeout(boot, 0);
 if(!TEST){ let n = 0; const w = ()=>{ if(store.ready()) startIdx(); else if(++n < 120) setTimeout(w, 250); }; setTimeout(w, 300); }

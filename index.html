@@ -2190,8 +2190,8 @@ main{padding-bottom:48px}
 <!-- كأس الخليج 27: قسم مستقل ببيانات منفصلة (seasons/gulf27) -->
 <link rel="stylesheet" href="gulf.css?v=18">
 <script src="gulf.js?v=46" defer></script>
-<link rel="stylesheet" href="efftime.css?v=2">
-<script src="efftime.js?v=2" defer></script>
+<link rel="stylesheet" href="efftime.css?v=3">
+<script src="efftime.js?v=3" defer></script>
 <!-- التحليل الموسّع + تقييم اللاعبين 0–100 + البحث العام (منصور 2026-09-29) -->
 <link rel="stylesheet" href="analysis.css?v=10">
 <script src="tstats-data.js?v=1" defer></script>
@@ -6342,6 +6342,7 @@ function renderMatchAdmin(){
     const mf = (typeof ADM_MCOMP!=="undefined" && ADM_MCOMP) || "الكل";
     box.innerHTML = `
       <button class="btn" data-act="new">+ إضافة مباراة جديدة</button>
+      <button class="btn am-efftool" data-eff-tool="1" title="ساعة الوقت الفعلي بدون اختيار مباراة — تحفظها على أي مباراة بعد ما تخلص">أداة الوقت الفعلي</button>
       <div class="segbar compbar adm-compf" role="tablist" aria-label="البطولة">
         <button class="seg" data-mcompf="الكل" aria-pressed="${mf==="الكل"}">كل البطولات <small>${ms.length}</small></button>
         ${COMPS.map(c=>`<button class="seg" data-mcompf="${esc(c)}" aria-pressed="${mf===c}">${esc(c)} <small>${cc[c]||0}</small></button>`).join("")}</div>

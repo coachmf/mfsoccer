@@ -90,3 +90,18 @@ html.eff-open{overflow:hidden}
 .effp-note{margin:10px 0 0;font-size:.72rem;color:var(--text-muted,#8ea3bf)}
 /* زر «الوقت الفعلي» في قوائم الإدارة */
 .am-btns .am-eff,.btns .am-eff{border-color:#22c55e66;color:#4ade80}
+/* الأداة الحرّة (2026-10-07): تسجيل بلا مباراة ثم «حفظ على مباراة» */
+.am-efftool{margin-inline-start:8px;border:1px solid #22c55e66!important;background:transparent!important;color:#4ade80!important}
+.eff-save{flex:1;min-height:52px;border-radius:12px;border:1px solid #22c55e88;background:#10261c;color:#4ade80;font-weight:800;font-size:1rem;font-family:inherit;cursor:pointer}
+.eff-save:active{transform:scale(.985)}
+.eff-q{width:100%;box-sizing:border-box;min-height:46px;margin:2px 0 10px;padding:0 14px;border-radius:12px;border:1px solid #2a4467;background:#0f1b2e;color:#e6eef8;font:inherit;font-size:.92rem}
+.eff-q:focus{outline:2px solid #4ade80;outline-offset:1px}
+.eff-pklist{display:flex;flex-direction:column;gap:6px}
+.eff-pk{display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"t i" "s i";align-items:center;gap:2px 10px;text-align:right;padding:10px 12px;border-radius:12px;border:1px solid #1f3350;background:#0f1b2e;color:#e6eef8;font-family:inherit;cursor:pointer}
+.eff-pk:active,.eff-pk:hover{border-color:#2a4467;background:#132238}
+.eff-pk b{grid-area:t;font-size:.92rem;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.eff-pk small{grid-area:s;font-size:.72rem;color:#8ea3bf}
+.eff-pk i{grid-area:i;font-style:normal;font-size:.68rem;font-weight:700;color:#fbbf24;border:1px solid #f5a52455;border-radius:999px;padding:3px 8px;white-space:nowrap}
+.eff-pkc{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px;margin-bottom:8px;scrollbar-width:none}
+.eff-pkc button{flex:none;min-height:38px;padding:0 14px;border-radius:999px;border:1px solid #2a4467;background:#0f1b2e;color:#8ea3bf;font:inherit;font-weight:700;font-size:.8rem;cursor:pointer}
+.eff-pkc button[aria-pressed="true"]{background:#1d3a5f;border-color:#4ade80;color:#fff}
