@@ -39,6 +39,7 @@ if(/^https?:$/.test(location.protocol)){ SNAP.get('2026-2027'); SNAP.get('assets
    DOMContentLoaded هي الدليل الوحيد على جاهزيتها (انظر domReady) */
 var DCL_FIRED=false; document.addEventListener('DOMContentLoaded', ()=>{ DCL_FIRED=true; }, {once:true});
 </script>
+<meta name="apple-itunes-app" content="app-id=6810213944">   <!-- شريط أبل الرسمي في Safari: «تحميل» أو «فتح» لتطبيق MF Soccer -->
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="mobile-web-app-capable" content="yes">
@@ -2196,7 +2197,7 @@ main{padding-bottom:48px}
 <script src="tstats-data.js?v=1" defer></script>
 <script src="analysis.js?v=19" defer></script>
 <!-- هوية MF SOCCER الذهبية + هيكل التطبيق (منصور 2026-10-05) -->
-<link rel="stylesheet" href="mf-brand.css?v=2">
+<link rel="stylesheet" href="mf-brand.css?v=4">
 <script>document.documentElement.classList.add("mf")</script>
 <script src="mf-shell.js?v=2" defer></script>
 <style>
@@ -10483,7 +10484,7 @@ html .squadbox .sqrow .sqno::placeholder{color:var(--cct,#fff);opacity:.6}
 </style>
 <div id="pwaBar" role="dialog" aria-live="polite">
   <img src="/icon-192.png" alt="">
-  <div class="txt"><b>ثبّت التطبيق</b><span id="pwaMsg">افتحه من شاشتك مباشرة، ويعمل بلا إنترنت.</span></div>
+  <div class="txt"><b id="pwaTtl">ثبّت التطبيق</b><span id="pwaMsg">افتحه من شاشتك مباشرة، ويعمل بلا إنترنت.</span></div>
   <button class="go" id="pwaGo">تثبيت</button>
   <button class="x" id="pwaX" aria-label="إغلاق">✕</button>
 </div>
@@ -10522,15 +10523,22 @@ html .squadbox .sqrow .sqno::placeholder{color:var(--cct,#fff);opacity:.6}
   };
   addEventListener('appinstalled', function(){ hide(3650); });
 
-  /* آيفون: لا توجد نافذة تثبيت — نشرح الخطوة مرة واحدة */
-  var iOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-  var safari = iOS && /Safari/.test(navigator.userAgent) && !/CriOS|FxiOS|EdgiOS/.test(navigator.userAgent);
-  if(safari && !installed() && !hidden()){
+  /* آيفون: التطبيق في App Store (منصور 2026-10-06) — بدل شرح «إضافة إلى الشاشة الرئيسية».
+     Safari يعرض شريط أبل الرسمي (meta apple-itunes-app) فلا نكرّره.
+     متصفحات التطبيقات (إنستغرام، تيك توك، إكس، سناب…) لا تعرض شريط أبل، فنعرض شريطنا فيها فقط.
+     القائمة صريحة عمداً: تطبيقنا نفسه يفتح الموقع داخله ولا يجوز أن يظهر فيه الشريط. */
+  var UA = navigator.userAgent;
+  var iOS = /iPad|iPhone|iPod/.test(UA) && !window.MSStream;
+  var inApp = iOS && /Instagram|FBAN|FBAV|FB_IAB|TikTok|musical_ly|BytedanceWebview|Twitter|Snapchat|LinkedInApp/i.test(UA);
+  var APP_URL = 'https://apps.apple.com/kw/app/id6810213944';
+  if(inApp && !installed() && !hidden()){
     setTimeout(function(){
-      msg.innerHTML='اضغط زر المشاركة <b style="display:inline">⬆</b> ثم «إضافة إلى الشاشة الرئيسية».';
-      go.style.display='none';
+      document.getElementById('pwaTtl').textContent='حمّل تطبيق MF Soccer';
+      msg.textContent='النتائج والإحصاءات على تلفونك.';
+      go.textContent='تحميل'; go.style.display='';
+      go.onclick=function(){ hide(14); location.href=APP_URL; };
       bar.classList.add('on');
-    }, 4000);
+    }, 2500);
   }
 
   /* التسجيل + تنبيه النسخة الجديدة */

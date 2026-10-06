@@ -458,6 +458,8 @@ html.mf .match[data-hw][data-aw]{box-shadow:var(--shadow),inset -2px 0 0 #D0D3DF
 /* ── index.html ── */
 html.mf #pwaBar{background:var(--navy,#0D142F);box-shadow:0 10px 30px rgba(13,20,47,0.21)}
 html.mf #pwaBar .go{color:#0D142F}
+html.mf #pwaBar img{background:none;padding:0;border-radius:10px;box-shadow:0 0 0 1px var(--mf-ln2)}
+html.mf #pwaBar .go{background:var(--mf-grad);color:var(--mf-gold-ink);border-radius:999px;padding:8px 16px}
 html.mf #pwaBar .x{color:#A9AFC6}
 /* ── index.html ── */
 html.mf .clubwrap{--ca:#AF9055;--cb:#0D142F}
