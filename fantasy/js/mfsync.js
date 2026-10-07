@@ -361,7 +361,8 @@ const MFSYNC = {
       if(!f) f=st.fixtures.find(x=>x.gw===gw && !used.has(x.id) && [x.h,x.a].some(c=>c===h||c===a));
       if(!f){ report.notes.push(`ما لقيت بالجدول: ${m.home} × ${m.away}`); continue; }
       used.add(f.id);
-      if(f.manual){ report.notes.push(`مباراة معدَّلة يدوياً من الإدارة — لم تُستورد: ${m.home} × ${m.away}`); continue; }
+      /* فقط تصحيح النقاط اليدوي يوقف الاستيراد؛ تعديل المباراة والبونص لا (منصور 2026-10-07) */
+      if(f.ptsFix){ report.notes.push(`مباراة فيها تصحيح نقاط يدوي — لم تُستورد: ${m.home} × ${m.away}`); continue; }
 
       // مسح إحصاءات النسخة القديمة من playerGW
       if(f.stats){ for(const cid in f.stats){ for(const pid in f.stats[cid]){ if(st.playerGW[pid]) delete st.playerGW[pid][gw]; } } }

@@ -425,7 +425,7 @@ const ADMIN = {
         pen:row.querySelector('.g_pen').checked, og});          // العكسي يُحسب للفريق الآخر
     });
     f.goals.sort((a,b)=>a.min-b.min);
-    f.manual=true;                                             // تعديل يدوي: المزامنة التلقائية من الموقع لا تطمسه
+    /* منصور 2026-10-07: حفظ المباراة (والبونص) لا يوقف المزامنة — أي تعديل لاحق في الموقع يصل للفانتسي، والبونص يبقى (importRound لا يمسّه) */
     f.lineups={};
     document.querySelectorAll('.lu[data-pid]').forEach(el=>{
       const stt=el.classList.contains('s')?'s':el.classList.contains('b')?'b':null;
@@ -640,7 +640,7 @@ const ADMIN = {
   applyPointsFix(pid,gw,val){
     const st=DB.state;
     st.playerGW[pid][gw].pts=val;
-    { const pc=(DB.player(pid)||{}).club; const fx=st.fixtures.find(x=>x.gw===gw && (x.h===pc||x.a===pc)); if(fx) fx.manual=true; }   // لا تطمسه المزامنة
+    { const pc=(DB.player(pid)||{}).club; const fx=st.fixtures.find(x=>x.gw===gw && (x.h===pc||x.a===pc)); if(fx) fx.ptsFix=true; }   // تصحيح نقاط يدوي: لا تطمسه المزامنة
     const g=DB.gw(gw);
     if(g.status==='finished'){
       for(const uid in st.teams){
