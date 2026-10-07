@@ -526,7 +526,13 @@ function genMatchStats(st, fx){
       const cm=Math.min(FPL_MATCH_MIN, +c.min||0); if(cm>0 && (r.off==null || cm<r.off)){ r.off=cm; r.min=Math.max(1, cm-(r.on||0)); } }
     else r.yc++; });
   (fx.pens||[]).forEach(pn=>{ const r=rowFor(pn.name,pn.club); if(!r) return; if(pn.type==='save') r.ps++; else r.pm++; });
-  (fx.bonus||[]).forEach(b=>{ const r=rowFor(b.name,b.club); if(r) r.bonus=(+b.pts||0); });
+  /* البونص لمن شارك فقط (فحص 2026-10-07): كان يصنع صفاً بـ90 دقيقة لمن ليس في التشكيلة فيأخذ مشاركة وشباكاً نظيفة لم يلعبها.
+     التشكيلة معروفة → لا بونص لمن لم يلعب؛ غير معروفة → السلوك القديم (يُعتبر أساسياً). */
+  (fx.bonus||[]).forEach(b=>{
+    const lu=(fx.lineups||{})[b.club]; const p=find(b.name,b.club);
+    const r = lu ? (p && fx.stats[b.club][p.id]) : rowFor(b.name,b.club);
+    if(r && (!lu || r.min>0)) r.bonus=(+b.pts||0);
+  });
   // بديل له هدف/كرت/جزاء لكن بلا تبديل مسجَّل: شارك فعلاً — دقيقة واحدة على الأقل (لا يُصفَّر)
   for(const clubId of [fx.h, fx.a]){
     for(const pid in fx.stats[clubId]){

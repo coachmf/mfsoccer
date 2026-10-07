@@ -394,6 +394,9 @@ const ADMIN = {
     document.getElementById('goalRows').insertAdjacentHTML('beforeend', this.goalRow(f,null,Date.now(),opts));
   },
   saveFx(fid){
+    /* لاعب واحد لا يأخذ خانتي بونص (كانت تُحفظ وتُحتسب الأخيرة فقط) — قبل أي تعديل */
+    const bxIds=[...document.querySelectorAll('.bx_sel')].map(s=>s.value).filter(Boolean);
+    if(new Set(bxIds).size!==bxIds.length){ UI.toast('البونص: نفس اللاعب مختار في خانتين — اختر ثلاثة لاعبين مختلفين', true); return; }
     const st=DB.state;
     const f=st.fixtures.find(x=>x.id===fid);
     // مسح إحصاءات النسخة القديمة قبل أي تعديل
