@@ -9369,7 +9369,9 @@ const isAnonFan = () => !!(fbAuth && fbAuth.currentUser && fbAuth.currentUser.is
 const monthOf  = d => String(d||"").slice(0,7);
 
 /* الجولة المفتوحة للتوقع: أقرب جولة فيها مباريات لم تُلعب بعد */
-function openRound(){
+/* التوقعات للدوري فقط (فحص 2026-10-07): MATCHES تتبع المسابقة المختارة («الكل»/كأس) فتختلط مباريات الكؤوس بجولة التوقعات */
+function openRound(){ return ALL ? withComp("الدوري", openRoundL) : openRoundL(); }
+function openRoundL(){
   const up = MATCHES.filter(isUpcoming).filter(m=>kickoffTS(m)!==null);
   if(!up.length) return null;
   const r = Math.min(...up.map(m=>+m.round||0));
@@ -9380,7 +9382,8 @@ function openRound(){
           lockAt:first?kickoffTS(first):null, month:monthOf(first?first.date:"")};
 }
 /* الجولة المعروضة للتوقع: ما فتحه المالك يدوياً، وإلا الجولة القادمة تلقائياً */
-function predRound(){
+function predRound(){ return ALL ? withComp("الدوري", predRoundL) : predRoundL(); }
+function predRoundL(){
   if(ROUNDMETA && ROUNDMETA.open){
     const ms = MATCHES.filter(m=>(+m.round||0)===+ROUNDMETA.round)
       .sort((a,b)=>(kickoffTS(a) ?? Infinity)-(kickoffTS(b) ?? Infinity));
@@ -9389,7 +9392,7 @@ function predRound(){
                           manual:true};
   }
   if(ROUNDMETA && ROUNDMETA.open===false) return null;   /* أُغلقت يدوياً */
-  return openRound();
+  return openRoundL();
 }
 const isLocked = o => !o || o.lockAt===null || Date.now() >= o.lockAt;
 
@@ -9622,12 +9625,14 @@ async function publishRound(round, lockMs, open){
 /* احتساب جولة — يشغّله المالك بعد إدخال النتائج */
 async function scoreRound(r){
   if(!isOwner || !fbDb) return {ok:false, msg:"غير مصرّح"};
-  const ms = MATCHES.filter(m=>(+m.round||0)===+r && !isUpcoming(m));
+  /* مباريات وأهداف الدوري فقط — لا الكؤوس بنفس رقم الجولة */
+  const {ms, scorers} = (ALL ? (f=>withComp("الدوري", f)) : (f=>f()))(()=>({
+    ms: MATCHES.filter(m=>(+m.round||0)===+r && !isUpcoming(m)),
+    scorers: new Set(GOALS.filter(g=>(+g.r||0)===+r).map(g=>g.p)) }));
   if(!ms.length) return {ok:false, msg:"لا توجد نتائج مسجّلة لهذه الجولة"};
   const key = m => m.home+"|"+m.away;
   const actual = {}; ms.forEach(m=>actual[key(m)] = [+m.hg||0, +m.ag||0]);
   const month = monthOf(ms[0].date);
-  const scorers = new Set(GOALS.filter(g=>(+g.r||0)===+r).map(g=>g.p));
 
   let snap;
   try{ snap = await fbDb.collection("preds").where("rk","==",roundKey(r)).get(); }

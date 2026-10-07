@@ -1258,6 +1258,14 @@ const AUTH = {
    الدوريات الخاصة
    ========================================================= */
 const LEAGUES = {
+  /* جولة H2H واحدة: أزواج بالترتيب المعطى؛ العدد الفردي = الأخير يواجه «المتوسط» (متوسط نقاط أعضاء الدوري في الجولة، كـFPL)
+     — كان يبقى بلا مباراة كل جولة (فحص 2026-10-07) */
+  h2hRound(order, score){
+    const res=(A,a,b)=>{ if(a>b){A.w++;A.h2hPts+=3;} else if(a<b){A.l++;} else {A.d++;A.h2hPts+=1;} };
+    for(let i=0;i+1<order.length;i+=2){ const A=order[i],B=order[i+1], a=score(A), b=score(B); res(A,a,b); res(B,b,a); }
+    if(order.length%2===1 && order.length>1){ const L=order[order.length-1];
+      const avg=Math.floor(order.reduce((s,r)=>s+score(r),0)/order.length); res(L, score(L), avg); }
+  },
   /* مواجهات H2H وترقيم المراكز على صفوف جاهزة من السحابة */
   decorate(rows, lg){
     if(lg.type!=='h2h') { rows.sort((a,b)=>b.total-a.total); this.movement(rows, lg); return rows; }
@@ -1269,11 +1277,7 @@ const LEAGUES = {
       const order=[...rows].sort((a,b)=>hashStr(a.id+gw)-hashStr(b.id+gw));
       const at=(r)=>{ const t=DB.state.teams[r.id]; const h=t&&(t.history||[]).find(x=>x.gw===gw);
                       return h? h.pts : (r.hist? (r.hist.find(x=>x.gw===gw)||{}).pts||0 : 0); };
-      for(let i=0;i+1<order.length;i+=2){
-        const A=order[i],B=order[i+1], a=at(A), b=at(B);
-        if(a>b){A.w++;B.l++;A.h2hPts+=3;} else if(a<b){B.w++;A.l++;B.h2hPts+=3;}
-        else {A.d++;B.d++;A.h2hPts+=1;B.h2hPts+=1;}
-      }
+      this.h2hRound(order, at);
     });
     rows.sort((a,b)=>b.h2hPts-a.h2hPts || b.total-a.total);
     rows.forEach((r,i)=>{ r.rank=i+1; r.move=0; });
@@ -1381,7 +1385,7 @@ const LEAGUES = {
     // H2H: نقاط 3/1/0 بالمواجهات حسب نقاط الجولة
     if(lg.type==='h2h'){
       rows.forEach(r=>{r.w=0;r.d=0;r.l=0;r.h2hPts=0;});
-      const done=RANKS.finishedGWs(st).filter(g=>g>=lg.createdGW);
+      const done=RANKS.finishedGWs(st).filter(g=>g>=lg.createdGW && g>=(st.rules.scoringFromGW||1));
       done.forEach(gw=>{
         const scores={};
         rows.forEach(r=>{
@@ -1389,12 +1393,7 @@ const LEAGUES = {
         });
         // اقتران حسب الترتيب داخل الجولة
         const order=[...rows].sort((a,b)=>hashStr(a.id+gw)-hashStr(b.id+gw));
-        for(let i=0;i+1<order.length;i+=2){
-          const A=order[i],B=order[i+1];
-          if(scores[A.id]>scores[B.id]){A.w++;B.l++;A.h2hPts+=3;}
-          else if(scores[A.id]<scores[B.id]){B.w++;A.l++;B.h2hPts+=3;}
-          else {A.d++;B.d++;A.h2hPts+=1;B.h2hPts+=1;}
-        }
+        this.h2hRound(order, r=>scores[r.id]);
       });
       rows.sort((a,b)=>b.h2hPts-a.h2hPts || b.total-a.total);
       rows.forEach((r,i)=>{ r.rank=i+1; r.move=0; });
