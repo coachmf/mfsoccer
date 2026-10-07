@@ -10711,6 +10711,9 @@ html.pp-open,html.pp-open body{overflow:hidden}
 .pprof-hero .wm{position:absolute;left:34%;top:-8%;width:62%;aspect-ratio:1;opacity:.07;background:center/contain no-repeat;filter:grayscale(1);pointer-events:none}
 .pprof-hero .ph{position:relative;z-index:1;grid-column:2;grid-row:1;height:236px;display:flex;align-items:flex-end;justify-content:center;pointer-events:none;padding:0 4px}
 .pprof-hero .ph img{height:100%;width:auto;max-width:100%;object-fit:contain;object-position:bottom center;filter:drop-shadow(0 10px 16px rgba(0,0,0,.45))}
+/* صورة صغيرة (_s) فورية خلف الصورة الحقيقية (_m) حتى تكتمل — سرعة ملف اللاعب (منصور 2026-10-07) */
+.pprof-hero .ph[style*="--lq"]::before{content:"";position:absolute;inset:0 4px;background:var(--lq) bottom center/contain no-repeat;filter:blur(2px) drop-shadow(0 10px 16px rgba(0,0,0,.45));z-index:-1}
+.pprof-hero .ph.ok::before{display:none}
 .pprof-hero .ph img.noph{height:46%;opacity:.14;filter:grayscale(1);margin-bottom:22%}
 .pprof-id{position:relative;z-index:1;grid-column:1;grid-row:1;min-width:0;padding:22px 18px 16px 4px;min-height:262px;display:flex;flex-direction:column;justify-content:flex-end;gap:6px}
 .pprof-id .club{display:flex;align-items:center;gap:8px;font-size:.8rem;color:var(--mist);font-weight:600;cursor:pointer}
@@ -12827,7 +12830,7 @@ function playerProfileHTML(D){
     <button type="button" class="pprof-share" data-share-player="${esc(D.name)}" data-share-club="${esc(D.club||"")}" aria-label="مشاركة بطاقة اللاعب" title="مشاركة"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="2.6"/><circle cx="6" cy="12" r="2.6"/><circle cx="18" cy="19" r="2.6"/><path d="M8.6 13.4l6.9 4.1M15.5 6.5l-6.9 4.1"/></svg></button>
     <div class="pprof-hero">
       <div class="wm" style="background-image:url('${crestSrcOf(D.club)}')"></div>
-      <div class="ph">${cut?`<img src="${cut}.webp?v=29" alt="" decoding="async" onload="fitNatFlag(this)" onerror="var f=this.parentNode.querySelector('.natf');if(f)f.classList.add('placed')">`:`<img class="noph" src="${crestSrcOf(D.club)}" alt="">`}${natFlag(D.name, D.club, "pprof-flag")}</div>
+      <div class="ph"${cut?` style="--lq:url('${cut}_s.webp?v=29')"`:""}>${cut?`<img src="${cut}_m.webp?v=29" alt="" decoding="async" onload="this.parentNode.classList.add('ok');fitNatFlag(this)" onerror="if(!this.dataset.fb){this.dataset.fb=1;this.src='${cut}.webp?v=29';return}var f=this.parentNode.querySelector('.natf');if(f)f.classList.add('placed')">`:`<img class="noph" src="${crestSrcOf(D.club)}" alt="">`}${natFlag(D.name, D.club, "pprof-flag")}</div>
       <div class="pprof-id">
         ${D.club?`<div class="club" data-club-link="${esc(D.club)}">${crest(D.club)}<span>${esc(D.club)}</span></div>`:""}
         <h3>${esc(D.name)}</h3>
@@ -12932,6 +12935,9 @@ document.addEventListener("click", e=>{
   if(t){ e.preventDefault(); openImageView(t.dataset.imgview, t.dataset.imgcap||""); }
 });
 window.addEventListener("popstate", ()=>{ const box=$("#pprof"); if(box && !box.hidden && !(history.state&&history.state.pp)) hidePlayerBox(); });
+/* يبدأ تحميل صورة الملف مع لمسة الإصبع قبل اكتمال النقرة */
+document.addEventListener("pointerdown", e=>{ const el=e.target.closest&&e.target.closest("[data-player]"); if(!el||el.closest("#v-admin")) return;
+  try{ const cut=(PHOTOSON && typeof photoCut==="function") ? photoCut(el.dataset.player, el.dataset.club||clubOfPlayer(el.dataset.player)) : null; if(cut){ const i=new Image(); i.src=cut+"_m.webp?v=29"; } }catch(_){} }, {passive:true});
 /* نقرة واحدة مفوَّضة لكل الموقع: أي عنصر يحمل data-player يفتح الملف (ما عدا لوحة الإدارة) */
 document.addEventListener("click", e=>{
   const box=$("#pprof");
