@@ -2186,7 +2186,7 @@ main{padding-bottom:48px}
 <script src="live.js?v=17" defer></script>
 <!-- تبويبات لوحة الإدارة: إعادة تنظيم للأقسام الموجودة فقط -->
 <link rel="stylesheet" href="admin-tabs.css?v=1">
-<script src="admin-tabs.js?v=4" defer></script>
+<script src="admin-tabs.js?v=5" defer></script>
 <!-- كأس الخليج 27: قسم مستقل ببيانات منفصلة (seasons/gulf27) -->
 <link rel="stylesheet" href="gulf.css?v=18">
 <script src="gulf.js?v=46" defer></script>
@@ -8845,8 +8845,10 @@ function renderAdmin(){
         const rs=[...new Set(MATCHES.map(m=>+m.round||0))].filter(Boolean).sort((a,b)=>a-b);
         const cur = ROUNDMETA;
         const auto = openRound();
-        const def = cur ? +cur.round : (auto ? auto.round : (rs[rs.length-1]||1));
-        const defMs = cur && cur.lockAt ? cur.lockAt : (auto && auto.lockAt ? auto.lockAt : null);
+        /* الجولة المحفوظة أُقفلت وجاءت بعدها جولة: الافتراضي الجولة القادمة وإقفالها (منصور 2026-10-07) */
+        const nextUp = !!(auto && cur && cur.lockAt && Date.now() >= cur.lockAt && auto.round > +cur.round);
+        const def = nextUp ? auto.round : cur ? +cur.round : (auto ? auto.round : (rs[rs.length-1]||1));
+        const defMs = nextUp ? auto.lockAt : cur && cur.lockAt ? cur.lockAt : (auto && auto.lockAt ? auto.lockAt : null);
         const dISO = defMs ? new Date(defMs - new Date().getTimezoneOffset()*60000).toISOString() : "";
         return `
         <div class="stat"><span>الحالة الآن</span><span class="v" style="font-size:.8rem">${
@@ -8854,7 +8856,7 @@ function renderAdmin(){
         <div class="stat"><span>الإقفال المحفوظ</span><span class="v" style="font-size:.78rem">${
           cur && cur.lockAt ? esc(stampLabel(cur.lockAt)) : "—"}</span></div>
         <div style="height:12px"></div>
-        <div class="fgrid">
+        <div class="fgrid" style="grid-template-columns:minmax(0,1fr)">
           <div class="fld"><label>جولة التوقعات</label>
             <select id="opRound">${rs.map(r=>`<option value="${r}" ${r===def?"selected":""}>الجولة ${r}</option>`).join("")}</select></div>
           <div class="fld"><label>تاريخ ووقت الإقفال</label>
@@ -8863,7 +8865,7 @@ function renderAdmin(){
         <p class="hint" style="margin:0 0 10px">يُملأ تلقائياً من أول مباراة في الجولة، وتقدر تعدّله كما تشاء — تمديداً أو تقديماً.</p>
         <div style="display:flex;gap:8px">
           <button class="btn" id="opGo" style="flex:1">فتح التوقعات</button>
-          <button class="btn ghost" id="opShut" style="flex:none">أغلقها الآن</button>
+          <button class="btn ghost" id="opShut" style="flex:none;width:auto;padding-inline:18px">أغلقها الآن</button>
         </div>
         <div style="height:16px"></div>`;
       })()}
@@ -9212,6 +9214,12 @@ function renderAdmin(){
       <div style="height:14px"></div>
       <div class="spark">${rows.map(r=>`<i style="height:${Math.max(3,Math.round(r.v/mx*100))}%" title="${r.d}: ${r.v}"></i>`).join("")}</div>
       <p class="hint" style="margin:10px 0 0">العدّاد يبدأ من يوم رفع هذا الملف — ما قبله يظهر أصفاراً لأنه لم يُسجَّل.</p>`;
+  };
+  /* تغيير الجولة يملأ الإقفال من أول مباراة فيها (يبقى قابلاً للتعديل) */
+  const opr=$("#opRound");
+  if(opr) opr.onchange=()=>{
+    const ts=MATCHES.filter(m=>(+m.round||0)===+opr.value).map(kickoffTS).filter(t=>t!==null);
+    if(ts.length) $("#opLock").value=new Date(Math.min(...ts)-new Date().getTimezoneOffset()*60000).toISOString().slice(0,16);
   };
   const op=$("#opGo");
   if(op) op.onclick=async()=>{
