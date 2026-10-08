@@ -16,21 +16,31 @@ Object.assign(VIEWS, {
   },
   gwRankOf(gw, uid){ const rows=this.gwBoard(gw); const i=rows.findIndex(r=>r.id===uid); if(i<0) return null; const p=rows[i].p; return rows.findIndex(r=>r.p===p)+1; },
   needBoard(){ if(typeof LEAGUES!=='undefined' && LEAGUES.online() && !LEAGUES.cloud.board && !this._boardAsk){ this._boardAsk=true; LEAGUES.refresh().then(()=>APP.render()); } },
-  /* شبكة الإحصاءات: المتوسط والأعلى يميناً، النقاط في الوسط، ترتيب الجولة والانتقالات يساراً */
+  /* لوحة نقاط الجولة بهوية MF (منصور 2026-10-08: «مابي exact نفسهم»): رقم ذهبي كبير، ومسطرة توضح موقعك بين المتوسط والأعلى،
+     وتحتها: ترتيب الجولة، فرقك عن المتوسط، خصم الانتقالات */
   ptsGrid(o){
     const fmt=v=> v==null? '—' : (+v).toLocaleString('en');
     const top=this.gwBoard(o.gw)[0];
     const highV = o.high!=null? o.high : (top? top.p : null);
     const highClick = top && top.p===highV ? `VIEWS.openManager('${top.id}')` : (o.live? '' : `APP.go('champions')`);
-    return `<div class="pts-grid">
-      <div class="pg-side">
-        <div><b>${fmt(o.avg)}</b><span>متوسط النقاط</span></div>
-        <div class="${highClick?'link':''}" ${highClick? `onclick="${highClick}"` : ''}><b><u>${fmt(highV)}</u></b><span>أعلى النقاط</span></div>
+    const max = Math.max(highV||0, o.pts||0, o.avg||0, 1);
+    const pct = v=> Math.max(0, Math.min(100, (v||0)/max*100)).toFixed(1);
+    const diff = (o.pts!=null && o.avg!=null)? o.pts-o.avg : null;
+    return `<div class="ptsx">
+      <div class="px-main"><b>${fmt(o.pts)}</b><span>${o.live? 'نقاطك الآن' : 'نقاط الجولة'}</span>${o.chip? `<em>${esc(o.chip)}</em>` : ''}</div>
+      <div class="px-scale">
+        <div class="px-track"><i class="px-fill" style="width:${pct(o.pts)}%"></i>
+          ${o.avg!=null? `<i class="px-avg" style="inset-inline-start:${pct(o.avg)}%"></i>` : ''}
+          <i class="px-me" style="inset-inline-start:${pct(o.pts)}%"></i></div>
+        <div class="px-ends">
+          ${o.avg!=null? `<span class="px-al" style="inset-inline-start:${pct(o.avg)}%">المتوسط <b>${fmt(o.avg)}</b></span>` : ''}
+          <span class="px-hl ${highClick?'link':''}" ${highClick? `onclick="${highClick}"` : ''}>الأعلى <b><u>${fmt(highV)}</u></b></span>
+        </div>
       </div>
-      <div class="pg-big"><b>${fmt(o.pts)}</b><span>${o.live? 'النقاط الآن' : 'النقاط النهائية'}</span>${o.chip? `<em>${esc(o.chip)}</em>` : ''}</div>
-      <div class="pg-side">
-        <div><b>${fmt(o.rank)}</b><span>ترتيب الجولة</span></div>
-        <div><b><bdi dir="ltr">${o.hits? '-'+o.hits : '0'}</bdi></b><span>خصم الانتقالات</span></div>
+      <div class="px-chips">
+        <div><span>ترتيب الجولة</span><b>${fmt(o.rank)}</b></div>
+        <div class="${diff==null?'':diff>=0?'up':'down'}"><span>عن المتوسط</span><b><bdi dir="ltr">${diff==null? '—' : (diff>0?'+':'')+diff}</bdi></b></div>
+        <div><span>خصم الانتقالات</span><b><bdi dir="ltr">${o.hits? '-'+o.hits : '0'}</bdi></b></div>
       </div>
     </div>`;
   },

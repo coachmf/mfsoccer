@@ -1487,3 +1487,38 @@ html.lang-en .pp-actions{justify-content:flex-start;}
 .pts-grid .pg-big b{font-size:2.6rem}
 .pts-grid .pg-big em{margin-top:6px; font-style:normal; font-size:.68rem; font-weight:700; padding:2px 8px; border-radius:20px; background:rgba(0,0,0,.25)}
 .mgr-pts{margin:-4px -4px 12px; border-radius:16px}
+
+
+/* لوحة نقاط الجولة بهوية MF (تحلّ محل شبكة FPL) — 2026-10-08 */
+.pts-grid{display:none}
+.ptsx{margin-top:12px; padding:16px 14px 14px; border-radius:18px; background:linear-gradient(160deg,rgba(0,6,26,.55),rgba(0,6,26,.25)); border:1px solid rgba(231,208,147,.28)}
+.px-main{display:flex; align-items:baseline; justify-content:center; gap:10px; flex-wrap:wrap}
+.px-main b{font-family:'Vazirmatn'; font-weight:900; font-size:3.4rem; line-height:1; background:linear-gradient(180deg,#F5E2A8,#AD8F59); -webkit-background-clip:text; background-clip:text; color:transparent}
+.px-main span{font-size:.85rem; font-weight:700; color:#E7D093}
+.px-main em{font-style:normal; font-size:.68rem; font-weight:800; padding:3px 9px; border-radius:20px; background:#E7D093; color:#0D1532}
+.px-scale{margin-top:14px}
+.px-track{position:relative; height:10px; border-radius:10px; background:rgba(255,255,255,.12)}
+.px-fill{position:absolute; inset-block:0; inset-inline-start:0; border-radius:10px; background:linear-gradient(90deg,#AD8F59,#F5E2A8)}
+[dir="rtl"] .px-fill{background:linear-gradient(270deg,#AD8F59,#F5E2A8)}
+.px-avg{position:absolute; top:-5px; width:2px; height:20px; margin-inline-start:-1px; background:#fff; border-radius:2px; opacity:.85}
+.px-me{position:absolute; top:50%; width:18px; height:18px; margin-inline-start:-9px; transform:translateY(-50%); border-radius:50%; background:#F5E2A8; border:3px solid #0D1532; box-shadow:0 0 0 2px #E7D093}
+.px-ends{display:flex; justify-content:space-between; margin-top:8px; font-size:.75rem; color:rgba(255,255,255,.75); font-weight:600}
+.px-ends b{color:#fff; font-family:'Vazirmatn'; font-size:.95rem; margin-inline-start:3px}
+.px-ends .link{cursor:pointer}
+.px-chips{display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-top:14px}
+.px-chips>div{display:flex; flex-direction:column; align-items:center; gap:3px; padding:9px 4px; border-radius:12px; background:rgba(255,255,255,.07)}
+.px-chips span{font-size:.68rem; color:rgba(255,255,255,.7); font-weight:600}
+.px-chips b{font-family:'Vazirmatn'; font-weight:800; font-size:1.1rem; color:#fff}
+.px-chips .up b{color:#4ade80} .px-chips .down b{color:#f87171}
+
+.px-ends{position:relative; display:block; height:22px}
+.px-al{position:absolute; top:0; transform:translateX(50%); white-space:nowrap} [dir="ltr"] .px-al{transform:translateX(-50%)}
+.px-hl{position:absolute; top:0; inset-inline-end:0; white-space:nowrap}
+
+/* صف من 5 لاعبين (5 دفاع أو 5 وسط) كان يطلع برّا خطوط الملعب على الجوال — البطاقات أضيق في هذا الصف فقط (منصور 2026-10-08) */
+@media (max-width:860px){
+  .pitch-row:has(> .pslot:nth-child(5)){gap:3px !important}
+  .pitch-row:has(> .pslot:nth-child(5)) .pslot{width:56px !important}
+  .pitch-row:has(> .pslot:nth-child(5)) .pslot .pk .kit.kit-img,.pitch-row:has(> .pslot:nth-child(5)) .pslot .pk .kit{width:52px !important;height:52px !important}
+  .pitch-row:has(> .pslot:nth-child(5)) .pslot .nm,.pitch-row:has(> .pslot:nth-child(5)) .pslot .pt{min-width:0 !important;max-width:none !important}
+}
