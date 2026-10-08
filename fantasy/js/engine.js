@@ -1256,6 +1256,21 @@ const AUTH = {
 /* =========================================================
    الدوريات الخاصة
    ========================================================= */
+/* النادي المفضل (منصور 2026-10-08): كل مشترك يختاره مرة واحدة، ولكل نادٍ دوري عام لمشجعيه.
+   يُخزَّن في حقل الملف avatar بصيغة 'fav:QAD' — حقل يسمح به Firestore للمشترك في كل وقت (قبل الإغلاق وبعده) بلا تعديل القواعد.
+   ترتيب دوري النادي = لقطة الترتيب العام (meta/own board، تحمل fav لكل صف) مصفّاة بالنادي — بلا قراءات إضافية. */
+const FAV = {
+  of(av){ const m=/^fav:([A-Z]{3})$/.exec(av||''); return m? m[1] : null; },
+  mine(){ const m=DB.me(); return m? this.of(m.avatar) : null; },
+  league(club){ const c=DB.club(club); return c? {id:'FAV_'+club, fav:club, name:c.name, type:'classic', global:false, code:''} : null; },
+  async set(club){
+    const m=DB.me(); if(!m || !DB.club(club)) return false;
+    m.avatar='fav:'+club; DB.save();
+    if(typeof CLOUD!=='undefined' && CLOUD.user) return await CLOUD.saveMyTeam({avatar:m.avatar});
+    return true;
+  },
+};
+
 const LEAGUES = {
   /* جولة H2H واحدة: أزواج بالترتيب المعطى؛ العدد الفردي = الأخير يواجه «المتوسط» (متوسط نقاط أعضاء الدوري في الجولة، كـFPL)
      — كان يبقى بلا مباراة كل جولة (فحص 2026-10-07) */
@@ -1323,6 +1338,7 @@ const LEAGUES = {
   },
 
   byId(id){
+    if(String(id).startsWith('FAV_')) return FAV.league(String(id).slice(4));
     return DB.state.leagues.find(l=>l.id===id) || (this.cloud.list||[]).find(l=>l.id===id) || null;
   },
   /* دوري جديد/انضمام: يُضاف للقائمة فوراً بلا انتظار قراءة كل الدوريات من الخادم */

@@ -275,6 +275,7 @@ const APP = {
       html=`<div class="card" style="border-color:var(--red)"><h3>حدث خطأ</h3><div class="tiny">${esc(e.message)}</div>
         <button class="btn sm sec" style="margin-top:10px" onclick="APP.go('dashboard')">العودة للرئيسية</button></div>`;
     }
+    this.askFav(cloudOn, needAuth, fetchingTeam);
     /* الحركة عند تغيّر الصفحة فقط، لا عند كل إعادة رسم (تحديث/مزامنة) */
     const anim = this._shownRoute !== this.route;
     this._shownRoute = this.route;
@@ -283,6 +284,14 @@ const APP = {
     this._lastHtml = html;
     main.innerHTML=`<div class="view${anim?' anim':''}">${html}</div>`;
     this.renderBottomNav();
+  },
+
+  /* اختيار النادي المفضل مرة واحدة لكل مشترك (حتى من عنده فريق) — بعد وصول ملفه من الخادم فقط، كي لا يُسأل من اختار على جهاز آخر */
+  askFav(cloudOn, needAuth, fetchingTeam){
+    if(this._favOpen || !cloudOn || needAuth || fetchingTeam || this.cloudState==='init') return;
+    if(!CLOUD.user || DB.state.session!==CLOUD.user.uid || DB.muted || FAV.mine()) return;
+    if(this.route==='auth' || document.getElementById('modalBack')) return;
+    this._favOpen=true; setTimeout(()=>VIEWS.favModal(), 400);
   },
 
   renderTopbar(){

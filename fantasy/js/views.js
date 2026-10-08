@@ -912,32 +912,74 @@ const VIEWS = {
       this.ui.leagueOpen=null;
     }
     const mine=LEAGUES.mine();
+    /* إدارة الدوريات على طراز FPL (منصور 2026-10-08): خاصة / عامة، لكل دوري مركزك وسهم الحركة */
+    const priv=mine.filter(l=>!l.global), fav=FAV.mine(), favLg=fav? FAV.league(fav) : null;
+    const pub=[...(favLg? [favLg] : []), ...mine.filter(l=>l.global)];
+    const myRow=l=>{
+      const rows= l.global? this.globalTable() : l.fav? this.favTable(l.fav) : LEAGUES.table(l);
+      const i=rows.findIndex(r=>r.id===m.id); const r=i>=0? rows[i] : null;
+      let rank= r? (r.rank||i+1) : null;
+      if(!r && l.global && !LEAGUES.online()){ const or_=RANKS.overallRank(st,TEAM.totalPoints(DB.myTeam())); if(typeof or_.rank==='number') rank=or_.rank; }
+      return {rank, move: r? r.move : 0, n: rows.length};
+    };
+    const lgRow=l=>{ const x=myRow(l);
+      return `<tr onclick="VIEWS.ui.leagueOpen='${l.id}';APP.render()">
+        <td class="lgx-n" data-i18n="off">${l.fav? UI.crest(l.fav,'sm')+' ' : ''}${esc(l.global? 'الترتيب العام' : l.name)}<small>${x.n.toLocaleString('ar')} فريق${l.fav? ' · دوري المشجعين' : ''}</small></td>
+        <td class="lgx-r num">${x.rank? x.rank.toLocaleString('en') : '—'}</td>
+        <td class="lgx-m">${x.rank? this.moveIcon(x.move) : '<span class="lgx-dash"></span>'}</td></tr>`; };
+    const tbl=(list, empty)=> list.length? `<table class="lgx-t"><tr><th>الدوري</th><th>الترتيب</th><th></th></tr>${list.map(lgRow).join('')}</table>`
+      : `<div class="muted lgx-empty">${empty}</div>`;
     return `<div class="row spread" style="margin-bottom:12px;flex-wrap:wrap;gap:8px">
-      <h2>الدوريات</h2>
+      <h2>إدارة الدوريات</h2>
       <div class="row" style="gap:8px">
         <button class="btn sm" onclick="VIEWS.leagueCreateModal()">+ إنشاء دوري</button>
         <button class="btn sm sec" onclick="VIEWS.leagueJoinModal()">الانضمام برمز</button>
       </div></div>
-    <div class="grid g2">
-      ${mine.map(l=>{
-        const rows=LEAGUES.table(l);
-        const myIdx=rows.findIndex(r=>r.id===m.id);
-        return `<div class="card" style="cursor:pointer" onclick="VIEWS.ui.leagueOpen='${l.id}';APP.render()">
-          <div class="row spread"><h3 style="margin:0" data-i18n="off">${esc(l.name)}</h3>
-          <span class="pill">${(l.global? (LEAGUES.online()&&LEAGUES.cloud.board? LEAGUES.cloud.board.length : RANKS.population(st)) : rows.length).toLocaleString('ar')} فريق</span></div>
-          <div class="muted" style="margin-top:8px">مركزك: <b style="color:var(--accent)">${(()=>{
-            if(myIdx>=0) return (myIdx+1).toLocaleString('ar');            // موجود في الصفوف المعروضة
-            if(!l.global || LEAGUES.online()) return '—';   // على السحابة: المركز من اللقطة فقط، لا من فرق هذا الجهاز
-            const t=DB.myTeam(); const or_=RANKS.overallRank(st,TEAM.totalPoints(t));
-            return typeof or_.rank==='number'? or_.rank.toLocaleString('ar') : '—';
-          })()}</b>
-          ${!l.global? `· الرمز: <b>${esc(l.code)}</b>`:''}</div>
-        </div>`;}).join('')}
+    <div class="card lgx">
+      <h3 class="lgx-h">الدوريات الخاصة</h3>
+      ${tbl(priv, 'ما عندك دوري خاص — أنشئ دوري لأصحابك أو انضم برمز')}
+      <h3 class="lgx-h" style="margin-top:22px">الدوريات العامة</h3>
+      ${tbl(pub, '')}
+      ${fav? '' : `<button class="btn sm sec" style="margin-top:10px" onclick="VIEWS.favModal()">اختر فريقك المفضل لتدخل دوري مشجعيه</button>`}
     </div>`;
+  },
+  /* دوري مشجعي نادٍ: الترتيب العام مصفّى بالنادي المفضل (صفّي أنا من اختياري المحلي حتى تصل اللقطة التالية) */
+  favTable(club){
+    const m=DB.me(), mine=FAV.mine();
+    const all=this.globalTable();
+    const rows=all.filter(r=> (r.id===(m&&m.id)? mine : r.fav)===club).map(r=>({...r}));
+    if(m && mine===club && !rows.some(r=>r.id===m.id)){
+      const t=DB.myTeam(); const hist=(t&&t.history)||[];
+      rows.push({id:m.id, name:m.username, teamName:m.teamName, total:hist.reduce((s,h)=>s+(h.pts||0),0), hist, last:hist.length?hist[hist.length-1].pts:0, fav:club, local:true});
+    }
+    rows.sort((a,b)=>b.total-a.total); LEAGUES.movement(rows, {global:true});
+    rows.forEach(r=>{ if(r.local) r.move=0; });   // صفّي قبل اللقطة التالية: لا حركة سابقة له في هذا الدوري
+    return rows;
+  },
+  /* اختيار النادي المفضل — إلزامي مرة واحدة */
+  favModal(){
+    const cs=DB.state.clubs;
+    UI.modal(`<h3 style="margin:0 0 4px">اختر فريقك المفضل</h3>
+      <div class="tiny muted" style="margin-bottom:12px">مرة وحدة بس — تدخل دوري مشجعي ناديك العام وتتنافس معاهم</div>
+      <div class="fav-grid">${cs.map(c=>`<button class="fav-c" data-c="${c.id}" onclick="VIEWS.favPick('${c.id}')">
+        ${UI.crest(c.id,'lg')}<span data-i18n="off">${esc(c.short||c.name)}</span></button>`).join('')}</div>
+      <button class="btn" id="favOk" style="width:100%;margin-top:14px" disabled onclick="VIEWS.favSave()">تأكيد</button>`, true);
+  },
+  favPick(c){
+    this._favPick=c;
+    document.querySelectorAll('.fav-c').forEach(b=>b.classList.toggle('on', b.dataset.c===c));
+    const ok=document.getElementById('favOk'); if(ok) ok.disabled=false;
+  },
+  async favSave(){
+    const c=this._favPick; if(!c) return;
+    const b=document.getElementById('favOk'); if(b){ b.disabled=true; b.textContent='جارٍ الحفظ…'; }
+    const ok=await FAV.set(c);
+    if(ok===false){ if(b){ b.disabled=false; b.textContent='تأكيد'; } UI.toast('تعذّر الحفظ — حاول مرة ثانية',true); return; }
+    UI.closeModal(); APP._favOpen=false; UI.toast('تم — صرت في دوري مشجعي '+DB.club(c).name); APP.render();
   },
   leagueDetail(lg){
     const st=DB.state, m=DB.me();
-    const rows= lg.global? this.globalTable() : LEAGUES.table(lg);
+    const rows= lg.global? this.globalTable() : lg.fav? this.favTable(lg.fav) : LEAGUES.table(lg);
     const isH2H=lg.type==='h2h';
     const liveCol = typeof LIVEGW!=='undefined' && LIVEGW.active();
     if(liveCol) LIVEGW.refresh();
@@ -945,7 +987,7 @@ const VIEWS = {
     <div class="card">
       <div class="row spread" style="flex-wrap:wrap;gap:8px">
         <h2 style="margin:0" data-i18n="off">${esc(lg.name)}</h2>
-        ${!lg.global? `<div class="row" style="gap:8px">
+        ${!lg.global && !lg.fav? `<div class="row" style="gap:8px">
           <span class="pill blue">رمز الدعوة: <b style="letter-spacing:2px">${esc(lg.code)}</b></span>
           <button class="btn sm sec" data-code="${esc(lg.code)}" onclick="navigator.clipboard&&navigator.clipboard.writeText(this.dataset.code);UI.toast('نُسخ الرمز — أرسله لأصحابك')">نسخ</button>
 

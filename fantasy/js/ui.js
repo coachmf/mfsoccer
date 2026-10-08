@@ -36,11 +36,11 @@ const UI = {
     box.appendChild(el);
     setTimeout(()=>{ el.style.opacity='0'; el.style.transition='opacity .4s'; setTimeout(()=>el.remove(),400); }, 3400);
   },
-  modal(html){
+  modal(html, locked){
     this.closeModal();
     const back=document.createElement('div'); back.id='modalBack';
     back.innerHTML=`<div id="modalBox">${html}</div>`;
-    back.addEventListener('click',e=>{ if(e.target===back) UI.closeModal(); });
+    back.addEventListener('click',e=>{ if(e.target===back && !locked) UI.closeModal(); });
     document.body.appendChild(back);
   },
   closeModal(){ const b=document.getElementById('modalBack'); if(b) b.remove(); },

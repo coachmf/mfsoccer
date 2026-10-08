@@ -582,7 +582,8 @@ const CLOUD = {
   boardRow(uid, v, hist, total){
     hist = (hist || v.history || []).map(h=>({gw:+h.gw, pts:+h.pts||0}));
     return { id:uid, name:v.username||'مشترك', teamName:v.teamName||'', total: total!=null? +total : (+v.total||0),
-      hist, last: hist.length? hist[hist.length-1].pts : 0 };
+      hist, last: hist.length? hist[hist.length-1].pts : 0,
+      fav: (/^fav:([A-Z]{3})$/.exec(v.avatar||'')||[])[1] || null };   // النادي المفضل (دوري النادي العام)
   },
   async computeOwnership(){
     let q;

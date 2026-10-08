@@ -1433,3 +1433,24 @@ html.lang-en .pp-actions{justify-content:flex-start;}
 .pitch-board.r::before{content:"";position:absolute;inset:0;border-radius:inherit;box-shadow:inset 0 0 10px rgba(55,226,255,.18)}
 /* منصور 2026-10-07: اللوحتان خلف خط النهاية مباشرة (كانتا تلامسانه/تغطيانه) */
 .pitch-board{top:auto !important; bottom:calc(91.5% + 5px) !important;}   /* قاعدة اللوحة فوق خط النهاية (8.5%) بـ5px أياً كان ارتفاعها */
+
+
+/* إدارة الدوريات (طراز FPL) + اختيار النادي المفضل — 2026-10-08 */
+.lgx-h{margin:0 0 10px; font-size:1.05rem; font-weight:700}
+.lgx-t{width:100%; border-collapse:collapse}
+.lgx-t th{background:var(--surface2); color:var(--text2); font-weight:600; font-size:.85rem; padding:9px 12px; text-align:start}
+.lgx-t th:first-child{border-radius:0 10px 10px 0} .lgx-t th:last-child{border-radius:10px 0 0 10px}
+.lgx-t td{padding:12px; border-bottom:1px solid var(--line); cursor:pointer; vertical-align:middle}
+.lgx-t tr:last-child td{border-bottom:0}
+.lgx-t tr:hover td{background:color-mix(in srgb,var(--accent) 6%,transparent)}
+.lgx-n{font-weight:800; font-size:1rem}
+.lgx-n .crest{vertical-align:middle}
+.lgx-n small{display:block; font-weight:500; font-size:.72rem; color:var(--text3); margin-top:2px}
+.lgx-r{font-weight:700; font-size:1rem; width:90px}
+.lgx-m{width:56px; text-align:end}
+.lgx-dash{display:inline-block; width:14px; height:3px; border-radius:2px; background:var(--text3)}
+.lgx-empty{padding:10px 2px}
+.fav-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:8px}
+.fav-c{display:flex; flex-direction:column; align-items:center; gap:6px; padding:10px 4px; border-radius:12px; border:1.5px solid var(--line); background:var(--surface2); color:var(--text); font:inherit; font-size:.8rem; font-weight:700; cursor:pointer}
+.fav-c.on{border-color:var(--accent); background:color-mix(in srgb,var(--accent) 14%,transparent)}
+.lgx-n .crest{width:24px;height:24px;margin-inline-end:4px}
