@@ -1424,11 +1424,12 @@ html.lang-en .pp-actions{justify-content:flex-start;}
   .addp-head .addp-name{padding-right:66px;}
 }
 
-/* لوحتا LED في الملعب: شعار الفانتسي يساراً وشريكنا رتم يميناً (منصور 2026-10-07 — بعد اتفاق رتم) */
+/* لوحتا LED في الملعب: شريكنا فاموس يساراً (من 2026-10-08 بدل شعار الفانتسي) وشريكنا رتم يميناً (منصور 2026-10-07 — بعد اتفاق رتم) */
 .pitch-board{border-radius:1.5px !important; overflow:visible !important;
   box-shadow:0 -1px 0 #3a4256, inset 0 1px 0 rgba(255,255,255,.22), inset 0 -1px 0 rgba(0,0,0,.6), 0 2px 0 #0b0f18, 0 5px 6px rgba(0,25,10,.55) !important; filter:saturate(1.15)}
 .pitch-board::after{content:"";position:absolute;left:4%;right:4%;bottom:-7px;height:6px;border-radius:50%;background:rgba(0,30,10,.45);filter:blur(2.5px);z-index:-1}
-.pitch-board.l{background:radial-gradient(circle at 50% 50%, rgba(255,255,255,.10) 0 .55px, transparent .9px) 0 0/2.2px 2.2px, url("../assets/logo-dark.png") center/auto 88% no-repeat, radial-gradient(70% 120% at 50% 50%, #12306c 0%, #081a40 60%, #04102a 100%) !important}
+.pitch-board.l{background:radial-gradient(circle at 50% 50%, rgba(255,255,255,.10) 0 .55px, transparent .9px) 0 0/2.2px 2.2px, url("../assets/vamos-logo-h.png") center/auto 62% no-repeat, radial-gradient(70% 120% at 50% 50%, #141a12 0%, #070907 60%, #000 100%) !important}
+.pitch-board.l::before{content:"";position:absolute;inset:0;border-radius:inherit;box-shadow:inset 0 0 10px rgba(143,212,0,.22)}   /* فاموس بدل شعار الفانتسي (منصور 2026-10-08) */
 .pitch-board.r{background:radial-gradient(circle at 50% 50%, rgba(255,255,255,.10) 0 .55px, transparent .9px) 0 0/2.2px 2.2px, url("../assets/rtm-mark-cyan.svg") center/auto 66% no-repeat, radial-gradient(70% 120% at 50% 50%, #0c2b4a 0%, #061a33 60%, #03101f 100%) !important}
 .pitch-board.r::before{content:"";position:absolute;inset:0;border-radius:inherit;box-shadow:inset 0 0 10px rgba(55,226,255,.18)}
 /* منصور 2026-10-07: اللوحتان خلف خط النهاية مباشرة (كانتا تلامسانه/تغطيانه) */
