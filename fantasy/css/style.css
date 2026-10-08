@@ -1614,3 +1614,6 @@ html.lang-en .pp-actions{justify-content:flex-start;}
 .lgr-name b.fit2{font-size:.84rem} .lgr-name small.fit2{font-size:.7rem}
 .lgr-name b.fit3,.lgr-name small.fit3{white-space:normal; overflow-wrap:anywhere; line-height:1.2}
 .lgr-name b.fit3{font-size:.76rem} .lgr-name small.fit3{font-size:.64rem}
+
+/* كل الأسماء (عربي وإنجليزي) تبدأ من جهة الصورة — كان الإنجليزي يتسنّد للجهة الثانية (منصور 2026-10-08) */
+.lgr-name b,.lgr-name small{unicode-bidi:isolate !important; text-align:start !important}
