@@ -2199,7 +2199,7 @@ main{padding-bottom:48px}
 <script src="tstats-data.js?v=1" defer></script>
 <script src="analysis.js?v=23" defer></script>
 <!-- هوية MF SOCCER الذهبية + هيكل التطبيق (منصور 2026-10-05) -->
-<link rel="stylesheet" href="mf-brand.css?v=4">
+<link rel="stylesheet" href="mf-brand.css?v=5">
 <script>document.documentElement.classList.add("mf")</script>
 <script src="mf-shell.js?v=7" defer></script>
 <style>
@@ -2553,7 +2553,7 @@ html[data-theme="light"] .rf-kpis .y b{color:#B98A00}
     <div class="hero-tools">
       <button class="iconbtn" id="langBtn" title="English" aria-label="English" onclick="I18N.toggle()">EN</button>
       <button class="iconbtn" id="themeBtn" title="الوضع الداكن" aria-label="الوضع الداكن" onclick="THEME.toggle()"></button>
-      <button class="iconbtn hero-admin" id="adminBtn" title="دخول المدير" aria-label="دخول المدير">⚙</button>
+      <button class="iconbtn hero-admin" id="adminBtn" title="دخول المدير" aria-label="دخول المدير"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
     </div>
     <script>THEME.apply(THEME.get());</script>
     <div class="hero-sub" role="group" aria-label="أقسام الموقع">
@@ -4544,6 +4544,7 @@ function fbInit(){
                : (me && me.active!==false && me.role==="editor") ? "editor" : "";
       }
       isAdmin = isOwner || MYROLE==="editor";
+      if(u && !isAdmin) ADMIN_HINT.set(false);   /* حساب مسجّل وليس مديراً — لا يُمسح قبل استرجاع الجلسة */
       $("#adminBtn").classList.toggle("on", isAdmin);
       paintAdminBtn();
       paintFantasyTab();
@@ -8780,7 +8781,7 @@ function renderEditorAdmin(){
   if(lo) lo.onclick=async()=>{
     if(fbAuth && FBUSER){ try{ await fbAuth.signOut(); }catch(e){} }
     isAdmin=false; isOwner=false; MYROLE="";
-    $("#adminBtn").classList.remove("on"); ADMIN_REVEAL=false; paintAdminBtn(); paintFantasyTab(); go("home");
+    $("#adminBtn").classList.remove("on"); ADMIN_REVEAL=false; ADMIN_HINT.set(false); paintAdminBtn(); paintFantasyTab(); go("home");
   };
 }
 
@@ -9283,7 +9284,7 @@ function renderAdmin(){
   $("#clearLogos").onclick=()=>{ if(confirm("حذف كل الشعارات المرفوعة؟")){ LOGOS={}; LSCALE={}; persist(); renderAdmin(); renderAll(); } };
   $("#logout").onclick=async()=>{
     if(fbAuth && FBUSER){ try{ await fbAuth.signOut(); }catch(e){} }
-    isAdmin=false; $("#adminBtn").classList.remove("on"); ADMIN_REVEAL=false; paintAdminBtn(); paintFantasyTab(); go("home"); };
+    isAdmin=false; $("#adminBtn").classList.remove("on"); ADMIN_REVEAL=false; ADMIN_HINT.set(false); paintAdminBtn(); paintFantasyTab(); go("home"); };
 }
 
 /* ================= التخزين ================= */
@@ -9926,10 +9927,16 @@ const FANTASY_URL = "/fantasy/";
 /* زر الإدارة (⚙) مخفي عن الزوار. يظهر تلقائياً للمدير المسجّل، أو عبر
    مدخل سرّي: رابط ينتهي بـ #admin، أو 5 نقرات سريعة على شعار الفوتر. */
 let ADMIN_REVEAL = (location.hash === "#admin");
+/* منصور 2026-10-08: كان الزر يتأخر حتى ينتهي تسجيل الدخول وقراءة «staff» — جهاز سبق أن دخل منه مدير يُظهره فوراً (mf_admin_hint)،
+   ويُمسح التلميح عند الخروج أو إذا تبيّن أن الحساب ليس مديراً */
+const ADMIN_HINT = { get(){ try{ return localStorage.getItem("mf_admin_hint")==="1"; }catch(e){ return false; } },
+  set(on){ try{ on ? localStorage.setItem("mf_admin_hint","1") : localStorage.removeItem("mf_admin_hint"); }catch(e){} } };
 function paintAdminBtn(){
   const b = document.getElementById("adminBtn"); if(!b) return;
-  b.classList.toggle("show", !!(isAdmin || ADMIN_REVEAL));
+  if(isAdmin) ADMIN_HINT.set(true);
+  b.classList.toggle("show", !!(isAdmin || ADMIN_REVEAL || ADMIN_HINT.get()));
 }
+paintAdminBtn();
 function paintFantasyTab(){
   const show = (FANTASY_OPEN || isAdmin);
   const b=$("#fantasyTab"); if(b) b.style.display = show ? "" : "none";

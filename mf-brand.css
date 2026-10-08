@@ -1433,3 +1433,7 @@ html.mf #v-gulf .gc-cp-c.mf-sel .p{color:var(--mf-tx);font-weight:700}
 .mf-cd{display:inline-block;width:9px;height:12px;border-radius:2px;flex:none}
 .mf-cd.y{background:#F5C518} .mf-cd.r{background:#E5484D}
 .mf-gcp .mn{display:inline-block;direction:ltr;unicode-bidi:isolate;font-variant-numeric:tabular-nums}
+
+/* زر الإدارة في شريط الأدوات (منصور 2026-10-08): كان absolute من نمط الهيرو القديم فيركب فوق زر الثيم، وأيقونته إيموجي — الآن بنفس مقاس الأزرار وأيقونة SVG ذهبية */
+html.mf .mf-tools .hero-admin{position:static;top:auto;left:auto;z-index:auto;color:var(--mf-gold,#E7D093);border-color:rgba(231,208,147,.45)}
+html.mf .mf-tools .hero-admin.on{background:rgba(231,208,147,.14);color:var(--mf-gold,#E7D093);border-color:rgba(231,208,147,.7)}
