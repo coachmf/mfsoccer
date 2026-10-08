@@ -388,16 +388,24 @@
   const circ=(attrs,inner,label,on,cls)=>`<button type="button" class="mf-circ${cls?" "+cls:""}" ${attrs} aria-pressed="${!!on}"><i>${inner}</i><span>${esc(label)}</span></button>`;
   /* داخل الدائرة: شعار البطولة إن وُجد في الموقع وإلا أيقونة؛ تحت الاسم عدد المباريات بكلمة واضحة */
   /* رموز البطولات (الكأس/الشعار بلا الكتابة): الدولية مقصوصة من شعاراتها الرسمية في ويكيبيديا (2026-10-05) */
-  const COMP_LOGO={"c:الدوري":"assets/hero/kpl-mark.webp","e:gulf27":"assets/comps/gulf27.webp","e:gcl":"assets/comps/gcl.webp",
+  const COMP_LOGO={"c:الدوري":"assets/hero/kpl-mark.webp","d:div1":"assets/hero/kpl-mark.webp","e:gulf27":"assets/comps/gulf27.webp","e:gcl":"assets/comps/gcl.webp",
     "e:acl2":"assets/comps/acl2.webp","e:acc":"assets/comps/acc.webp","e:asiad":"assets/comps/asiad.webp"};
   const mw2=n=>n===1?"مباراة واحدة":n===2?"مباراتان":(n>=3&&n<=10)?n+" مباريات":n+" مباراة";
   function compCirc(x,i){
     const logo=COMP_LOGO[x.key], total=x.key==="c:الكل";
     const inner=logo?`<img src="${logo}" alt="" width="32" height="32">`:total?IC.all:IC.cups;
-    const label=total?"الإجمالي":x.label;
+    const label=total?"الإجمالي":x.key==="c:الدوري"?"الدوري الممتاز":x.label;   /* منصور 2026-10-08 */
     return `<button type="button" class="mf-circ sm comp" data-mx-opt="${i}" aria-pressed="${!!x.sel}" title="${esc(x.label)}"><i>${inner}</i><span>${esc(label)}</span><em>${mw2(x.n)}</em></button>`;
   }
   let mxGroup=null;   /* المجموعة المفتوحة: all | local | ext */
+  let mxDiv1=false;   /* دائرة «دوري الدرجة الأولى» مختارة: قائمة مبارياتها من div1.js بدل قائمة الموقع (منصور 2026-10-08) */
+  function mxDiv1Paint(v){
+    v.querySelectorAll(".mf-d1-list").forEach(x=>x.remove());
+    v.classList.toggle("mf-d1-on", mxDiv1);
+    if(!mxDiv1 || !window.DIV1 || !DIV1.matchesHTML) return;
+    const w=D.createElement("div"); w.className="mf-d1-list d1"; w.innerHTML=DIV1.matchesHTML();
+    v.querySelector(".mf-circles").after(w);
+  }
   function mxCircles(){
     const v=D.getElementById("v-matches"), dd=v && v.querySelector(".mx-comp"); if(!dd) return;
     const opts=[...dd.querySelectorAll(".rs-menu > *")];
@@ -405,6 +413,8 @@
     opts.forEach(o=>{ if(o.classList.contains("rs-grp")){ grp = /خارج/.test(o.textContent) ? "ext" : "local"; return; }
       const em=o.querySelector("em"), n=em?+em.textContent||0:0, label=(o.firstChild&&o.firstChild.nodeType===3?o.firstChild.textContent:o.textContent).trim();
       G[grp].push({o, n, label, sel:o.getAttribute("aria-selected")==="true", key:o.dataset.comp?"c:"+o.dataset.comp:"e:"+o.dataset.ext}); });
+    if(window.DIV1 && DIV1.count){ const i=G.local.findIndex(x=>x.key==="c:الدوري"); G.local.splice(i+1, 0, {o:null, n:DIV1.count(), label:"دوري الدرجة الأولى", sel:false, key:"d:div1"}); }   /* بعد الممتاز مباشرة */
+    if(mxDiv1){ G.all.concat(G.local,G.ext).forEach(x=>x.sel = x.key==="d:div1"); mxGroup="local"; }
     const curGrp = G.all.some(x=>x.sel) ? "all" : G.ext.some(x=>x.sel) ? "ext" : "local";
     const open = mxGroup || curGrp;
     const show = x => x.n>0 || x.sel;
@@ -417,19 +427,23 @@
     box._sub=sub; box._all=G.all[0]; box._G=G;
     const old=v.querySelector(".mf-circles"); if(old) old.remove();
     (v.querySelector(".mx-head")||v.firstElementChild).after(box);
+    mxDiv1Paint(v);
   }
   D.addEventListener("click", e=>{
     const box=e.target.closest("#v-matches .mf-circles"); if(!box) return;
     const g=e.target.closest("[data-mx-grp]");
     if(g){ const k=g.dataset.mxGrp;
-      if(k==="all"){ mxGroup=null; if(box._all) box._all.o.click(); return; }
+      if(k==="all"){ mxGroup=null; mxDiv1=false; if(box._all) box._all.o.click(); return; }
+      if(k!=="local") mxDiv1=false;
       /* المحتوى يطابق الدائرة دائماً: إن لم يكن الاختيار الحالي من هذه المجموعة نختار أول بطولة فيها */
       mxGroup=k;
-      const g2=(box._G||{})[k]||[], first=g2.find(x=>x.n>0)||g2[0];
+      const g2=((box._G||{})[k]||[]).filter(x=>x.o), first=g2.find(x=>x.n>0)||g2[0];
       if(first && !g2.some(x=>x.sel)) first.o.click(); else mxCircles();
       return; }
     const o=e.target.closest("[data-mx-opt]");
-    if(o){ const x=box._sub[+o.dataset.mxOpt]; if(x){ mxGroup=null; x.o.click(); } }
+    if(o){ const x=box._sub[+o.dataset.mxOpt]; if(!x) return;
+      if(x.key==="d:div1"){ mxDiv1=true; mxGroup="local"; mxCircles(); return; }
+      mxDiv1=false; mxGroup=null; x.o.click(); }
   });
 
   function plCircles(){
@@ -466,7 +480,7 @@
     const box=D.createElement("div"); box.className="mf-circles mf-ax";
     box.innerHTML=`<h2 class="mf-ptitle">الإحصائيات</h2><div class="mf-crow l1" role="group" aria-label="أقسام الإحصائيات">${tabs.map(b=>circ(`data-mf-at="${b.dataset.at}"`, AX_IC[b.dataset.at]||IC.stats, b.textContent.trim(), b.dataset.at===cur)).join("")}</div>
       ${comps.length>1?`<div class="mf-crow l2" role="group" aria-label="المسابقة">${comps.map(b=>{ const c=b.dataset.comp, logo=COMP_LOGO["c:"+c];
-        return `<button type="button" class="mf-circ sm comp" data-mf-axc="${esc(c)}" aria-pressed="${b.getAttribute("aria-pressed")==="true"}"><i>${logo?`<img src="${logo}" alt="" width="32" height="32">`:c==="الكل"?IC.all:IC.cups}</i><span>${esc(c==="الكل"?"الإجمالي":c)}</span></button>`; }).join("")}</div>`:""}`;
+        return `<button type="button" class="mf-circ sm comp" data-mf-axc="${esc(c)}" aria-pressed="${b.getAttribute("aria-pressed")==="true"}"><i>${logo?`<img src="${logo}" alt="" width="32" height="32">`:c==="الكل"?IC.all:IC.cups}</i><span>${esc(c==="الكل"?"الإجمالي":c==="الدوري"?"الدوري الممتاز":c)}</span></button>`; }).join("")}</div>`:""}`;
     const old=v.querySelector(".mf-ax"); if(old) old.remove();
     w.prepend(box);
   }

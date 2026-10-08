@@ -1437,3 +1437,7 @@ html.mf #v-gulf .gc-cp-c.mf-sel .p{color:var(--mf-tx);font-weight:700}
 /* زر الإدارة في شريط الأدوات (منصور 2026-10-08): كان absolute من نمط الهيرو القديم فيركب فوق زر الثيم، وأيقونته إيموجي — الآن بنفس مقاس الأزرار وأيقونة SVG ذهبية */
 html.mf .mf-tools .hero-admin{position:static;top:auto;left:auto;z-index:auto;color:var(--mf-gold,#E7D093);border-color:rgba(231,208,147,.45)}
 html.mf .mf-tools .hero-admin.on{background:rgba(231,208,147,.14);color:var(--mf-gold,#E7D093);border-color:rgba(231,208,147,.7)}
+
+/* دائرة «دوري الدرجة الأولى» في صفحة المباريات (منصور 2026-10-08): نخفي قائمة الموقع ونعرض جولاتها */
+#v-matches.mf-d1-on > *:not(.mf-circles):not(.mf-d1-list):not(.mx-head){display:none !important}
+#v-matches .mf-d1-list{margin-top:12px}
