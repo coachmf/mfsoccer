@@ -322,7 +322,7 @@ Object.assign(VIEWS, {
       <div class="card"><h3>المباريات القادمة</h3>
         ${FDR.next(c.club,6).map(x=>`<div class="fx"><div class="team">ج${x.gw}</div>
           <div class="team">${UI.crest(x.opp)} ${DB.club(x.opp).name} ${UI.ha(x.home)}</div>
-          <span class="fdr l${x.lvl}">${x.label}</span></div>`).join('')||'<div class="muted">انتهى الموسم</div>'}
+          <span class="fdr nolbl l${x.lvl}" title="${x.label}"></span></div>`).join('')||'<div class="muted">انتهى الموسم</div>'}
       </div>
       <div class="card" style="grid-column:1/-1"><h3>مباراة بمباراة</h3>
         <div class="scroll-x"><table class="tbl"><tr><th>جولة</th><th>المنافس</th><th>النتيجة</th><th></th><th>نقاط المدرب</th></tr>${log||'<tr><td colspan="5" class="muted">لا مباريات منتهية بعد</td></tr>'}</table></div>

@@ -492,7 +492,7 @@ const VIEWS = {
     const fxCells=FDR.next(p.club,3).map(x=>`
       <div class="fcell"><div class="tiny">ج${x.gw}</div>${UI.crest(x.opp)}
         <div class="tiny">${DB.club(x.opp).short} ${UI.ha(x.home)}</div>
-        <span class="ptschip fdr-l${x.lvl}">${x.label}</span></div>`).join('');
+        <span class="ptschip nolbl fdr-l${x.lvl}" title="${x.label}"></span></div>`).join('');
     UI.sheet(`
       ${UI.statusBanner(p)}
       <div class="ps-head ps-head-photo" style="background:linear-gradient(135deg,${c.color} 0%,${c.dark} 100%)">
@@ -807,7 +807,7 @@ const VIEWS = {
       <div class="card"><h3>المباريات القادمة</h3>
         ${FDR.next(p.club,6).map(x=>`<div class="fx"><div class="team">ج${x.gw}</div>
           <div class="team">${UI.crest(x.opp)} ${DB.club(x.opp).name} ${UI.ha(x.home)}</div>
-          <span class="fdr l${x.lvl}">${x.label}</span></div>`).join('')||'<div class="muted">انتهى الموسم</div>'}
+          <span class="fdr nolbl l${x.lvl}" title="${x.label}"></span></div>`).join('')||'<div class="muted">انتهى الموسم</div>'}
       </div>
       <div class="card" style="grid-column:1/-1"><h3>سجل الجولات</h3>
         <div class="scroll-x"><table class="tbl"><tr><th>جولة</th><th>دقائق</th><th>أهداف</th><th>صناعة</th><th>شباك</th><th>إنذار</th><th>طرد</th><th>بونص</th><th>نقاط</th></tr>
@@ -854,9 +854,6 @@ const VIEWS = {
       </div>
       <div class="card"><h3>صعوبة المباريات القادمة (لكل نادٍ)</h3>
         <div class="scroll-x"><table class="tbl fdr-grid"><tr><th>النادي</th><th colspan="5">المباريات الخمس القادمة</th></tr>${fdrGrid}</table></div>
-        <div class="row" style="gap:6px;margin-top:10px;flex-wrap:wrap">
-          <span class="fdr l1">سهلة</span><span class="fdr l3">متوسطة</span><span class="fdr l5">صعبة</span>
-        </div>
       </div>
     </div>`;
   },
