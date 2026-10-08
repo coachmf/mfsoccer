@@ -1608,3 +1608,9 @@ html.lang-en .pp-actions{justify-content:flex-start;}
 .lgr-tot{text-align:center; font-size:1rem; font-weight:800}
 
 .lgr-name b,.lgr-name small{unicode-bidi:plaintext; text-align:start}   /* أسماء إنجليزية: القص من الآخر لا من البداية */
+
+/* الاسم الطويل يصغر خطه، والأطول يلتف لسطرين بدل «…» */
+.lgr-name b,.lgr-name small{text-overflow:clip}
+.lgr-name b.fit2{font-size:.84rem} .lgr-name small.fit2{font-size:.7rem}
+.lgr-name b.fit3,.lgr-name small.fit3{white-space:normal; overflow-wrap:anywhere; line-height:1.2}
+.lgr-name b.fit3{font-size:.76rem} .lgr-name small.fit3{font-size:.64rem}

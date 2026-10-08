@@ -1031,12 +1031,14 @@ const VIEWS = {
             return `<div class="lgr-r${r.id===m.id?' me':''}" onclick="VIEWS.openManager('${r.id}')">
               <span class="lgr-pos"><b>${(r.rank||i+1).toLocaleString('en')}</b>${mode==='gw'? '' : this.moveIcon(r.move)}</span>
               ${UI.mgrAvatar(nm, PICS.of(r.id), 38)}
-              <span class="lgr-name"><b data-i18n="off">${esc(blocked? '—' : (r.teamName||nm))}</b><small data-i18n="off">${esc(nm)}${r.id===m.id?' · أنت':''}${isH2H? ` · ${r.w||0}/${r.d||0}/${r.l||0}` : ''}</small></span>
+              <span class="lgr-name"><b class="${this.lgrFit(blocked? '—' : (r.teamName||nm))}" data-i18n="off">${esc(blocked? '—' : (r.teamName||nm))}</b><small class="${this.lgrFit(nm,1)}" data-i18n="off">${esc(nm)}${r.id===m.id?' · أنت':''}${isH2H? ` · ${r.w||0}/${r.d||0}/${r.l||0}` : ''}</small></span>
               <span class="lgr-gw${liveCol&&mode!=='gw'?' live':''}">${gwV}</span>
               <span class="lgr-tot">${r.total}</span></div>`; }).join('')}
         </div>`; })()}
     </div>`;
   },
+  /* حجم خط اسم الفريق/المدير حسب طوله — يصغر بدل القص (منصور 2026-10-08) */
+  lgrFit(t, sub){ const n=String(t||'').length; const k=sub? [16,22] : [14,20]; return n>k[1]? 'fit3' : n>k[0]? 'fit2' : ''; },
   /* ======================= تشكيلة مشترك آخر (من جدول الدوري) ======================= */
   openManager(uid){
     const m=DB.me();
