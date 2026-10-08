@@ -5677,6 +5677,13 @@ function voteRounds(){
   });
   return out.sort((a,b)=>b.r-a.r);
 }
+/* تقييم كل لاعب في الجولة: «الاسم|النادي» ← تقييم مباراته (matchRatings) */
+function roundRatingMap(round, comp){
+  const out={};
+  MATCHES.filter(m=>m.round===round && compOf(m)===comp).forEach(m=>[m.home,m.away].forEach(c=>
+    matchRatings(m,c).forEach(x=>{ out[x.n+"|"+c]=x.r.v; })));
+  return out;
+}
 /* من شارك في الجولة: الأساسيون ومن دخل بديلاً */
 function roundPlayers(round, comp){
   const seen={}, out=[];
@@ -7808,8 +7815,11 @@ function ballotHTML(round, comp){
   const chosen=new Set(BALLOT.xi.map(p=>p.n+"|"+p.club));
 
   let i=0;
+  /* الخيارات: أعلى 3 تقييماً لكل خانة في الخط من مباريات الجولة نفسها (منصور 2026-10-08) — 4 مدافعين = أعلى 12 مدافعاً */
+  const RT=roundRatingMap(round, comp), rv=p=>RT[p.n+"|"+p.club];
+  const topLine=(line,k)=>pool.filter(p=>p.line===line && rv(p)!=null).sort((a,b)=>rv(b)-rv(a)).slice(0,k);
   const slots=lineNeeds(BALLOT.f).map(([line,n])=>{
-    const opts=pool.filter(p=>p.line===line);
+    const opts=topLine(line, 3*n);
     const cells=[];
     for(let k=0;k<n;k++,i++){
       const cur=BALLOT.xi[i]||null;
@@ -7819,7 +7829,7 @@ function ballotHTML(round, comp){
           <option value="">— اختر —</option>
           ${opts.map(p=>{const v=p.n+"|"+p.club;
             const taken=chosen.has(v)&&v!==key;
-            return `<option value="${esc(v)}" ${v===key?"selected":""} ${taken?"disabled":""}>${esc(p.n)} — ${esc(p.club)}${p.s?" ("+p.s+")":""}</option>`;}).join("")}
+            return `<option value="${esc(v)}" ${v===key?"selected":""} ${taken?"disabled":""}>${esc(p.n)} — ${esc(p.club)} · ${rv(p).toFixed(1)}</option>`;}).join("")}
         </select></label>`);
     }
     return `<div class="bl-line"><div class="bl-lt">${LINE_AR[line]}</div>${cells.join("")}</div>`;
@@ -7843,7 +7853,7 @@ function ballotHTML(round, comp){
       <label class="bl-f"><span>أفضل لاعب</span>
         <select id="blBest"><option value="">— اختر —</option>${pool.map(p=>opt(p,BALLOT.best)).join("")}</select></label>
       <label class="bl-f"><span>أفضل حارس</span>
-        <select id="blGk"><option value="">— اختر —</option>${gks.map(p=>opt(p,BALLOT.gk)).join("")}</select></label>
+        <select id="blGk"><option value="">— اختر —</option>${topLine("G",3).map(p=>opt(p,BALLOT.gk)).join("")}</select></label>
       <label class="bl-f"><span>هدف الجولة</span>
         <select id="blGoal"><option value="">— اختر —</option>${goals.map(g=>`<option value="${esc(g.id)}" ${g.id===BALLOT.goal?"selected":""}>${esc(g.p)} (${esc(g.club)}) — ${g.m}'${g.det?" · "+esc(g.det):""}</option>`).join("")}</select></label>
     </div>
@@ -13748,8 +13758,16 @@ function playerRating(m, club, name){
 /* تقييمات فريق في مباراة، مرتبة من الأعلى */
 /* كأس الخليج بلا تقييمات لاعبين في أي مكان (منصور 2026-09-24) — التقييم الداخلي يبقى لاختيار «أفضل لاعب» تلقائياً فقط */
 function matchRatings(m, club){ return isGulfMatch(m) ? [] : matchRatingsRaw(m, club); }
+/* التقييم يظهر بعد نهاية المباراة فقط (منصور 2026-10-08: «مابي التقييم يكون لايف»): «انتهت» صراحة،
+   أو بلا مرحلة جارية ومضت ساعتان ونصف على الانطلاق (نافذة matchOver ساعتان فقط — تنتهي قبل الصافرة أحياناً) */
+function ratingsReady(m){
+  if(!m) return false; if(m.status==="ft") return true;
+  if(!matchOver(m)) return false;
+  const k=kickoffTS(m);
+  return k===null || Date.now() >= k + 150*60*1000;
+}
 function matchRatingsRaw(m, club){
-  if(!matchOver(m)) return [];                 /* لا تقييمات (ولا «أفضل لاعب») قبل صافرة النهاية — قبل الانطلاق ولا أثناء اللعب */
+  if(!ratingsReady(m)) return [];                 /* لا تقييمات (ولا «أفضل لاعب») قبل صافرة النهاية — قبل الانطلاق ولا أثناء اللعب */
   const comp=compOf(m), men=new Set(xiNames(m.round, comp, club));
   matchSubs(m).filter(s=>s.club===club && s.in).forEach(s=>men.add(s.in));
   return [...men].map(n=>({n, c:club, r:playerRating(m, club, n)})).filter(x=>x.r).sort((a,b)=>b.r.v-a.r.v);
