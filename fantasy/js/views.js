@@ -981,6 +981,7 @@ const VIEWS = {
   leagueDetail(lg){
     const st=DB.state, m=DB.me();
     let rows= lg.global? this.globalTable() : lg.fav? this.favTable(lg.fav) : LEAGUES.table(lg);
+    PICS.refresh();
     const isH2H=lg.type==='h2h';
     let liveCol = typeof LIVEGW!=='undefined' && LIVEGW.active();
     if(liveCol) LIVEGW.refresh();
@@ -1023,7 +1024,7 @@ const VIEWS = {
         ${rows.map((r,i)=>`<tr style="cursor:pointer;${r.id===m.id?'background:color-mix(in srgb,var(--accent) 10%,transparent)':''}" onclick="VIEWS.openManager('${r.id}')" title="عرض التشكيلة">
           <td class="num" style="font-weight:800">${(r.rank||i+1).toLocaleString('ar')}</td>
           <td style="width:34px;white-space:nowrap">${this.moveIcon(r.move)}</td>
-          <td><span data-i18n="off">${esc(MODERATION.shown(r.id, r.name))}</span> ${r.id===m.id?'<span class="pill green">أنت</span>':''}${MODERATION.isBlocked(r.id)?'<span class="pill" style="margin-inline-start:4px">محظور</span>':''}</td>
+          <td><span class="lg-who">${UI.mgrAvatar(MODERATION.shown(r.id, r.name), PICS.of(r.id), 26)}<span data-i18n="off">${esc(MODERATION.shown(r.id, r.name))}</span></span> ${r.id===m.id?'<span class="pill green">أنت</span>':''}${MODERATION.isBlocked(r.id)?'<span class="pill" style="margin-inline-start:4px">محظور</span>':''}</td>
           <td class="muted" data-i18n="off">${esc(MODERATION.isBlocked(r.id)? '—' : r.teamName)}</td>
           ${isH2H?`<td class="tiny">${r.w||0}/${r.d||0}/${r.l||0}</td><td class="num">${r.h2hPts||0}</td>`:''}
           ${liveCol?`<td class="num" style="color:var(--red)">${LIVEGW.liveOf(r.id)??'—'}</td>`:''}

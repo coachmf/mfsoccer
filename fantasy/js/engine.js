@@ -1268,6 +1268,25 @@ const AV = {
   make(fav, img){ return (fav? 'fav:'+fav : '') + (img? '|'+img : ''); },
   img(av){ return this.parse(av).img; },
 };
+/* صور البروفايل المصغّرة لجداول الترتيب: مستند واحد meta/avatars (ينشره المدير مع لقطة الترتيب) — قراءة واحدة كل 10 دقائق، ومخزّنة على الجهاز */
+const PICS = {
+  map:null, at:0, busy:false, CK:'kwf_avpics',
+  of(uid){
+    const m=DB.me();
+    if(m && uid===m.id){ const mine=AV.img(m.avatar); if(mine) return mine; }
+    if(typeof MODERATION!=='undefined' && MODERATION.isBlocked(uid)) return '';
+    if(!this.map){ try{ const c=JSON.parse(localStorage.getItem(this.CK)||'null'); this.map=(c&&c.map)||{}; }catch(e){ this.map={}; } }
+    return this.map[uid] || '';
+  },
+  async refresh(){
+    if(this.busy || typeof CLOUD==='undefined' || !CLOUD.ready) return;
+    if(this.at && Date.now()-this.at < 10*60000) return;
+    this.busy=true; this.at=Date.now();
+    const d=await CLOUD.loadPics();
+    if(d && d.map){ this.map=d.map; try{ localStorage.setItem(this.CK, JSON.stringify({map:d.map, at:d.at})); }catch(e){} if(typeof APP!=='undefined' && APP.route==='leagues') APP.render(); }
+    this.busy=false;
+  },
+};
 const FAV = {
   of(av){ return AV.parse(av).fav; },
   mine(){ const m=DB.me(); return m? this.of(m.avatar) : null; },

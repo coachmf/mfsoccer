@@ -89,7 +89,8 @@ const CLOUD = {
   round(gw){ return this.root().collection('rounds').doc(String(gw)); },
   playersDoc(){ return this.root().collection('meta').doc('players'); },
   liveDoc(){ return this.root().collection('meta').doc('live'); },
-  ownDoc(){ return this.root().collection('meta').doc('own'); },        // التملّك ولقطة الترتيب العام — مستند مستقل حتى لا يُعاد تحميل اللعبة كل ساعة      // نقاط الجولة الجارية لكل المشتركين — ينشرها المدير
+  ownDoc(){ return this.root().collection('meta').doc('own'); },
+  picsDoc(){ return this.root().collection('meta').doc('avatars'); },   // صور البروفايل المصغّرة (40px) لمن رفع صورة فقط — لجداول الترتيب        // التملّك ولقطة الترتيب العام — مستند مستقل حتى لا يُعاد تحميل اللعبة كل ساعة      // نقاط الجولة الجارية لكل المشتركين — ينشرها المدير
   lockDoc(){ return this.root().collection('meta').doc('lock'); },
 
   /* ---------- قفل الجولة ----------
@@ -590,9 +591,10 @@ const CLOUD = {
     let q;
     try{ q = await this.managers().get(); }
     catch(e){ return {ok:false, err:'تعذّرت قراءة قائمة المشتركين'}; }
-    const own={}; let count=0; const board=[];
+    const own={}; let count=0; const board=[]; const pics={};
     q.forEach(d=>{
       const v=d.data(); const squad=(v.team && v.team.squad)||[];
+      const im=String(v.avatar||''); const k=im.indexOf('|'); if(k>=0 && /^data:image\//.test(im.slice(k+1))) pics[d.id]=im.slice(k+1);
       if(!squad.length) return;
       count++;
       squad.forEach(pid=>{ own[pid]=(own[pid]||0)+1; });
@@ -600,7 +602,30 @@ const CLOUD = {
       board.push(this.boardRow(d.id, v));
     });
     board.sort((a,b)=>b.total-a.total || a.name.localeCompare(b.name,'ar'));
-    return {ok:true, own, count, total:q.size, board};
+    return {ok:true, own, count, total:q.size, board, pics};
+  },
+  /* صورة مصغّرة 40px (~1KB) من صورة البروفايل — تُبنى على جهاز المدير وقت النشر */
+  async thumb(src){
+    try{
+      const img=await new Promise((res,rej)=>{ const i=new Image(); i.onload=()=>res(i); i.onerror=rej; i.src=src; });
+      const S=40, c=document.createElement('canvas'); c.width=S; c.height=S;
+      c.getContext('2d').drawImage(img, 0, 0, S, S);
+      return c.toDataURL('image/jpeg', .6);
+    }catch(e){ return null; }
+  },
+  async publishPics(pics){
+    const map={}; let size=0;
+    for(const [uid, src] of Object.entries(pics||{})){
+      const t=await this.thumb(src); if(!t) continue;
+      if(size + t.length > 850000) break;          // حد مستند Firestore (1MB) — احتياط
+      map[uid]=t; size+=t.length;
+    }
+    const at=new Date().toISOString();
+    await this.race(this.picsDoc().set({ map, at }));
+    return Object.keys(map).length;
+  },
+  async loadPics(){
+    try{ const s=await this.picsDoc().get(); return s.exists? s.data() : null; }catch(e){ return null; }
   },
 
   /* المدير: يحسب التملّك وينشره وحده (بلا إعادة نشر اللعبة كاملة) */
@@ -615,6 +640,7 @@ const CLOUD = {
       updatedBy: (this.user && this.user.email) || ''
     }));
     if(!r.ok) return {ok:false, err: r.timeout ? 'الاتصال بطيء — لم يكتمل النشر' : this.errAr(r.err)};
+    try{ await this.publishPics(c.pics); if(typeof PICS!=='undefined') PICS.at=0; }catch(e){ console.warn('pics publish failed', e); }
     return {ok:true, count:c.count, total:c.total};
   },
 

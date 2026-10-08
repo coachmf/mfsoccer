@@ -1581,3 +1581,7 @@ html.lang-en .pp-actions{justify-content:flex-start;}
 .pvb-me{background:#1a2b5e !important; color:#fff !important}
 .pvb-me span{opacity:.85}
 .pvb-sep{background:rgba(255,255,255,.18) !important}
+
+/* صورة المدير في جدول الدوري — 2026-10-08 */
+.lg-who{display:inline-flex; align-items:center; gap:7px; vertical-align:middle}
+.lg-who .mgr-av{border-width:1px}
