@@ -130,8 +130,10 @@ const MFSYNC = {
         const i=l.findIndex(e=>this.norm(typeof e==='string'?e:(e&&e.n))===this.norm(x.n)); if(i<0) return;
         l[i]=Object.assign({}, typeof l[i]==='object'?l[i]:{n:l[i]}, {s:x.s}, x.p?{p:x.p}:{}); });
       MF_SQUAD_MOVE.forEach(mv=>{ const nm=e=>this.norm(typeof e==='string'?e:(e&&e.n)), src=d.squads[mv.from], dst=d.squads[mv.to];
-        if(!Array.isArray(dst) || dst.some(e=>nm(e)===this.norm(mv.n))) return;
+        if(!Array.isArray(dst)) return;
+        /* يُشال من ناديه القديم دائماً — MF_SQUAD_ADD يرجّعه للقديم لو كان بالجديد أصلاً (منصور 2026-10-08) */
         const i=Array.isArray(src)?src.findIndex(e=>nm(e)===this.norm(mv.n)):-1, old=i>=0?src.splice(i,1)[0]:{};
+        if(dst.some(e=>nm(e)===this.norm(mv.n))) return;
         dst.push(Object.assign({p:''}, typeof old==='object'?old:{}, {n:mv.n, s:mv.s}, mv.p?{p:mv.p}:{})); });
     }
     return d;

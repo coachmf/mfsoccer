@@ -151,11 +151,19 @@ const ROSTER = {
       <button class="btn" style="margin-top:12px" onclick="UI.closeModal()">تمام</button>`);
   },
 
+  /* لاعب في MF_SQUAD_MOVE وما زال بناديه القديم في اللعبة → سحب فوري (منصور 2026-10-08: مزيد نواف للشباب) */
+  moveMissing(){
+    if(typeof MF_SQUAD_MOVE==='undefined') return false;
+    const ps=(DB.state && DB.state.players)||[];
+    return MF_SQUAD_MOVE.some(mv=>{ const to=MFSYNC.clubId(mv.to), p=ps.find(x=>MFSYNC.norm(x.name)===MFSYNC.norm(mv.n));
+      return !!(p && to && p.club!==to); });
+  },
+
   /* سحب صامت عند فتح اللعبة: يضيف ويحدّث فقط، بلا إخفاء */
   auto(){
     let last = 0;
     try{ last = +localStorage.getItem(this.KEY) || 0; }catch(e){}
-    if(Date.now() - last < this.AUTO_HOURS * 3600e3 && !this.addMissing()) return;
+    if(Date.now() - last < this.AUTO_HOURS * 3600e3 && !this.addMissing() && !this.moveMissing()) return;
     setTimeout(() => this.sync({ quiet:true, removals:false }), 2500);
   },
 
