@@ -159,6 +159,10 @@ const NAMES_EN = {
 const DICT_MORE = {
   // إدارة الدوريات + النادي المفضل (2026-10-08)
   'إدارة الدوريات':'Leagues', 'الدوريات الخاصة':'Private leagues', 'الدوريات العامة':'Public leagues', 'الدوري':'League',
+  'متوسط النقاط':'Average', 'أعلى النقاط':'Highest', 'النقاط النهائية':'Final points', 'النقاط الآن':'Live points', 'ترتيب الجولة':'GW rank', 'خصم الانتقالات':'Transfer cost',
+  'النقاط / الترتيبات':'Points / Rankings', 'إجمالي النقاط':'Total points', 'إجمالي المشتركين':'Total managers', 'عرض سجل الجولات':'Gameweek history',
+  'سجل الجولات':'Gameweek history', 'ما عنده دوريات خاصة':'No private leagues', 'إضافة صورة بروفايل':'Add profile photo', 'تغيير الصورة':'Change photo',
+  'إزالة':'Remove', 'تظهر لما أحد يفتح ملفك في الدوريات':'Shown when someone opens your profile', 'تم تحديث صورتك':'Photo updated', 'أُزيلت الصورة':'Photo removed',
   'دوري المشجعين':'Fans league', 'مغادرة الدوري':'Leave league', 'اطلع من الدوري':'Leave', 'طلعت من الدوري':'You left the league', 'اختر فريقك المفضل':'Pick your favourite club', 'تأكيد':'Confirm',
   'مرة وحدة بس — تدخل دوري مشجعي ناديك العام وتتنافس معاهم':'One time only — you join your club\'s public fans league',
   'اختر فريقك المفضل لتدخل دوري مشجعيه':'Pick your favourite club to join its fans league',

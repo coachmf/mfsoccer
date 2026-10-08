@@ -8,6 +8,32 @@
 'use strict';
 
 Object.assign(VIEWS, {
+  /* ترتيب الجولة وأعلى نقاطها من لقطة الترتيب board (تحمل hist لكل مشترك) — بلا قراءات إضافية (منصور 2026-10-08) */
+  gwBoard(gw){
+    const b=(typeof LEAGUES!=='undefined' && LEAGUES.cloud && LEAGUES.cloud.board) || [];
+    const rows=[]; b.forEach(r=>{ const h=(r.hist||[]).find(x=>+x.gw===+gw); if(h) rows.push({id:r.id, name:r.name, p:+h.pts||0}); });
+    rows.sort((a,b)=>b.p-a.p); return rows;
+  },
+  gwRankOf(gw, uid){ const rows=this.gwBoard(gw); const i=rows.findIndex(r=>r.id===uid); if(i<0) return null; const p=rows[i].p; return rows.findIndex(r=>r.p===p)+1; },
+  needBoard(){ if(typeof LEAGUES!=='undefined' && LEAGUES.online() && !LEAGUES.cloud.board && !this._boardAsk){ this._boardAsk=true; LEAGUES.refresh().then(()=>APP.render()); } },
+  /* شبكة الإحصاءات: المتوسط والأعلى يميناً، النقاط في الوسط، ترتيب الجولة والانتقالات يساراً */
+  ptsGrid(o){
+    const fmt=v=> v==null? '—' : (+v).toLocaleString('en');
+    const top=this.gwBoard(o.gw)[0];
+    const highV = o.high!=null? o.high : (top? top.p : null);
+    const highClick = top && top.p===highV ? `VIEWS.openManager('${top.id}')` : (o.live? '' : `APP.go('champions')`);
+    return `<div class="pts-grid">
+      <div class="pg-side">
+        <div><b>${fmt(o.avg)}</b><span>متوسط النقاط</span></div>
+        <div class="${highClick?'link':''}" ${highClick? `onclick="${highClick}"` : ''}><b><u>${fmt(highV)}</u></b><span>أعلى النقاط</span></div>
+      </div>
+      <div class="pg-big"><b>${fmt(o.pts)}</b><span>${o.live? 'النقاط الآن' : 'النقاط النهائية'}</span>${o.chip? `<em>${esc(o.chip)}</em>` : ''}</div>
+      <div class="pg-side">
+        <div><b>${fmt(o.rank)}</b><span>ترتيب الجولة</span></div>
+        <div><b><bdi dir="ltr">${o.hits? '-'+o.hits : '0'}</bdi></b><span>خصم الانتقالات</span></div>
+      </div>
+    </div>`;
+  },
   /* الجولات التي لفريقي نقاط فيها: المعتمدة من السجل + الجارية الآن */
   pointsGws(team){
     const st=DB.state, hist=(team&&team.history)||[];
@@ -135,6 +161,8 @@ Object.assign(VIEWS, {
     if(h.hits) notes.push(`خصم انتقالات: -${h.hits}`);
     notes.push(`نقاط الدكة: ${h.benchPts}`);
     const fmt=v=> (v==null ? '—' : v);
+    this.needBoard();
+    const myRank = typeof h.rank==='number' && h.rank>0 ? h.rank : this.gwRankOf(gw, m.id);
     return `<div class="pickteam pts-page">
       <div class="pts-hero">
         <div class="pts-team" data-i18n="off">${esc(m.teamName)}</div>
@@ -143,12 +171,8 @@ Object.assign(VIEWS, {
           <div class="pts-gw">الجولة ${gw} ${isLive?'<span class="pill red">مباشر</span>':''}</div>
           <button class="next" ${next==null?'disabled':''} onclick="VIEWS.ui.pointsGw=${next};APP.render()" title="الجولة التالية">${UI.icon('chev',22)}</button>
         </div>
-        <div class="pts-stats">
-          <div><b>${fmt(d.avg)}</b><span>المتوسط</span></div>
-          <div class="big"><b>${h.pts}</b><span>${isLive?'نقاطك الآن':'نقاطك'}</span>${chipLabel? `<em>${esc(chipLabel)}</em>`:''}</div>
-          <div class="${isLive?'':'link'}" ${isLive?'':`onclick="APP.go('champions')"`}><b>${fmt(d.high)}</b><span>الأعلى</span></div>
-        </div>
-        <div class="pts-note">${notes.map(n=>`<span>${n}</span>`).join(' · ')}</div>
+        ${this.ptsGrid({gw, pts:h.pts, live:isLive, avg:d.avg, high:d.high, rank:isLive? (h.rank||null) : myRank, hits:h.hits, chip:chipLabel})}
+        <div class="pts-note">${notes.filter(n=>!/^ترتيب الجولة|^خصم انتقالات/.test(n)).map(n=>`<span>${n}</span>`).join(' · ')}</div>
       </div>
       <div class="pt-toggle">
         <button class="${view==='pitch'?'active':''}" onclick="VIEWS.ui.pointsView='pitch';APP.render()">الملعب</button>

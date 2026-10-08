@@ -1454,3 +1454,36 @@ html.lang-en .pp-actions{justify-content:flex-start;}
 .fav-c{display:flex; flex-direction:column; align-items:center; gap:6px; padding:10px 4px; border-radius:12px; border:1.5px solid var(--line); background:var(--surface2); color:var(--text); font:inherit; font-size:.8rem; font-weight:700; cursor:pointer}
 .fav-c.on{border-color:var(--accent); background:color-mix(in srgb,var(--accent) 14%,transparent)}
 .lgx-n .crest{width:24px;height:24px;margin-inline-end:4px}
+
+
+/* ملف المدير (طراز FPL) + صورة البروفايل — 2026-10-08 */
+.mgr-av{display:inline-block; flex:none; border-radius:50%; object-fit:cover; border:2px solid var(--line); background:var(--surface2)}
+.mgr-ini{display:inline-grid; place-items:center; background:linear-gradient(145deg,#F5A524,#E07B00); color:#1a1200; font-weight:800; border:0}
+.mgr-top{display:flex; align-items:center; gap:14px}
+.mgr-names{flex:1; min-width:0}
+.mgr-names h2{margin:0; font-size:1.25rem; overflow-wrap:anywhere}
+.mgr-fav{display:flex; flex-direction:column; align-items:center; gap:2px; font-size:.7rem; color:var(--text2); font-weight:700}
+.mgr-stats{margin-top:14px; padding:14px; border-radius:14px; background:var(--surface2)}
+.mgr-stats h3,.mgr-lgs h3{margin:0 0 8px; font-size:1.05rem}
+.mgr-kv{display:flex; justify-content:space-between; padding:7px 0; border-bottom:1px solid var(--line)}
+.mgr-kv:last-of-type{border-bottom:0}
+.mgr-kv span{color:var(--text2)} .mgr-kv b{font-variant-numeric:tabular-nums}
+.mgr-lgs{margin-top:14px}
+.lgx-sub{font-size:.85rem; color:var(--text2); font-weight:700; margin:4px 0 6px}
+.pp-photo{display:flex; align-items:center; gap:14px; margin-bottom:12px}
+.pp-photo-b{display:flex; flex-wrap:wrap; gap:8px; align-items:center}
+.pp-photo-b .tiny{flex-basis:100%}
+.pp-photo-b label.btn{cursor:pointer}
+.pp-fav{display:flex; align-items:center; gap:6px; margin-bottom:10px; font-size:.85rem; color:var(--text2)}
+
+
+/* شبكة نقاط الجولة على طراز FPL (المتوسط/الأعلى · النقاط · الترتيب/الانتقالات) — 2026-10-08 */
+.pts-grid{display:grid; grid-template-columns:1fr 1.15fr 1fr; gap:10px; align-items:stretch; margin-top:12px; padding:10px; border-radius:16px; background:rgba(0,0,0,.18)}
+.pts-grid .pg-side{display:flex; flex-direction:column; justify-content:space-around; gap:10px; text-align:center}
+.pts-grid b{display:block; font-family:'Vazirmatn'; font-weight:800; font-size:1.35rem; line-height:1.1}
+.pts-grid span{display:block; font-size:.72rem; opacity:.82; font-weight:600; margin-top:3px}
+.pts-grid .link{cursor:pointer}
+.pts-grid .pg-big{display:flex; flex-direction:column; align-items:center; justify-content:center; padding:16px 6px; border-radius:14px; background:#2f5bff; color:#fff; box-shadow:0 8px 20px rgba(47,91,255,.35)}
+.pts-grid .pg-big b{font-size:2.6rem}
+.pts-grid .pg-big em{margin-top:6px; font-style:normal; font-size:.68rem; font-weight:700; padding:2px 8px; border-radius:20px; background:rgba(0,0,0,.25)}
+.mgr-pts{margin:-4px -4px 12px; border-radius:16px}

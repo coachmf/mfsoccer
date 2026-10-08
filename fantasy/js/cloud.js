@@ -583,7 +583,7 @@ const CLOUD = {
     hist = (hist || v.history || []).map(h=>({gw:+h.gw, pts:+h.pts||0}));
     return { id:uid, name:v.username||'مشترك', teamName:v.teamName||'', total: total!=null? +total : (+v.total||0),
       hist, last: hist.length? hist[hist.length-1].pts : 0,
-      fav: (/^fav:([A-Z]{3})$/.exec(v.avatar||'')||[])[1] || null };   // النادي المفضل (دوري النادي العام)
+      fav: (/^fav:([A-Z]{3})(?:\||$)/.exec(v.avatar||'')||[])[1] || null };   // النادي المفضل (دوري النادي العام) — الصورة بعد «|» لا تدخل اللقطة
   },
   async computeOwnership(){
     let q;
@@ -908,6 +908,14 @@ const CLOUD = {
     }catch(e){ return {ok:false, err:this.errAr(e)}; }
   },
 
+  /* دوريات مشترك آخر الخاصة (صفحة المدير) — استعلام واحد */
+  async leaguesOf(uid){
+    try{
+      const q = await this.leaguesCol().where('members','array-contains',uid).get();
+      const out=[]; q.forEach(d=>{ const v=d.data(); out.push({id:d.id, name:v.name, type:v.type||'classic', members:v.members||[], createdGW:v.createdGW||1, code:v.code}); });
+      return out;
+    }catch(e){ return []; }
+  },
   /* مغادرة دوري خاص: يحذف المشترك نفسه فقط من members (قاعدة Firestore «Leaving» تسمح بذلك) — منصور 2026-10-08 */
   async leaveLeague(id){
     if(!this.user) return {ok:false, err:'سجّل دخولك أولاً'};

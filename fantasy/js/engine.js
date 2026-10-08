@@ -1259,13 +1259,22 @@ const AUTH = {
 /* النادي المفضل (منصور 2026-10-08): كل مشترك يختاره مرة واحدة، ولكل نادٍ دوري عام لمشجعيه.
    يُخزَّن في حقل الملف avatar بصيغة 'fav:QAD' — حقل يسمح به Firestore للمشترك في كل وقت (قبل الإغلاق وبعده) بلا تعديل القواعد.
    ترتيب دوري النادي = لقطة الترتيب العام (meta/own board، تحمل fav لكل صف) مصفّاة بالنادي — بلا قراءات إضافية. */
+/* حقل avatar يحمل الاثنين: 'fav:QAD' ثم اختيارياً '|' + صورة البروفايل (data:image/jpeg;base64 مصغّرة 200px، ~10KB) — منصور 2026-10-08.
+   لقطة الترتيب board لا تحمل الصورة (fav فقط)، فلا تكبر. */
+const AV = {
+  parse(av){ av=String(av||''); const i=av.indexOf('|'); const head=i<0? av : av.slice(0,i), img=i<0? '' : av.slice(i+1);
+    const m=/^fav:([A-Z]{3})$/.exec(head);
+    return { fav: m? m[1] : null, img: (/^data:image\/(jpeg|png|webp);base64,/.test(img) && img.length<150000)? img : '' }; },
+  make(fav, img){ return (fav? 'fav:'+fav : '') + (img? '|'+img : ''); },
+  img(av){ return this.parse(av).img; },
+};
 const FAV = {
-  of(av){ const m=/^fav:([A-Z]{3})$/.exec(av||''); return m? m[1] : null; },
+  of(av){ return AV.parse(av).fav; },
   mine(){ const m=DB.me(); return m? this.of(m.avatar) : null; },
   league(club){ const c=DB.club(club); return c? {id:'FAV_'+club, fav:club, name:c.name, type:'classic', global:false, code:''} : null; },
   async set(club){
     const m=DB.me(); if(!m || !DB.club(club)) return false;
-    m.avatar='fav:'+club; DB.save();
+    m.avatar=AV.make(club, AV.img(m.avatar)); DB.save();
     if(typeof CLOUD!=='undefined' && CLOUD.user) return await CLOUD.saveMyTeam({avatar:m.avatar});
     return true;
   },

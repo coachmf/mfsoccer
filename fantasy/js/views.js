@@ -944,10 +944,11 @@ const VIEWS = {
     </div>`;
   },
   /* دوري مشجعي نادٍ: الترتيب العام مصفّى بالنادي المفضل (صفّي أنا من اختياري المحلي حتى تصل اللقطة التالية) */
-  favTable(club){
+  favTable(club, who){
     const m=DB.me(), mine=FAV.mine();
     const all=this.globalTable();
-    const rows=all.filter(r=> (r.id===(m&&m.id)? mine : r.fav)===club).map(r=>({...r}));
+    const favOf=r=> r.id===(m&&m.id)? mine : (who && r.id===who.id && who.fav)? who.fav : r.fav;
+    const rows=all.filter(r=> favOf(r)===club).map(r=>({...r}));
     if(m && mine===club && !rows.some(r=>r.id===m.id)){
       const t=DB.myTeam(); const hist=(t&&t.history)||[];
       rows.push({id:m.id, name:m.username, teamName:m.teamName, total:hist.reduce((s,h)=>s+(h.pts||0),0), hist, last:hist.length?hist[hist.length-1].pts:0, fav:club, local:true});
@@ -1012,8 +1013,10 @@ const VIEWS = {
   openManager(uid){
     const m=DB.me();
     if(m && uid===m.id){ APP.go('team'); return; }
-    this.ui.managerOpen=uid; this.ui.managerDoc=undefined;
+    this.ui.managerOpen=uid; this.ui.managerDoc=undefined; this.ui.managerLgs=undefined; this.ui.mgrGw=null;
     APP.go('manager');
+    if(typeof CLOUD!=='undefined' && CLOUD.ready) CLOUD.leaguesOf(uid).then(l=>{ if(this.ui.managerOpen!==uid) return; this.ui.managerLgs=l; if(APP.route==='manager') APP.render(); });
+    else this.ui.managerLgs=DB.state.leagues.filter(l=>!l.global && (l.members||[]).includes(uid));
     const local=DB.state.users.find(u=>u.id===uid);
     const localTeam=DB.state.teams[uid];
     if(typeof CLOUD!=='undefined' && CLOUD.ready){
@@ -1040,19 +1043,53 @@ const VIEWS = {
     let showGw=null, picks=null;
     if(locked){ showGw=gw; picks=(team.gwPicks||{})[gw] || {xi:team.xi||[], bench:team.bench||[], cap:team.cap, vice:team.vice, chip:team.activeChip||null}; }
     else if(lastFin && (team.gwPicks||{})[lastFin]){ showGw=lastFin; picks=(team.gwPicks||{})[lastFin]; }
+    /* التنقل بين جولات المشترك (السابق/التالي) — كل جولة مقفلة لها تشكيلة محفوظة */
+    const mGws=Object.keys(team.gwPicks||{}).map(Number).filter(n=>{ const g0=st.gws.find(x=>x.n===n); return g0 && (g0.status==='finished' || g0.status==='live' || (n===gw && locked)); });
+    if(locked && !mGws.includes(gw)) mGws.push(gw);
+    mGws.sort((a,b)=>a-b);
+    if(this.ui.mgrGw && mGws.includes(this.ui.mgrGw) && this.ui.mgrGw!==showGw){ showGw=this.ui.mgrGw; picks=(team.gwPicks||{})[showGw] || picks; }
     const hist=doc.history||[]; const last=hist.length? hist[hist.length-1] : null;
     const total = doc.total!=null ? doc.total : hist.reduce((s,h)=>s+(h.pts||0),0);
     const uid=this.ui.managerOpen;
     const blocked=MODERATION.isBlocked(uid);
     const shownName=MODERATION.shown(uid, doc.username||'مشترك');
     const shownTeam=blocked? '—' : (doc.teamName||'فريق');
-    const head=`<div class="card" style="margin-bottom:12px">
-      <div class="row spread" style="flex-wrap:wrap;gap:8px">
-        <div><h2 style="margin:0">${esc(shownTeam)}</h2><div class="muted">${esc(shownName)}</div></div>
-        <div class="row" style="gap:14px">
-          <div style="text-align:center"><b style="font-family:'Vazirmatn';font-size:1.2rem">${total}</b><div class="tiny">مجموع النقاط</div></div>
-          <div style="text-align:center"><b style="font-family:'Vazirmatn';font-size:1.2rem">${last? last.pts : '—'}</b><div class="tiny">${last? 'الجولة '+last.gw : 'آخر جولة'}</div></div>
-        </div>
+    /* ملف المدير على طراز FPL (منصور 2026-10-08): الصورة، النادي المفضل، النقاط والترتيبات، ودورياته */
+    const av=AV.parse(doc.avatar), mFav=av.fav;
+    const gRows=this.globalTable(); const gi=gRows.findIndex(r=>r.id===uid); const gR=gi>=0? gRows[gi] : null;
+    const pop = LEAGUES.online()&&LEAGUES.cloud.board? LEAGUES.cloud.board.length : (st.managerCount||gRows.length);
+    const rk=x=> x? (x.rank||0).toLocaleString('en') : '—';
+    const lgLine=(name, sub, rank, move, onclick)=>`<tr${onclick? ` onclick="${onclick}"` : ''}><td class="lgx-n" data-i18n="off">${name}<small>${sub}</small></td><td class="lgx-r num">${rank}</td><td class="lgx-m">${rank!=='—'? this.moveIcon(move) : '<span class="lgx-dash"></span>'}</td></tr>`;
+    let favRow='';
+    if(mFav){ const fr=this.favTable(mFav, {id:uid, fav:mFav}); const fi=fr.findIndex(r=>r.id===uid); const x=fi>=0? fr[fi] : null;
+      favRow=lgLine(UI.crest(mFav,'sm')+' '+esc(DB.club(mFav).name), fr.length.toLocaleString('ar')+' فريق · دوري المشجعين', rk(x), x? x.move : 0, `VIEWS.ui.leagueOpen='FAV_${mFav}';APP.go('leagues')`); }
+    const pubRows = favRow + lgLine('الترتيب العام', pop.toLocaleString('ar')+' فريق', rk(gR), gR? gR.move : 0, `VIEWS.ui.leagueOpen='L1';APP.go('leagues')`);
+    const lgs=this.ui.managerLgs;
+    const privRows = lgs===undefined? '<tr><td colspan="3" class="muted">جارٍ التحميل…</td></tr>'
+      : !lgs.length? '<tr><td colspan="3" class="muted">ما عنده دوريات خاصة</td></tr>'
+      : lgs.map(l=>{ const board=LEAGUES.cloud.board||[]; const rows=board.filter(r=>(l.members||[]).includes(r.id)).map(r=>({...r}));
+          LEAGUES.decorate(rows, l); const x=rows.find(r=>r.id===uid);
+          return lgLine(esc(l.name), (l.members||[]).length.toLocaleString('ar')+' فريق', rk(x), x? x.move : 0, ''); }).join('');
+    const head=`<div class="card mgr-card" style="margin-bottom:12px">
+      <div class="mgr-top">
+        ${UI.mgrAvatar(shownName, blocked? '' : av.img, 72)}
+        <div class="mgr-names"><h2 data-i18n="off">${esc(shownTeam)}</h2><div class="muted" data-i18n="off">${esc(shownName)}</div></div>
+        ${mFav? `<div class="mgr-fav" title="الفريق المفضل">${UI.crest(mFav,'lg')}<span>${esc(DB.club(mFav).short||DB.club(mFav).name)}</span></div>` : ''}
+      </div>
+      <div class="mgr-stats">
+        <h3>النقاط / الترتيبات</h3>
+        <div class="mgr-kv"><span>إجمالي النقاط</span><b>${total.toLocaleString('en')}</b></div>
+        <div class="mgr-kv"><span>الترتيب العام</span><b>${rk(gR)}</b></div>
+        <div class="mgr-kv"><span>إجمالي المشتركين</span><b>${pop.toLocaleString('en')}</b></div>
+        <div class="mgr-kv"><span>${last? 'نقاط الجولة '+last.gw : 'نقاط الجولة'}</span><b>${last? last.pts : '—'}</b></div>
+        ${hist.length? `<button class="btn sm sec" style="margin-top:8px" onclick="VIEWS.mgrHistModal()">عرض سجل الجولات</button>` : ''}
+      </div>
+      <div class="mgr-lgs">
+        <h3>الدوريات</h3>
+        <div class="lgx-sub">الدوريات العامة</div>
+        <table class="lgx-t"><tr><th>الدوري</th><th>الترتيب</th><th></th></tr>${pubRows}</table>
+        <div class="lgx-sub" style="margin-top:14px">الدوريات الخاصة</div>
+        <table class="lgx-t"><tr><th>الدوري</th><th>الترتيب</th><th></th></tr>${privRows}</table>
       </div>
       <div class="row" style="gap:8px;margin-top:12px;padding-top:10px;border-top:1px solid var(--line);flex-wrap:wrap">
         <button class="btn sm sec" onclick="VIEWS.reportModal('${uid}')">إبلاغ</button>
@@ -1076,10 +1113,19 @@ const VIEWS = {
     const info = (res && typeof this.pointsSlotInfo==='function') ? this.pointsSlotInfo(res, picks, showGw) : null;
     const opt = info ? {view:true, pts, slot:pid=>this.pointsSlot(pid, info[pid], showGw), coachPts:res.coach||null, gw:showGw} : {view:true, pts};
     let k=0;
+    this.needBoard();
+    const gi2=mGws.indexOf(showGw), pGw=mGws[gi2-1], nGw=mGws[gi2+1];
+    const hG=hist.find(x=>+x.gw===+showGw);
+    const gObj=st.gws.find(x=>x.n===showGw)||{};
+    const gridPts = hG? hG.pts : (res? res.total : null);
     return back+head+`<div class="card">
-      <div class="row spread" style="flex-wrap:wrap;gap:8px;margin-bottom:10px">
-        <h3 style="margin:0">${locked? 'تشكيلة الجولة '+showGw : 'التشكيلة المقفلة للجولة '+showGw}</h3>
-        <div class="row" style="gap:6px">${chip? `<span class="pill gold">كرت: ${esc(chip)}</span>`:''}${res? `<span class="pill blue">${res.total} نقطة</span>`:''}</div>
+      <div class="pts-hero mgr-pts">
+        <div class="pts-nav">
+          <button class="prev" ${pGw==null?'disabled':''} onclick="VIEWS.ui.mgrGw=${pGw};APP.render()" title="الجولة السابقة">${UI.icon('chev',22)}</button>
+          <div class="pts-gw">الجولة ${showGw} ${gObj.status==='live'?'<span class="pill red">مباشر</span>':''}</div>
+          <button class="next" ${nGw==null?'disabled':''} onclick="VIEWS.ui.mgrGw=${nGw};APP.render()" title="الجولة التالية">${UI.icon('chev',22)}</button>
+        </div>
+        ${this.ptsGrid({gw:showGw, pts:gridPts, live:gObj.status==='live', avg:gObj.avg, high:gObj.high, rank:(hG&&hG.rank)||this.gwRankOf(showGw, uid), hits:(hG&&hG.hits)||0, chip})}
       </div>
       <div class="pitch-frame">
         ${this.pitchHTML(vt, opt)}
@@ -1234,6 +1280,15 @@ const VIEWS = {
     return `<h2 style="margin-bottom:12px">الملف الشخصي</h2>
     <div class="grid g2">
       <div class="card"><h3>البيانات</h3>
+        <div class="pp-photo">
+          ${UI.mgrAvatar(m.username, AV.img(m.avatar), 76)}
+          <div class="pp-photo-b">
+            <label class="btn sm">${AV.img(m.avatar)? 'تغيير الصورة' : 'إضافة صورة بروفايل'}<input type="file" accept="image/*" hidden onchange="VIEWS.pickPhoto(this)"></label>
+            ${AV.img(m.avatar)? '<button class="btn sm sec" onclick="VIEWS.savePhoto(\'\')">إزالة</button>' : ''}
+            <div class="tiny muted">تظهر لما أحد يفتح ملفك في الدوريات</div>
+          </div>
+        </div>
+        ${FAV.mine()? `<div class="pp-fav">${UI.crest(FAV.mine(),'sm')} <span>فريقك المفضل: <b>${esc(DB.club(FAV.mine()).name)}</b></span></div>` : ''}
         <div class="field"><label>اسم المستخدم</label><input id="pr_user" value="${esc(m.username)}"></div>
         <div class="field"><label>اسم الفريق</label><input id="pr_team" value="${esc(m.teamName)}"></div>
         <button class="btn" onclick="VIEWS.saveProfile()">حفظ</button>
@@ -1268,6 +1323,36 @@ const VIEWS = {
     </div>`;
   },
   setAvatar(a){ DB.me().avatar=a; DB.save(); APP.render(); },
+  mgrHistModal(){
+    const d=this.ui.managerDoc||{}; const hist=(d.history||[]).slice().sort((a,b)=>a.gw-b.gw);
+    UI.modal(`<h3 style="margin:0 0 10px">سجل الجولات</h3>
+      <table class="tbl"><tr><th>الجولة</th><th>النقاط</th><th>المجموع</th></tr>
+      ${(()=>{ let s=0; return hist.map(h=>{ s+=h.pts||0; return `<tr><td>${h.gw}</td><td class="num"><b>${h.pts||0}</b></td><td class="num">${s}</td></tr>`; }).join(''); })()}</table>
+      <button class="btn sec" style="width:100%;margin-top:12px" onclick="UI.closeModal()">إغلاق</button>`);
+  },
+  /* صورة البروفايل: تُقصّ مربعاً وتُصغَّر إلى 200px JPEG في الجهاز ثم تُحفظ في avatar */
+  async pickPhoto(input){
+    const f=input.files && input.files[0]; input.value='';
+    if(!f) return;
+    if(!/^image\//.test(f.type)){ UI.toast('اختر صورة',true); return; }
+    try{
+      const url=URL.createObjectURL(f);
+      const img=await new Promise((res,rej)=>{ const i=new Image(); i.onload=()=>res(i); i.onerror=rej; i.src=url; });
+      const S=200, c=document.createElement('canvas'); c.width=S; c.height=S;
+      const k=Math.min(img.naturalWidth, img.naturalHeight);
+      c.getContext('2d').drawImage(img, (img.naturalWidth-k)/2, (img.naturalHeight-k)/2, k, k, 0, 0, S, S);
+      URL.revokeObjectURL(url);
+      let q=.82, data=c.toDataURL('image/jpeg', q);
+      while(data.length>60000 && q>.4){ q-=.12; data=c.toDataURL('image/jpeg', q); }
+      await this.savePhoto(data);
+    }catch(e){ UI.toast('تعذّر قراءة الصورة',true); }
+  },
+  async savePhoto(data){
+    const m=DB.me(); if(!m) return;
+    m.avatar=AV.make(FAV.mine(), data||''); DB.save();
+    if(typeof CLOUD!=='undefined' && CLOUD.user){ const ok=await CLOUD.saveMyTeam({avatar:m.avatar}); if(ok===false){ UI.toast('تعذّر الحفظ',true); return; } }
+    UI.toast(data? 'تم تحديث صورتك' : 'أُزيلت الصورة'); APP.render();
+  },
   async saveProfile(){
     const m=DB.me();
     const u=gv('pr_user').trim(), t=gv('pr_team').trim();

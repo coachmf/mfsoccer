@@ -36,6 +36,13 @@ const UI = {
     box.appendChild(el);
     setTimeout(()=>{ el.style.opacity='0'; el.style.transition='opacity .4s'; setTimeout(()=>el.remove(),400); }, 3400);
   },
+  /* صورة المدير (البروفايل) أو أول حرفين من اسمه */
+  mgrAvatar(name, img, size){
+    size=size||44;
+    if(img) return `<img class="mgr-av" src="${img}" alt="" style="width:${size}px;height:${size}px">`;
+    const ini=String(name||'؟').trim().split(/\s+/).map(w=>w[0]||'').join('').slice(0,2).toUpperCase();
+    return `<span class="mgr-av mgr-ini" style="width:${size}px;height:${size}px;font-size:${Math.round(size*.36)}px" data-i18n="off">${ini}</span>`;
+  },
   modal(html, locked){
     this.closeModal();
     const back=document.createElement('div'); back.id='modalBack';
