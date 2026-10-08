@@ -4,7 +4,7 @@
 'use strict';
 
 /* رقم نسخة الصور: ارفعه عند إعادة توليد أي قصّة حتى لا يبقى المتصفح على النسخة القديمة */
-const PLAYER_PHOTOS_VER = '35';
+const PLAYER_PHOTOS_VER = '36';
 
 const PLAYER_PHOTOS = {
   // الصليبخات (17)
@@ -207,7 +207,8 @@ const PLAYER_PHOTOS = {
   'NSR|ابراهيم الظفيري': '/assets/players/nsr/25',
   'NSR|احمد الرشيدي': '/assets/players/nsr/14',
   'NSR|محمد عجاج': '/assets/players/nsr/1',
-  'NSR|مزيد نواف': '/assets/players/nsr/88',
+  'NSR|مزيد نواف': '/assets/players/shb/mazyad',   // انتقل للشباب (منصور 2026-10-08) — حتى ينقله سحب الكشوفات
+  'SHB|مزيد نواف': '/assets/players/shb/mazyad',
   // القادسية (27)
   'QAD|عبدالوهاب الشلال': '/assets/players/qad/29',   // انضم للكشف 2026-09-15 (Qadsia Club2558)
   'QAD|احمد اليحيى': '/assets/players/qad/2',

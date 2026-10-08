@@ -31,6 +31,7 @@ const MF_SQUAD_RENAME = [
 const MF_SQUAD_MOVE = [
   {n:'بدر طارق', from:'العربي', to:'كاظمة', s:77},
   {n:'شيلدون', from:'العربي', to:'الصليبخات', s:33},   // منصور 2026-09-22
+  {n:'مزيد نواف', from:'النصر', to:'الشباب', s:0, p:'CAM'},   // منصور 2026-10-08 (مزيد المطيري)
 ];
 const MFSYNC = {
   URL: 'https://firestore.googleapis.com/v1/projects/mfsoccer-c7ee4/databases/(default)/documents/seasons/2026-2027?key=AIzaSyD_ZzAE4HEKPIuAKCmta8tzN5KOa8IUfuo',
@@ -131,7 +132,7 @@ const MFSYNC = {
       MF_SQUAD_MOVE.forEach(mv=>{ const nm=e=>this.norm(typeof e==='string'?e:(e&&e.n)), src=d.squads[mv.from], dst=d.squads[mv.to];
         if(!Array.isArray(dst) || dst.some(e=>nm(e)===this.norm(mv.n))) return;
         const i=Array.isArray(src)?src.findIndex(e=>nm(e)===this.norm(mv.n)):-1, old=i>=0?src.splice(i,1)[0]:{};
-        dst.push(Object.assign({p:''}, typeof old==='object'?old:{}, {n:mv.n, s:mv.s})); });
+        dst.push(Object.assign({p:''}, typeof old==='object'?old:{}, {n:mv.n, s:mv.s}, mv.p?{p:mv.p}:{})); });
     }
     return d;
   },

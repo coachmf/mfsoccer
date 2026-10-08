@@ -491,7 +491,7 @@
     const keep=safe(()=>ST_TAB);
     const ini=n=>String(n||"").split(/\s+/).slice(0,2).map(w=>w[0]||"").join("");
     const face=r=>{ const c=safe(()=>(PHOTOSON && typeof LOCAL_PHOTOS!=="undefined") ? photoCut(r.n, r.c) : null);
-      return c?`<img src="${c}_f.webp?v=35" alt="" loading="lazy" decoding="async">`:`<span>${esc(ini(r.n))}</span>`; };
+      return c?`<img src="${c}_f.webp?v=36" alt="" loading="lazy" decoding="async">`:`<span>${esc(ini(r.n))}</span>`; };
     const card=t=>{ let d=null; try{ ST_TAB=t.k; d=stData(); }catch(e){ console.error(e); }
       if(!d || !d.rows.length) return "";
       const fmt=v=>t.k==="mn"?v+"′":v;
