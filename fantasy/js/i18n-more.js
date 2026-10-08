@@ -159,7 +159,7 @@ const NAMES_EN = {
 const DICT_MORE = {
   // إدارة الدوريات + النادي المفضل (2026-10-08)
   'إدارة الدوريات':'Leagues', 'الدوريات الخاصة':'Private leagues', 'الدوريات العامة':'Public leagues', 'الدوري':'League',
-  'دوري المشجعين':'Fans league', 'اختر فريقك المفضل':'Pick your favourite club', 'تأكيد':'Confirm',
+  'دوري المشجعين':'Fans league', 'مغادرة الدوري':'Leave league', 'اطلع من الدوري':'Leave', 'طلعت من الدوري':'You left the league', 'اختر فريقك المفضل':'Pick your favourite club', 'تأكيد':'Confirm',
   'مرة وحدة بس — تدخل دوري مشجعي ناديك العام وتتنافس معاهم':'One time only — you join your club\'s public fans league',
   'اختر فريقك المفضل لتدخل دوري مشجعيه':'Pick your favourite club to join its fans league',
   'ما عندك دوري خاص — أنشئ دوري لأصحابك أو انضم برمز':'No private league yet — create one or join with a code',

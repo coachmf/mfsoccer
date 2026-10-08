@@ -936,11 +936,11 @@ const VIEWS = {
         <button class="btn sm sec" onclick="VIEWS.leagueJoinModal()">الانضمام برمز</button>
       </div></div>
     <div class="card lgx">
-      <h3 class="lgx-h">الدوريات الخاصة</h3>
-      ${tbl(priv, 'ما عندك دوري خاص — أنشئ دوري لأصحابك أو انضم برمز')}
-      <h3 class="lgx-h" style="margin-top:22px">الدوريات العامة</h3>
+      <h3 class="lgx-h">الدوريات العامة</h3>
       ${tbl(pub, '')}
       ${fav? '' : `<button class="btn sm sec" style="margin-top:10px" onclick="VIEWS.favModal()">اختر فريقك المفضل لتدخل دوري مشجعيه</button>`}
+      <h3 class="lgx-h" style="margin-top:22px">الدوريات الخاصة</h3>
+      ${tbl(priv, 'ما عندك دوري خاص — أنشئ دوري لأصحابك أو انضم برمز')}
     </div>`;
   },
   /* دوري مشجعي نادٍ: الترتيب العام مصفّى بالنادي المفضل (صفّي أنا من اختياري المحلي حتى تصل اللقطة التالية) */
@@ -990,6 +990,7 @@ const VIEWS = {
         ${!lg.global && !lg.fav? `<div class="row" style="gap:8px">
           <span class="pill blue">رمز الدعوة: <b style="letter-spacing:2px">${esc(lg.code)}</b></span>
           <button class="btn sm sec" data-code="${esc(lg.code)}" onclick="navigator.clipboard&&navigator.clipboard.writeText(this.dataset.code);UI.toast('نُسخ الرمز — أرسله لأصحابك')">نسخ</button>
+          <button class="btn sm sec lg-leave" onclick="VIEWS.leagueLeaveModal('${lg.id}')">مغادرة الدوري</button>
 
         </div>`:''}
       </div>
@@ -1148,6 +1149,25 @@ const VIEWS = {
     UI.modal(`<h3>الانضمام لدوري</h3>
       <div class="field"><label>رمز الدعوة</label><input id="lg_code" placeholder="مثال: A3X9KM" style="letter-spacing:3px"></div>
       <button class="btn" style="width:100%" onclick="VIEWS.leagueJoin()">انضمام</button>`);
+  },
+  leagueLeaveModal(id){
+    const lg=LEAGUES.byId(id); if(!lg || lg.global || lg.fav) return;
+    UI.modal(`<h3 style="margin:0 0 8px">مغادرة الدوري</h3>
+      <div class="muted" style="margin-bottom:14px">متأكد تبي تطلع من «<b data-i18n="off">${esc(lg.name)}</b>»؟ تقدر ترجع له بعدين بنفس الرمز.</div>
+      <div class="row" style="gap:8px"><button class="btn" style="flex:1;background:var(--red);border-color:var(--red)" onclick="VIEWS.leagueLeave('${id}')">اطلع من الدوري</button>
+      <button class="btn sec" style="flex:1" onclick="UI.closeModal()">إلغاء</button></div>`);
+  },
+  async leagueLeave(id){
+    const m=DB.me();
+    if(LEAGUES.online()){
+      const r=await CLOUD.leaveLeague(id);
+      if(!r.ok){ UI.toast(r.err||'تعذّرت المغادرة',true); return; }
+      LEAGUES.removeLocal(id);
+    } else {
+      const lg=DB.state.leagues.find(l=>l.id===id);
+      if(lg){ lg.members=lg.members.filter(x=>x!==(m&&m.id)); DB.save(); }
+    }
+    UI.closeModal(); this.ui.leagueOpen=null; UI.toast('طلعت من الدوري'); APP.render();
   },
   async leagueJoin(){
     if(LEAGUES.online()){

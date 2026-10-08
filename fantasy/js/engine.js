@@ -1313,6 +1313,11 @@ const LEAGUES = {
       return true;
     }catch(e){ return false; }
   },
+  removeLocal(id){
+    if(this.cloud.list) this.cloud.list=this.cloud.list.filter(l=>l.id!==id);
+    delete this.cloud.rows[id];
+    if(this.online()) this.persist();
+  },
   persist(){
     try{ localStorage.setItem(this.CK, JSON.stringify({uid:CLOUD.user.uid, at:Date.now(), list:this.cloud.list, board:this.cloud.board, rows:this.cloud.rows})); }catch(e){}
   },
