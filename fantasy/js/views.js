@@ -1019,19 +1019,22 @@ const VIEWS = {
         </div>`:''}
       </div>
       ${modeBar}
-      <div class="scroll-x" style="margin-top:12px"><table class="tbl lg-tbl">
-        <tr><th>#</th><th></th><th>المدير</th><th>الفريق</th>${isH2H?'<th>ف/ت/خ</th><th>ن. المواجهات</th>':''}${liveCol?'<th><span class="pill red">مباشر</span></th>':''}<th>${mode==='gw'? 'نقاط الجولة '+selGw : 'آخر جولة'}</th><th>المجموع</th><th></th></tr>
-        ${rows.map((r,i)=>`<tr style="cursor:pointer;${r.id===m.id?'background:color-mix(in srgb,var(--accent) 10%,transparent)':''}" onclick="VIEWS.openManager('${r.id}')" title="عرض التشكيلة">
-          <td class="num" style="font-weight:800">${(r.rank||i+1).toLocaleString('ar')}</td>
-          <td style="width:34px;white-space:nowrap">${this.moveIcon(r.move)}</td>
-          <td><span class="lg-who">${UI.mgrAvatar(MODERATION.shown(r.id, r.name), PICS.of(r.id), 26)}<span data-i18n="off">${esc(MODERATION.shown(r.id, r.name))}</span></span> ${r.id===m.id?'<span class="pill green">أنت</span>':''}${MODERATION.isBlocked(r.id)?'<span class="pill" style="margin-inline-start:4px">محظور</span>':''}</td>
-          <td class="muted" data-i18n="off">${esc(MODERATION.isBlocked(r.id)? '—' : r.teamName)}</td>
-          ${isH2H?`<td class="tiny">${r.w||0}/${r.d||0}/${r.l||0}</td><td class="num">${r.h2hPts||0}</td>`:''}
-          ${liveCol?`<td class="num" style="color:var(--red)">${LIVEGW.liveOf(r.id)??'—'}</td>`:''}
-          ${mode==='gw'? `<td class="num" style="font-weight:800">${r.gwPts}</td><td class="num muted">${r.total}</td>`
-            : `<td>${r.last}</td><td class="num" style="color:var(--accent)">${r.total}</td>`}
-          <td style="text-align:left"><span class="btn-view">${r.id===m.id?'فريقي':'التشكيلة'}</span></td></tr>`).join('')}
-      </table></div>
+      ${(()=>{
+        /* جدول الدوري صفوفاً بعرض الشاشة — بلا تمرير جانبي (منصور 2026-10-08): المركز+الحركة، الصورة، الفريق فوق المدير، نقاط الجولة، المجموع */
+        const lastGw = Math.max(0, ...rows.flatMap(r=>(r.hist||[]).map(h=>+h.gw)));
+        const colGw = mode==='gw'? 'ج'+selGw : liveCol? 'مباشر' : (lastGw? 'ج'+lastGw : 'آخر جولة');
+        const upd = (lg.global||lg.fav) && st.ownUpdated ? `<div class="lgr-upd">آخر تحديث: <b>${UI.fmtDate(st.ownUpdated)}</b></div>` : '';
+        return `${upd}<div class="lgr">
+          <div class="lgr-h"><span>#</span><span></span><span>الفريق</span><span>${isH2H? 'ن.م' : colGw}</span><span>المجموع</span></div>
+          ${rows.map((r,i)=>{ const blocked=MODERATION.isBlocked(r.id), nm=MODERATION.shown(r.id, r.name);
+            const gwV = mode==='gw'? r.gwPts : liveCol? (LIVEGW.liveOf(r.id)??'—') : isH2H? (r.h2hPts||0) : r.last;
+            return `<div class="lgr-r${r.id===m.id?' me':''}" onclick="VIEWS.openManager('${r.id}')">
+              <span class="lgr-pos"><b>${(r.rank||i+1).toLocaleString('en')}</b>${mode==='gw'? '' : this.moveIcon(r.move)}</span>
+              ${UI.mgrAvatar(nm, PICS.of(r.id), 38)}
+              <span class="lgr-name"><b data-i18n="off">${esc(blocked? '—' : (r.teamName||nm))}</b><small data-i18n="off">${esc(nm)}${r.id===m.id?' · أنت':''}${isH2H? ` · ${r.w||0}/${r.d||0}/${r.l||0}` : ''}</small></span>
+              <span class="lgr-gw${liveCol&&mode!=='gw'?' live':''}">${gwV}</span>
+              <span class="lgr-tot">${r.total}</span></div>`; }).join('')}
+        </div>`; })()}
     </div>`;
   },
   /* ======================= تشكيلة مشترك آخر (من جدول الدوري) ======================= */
