@@ -537,7 +537,8 @@ const CLOUD = {
       const me = DB.me && DB.me(); const t = me && st.teams[me.id];
       if(me && t && (t.squad||[]).length && !rows.some(r=>r.id===me.id)){
         const hist=(t.history||[]).map(h=>({gw:+h.gw,pts:+h.pts||0}));
-        rows.push({ id:me.id, name:me.username||'مشترك', teamName:me.teamName||'', total:hist.reduce((s,h)=>s+h.pts,0), hist, last:hist.length?hist[hist.length-1].pts:0 });
+        rows.push({ id:me.id, name:me.username||'مشترك', teamName:me.teamName||'', total:hist.reduce((s,h)=>s+h.pts,0), hist, last:hist.length?hist[hist.length-1].pts:0,
+          fav: (typeof FAV!=='undefined'? FAV.mine() : null) });
       }
       rows.sort((a,b)=>b.total-a.total || (a.name||'').localeCompare(b.name||'','ar'));
       return rows;

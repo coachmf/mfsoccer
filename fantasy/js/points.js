@@ -16,33 +16,51 @@ Object.assign(VIEWS, {
   },
   gwRankOf(gw, uid){ const rows=this.gwBoard(gw); const i=rows.findIndex(r=>r.id===uid); if(i<0) return null; const p=rows[i].p; return rows.findIndex(r=>r.p===p)+1; },
   needBoard(){ if(typeof LEAGUES!=='undefined' && LEAGUES.online() && !LEAGUES.cloud.board && !this._boardAsk){ this._boardAsk=true; LEAGUES.refresh().then(()=>APP.render()); } },
-  /* لوحة نقاط الجولة بهوية MF (منصور 2026-10-08: «مابي exact نفسهم»): رقم ذهبي كبير، ومسطرة توضح موقعك بين المتوسط والأعلى،
-     وتحتها: ترتيب الجولة، فرقك عن المتوسط، خصم الانتقالات */
+  /* لوحة نقاط الجولة — 3 تصاميم للاختيار (منصور 2026-10-08: الشريط ما عجبه). PTS_STYLE يحدد المعتمد */
   ptsGrid(o){
     const fmt=v=> v==null? '—' : (+v).toLocaleString('en');
     const top=this.gwBoard(o.gw)[0];
     const highV = o.high!=null? o.high : (top? top.p : null);
     const highClick = top && top.p===highV ? `VIEWS.openManager('${top.id}')` : (o.live? '' : `APP.go('champions')`);
-    const max = Math.max(highV||0, o.pts||0, o.avg||0, 1);
-    const pct = v=> Math.max(0, Math.min(100, (v||0)/max*100)).toFixed(1);
     const diff = (o.pts!=null && o.avg!=null)? o.pts-o.avg : null;
-    return `<div class="ptsx">
-      <div class="px-main"><b>${fmt(o.pts)}</b><span>${o.live? 'نقاطك الآن' : 'نقاط الجولة'}</span>${o.chip? `<em>${esc(o.chip)}</em>` : ''}</div>
-      <div class="px-scale">
-        <div class="px-track"><i class="px-fill" style="width:${pct(o.pts)}%"></i>
-          ${o.avg!=null? `<i class="px-avg" style="inset-inline-start:${pct(o.avg)}%"></i>` : ''}
-          <i class="px-me" style="inset-inline-start:${pct(o.pts)}%"></i></div>
-        <div class="px-ends">
-          ${o.avg!=null? `<span class="px-al" style="inset-inline-start:${pct(o.avg)}%">المتوسط <b>${fmt(o.avg)}</b></span>` : ''}
-          <span class="px-hl ${highClick?'link':''}" ${highClick? `onclick="${highClick}"` : ''}>الأعلى <b><u>${fmt(highV)}</u></b></span>
-        </div>
+    const hc = highClick? ` class="link" onclick="${highClick}"` : '';
+    const lbl = o.live? 'نقاطك الآن' : 'نقاط الجولة';
+    const chip = o.chip? `<em class="pv-chip">${esc(o.chip)}</em>` : '';
+    const hits = `<bdi dir="ltr">${o.hits? '-'+o.hits : '0'}</bdi>`;
+    const dTxt = `<bdi dir="ltr">${diff==null? '—' : (diff>0?'+':'')+diff}</bdi>`;
+    const dCls = diff==null? '' : diff>=0? 'up' : 'down';
+    const st = this.ui.ptsStyle || (typeof PTS_STYLE!=='undefined'? PTS_STYLE : 'A');
+    if(st==='B') return `<div class="pv pv-b">
+      <div class="pvb-score">
+        <div class="pvb-me"><b>${fmt(o.pts)}</b><span>${lbl}</span></div>
+        <i class="pvb-sep"></i>
+        <div class="pvb-avg"><b>${fmt(o.avg)}</b><span>المتوسط</span></div>
       </div>
-      <div class="px-chips">
+      ${chip}
+      <div class="pvb-row">
+        <div${hc}><span>الأعلى</span><b>${fmt(highV)}</b></div>
         <div><span>ترتيب الجولة</span><b>${fmt(o.rank)}</b></div>
-        <div class="${diff==null?'':diff>=0?'up':'down'}"><span>عن المتوسط</span><b><bdi dir="ltr">${diff==null? '—' : (diff>0?'+':'')+diff}</bdi></b></div>
-        <div><span>خصم الانتقالات</span><b><bdi dir="ltr">${o.hits? '-'+o.hits : '0'}</bdi></b></div>
-      </div>
-    </div>`;
+        <div class="${dCls}"><span>عن المتوسط</span><b>${dTxt}</b></div>
+        <div><span>الخصم</span><b>${hits}</b></div>
+      </div></div>`;
+    if(st==='C'){ const max=Math.max(highV||0,o.pts||0,1), pc=Math.round(Math.min(1,(o.pts||0)/max)*100);
+      return `<div class="pv pv-c">
+      <div class="pvc-ring" style="--p:${pc}"><div><b>${fmt(o.pts)}</b><span>${lbl}</span></div></div>
+      <div class="pvc-list">
+        <div><span>المتوسط</span><b>${fmt(o.avg)}</b></div>
+        <div${hc}><span>الأعلى</span><b><u>${fmt(highV)}</u></b></div>
+        <div><span>ترتيب الجولة</span><b>${fmt(o.rank)}</b></div>
+        <div class="${dCls}"><span>عن المتوسط</span><b>${dTxt}</b></div>
+        <div><span>خصم الانتقالات</span><b>${hits}</b></div>
+      </div>${chip}</div>`; }
+    return `<div class="pv pv-a">
+      <div class="pva-main"><span>${lbl}</span><b>${fmt(o.pts)}</b>${chip}<small class="${dCls}">${dTxt} عن المتوسط</small></div>
+      <div class="pva-grid">
+        <div><b>${fmt(o.avg)}</b><span>المتوسط</span></div>
+        <div${hc}><b><u>${fmt(highV)}</u></b><span>الأعلى</span></div>
+        <div><b>${fmt(o.rank)}</b><span>ترتيب الجولة</span></div>
+        <div><b>${hits}</b><span>خصم الانتقالات</span></div>
+      </div></div>`;
   },
   /* الجولات التي لفريقي نقاط فيها: المعتمدة من السجل + الجارية الآن */
   pointsGws(team){

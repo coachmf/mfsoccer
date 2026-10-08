@@ -980,10 +980,32 @@ const VIEWS = {
   },
   leagueDetail(lg){
     const st=DB.state, m=DB.me();
-    const rows= lg.global? this.globalTable() : lg.fav? this.favTable(lg.fav) : LEAGUES.table(lg);
+    let rows= lg.global? this.globalTable() : lg.fav? this.favTable(lg.fav) : LEAGUES.table(lg);
     const isH2H=lg.type==='h2h';
-    const liveCol = typeof LIVEGW!=='undefined' && LIVEGW.active();
+    let liveCol = typeof LIVEGW!=='undefined' && LIVEGW.active();
     if(liveCol) LIVEGW.refresh();
+    /* «الإجمالي» / «ترتيب الجولة» (منصور 2026-10-08): ترتيب على نقاط جولة واحدة من سجل كل مشترك (hist)، والمجموع ظاهر بجانبه.
+       الجولات = كل جولة لها نقاط عند أي عضو؛ كل من له سجل في الجولة يدخل ترتيبها (لا أحد يُنسى). */
+    const gwList=[...new Set(rows.flatMap(r=>(r.hist||[]).map(h=>+h.gw)))].filter(g=>g>=(st.rules.scoringFromGW||1)).sort((a,b)=>a-b);
+    const mode = (!isH2H && gwList.length && this.ui.lgMode==='gw')? 'gw' : 'total';
+    const selGw = gwList.includes(this.ui.lgGw)? this.ui.lgGw : gwList[gwList.length-1];
+    if(mode==='gw'){
+      liveCol=false;
+      rows=rows.map(r=>{ const h=(r.hist||[]).find(x=>+x.gw===+selGw); return h? {...r, gwPts:+h.pts||0} : null; }).filter(Boolean)
+        .sort((a,b)=>b.gwPts-a.gwPts || b.total-a.total);
+      let prev=null, rk=0; rows.forEach((r,i)=>{ if(prev===null || r.gwPts<prev){ rk=i+1; prev=r.gwPts; } r.rank=rk; r.move=0; });
+    }
+    const gi=gwList.indexOf(selGw);
+    const modeBar = (!isH2H && gwList.length)? `<div class="lg-mode">
+        <div class="pt-toggle" style="margin:0">
+          <button class="${mode==='total'?'active':''}" onclick="VIEWS.ui.lgMode='total';APP.render()">الإجمالي</button>
+          <button class="${mode==='gw'?'active':''}" onclick="VIEWS.ui.lgMode='gw';APP.render()">ترتيب الجولة</button>
+        </div>
+        ${mode==='gw'? `<div class="pts-nav lg-gwnav">
+          <button class="prev" ${gi<=0?'disabled':''} onclick="VIEWS.ui.lgGw=${gwList[gi-1]};APP.render()">${UI.icon('chev',20)}</button>
+          <div class="pts-gw">الجولة ${selGw}</div>
+          <button class="next" ${gi>=gwList.length-1?'disabled':''} onclick="VIEWS.ui.lgGw=${gwList[gi+1]};APP.render()">${UI.icon('chev',20)}</button></div>` : ''}
+      </div>` : '';
     return `<button class="btn sm sec" onclick="VIEWS.ui.leagueOpen=null;APP.render()" style="margin-bottom:12px">→ كل الدوريات</button>
     <div class="card">
       <div class="row spread" style="flex-wrap:wrap;gap:8px">
@@ -995,8 +1017,9 @@ const VIEWS = {
 
         </div>`:''}
       </div>
+      ${modeBar}
       <div class="scroll-x" style="margin-top:12px"><table class="tbl lg-tbl">
-        <tr><th>#</th><th></th><th>المدير</th><th>الفريق</th>${isH2H?'<th>ف/ت/خ</th><th>ن. المواجهات</th>':''}${liveCol?'<th><span class="pill red">مباشر</span></th>':''}<th>آخر جولة</th><th>المجموع</th><th></th></tr>
+        <tr><th>#</th><th></th><th>المدير</th><th>الفريق</th>${isH2H?'<th>ف/ت/خ</th><th>ن. المواجهات</th>':''}${liveCol?'<th><span class="pill red">مباشر</span></th>':''}<th>${mode==='gw'? 'نقاط الجولة '+selGw : 'آخر جولة'}</th><th>المجموع</th><th></th></tr>
         ${rows.map((r,i)=>`<tr style="cursor:pointer;${r.id===m.id?'background:color-mix(in srgb,var(--accent) 10%,transparent)':''}" onclick="VIEWS.openManager('${r.id}')" title="عرض التشكيلة">
           <td class="num" style="font-weight:800">${(r.rank||i+1).toLocaleString('ar')}</td>
           <td style="width:34px;white-space:nowrap">${this.moveIcon(r.move)}</td>
@@ -1004,7 +1027,8 @@ const VIEWS = {
           <td class="muted" data-i18n="off">${esc(MODERATION.isBlocked(r.id)? '—' : r.teamName)}</td>
           ${isH2H?`<td class="tiny">${r.w||0}/${r.d||0}/${r.l||0}</td><td class="num">${r.h2hPts||0}</td>`:''}
           ${liveCol?`<td class="num" style="color:var(--red)">${LIVEGW.liveOf(r.id)??'—'}</td>`:''}
-          <td>${r.last}</td><td class="num" style="color:var(--accent)">${r.total}</td>
+          ${mode==='gw'? `<td class="num" style="font-weight:800">${r.gwPts}</td><td class="num muted">${r.total}</td>`
+            : `<td>${r.last}</td><td class="num" style="color:var(--accent)">${r.total}</td>`}
           <td style="text-align:left"><span class="btn-view">${r.id===m.id?'فريقي':'التشكيلة'}</span></td></tr>`).join('')}
       </table></div>
     </div>`;
