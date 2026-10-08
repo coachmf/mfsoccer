@@ -28,7 +28,7 @@ const norm = s => String(s||"").normalize("NFKC")
   .toLowerCase().replace(/\s+/g," ").trim();
 function face(n, c, cls){
   let cut=null; try{ cut=(PHOTOSON && typeof LOCAL_PHOTOS!=="undefined") ? photoCut(n,c) : null; }catch(e){}
-  return `<span class="ax-face${cls?" "+cls:""}">${cut?`<img src="${cut}_f.webp?v=33" alt="" loading="lazy" decoding="async">`:`<i>${H(initials(n))}</i>`}</span>`;
+  return `<span class="ax-face${cls?" "+cls:""}">${cut?`<img src="${cut}_f.webp?v=34" alt="" loading="lazy" decoding="async">`:`<i>${H(initials(n))}</i>`}</span>`;
 }
 const pbtn = (n,c,inner) => `<button type="button" class="rf-name ax-pl" data-ax-p="${H(n)}" data-ax-c="${H(c)}">${inner}</button>`;
 
