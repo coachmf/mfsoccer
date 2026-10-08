@@ -1620,3 +1620,10 @@ html.lang-en .pp-actions{justify-content:flex-start;}
 
 /* صعوبة المباريات: ألوان فقط بلا كلمات (منصور 2026-10-08) */
 .fdr.nolbl,.ptschip.nolbl{display:inline-block;min-width:44px;width:44px;height:10px;padding:0;border-radius:5px;vertical-align:middle;font-size:0}
+
+/* صورة + ملاحظة الدوري الخاص (منصور 2026-10-08) */
+.lg-info{margin:12px 0 4px;display:flex;flex-direction:column;gap:10px}
+.lg-banner{display:block;width:100%;max-height:260px;object-fit:cover;border-radius:14px;border:1px solid var(--line,rgba(0,0,0,.1))}
+.lg-note{white-space:pre-wrap;line-height:1.7;font-size:.92rem;padding:10px 12px;border-radius:12px;background:var(--soft,rgba(0,0,0,.04));border:1px solid var(--line,rgba(0,0,0,.08))}
+.lg-info-edit{align-self:flex-start}
+#lgi_prev .lg-banner{max-height:200px}

@@ -943,6 +943,14 @@ const CLOUD = {
       return out;
     }catch(e){ return []; }
   },
+  /* صورة + ملاحظة تحت اسم الدوري الخاص — لصاحب الدوري فقط (قاعدة leagues: «The league owner may edit their own league») — منصور 2026-10-08 */
+  async saveLeagueInfo(id, info){
+    if(!this.user) return {ok:false, err:'سجّل دخولك أولاً'};
+    try{
+      await this.leaguesCol().doc(id).update({ banner: info.banner||'', note: info.note||'', infoUpdated: new Date().toISOString() });
+      return {ok:true};
+    }catch(e){ return {ok:false, err:this.errAr(e)}; }
+  },
   /* مغادرة دوري خاص: يحذف المشترك نفسه فقط من members (قاعدة Firestore «Leaving» تسمح بذلك) — منصور 2026-10-08 */
   async leaveLeague(id){
     if(!this.user) return {ok:false, err:'سجّل دخولك أولاً'};

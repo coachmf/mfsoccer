@@ -1015,6 +1015,7 @@ const VIEWS = {
 
         </div>`:''}
       </div>
+      ${this.leagueInfoHTML(lg)}
       ${modeBar}
       ${(()=>{
         /* جدول الدوري صفوفاً بعرض الشاشة — بلا تمرير جانبي (منصور 2026-10-08): المركز+الحركة، الصورة، الفريق فوق المدير، نقاط الجولة، المجموع */
@@ -1358,6 +1359,64 @@ const VIEWS = {
       <button class="btn sec" style="width:100%;margin-top:12px" onclick="UI.closeModal()">إغلاق</button>`);
   },
   /* صورة البروفايل: تُقصّ مربعاً وتُصغَّر إلى 200px JPEG في الجهاز ثم تُحفظ في avatar */
+  /* ===== صورة + ملاحظة الدوري الخاص (منصور 2026-10-08: طلب مشترك — للرعاة والجوائز) ===== */
+  leagueIsMine(lg){ return !!(lg && !lg.global && !lg.fav && typeof CLOUD!=='undefined' && CLOUD.user && lg.owner===CLOUD.user.uid); },
+  leagueInfoHTML(lg){
+    if(!lg || lg.global || lg.fav) return '';
+    const mine=this.leagueIsMine(lg), has=!!(lg.banner || lg.note);
+    if(!has && !mine) return '';
+    return `<div class="lg-info">
+      ${lg.banner? `<img class="lg-banner" src="${esc(lg.banner)}" alt="">` : ''}
+      ${lg.note? `<div class="lg-note" data-i18n="off">${esc(lg.note)}</div>` : ''}
+      ${mine? `<button class="btn sm sec lg-info-edit" onclick="VIEWS.leagueInfoModal('${lg.id}')">${has? 'تعديل الصورة والملاحظة' : 'أضف صورة وملاحظة للدوري'}</button>` : ''}
+    </div>`;
+  },
+  leagueInfoModal(id){
+    const lg=LEAGUES.byId(id); if(!lg) return;
+    this.ui.lgInfoDraft={ banner: lg.banner||'', note: lg.note||'' };
+    UI.modal(`<h3 style="margin:0 0 6px">صورة وملاحظة الدوري</h3>
+      <p class="tiny muted" style="margin:0 0 12px">تظهر تحت اسم الدوري لكل الأعضاء — مثلاً الراعي أو الجوائز.</p>
+      <div id="lgi_prev">${this.ui.lgInfoDraft.banner? `<img class="lg-banner" src="${esc(this.ui.lgInfoDraft.banner)}" alt="">` : ''}</div>
+      <div class="row" style="gap:8px;margin:10px 0 14px;flex-wrap:wrap">
+        <label class="btn sm">${this.ui.lgInfoDraft.banner? 'تغيير الصورة' : 'إضافة صورة'}<input type="file" accept="image/*" style="display:none" onchange="VIEWS.leagueInfoPick(this)"></label>
+        <button class="btn sm sec" onclick="VIEWS.ui.lgInfoDraft.banner='';document.getElementById('lgi_prev').innerHTML=''">إزالة الصورة</button>
+      </div>
+      <div class="field"><label>الملاحظة</label>
+        <textarea id="lgi_note" maxlength="300" rows="4" style="width:100%;resize:vertical" placeholder="مثال: الجائزة للأول 50 دينار — برعاية …">${esc(this.ui.lgInfoDraft.note)}</textarea></div>
+      <div class="row" style="gap:8px;margin-top:12px">
+        <button class="btn" onclick="VIEWS.leagueInfoSave('${id}')">حفظ</button>
+        <button class="btn sec" onclick="UI.closeModal()">إلغاء</button></div>`);
+  },
+  async leagueInfoPick(input){
+    const f=input.files && input.files[0]; input.value='';
+    if(!f) return;
+    if(!/^image\//.test(f.type)){ UI.toast('اختر صورة',true); return; }
+    try{
+      const url=URL.createObjectURL(f);
+      const img=await new Promise((res,rej)=>{ const i=new Image(); i.onload=()=>res(i); i.onerror=rej; i.src=url; });
+      const W=Math.min(900, img.naturalWidth), H=Math.round(img.naturalHeight*W/img.naturalWidth);
+      const c=document.createElement('canvas'); c.width=W; c.height=Math.min(H, 900);
+      c.getContext('2d').drawImage(img, 0, Math.max(0,(H-c.height)/2)*img.naturalWidth/W, img.naturalWidth, c.height*img.naturalWidth/W, 0, 0, W, c.height);
+      URL.revokeObjectURL(url);
+      let q=.82, data=c.toDataURL('image/jpeg', q);
+      while(data.length>140000 && q>.35){ q-=.1; data=c.toDataURL('image/jpeg', q); }
+      if(data.length>200000){ UI.toast('الصورة كبيرة — جرّب صورة أصغر',true); return; }
+      this.ui.lgInfoDraft.banner=data;
+      const pv=document.getElementById('lgi_prev'); if(pv) pv.innerHTML=`<img class="lg-banner" src="${data}" alt="">`;
+    }catch(e){ UI.toast('تعذّر قراءة الصورة',true); }
+  },
+  async leagueInfoSave(id){
+    const lg=LEAGUES.byId(id); if(!lg) return;
+    const note=(gv('lgi_note')||'').trim().slice(0,300);
+    if(note && typeof MODERATION!=='undefined'){ const M=MODERATION, glued=M.norm(note), ws=new Set(M.words(note));
+      if((M.SUB||[]).some(w=>glued.includes(M.norm(w))) || (M.WORD||[]).some(w=>ws.has(M.norm(w)))){ UI.toast('الملاحظة فيها لفظ غير لائق',true); return; } }
+    const info={ banner:this.ui.lgInfoDraft.banner||'', note };
+    const r=await CLOUD.saveLeagueInfo(id, info);
+    if(!r.ok){ UI.toast(r.err||'تعذّر الحفظ',true); return; }
+    Object.assign(lg, info);
+    try{ (LEAGUES.cloud.list||[]).forEach(x=>{ if(x.id===id) Object.assign(x, info); }); LEAGUES.persist(); }catch(e){}
+    UI.closeModal(); UI.toast('تم حفظ صورة وملاحظة الدوري'); APP.render();
+  },
   async pickPhoto(input){
     const f=input.files && input.files[0]; input.value='';
     if(!f) return;
