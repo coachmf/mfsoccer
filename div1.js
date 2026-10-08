@@ -139,6 +139,7 @@ function render(){
 D1.render = render;
 /* لصفحة المباريات (دائرة «دوري الدرجة الأولى» — منصور 2026-10-08) */
 D1.matchesHTML = () => { if(!DATA) DATA = normalize(null); return matchesHTML(); };
+D1.tableHTML = () => { if(!DATA) DATA = normalize(null); return tableHTML(); };
 D1.count = () => { if(!DATA) DATA = normalize(null); return DATA.matches.length; };
 function repaint(){ if(document.querySelector("#v-div1.on")) render(); paintAdmin(); }
 document.addEventListener("click", e=>{

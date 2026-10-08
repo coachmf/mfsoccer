@@ -1441,3 +1441,9 @@ html.mf .mf-tools .hero-admin.on{background:rgba(231,208,147,.14);color:var(--mf
 /* دائرة «دوري الدرجة الأولى» في صفحة المباريات (منصور 2026-10-08): نخفي قائمة الموقع ونعرض جولاتها */
 #v-matches.mf-d1-on > *:not(.mf-circles):not(.mf-d1-list):not(.mx-head){display:none !important}
 #v-matches .mf-d1-list{margin-top:12px}
+
+/* مبدّل جدول الترتيب في الرئيسية: الممتاز | الدرجة الأولى */
+.mf-stdsw{display:flex; gap:6px; margin:0 auto 14px; padding:4px; width:max-content; max-width:100%; border-radius:999px; border:1px solid var(--mf-ln,rgba(255,255,255,.12)); background:rgba(255,255,255,.03)}
+.mf-stdsw button{border:0; background:transparent; color:var(--mf-tx2,#aab); font:700 .86rem/1 inherit; padding:9px 16px; border-radius:999px; cursor:pointer; white-space:nowrap}
+.mf-stdsw button[aria-selected="true"]{background:linear-gradient(180deg,#E7D093,#AD8F59); color:#07112B}
+.mf-d1t .mf-d1h{text-align:center; margin:0 0 12px; font-size:1.35rem}

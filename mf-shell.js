@@ -231,9 +231,19 @@
         <span class="t${aw?" w":""}">${crest(m.away)}<b>${esc(m.away)}</b><em>${m.ag??""}</em></span>
         <small>${safe(()=>dayLabel(m.date))||""}</small></button>`; }).join("")}</div></section>`;
   }
+  /* مبدّل الترتيب في الرئيسية: الدوري الممتاز | دوري الدرجة الأولى (منصور 2026-10-08) */
+  let stdDiv1=false, stdT=null;
+  function stdSwitch(){
+    if(!(window.DIV1 && DIV1.tableHTML)) return "";
+    return `<div class="mf-stdsw" role="tablist">${[["0","الدوري الممتاز"],["1","دوري الدرجة الأولى"]].map(([k,t])=>
+      `<button type="button" role="tab" data-mf-stdsw="${k}" aria-selected="${(k==="1")===stdDiv1}">${t}</button>`).join("")}</div>`;
+  }
   function standingsHTML(T){
+    stdT=T;
+    if(stdDiv1 && window.DIV1 && DIV1.tableHTML)
+      return `<section class="mf-sec mf-std mf-std-d1" id="mfStd">${stdSwitch()}<div class="mf-d1t d1"><h2 class="mf-d1h">جدول الترتيب</h2>${DIV1.tableHTML()}</div></section>`;
     const rows=T.length;
-    return `<section class="mf-sec mf-std" id="mfStd"><div class="hm">${hmStandingsHTML(T)}</div>
+    return `<section class="mf-sec mf-std" id="mfStd">${stdSwitch()}<div class="hm">${hmStandingsHTML(T)}</div>
       ${rows>6?`<button type="button" class="mf-more" data-mf-std aria-expanded="false"><span>الجدول كاملاً</span>${IC.chev}</button>`:""}</section>`;
   }
   function openStandings(scroll){
@@ -278,6 +288,10 @@
     if(typeof HM_CD_TIMER!=="undefined"){ if(HM_CD_TIMER) clearInterval(HM_CD_TIMER); HM_CD_TIMER = v.querySelector(".hm-nm") ? setInterval(hmTickCountdown,20000) : null; }
   }
   D.addEventListener("click", e=>{
+    const sw=e.target.closest("#v-home [data-mf-stdsw]");
+    if(sw){ const on=sw.dataset.mfStdsw==="1"; if(on===stdDiv1) return; stdDiv1=on;
+      const s=D.getElementById("mfStd"); if(s && stdT){ const t=D.createElement("div"); t.innerHTML=standingsHTML(stdT); s.replaceWith(t.firstElementChild); }
+      return; }
     const sb=e.target.closest("#v-home [data-mf-std]");
     if(sb){ const s=D.getElementById("mfStd"); const open=!s.classList.contains("open");
       if(open) openStandings(false); else { s.classList.remove("open"); sb.setAttribute("aria-expanded","false"); sb.querySelector("span").textContent="الجدول كاملاً"; s.scrollIntoView({block:"start"}); }
