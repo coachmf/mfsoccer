@@ -29,7 +29,7 @@ Object.assign(VIEWS, {
     const hits = `<bdi dir="ltr">${o.hits? '-'+o.hits : '0'}</bdi>`;
     const dTxt = `<bdi dir="ltr">${diff==null? '—' : (diff>0?'+':'')+diff}</bdi>`;
     const dCls = diff==null? '' : diff>=0? 'up' : 'down';
-    const st = this.ui.ptsStyle || (typeof PTS_STYLE!=='undefined'? PTS_STYLE : 'A');
+    const st = this.ui.ptsStyle || 'B';   // منصور اختار B (2026-10-08)
     if(st==='B') return `<div class="pv pv-b">
       <div class="pvb-score">
         <div class="pvb-me"><b>${fmt(o.pts)}</b><span>${lbl}</span></div>

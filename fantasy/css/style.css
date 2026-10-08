@@ -1575,3 +1575,9 @@ html.lang-en .pp-actions{justify-content:flex-start;}
 .lg-gwnav{margin:0}
 .lg-gwnav button{color:var(--text); background:var(--surface2)}
 .lg-gwnav .pts-gw{min-width:80px; text-align:center}
+
+/* B المعتمد — بدون التدرّج الذهبي (منصور 2026-10-08) */
+.pvb-score{border-color:var(--line,rgba(255,255,255,.18)) !important; background:#050d26}
+.pvb-me{background:#1a2b5e !important; color:#fff !important}
+.pvb-me span{opacity:.85}
+.pvb-sep{background:rgba(255,255,255,.18) !important}
