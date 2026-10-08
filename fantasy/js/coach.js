@@ -14,7 +14,8 @@
 const coachIdOf = club => 'c' + club;
 
 const COACHES = {
-  rules(st){ st=st||DB.state; return (st.rules && st.rules.coach) || COACH_RULES; },
+  /* منصور 2026-10-09: «المدرب تقدر تغيره كل جولة» — العقد جولة واحدة مهما كانت القيمة المحفوظة في السحابة (كانت 2) */
+  rules(st){ st=st||DB.state; const r=(st.rules && st.rules.coach) || COACH_RULES; return +r.contract===1 ? r : Object.assign({}, r, {contract:1}); },
   enabled(st){ return !!this.rules(st).enabled; },
   /* هل تُحتسب نقاط المدرب في هذه الجولة؟ (تبدأ من جولة الانطلاق) */
   active(st, gw){ st=st||DB.state; const R=this.rules(st); return !!R.enabled && gw >= (R.fromGW||1); },
