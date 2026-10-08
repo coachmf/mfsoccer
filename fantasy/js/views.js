@@ -492,7 +492,7 @@ const VIEWS = {
     const fxCells=FDR.next(p.club,3).map(x=>`
       <div class="fcell"><div class="tiny">ج${x.gw}</div>${UI.crest(x.opp)}
         <div class="tiny">${DB.club(x.opp).short} ${UI.ha(x.home)}</div>
-        <span class="ptschip fdr-l${x.lvl}">${x.lvl}</span></div>`).join('');
+        <span class="ptschip fdr-l${x.lvl}">${x.label}</span></div>`).join('');
     UI.sheet(`
       ${UI.statusBanner(p)}
       <div class="ps-head ps-head-photo" style="background:linear-gradient(135deg,${c.color} 0%,${c.dark} 100%)">
@@ -855,7 +855,7 @@ const VIEWS = {
       <div class="card"><h3>صعوبة المباريات القادمة (لكل نادٍ)</h3>
         <div class="scroll-x"><table class="tbl fdr-grid"><tr><th>النادي</th><th colspan="5">المباريات الخمس القادمة</th></tr>${fdrGrid}</table></div>
         <div class="row" style="gap:6px;margin-top:10px;flex-wrap:wrap">
-          <span class="fdr l1">سهلة جداً</span><span class="fdr l2">سهلة</span><span class="fdr l3">متوسطة</span><span class="fdr l4">صعبة</span><span class="fdr l5">صعبة جداً</span>
+          <span class="fdr l1">سهلة</span><span class="fdr l3">متوسطة</span><span class="fdr l5">صعبة</span>
         </div>
       </div>
     </div>`;

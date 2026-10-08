@@ -881,11 +881,10 @@ const MARKET = {
 const FDR = {
   rate(oppId, isHome){
     const s = DB.club(oppId).strength - (isHome?0.3:0);
-    if(s>=4.4) return {lvl:5, label:'صعبة جداً'};
-    if(s>=3.9) return {lvl:4, label:'صعبة'};
-    if(s>=3.2) return {lvl:3, label:'متوسطة'};
-    if(s>=2.7) return {lvl:2, label:'سهلة'};
-    return {lvl:1, label:'سهلة جداً'};
+    /* ثلاث درجات فقط (منصور 2026-10-08): سهلة / متوسطة / صعبة — lvl يبقى على مقياس 1..5 (1·3·5) لألوان fdr-l* ومعدّل avgNext */
+    if(s>=4.2) return {lvl:5, label:'صعبة'};
+    if(s>=2.9) return {lvl:3, label:'متوسطة'};
+    return {lvl:1, label:'سهلة'};
   },
   next(clubId, n){
     const st=DB.state;
