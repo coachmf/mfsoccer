@@ -3154,8 +3154,8 @@ const mclkHTML = m => { const P=m&&PH_CLOCK[m.status]; if(!P||!+m.pst) return ""
   return `<span class="mclk" dir="ltr" data-ph="${m.status}" data-pst="${+m.pst}" data-ad="${+m[P[2]]||0}">${phaseMinute(m)}</span>`; };
 setInterval(()=>document.querySelectorAll(".mclk[data-pst]").forEach(el=>{ const P=PH_CLOCK[el.dataset.ph]; if(!P) return;
   const v=phaseMinute({status:el.dataset.ph, pst:el.dataset.pst, [P[2]]:el.dataset.ad}); if(el.textContent!==v) el.textContent=v; }), 10000);
-/* في البطاقات: الشوط والدقيقة معاً (منصور 2026-10-09: «يبين فقط الدقيقة والشوط من برا»)، و«بين الشوطين» في الاستراحة */
-const liveStHTML = (ph, m) => ph==="ht" ? '<span class="mc-st ht">بين الشوطين</span>' : `<span class="mc-st live"><i></i>${LIVE_PH_AR[ph]||"جارية الآن"}${m&&mclkHTML(m)?` · ${mclkHTML(m)}`:""}</span>`;
+/* في البطاقات: الدقيقة وحدها حين تجري الساعة (منصور 2026-10-09: «بس تحط الدقيقة بدون الشوط»)، و«بين الشوطين» في الاستراحة */
+const liveStHTML = (ph, m) => ph==="ht" ? '<span class="mc-st ht">بين الشوطين</span>' : `<span class="mc-st live"><i></i>${(m&&mclkHTML(m))||LIVE_PH_AR[ph]||"جارية الآن"}</span>`;
 function matchOver(m){
   if(!m) return false; if(m.status==="ft") return true;
   if(["pre","h1","ht","h2","e1","e2","pso"].includes(m.status)) return false;
@@ -7245,7 +7245,7 @@ function liveMatches(){
 }
 function liveMinute(m){
   if(m.status==="ht") return "بين الشوطين";
-  return [LIVE_PH_AR[m.status], mclkHTML(m)].filter(Boolean).join(" · ");   /* الدقيقة من ساعة المحرّر فقط — لا تخمين من موعد الانطلاق */
+  return mclkHTML(m) || LIVE_PH_AR[m.status] || "";   /* الدقيقة من ساعة المحرّر فقط — لا تخمين من موعد الانطلاق */
 }
 function liveCard(){
   const ms=liveMatches();
