@@ -143,12 +143,19 @@ const CLOUD = {
     // أثناء التسجيل يتوقف مستمع الدخول (APP.initCloud) عن إنشاء مستند افتراضي
     // حتى لا يطمس اسم المستخدم واسم الفريق اللذين كتبهما المشترك.
     this.signingUp = true;
+    /* لو اكتمل إنشاء الحساب بعد المهلة (شبكة بطيئة) يأخذ مستمع الدخول الاسمين اللذين كتبهما المشترك */
+    this._pendingSignup = {username, teamName, email};
     try{
-      const cred = await this.auth.createUserWithEmailAndPassword(email, pass);
+      /* زر «جارٍ الإنشاء…» لا يعلق أبداً (محمد القلاف 2026-10-09): كل خطوة شبكة بمهلة */
+      const cr = await this.race(this.auth.createUserWithEmailAndPassword(email, pass), 30000);
+      if(cr.timeout) return {ok:false, err:'الشبكة بطيئة — انتظر قليلاً ثم جرّب «دخول» بنفس البريد وكلمة المرور'};
+      if(!cr.ok) throw cr.err;
+      const cred = cr.v;
       // لا ننتظر كتابة المستند بلا حدّ: على شبكة تحجب قناة Firestore يبقى
       // الوعد معلقاً بلا خطأ فيعلق زر التسجيل، والحساب أُنشئ فعلاً.
       const saved = await this.createManager(cred.user.uid, username, teamName, email);
-      try{ await cred.user.sendEmailVerification(); }catch(e){}
+      if(saved) this._pendingSignup = null;
+      try{ cred.user.sendEmailVerification().catch(()=>{}); }catch(e){}   // بلا انتظار
       return saved ? {ok:true}
                    : {ok:true, warn:'أُنشئ حسابك، لكن حفظ بياناتك تأخّر — أعد فتح الصفحة'};
     }catch(e){ return {ok:false, err:this.errAr(e)}; }
@@ -441,8 +448,9 @@ const CLOUD = {
 
     /* المسجَّل حديثاً قد لا يكون في اللقطة بعد */
     try{
-      const q = await this.managers().where('username','==',String(username).trim()).limit(1).get();
-      if(!q.empty && q.docs[0].id !== myUid) return (q.docs[0].data()||{}).username || String(username).trim();
+      const qr = await this.race(this.managers().where('username','==',String(username).trim()).limit(1).get(), 6000);   // بلا مهلة كان يعلّق التسجيل على شبكة بطيئة
+      const q = qr.ok ? qr.v : null;
+      if(q && !q.empty && q.docs[0].id !== myUid) return (q.docs[0].data()||{}).username || String(username).trim();
     }catch(e){}
     return null;
   },

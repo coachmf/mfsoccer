@@ -108,8 +108,10 @@ const APP = {
           let fresh=false;
           if(!doc){
             // حساب جديد (غالباً Google): اسم مبدئي من الحساب، ويُطلب من المشترك إكمال اسمه واسم فريقه
-            const base=(u.displayName||'').trim() || (u.email||'مشترك').split('@')[0];
-            doc = await CLOUD.createManager(u.uid, base, 'فريق '+base.split(' ')[0], u.email||'');
+            const ps = CLOUD._pendingSignup && String(CLOUD._pendingSignup.email||'')===String(u.email||'').toLowerCase() ? CLOUD._pendingSignup : null;
+            const base=(ps && ps.username) || (u.displayName||'').trim() || (u.email||'مشترك').split('@')[0];
+            doc = await CLOUD.createManager(u.uid, base, (ps && ps.teamName) || ('فريق '+base.split(' ')[0]), u.email||'');
+            if(doc && ps) CLOUD._pendingSignup = null;
             fresh=!!doc;
           }
           this.freshAccount = fresh;
