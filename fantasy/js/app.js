@@ -65,18 +65,26 @@ const APP = {
         // نعرض آخر نسخة محفوظة على الجهاز ونكمل المزامنة في الخلفية أول ما ترد.
         const loadP = Promise.all([DB.hydrate(), u? CLOUD.getManager(u.uid) : Promise.resolve(null)]);
         let slowFired = 0;
+        /* شبكة الجوال البطيئة (2026-10-09، يوم الديدلاين): التحميل الأول يتجاوز 12ث فكان يظهر «تعذّر الاتصال» ثم تعيد
+           retryCloud تحميل الصفحة فتقطع التحميل الجاري — حلقة. الآن: من له نسخة على الجهاز نعرضها بعد 12ث كالسابق،
+           ومن لا نسخة له يبقى على «جارٍ الاتصال… الشبكة بطيئة» حتى 45ث قبل شاشة الاتصال، ولا إعادة تحميل أثناء التحميل */
+        this._loading = true;
+        const goOffline = cached => {
+          if(!DB.muted) return;
+          slowFired = Date.now(); this._loading = false;
+          DB.muted = false;
+          this.cloudState = cached ? 'ready' : 'offline';
+          this.render();
+          UI.toast(cached ? 'الاتصال بطيء — نعرض آخر نسخة محفوظة ونحاول في الخلفية' : 'تعذّر الوصول للخادم — اسحب الصفحة للأسفل أو أعد فتحها', !cached);
+        };
         const slowT = setTimeout(()=>{
-          if(DB.muted){
-            slowFired = Date.now();
-            const cached = DB.state.session && DB.state.session!=='u1local' && DB.state.teams[DB.state.session];
-            DB.muted = false;
-            this.cloudState = cached ? 'ready' : 'offline';
-            this.render();
-            UI.toast(cached ? 'الاتصال بطيء — نعرض آخر نسخة محفوظة ونحاول في الخلفية' : 'تعذّر الوصول للخادم — اسحب الصفحة للأسفل أو أعد فتحها', !cached);
-          }
+          const cached = DB.state.session && DB.state.session!=='u1local' && DB.state.teams[DB.state.session];
+          if(cached) goOffline(true);
+          else if(DB.muted){ this.slowLoad = true; this.render(); }
         }, 12000);
+        const hardT = setTimeout(()=>goOffline(false), 45000);
         let [h, doc0] = await loadP;
-        clearTimeout(slowT);
+        clearTimeout(slowT); clearTimeout(hardT); this._loading = false; this.slowLoad = false;
         if(slowFired && u){
           // عدّل المشترك فريقه أثناء الانتظار: نسخته أحدث من اللقطة القديمة — لا نطمسها، ونعيد القراءة من الخادم
           const d2 = await CLOUD.getManager(u.uid); if(d2) doc0 = d2;
@@ -163,6 +171,7 @@ const APP = {
   _retryBusy:false,
   async retryCloud(manual){
     if(this.cloudState!=='offline' || this._retryBusy || (!manual && document.hidden)) return;
+    if(!manual && this._loading) return;   /* التحميل الأول ما زال جارياً على شبكة بطيئة: لا نقطعه بإعادة تحميل */
     if(typeof CLOUD==='undefined' || !CLOUD.ready){ if(manual) location.reload(); return; }
     /* توفير القراءات (حصة Firestore اليومية): تباعد متزايد 20ث → 40ث → … حتى 5 دقائق، وبعد بلوغ حد إعادة التحميل
        تتوقف المحاولات التلقائية تماماً (يبقى الزر) — جهاز عالق لا يستهلك قراءة كل 20 ثانية للأبد */
@@ -358,9 +367,9 @@ const APP = {
         <div class="muted" style="line-height:1.9">لعب الفانتسي يحتاج اتصالاً وحساباً — بدونهما ما تقدر تحفظ تشكيلتك أو تختار الكابتن أو تسمّي فريقك أو تدخل الدوريات، ولا تظهر آخر الجولات واللاعبين الجدد.</div>
         <div class="tiny" style="margin:10px 0 14px;line-height:1.9">تأكد من الإنترنت، ثم اضغط «إعادة الاتصال». نحاول تلقائياً كل 20 ثانية.</div>
         <button class="btn" onclick="APP.retryCloud(true)">إعادة الاتصال</button></div>`; }
-      else if(fetchingTeam){ html=`<div class="card" style="text-align:center;padding:30px"><div class="muted">جارٍ تحميل فريقك…</div>
+      else if(fetchingTeam){ html=`<div class="card" style="text-align:center;padding:30px"><div class="muted">جارٍ تحميل فريقك…</div>${this.slowLoad?'<div class="tiny" style="margin-top:10px">الشبكة بطيئة — نكمل التحميل، لا تسكّر الصفحة</div>':''}
         <div class="tiny" style="margin-top:10px">لو طال الانتظار: <button class="btn sm sec" onclick="location.reload()">إعادة المحاولة</button></div></div>`; }
-      else if(needAuth){ html = this.cloudState==='init' ? '<div class="card" style="text-align:center;padding:30px"><div class="muted">جارٍ الاتصال…</div></div>' : VIEWS.auth(); }
+      else if(needAuth){ html = this.cloudState==='init' ? '<div class="card" style="text-align:center;padding:30px"><div class="muted">جارٍ الاتصال…</div>'+(this.slowLoad?'<div class="tiny" style="margin-top:10px">الشبكة بطيئة — نكمل التحميل، لا تسكّر الصفحة</div>':'')+'</div>' : VIEWS.auth(); }
       else if(r==='team') html=VIEWS.team();
       else if(r==='transfers'){ VIEWS.ui.teamView='market'; this.route='team'; html=VIEWS.team(); }
       else if(r==='players') html=VIEWS.players();

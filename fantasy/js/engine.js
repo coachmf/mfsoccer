@@ -55,7 +55,9 @@ const DB = {
   async hydrate(){
     if(typeof CLOUD==='undefined' || !CLOUD.ready) return {ok:false, err:'offline'};
     const st=this.state;
-    const [game, ownDoc] = await Promise.all([CLOUD.loadGame(), CLOUD.loadOwn()]);
+    /* meta/own (~0.8MB: التملّك ولقطة الترتيب) لا يؤخر الفتح على شبكة بطيئة — يصل في الخلفية ويُطبَّق إن كان أحدث (2026-10-09) */
+    const ownP = CLOUD.loadOwn();
+    const game = await CLOUD.loadGame();
     if(!game) return {ok:false, err:'no-game'};      // المدير لم ينشر بعد
     /* اللاعبون والجولات (23 مستنداً) لا تُقرأ إلا إذا تغيّرت اللعبة منذ آخر تحميل ناجح على هذا الجهاز:
        الفتح المعتاد يكلّف قراءتين بدل ~25 — أكبر توفير في حصة القراءات المجانية */
@@ -86,7 +88,11 @@ const DB = {
     if(game.managerCount!=null) st.managerCount = +game.managerCount;
     if(game.ownUpdated)     st.ownUpdated = game.ownUpdated;
     if(game.transferStats)  st.transferStats = game.transferStats;
-    CLOUD.applyOwn(st, ownDoc);                                    // meta/own أحدث من نسخة مستند اللعبة (ينشرها المدير كل ساعة)
+    ownP.then(ownDoc=>{                                            // meta/own أحدث من نسخة مستند اللعبة (ينشرها المدير كل ساعة)
+      if(!CLOUD.applyOwn(st, ownDoc)) return;
+      try{ localStorage.setItem(this.KEY, JSON.stringify(st)); }catch(e){}
+      if(typeof APP!=='undefined' && APP.cloudState==='ready' && CLOUD.user && ['players','stats','player','leagues','dashboard'].includes(APP.route)) APP.render();
+    });
     this.cloudUpdated = game.updated || null;
     if(players && players.list && players.list.length){
       st.players = players.list; st.fromCloud = true;
