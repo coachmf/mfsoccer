@@ -4659,7 +4659,7 @@ function applyRemote(d){
   applyData(d,"السحابة (تحديث حيّ)");
   cacheSeasonLocal(d);
   if(!EDIT) renderMatchAdmin();   /* v27: قائمة المباريات في لوحة التحكم تتحدّث أيضاً */
-  if(d.updatedBy && d.updatedBy!==mine) toast(`وصل تحديث من ${d.updatedBy}`,"ok");
+  if(isAdmin && d.updatedBy && d.updatedBy!==mine) toast(`وصل تحديث من ${d.updatedBy}`,"ok");   /* للمديرين فقط: الزائر لا يرى بريد المحرّر */
 }
 function flushRemote(){
   if(PENDING_REMOTE && !EDIT){ const d=PENDING_REMOTE; PENDING_REMOTE=null; applyRemote(d); }
