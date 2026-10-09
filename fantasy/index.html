@@ -9,28 +9,24 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="robots" content="noindex, nofollow">
 <title>فانتسي الدوري الكويتي — الدوري الكويتي الممتاز 2026/27</title>
-<link rel="icon" href="assets/ball.png">
+<link rel="icon" href="assets/ball-128.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700;800&display=swap" onload="this.onload=null;this.rel='stylesheet'"><noscript><link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"></noscript>
 <link rel="stylesheet" href="css/style.css?v=308">
 <link rel="stylesheet" href="css/motion.css?v=285">
 <link rel="stylesheet" href="css/mf-theme.css?v=5">   <!-- هوية عائلة MF (منصور 2026-10-05) -->
 <script>document.documentElement.classList.add("mff")</script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.12.2/firebase-app-compat.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.12.2/firebase-auth-compat.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.12.2/firebase-firestore-compat.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.12.2/firebase-messaging-compat.min.js"></script>
 </head>
 <body>
   <div id="splash">
-    <div class="splash-card"><img class="splash-logo" src="assets/logo-light.png?v=285" alt="Kuwait Fantasy League"></div>
+    <div class="splash-card"><img class="splash-logo" src="assets/logo-light.webp?v=1" fetchpriority="high" alt="Kuwait Fantasy League"></div>
   </div>
 
   <header id="topbar" style="display:none">
     <div id="brand" onclick="APP.go('dashboard')">
-      <img class="brand-lockup lk-dark" src="assets/logo-dark.png?v=285" alt="Kuwait Fantasy League">
-      <img class="brand-lockup lk-light" src="assets/logo-light.png?v=285" alt="Kuwait Fantasy League">
+      <img class="brand-lockup lk-dark" src="assets/logo-dark.webp?v=1" alt="Kuwait Fantasy League">
+      <img class="brand-lockup lk-light" src="assets/logo-light.webp?v=1" alt="Kuwait Fantasy League">
     </div>
     <a id="toSite" href="/" title="العودة للموقع">
       <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
@@ -45,6 +41,11 @@
   <nav id="bottomnav"></nav>
   <div id="toasts"></div>
 
+  <!-- Firebase نُقل من <head> (منصور 2026-10-09): كان يمنع رسم شاشة التحميل حتى يكتمل تنزيله (~25ث شاشة سوداء على 4G ضعيف). الترتيب نفسه قبل cloud.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.12.2/firebase-app-compat.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.12.2/firebase-auth-compat.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.12.2/firebase-firestore-compat.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.12.2/firebase-messaging-compat.min.js"></script>
   <script src="js/cloud.js?v=296"></script>
   <script src="js/data.js?v=299"></script>
   <script src="js/engine.js?v=304"></script>
@@ -54,10 +55,10 @@
   <script src="js/kits.js?v=286"></script>
   <script src="js/kits-number.js?v=285"></script>
   <script src="js/moderation.js?v=285"></script>
-  <script src="js/views.js?v=302"></script>
+  <script src="js/views.js?v=303"></script>
   <script src="js/picker.js?v=285"></script>
   <script src="js/coach-ui.js?v=300"></script>
-  <script src="js/extras.js?v=285"></script>
+  <script src="js/extras.js?v=286"></script>
   <script src="js/push.js?v=285"></script>
   <script src="js/adminauth.js?v=285"></script>
   <script src="js/admin.js?v=292"></script>
@@ -70,6 +71,6 @@
   <script src="js/motion.js?v=285"></script>
   <script src="js/i18n.js?v=285"></script>
   <script src="js/i18n-more.js?v=290"></script>
-  <script src="js/gate.js?v=285"></script>
+  <script src="js/gate.js?v=286"></script>
 </body>
 </html>

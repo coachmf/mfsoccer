@@ -28,8 +28,8 @@ const VIEWS = {
         <p class="tiny">يصلك رابط على بريدك تغيّر منه كلمة المرور، ثم تعود وتسجّل الدخول.</p>
       </div>`;
     return `<div class="auth-hero">
-      <img class="lk-light" src="assets/logo-light.png" alt="Kuwait Fantasy League" style="height:60px;margin:0 auto">
-      <img class="lk-dark" src="assets/logo-dark.png" alt="Kuwait Fantasy League" style="height:60px;margin:0 auto">
+      <img class="lk-light" src="assets/logo-light.webp?v=1" alt="Kuwait Fantasy League" style="height:60px;margin:0 auto">
+      <img class="lk-dark" src="assets/logo-dark.webp?v=1" alt="Kuwait Fantasy League" style="height:60px;margin:0 auto">
       <h1>فانتسي الدوري الكويتي</h1>
       <div class="sub">الدوري الكويتي الممتاز ${DB.state.rules.season} — كوّن فريقك ونافس أصحابك</div>
       <div class="card">

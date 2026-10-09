@@ -32,7 +32,7 @@ const REMIND = {
       const perm=await Notification.requestPermission();
       if(perm!=='granted'){ UI.toast('لم يُسمح بالتنبيهات — فعّلها من إعدادات المتصفح',true); APP.render(); return; }
       localStorage.setItem('kwf_notify','1'); UI.toast('سيصلك تنبيه قبل الإغلاق بساعتين');
-      try{ new Notification('فانتسي الدوري الكويتي', {body:'تم تفعيل التنبيهات — بنذكّرك قبل إغلاق كل جولة بساعتين.', icon:'assets/ball.png'}); }catch(e){}
+      try{ new Notification('فانتسي الدوري الكويتي', {body:'تم تفعيل التنبيهات — بنذكّرك قبل إغلاق كل جولة بساعتين.', icon:'assets/ball-128.png'}); }catch(e){}
     } else { localStorage.setItem('kwf_notify',''); UI.toast('أُوقفت التنبيهات'); }
     APP.render();
   },
@@ -50,7 +50,7 @@ const REMIND = {
     }
     if(this.enabled() && 'Notification' in window && Notification.permission==='granted' && !localStorage.getItem('kwf_dln'+st.currentGW)){
       localStorage.setItem('kwf_dln'+st.currentGW,'1');
-      try{ new Notification(`الجولة ${st.currentGW} تُغلق بعد ${UI.countdown(g.deadline)}`, {body:'راجع تشكيلتك وانتقالاتك قبل الإغلاق', icon:'assets/ball.png', tag:'kwf-dl'}); }catch(e){}
+      try{ new Notification(`الجولة ${st.currentGW} تُغلق بعد ${UI.countdown(g.deadline)}`, {body:'راجع تشكيلتك وانتقالاتك قبل الإغلاق', icon:'assets/ball-128.png', tag:'kwf-dl'}); }catch(e){}
     }
   },
   whatsappLink(){

@@ -519,6 +519,27 @@ const CLOUD = {
     if(r.ok === true) return true;
     // الخادم يرفض تعديل التشكيلة بعد الإغلاق — نوضّح السبب بدل فشل صامت
     const code = r.err && r.err.code;
+    /* مستند المشترك غير موجود على الخادم (سُجّل على شبكة بطيئة ولم تكتمل كتابة ملفه): set+merge يصير «إنشاء»
+       والقاعدة ترفضه (total/history ناقصان) — فكان الحفظ يفشل دائماً بـ«لا تملك صلاحية» (2026-10-09).
+       ننشئ الملف الصحيح ثم نعيد الحفظ مرة واحدة. */
+    if(code === 'permission-denied' && !this._repairing){
+      this._repairing = true;
+      try{
+        const g = await this.race(this.managers().doc(this.user.uid).get(), 15000);
+        if(g.ok && g.v && !g.v.exists){
+          const me = (typeof DB!=='undefined' && DB.me) ? DB.me() : null;
+          const un = patch.username || (me && me.username) || (this.user.email||'مشترك').split('@')[0];
+          const tn = patch.teamName || (me && me.teamName) || 'فريقي';
+          await this.createManager(this.user.uid, un, tn, this.user.email||'');
+          const g2 = await this.race(this.managers().doc(this.user.uid).get(), 15000);
+          if(g2.ok && g2.v && g2.v.exists){
+            if(typeof DB!=='undefined'){ DB.noPush = false; }
+            return await this.saveMyTeam(profile, team);
+          }
+        }
+      }catch(e){}
+      finally{ this._repairing = false; }
+    }
     if(code === 'permission-denied' && typeof UI!=='undefined'){
       UI.toast(patch.team !== undefined
         ? 'أُغلقت الجولة — لا يمكن تعديل التشكيلة بعد الموعد'
