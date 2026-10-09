@@ -2180,7 +2180,7 @@ main{padding-bottom:48px}
 <!-- اللغة الإنجليزية والوضع الداكن -->
 <link rel="stylesheet" href="site-theme.css?v=6">
 <script src="fantasy/js/i18n-more.js?v=12" defer></script>
-<script src="site-i18n.js?v=25" defer></script>
+<script src="site-i18n.js?v=26" defer></script>
 <!-- مركز المباراة المباشر: صفحة الجمهور + الربط (غرفة التحكم live-admin.js تُحمَّل عند فتحها فقط) -->
 <link rel="stylesheet" href="live.css?v=9">
 <script src="live.js?v=19" defer></script>
@@ -2705,6 +2705,9 @@ const SETPIECE = /ركنية|ركلة حرة|رمية تماس|ركلة جزاء
    في مرماه ويُحتسب عليه الهدف — وهو من الفريق المستقبِل (cd). الفانتسي يقرأ og
    نفسه، فتوحّدت القراءة بين الموقع واللعبة (منصور 2026-09-16) */
 const isOG = g => !!g && g.bp==="هدف عكسي";
+/* هدف من خطأ دفاعي: اسم اللاعب المخطئ من الفريق المستقبِل (goal.err — سعد المنصور 2026-10-09) */
+const isDefErr = g => !!g && /خطأ دفاعي/.test(g.det||"");
+const goalDetTxt = g => !g ? "" : (isDefErr(g) && g.err) ? `خطأ دفاعي من ${g.err}` : (g.det||"");
 /* وسم الهدف العكسي: اسم المدافع الذي ارتدت عنه الكرة */
 const ogLabel = g => (g && g.bp==="هدف عكسي")
   ? ` <span style="color:var(--loss);font-size:.72rem">هدف عكسي${g.og?" · ارتدت عن "+esc(g.og):""}</span>`
@@ -5377,7 +5380,7 @@ function loadEditRaw(m){
     mev:(ALL.mev||[]).filter(x=>x.r===m.round && compOf(x)===compOf(m) && x.home===m.home && x.away===m.away).map(x=>({k:x.k, club:x.club||"", p:x.p||"", m:x.m||"", x:x.x||0, note:x.note||"", lid:x.lid||""})),
     lineup:lus.map(x=>({club:x.club, p:x.p})),
     subs:sbs.map(x=>({club:x.club, out:x.out||"", in:x.in||"", h:x.h||1, m:x.m||"", x:x.x||0, lid:x.lid||""})),
-    goals:gs.map(g=>({sc:g.sc,p:g.p,a:g.a||"",m:g.m,x:g.x||0,det:g.det||"",bp:g.bp||"",zone:g.zone||"",og:g.og||"",lid:g.lid||""})),   /* og كان يضيع عند إعادة التحرير */
+    goals:gs.map(g=>({sc:g.sc,p:g.p,a:g.a||"",m:g.m,x:g.x||0,det:g.det||"",bp:g.bp||"",zone:g.zone||"",og:g.og||"",err:g.err||"",lid:g.lid||""})),   /* og كان يضيع عند إعادة التحرير */
     cards:cs.map(x=>({club:x.club,p:x.p,m:x.m,x:+x.x||0,type:x.type,lid:x.lid||""})),
     pens:ps.map(x=>({by:x.by,p:x.p,m:x.m,res:x.res,place:x.place||"",lid:x.lid||""}))};
   /* lid = معرّف الحدث في اللعب الفعلي: يربط صف السجل بحدثه فيُعدَّل الحدث نفسه من أي واجهة بلا تكرار */
@@ -6193,7 +6196,7 @@ function applyEdit(E){
                         : m.pso && m.pso.h!=="" && m.pso.a!=="" && m.pso.h!=null && m.pso.a!=null ? {pso:{h:+m.pso.h, a:+m.pso.a}} : {}), hg:0, ag:0});   /* ref = حكم الساحة، refs = بقية الطاقم */
   E.goals.forEach(g=>ALL.goals.push({r:round, comp:m.comp, sc:g.sc, cd:other(g.sc), p:g.p, a:g.a||"",
       m:+g.m, x:+g.x||0, cat:catOf(g.det), det:g.det, bp:g.bp||"", zone:g.zone||"",
-      og: g.bp==="هدف عكسي" ? (g.og||"") : "", ...(g.lid?{lid:g.lid}:{})}));
+      og: g.bp==="هدف عكسي" ? (g.og||"") : "", ...(isDefErr(g) && g.err ? {err:g.err} : {}), ...(g.lid?{lid:g.lid}:{})}));
   upgradeSecondYellows(E.cards).forEach(x=>ALL.cards.push(
       {r:round, comp:m.comp, club:x.club, p:x.p, m:+x.m||0, ...(+x.x?{x:+x.x}:{}), type:x.type, ...(x.lid?{lid:x.lid}:{})}));   /* x = وقت بدل ضائع (45+1) */
   E.pens.forEach(x=>ALL.pens.push({r:round, comp:m.comp, by:x.by, vs:other(x.by), p:x.p,
@@ -7439,7 +7442,7 @@ function goalsTimeline(m,gs,mc){
           <div class="tl-name" data-player="${esc(g.p)}" data-club="${esc(g.sc)}">${ICO_BALL}${esc(g.p)}${og?`<i class="tl-og">هدف عكسي</i>`:""}</div>
           ${og ? (g.og?`<div class="tl-assist" data-player="${esc(g.og)}" data-club="${esc(g.cd||"")}">${ICO_BOOT}ارتدت عن ${esc(g.og)}</div>`:"")
                : (g.a?`<div class="tl-assist" data-player="${esc(g.a)}" data-club="${esc(g.sc)}">${ICO_BOOT}${esc(g.a)}</div>`:"")}
-          ${g.det?`<div class="tl-det">${esc(g.det)}</div>`:""}
+          ${g.det?`<div class="tl-det">${esc(goalDetTxt(g))}</div>`:""}
         </div>
         <div class="tl-score" dir="ltr">${isH?`<b>${h}</b> - ${a}`:`${h} - <b>${a}</b>`}</div>
       </div>`;
@@ -15040,7 +15043,7 @@ html.mx-editing #waFab{display:none!important}   /* زر واتساب كان ي�
   function evRow({k,i,r}){
     let club="", who="", sub="", ic="", mn="";
     if(k==="goal"){ club=r.sc; who=r.p; ic=ICO_BALL; mn=r.m?`${r.m}${+r.x?`+${r.x}`:""}'`:"—";
-      sub=[r.bp==="هدف عكسي"?"هدف عكسي":"", r.a?`صناعة: ${r.a}`:"", r.det||""].filter(Boolean).join(" · "); }
+      sub=[r.bp==="هدف عكسي"?"هدف عكسي":"", r.a?`صناعة: ${r.a}`:"", goalDetTxt(r)].filter(Boolean).join(" · "); }
     if(k==="card"){ club=r.club; who=r.p; mn=r.m?`${r.m}${+r.x?`+${r.x}`:""}'`:"—";
       const t=r.type||""; ic=`<span class="ic-card ${/ثان/.test(t)?"yr":isRed(t)?"r":"y"}"></span>`; sub=t; }
     if(k==="pen"){ club=r.by; who=r.p; ic=SV.pen; mn=r.m?`${r.m}'`:"—"; sub=`ركلة جزاء · ${r.res||""}`; }
@@ -15180,7 +15183,8 @@ html.mx-editing #waFab{display:none!important}   /* زر واتساب كان ي�
         <div class="mx-grid">
           <div><span class="mx-lbl">تفصيل الهجمة</span><select data-msf="det">${opt(LIST.det,d.det,"اختر")}</select></div>
           <div><span class="mx-lbl">منطقة التسجيل</span><select data-msf="zone">${opt(LIST.zone,d.zone,"اختر")}</select></div>
-        </div>`;
+        </div>
+        ${isDefErr(d)?`<div><span class="mx-lbl">اللاعب المخطئ (لاعب ${esc(opp||"الخصم")})</span>${pickGrid(opp,"err",d.err,{none:"غير محدد"})}</div>`:""}`;
     }
     if(k==="card"){
       body+=`<div><span class="mx-lbl">نوع البطاقة</span>${chips("type",LIST.cardtype,d.type,v=>isRed(v)&&!/ثان/.test(v)?"red":"warn")}</div>
@@ -15381,7 +15385,7 @@ html.mx-editing #waFab{display:none!important}   /* زر واتساب كان ي�
     if(MX.sheet && MX.sheet.kind==="ev"){
       const d=MX.sheet.d;
       q("[data-mset]",b=>b.onclick=()=>{ const key=b.dataset.mset, v=b.dataset.mval;
-        if(key===CLUBKEY[MX.sheet.k] && d[key]!==v){ ["p","a","og","out","in"].forEach(f=>{ if(f in d) d[f]=""; }); }
+        if(key===CLUBKEY[MX.sheet.k] && d[key]!==v){ ["p","a","og","err","out","in"].forEach(f=>{ if(f in d) d[f]=""; }); }
         d[key]=v; if(key==="bp"&&v!=="هدف عكسي") d.og=""; rerender(); });
       q("[data-mper]",b=>b.onclick=()=>{ const v=b.dataset.mper, row=PERS.find(r=>r[0]===v), m=+d.m||0;
         if(MX.sheet.k==="sub") d.h=v; else d._per=v;
@@ -15390,7 +15394,8 @@ html.mx-editing #waFab{display:none!important}   /* زر واتساب كان ي�
         if(+v>=3) EDIT.match.et=true; rerender(); });
       q("[data-mbench]",b=>b.onclick=()=>{ const S=MX.sheet; S.bench=S.bench||{}; S.bench[b.dataset.mbench]=true; rerender(); });
       q("[data-mpick]",b=>b.onclick=()=>{ const key=b.dataset.mpick, v=b.dataset.mname; d[key]=(d[key]===v&&key==="a")?"":v; rerender(); });
-      q("[data-msf]",el=>{ el.oninput=()=>{ d[el.dataset.msf]=el.value; }; el.onchange=()=>{ d[el.dataset.msf]=el.value; }; });
+      q("[data-msf]",el=>{ el.oninput=()=>{ d[el.dataset.msf]=el.value; }; el.onchange=()=>{ d[el.dataset.msf]=el.value;
+        if(el.dataset.msf==="det"){ if(!isDefErr(d)) d.err=""; rerender(); } }; });   /* إظهار/إخفاء «اللاعب المخطئ» */
       q("[data-mstep]",b=>b.onclick=()=>{ const key=b.dataset.mstep; d[key]=String(Math.max(0,(+d[key]||0)+(+b.dataset.mby))); rerender(); });
       q("[data-mcommit]",b=>b.onclick=commitEv);
     }
