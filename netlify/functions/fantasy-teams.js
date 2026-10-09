@@ -34,7 +34,11 @@ exports.handler = async (event) => {
   try{
     let auth = {};
     try{ auth = { Authorization:'Bearer ' + await accessToken('https://www.googleapis.com/auth/datastore') }; }catch(e){}
-    const mask = ['username','teamName','total','team'].map(f => 'mask.fieldPaths=' + f).join('&');
+    const mask = ['username','teamName','total','team','joinedGW'].map(f => 'mask.fieldPaths=' + f).join('&');
+    /* الجولة الحالية: من انضم بعد موعدها (joinedGW > الجولة) لا يدخل متوسطها ولا ترتيبها — 69eb4cb */
+    let cur = 0;
+    try{ const g = await fetch(base.replace(/\/managers$/, '') + '?mask.fieldPaths=currentGW' + (auth.Authorization ? '' : '&key=' + API_KEY), { headers:auth });
+      if(g.ok) cur = +((fields((await g.json()).fields) || {}).currentGW) || 0; }catch(e){}
     let tok = '', docs = [], pages = 0;
     do{
       const url = `${base}?pageSize=300&${mask}` + (tok ? '&pageToken=' + encodeURIComponent(tok) : '') + (auth.Authorization ? '' : '&key=' + API_KEY);
@@ -46,11 +50,12 @@ exports.handler = async (event) => {
     for(const d of docs){
       const v = fields(d.fields); const t = v.team;
       if(!t || !Array.isArray(t.squad) || !t.squad.length) continue;
+      if(cur && (+v.joinedGW || 0) > cur) continue;
       const team = {}; for(const k in t) if(!DROP.has(k)) team[k] = t[k];
       rows.push({ id:d.name.split('/').pop(), name:v.username || 'مشترك', teamName:v.teamName || '', total:+v.total || 0, team });
     }
     return { statusCode:200, headers:{ ...json, 'Cache-Control':'public, max-age=0, must-revalidate',
         'Netlify-CDN-Cache-Control':'public, durable, s-maxage=120, stale-while-revalidate=300' },
-      body: JSON.stringify({ at:new Date().toISOString(), count:rows.length, rows }) };
+      body: JSON.stringify({ at:new Date().toISOString(), gw:cur, count:rows.length, rows }) };
   }catch(e){ return fail(502, {err:String(e.message||e)}); }
 };
