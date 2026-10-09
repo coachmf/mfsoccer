@@ -2180,7 +2180,7 @@ main{padding-bottom:48px}
 <!-- اللغة الإنجليزية والوضع الداكن -->
 <link rel="stylesheet" href="site-theme.css?v=6">
 <script src="fantasy/js/i18n-more.js?v=12" defer></script>
-<script src="site-i18n.js?v=24" defer></script>
+<script src="site-i18n.js?v=25" defer></script>
 <!-- مركز المباراة المباشر: صفحة الجمهور + الربط (غرفة التحكم live-admin.js تُحمَّل عند فتحها فقط) -->
 <link rel="stylesheet" href="live.css?v=9">
 <script src="live.js?v=19" defer></script>
@@ -14026,7 +14026,7 @@ function tvOf(m){
 }
 function mpHeader(m){
   const soon=isUpcoming(m), live=isLive(m);
-  const MS={pre:"لم تبدأ", h1:"الشوط الأول", ht:"بين الشوطين", h2:"الشوط الثاني", e1:"الشوط الإضافي الأول", e2:"الشوط الإضافي الثاني", pso:"ركلات الترجيح", ft:"انتهت"};
+  const MS={pre:"لم تبدأ", h1:"الشوط الأول", ht:"استراحة بين الشوطين",   /* سعد المنصور 2026-10-09 */ h2:"الشوط الثاني", e1:"الشوط الإضافي الأول", e2:"الشوط الإضافي الثاني", pso:"ركلات الترجيح", ft:"انتهت"};
   const stLive = ["h1","h2","e1","e2","pso"].includes(m.status) || (!m.status && live);
   const st = m.status ? MS[m.status]||"" : soon ? "لم تبدأ" : live ? "جارية الآن" : "انتهت";
   /* القنوات في سطر مستقل تحت الموعد، كلها في صف واحد (منصور 2026-09-23) */

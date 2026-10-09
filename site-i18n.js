@@ -89,7 +89,7 @@ const I18N = {
     'بعد ⟨x⟩ ساعات':'in ⟨x⟩ hours', 'بعد دقيقة':'in 1 minute', 'بعد ⟨x⟩ دقيقة':'in ⟨x⟩ minutes',
     // المباريات
     'الجولة':'Round', 'الجولة ⟨x⟩':'Round ⟨x⟩', 'الجولة ⟨x⟩ · ⟨x⟩':'Round ⟨x⟩ · ⟨x⟩', 'الجولة ⟨x⟩⟨x⟩':'Round ⟨x⟩⟨x⟩', 'الجولة ⟨x⟩⟨x⟩ — ⟨x⟩':'Round ⟨x⟩⟨x⟩ — ⟨x⟩',
-    'لم تبدأ':'Not started', 'بلا تاريخ':'No date', 'لا توجد مباريات ضمن هذا التحديد.':'No matches in this selection.', 'الشوط الأول':'First half', 'النهاية':'Full time',
+    'لم تبدأ':'Not started', 'بلا تاريخ':'No date', 'لا توجد مباريات ضمن هذا التحديد.':'No matches in this selection.', 'الشوط الأول':'First half', 'استراحة بين الشوطين':'Half-time break', 'بين الشوطين':'Half-time', 'النهاية':'Full time',
     'الكل':'All', 'أُقيمت':'Played', 'أهداف':'Goals', 'بطاقات':'Cards', 'من':'From', 'إلى':'To', 'تفصيل':'Detail',
     'بطولة خارجية':'External competition', 'توقف الدوري':'League break', 'مناسبة':'Event', 'منتخب':'National team',
     'الشهر التالي':'Next month', 'الشهر السابق':'Previous month', 'إلغاء التحديد':'Clear selection',
