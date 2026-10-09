@@ -253,10 +253,11 @@
   }
   function renderHomeMF(){
     const v=D.getElementById("v-home"); if(!v) return;
-    const T=standings(), played=playedMatches().length, soon=MATCHES.length-played;
+    const T=standings();
     const hs=safe(()=>headlines())||[];
-    const live=safe(()=>liveCard())||"";
-    const next=safe(()=>hmNextMatchHTML())||"";
+    const today=safe(()=>hmTodayHTML())||"";            /* يوم مباريات: القائمة تغني عن «جارية الآن» */
+    const live=today?"":(safe(()=>liveCard())||"");
+    const next=today||safe(()=>hmNextMatchHTML())||"";
     v.innerHTML=`<div class="mf-home">
       ${compChips()}
       ${live}
@@ -264,7 +265,7 @@
       ${COMP==="الدوري"?"":`<div class="note mf-note"><b>تنبيه:</b> جدول الترتيب يُحتسب بنظام الدوري. في مسابقات الكؤوس اعتبره ترتيباً بالنقاط لا جدولاً رسمياً.</div>`}
       <div class="mf-row mf-row-b">
         <div class="mf-col">${standingsHTML(T)}
-          <p class="hint">${mw(played)} أُقيمت${soon?` · ${soon} لم تبدأ بعد ولا تُحتسب في الجدول`:""} · الترتيب بالنقاط ثم فارق الأهداف ثم الأهداف المسجلة.</p></div>
+          </div>
         <aside class="mf-col">
           <h2 class="sec">أرقام الموسم</h2>
           <div class="hm">${hmKpiHTML()}</div>

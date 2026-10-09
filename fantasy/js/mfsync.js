@@ -93,10 +93,22 @@ const MFSYNC = {
   isOver(m, data){
     if(!this.isPlayed(m, data)) return false;
     if(m.status==='ft') return true;
-    if(['pre','h1','ht','h2'].includes(m.status)) return false;
+    if(['pre','h1','ht','h2','e1','e2','pso'].includes(m.status)) return false;
     if(!m.date) return false;
     const ko = kwDate(m.date+'T'+(m.time||'23:59'));
     return !isNaN(ko) && Date.now() > ko.getTime() + 2*3600e3;
+  },
+
+  /* الدقيقة الحالية (0-120) لمباراة جارية (منصور 2026-10-09: الشباك النظيفة لا تُحسب قبل الدقيقة 60):
+     من ساعة المحرّر (m.pst = لحظة بداية الشوط) وإلا تقدير من موعد الانطلاق (ربع ساعة استراحة). */
+  liveMinute(m){
+    if(m.status==='ht') return 45;
+    const P={h1:[0,45],h2:[45,90],e1:[90,105],e2:[105,120]}[m.status];
+    if(P && +m.pst) return Math.min(P[1], P[0]+Math.max(0, Math.floor((Date.now()- +m.pst)/60000))+1);
+    const ko=m.date ? kwDate(m.date+'T'+(m.time||'23:59')).getTime() : NaN; if(isNaN(ko)) return null;
+    const el=Math.max(0, Math.floor((Date.now()-ko)/60000));
+    if(m.status==='h2') return Math.max(46, Math.min(90, el-15));
+    return el<=45 ? el : el<60 ? 45 : Math.min(90, el-15);
   },
 
   /* هل لُعبت المباراة فعلاً؟ الموقع يخزّن 0-0 كقيمة افتراضية للمباريات القادمة،
@@ -374,7 +386,8 @@ const MFSYNC = {
       f.h=h; f.a=a; f.venue=DB.club(h).stadium;
       if(m.date) f.date=m.date+'T'+(m.time||'18:00');
       const played = this.isPlayed(m, data);
-      if(played){ f.hs=+m.hg; f.as=+m.ag; f.status='F'; f.est=false; f.over=this.isOver(m, data); }
+      if(played){ f.hs=+m.hg; f.as=+m.ag; f.status='F'; f.est=false; f.over=this.isOver(m, data);
+                  if(f.over) delete f.liveMin; else f.liveMin=this.liveMinute(m); }
       else { f.hs=null; f.as=null; f.status=this.postponed(m, win, data)?'P':'U'; f.goals=[]; f.cards=[]; f.pens=[];
              f.lineups=null; f.subs=[]; report.matches++; continue; }
 

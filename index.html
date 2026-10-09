@@ -13234,10 +13234,37 @@ function hmNextMatchHTML(){
     </div>
   </section>`;
 }
+/* مباريات اليوم (منصور 2026-10-09: «نحط كل مباريات اليوم بدل مباراة وحدة»): في يوم فيه مباريات تصير البطاقة قائمة —
+   الوقت قبل البداية، النتيجة والدقيقة أثناء اللعب، «بين الشوطين»، والنتيجة بعد النهاية. بلا عدّ تنازلي (منصور 2026-10-09).
+   لا مباريات اليوم = بطاقة المباراة القادمة كما كانت. */
+function todayISO(){ const d=new Date(), p=n=>String(n).padStart(2,"0"); return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}`; }
+function todayMatches(){ const t=todayISO(); return MATCHES.filter(m=>m.date===t).sort((a,b)=>(kickoffTS(a)||0)-(kickoffTS(b)||0)); }
+function hmTodayHTML(){
+  const list=todayMatches(); if(!list.length) return "";
+  const row=m=>{
+    const live=LIVE_PHASES.includes(m.status), over=!live && matchOver(m), sc=`<b class="hm-td-sc" dir="ltr">${+m.ag} - ${+m.hg}</b>`;
+    const mid = live ? `${sc}${m.status==="ht" ? '<span class="hm-td-st ht">بين الشوطين</span>' : `<span class="hm-td-st live" dir="ltr">${mclkHTML(m)||esc(LIVE_PH_AR[m.status]||"")}</span>`}`
+              : over ? `${sc}<span class="hm-td-st">انتهت</span>`
+              : `<b class="hm-td-time" dir="ltr">${m.time?esc(m.time):"—"}</b>`;
+    return `<button type="button" class="hm-td-row${live?" is-live":""}" data-mopen="${esc(matchKey(m))}">
+      <span class="hm-td-team h">${crest(m.home)}<b>${esc(m.home)}</b></span>
+      <span class="hm-td-mid">${mid}</span>
+      <span class="hm-td-team a"><b>${esc(m.away)}</b>${crest(m.away)}</span></button>`;
+  };
+  return `<section class="hm-nm hm-today">
+    <div class="hm-nm-hd"><span class="hm-tag"><i></i>مباريات اليوم</span><span class="hm-muted">${dayLabel(list[0].date)} · الجولة ${list[0].round}</span></div>
+    <div class="hm-td-list">${list.map(row).join("")}</div>
+    <div class="hm-cta">
+      <button type="button" class="hm-btn" data-go-view="predict">التوقعات</button>
+      <button type="button" class="hm-btn primary" data-go-view="fans">صوّت بتشكيلتك</button>
+    </div>
+  </section>`;
+}
 function hmTickCountdown(){
   const box=$("#v-home .hm-nm"); if(!box){ if(HM_CD_TIMER){ clearInterval(HM_CD_TIMER); HM_CD_TIMER=null; } return; }
   const c=hmCountdownParts(+box.dataset.ts); const pad=n=>String(n).padStart(2,"0");
   const set=(k,v)=>{ const el=box.querySelector(`[data-cd="${k}"]`); if(el && el.textContent!==pad(v)) el.textContent=pad(v); };
+  if(box.classList.contains("hm-today")) return;
   set("d",c.d); set("h",c.h); set("m",c.m);
 }
 function hmSparkline(){

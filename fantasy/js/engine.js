@@ -540,6 +540,15 @@ function genMatchStats(st, fx){
       if(r.min===0 && (r.g||r.a||r.yc||r.rc||r.ps||r.pm||r.og)){ r.min=1; r.on=89; r.off=90; }
     }
   }
+  /* مباراة جارية: الدقائق تقف عند الدقيقة الحالية (منصور 2026-10-09) — كان الأساسي يُعدّ 90 دقيقة من صافرة البداية
+     فتظهر الشباك النظيفة ونقطتا المشاركة من الدقيقة الأولى. الآن الشباك النظيفة والنقطة الثانية من الدقيقة 60 فقط. */
+  if(fx.over===false && fx.liveMin!=null){
+    const now=Math.max(0, Math.min(FPL_MATCH_MIN, +fx.liveMin||0));
+    for(const clubId of [fx.h, fx.a]) for(const pid in fx.stats[clubId]){
+      const r=fx.stats[clubId][pid]; const on=r.on||0;
+      if(r.off==null || r.off>now){ r.off=Math.max(on, now); r.min=Math.max(r.min>0?1:0, now-on); }
+    }
+  }
   // الأهداف المستقبلة أثناء وجوده في الملعب، والشباك النظيفة (60+ دقيقة بلا هدف عليه) — كقاعدة FPL
   for(const side of ['h','a']){
     const clubId=fx[side]; const conceded=(side==='h'?fx.as:fx.hs)||0;
