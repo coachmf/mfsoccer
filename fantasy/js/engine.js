@@ -217,7 +217,18 @@ const DB = {
     }
     const profile = u? {username:u.username, teamName:u.teamName, avatar:u.avatar} : null;
     // بعد الإغلاق: الملف الشخصي يُحفظ، والتشكيلة لا تُرسل أصلاً — والخادم يرفضها كذلك
-    if(GWADMIN.deadlinePassed(this.state.currentGW)) return await CLOUD.saveMyTeam(profile, undefined);
+    if(GWADMIN.deadlinePassed(this.state.currentGW)){
+      /* إلا من ليس له فريق على الخادم (أو سُجّل منضماً للجولة التالية): يُحفظ فريقه منضماً للجولة التالية،
+         والقواعد على الخادم تسمح بهذا وحده (joinedGW = الجولة المقفلة + 1) */
+      const cur=this.state.currentGW, rSquad=((remote&&remote.team&&remote.team.squad)||[]).length;
+      const late = (t.squad||[]).length>0 && (!rSquad || +(remote&&remote.joinedGW)>cur);
+      if(late){
+        t.joinedGW=cur+1;
+        const {history, ...team} = t;
+        return await CLOUD.saveMyTeam({...(profile||{}), joinedGW:cur+1}, team);
+      }
+      return await CLOUD.saveMyTeam(profile, undefined);
+    }
     /* حماية التشكيلات (منصور 2026-10-09: «تاكد ان تشكيلاتهم ما تنمسح»): جهاز فريقه فارغ لا يرفع أبداً فوق تشكيلة
        محفوظة على الخادم (ملف مؤقت بعد قراءة فاشلة، جهاز جديد، ذاكرة ممسوحة…) — يُحفظ الملف الشخصي وحده */
     if(!(t.squad||[]).length && remote && remote.team && (remote.team.squad||[]).length) return await CLOUD.saveMyTeam(profile, undefined);
@@ -1068,6 +1079,11 @@ function weightedPick(items, weights){
    إدارة الجولات: قفل، احتساب، ترحيل
    ========================================================= */
 const GWADMIN = {
+  /* المنضم بعد إغلاق الجولة (منصور 2026-10-09: «يسوي فريق للجولة الخامسة ما يشارك بالرابعة»):
+     فريقه يبدأ من الجولة التالية (joinedGW = الحالية + 1) — يُحفظ على الخادم فوراً، ولا نقاط له في الجولة الجارية */
+  lateJoiner(team, st){ st=st||DB.state; return !!(team && +team.joinedGW > st.currentGW); },
+  /* قفل تعديل التشكيلة (الكابتن والدكة): بعد الموعد، إلا لمن فريقه يبدأ من الجولة التالية */
+  editLocked(team, st){ st=st||DB.state; return this.deadlinePassed(st.currentGW) && !this.lateJoiner(team, st); },
   /* إنهاء الجولة الحالية على هذا الجهاز: تثبيت الحالة + أسعار + الترحيل.
      نقاط المشتركين وترحيل فرقهم يقوم بهما CLOUD.finalizeForAll على الخادم؛
      agg = خلاصته (المتوسط، الأعلى، التملّك، الصفقات، عدد المشتركين). */

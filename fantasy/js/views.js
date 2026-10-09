@@ -241,7 +241,7 @@ const VIEWS = {
   points(){
     const st=DB.state, team=DB.myTeam();
     const hist=team.history||[];
-    const liveOn = typeof LIVEGW!=='undefined' && LIVEGW.active() && (team.squad||[]).length && !hist.some(x=>x.gw===st.currentGW);
+    const liveOn = typeof LIVEGW!=='undefined' && LIVEGW.active() && (team.squad||[]).length && !hist.some(x=>x.gw===st.currentGW) && !GWADMIN.lateJoiner(team);
     const tabsGw=[...hist.map(x=>x.gw), ...(liveOn? [st.currentGW] : [])];
     if(!tabsGw.length) return '<div class="card"><div class="muted">لا توجد جولات محتسبة بعد — نقاطك تظهر هنا مباشرة أثناء الجولة بعد موعد الإغلاق.</div></div>';
     const gw=tabsGw.includes(this.ui.pointsGw)? this.ui.pointsGw : tabsGw[tabsGw.length-1];
@@ -283,7 +283,7 @@ const VIEWS = {
     const team=DB.myTeam();
     if(!team.squad.length) return this.squadPicker();
     const st=DB.state, gw=st.currentGW;
-    const locked=GWADMIN.deadlinePassed(gw);
+    const locked=GWADMIN.editLocked(team, st), late=GWADMIN.lateJoiner(team, st);
     const xiV=TEAM.validateXI(team.xi);
     const chips=st.rules.chips;
     const view=this.ui.teamView||'pitch';
@@ -293,7 +293,7 @@ const VIEWS = {
       const c=chips[key]; if(!c.enabled) return '';
       const used=team.usedChips[key]||0;
       const active=team.activeChip===key;
-      const disabled= locked || (used>=c.uses && !active) || (team.activeChip && !active);
+      const disabled= locked || late || (used>=c.uses && !active) || (team.activeChip && !active);   /* المنضم للجولة التالية: الكروت تفتح معها */
       return `<div class="chip-card ${active?'on':''}" title="${esc(c.desc)}">
         <div class="ci">${UI.icon(CHIP_IC[key]||'spark',22)}</div>
         <div class="cl">${esc(c.label)}</div>
@@ -312,6 +312,7 @@ const VIEWS = {
           <div><b>${team.ft}</b><span>انتقالات</span></div>
         </div>
       </div>
+      ${late? `<div class="card" style="border-color:#E7D093;margin:0 0 10px"><b>فريقك يبدأ من الجولة ${team.joinedGW}</b><div class="tiny" style="margin-top:4px">انضممت بعد إغلاق الجولة ${gw}، فلا تُحتسب لك نقاطها. فريقك محفوظ، وتقدر تعدّل الكابتن والدكة حتى موعد الجولة ${team.joinedGW}.</div></div>` : ''}
       <div class="chips-row">${Object.keys(chips).map(chipCard).join('')}</div>
       ${xiV.ok? '' : `<div class="card" style="border-color:var(--red);margin:0 0 10px">${xiV.errs.map(e=>`<div style="color:var(--red)">${e}</div>`).join('')}</div>`}
       ${typeof COACHES!=='undefined' && COACHES.enabled(st) && !team.coach && !locked ? `<div class="card cnotice" style="margin:0 0 10px"><div class="row spread" style="gap:8px;flex-wrap:wrap"><div><b>فريقك بلا مدرب</b><div class="tiny">اختر مدرباً من الشريط تحت الملعب — نقاطه من نتائج ناديه وصعوبة المنافس. بلا مدرب لا تُخصم نقاط، لكن تخسر نقاطه.</div></div><button class="btn sm" onclick="VIEWS.openAddCoach({ctx:'team'})">اختر مدرباً</button></div></div>` : ''}
@@ -446,7 +447,7 @@ const VIEWS = {
   },
   slotClick(pid){
     const team=DB.myTeam(); const st=DB.state;
-    const locked=GWADMIN.deadlinePassed(st.currentGW);
+    const locked=GWADMIN.editLocked(team, st);
     if(this.ui.subMode && this.ui.sel && locked){ this.ui.sel=null; this.ui.subMode=false; UI.toast('أُغلقت الجولة — لا تعديل على التشكيلة بعد الموعد',true); APP.render(); return; }
     if(this.ui.subMode && this.ui.sel){
       if(this.canSwapWith(this.ui.sel, pid, team)){
@@ -478,7 +479,7 @@ const VIEWS = {
     mode=mode||'team';
     const st=DB.state, team=DB.myTeam(), p=DB.player(pid);
     const c=DB.club(p.club);
-    const locked=GWADMIN.deadlinePassed(st.currentGW);
+    const locked=GWADMIN.editLocked(team, st);
     const inXI=team.xi.includes(pid);
     const POS_FULL={G:'حارس مرمى',D:'مدافع',M:'لاعب وسط',F:'مهاجم'};
     const same=st.players.filter(x=>x.pos===p.pos && x.status!=='u');
@@ -557,7 +558,7 @@ const VIEWS = {
       <div class="ps-actions" style="margin-top:8px"><button class="btn ghost" onclick="VIEWS.cmpOpen('${pid}')">قارن مع لاعب آخر</button></div>`;
   },
   sheetCap(pid,isVice){
-    if(GWADMIN.deadlinePassed(DB.state.currentGW)){ UI.closeModal(); UI.closeSheet(); this.ui.sel=null; this.ui.subMode=false; UI.toast('أُغلقت الجولة — لا تعديل على التشكيلة بعد الموعد',true); APP.render(); return; }
+    if(GWADMIN.editLocked(DB.myTeam())){ UI.closeModal(); UI.closeSheet(); this.ui.sel=null; this.ui.subMode=false; UI.toast('أُغلقت الجولة — لا تعديل على التشكيلة بعد الموعد',true); APP.render(); return; }
     const team=DB.myTeam();
     if(isVice){ if(team.cap===pid) team.cap=team.vice; team.vice=pid; }
     else { if(team.vice===pid) team.vice=team.cap; team.cap=pid; }
@@ -565,7 +566,7 @@ const VIEWS = {
   },
   startSub(pid){ UI.closeModal(); UI.closeSheet(); this.ui.sel=pid; this.ui.subMode=true; UI.toast('اختر اللاعب الذي تريد التبديل معه'); APP.render(); },
   makeCap(pid,isVice){
-    if(GWADMIN.deadlinePassed(DB.state.currentGW)){ UI.closeModal(); UI.closeSheet(); this.ui.sel=null; this.ui.subMode=false; UI.toast('أُغلقت الجولة — لا تعديل على التشكيلة بعد الموعد',true); APP.render(); return; }
+    if(GWADMIN.editLocked(DB.myTeam())){ UI.closeModal(); UI.closeSheet(); this.ui.sel=null; this.ui.subMode=false; UI.toast('أُغلقت الجولة — لا تعديل على التشكيلة بعد الموعد',true); APP.render(); return; }
     const team=DB.myTeam();
     if(isVice){ if(team.cap===pid) team.cap=team.vice; team.vice=pid; }
     else { if(team.vice===pid) team.vice=team.cap; team.cap=pid; }

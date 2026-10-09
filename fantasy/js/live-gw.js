@@ -12,12 +12,14 @@ const LIVEGW = {
   cache:{ at:0, rows:null, gw:0 }, busy:false,
   gw(){ return DB.state.currentGW; },
   active(){ return GWADMIN.inProgress(this.gw()); },
-  matches(){ const fx=DB.state.fixtures.filter(f=>f.gw===this.gw()); return { played:fx.filter(f=>f.status==='F').length, total:fx.length }; },
+  /* «لُعبت» = انتهت فعلاً: status 'F' تعني أن للمباراة نتيجة/إحصاءات (تُحتسب مباشرة)، وover=false أثناء اللعب (2026-10-09: «1 من 6 لُعبت» والمباراة في شوطها الأول) */
+  matches(){ const fx=DB.state.fixtures.filter(f=>f.gw===this.gw()); return { played:fx.filter(f=>f.status==='F' && f.over!==false).length, live:fx.filter(f=>f.status==='F' && f.over===false).length, total:fx.length }; },
   picksOf(team, gw){ return (team.gwPicks && team.gwPicks[gw]) || TEAM.picksFrom(team); },
   calc(team, gw){ return TEAM.gwPoints({...team, gwPicks:{[gw]:this.picksOf(team,gw)}}, gw, DB.state, {live:true}); },
   /* نقاطي الآن */
   mine(){
     const t=DB.myTeam(); if(!t || !(t.squad||[]).length) return null;
+    if(GWADMIN.lateJoiner(t)) return null;   /* فريقه يبدأ من الجولة التالية */
     return this.calc(t, this.gw());
   },
   /* نقاط كل المشتركين الآن (للترتيب والمتوسط):

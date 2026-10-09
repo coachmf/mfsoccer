@@ -65,7 +65,7 @@ Object.assign(VIEWS, {
   /* الجولات التي لفريقي نقاط فيها: المعتمدة من السجل + الجارية الآن */
   pointsGws(team){
     const st=DB.state, hist=(team&&team.history)||[];
-    const liveOn = typeof LIVEGW!=='undefined' && LIVEGW.active() && ((team&&team.squad)||[]).length>0 && !hist.some(x=>x.gw===st.currentGW);
+    const liveOn = typeof LIVEGW!=='undefined' && LIVEGW.active() && ((team&&team.squad)||[]).length>0 && !hist.some(x=>x.gw===st.currentGW) && !GWADMIN.lateJoiner(team);
     const gws=[...new Set(hist.map(x=>x.gw))].sort((a,b)=>a-b);
     if(liveOn) gws.push(st.currentGW);
     return { gws, liveOn };

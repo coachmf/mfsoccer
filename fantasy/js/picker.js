@@ -41,6 +41,7 @@ Object.assign(VIEWS, {
       <div class="squad-hero">
         <div class="sh-info">
           <div class="sh-name">كوّن فريقك</div>
+          ${GWADMIN.deadlinePassed(st.currentGW)? `<div class="sh-sub" style="color:#E7D093">الجولة ${st.currentGW} مقفلة — فريقك يبدأ من الجولة ${st.currentGW+1}</div>` : ''}
           <div class="sh-sub">${R.posCount.G} حراس · ${R.posCount.D} مدافعين · ${R.posCount.M} وسط · ${R.posCount.F} مهاجمين · حد أقصى ${R.maxPerClub} من كل نادٍ${typeof COACHES!=='undefined' && COACHES.enabled(st)? ' · ومدرب' : ''}</div>
         </div>
         <div class="sh-stats">

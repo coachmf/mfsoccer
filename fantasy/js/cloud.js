@@ -535,6 +535,7 @@ const CLOUD = {
       if(profile.username!=null) patch.username = profile.username;
       if(profile.teamName!=null) patch.teamName = profile.teamName;
       if(profile.avatar  !=null) patch.avatar   = profile.avatar;
+      if(profile.joinedGW!=null) patch.joinedGW = profile.joinedGW;   /* المنضم بعد الإغلاق فقط (GWADMIN.lateJoiner) */
     }
     const r = await this.race(this.managers().doc(this.user.uid).set(patch, {merge:true}));
     if(r.ok === true) return true;
@@ -593,7 +594,8 @@ const CLOUD = {
     const locked=!isNaN(dl) && Date.now()>dl;
     if(locked && this._liveTeams && this._liveTeams.gw===gw && this._liveTeams.at>dl) return this._liveTeams.list;
     const q=await this.managers().get(); const list=[];
-    q.forEach(d=>{ const v=d.data(); if(!v.team || !(v.team.squad||[]).length) return; list.push({id:d.id, name:v.username||'مشترك', teamName:v.teamName||'', total:+v.total||0, team:v.team}); });
+    q.forEach(d=>{ const v=d.data(); if(!v.team || !(v.team.squad||[]).length) return; if(+v.joinedGW>gw) return;   /* منضم للجولة التالية: خارج الترتيب المباشر */
+      list.push({id:d.id, name:v.username||'مشترك', teamName:v.teamName||'', total:+v.total||0, team:v.team}); });
     const known = (typeof DB!=='undefined' && DB.state && +DB.state.managerCount) || 0;
     if(known && list.length < known*0.5) throw new Error('قراءة ناقصة للمشتركين');   // لا لقطة حية من ذاكرة الجهاز
     this._liveTeams={gw, at:Date.now(), list};
