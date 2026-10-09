@@ -3053,7 +3053,7 @@ function renderUpcomingMatches(){
         <div class="mc-team h">${crest(m.home)}<b>${esc(m.home)}</b></div>
         <div class="mc-mid">${LIVE_PHASES.includes(m.status)   /* أثناء اللعب الدقيقة مكان وقت الانطلاق (منصور 2026-10-09) */
           ? (m.status==="ht" ? '<span class="mc-time mc-now ht">بين الشوطين</span>' : `<span class="mc-time mc-now" dir="ltr">${mclkHTML(m)||esc(LIVE_PH_AR[m.status]||"")}</span>`)
-          : `<span class="mc-time" dir="ltr">${m.time?esc(m.time):"—"}</span><span class="mc-st soon">لم تبدأ</span>`}${(()=>{ const tv=tvOf(m); return tv?`<span class="mc-tv${tv==="غير منقولة"?" off":""}">${TV_ICO}<span>${esc(tv)}</span></span>`:""; })()}</div>
+          : `<span class="mc-time" dir="ltr">${m.time?esc(m.time):"—"}</span><span class="mc-st soon">لم تبدأ</span>`}${(()=>{ const tv=tvOf(m); return tv?`<span class="mc-tv${tv==="غير منقولة"?" off":""}">${TV_ICO}<span>${esc(tv)}</span></span>`:""; })()}${(()=>{ const r=String(crewOf(m).ref||"").trim(); return r && r!=="لا يوجد" ? `<span class="mc-tv mc-refl">${refRoleIco("ref","sm")}<span>${esc(r)}</span></span>` : ""; })()}   <!-- حكم الساحة تحت القناة (منصور 2026-10-09) --></div>
         <div class="mc-team a">${crest(m.away)}<b>${esc(m.away)}</b></div>
       </div>
       <div class="mc-foot"><span>${esc(compOf(m))}</span><span>الجولة ${m.round}</span>${m.venue?`<span>${esc(m.venue)}</span>`:""}</div>
@@ -10883,6 +10883,7 @@ html[data-theme="dark"] .mc-score{background:#182C48}
 .mc-foot{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;padding:0 12px 10px;font-size:.68rem;color:var(--slate)}
 .mc-foot>span+span::before{content:"·";margin-inline-end:10px;opacity:.6}
 .mc-foot .mc-ref{display:inline-flex;align-items:center;gap:0;white-space:nowrap}
+.mc-refl .ref-role.sm{width:14px;height:14px;flex:0 0 auto}
 .mc-foot .mc-ref .ref-role.sm{width:14px;height:14px;margin-inline-end:3px;vertical-align:0;flex:0 0 auto}
 /* كل التفاصيل في سطر واحد (منصور 2026-09-16): بلا التفاف، والأسماء الطويلة تُختصر بثلاث نقاط */
 .mc-foot:has(.mc-ref){flex-wrap:nowrap;gap:4px 5px;overflow:hidden;font-size:.58rem;padding-inline:8px}
