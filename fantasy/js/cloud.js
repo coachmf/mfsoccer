@@ -668,6 +668,17 @@ const CLOUD = {
   async managerCount(){
     /* عدّ على الخادم (قراءة واحدة لكل 1000) بدل تنزيل كل المشتركين */
     try{ const c=this.managers(); if(typeof c.count==='function'){ const s=await c.count().get(); return s.data().count; } }catch(e){}
+    /* مكتبة compat بلا count(): كان يُنزَّل كل المشتركين (1500+ قراءة و13 ثانية — «—» في لوحة الإدارة، 2026-10-10).
+       العدّ على الخادم عبر REST runAggregationQuery برمز المستخدم نفسه: قراءة لكل 1000 مستند */
+    try{
+      if(this.user && typeof fetch!=='undefined'){
+        const tok=await this.user.getIdToken();
+        const r=await fetch(`https://firestore.googleapis.com/v1/projects/mfsoccer-c7ee4/databases/(default)/documents/fantasy/${this.SEASON}:runAggregationQuery`,
+          {method:'POST', headers:{'Content-Type':'application/json', Authorization:'Bearer '+tok},
+           body:JSON.stringify({structuredAggregationQuery:{structuredQuery:{from:[{collectionId:'managers'}]}, aggregations:[{alias:'n', count:{}}]}})});
+        if(r.ok){ const j=await r.json(); const n=+(((j[0]||{}).result||{}).aggregateFields||{}).n?.integerValue; if(n>=0) return n; }
+      }
+    }catch(e){}
     try{ const q=await this.managers().get(); return q.size; }catch(e){ return null; }
   },
 

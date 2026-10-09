@@ -1,7 +1,7 @@
 /* ملف المشترك عبر الخادم — لمن تعذّر عليه Firestore من جهازه (2026-10-09، يوم ديدلاين الجولة 4):
    مشتركون سجّلوا ولم تُكتب ملفاتهم، أو قناة Firestore محجوبة/مخنوقة على شبكتهم، فبقي اسمهم «فريقي» ولا يُحفظ شيء.
    POST {idToken, username?, teamName?, team?} → يتحقق من الهوية، يقرأ managers/{uid} بحساب الخدمة،
-   وإن لم يوجد ينشئه بالشكل الذي تقبله القواعد (total 0، history []) — التشكيلة تُقبل قبل موعد الإغلاق فقط.
+   وإن لم يوجد ينشئه بالشكل الذي تقبله القواعد (total 0، history []) — تشكيلة بعد الموعد تبدأ من الجولة التالية.
    يعيد {ok, created, doc}. لا يعدّل ملفاً موجوداً أبداً. */
 'use strict';
 const { accessToken, verifyIdToken } = require('./lib/google');
@@ -58,23 +58,16 @@ exports.handler = async (event) => {
     const cur = +game.currentGW || 1;
     const gw = (game.gws || []).find(x => +x.n === cur) || {};
     const dl = gw.deadline ? Date.parse(gw.deadline) : NaN;
-    let open = !isNaN(dl) && Date.now() < dl;
-    /* حساب أُنشئ قبل الموعد ولم يُكتب ملفه (شبكة/حصة يوم الديدلاين 2026-10-09): تُقبل تشكيلة جهازه لهذه الجولة
-       حتى 12 ساعة بعد الموعد — تاريخ إنشاء الحساب من Firebase Auth لا يُزوَّر، فحساب جديد بعد الموعد لا يستفيد */
-    if(!open && !isNaN(dl) && Date.now() < dl + 12*3600e3){
-      try{
-        const lk = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=${API_KEY}`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ idToken:b.idToken }) });
-        const acc = lk.ok ? ((await lk.json()).users || [])[0] : null;
-        if(acc && +acc.createdAt && +acc.createdAt < dl) open = true;
-      }catch(e){}
-    }
+    const open = !isNaN(dl) && Date.now() < dl;
+    /* بعد الموعد (منصور 2026-10-10: «صلح الثغرة»): لا مهلة — كانت 12 ساعة لمن سُجّل حسابه قبل الموعد، فدخل بها
+       من كوّن فريقه بعد الموعد أيضاً. الفريق يُحفظ ويبدأ من الجولة التالية (joinedGW = الحالية + 1)، كالقواعد على الخادم. */
     let team = null;
-    if(open && b.team && typeof b.team === 'object' && Array.isArray(b.team.squad) && b.team.squad.length && JSON.stringify(b.team).length < 60000){
+    if(b.team && typeof b.team === 'object' && Array.isArray(b.team.squad) && b.team.squad.length && JSON.stringify(b.team).length < 60000){
       const { history, ...t } = b.team; team = t;
     }
     const now = new Date().toISOString();
     const doc = { username: clean(b.username, 40) || 'مشترك', teamName: clean(b.teamName, 40) || 'فريقي', avatar:'',
-      joinedGW: cur, created: now, updated: now, team, history: [], total: 0, lastGW: 0 };
+      joinedGW: (team && !open) ? cur + 1 : cur, created: now, updated: now, team, history: [], total: 0, lastGW: 0 };
     const f = {}; for(const k in doc) f[k] = enc(doc[k]);
     /* currentDocument.exists=false: لا يطمس ملفاً كُتب في هذه الأثناء */
     const w = await fetch(`${url}?currentDocument.exists=false`, { method:'PATCH', headers:{...auth, 'Content-Type':'application/json'}, body:JSON.stringify({fields:f}) });

@@ -85,7 +85,7 @@ const ADMIN = {
         <tr><td>الاتصال</td><td><span class="pill ${st==='ready'?'green':(st==='offline'?'':'gold')}">${stateAr}</span></td></tr>
         <tr><td>حساب المدير</td><td style="direction:ltr;text-align:right">${u? esc(u.email) : '—'}</td></tr>
         <tr><td>صلاحية النشر</td><td>${up&&CLOUD.admin? '<span class="pill green">متاحة</span>' : '<span class="pill">غير متاحة</span>'}</td></tr>
-        <tr><td>عدد المشتركين</td><td id="mgrCount">—</td></tr>
+        <tr><td>عدد المشتركين</td><td id="mgrCount">جارٍ العدّ…</td></tr>
         <tr><td>نسبة التملّك</td><td>${DB.state.ownUpdated
           ? 'من '+(DB.state.managerCount||0)+' فريقاً — حُدّثت '+new Date(DB.state.ownUpdated).toLocaleString('ar-KW',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})
           : (DB.state.managerCount? 'من '+DB.state.managerCount+' فريقاً (آخر احتساب)' : 'لم تُنشر بعد')}</td></tr>
