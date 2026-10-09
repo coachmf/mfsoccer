@@ -26,6 +26,8 @@ const COACH_FLAG = { 'الكويت':'kw', 'سوريا':'sy', 'كرواتيا':'h
 const COACH_UI = {
   /* مكان المدرب على شاشة الفريق: 'row' يمين الحارس · 'bench' أول الدكة · 'bar' شريط الجهاز الفني تحت الملعب */
   layout(){ try{ return localStorage.getItem('kwf_coach_layout') || 'bar'; }catch(e){ return 'bar'; } },
+  /* قفل تغيير/إزالة المدرب = قفل التشكيلة: بعد الموعد، إلا للمنضم للجولة التالية (GWADMIN.editLocked، 69eb4cb) */
+  locked(team, st){ st=st||DB.state; return GWADMIN.editLocked ? GWADMIN.editLocked(team, st) : GWADMIN.deadlinePassed(st.currentGW); },
   lastName(c){ return String(c.name||'').trim().split(/\s+/).slice(-1)[0]; },
   flag(c, size){
     const k=COACH_FLAG[c.nat]; if(!k) return '';
@@ -141,7 +143,7 @@ Object.assign(VIEWS, {
     const cost = mine ? null : (team && team.coach ? TEAM.coachChangeCost(team, st) : {free:true});
     const rec=STANDINGS.record(st, c.club)||{P:0,W:0,D:0,L:0,form:[]};
     const rank=COACH_UI.rankNow(c.club);
-    const locked=GWADMIN.deadlinePassed(st.currentGW);
+    const locked=COACH_UI.locked(team, st);
     const next=FDR.next(c.club,3);
     let actions='', note='';
     if(mode==='picker'){
@@ -179,7 +181,7 @@ Object.assign(VIEWS, {
   /* ======================= شاشة اختيار المدرب ======================= */
   openAddCoach(o){
     o=o||{}; const st=DB.state;
-    if(o.ctx!=='picker' && GWADMIN.deadlinePassed(st.currentGW)){ UI.toast('أُغلقت الجولة — تغيير المدرب بعد الاحتساب',true); return; }
+    if(o.ctx!=='picker' && COACH_UI.locked(DB.myTeam(), st)){ UI.toast('أُغلقت الجولة — تغيير المدرب بعد الاحتساب',true); return; }
     this.ui.addc={ ctx:o.ctx||'team', sort:'price' };
     document.body.classList.add('addp-open');
     let back=document.getElementById('addpBack');
@@ -276,7 +278,7 @@ Object.assign(VIEWS, {
   /* إزالة مدرب الفريق: سعره يرجع للبنك، وبلا مدرب = صفر نقاط بلا خصم (منصور 2026-10-09) */
   removeCoach(){
     const st=DB.state, team=DB.myTeam(); if(!team || !team.coach) return;
-    if(GWADMIN.deadlinePassed(st.currentGW)){ UI.toast('أُغلقت الجولة — إزالة المدرب بعد الاحتساب',true); return; }
+    if(COACH_UI.locked(team, st)){ UI.toast('أُغلقت الجولة — إزالة المدرب بعد الاحتساب',true); return; }
     UI.modal(`<h3>إزالة المدرب؟</h3>
       <p class="muted">بلا مدرب لا تُخصم نقاط، لكن تخسر نقاطه. تقدر تضيف مدرباً في أي وقت قبل إغلاق الجولة.</p>
       <div class="row" style="gap:8px"><button class="btn" onclick="UI.closeModal();VIEWS._removeCoachGo()">تأكيد الإزالة</button>
@@ -490,6 +492,9 @@ const COACH_I18N = {
     'سوريا':'Syria', 'كرواتيا':'Croatia', 'البحرين':'Bahrain', 'سلوفاكيا':'Slovakia', 'البرتغال':'Portugal', 'البرازيل':'Brazil', 'البوسنة':'Bosnia',
     'فريقك بلا مدرب':'Your team has no coach', 'اختر مدرباً من الشريط تحت الملعب — نقاطه من نتائج ناديه وصعوبة المنافس. بلا مدرب لا تُخصم نقاط، لكن تخسر نقاطه.':'Pick a coach from the bar under the pitch — his points come from his club\'s results and the opponent\'s difficulty. Without a coach nothing is deducted, but you miss his points.',
     'الأغلى':'Most expensive', 'الأعلى نقاطاً':'Most points', 'الأكثر تملكاً':'Most owned',
+    'التغيير مجاني في أي وقت قبل إغلاق الجولة':'Free to change any time before the gameweek locks', 'مدربك':'Your coach',
+    'تغيير المدرب مجاني في أي وقت قبل إغلاق الجولة، ولا يُحسب من تبديلاتك':'Changing the coach is free any time before the gameweek locks, and it does not count as a transfer',
+    'تغيير المدرب مجاني دائماً ولا يُحسب من تبديلاتك':'Changing the coach is always free and does not count as a transfer',
     'إزالة المدرب':'Remove coach', 'تغيير':'Change', 'إزالة المدرب؟':'Remove the coach?', 'إزالة':'Remove', 'تأكيد الإزالة':'Confirm removal', 'تراجع':'Cancel',
     'تعذّر الاتصال بالخادم':'Could not reach the server', 'إعادة الاتصال':'Reconnect',
     'لعب الفانتسي يحتاج اتصالاً وحساباً — بدونهما ما تقدر تحفظ تشكيلتك أو تختار الكابتن أو تسمّي فريقك أو تدخل الدوريات، ولا تظهر آخر الجولات واللاعبين الجدد.':'Playing the fantasy needs a connection and an account — without them you cannot save your line-up, pick a captain, name your team or join leagues, and the latest gameweeks and new players do not appear.',
@@ -518,6 +523,7 @@ const COACH_I18N = {
     [/^أعلى بـ(\d+)$/, '$1 above'], [/^أقل بـ(\d+)$/, '$1 below'],
     [/^الجولة (\d+) · جولة مزدوجة — تُجمع المباراتان$/, 'Gameweek $1 · double gameweek — both matches count'],
     [/^تُحتسب نقاط المدرب من الجولة (\d+)\.?$/, 'Coach points count from Gameweek $1.'],
+    [/^مدرب واحد لفريقك، خارج الـ15\. نقاطه من نتيجة ناديه وصعوبة المنافس حسب جدول الدوري — تغيير المدرب مجاني دائماً ولا يُحسب من تبديلاتك\.$/, 'One coach for your team, outside the 15. His points come from his club\'s result and the opponent\'s difficulty by league position — changing your coach is always free and never uses a transfer.'],
     [/^مدرب واحد لفريقك، خارج الـ15\. نقاطه من نتيجة ناديه وصعوبة المنافس حسب جدول الدوري — عقد من (\d+) جولتين\.$/, 'One coach for your team, outside the 15. His points come from his club\'s result and the opponent\'s difficulty by league position — a $1-gameweek contract.'],
     [/^بالبنك (.+?) · (.+)$/, (m, a, b) => 'In the bank ' + I18N.trIn(a) + ' · ' + I18N.trIn(b)],
     [/^التغيير المبكر (.+)$/, (m, a) => 'Early change ' + I18N.trIn(a)],

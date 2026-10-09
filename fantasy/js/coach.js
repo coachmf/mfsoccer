@@ -189,7 +189,7 @@ Object.assign(TEAM, {
   removeCoach(team, st){
     st=st||DB.state;
     if(!team || !team.coach) return null;
-    if(GWADMIN.deadlinePassed(st.currentGW)) return 'أُغلقت الجولة — إزالة المدرب بعد الاحتساب';
+    if(GWADMIN.editLocked ? GWADMIN.editLocked(team, st) : GWADMIN.deadlinePassed(st.currentGW)) return 'أُغلقت الجولة — إزالة المدرب بعد الاحتساب';   /* المنضم للجولة التالية يعدّل (69eb4cb) */
     const old=this.coachOf(team, st);
     team.bank=Math.round(((+team.bank||0)+(old? +old.price||0 : 0))*10)/10;
     team.coachLog=(team.coachLog||[]).concat([{gw:st.currentGW, out:team.coach, in:null, date:new Date().toISOString()}]).slice(-30);
