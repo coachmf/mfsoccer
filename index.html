@@ -6279,6 +6279,8 @@ setInterval(()=>{
   const {base, ...cur} = EDIT; const s = JSON.stringify(cur);
   if(s === JSON.stringify(base)){ MX_ASIG=""; mxAutoPaint(MX_ACLOUD?"ok":"wait", MX_ACLOUD?"محفوظ ✓":"على الجهاز، بانتظار الشبكة"); return; }
   if(validateEdit()){ mxAutoPaint("err","لم يُحفظ: اضغط هنا"); return; }
+  /* أثناء ضبط التشكيلة لا حفظ تلقائي (منصور 2026-10-09: «قاعد يعلق») — يُحفظ عند الانتقال لتبويب آخر أو بزر الحفظ */
+  if(MX.tab==="lineup"){ MX_ASIG=""; mxAutoPaint("busy","يُحفظ عند الخروج"); return; }
   mxAutoPaint("busy","سيُحفظ تلقائياً");
   if(s !== MX_ASIG){ MX_ASIG=s; MX_AT=Date.now(); return; }
   if(Date.now()-MX_AT < 2000 || MX.sheet || mxTyping()) return;
@@ -15348,9 +15350,25 @@ html.mx-editing #waFab{display:none!important}   /* زر واتساب كان ي�
       if(xi.includes(n)){ if(MX.sel===n){ MX.sel=null; } else { removeStarter(cl,n); } rerender(); return; }
       if(MX.sel){ swapStarter(cl, MX.sel, n); MX.sel=null; rerender(); return; }
       if(xi.length>=11){ toast("التشكيلة مكتملة (11) — اضغط لاعباً على الملعب ثم اختر بديله","err"); return; }
+      /* كل لاعب يثبت في مكانه لحظة اختياره (منصور 2026-10-09: «كل واحد لمن اضغط عليه يتثبت بمركزه الا اذا انا حركته»):
+         كان إضافة لاعب بلا موضع تُرجع الترتيب التلقائي فيتحرك الجميع. نثبّت مواضع الظاهرين كما تُرى، ثم الجديد في مكانه التلقائي. */
+      const S0=slotsFor(cl), st=EDIT.shapes[cl]=EDIT.shapes[cl]||{f:"",pos:{}}; st.pos=st.pos||{};
+      S0.spots.forEach(({p,x,y})=>{ if(!st.pos[p.n]) st.pos[p.n]={x:+x.toFixed(1),y:+y.toFixed(1)}; });
       EDIT.lineup=EDIT.lineup.filter(x=>!(x.club===cl&&!x.p)); EDIT.lineup.push({club:cl,p:n});
-      /* الداخل يأخذ مكان آخر من أُخرج، فتبقى المواضع المضبوطة كاملة */
-      const st=EDIT.shapes[cl], vac=(MX.vac||{})[cl]; if(st&&st.pos&&vac&&vac.length&&!st.pos[n]) st.pos[n]=vac.pop();
+      /* الداخل يأخذ مكان آخر من أُخرج، وإلا موضعه في الترتيب التلقائي (بعيداً قليلاً عن أي لاعب فوقه) */
+      const vac=(MX.vac||{})[cl];
+      if(!st.pos[n] && vac && vac.length) st.pos[n]=vac.pop();
+      if(!st.pos[n]){
+        /* صفّه من مركزه في الكشف (صفوف 4-4-2 التلقائية: حارس 90، دفاع 64، وسط 38، هجوم 12) وجهته (x يُقاس من اليمين) */
+        const me=shapeMenFrom([n], cl)[0]||{line:"M",role:"CM"};
+        const y={G:90,D:64,M:38,F:12}[me.line]??38, side=shSide(me.role);
+        const free=x=>!Object.entries(st.pos).some(([k,q])=>k!==n && Math.abs(q.y-y)<8 && Math.abs(q.x-x)<14);
+        let x=me.line==="G"?50:side===2?22:side===0?78:50;
+        if(!free(x)){ const row=Object.entries(st.pos).filter(([k,q])=>k!==n && Math.abs(q.y-y)<8).map(([,q])=>q.x);
+          const C=[50,22,78,36,64,12,88,30,70,42,58], gap=c=>Math.min(...row.map(r=>Math.abs(r-c)));
+          x=C.find(free) ?? C.reduce((b,c)=>gap(c)>gap(b)?c:b, C[0]); }   /* صف مزدحم: أبعد نقطة عن الموجودين */
+        st.pos[n]={x,y};
+      }
       rerender(); });
     q("[data-mnew]",b=>b.onclick=()=>{ const k=b.dataset.mnew, preset={}; if(b.dataset.mtype) preset.type=b.dataset.mtype; if(b.dataset.mclub) preset[CLUBKEY[k]]=b.dataset.mclub; openEv(k,-1,preset); });
     q("[data-medit]",b=>b.onclick=()=>{ const [k,i]=b.dataset.medit.split("."); openEv(k,+i); });
