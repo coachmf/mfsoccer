@@ -19,7 +19,10 @@ Object.assign(VIEWS, {
   /* لوحة نقاط الجولة — 3 تصاميم للاختيار (منصور 2026-10-08: الشريط ما عجبه). PTS_STYLE يحدد المعتمد */
   ptsGrid(o){
     const fmt=v=> v==null? '—' : (+v).toLocaleString('en');
-    const top=this.gwBoard(o.gw)[0];
+    /* أثناء الجولة: صاحب الأعلى من الترتيب المباشر (2026-10-09: «اطق على الأعلى ما يوديني» — كان لا يُضغط إلا بعد الاعتماد) */
+    const lr = o.live && typeof LIVEGW!=='undefined' && LIVEGW.cache && LIVEGW.cache.gw===o.gw ? (LIVEGW.cache.rows||[]) : null;
+    const lTop = lr && lr.length ? lr.reduce((a,r)=> (r.live>a.live? r : a), lr[0]) : null;
+    const top = lTop ? {id:lTop.id, p:lTop.live} : this.gwBoard(o.gw)[0];
     const highV = o.high!=null? o.high : (top? top.p : null);
     const highClick = top && top.p===highV ? `VIEWS.openManager('${top.id}')` : (o.live? '' : `APP.go('champions')`);
     const diff = (o.pts!=null && o.avg!=null)? o.pts-o.avg : null;
