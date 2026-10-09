@@ -534,7 +534,15 @@ const CLOUD = {
           const g2 = await this.race(this.managers().doc(this.user.uid).get(), 15000);
           if(g2.ok && g2.v && g2.v.exists){
             if(typeof DB!=='undefined'){ DB.noPush = false; }
-            return await this.saveMyTeam(profile, team);
+            /* الملف الجديد بلا فريق: نرفع تشكيلة الجهاز معه (قبل الإغلاق) حتى لا يبقى فريق المشترك فارغاً على الخادم */
+            let t2 = team;
+            try{
+              if(t2===undefined && typeof DB!=='undefined' && typeof GWADMIN!=='undefined' && !GWADMIN.deadlinePassed(DB.state.currentGW)){
+                const lt = DB.state.teams && DB.state.teams[this.user.uid];
+                if(lt && (lt.squad||[]).length){ const {history, ...rest} = JSON.parse(JSON.stringify(lt)); t2 = rest; }
+              }
+            }catch(e){}
+            return await this.saveMyTeam(profile, t2);
           }
         }
       }catch(e){}

@@ -132,7 +132,9 @@ const VIEWS = {
       if(ok!==true){ UI.toast('تعذّر الحفظ — تأكد من الاتصال وحاول مرة ثانية', true); return; }
     }
     m.username=u; m.teamName=t; DB.save(); UI.closeModal();
-    if(force){ UI.toast('تم حفظ اسمك'); APP.render(); } else { UI.toast('تم — كوّن فريقك الآن'); APP.go('team'); }
+    /* من عنده تشكيلة أصلاً (ملفه كان ناقصاً على الخادم فعومل كحساب جديد) لا يُطلب منه تكوين فريق — 2026-10-09 */
+    const mt = DB.myTeam(), hasTeam = !!(mt && (mt.squad||[]).length);
+    if(force || hasTeam){ UI.toast('تم حفظ اسمك'); APP.render(); } else { UI.toast('تم — كوّن فريقك الآن'); APP.go('team'); }
   },
   async doForgot(ev){
     const b=ev&&ev.target; this._busy(b,true,'جارٍ الإرسال…');
