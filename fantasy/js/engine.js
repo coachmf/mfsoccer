@@ -221,7 +221,11 @@ const DB = {
       /* إلا من ليس له فريق على الخادم (أو سُجّل منضماً للجولة التالية): يُحفظ فريقه منضماً للجولة التالية،
          والقواعد على الخادم تسمح بهذا وحده (joinedGW = الجولة المقفلة + 1) */
       const cur=this.state.currentGW, rSquad=((remote&&remote.team&&remote.team.squad)||[]).length;
-      const late = (t.squad||[]).length>0 && (!rSquad || +(remote&&remote.joinedGW)>cur);
+      /* مشارك في الجولة الجارية لا يصير «منضماً للتالية» أبداً (2026-10-09: علّم حسابَي مديرَين بالجولة 5):
+         لقطة تشكيلة الجولة على الجهاز أو سجل نقاط = كان داخلاً قبل الموعد. ومستند الخادم يجب أن يكون مقروءاً فعلاً. */
+      const inRound = !!((t.gwPicks||{})[cur]) || (t.history||[]).length>0 || +t.rolledGW>0;
+      const late = !!remote && !inRound && (t.squad||[]).length>0 && (!rSquad || +remote.joinedGW>cur);
+      if(t.joinedGW>cur && inRound) t.joinedGW = Math.min(+(remote&&remote.joinedGW)||cur, cur);   /* إصلاح علامة خاطئة على الجهاز */
       if(late){
         t.joinedGW=cur+1;
         const {history, ...team} = t;
@@ -1081,7 +1085,7 @@ function weightedPick(items, weights){
 const GWADMIN = {
   /* المنضم بعد إغلاق الجولة (منصور 2026-10-09: «يسوي فريق للجولة الخامسة ما يشارك بالرابعة»):
      فريقه يبدأ من الجولة التالية (joinedGW = الحالية + 1) — يُحفظ على الخادم فوراً، ولا نقاط له في الجولة الجارية */
-  lateJoiner(team, st){ st=st||DB.state; return !!(team && +team.joinedGW > st.currentGW); },
+  lateJoiner(team, st){ st=st||DB.state; return !!(team && +team.joinedGW > st.currentGW && !((team.gwPicks||{})[st.currentGW]) && !(team.history||[]).length); },
   /* قفل تعديل التشكيلة (الكابتن والدكة): بعد الموعد، إلا لمن فريقه يبدأ من الجولة التالية */
   editLocked(team, st){ st=st||DB.state; return this.deadlinePassed(st.currentGW) && !this.lateJoiner(team, st); },
   /* إنهاء الجولة الحالية على هذا الجهاز: تثبيت الحالة + أسعار + الترحيل.
