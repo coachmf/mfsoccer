@@ -1448,7 +1448,14 @@ const VIEWS = {
       const clash = await CLOUD.usernameConflict(u, m.id);
       if(clash){ UI.toast(`اسم المستخدم يشبه «${clash}» — اختر اسماً مميّزاً`, true); return; }
     }
-    if(u) m.username=u; if(t) m.teamName=t;
+    /* يُرسل للخادم مباشرة كالصورة (منصور 2026-10-09: «لمن تغير الاسم ما يحفظ»): كان يمرّ عبر رفع التشكيلة الذي يتخطى الملف
+       إن لم يكن للمشترك فريق بعد، أو اعتُمدت نسخة الخادم بعد احتساب جولة، أو لم تكتمل المزامنة — فيعود الاسم القديم عند التحميل. */
+    const nu = u || m.username, nt = t || m.teamName;
+    if(typeof CLOUD!=='undefined' && CLOUD.user){
+      const ok = await CLOUD.saveMyTeam({username:nu, teamName:nt});
+      if(ok!==true){ UI.toast('تعذّر الحفظ — تأكد من الاتصال وحاول مرة ثانية', true); return; }
+    }
+    m.username=nu; m.teamName=nt;
     DB.save(); UI.toast('تم الحفظ'); APP.render();
   },
   /* داخل تطبيق أندرويد: التحويل يفقد sessionStorage فيفشل الدخول.
