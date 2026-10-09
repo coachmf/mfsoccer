@@ -9,7 +9,7 @@
 
    عند كل نشر: ارفع رقم VER فتُبنى ذاكرة جديدة وتُحذف القديمة.
    ========================================================= */
-const VER   = 'mf-2026-10-09-374-silentupdate';
+const VER   = 'mf-2026-10-09-375-matchclock';
 const SHELL = 'shell-' + VER;
 const RUN   = 'run-'   + VER;
 
