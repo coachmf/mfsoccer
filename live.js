@@ -772,6 +772,9 @@ LV.mountPublic = function(host, m){
 LV.stopPublic = stopPub;
 
 /* ───── ربط صفحة المباراة: تبويب «مباشر» متى وُجدت وثيقة مباشرة للمباراة ───── */
+/* واجهة الجمهور للبث معطّلة (منصور 2026-10-09: «شيل المباشر هذا»): لا تبويب «مباشر» ولا شريط «مباشر الآن» ولا ساعة البث في رأس الصفحة —
+   حالة المباراة ودقيقتها من المحرّر وحده (pst). غرفة التحكم للإدارة باقية. */
+LV.PUBLIC_OFF = true;
 function hookMatchPage(){
   if(typeof renderMatchPage!=="function" || renderMatchPage.__lv) return;
   const orig = renderMatchPage;
@@ -780,6 +783,7 @@ function hookMatchPage(){
     try{
       const box = document.getElementById("mpage"), m = (typeof MP==="object") ? MP.m : null;
       if(!box || !m) return r;
+      if(LV.PUBLIC_OFF){ if(MP.tab==="live"){ MP.tab="details"; return renderMatchPage.apply(this, arguments); } stopPub(); return r; }
       const L = liveOf(m);
       const nav = box.querySelector(".mp-tabs");
       if(L && nav && !nav.querySelector('[data-mp-tab="live"]')){
@@ -799,7 +803,7 @@ function hookMatchPage(){
       const mm = typeof m==="string" && typeof matchByKey==="function" ? matchByKey(m) : m;
       const was = (typeof MP==="object") ? MP.m : null;
       const r = o.apply(this, arguments);
-      const L = liveOf(mm);
+      const L = LV.PUBLIC_OFF ? null : liveOf(mm);
       if(mm && L && was!==mm && (LV.isLivePh(L.phase) || L.phase==="ht" || (opts&&opts.live))){ MP.tab="live"; renderMatchPage(); }
       return r;
     };
@@ -811,6 +815,7 @@ function hookMatchPage(){
 /* ───── شريط «مباشر الآن» أعلى الموقع ───── */
 function paintStrip(){
   let el = document.getElementById("lvStrip");
+  if(LV.PUBLIC_OFF){ if(el) el.remove(); return; }
   const live = Object.values(LV.idx||{}).filter(L=>L && (LV.isLivePh(L.phase) || L.phase==="ht"));
   if(!live.length){ if(el) el.remove(); return; }
   if(!el){ el=document.createElement("div"); el.id="lvStrip"; el.className="lv-strip"; const anchor=document.getElementById("resStrip"); if(anchor) anchor.parentNode.insertBefore(el, anchor); else document.body.prepend(el);
@@ -826,7 +831,7 @@ function startIdx(){
   if(idxOn || !LV.store.ready()) return; idxOn = true;
   LV.store.idxWatch(d=>{ LV.idx = (d && d.m) || {}; paintStrip();
     const box=document.getElementById("mpage");
-    if(box && !box.hidden && typeof MP==="object" && MP.m){
+    if(!LV.PUBLIC_OFF && box && !box.hidden && typeof MP==="object" && MP.m){
       const nav=box.querySelector(".mp-tabs"), L=liveOf(MP.m);
       if(L && nav && !nav.querySelector('[data-mp-tab="live"]')) renderMatchPage();
       else if(L && MP.tab!=="live") syncHeaderFromIdx(L);

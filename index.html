@@ -2183,7 +2183,7 @@ main{padding-bottom:48px}
 <script src="site-i18n.js?v=24" defer></script>
 <!-- مركز المباراة المباشر: صفحة الجمهور + الربط (غرفة التحكم live-admin.js تُحمَّل عند فتحها فقط) -->
 <link rel="stylesheet" href="live.css?v=9">
-<script src="live.js?v=18" defer></script>
+<script src="live.js?v=19" defer></script>
 <!-- تبويبات لوحة الإدارة: إعادة تنظيم للأقسام الموجودة فقط -->
 <link rel="stylesheet" href="admin-tabs.css?v=1">
 <script src="admin-tabs.js?v=5" defer></script>
@@ -5559,7 +5559,7 @@ function syncPNum(box, el){
 /* ===== شكل التشكيلة على الملعب =====
    الخطة تُقترح من مراكز اللاعبين في الكشف، وتُغيَّر من القائمة، والمواضع
    تُسحب باليد فتُحفظ مع بيانات المباراة ويراها الجمهور كما ضُبطت. */
-const FORMATIONS=["4-4-2","4-3-3","4-2-3-1","4-5-1","4-1-4-1","3-5-2","3-4-3","5-3-2","5-4-1","4-4-1-1","4-2-2-2"];
+const FORMATIONS=["4-4-2","4-3-3","4-2-3-1","4-5-1","4-1-4-1","3-5-2","3-4-3","5-3-2","5-4-1","4-4-1-1","4-2-2-2","4-1-2-1-2","4-3-2-1"];   /* 4-1-2-1-2 و4-3-2-1 (منصور 2026-10-09) */
 /* قوائم منتخبات الخليج تكتب المركز مختصراً (GK/D/M/F) بدل RB/CB/ST… — بدونها يُعدّ الجميع وسطاً فتنزل التشكيلة صفاً واحداً (المحررون 2026-09-30) */
 const SH_LINE={GK:"G",G:"G",RB:"D",CB:"D",LB:"D",RWB:"D",LWB:"D",D:"D",DF:"D",CDM:"M",CM:"M",CAM:"M",RM:"M",LM:"M",M:"M",MF:"M",DM:"M",AM:"M",RW:"F",ST:"F",LW:"F",CF:"F",F:"F",FW:"F"};
 const shSide=p=>String(p||"").startsWith("R")?2:String(p||"").startsWith("L")?0:1;
