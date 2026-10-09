@@ -134,6 +134,8 @@ const APP = {
       this.authSynced = !!u;
       this.render();
       if(this.freshAccount){ this.freshAccount=false; setTimeout(()=>VIEWS.completeProfile(), 400); }
+      /* اسم افتراضي («مشترك» / «فريقي») على حساب مسجّل: لازم يغيّره قبل المتابعة (منصور 2026-10-09) */
+      else if(u && this.cloudState!=='offline'){ const me=DB.me(); if(me && VIEWS.isDefaultName(me.username, me.teamName)) setTimeout(()=>VIEWS.completeProfile(true), 600); }
       /* فُتحت من لقطة CDN (قد تتأخر حتى دقيقتين عن النشر): تحقّق فوري من Firestore في الخلفية */
       if(DB.fromSnap){ DB.fromSnap=false; setTimeout(()=>this.pollCloud(), 2500); }
       // الجدول والنتائج من mfsoccer على كل جهاز عند كل تحميل؛ الكشوفات للمدير فقط (تُنشر مع اللعبة)

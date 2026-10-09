@@ -104,24 +104,35 @@ const VIEWS = {
     };
     setTimeout(tick, 400);
   },
-  /* حساب جديد عبر Google: إكمال اسم المستخدم واسم الفريق */
-  completeProfile(){
+  /* الاسمان الافتراضيان «مشترك» و«فريقي» (أو الفراغ) ليسا اسماً حقيقياً: كانا يُكتبان للخادم كأنهما اختيار المشترك (منصور 2026-10-09) */
+  DEFAULT_NAMES:{user:'مشترك', team:'فريقي'},
+  isDefaultName(u, t){ u=String(u||'').trim(); t=String(t||'').trim(); return !u || !t || u===this.DEFAULT_NAMES.user || t===this.DEFAULT_NAMES.team; },
+  /* حساب جديد عبر Google، أو مشترك اسمه افتراضي: إكمال اسم المستخدم واسم الفريق — نافذة مقفلة حتى يُحفظ اسمان حقيقيان */
+  completeProfile(force){
     const m=DB.me(); if(!m) return;
-    UI.modal(`<h3>أهلاً بك — أكمل بياناتك</h3>
-      <div class="field"><label>اسم المستخدم (يظهر في الترتيب)</label><input id="cp_user" value="${esc(m.username)}"></div>
-      <div class="field"><label>اسم فريقك في الفانتسي</label><input id="cp_team" value="${esc(m.teamName)}" placeholder="مثال: نسور الديرة"></div>
-      <button class="btn" style="width:100%" onclick="VIEWS.saveCompleteProfile()">حفظ والبدء</button>`);
+    const v=(x,d)=>x===d? '' : (x||'');
+    UI.modal(`<h3>${force? 'اختر اسمك واسم فريقك' : 'أهلاً بك — أكمل بياناتك'}</h3>
+      ${force? '<p class="muted" style="margin:0 0 10px">اسمك الحالي افتراضي ويظهر هكذا في الترتيب والدوريات. اكتب اسمك واسم فريقك للمتابعة.</p>' : ''}
+      <div class="field"><label>اسم المستخدم (يظهر في الترتيب)</label><input id="cp_user" value="${esc(v(m.username,this.DEFAULT_NAMES.user))}"></div>
+      <div class="field"><label>اسم فريقك في الفانتسي</label><input id="cp_team" value="${esc(v(m.teamName,this.DEFAULT_NAMES.team))}" placeholder="مثال: نسور الديرة"></div>
+      <button class="btn" style="width:100%" onclick="VIEWS.saveCompleteProfile(${force?1:0})">${force? 'حفظ' : 'حفظ والبدء'}</button>`, !!force);
   },
-  async saveCompleteProfile(){
+  async saveCompleteProfile(force){
     const m=DB.me(); const u=gv('cp_user').trim(), t=gv('cp_team').trim();
     if(!u || !t){ UI.toast('اكتب الاسمين', true); return; }
+    if(this.isDefaultName(u,t)){ UI.toast('اكتب اسماً غير «مشترك» واسم فريق غير «فريقي»', true); return; }
     const bad = MODERATION.checkName(u,'اسم المستخدم') || MODERATION.checkName(t,'اسم الفريق');
     if(bad){ UI.toast(bad,true); return; }
     /* هذا مسار من دخل بـGoogle أو Apple، وكان بلا تحقّق من التعارض
        إطلاقاً — فتكرّرت الأسماء المتشابهة في لوحة الترتيب. */
     const clash = await CLOUD.usernameConflict(u, m.id);
     if(clash){ UI.toast(`اسم المستخدم يشبه «${clash}» — اختر اسماً مميّزاً`, true); return; }
-    m.username=u; m.teamName=t; DB.save(); UI.closeModal(); UI.toast('تم — كوّن فريقك الآن'); APP.go('team');
+    if(typeof CLOUD!=='undefined' && CLOUD.user){
+      const ok = await CLOUD.saveMyTeam({username:u, teamName:t});
+      if(ok!==true){ UI.toast('تعذّر الحفظ — تأكد من الاتصال وحاول مرة ثانية', true); return; }
+    }
+    m.username=u; m.teamName=t; DB.save(); UI.closeModal();
+    if(force){ UI.toast('تم حفظ اسمك'); APP.render(); } else { UI.toast('تم — كوّن فريقك الآن'); APP.go('team'); }
   },
   async doForgot(ev){
     const b=ev&&ev.target; this._busy(b,true,'جارٍ الإرسال…');
@@ -1444,6 +1455,7 @@ const VIEWS = {
     const u=gv('pr_user').trim(), t=gv('pr_team').trim();
     const bad = MODERATION.checkName(u,'اسم المستخدم') || MODERATION.checkName(t,'اسم الفريق');
     if(bad){ UI.toast(bad,true); return; }
+    if(this.isDefaultName(u||m.username, t||m.teamName)){ UI.toast('اكتب اسماً غير «مشترك» واسم فريق غير «فريقي»', true); return; }
     if(u && u!==m.username){
       const clash = await CLOUD.usernameConflict(u, m.id);
       if(clash){ UI.toast(`اسم المستخدم يشبه «${clash}» — اختر اسماً مميّزاً`, true); return; }
