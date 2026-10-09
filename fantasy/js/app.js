@@ -93,6 +93,13 @@ const APP = {
         }
         DB.muted = true; clearTimeout(DB._pushT);
         this.cloudState = h.ok ? 'ready' : (h.err==='no-game' ? 'nogame' : 'offline');
+        /* تعذّرت قراءة الملف من Firestore (قناة محجوبة/شبكة بطيئة): نجرّب عبر الخادم قبل الاستسلام لوضع «بلا اتصال» */
+        if(u && doc0===undefined){
+          const ps = CLOUD._pendingSignup;
+          const lt = DB.state.teams && DB.state.teams[u.uid];
+          const sm = await CLOUD.serverMe({ username: ps && ps.username, teamName: ps && ps.teamName, team: (lt && (lt.squad||[]).length) ? lt : null });
+          if(sm){ doc0 = sm; if(ps) CLOUD._pendingSignup = null; if(!h.ok && DB.state.players && DB.state.players.length) this.cloudState = 'ready'; }
+        }
         if(u && doc0===undefined){
           // فشلت قراءة ملف المشترك (شبكة): ليس حساباً جديداً — نبقي آخر نسخة محفوظة ولا نرفع شيئاً حتى تنجح قراءة
           DB.noPush = true; this.cloudState = 'offline';
@@ -111,6 +118,8 @@ const APP = {
             const ps = CLOUD._pendingSignup && String(CLOUD._pendingSignup.email||'')===String(u.email||'').toLowerCase() ? CLOUD._pendingSignup : null;
             const base=(ps && ps.username) || (u.displayName||'').trim() || (u.email||'مشترك').split('@')[0];
             doc = await CLOUD.createManager(u.uid, base, (ps && ps.teamName) || ('فريق '+base.split(' ')[0]), u.email||'');
+            if(!doc){ const lt = DB.state.teams && DB.state.teams[u.uid];   // تعذّرت الكتابة من الجهاز: عبر الخادم
+              doc = await CLOUD.serverMe({ username: base, teamName: (ps && ps.teamName) || ('فريق '+base.split(' ')[0]), team: (lt && (lt.squad||[]).length) ? lt : null }); }
             if(doc && ps) CLOUD._pendingSignup = null;
             fresh=!!doc;
           }

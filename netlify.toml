@@ -10,6 +10,13 @@
   status = 200
   force = true
 
+# ——— ملف المشترك عبر الخادم (netlify/functions/fantasy-me.js) ———
+[[redirects]]
+  from = "/api/fantasy-me"
+  to = "/.netlify/functions/fantasy-me"
+  status = 200
+  force = true
+
 # ——— لقطة الفانتسي من CDN (netlify/functions/fantasy.js) ———
 [[redirects]]
   from = "/api/fantasy/*"

@@ -496,6 +496,23 @@ const CLOUD = {
     return r.ok === true ? doc : null;
   },
 
+  /* ملف المشترك عبر الخادم (netlify/functions/fantasy-me.js) — HTTPS عادي لا قناة Firestore: يقرأ الملف، وإن لم يوجد
+     ينشئه بالشكل الصحيح (التشكيلة قبل الإغلاق فقط). لمن تعذّر عليه Firestore من جهازه — 2026-10-09. يعيد المستند أو null */
+  async serverMe(extra){
+    if(!this.user || typeof fetch==='undefined') return null;
+    try{
+      const idToken = await this.race(this.user.getIdToken(), 15000);
+      if(!idToken.ok) return null;
+      const ctl = typeof AbortController!=='undefined' ? new AbortController() : null;
+      const t = setTimeout(()=>{ try{ ctl && ctl.abort(); }catch(e){} }, 20000);
+      const r = await fetch('/api/fantasy-me', { method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ idToken: idToken.v, ...(extra||{}) }), ...(ctl ? {signal:ctl.signal} : {}) });
+      clearTimeout(t);
+      const j = await r.json().catch(()=>null);
+      return (j && j.ok && j.doc) ? j.doc : null;
+    }catch(e){ return null; }
+  },
+
   /* null = لا مستند (حساب جديد) · undefined = فشلت القراءة (شبكة) — لا يُعامَل الفشل كحساب جديد أبداً */
   async getManager(uid){
     try{
@@ -532,7 +549,12 @@ const CLOUD = {
           const tn = patch.teamName || (me && me.teamName) || 'فريقي';
           await this.createManager(this.user.uid, un, tn, this.user.email||'');
           const g2 = await this.race(this.managers().doc(this.user.uid).get(), 15000);
-          if(g2.ok && g2.v && g2.v.exists){
+          let made = !!(g2.ok && g2.v && g2.v.exists);
+          if(!made){   // تعذّر الإنشاء من الجهاز: عبر الخادم مع تشكيلة الجهاز
+            const lt = (typeof DB!=='undefined' && DB.state.teams) ? DB.state.teams[this.user.uid] : null;
+            made = !!(await this.serverMe({ username:un, teamName:tn, team: (lt && (lt.squad||[]).length) ? lt : null }));
+          }
+          if(made){
             if(typeof DB!=='undefined'){ DB.noPush = false; }
             /* الملف الجديد بلا فريق: نرفع تشكيلة الجهاز معه (قبل الإغلاق) حتى لا يبقى فريق المشترك فارغاً على الخادم */
             let t2 = team;
