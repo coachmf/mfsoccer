@@ -215,6 +215,9 @@ const DB = {
     const profile = u? {username:u.username, teamName:u.teamName, avatar:u.avatar} : null;
     // بعد الإغلاق: الملف الشخصي يُحفظ، والتشكيلة لا تُرسل أصلاً — والخادم يرفضها كذلك
     if(GWADMIN.deadlinePassed(this.state.currentGW)) return await CLOUD.saveMyTeam(profile, undefined);
+    /* حماية التشكيلات (منصور 2026-10-09: «تاكد ان تشكيلاتهم ما تنمسح»): جهاز فريقه فارغ لا يرفع أبداً فوق تشكيلة
+       محفوظة على الخادم (ملف مؤقت بعد قراءة فاشلة، جهاز جديد، ذاكرة ممسوحة…) — يُحفظ الملف الشخصي وحده */
+    if(!(t.squad||[]).length && remote && remote.team && (remote.team.squad||[]).length) return await CLOUD.saveMyTeam(profile, undefined);
     const {history, ...team} = t;                 // السجل لا يُرفع: المدير يكتبه
     return await CLOUD.saveMyTeam(profile, team);
   },
