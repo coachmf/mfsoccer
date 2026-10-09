@@ -7,6 +7,7 @@
 const { accessToken, verifyIdToken } = require('./lib/google');
 
 const PROJECT = 'mfsoccer-c7ee4';
+const API_KEY = 'AIzaSyD_ZzAE4HEKPIuAKCmta8tzN5KOa8IUfuo';   /* المفتاح العام (accounts:lookup برمز المستخدم نفسه) */
 const SEASON = '2026-2027';
 const BASE = `https://firestore.googleapis.com/v1/projects/${PROJECT}/databases/(default)/documents/fantasy/${SEASON}`;
 const H = { 'Content-Type':'application/json; charset=utf-8', 'Access-Control-Allow-Origin':'https://mfsoccer.com',
@@ -56,7 +57,17 @@ exports.handler = async (event) => {
     const game = g.ok ? fields((await g.json()).fields) : {};
     const cur = +game.currentGW || 1;
     const gw = (game.gws || []).find(x => +x.n === cur) || {};
-    const open = gw.deadline ? Date.now() < Date.parse(gw.deadline) : false;
+    const dl = gw.deadline ? Date.parse(gw.deadline) : NaN;
+    let open = !isNaN(dl) && Date.now() < dl;
+    /* حساب أُنشئ قبل الموعد ولم يُكتب ملفه (شبكة/حصة يوم الديدلاين 2026-10-09): تُقبل تشكيلة جهازه لهذه الجولة
+       حتى 12 ساعة بعد الموعد — تاريخ إنشاء الحساب من Firebase Auth لا يُزوَّر، فحساب جديد بعد الموعد لا يستفيد */
+    if(!open && !isNaN(dl) && Date.now() < dl + 12*3600e3){
+      try{
+        const lk = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=${API_KEY}`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ idToken:b.idToken }) });
+        const acc = lk.ok ? ((await lk.json()).users || [])[0] : null;
+        if(acc && +acc.createdAt && +acc.createdAt < dl) open = true;
+      }catch(e){}
+    }
     let team = null;
     if(open && b.team && typeof b.team === 'object' && Array.isArray(b.team.squad) && b.team.squad.length && JSON.stringify(b.team).length < 60000){
       const { history, ...t } = b.team; team = t;

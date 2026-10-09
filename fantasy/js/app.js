@@ -117,9 +117,13 @@ const APP = {
             // حساب جديد (غالباً Google): اسم مبدئي من الحساب، ويُطلب من المشترك إكمال اسمه واسم فريقه
             const ps = CLOUD._pendingSignup && String(CLOUD._pendingSignup.email||'')===String(u.email||'').toLowerCase() ? CLOUD._pendingSignup : null;
             const base=(ps && ps.username) || (u.displayName||'').trim() || (u.email||'مشترك').split('@')[0];
-            doc = await CLOUD.createManager(u.uid, base, (ps && ps.teamName) || ('فريق '+base.split(' ')[0]), u.email||'');
-            if(!doc){ const lt = DB.state.teams && DB.state.teams[u.uid];   // تعذّرت الكتابة من الجهاز: عبر الخادم
-              doc = await CLOUD.serverMe({ username: base, teamName: (ps && ps.teamName) || ('فريق '+base.split(' ')[0]), team: (lt && (lt.squad||[]).length) ? lt : null }); }
+            /* على الجهاز تشكيلة ولا ملف على الخادم: الإنشاء عبر الخادم أولاً مع التشكيلة — يقبلها حتى بعد الموعد لحساب أُنشئ قبله
+               (الإنشاء من الجهاز بعد الموعد يُنشئ ملفاً بلا فريق ويضيع الفريق — 2026-10-09) */
+            const lt = DB.state.teams && (DB.state.teams[u.uid] || DB.state.teams['u1local']);
+            const tn0 = (ps && ps.teamName) || ('فريق '+base.split(' ')[0]);
+            if(lt && (lt.squad||[]).length) doc = await CLOUD.serverMe({ username: base, teamName: tn0, team: lt });
+            if(!doc) doc = await CLOUD.createManager(u.uid, base, tn0, u.email||'');
+            if(!doc) doc = await CLOUD.serverMe({ username: base, teamName: tn0, team: (lt && (lt.squad||[]).length) ? lt : null });
             if(doc && ps) CLOUD._pendingSignup = null;
             fresh=!!doc;
           }
