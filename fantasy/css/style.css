@@ -1640,3 +1640,15 @@ html.lang-en .pp-actions{justify-content:flex-start;}
   .pitch .pslot .pt,.pitch .pslot .club-tag{font-size:clamp(.54rem,1.45cqw,.8rem) !important;max-width:none !important;}
   .pitch-row{gap:clamp(4px,1.2cqw,14px) !important;}
 }
+
+/* تشكيلة الجولة — Dream Team على الرئيسية (2026-10-09) */
+.dream-card{ margin:14px 0; }
+.dream-card .dc-head{ display:flex; align-items:flex-start; justify-content:space-between; gap:10px; margin-bottom:10px; }
+.dream-card .dc-head b{ display:block; font-size:18px; font-weight:800; }
+.dream-card .dc-head span{ display:block; font-size:12.5px; color:var(--muted); margin-top:2px; }
+.dream-card .dc-head .pill{ flex:none; }
+.dream-card .dc-sum{ display:grid; grid-template-columns:1fr 1fr 2fr; gap:8px; margin-bottom:12px; }
+.dream-card .dc-sum > div{ border:1px solid var(--line); border-radius:12px; padding:8px 10px; text-align:center; min-width:0; }
+.dream-card .dc-sum b{ display:block; font-size:20px; font-weight:800; }
+.dream-card .dc-sum span{ display:block; font-size:11.5px; color:var(--muted); margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.dream-card .dc-sum .link{ cursor:pointer; }

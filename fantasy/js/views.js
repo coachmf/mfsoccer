@@ -230,12 +230,56 @@ const VIEWS = {
           <button class="big-pill" onclick="APP.go('points')">${UI.icon('stats',18)} النقاط</button>
         </div>
       </div>
+      ${this.dreamCard()}
       <div class="link-list">
         ${links.map(([r,ic,l,sub])=>`<div class="link-row" onclick="APP.go('${r}')">
           <span class="lr-lead">${UI.icon(ic,19)}<span><span class="lr-title">${l}${r==='about'&&typeof FEEDBACK!=='undefined'? FEEDBACK.badge():''}</span><span class="lr-sub">${sub}</span></span></span>
           <span class="lr-arrow">${UI.icon('chev',16)}</span></div>`).join('')}
       </div>
       ${this.devCard(true)}
+    </div>`;
+  },
+
+  /* ======================= تشكيلة الجولة (Dream Team) =======================
+     منصور 2026-10-09: «تحت حط تشكيلة اللاعبين الأعلى نقاط» — كما في FPL: أفضل 11 بخطة صالحة
+     (حارس + 3–5 دفاع + 2–5 وسط + 1–3 هجوم) من نقاط الجولة. أثناء الجولة مباشرة، وبعدها آخر جولة معتمدة. */
+  dreamGw(){
+    const st=DB.state, fromGW=st.rules.scoringFromGW||1;
+    if(typeof LIVEGW!=='undefined' && LIVEGW.active()) return {gw:st.currentGW, live:true};
+    const fin=[...st.gws].filter(g=>g.status==='finished' && g.n>=fromGW).pop();
+    return fin? {gw:fin.n, live:false} : null;
+  },
+  dreamTeam(gw){
+    const st=DB.state, R=st.rules, by={G:[],D:[],M:[],F:[]};
+    st.players.forEach(p=>{ const r=DB.pgw(p.id,gw); if(r && r.min>0 && by[p.pos]) by[p.pos].push({id:p.id, pts:+r.pts||0, ga:(r.g||0)+(r.a||0), min:r.min}); });
+    const ord=(a,b)=> b.pts-a.pts || b.ga-a.ga || b.min-a.min;
+    Object.values(by).forEach(l=>l.sort(ord));
+    if(!by.G.length) return null;
+    let best=null;
+    for(let d=R.formationMin.D; d<=R.formationMax.D; d++) for(let m=R.formationMin.M; m<=R.formationMax.M; m++){
+      const f=10-d-m; if(f<R.formationMin.F || f>R.formationMax.F) continue;
+      if(by.D.length<d || by.M.length<m || by.F.length<f) continue;
+      const xi=[by.G[0], ...by.D.slice(0,d), ...by.M.slice(0,m), ...by.F.slice(0,f)];
+      const tot=xi.reduce((s,x)=>s+x.pts,0);
+      if(!best || tot>best.tot) best={xi, tot, form:`${d}-${m}-${f}`};
+    }
+    if(!best) return null;
+    best.star=[...best.xi].sort(ord)[0];
+    return best;
+  },
+  dreamCard(){
+    const g=this.dreamGw(); if(!g) return '';
+    const dt=this.dreamTeam(g.gw); if(!dt) return '';
+    const pts={}; dt.xi.forEach(x=>{ pts[x.id]=x.pts; });
+    const star=DB.player(dt.star.id);
+    return `<div class="card dream-card">
+      <div class="dc-head">
+        <div><b>تشكيلة الجولة ${g.gw}</b><span>اللاعبون الأعلى نقاطاً${g.live? ' — تتحدث مع المباريات' : ''}</span></div>
+        ${g.live? '<span class="pill red">مباشر</span>' : ''}
+      </div>
+      <div class="dc-sum"><div><b>${dt.tot}</b><span>المجموع</span></div><div><b dir="ltr">${dt.form}</b><span>الخطة</span></div>
+        <div class="link" onclick="VIEWS.playerSheet('${star.id}','addp-out')"><b>${dt.star.pts}</b><span>نجم الجولة: <bdi data-i18n="off">${esc(star.name)}</bdi></span></div></div>
+      <div class="pitch-frame">${this.pitchHTML({xi:dt.xi.map(x=>x.id), bench:[], cap:null, vice:null}, {view:true, pts})}</div>
     </div>`;
   },
 

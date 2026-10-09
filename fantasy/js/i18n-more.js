@@ -159,7 +159,7 @@ const NAMES_EN = {
 const DICT_MORE = {
   // إدارة الدوريات + النادي المفضل (2026-10-08)
   'إدارة الدوريات':'Leagues', 'الدوريات الخاصة':'Private leagues', 'الدوريات العامة':'Public leagues', 'الدوري':'League',
-  'الإجمالي':'Overall', 'آخر تحديث:':'Last updated:', 'الفريق':'Team', 'المجموع':'Total', 'متوسط النقاط':'Average', 'نقاط الجولة':'GW points', 'نقاطك الآن':'Your live points', 'نقاطه الآن':'Live points', 'عن المتوسط':'vs average', 'المتوسط':'Average', 'الأعلى':'Highest', 'أعلى النقاط':'Highest', 'النقاط النهائية':'Final points', 'النقاط الآن':'Live points', 'ترتيب الجولة':'GW rank', 'خصم الانتقالات':'Transfer cost',
+  'الإجمالي':'Overall', 'آخر تحديث:':'Last updated:', 'الفريق':'Team', 'المجموع':'Total', 'متوسط النقاط':'Average', 'نقاط الجولة':'GW points', 'نقاطك الآن':'Your live points', 'نقاطه الآن':'Live points', 'الخطة':'Formation', 'نجم الجولة:':'Star of the round:', 'اللاعبون الأعلى نقاطاً':'Highest-scoring players', 'اللاعبون الأعلى نقاطاً — تتحدث مع المباريات':'Highest-scoring players — updates live', 'عن المتوسط':'vs average', 'المتوسط':'Average', 'الأعلى':'Highest', 'أعلى النقاط':'Highest', 'النقاط النهائية':'Final points', 'النقاط الآن':'Live points', 'ترتيب الجولة':'GW rank', 'خصم الانتقالات':'Transfer cost',
   'النقاط / الترتيبات':'Points / Rankings', 'إجمالي النقاط':'Total points', 'إجمالي المشتركين':'Total managers', 'عرض سجل الجولات':'Gameweek history',
   'سجل الجولات':'Gameweek history', 'ما عنده دوريات خاصة':'No private leagues', 'إضافة صورة بروفايل':'Add profile photo', 'تغيير الصورة':'Change photo',
   'إزالة':'Remove', 'تظهر لما أحد يفتح ملفك في الدوريات':'Shown when someone opens your profile', 'تم تحديث صورتك':'Photo updated', 'أُزيلت الصورة':'Photo removed',
