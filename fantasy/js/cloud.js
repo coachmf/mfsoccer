@@ -76,6 +76,10 @@ const CLOUD = {
       const P = C && C.prototype; if(!P || typeof P[name] !== 'function') return;
       const orig = P[name];
       P[name] = function(...a){ return lim(orig.apply(this, a), ms, (C.name||'')+'.'+name); };
+      if(C === fs.Query && name === 'get')
+        /* الاستعلام من الخادم دائماً: بلا اتصال كان Firestore يعيد ما في ذاكرة الجهاز بصمت (ملف المشترك وحده) —
+           فحُسب الترتيب الحي «1 / 1» ومتوسط 0 على جهاز المدير (2026-10-09). فشل صريح أفضل من نتيجة ناقصة. */
+        P[name] = function(o){ return lim(orig.call(this, o || {source:'server'}), ms, 'Query.get'); };
     };
     const M = this.OP_MS;
     wrap(fs.DocumentReference, 'get', M.docGet);
@@ -590,6 +594,8 @@ const CLOUD = {
     if(locked && this._liveTeams && this._liveTeams.gw===gw && this._liveTeams.at>dl) return this._liveTeams.list;
     const q=await this.managers().get(); const list=[];
     q.forEach(d=>{ const v=d.data(); if(!v.team || !(v.team.squad||[]).length) return; list.push({id:d.id, name:v.username||'مشترك', teamName:v.teamName||'', total:+v.total||0, team:v.team}); });
+    const known = (typeof DB!=='undefined' && DB.state && +DB.state.managerCount) || 0;
+    if(known && list.length < known*0.5) throw new Error('قراءة ناقصة للمشتركين');   // لا لقطة حية من ذاكرة الجهاز
     this._liveTeams={gw, at:Date.now(), list};
     return list;
   },
@@ -689,6 +695,8 @@ const CLOUD = {
       board.push(this.boardRow(d.id, v));
     });
     board.sort((a,b)=>b.total-a.total || a.name.localeCompare(b.name,'ar'));
+    const known = (typeof DB!=='undefined' && DB.state && +DB.state.managerCount) || 0;
+    if(known && count < known*0.5) return {ok:false, err:`قراءة ناقصة (${count} من ~${known}) — لم تُنشر`};   // لا ننشر لقطة من ذاكرة الجهاز
     return {ok:true, own, count, total:q.size, board, pics};
   },
   /* صورة مصغّرة 40px (~1KB) من صورة البروفايل — تُبنى على جهاز المدير وقت النشر */
