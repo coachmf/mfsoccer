@@ -251,6 +251,25 @@
     s.classList.add("open"); const b=s.querySelector("[data-mf-std]"); if(b){ b.setAttribute("aria-expanded","true"); b.querySelector("span").textContent="إخفاء"; }
     if(scroll) s.scrollIntoView({behavior: matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth", block:"start"});
   }
+  /* موعد إغلاق الفانتسي أعلى الرئيسية (منصور 2026-10-09: «ثابت لكل جولة»): نفس قاعدة الفانتسي — انطلاق أول مباراة
+     في الجولة (بلا المؤجلة) — محسوب من جدول الموقع نفسه بلا أي قراءة إضافية. يظهر موعد الجولة التالية فور إغلاق الحالية. */
+  function fantasyDeadline(){
+    const now=Date.now(), first={};
+    (ALL.matches||[]).forEach(m=>{ if(compOf(m)!=="الدوري" || !m.date || !m.time) return; const k=kickoffTS(m); if(k==null) return;
+      const r=+m.round; if(!(r in first) || k<first[r]) first[r]=k; });
+    let best=null;
+    Object.keys(first).forEach(r=>{ const k=first[r]; if(k>now && (!best || k<best.ts)) best={round:+r, ts:k}; });
+    return best;
+  }
+  function fantasyDeadlineHTML(){
+    if(!shown("fantasy")) return "";
+    const d=fantasyDeadline(); if(!d) return "";
+    const dt=new Date(d.ts), p=n=>String(n).padStart(2,"0");
+    const day=`${AR_DOW[dt.getDay()]} ${dt.getDate()} ${AR_MON[dt.getMonth()]}`;
+    return `<a class="mf-dl" href="${window.FANTASY_URL||"/fantasy/"}">
+      <span class="mf-dl-k">ديدلاين الفانتسي<small>الجولة ${d.round}</small></span>
+      <span class="mf-dl-v"><b>${day}</b><b dir="ltr">${p(dt.getHours())}:${p(dt.getMinutes())}</b></span></a>`;
+  }
   function renderHomeMF(){
     const v=D.getElementById("v-home"); if(!v) return;
     const T=standings();
@@ -259,6 +278,7 @@
     const live=today?"":(safe(()=>liveCard())||"");
     const next=today||safe(()=>hmNextMatchHTML())||"";
     v.innerHTML=`<div class="mf-home">
+      ${safe(()=>fantasyDeadlineHTML())||""}
       ${compChips()}
       ${live}
       <div class="mf-row mf-row-a">${next}${resultsHTML()}</div>

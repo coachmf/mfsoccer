@@ -1194,6 +1194,15 @@ html.mf .hm-nm-team b{color:var(--mf-tx)}
 html.mf .hm-nm-team .crest.lg{background:transparent!important}
 html.mf .hm-nm-time{font-family:'Rubik',sans-serif;color:var(--mf-tx);font-size:28px}
 html.mf .hm-cd b{color:var(--mf-gold);font-family:'Rubik',sans-serif}
+/* ديدلاين الفانتسي أعلى الرئيسية */
+.mf-dl{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 16px;border-radius:var(--mf-rc);
+  border:1px solid var(--mf-ln2);background:linear-gradient(90deg,rgba(231,208,147,.12),rgba(231,208,147,.03));color:var(--mf-tx);text-decoration:none}
+.mf-dl-k{display:flex;flex-direction:column;font-weight:800;font-size:var(--mf-t4);color:var(--mf-gold)}
+.mf-dl-k small{font-weight:600;font-size:var(--mf-t5);color:var(--mf-tx3);margin-top:2px}
+.mf-dl-v{display:flex;align-items:baseline;gap:10px}
+.mf-dl-v b{font-family:'Rubik',sans-serif;font-weight:700;font-size:var(--mf-t3);color:var(--mf-tx)}
+.mf-dl-v b[dir]{font-size:1.15rem}
+html.mf[data-theme="light"] .mf-dl-k{color:var(--mf-acc-tx)}
 /* مباريات اليوم */
 .hm-td-list{display:flex;flex-direction:column}
 .hm-td-row{display:grid;grid-template-columns:minmax(0,1fr) 104px minmax(0,1fr);align-items:center;gap:8px;background:none;border:0;border-top:1px solid var(--mf-ln);padding:12px 2px;color:inherit;font-family:inherit;cursor:pointer;text-align:inherit}
