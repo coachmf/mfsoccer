@@ -627,8 +627,8 @@ function scoreFixture(st, fx){
       pts += r.g*S('goal'+p.pos) + r.a*S('assist');
       if(r.cs){ if(p.pos==='G') pts+=S('csG'); else if(p.pos==='D') pts+=S('csD'); else if(p.pos==='M') pts+=S('csM'); }
       pts += r.ps*S('penSave') + r.pm*S('penMiss') + r.og*S('ownGoal');
-      pts += r.yc*S('yellow') + r.rc*S('red');
-      if((p.pos==='G'||p.pos==='D') && r.min>=60) pts += Math.floor((r.gc||0)/2)*S('concededPer2');
+      pts += r.rc ? r.rc*S('red') : r.yc*S('yellow');   /* مثل FPL: خصم الطرد يشمل الصفراء (إنذار ثانٍ = −3 لا −4) */
+      if((p.pos==='G'||p.pos==='D') && r.min>0) pts += Math.floor((r.gc||0)/2)*S('concededPer2');   /* مثل FPL: كل هدفين وهو في الملعب، مهما كانت دقائقه (منصور 2026-10-09) */
       pts += r.bonus||0;
       r.pts = pts;
       st.playerGW[pid] = st.playerGW[pid]||{};
@@ -648,11 +648,11 @@ function explainPoints(st, p, r){
   if(r.g)  add('الأهداف', r.g, r.g*S('goal'+p.pos));
   if(r.a)  add('صناعة الأهداف', r.a, r.a*S('assist'));
   if(r.cs){ const k = p.pos==='G'?'csG' : p.pos==='D'?'csD' : p.pos==='M'?'csM' : null; if(k) add('شباك نظيفة', 1, S(k)); }
-  if((p.pos==='G'||p.pos==='D') && r.min>=60 && r.gc) add('أهداف مستقبلة', r.gc, Math.floor(r.gc/2)*S('concededPer2'));
+  if((p.pos==='G'||p.pos==='D') && r.min>0 && r.gc) add('أهداف مستقبلة', r.gc, Math.floor(r.gc/2)*S('concededPer2'));
   if(r.ps) add('تصدي لركلة جزاء', r.ps, r.ps*S('penSave'));
   if(r.pm) add('إهدار ركلة جزاء', r.pm, r.pm*S('penMiss'));
   if(r.og) add('هدف عكسي', r.og, r.og*S('ownGoal'));
-  if(r.yc) add('بطاقة صفراء', r.yc, r.yc*S('yellow'));
+  if(r.yc && !r.rc) add('بطاقة صفراء', r.yc, r.yc*S('yellow'));   /* مع الطرد تُحسب الحمراء وحدها */
   if(r.rc) add('بطاقة حمراء', r.rc, r.rc*S('red'));
   if(r.bonus) add('نقاط البونص', r.bonus, r.bonus);
   return { rows, total: rows.reduce((s,x)=>s+x.pts,0), played:true };

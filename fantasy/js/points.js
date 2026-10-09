@@ -24,7 +24,7 @@ Object.assign(VIEWS, {
     const highClick = top && top.p===highV ? `VIEWS.openManager('${top.id}')` : (o.live? '' : `APP.go('champions')`);
     const diff = (o.pts!=null && o.avg!=null)? o.pts-o.avg : null;
     const hc = highClick? ` class="link" onclick="${highClick}"` : '';
-    const lbl = o.live? 'نقاطك الآن' : 'نقاط الجولة';
+    const lbl = o.live? (o.other? 'نقاطه الآن' : 'نقاطك الآن') : 'نقاط الجولة';
     const chip = o.chip? `<em class="pv-chip">${esc(o.chip)}</em>` : '';
     const hits = `<bdi dir="ltr">${o.hits? '-'+o.hits : '0'}</bdi>`;
     const dTxt = `<bdi dir="ltr">${diff==null? '—' : (diff>0?'+':'')+diff}</bdi>`;

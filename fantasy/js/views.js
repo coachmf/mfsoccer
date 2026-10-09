@@ -1165,8 +1165,11 @@ const VIEWS = {
     // نقاط الجولة المعروضة إن كانت محتسبة (أو جارية)
     let pts=null, res=null;
     const g=st.gws.find(x=>x.n===showGw);
-    if(g && (g.status==='finished' || g.status==='live')){
-      try{ res=TEAM.gwPoints({...vt, gwPicks:{[showGw]:picks}}, showGw, st, {live:g.status==='live'}); pts={}; res.rows.forEach(r=>{ pts[r.pid]=r.eff; }); }catch(e){}
+    /* الجولة الجارية بعد الإغلاق (حالتها 'next' لا 'live'): نقاطه المباشرة كما في صفحة نقاطي (2026-10-09: كانت تظهر «0» و«—») */
+    const liveV = showGw===st.currentGW && typeof LIVEGW!=='undefined' && LIVEGW.active() && !(+doc.joinedGW>showGw) && !(doc.history||[]).some(x=>+x.gw===+showGw);
+    if(liveV) LIVEGW.refresh();
+    if(g && (g.status==='finished' || g.status==='live' || liveV)){
+      try{ res=TEAM.gwPoints({...vt, gwPicks:{[showGw]:picks}}, showGw, st, {live:g.status==='live' || liveV}); pts={}; res.rows.forEach(r=>{ pts[r.pid]=r.eff; }); }catch(e){}
     }
     const chip=picks.chip? (st.rules.chips[picks.chip]||{}).label||picks.chip : null;
     // مع نقاط محتسبة: بطاقات صفحة النقاط (الضغط يفتح تفصيل النقاط) بدل بطاقة العرض العادية
@@ -1178,14 +1181,16 @@ const VIEWS = {
     const hG=hist.find(x=>+x.gw===+showGw);
     const gObj=st.gws.find(x=>x.n===showGw)||{};
     const gridPts = hG? hG.pts : (res? res.total : null);
+    const lsV = liveV ? (LIVEGW.summary()||{}) : null;
+    const lrV = liveV && LIVEGW.cache.rows ? (LIVEGW.cache.rows.find(r=>r.id===uid)||{}).liveRank : null;
     return back+head+`<div class="card">
       <div class="pts-hero mgr-pts">
         <div class="pts-nav">
           <button class="prev" ${pGw==null?'disabled':''} onclick="VIEWS.ui.mgrGw=${pGw};APP.render()" title="الجولة السابقة">${UI.icon('chev',22)}</button>
-          <div class="pts-gw">الجولة ${showGw} ${gObj.status==='live'?'<span class="pill red">مباشر</span>':''}</div>
+          <div class="pts-gw">الجولة ${showGw} ${(gObj.status==='live'||liveV)?'<span class="pill red">مباشر</span>':''}</div>
           <button class="next" ${nGw==null?'disabled':''} onclick="VIEWS.ui.mgrGw=${nGw};APP.render()" title="الجولة التالية">${UI.icon('chev',22)}</button>
         </div>
-        ${this.ptsGrid({gw:showGw, pts:gridPts, live:gObj.status==='live', avg:gObj.avg, high:gObj.high, rank:(hG&&hG.rank)||this.gwRankOf(showGw, uid), hits:(hG&&hG.hits)||0, chip})}
+        ${this.ptsGrid({gw:showGw, pts:gridPts, live:gObj.status==='live'||liveV, other:true, avg:liveV? (lsV.avg??null) : gObj.avg, high:liveV? (lsV.high??null) : gObj.high, rank:(hG&&hG.rank)||lrV||this.gwRankOf(showGw, uid), hits:(hG&&hG.hits)||(res&&res.hits)||0, chip})}
       </div>
       <div class="pitch-frame">
         ${this.pitchHTML(vt, opt)}
