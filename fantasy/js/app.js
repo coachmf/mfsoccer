@@ -31,7 +31,12 @@ const APP = {
     try{ PUSH.refresh(); }catch(e){}
     // نشر جولة أو احتسابها على الخادم يصل للأجهزة المفتوحة بلا إعادة تحميل
     setInterval(()=>this.pollCloud(), 5*60000);
-    document.addEventListener('visibilitychange', ()=>{ if(!document.hidden){ this.pollCloud(); this.retryCloud(); } });
+    document.addEventListener('visibilitychange', ()=>{
+      if(document.hidden){ this._hiddenAt=Date.now(); return; }
+      this.pollCloud(); this.retryCloud();
+      if(Date.now()-(this._hiddenAt||0) > 60000) this.checkVersion('resume');   // رجع للتطبيق من الخلفية: نسخة جديدة؟
+    });
+    this.initVersionWatch();
     // وضع بلا اتصال لا يبقى للأبد: كل 20 ثانية نجرّب الخادم، وأول ما يرد نعيد التحميل فتصل الجولة واللاعبون الجدد
     setInterval(()=>this.retryCloud(), 20000);
     // شاشة الافتتاح
@@ -169,6 +174,64 @@ const APP = {
       if(manual) UI.toast('ما زال الخادم لا يرد — تأكد من الإنترنت وحاول بعد قليل', true);
     }catch(e){}
     this._retryBusy=false;
+  },
+
+  /* ---------- النسخة الجديدة ----------
+     الصفحة تُقدَّم من ذاكرة sw.js فوراً والجديدة تُجلب في الخلفية، والتطبيق على الآيفون يرجع من الخلفية بلا إعادة تحميل —
+     فبقي بعض المشتركين على نسخة قديمة (لوحة VAMOS لم تظهر لهم، 2026-10-09). الآن: نقارن رقم ?v لـ app.js
+     مع الصفحة على الخادم عند الفتح وعند الرجوع من الخلفية، ونحدّث تلقائياً إن لم يكن المشترك في منتصف شيء. */
+  _bootAt: Date.now(),
+  /* بصمة النسخة = كل ملفات الصفحة بأرقام ?v (سكربتات وأنماط) — أي تعديل منشور يغيّر رقماً منها (لوحة VAMOS كانت في css فقط) */
+  verMap(list){ const o={}; list.forEach(x=>{ const m=String(x||'').match(/((?:js|css)\/[^/?]+)\?v=(\d+)/); if(m) o[m[1]]=+m[2]; }); return o; },
+  myVer(){ return this.verMap([...document.querySelectorAll('script[src],link[rel=stylesheet][href]')].map(e=>e.getAttribute('src')||e.getAttribute('href'))); },
+  /* ملف موجود عندنا وعلى الخادم برقم أحدث = نسخة جديدة (ملفات تُضاف أثناء التشغيل لا تُحسب) */
+  isNewer(srv){ const me=this.myVer(); return Object.keys(srv).some(k=>me[k]!==undefined && srv[k]>me[k]); },
+  initVersionWatch(){
+    if('serviceWorker' in navigator){
+      navigator.serviceWorker.addEventListener('message', e=>{
+        if(e.data && e.data.type==='HTML_UPDATED' && /^\/fantasy/.test(e.data.path||'')) this.newVersion(null);
+      });
+    }
+    setTimeout(()=>this.checkVersion('boot'), 4000);
+  },
+  async checkVersion(){
+    if(this._verBusy || /^(localhost|127\.0\.0\.1)$/.test(location.hostname)) return;
+    this._verBusy=true;
+    try{
+      /* ?vcheck يتجاوز ذاكرة sw.js (يمر للشبكة مباشرة) */
+      const res=await fetch('/fantasy/?vcheck='+Date.now(), {cache:'no-store'});
+      if(res.ok){
+        const html=await res.text();
+        const srv=this.verMap([...html.matchAll(/(?:src|href)="([^"]+\?v=\d+)"/g)].map(m=>m[1]));
+        if(this.isNewer(srv)) await this.newVersion(html);
+      }
+    }catch(e){}
+    this._verBusy=false;
+  },
+  /* المشترك في منتصف عمل؟ (ورقة/نافذة مفتوحة، انتقالات أو تشكيلة غير معتمدة) — لا نعيد التحميل تحت يده */
+  busyUser(){
+    const u=(typeof VIEWS!=='undefined' && VIEWS.ui)||{};
+    return !!(document.getElementById('sheetBack') || document.getElementById('modalBack') || document.querySelector('.addp-open')
+      || (u.tIn&&u.tIn.length) || (u.tOut&&u.tOut.length) || (u.pickerSquad&&u.pickerSquad.length) || u.sel
+      || (document.activeElement && /INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)));
+  },
+  async newVersion(html){
+    if(this._verShown) return;
+    /* نحفظ الصفحة الجديدة في ذاكرة sw.js حتى تفتح إعادة التحميل عليها مباشرة (لا على القديمة) */
+    if(html && window.caches){
+      try{ const keys=await caches.keys(); const k=keys.find(x=>/^shell-/.test(x));
+        if(k){ const c=await caches.open(k); const hdr={headers:{'Content-Type':'text/html; charset=utf-8'}};
+          await c.put(new Request(location.origin+'/fantasy/'), new Response(html, hdr));
+          await c.put(new Request(location.origin+'/fantasy/index.html'), new Response(html, hdr)); } }catch(e){}
+    }
+    /* حماية من حلقة: تحديث تلقائي مرتين كحد أقصى كل 10 دقائق، بعدها زر فقط */
+    let log=[]; try{ log=JSON.parse(sessionStorage.getItem('kwf_verreload')||'[]').filter(t=>Date.now()-t<600000); }catch(e){}
+    if(!this.busyUser() && log.length<2){ log.push(Date.now()); try{ sessionStorage.setItem('kwf_verreload', JSON.stringify(log)); }catch(e){} location.reload(); return; }
+    this._verShown=true;
+    const bar=document.createElement('div'); bar.id='verBar';
+    bar.style.cssText='position:fixed;left:12px;right:12px;bottom:calc(76px + env(safe-area-inset-bottom));z-index:9999;display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:14px;background:var(--surface,#0b1430);border:1px solid var(--accent,#5aa0ff);box-shadow:0 8px 24px rgba(0,0,0,.35)';
+    bar.innerHTML='<span style="flex:1;font-size:.9rem">صدرت نسخة جديدة من اللعبة</span><button class="btn sm" onclick="location.reload()">تحديث</button>';
+    document.body.appendChild(bar);
   },
 
   /* هل المشترك داخل بحساب سحابي حقيقي؟ */
