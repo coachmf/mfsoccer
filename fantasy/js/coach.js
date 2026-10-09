@@ -15,7 +15,8 @@ const coachIdOf = club => 'c' + club;
 
 const COACHES = {
   /* منصور 2026-10-09: «المدرب تقدر تغيره كل جولة» — العقد جولة واحدة مهما كانت القيمة المحفوظة في السحابة (كانت 2) */
-  rules(st){ st=st||DB.state; const r=(st.rules && st.rules.coach) || COACH_RULES; return +r.contract===1 ? r : Object.assign({}, r, {contract:1}); },
+  /* ومنصور 2026-10-09: المدرب اختياري — يقدر المشترك يزيله (بلا مدرب = صفر نقاط بلا خصم) مهما كانت قيمة required في السحابة */
+  rules(st){ st=st||DB.state; const r=(st.rules && st.rules.coach) || COACH_RULES; return +r.contract===1 && !r.required ? r : Object.assign({}, r, {contract:1, required:false}); },
   enabled(st){ return !!this.rules(st).enabled; },
   /* هل تُحتسب نقاط المدرب في هذه الجولة؟ (تبدأ من جولة الانطلاق) */
   active(st, gw){ st=st||DB.state; const R=this.rules(st); return !!R.enabled && gw >= (R.fromGW||1); },
@@ -181,6 +182,17 @@ Object.assign(TEAM, {
     team.bank=bankAfter;
     team.coach=coachId; team.coachSince=st.currentGW;
     team.coachLog=(team.coachLog||[]).concat([{gw:st.currentGW, out:old? old.id:null, in:coachId, date:new Date().toISOString()}]).slice(-30);
+    return null;
+  },
+  /* إزالة المدرب: مجانية، سعره يرجع للبنك، والفريق بلا مدرب = صفر نقاط له */
+  removeCoach(team, st){
+    st=st||DB.state;
+    if(!team || !team.coach) return null;
+    if(GWADMIN.deadlinePassed(st.currentGW)) return 'أُغلقت الجولة — إزالة المدرب بعد الاحتساب';
+    const old=this.coachOf(team, st);
+    team.bank=Math.round(((+team.bank||0)+(old? +old.price||0 : 0))*10)/10;
+    team.coachLog=(team.coachLog||[]).concat([{gw:st.currentGW, out:team.coach, in:null, date:new Date().toISOString()}]).slice(-30);
+    team.coach=null; team.coachSince=null;
     return null;
   },
 });

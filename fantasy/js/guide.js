@@ -17,6 +17,7 @@ const FEEDBACK = {
     const doc={ type, text, username:(m&&m.username)||'', teamName:(m&&m.teamName)||'',
       uid:(typeof CLOUD!=='undefined' && CLOUD.user)? CLOUD.user.uid : '',
       gw:DB.state.currentGW, ver:appVersion(), ua:navigator.userAgent.slice(0,120),
+      cs:(typeof APP!=='undefined' && APP.cloudState)||'', cerr:(typeof APP!=='undefined' && APP.cloudErr)||'',   /* حالة الاتصال لتشخيص «جولة قديمة/لاعبون ناقصون» */
       created:new Date().toISOString(), status:'new', replies:[], updated:new Date().toISOString(), userUnread:0 };
     if(typeof CLOUD!=='undefined' && CLOUD.ready){
       const r=await CLOUD.race(CLOUD.root().collection('feedback').add(doc), 8000);

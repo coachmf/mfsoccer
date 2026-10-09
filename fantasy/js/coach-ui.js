@@ -99,7 +99,7 @@ Object.assign(VIEWS, {
       return `<div class="coach-bar empty" ${click} data-testid="coach-bar">
         <div class="cb-ph"><div class="empty-shirt">${UI.icon('plus',20)}</div></div>
         <div class="cb-txt"><div class="cb-lbl">المدرب</div><b>اختر مدرباً</b><span>نقاطه من نتائج ناديه وصعوبة المنافس</span></div>
-        <div class="cb-side"><span class="pill cb-pill">${mode==='picker'? 'مطلوب' : 'إضافة'}</span></div></div>`;
+        <div class="cb-side"><span class="pill cb-pill">إضافة</span></div></div>`;
     }
     const club=DB.club(c.club), next=FDR.next(c.club,1)[0];
     const rec=STANDINGS.record(st, c.club)||{form:[]}, rank=COACH_UI.rankNow(c.club);
@@ -143,14 +143,15 @@ Object.assign(VIEWS, {
     const rank=COACH_UI.rankNow(c.club);
     const locked=GWADMIN.deadlinePassed(st.currentGW);
     const next=FDR.next(c.club,3);
-    let actions='';
+    let actions='', note='';
     if(mode==='picker'){
       actions=`<button class="btn sec" onclick="UI.closeSheet();VIEWS.openAddCoach({ctx:'picker'})">تغيير المدرب</button>
         <button class="btn ghost" onclick="UI.closeSheet();VIEWS.pickerRemoveCoach()">إزالة</button>`;
     } else if(mine){
-      const why = locked ? 'أُغلقت الجولة' : (cost&&!cost.free)? '' : '';
-      actions=`<button class="btn sec" ${locked?'disabled':''} onclick="UI.closeSheet();VIEWS.openAddCoach({ctx:'team'})">تغيير المدرب</button>`;
-      if(ct) actions=`<div class="tiny" style="margin-bottom:8px">العقد: من الجولة ${ct.since} إلى الجولة ${ct.since+ct.len}${ct.free? ' — التغيير مجاني الآن' : (st.rules.freeChanges? ' — تغييرات حرة حتى الإغلاق' : ' — التغيير المبكر يستهلك انتقالاً أو −'+st.rules.transferCost)}</div>`+actions;
+      /* ثلاثة أزرار بعرض الجوال: عناوين قصيرة، وسطر العقد فوقها بعرض كامل */
+      actions=`<button class="btn sec" ${locked?'disabled':''} onclick="UI.closeSheet();VIEWS.openAddCoach({ctx:'team'})">تغيير</button>
+        <button class="btn ghost" ${locked?'disabled':''} onclick="UI.closeSheet();VIEWS.removeCoach()">إزالة</button>`;
+      if(ct) note=`<div class="tiny" style="margin:0 16px 10px">العقد: من الجولة ${ct.since} إلى الجولة ${ct.since+ct.len}${ct.free? ' — التغيير مجاني الآن' : (st.rules.freeChanges? ' — تغييرات حرة حتى الإغلاق' : ' — التغيير المبكر يستهلك انتقالاً أو −'+st.rules.transferCost)}</div>`;
     }
     UI.sheet(`
       <div class="ps-head ps-head-photo" style="background:linear-gradient(135deg,${club.color} 0%,${club.dark} 100%)">
@@ -172,7 +173,7 @@ Object.assign(VIEWS, {
         <div class="row" style="gap:6px;margin:10px 0 4px;align-items:center"><span class="tiny">آخر 5:</span>${COACH_UI.formPills(rec.form.slice(-5))||'<span class="tiny">—</span>'}</div>
         <div class="fdr-line">${next.map(x=>UI.fdrPill(x)).join('')}</div>
       </div>
-      <div class="ps-actions">${actions}<button class="btn ghost" onclick="UI.closeSheet();VIEWS.openCoach('${id}')">الملف الكامل</button></div>`);
+      ${note}<div class="ps-actions">${actions}<button class="btn ghost" onclick="UI.closeSheet();VIEWS.openCoach('${id}')">الملف الكامل</button></div>`);
   },
 
   /* ======================= شاشة اختيار المدرب ======================= */
@@ -272,6 +273,20 @@ Object.assign(VIEWS, {
     go();
   },
   pickerRemoveCoach(){ this.ui.pickerCoach=null; APP.render(); },
+  /* إزالة مدرب الفريق: سعره يرجع للبنك، وبلا مدرب = صفر نقاط بلا خصم (منصور 2026-10-09) */
+  removeCoach(){
+    const st=DB.state, team=DB.myTeam(); if(!team || !team.coach) return;
+    if(GWADMIN.deadlinePassed(st.currentGW)){ UI.toast('أُغلقت الجولة — إزالة المدرب بعد الاحتساب',true); return; }
+    UI.modal(`<h3>إزالة المدرب؟</h3>
+      <p class="muted">بلا مدرب لا تُخصم نقاط، لكن تخسر نقاطه. تقدر تضيف مدرباً في أي وقت قبل إغلاق الجولة.</p>
+      <div class="row" style="gap:8px"><button class="btn" onclick="UI.closeModal();VIEWS._removeCoachGo()">تأكيد الإزالة</button>
+      <button class="btn sec" onclick="UI.closeModal()">تراجع</button></div>`);
+  },
+  _removeCoachGo(){
+    const team=DB.myTeam(); const err=TEAM.removeCoach(team, DB.state);
+    if(err){ UI.toast(err,true); return; }
+    DB.save(); UI.toast('أُزيل المدرب — رجع سعره للبنك'); APP.render();
+  },
 
   /* ======================= صفحة ملف المدرب ======================= */
   openCoach(id){
@@ -475,6 +490,14 @@ const COACH_I18N = {
     'سوريا':'Syria', 'كرواتيا':'Croatia', 'البحرين':'Bahrain', 'سلوفاكيا':'Slovakia', 'البرتغال':'Portugal', 'البرازيل':'Brazil', 'البوسنة':'Bosnia',
     'فريقك بلا مدرب':'Your team has no coach', 'اختر مدرباً من الشريط تحت الملعب — نقاطه من نتائج ناديه وصعوبة المنافس. بلا مدرب لا تُخصم نقاط، لكن تخسر نقاطه.':'Pick a coach from the bar under the pitch — his points come from his club\'s results and the opponent\'s difficulty. Without a coach nothing is deducted, but you miss his points.',
     'الأغلى':'Most expensive', 'الأعلى نقاطاً':'Most points', 'الأكثر تملكاً':'Most owned',
+    'إزالة المدرب':'Remove coach', 'تغيير':'Change', 'إزالة المدرب؟':'Remove the coach?', 'إزالة':'Remove', 'تأكيد الإزالة':'Confirm removal', 'تراجع':'Cancel',
+    'تعذّر الاتصال بالخادم':'Could not reach the server', 'إعادة الاتصال':'Reconnect',
+    'لعب الفانتسي يحتاج اتصالاً وحساباً — بدونهما ما تقدر تحفظ تشكيلتك أو تختار الكابتن أو تسمّي فريقك أو تدخل الدوريات، ولا تظهر آخر الجولات واللاعبين الجدد.':'Playing the fantasy needs a connection and an account — without them you cannot save your line-up, pick a captain, name your team or join leagues, and the latest gameweeks and new players do not appear.',
+    'تأكد من الإنترنت، ثم اضغط «إعادة الاتصال». نحاول تلقائياً كل 20 ثانية.':'Check your internet, then tap “Reconnect”. We retry automatically every 20 seconds.',
+    'ما زال الخادم لا يرد — تأكد من الإنترنت وحاول بعد قليل':'The server still is not responding — check your internet and try again shortly',
+    'أُزيل المدرب — رجع سعره للبنك':'Coach removed — his price is back in the bank',
+    'أُغلقت الجولة — إزالة المدرب بعد الاحتساب':'Gameweek locked — remove the coach after scoring',
+    'بلا مدرب لا تُخصم نقاط، لكن تخسر نقاطه. تقدر تضيف مدرباً في أي وقت قبل إغلاق الجولة.':'Without a coach nothing is deducted, but you miss his points. You can add a coach any time before the gameweek locks.',
   },
   RX: [
     [/^(.+?) · المدرب$/, (m, c) => I18N.trIn(c) + ' · Coach'],

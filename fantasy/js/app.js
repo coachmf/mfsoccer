@@ -31,7 +31,9 @@ const APP = {
     try{ PUSH.refresh(); }catch(e){}
     // نشر جولة أو احتسابها على الخادم يصل للأجهزة المفتوحة بلا إعادة تحميل
     setInterval(()=>this.pollCloud(), 5*60000);
-    document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) this.pollCloud(); });
+    document.addEventListener('visibilitychange', ()=>{ if(!document.hidden){ this.pollCloud(); this.retryCloud(); } });
+    // وضع بلا اتصال لا يبقى للأبد: كل 20 ثانية نجرّب الخادم، وأول ما يرد نعيد التحميل فتصل الجولة واللاعبون الجدد
+    setInterval(()=>this.retryCloud(), 20000);
     // شاشة الافتتاح
     const splash=document.getElementById('splash');
     if(splash) setTimeout(()=>{ splash.classList.add('hide'); setTimeout(()=>splash.remove(),700); }, 900);
@@ -108,7 +110,7 @@ const APP = {
           DB.state.session=null;
           AUTH.guest();                      // تصفّح بلا حساب: فريق محلي للتجربة
         }
-      }catch(e){ console.warn('cloud sync failed', e); this.cloudState='offline'; }
+      }catch(e){ console.warn('cloud sync failed', e); this.cloudState='offline'; this.cloudErr=String(e&&e.message||e).slice(0,160); }
       DB.muted = false;
       if(DB.pendingPush){ DB.pendingPush=false; DB.pushTeam(); }   // فريق الضيف المرحَّل يُرفع للحساب
       ADMINAUTH.sync();
@@ -150,6 +152,25 @@ const APP = {
     if(typeof CLOUD!=='undefined' && CLOUD.admin && !document.hidden) this.autoOwnership();   // كل 5 دقائق يتحقق: مرّت ساعة؟ ينشر
   },
 
+  /* الجهاز في وضع بلا اتصال (تعذّر تحميل اللعبة أو علّق الخادم): نجرّب قراءة مستند اللعبة،
+     فإن ردّ نعيد تحميل الصفحة لتكتمل المزامنة من البداية — بدل أن يبقى المشترك على جولة قديمة ولاعبين ناقصين */
+  _retryBusy:false,
+  async retryCloud(manual){
+    if(this.cloudState!=='offline' || this._retryBusy || (!manual && document.hidden)) return;
+    if(typeof CLOUD==='undefined' || !CLOUD.ready){ if(manual) location.reload(); return; }
+    this._retryBusy=true;
+    try{
+      const r = await CLOUD.race(CLOUD.root().get(), 10000);
+      if(r.ok && r.v && r.v.exists){
+        /* حماية من حلقة إعادة تحميل لو ردّ الخادم وفشلت المزامنة لسبب آخر: 3 مرات تلقائية كحد أقصى كل 10 دقائق */
+        let log=[]; try{ log=JSON.parse(sessionStorage.getItem('kwf_retry')||'[]').filter(t=>Date.now()-t<600000); }catch(e){}
+        if(manual || log.length<3){ log.push(Date.now()); try{ sessionStorage.setItem('kwf_retry', JSON.stringify(log)); }catch(e){} location.reload(); return; }
+      }
+      if(manual) UI.toast('ما زال الخادم لا يرد — تأكد من الإنترنت وحاول بعد قليل', true);
+    }catch(e){}
+    this._retryBusy=false;
+  },
+
   /* هل المشترك داخل بحساب سحابي حقيقي؟ */
   signedIn(){ return typeof CLOUD!=='undefined' && !!CLOUD.user; },
 
@@ -160,7 +181,8 @@ const APP = {
       return `<div class="card" style="border-color:#e0a800;margin-bottom:12px">
         <b>وضع بلا اتصال</b>
         <div class="tiny" style="margin-top:6px">تعذّر الوصول للخادم، فما تشوفه محفوظ على هذا الجهاز فقط.
-        نقاطك وترتيبك يحتاجان اتصالاً.</div></div>`;
+        نقاطك وترتيبك يحتاجان اتصالاً.</div>
+        <div style="margin-top:10px"><button class="btn sm" onclick="APP.retryCloud(true)">إعادة الاتصال</button></div></div>`;
     return `<div class="card" style="border-color:var(--accent);margin-bottom:12px">
       <b>أنت تتصفح بلا حساب</b>
       <div class="tiny" style="margin-top:6px">الفريق الذي تكوّنه الآن محفوظ على هذا الجهاز فقط،
@@ -248,8 +270,18 @@ const APP = {
     const needAuth = cloudOn && !CLOUD.user && !cachedSession && !['guide','about'].includes(r);
     // دخل الحساب لكن فريقه لم يصل بعد من الخادم: لا نعرض فريق الضيف الفارغ للحظات
     const fetchingTeam = cloudOn && CLOUD.user && DB.muted && DB.state.session!==CLOUD.user.uid && !['guide','about','auth'].includes(r);
+    /* ضيف بلا حساب والخادم لا يرد: لا نعرض فريقاً محلياً بجولة قديمة ولاعبين ناقصين (يبدو مقفلاً ولا يُحفظ) —
+       نعرض شاشة الاتصال، ونعيد المحاولة تلقائياً (retryCloud). رسالة «المدرب» 2026-10-09 */
+    const guestOffline = this.cloudState==='offline' && !(typeof CLOUD!=='undefined' && CLOUD.user)
+      && (!DB.state.session || DB.state.session==='u1local') && !['guide','about'].includes(r)
+      && !/^(localhost|127\.0\.0\.1)$/.test(location.hostname);   /* محلياً (اختبارات السحابة المحجوبة) يبقى وضع الضيف المحلي */
     try{
-      if(fetchingTeam){ html=`<div class="card" style="text-align:center;padding:30px"><div class="muted">جارٍ تحميل فريقك…</div>
+      if(guestOffline){ html=`<div class="card" style="text-align:center;padding:28px 18px">
+        <h3 style="margin:0 0 8px;display:block;text-align:center">تعذّر الاتصال بالخادم</h3>
+        <div class="muted" style="line-height:1.9">لعب الفانتسي يحتاج اتصالاً وحساباً — بدونهما ما تقدر تحفظ تشكيلتك أو تختار الكابتن أو تسمّي فريقك أو تدخل الدوريات، ولا تظهر آخر الجولات واللاعبين الجدد.</div>
+        <div class="tiny" style="margin:10px 0 14px;line-height:1.9">تأكد من الإنترنت، ثم اضغط «إعادة الاتصال». نحاول تلقائياً كل 20 ثانية.</div>
+        <button class="btn" onclick="APP.retryCloud(true)">إعادة الاتصال</button></div>`; }
+      else if(fetchingTeam){ html=`<div class="card" style="text-align:center;padding:30px"><div class="muted">جارٍ تحميل فريقك…</div>
         <div class="tiny" style="margin-top:10px">لو طال الانتظار: <button class="btn sm sec" onclick="location.reload()">إعادة المحاولة</button></div></div>`; }
       else if(needAuth){ html = this.cloudState==='init' ? '<div class="card" style="text-align:center;padding:30px"><div class="muted">جارٍ الاتصال…</div></div>' : VIEWS.auth(); }
       else if(r==='team') html=VIEWS.team();
