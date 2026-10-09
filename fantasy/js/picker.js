@@ -125,13 +125,13 @@ Object.assign(VIEWS, {
         const used=team.usedChips[k]||0; const active=chip===k;
         return `<button class="btn sm ${active?'':'sec'}" ${locked||(used>=c.uses&&!active)||(chip&&!active)?'disabled':''}
           onclick="VIEWS.toggleChip('${k}')">${c.label}</button>`;}).join('')}
-      <span class="pill ${freeMode?'green':'blue'}">${st.rules.freeChanges? 'تغييرات حرة حتى موعد الإغلاق' : (freeMode? 'انتقالات حرة — كرت مفعّل' : `مجاني: ${team.ft} · الإضافي −${st.rules.transferCost}`)}</span>
+      ${locked? '' : `<span class="pill ${freeMode?'green':'blue'}">${st.rules.freeChanges? 'تغييرات حرة حتى موعد الإغلاق' : (freeMode? 'انتقالات حرة — كرت مفعّل' : `مجاني: ${team.ft} · الإضافي −${st.rules.transferCost}`)}</span>`}
     </div>
     ${locked? '<div class="card" style="border-color:var(--red);margin-bottom:12px">أُغلقت الجولة — الانتقالات تفتح بعد احتساب النتائج.</div>':''}
     <div class="tf-wrap">
       <div class="tf-stats">
-        <div><b>${st.rules.freeChanges ? '∞' : team.ft}</b><span>مجاني</span></div>
-        <div><b style="color:${hits?'var(--red)':'var(--text)'}">${freeMode?'حر':(hits?'−'+hits:'0')}</b><span>الخصم</span></div>
+        <div><b>${locked ? '—' : st.rules.freeChanges ? '∞' : team.ft}</b><span>مجاني</span></div>
+        <div><b style="color:${hits&&!locked?'var(--red)':'var(--text)'}">${locked ? '—' : freeMode?'حر':(hits?'−'+hits:'0')}</b><span>الخصم</span></div>
         <div><b style="color:${bankAfter<0?'var(--red)':'var(--text)'}">${fmtM(bankAfter)}</b><span>بالبنك (${CUR})</span></div>
       </div>
       <div class="pitch-frame"><div class="pitch tf-board">${board}</div>${this.coachBarHTML(team,{mode:'transfer', locked})}</div>
