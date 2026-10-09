@@ -6253,6 +6253,7 @@ async function saveMatch(opt){
   if(!quiet) toast("جارٍ حفظ المباراة…","busy",true);
   if(quiet && !mxTyping()) renderMatchAdmin();
   const okm = await persistData();
+  if(quiet) MX_ACLOUD = okm===true;
   if(okm===true){ LASTSYNC=new Date(); if(!quiet) toast(`حُفظت المباراة: ${m.home} ضد ${m.away} ✅`,"ok"); }
   else if(okm==="pending") toast(SYNCMSG,"busy");
   else toast(SYNCMSG||"حُفظت محلياً، لكن تعذّر الحفظ في السحابة","err");
@@ -6264,15 +6265,23 @@ async function saveMatch(opt){
 }
 /* الحفظ التلقائي في المحرّر: أي تعديل على مباراة محفوظة سابقاً يُحفظ بعد ثانيتين من آخر تغيير، ما دامت لا نافذة إدخال
    مفتوحة ولا حقل قيد الكتابة. مباراة جديدة تُحفظ أول مرة بالزر. */
-let MX_ASAVED = 0, MX_ASIG = "", MX_AT = 0;
+let MX_ASAVED = 0, MX_ASIG = "", MX_AT = 0, MX_ACLOUD = true;
 const mxTyping = () => { const a=document.activeElement; return !!(a && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)); };
+/* مؤشر الحفظ في شريط المحرّر (منصور 2026-10-09: «ما نبي أغلاط»): كان الحفظ التلقائي يسكت إذا في حدث ناقص فيظن المحرّر أنه حُفظ */
+function mxAutoPaint(st, tx){
+  const el=document.querySelector(".mx-auto"); if(!el) return;
+  if(el.dataset.st===st && el.textContent===tx) return;
+  el.dataset.st=st; el.textContent=tx;
+}
 setInterval(()=>{
-  if(!EDIT || !EDIT.orig || !EDIT.base || EDIT.gulf || SAVING_MATCH || !window.MX){ MX_ASIG=""; return; }
+  if(!EDIT || !EDIT.orig || !EDIT.base || EDIT.gulf || !window.MX){ MX_ASIG=""; return; }
+  if(SAVING_MATCH){ mxAutoPaint("busy","جارٍ الحفظ…"); return; }
   const {base, ...cur} = EDIT; const s = JSON.stringify(cur);
-  if(s === JSON.stringify(base)){ MX_ASIG=""; return; }
+  if(s === JSON.stringify(base)){ MX_ASIG=""; mxAutoPaint(MX_ACLOUD?"ok":"wait", MX_ACLOUD?"محفوظ ✓":"على الجهاز، بانتظار الشبكة"); return; }
+  if(validateEdit()){ mxAutoPaint("err","لم يُحفظ: اضغط هنا"); return; }
+  mxAutoPaint("busy","سيُحفظ تلقائياً");
   if(s !== MX_ASIG){ MX_ASIG=s; MX_AT=Date.now(); return; }
-  if(Date.now()-MX_AT < 2000 || MX.sheet) return;
-  if(mxTyping() || validateEdit()) return;
+  if(Date.now()-MX_AT < 2000 || MX.sheet || mxTyping()) return;
   MX_ASIG=""; saveMatch({quiet:true});
 }, 700);
 
@@ -14664,7 +14673,9 @@ html[data-theme="dark"] .mx select option{color:#E6EEF8;background:#0F1E35}   /*
 @media(max-width:620px){.mx-phase{grid-template-columns:repeat(3,minmax(0,1fr))}}
 .mx-ph{padding:11px 4px;border-radius:12px;border:1px solid var(--mx-ln)!important;background:var(--mx-soft)!important;font-weight:800;font-size:.8rem;color:var(--slate)}
 .mx-ph.on{background:linear-gradient(135deg,#1c6fd1,#0e3f86)!important;border-color:#1c6fd1!important;color:#fff}
-.mx-auto{font-size:.72rem;font-weight:800;color:#3ecf8e;white-space:nowrap;align-self:center}
+.mx-auto{font-size:.72rem;font-weight:800;color:#3ecf8e;white-space:nowrap;align-self:center;background:none;border:0;padding:6px 4px;cursor:pointer;font-family:inherit}
+.mx-auto[data-st="busy"],.mx-auto[data-st="wait"]{color:#E0B23C}
+.mx-auto[data-st="err"]{color:#fff;background:#C8443C;border-radius:999px;padding:6px 10px}
 .mx-clk{display:flex;align-items:center;flex-wrap:wrap;gap:8px 12px;margin-top:12px}
 .mx-clk .mx-lbl{margin:0}
 .mx-clk .mclk{font-weight:900;font-size:1.35rem;font-variant-numeric:tabular-nums}
@@ -15200,7 +15211,7 @@ html.mx-editing #waFab{display:none!important}   /* زر واتساب كان ي�
     if(k==="goal"){ if(!need(d.sc,"اختر الفريق المسجّل")||!need(d.p,"اختر اللاعب المسجّل")||!need(+d.m>=1,"أدخل دقيقة الهدف")||!need(d.det,"اختر تفصيل الهجمة (مطلوب لإحصاءات الأهداف)")) return; }
     if(k==="card"){ if(!need(d.club,"اختر الفريق")||!need(d.p,"اختر اللاعب")||!need(d.type,"اختر نوع البطاقة")) return; }
     if(k==="pen"){ if(!need(d.by,"اختر الفريق المنفّذ")||!need(d.res,"اختر نتيجة الركلة")) return; }
-    if(k==="sub"){ if(!need(d.club,"اختر الفريق")||!need(d.out||d.in,"اختر اللاعب الخارج أو الداخل")) return; }
+    if(k==="sub"){ if(!need(d.club,"اختر الفريق")||!need(d.out,"اختر اللاعب الخارج")||!need(d.in,"اختر اللاعب الداخل")) return; }
     if(k==="chance"){ if(!need(d.club,"اختر الفريق")||!need(d.p,"اختر اللاعب")||!need(+d.m>=1,"أدخل الدقيقة")) return; }
     if(k==="var"){ if(!need(+d.m>=1,"أدخل الدقيقة")) return; }
     if(k==="note"){ if(!need((d.note||"").trim(),"اكتب نص التعليق")) return; }
@@ -15239,7 +15250,7 @@ html.mx-editing #waFab{display:none!important}   /* زر واتساب كان ي�
       </nav>
       <section>${MX.tab==="lineup"?tabLineup():MX.tab==="events"?tabEvents():tabMatch()}</section>
       <div class="mx-bar"><div class="sum">${esc(m.home||"—")} ${hg} - ${ag} ${esc(m.away||"—")}<br>${hx+ax} لاعباً أساسياً · ${evs} حدث</div>
-        ${EDIT.orig?`<span class="mx-auto">حفظ تلقائي</span>`:`<button class="mx-ghost" data-act="cancel">إلغاء</button>`}<button class="mx-ghost" data-act="savestay">حفظ الآن</button><button class="mx-save" data-act="save">${SV.save}حفظ وإغلاق</button></div>
+        ${EDIT.orig?`<button type="button" class="mx-auto" data-act="savestay" title="الحفظ تلقائي. إن ظهر «لم يُحفظ» اضغط لعرض السبب">محفوظ ✓</button>`:`<button class="mx-ghost" data-act="cancel">إلغاء</button>`}<button class="mx-ghost" data-act="savestay">حفظ الآن</button><button class="mx-save" data-act="save">${SV.save}حفظ وإغلاق</button></div>
     </div>`;
     /* النافذة على مستوى body: داخل المحتوى تبقى تحت شريط التنقل السفلي مهما ارتفع z-index */
     let host=document.getElementById("mxSheetHost");
@@ -15272,7 +15283,7 @@ html.mx-editing #waFab{display:none!important}   /* زر واتساب كان ي�
     });
     /* حفظ ومتابعة: يحفظ ثم يعيد فتح المباراة نفسها في التبويب نفسه — للإدخال المباشر أثناء المباراة */
     function saveStay(){
-        MX.sheet=null; MX.sel=null; document.documentElement.classList.remove("mx-open"); const pre=validateEdit(); if(pre){ FORMERR=pre; MX.tab=errTab(pre); rerender(); return false; }
+        MX.sheet=null; MX.sel=null; document.documentElement.classList.remove("mx-open"); const pre=validateEdit(); if(pre){ FORMERR=pre; MX.tab=errTab(pre); rerender(); toast("لم يُحفظ: "+pre,"err"); return false; }
         const mm=EDIT.match, key={round:+mm.round, comp:mm.comp, home:mm.home, away:mm.away}, tab=MX.tab, side=MX.side;
         const gulf=!!EDIT.gulf;
         saveMatch().then(()=>{ if(EDIT) return;

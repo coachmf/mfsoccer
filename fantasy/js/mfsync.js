@@ -117,6 +117,8 @@ const MFSYNC = {
     const has = m.hg!=null && m.ag!=null && m.hg!=='' && m.ag!=='';
     if(!has) return false;
     if((+m.hg||0)+(+m.ag||0) > 0) return true;
+    /* المحرّر اختار مرحلة اللعب (منصور 2026-10-09): بدأت فعلاً ولو قبل الموعد المكتوب أو بلا تشكيلة بعد */
+    if(['h1','ht','h2','e1','e2','pso','ft'].includes(m.status)) return true;
     if(!m.date) return false;
     const ko = kwDate(m.date+'T'+(m.time||'23:59'));      // توقيت الكويت دائماً، لا توقيت جهاز الزائر
     if(isNaN(ko) || ko.getTime() > Date.now()) return false;
@@ -147,6 +149,11 @@ const MFSYNC = {
         const i=Array.isArray(src)?src.findIndex(e=>nm(e)===this.norm(mv.n)):-1, old=i>=0?src.splice(i,1)[0]:{};
         if(dst.some(e=>nm(e)===this.norm(mv.n))) return;
         dst.push(Object.assign({p:''}, typeof old==='object'?old:{}, {n:mv.n, s:mv.s}, mv.p?{p:mv.p}:{})); });
+      /* أسماء كشوف الموقع لكل نادٍ — تمنع المطابقة التقريبية لاسم موجود حرفياً في الكشف (انظر resolvePlayer) */
+      const site={};
+      for(const c in d.squads){ const cid=this.clubId(c); if(!cid || !Array.isArray(d.squads[c])) continue;
+        site[cid]=new Set(d.squads[c].map(e=>this.norm(typeof e==='string'?e:(e&&e.n))).filter(Boolean)); }
+      this._site=site;
     }
     return d;
   },
@@ -229,7 +236,19 @@ const MFSYNC = {
     const squad=[...DB.state.players.filter(p=>p.club===clubId && !forced[p.id]),
                  ...DB.state.players.filter(p=>p.club!==clubId && (p.exClubs||[]).includes(clubId))];
     let hit = squad.find(p=>this.norm(p.name)===nm);
+    /* لاعب منقول في MF_SQUAD_MOVE ولم يُنفَّذ نقله في كشف اللعبة بعد (مثل «مزيد نواف» النصر ← الشباب): نجده بالاسم في ناديه القديم */
+    if(!hit && typeof MF_SQUAD_MOVE!=='undefined' && MF_SQUAD_MOVE.some(mv=>this.norm(mv.n)===nm && this.clubId(mv.to)===clubId))
+      hit = DB.state.players.find(p=>this.norm(p.name)===nm && !forced[p.id]) || null;
     if(exactOnly){ if(!hit && report) report.unmatched.push(`${clean} (${DB.club(clubId).name})`); return hit||null; }
+    /* اسم موجود حرفياً في كشف النادي على الموقع (وهي الأسماء التي يسحبها المحرّر) ولا يطابق أحداً في اللعبة = لاعب جديد لم يُضف بعد.
+       لا مطابقة تقريبية له (منصور 2026-10-09): كانت «علي دشتي» تُعطى لـ«مهدي دشتي» و«عايد ماجد» لـ«يوسف ماجد» قبل إضافتهما.
+       المسموح فقط اختلاف إملائي بسيط مع نفس الاسم الأول؛ وإلا لا نقاط لأحد حتى يُضاف اللاعب، ثم تُحسب له تلقائياً. */
+    if(!hit && this._site && this._site[clubId] && this._site[clubId].has(nm)){
+      const first=w=>this.norm(String(w||'').split(/\s+/)[0]);
+      hit = squad.find(p=>this.lev(this.norm(p.name),nm)<=2 && first(p.name)===first(clean)) || null;
+      if(!hit && report) report.unmatched.push(`${clean} (${DB.club(clubId).name}) لاعب جديد لم يُضف للعبة`);
+      return hit;
+    }
     if(!hit) hit = squad.find(p=>{const n=this.norm(p.name); return n.length>3 && nm.length>3 && (n.includes(nm)||nm.includes(n));});
     if(!hit) hit = squad.find(p=>this.lev(this.norm(p.name),nm)<=2);
     if(!hit){
