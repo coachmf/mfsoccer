@@ -742,6 +742,18 @@ const CLOUD = {
   /* ---------- حالة اللعبة (المدير يكتبها، الجميع يقرؤها) ---------- */
   /* لقطة CDN (netlify/functions/fantasy.js): اللعبة + اللاعبون + الجولات في ~80 ك.ب — أسرع بكثير من قناة Firestore
      على شبكة الجوال (2026-10-09). أي فشل/مهلة = null فنرجع لـFirestore كما كان */
+  /* تشكيلات كل المشتركين (CDN) — للمتوسط والترتيب الحي بعد ساعة من آخر مباراة اليوم */
+  async loadTeamsSnap(){
+    if(typeof fetch==='undefined' || /^(localhost|127\.0\.0\.1)$/.test(location.hostname)) return null;
+    try{
+      const ctl = typeof AbortController!=='undefined' ? new AbortController() : null;
+      const t = setTimeout(()=>{ try{ ctl && ctl.abort(); }catch(e){} }, 20000);
+      const r = await fetch('/api/fantasy-teams/'+this.SEASON, ctl ? {signal:ctl.signal} : {});
+      clearTimeout(t);
+      if(!r.ok) return null;
+      const v = await r.json(); return (v && Array.isArray(v.rows)) ? v : null;
+    }catch(e){ return null; }
+  },
   async loadSnapshot(ms){
     if(typeof fetch==='undefined' || /^(localhost|127\.0\.0\.1)$/.test(location.hostname)) return null;
     try{

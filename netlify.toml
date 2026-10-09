@@ -17,6 +17,13 @@
   status = 200
   force = true
 
+# ——— تشكيلات المشتركين للترتيب الحي (netlify/functions/fantasy-teams.js) ———
+[[redirects]]
+  from = "/api/fantasy-teams/*"
+  to = "/.netlify/functions/fantasy-teams/:splat"
+  status = 200
+  force = true
+
 # ——— لقطة الفانتسي من CDN (netlify/functions/fantasy.js) ———
 [[redirects]]
   from = "/api/fantasy/*"
