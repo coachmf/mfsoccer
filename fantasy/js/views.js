@@ -272,14 +272,16 @@ const VIEWS = {
     const dt=this.dreamTeam(g.gw); if(!dt) return '';
     const pts={}; dt.xi.forEach(x=>{ pts[x.id]=x.pts; });
     const star=DB.player(dt.star.id);
-    return `<div class="card dream-card">
-      <div class="dc-head">
+    /* مطوية افتراضياً — تُفتح بالضغط مثل القائمة المنسدلة (منصور 2026-10-10) */
+    const open=!!this.ui.dreamOpen;
+    return `<div class="card dream-card${open?' open':''}">
+      <div class="dc-head" role="button" aria-expanded="${open}" onclick="VIEWS.ui.dreamOpen=!VIEWS.ui.dreamOpen;APP.render()">
         <div><b>تشكيلة الجولة ${g.gw}</b><span>اللاعبون الأعلى نقاطاً${g.live? ' — تتحدث مع المباريات' : ''}</span></div>
-        ${g.live? '<span class="pill red">مباشر</span>' : ''}
+        <div class="dc-side">${g.live? '<span class="pill red">مباشر</span>' : ''}<span class="dc-chev">${UI.icon('chev',18)}</span></div>
       </div>
-      <div class="dc-sum"><div><b>${dt.tot}</b><span>المجموع</span></div><div><b dir="ltr">${dt.form}</b><span>الخطة</span></div>
+      ${open? `<div class="dc-sum"><div><b>${dt.tot}</b><span>المجموع</span></div><div><b dir="ltr">${dt.form}</b><span>الخطة</span></div>
         <div class="link" onclick="VIEWS.playerSheet('${star.id}','addp-out')"><b>${dt.star.pts}</b><span>نجم الجولة: <bdi data-i18n="off">${esc(star.name)}</bdi></span></div></div>
-      <div class="pitch-frame">${this.pitchHTML({xi:dt.xi.map(x=>x.id), bench:[], cap:null, vice:null}, {view:true, pts})}</div>
+      <div class="pitch-frame">${this.pitchHTML({xi:dt.xi.map(x=>x.id), bench:[], cap:null, vice:null}, {view:true, pts})}</div>` : ''}
     </div>`;
   },
 
