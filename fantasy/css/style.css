@@ -1628,3 +1628,15 @@ html.lang-en .pp-actions{justify-content:flex-start;}
 .lg-note{white-space:pre-wrap;line-height:1.7;font-size:.92rem;padding:10px 12px;border-radius:12px;background:var(--soft,rgba(0,0,0,.04));border:1px solid var(--line,rgba(0,0,0,.08))}
 .lg-info-edit{align-self:flex-start}
 #lgi_prev .lg-banner{max-height:200px}
+
+/* الشاشات العريضة («نسخة الكمبيوتر» على الجوال، الآيباد، الكمبيوتر) — منصور 2026-10-09: الملعب كان طويلاً والبطاقات بحجم الجوال.
+   الملعب أقل طولاً، والبطاقات والأطقم والخطوط تكبر مع عرض الملعب نفسه (cqw) */
+@media (min-width:601px){
+  .pitch{aspect-ratio:400/440 !important; container-type:inline-size;}
+  .pitch .pslot{width:clamp(74px,14cqw,124px) !important;}
+  .pitch .pslot .pk{height:auto !important;}
+  .pitch .pslot .pk .kit.kit-img,.pitch .pslot .pk .kit{width:clamp(56px,10.5cqw,100px)!important;height:clamp(56px,10.5cqw,100px)!important;}
+  .pitch .pslot .nm{font-size:clamp(.66rem,1.9cqw,1rem) !important;max-width:none !important;}
+  .pitch .pslot .pt,.pitch .pslot .club-tag{font-size:clamp(.54rem,1.45cqw,.8rem) !important;max-width:none !important;}
+  .pitch-row{gap:clamp(4px,1.2cqw,14px) !important;}
+}
