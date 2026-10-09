@@ -1075,7 +1075,7 @@ function liveToRows(doc){
     const mm = recMin(e), {m, x} = mm, c = club(e.team);
     switch(e.k){
       case "goal":
-        R.goals.push({sc:c, p:e.p||"", a:e.p2||"", m, x, det:e.det||(e.pen?"ركلة جزاء":""), bp:e.bp||"", zone:e.gz||"", og:"", lid:e.id});
+        R.goals.push({sc:c, p:e.p||"", a:e.p2||"", m, x, det:e.det||(e.pen?"ركلة جزاء":""), bp:e.bp||"", zone:e.gz||"", og:"", ...(e.err?{err:e.err}:{}), lid:e.id});   /* err = اللاعب المخطئ (2026-10-09) */
         if(e.pen) R.pens.push({by:c, p:e.p||"", m:(e.penm!=null ? e.penm : m + x), res:"سجلت", place:e.place||"", lid:e.id+":p"});   /* صف الجزاء بالدقيقة المطلقة (90+2 ⇒ 92) كما في السجل */
         break;
       case "og":
@@ -1113,7 +1113,7 @@ function rowsToLive(doc, E){
     const tt = tOf(g.m, g.x);
     const rm = {m:+g.m||0, x:+g.x||0};
     if(g.bp==="هدف عكسي"){ out.push({k:"og", team:side(g.sc), p:g.og||"", p2:g.p||"", ...(g.a?{ast:g.a}:{}), det:g.det||"", gz:g.zone||"", ...tt, rm, id:g.lid||nid()}); return; }
-    const e = {k:"goal", team:side(g.sc), p:g.p||"", p2:g.a||"", det:g.det||"", bp:g.bp||"", gz:g.zone||"", ...tt, rm, id:g.lid||nid()};
+    const e = {k:"goal", team:side(g.sc), p:g.p||"", p2:g.a||"", det:g.det||"", bp:g.bp||"", gz:g.zone||"", ...(g.err?{err:g.err}:{}), ...tt, rm, id:g.lid||nid()};
     /* ركلة جزاء مسجّلة لنفس اللاعب ⇒ الهدف نفسه (لا حدثان) */
     if(g.det==="ركلة جزاء"){ const pr = pens.find(p=>!penUsed.has(p._i) && p.res==="سجلت" && p.by===g.sc && (!p.p || p.p===g.p));
       if(pr){ penUsed.add(pr._i); e.pen = true; if(pr.place) e.place = pr.place; e.penm = +pr.m||0; } }
