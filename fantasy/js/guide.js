@@ -37,15 +37,19 @@ const FEEDBACK = {
     try{ localStorage.setItem(this.PENDING, JSON.stringify(rest)); }catch(e){}
     if(rest.length<p.length) UI.toast(`أُرسل ${p.length-rest.length} اقتراح كان محفوظاً على جهازك`);
   },
+  /* null = لا صلاحية/لا سحابة، undefined = الخادم لم يرد خلال المهلة (لا نعلّق «جارٍ التحميل…» للأبد) */
+  _cache:null,
   async list(){
     if(typeof CLOUD==='undefined' || !CLOUD.ready) return null;
-    try{
-      const q=await CLOUD.root().collection('feedback').orderBy('created','desc').limit(200).get();
-      const out=[]; q.forEach(d=>out.push({id:d.id, ...d.data()})); return out;
-    }catch(e){ return null; }
+    const r=await CLOUD.race(CLOUD.root().collection('feedback').orderBy('created','desc').limit(200).get(), 12000);
+    if(!r.ok) return r.timeout ? undefined : null;
+    const out=[]; r.v.forEach(d=>out.push({id:d.id, ...d.data()}));
+    this._cache=out; return out;
   },
   async setStatus(id, status){
-    try{ await CLOUD.root().collection('feedback').doc(id).set({status}, {merge:true}); return true; }catch(e){ return false; }
+    try{ await CLOUD.root().collection('feedback').doc(id).set({status}, {merge:true});
+      if(this._cache){ const c=this._cache.find(x=>x.id===id); if(c) c.status=status; }
+      return true; }catch(e){ return false; }
   },
 
   /* ---------- الدعم الفني: محادثة على كل رسالة ----------
@@ -83,6 +87,7 @@ const FEEDBACK = {
       const patch={replies, updated:new Date().toISOString(), userUnread:(+v.userUnread||0)+1};
       if((v.status||'new')==='new') patch.status='seen';
       const r=await CLOUD.race(ref.set(patch,{merge:true}), 8000);
+      if(r.ok && this._cache){ const c=this._cache.find(x=>x.id===id); if(c) Object.assign(c, patch); }   // القائمة تُعرض فوراً بالرد
       return r.ok? {ok:true} : {ok:false, err:'تعذّر حفظ الرد'};
     }catch(e){ return {ok:false, err:CLOUD.errAr(e)}; }
   },
@@ -421,8 +426,15 @@ if(typeof ADMIN!=='undefined'){
   ADMIN.sec_feedback=function(){
     const id='fbList'+Date.now();
     setTimeout(async()=>{
-      const el=document.getElementById(id); if(!el) return;
+      let el=document.getElementById(id); if(!el) return;
+      /* آخر نسخة تُعرض فوراً (بعد الرد مثلاً) ثم تُحدَّث من الخادم في الخلفية */
+      if(FEEDBACK._cache) draw(el, FEEDBACK._cache);
       const list=await FEEDBACK.list();
+      el=document.getElementById(id); if(!el) return;
+      if(list===undefined){
+        if(FEEDBACK._cache) return;
+        el.innerHTML='<div class="muted">الخادم بطيء ولم يرد. <button class="btn sm sec" onclick="APP.render()">إعادة المحاولة</button></div>';
+        return; }
       if(list===null){
         const u = typeof CLOUD!=='undefined' && CLOUD.user;
         el.innerHTML = !u
@@ -431,6 +443,12 @@ if(typeof ADMIN!=='undefined'){
               ? '<div class="muted">دخلت بحساب <b>'+esc(u.email||'')+'</b> لكنه ليس ضمن فريق العمل في seasons/staff — لا يستطيع قراءة الاقتراحات.</div>'
               : '<div class="muted">أنت مدير على الخادم لكن قواعد Firestore الحالية لا تسمح بقراءة مجموعة <code>feedback</code> بعد — يضيفها محمد من وثيقة التسليم (§3).</div>');
         return; }
+      draw(el, list);
+    },50);
+    function draw(el, list){
+      try{ drawList(el, list); }catch(e){ console.warn('feedback draw', e); el.innerHTML='<div class="muted">تعذّر عرض الرسائل: '+esc(String(e&&e.message||e))+' <button class="btn sm sec" onclick="APP.render()">إعادة المحاولة</button></div>'; }
+    }
+    function drawList(el, list){
       if(!list.length){ el.innerHTML='<div class="muted">لا اقتراحات بعد</div>'; return; }
       const T=Object.fromEntries(FEEDBACK.TYPES);
       list.sort((a,b)=>String(b.updated||b.created).localeCompare(String(a.updated||a.created)));
@@ -444,7 +462,7 @@ if(typeof ADMIN!=='undefined'){
           </div>
           ${f.uid? FEEDBACK.thread(f,'admin') : `<div class="fb-thread"><div class="fb-msgs">${'<div class="fb-msg u"><div class="fb-txt">'+esc(f.text)+'</div></div>'}</div></div>`}
         </div>`).join('')}</div>`;
-    },50);
+    }
     return `<div class="card"><h3>اقتراحات المشتركين</h3>
       <div class="tiny" style="margin-bottom:10px">ما يرسله المشتركون من صفحة «الدعم والاقتراحات». اكتب ردّك تحت أي رسالة فيصل المشترك كمحادثة مع تنبيه. «منفّذ» أو «مرفوض» يغلق المحادثة.</div>
       <div id="${id}"><div class="muted">جارٍ التحميل…</div></div></div>`;
