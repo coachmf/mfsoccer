@@ -163,6 +163,13 @@ const APP = {
   async retryCloud(manual){
     if(this.cloudState!=='offline' || this._retryBusy || (!manual && document.hidden)) return;
     if(typeof CLOUD==='undefined' || !CLOUD.ready){ if(manual) location.reload(); return; }
+    /* توفير القراءات (حصة Firestore اليومية): تباعد متزايد 20ث → 40ث → … حتى 5 دقائق، وبعد بلوغ حد إعادة التحميل
+       تتوقف المحاولات التلقائية تماماً (يبقى الزر) — جهاز عالق لا يستهلك قراءة كل 20 ثانية للأبد */
+    if(!manual){
+      if(this._retryStop || Date.now() < (this._retryNext||0)) return;
+      this._retryGap = Math.min(300000, (this._retryGap||10000)*2);
+      this._retryNext = Date.now() + this._retryGap;
+    }
     this._retryBusy=true;
     try{
       const r = await CLOUD.race(CLOUD.root().get(), 10000);
@@ -170,6 +177,7 @@ const APP = {
         /* حماية من حلقة إعادة تحميل لو ردّ الخادم وفشلت المزامنة لسبب آخر: 3 مرات تلقائية كحد أقصى كل 10 دقائق */
         let log=[]; try{ log=JSON.parse(sessionStorage.getItem('kwf_retry')||'[]').filter(t=>Date.now()-t<600000); }catch(e){}
         if(manual || log.length<3){ log.push(Date.now()); try{ sessionStorage.setItem('kwf_retry', JSON.stringify(log)); }catch(e){} location.reload(); return; }
+        this._retryStop = true;   // الخادم يرد لكن المزامنة تفشل: لا فائدة من مزيد من القراءات التلقائية
       }
       if(manual) UI.toast('ما زال الخادم لا يرد — تأكد من الإنترنت وحاول بعد قليل', true);
     }catch(e){}
