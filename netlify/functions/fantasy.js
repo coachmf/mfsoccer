@@ -45,12 +45,14 @@ exports.handler = async (event) => {
   if(!ALLOWED.test(id)) return fail(400, {err:'bad id'});
   const base = `https://firestore.googleapis.com/v1/projects/${PROJECT}/databases/(default)/documents/fantasy/${id}`;
   try{
-    const [rg, rp, rr] = await Promise.all([get(base), get(base + '/meta/players'), get(base + '/rounds?pageSize=300')]);
+    const [rg, rp, rr, ro] = await Promise.all([get(base), get(base + '/meta/players'), get(base + '/rounds?pageSize=300'), get(base + '/meta/own')]);
     if(rg.status === 404) return { statusCode:404, headers:{...json, 'Cache-Control':'public, max-age=30'}, body:'null' };
     if(!rg.ok || !rp.ok || !rr.ok) return fail(502, {err:[rg.status, rp.status, rr.status]});
     const game = fields((await rg.json()).fields);
     const pv = fields((await rp.json()).fields);
     const rj = await rr.json();
+    /* التملّك ولقطة الترتيب (عدد المشاركين ودوريات المشجعين) — اختياري: فشله لا يُفشل اللقطة */
+    let own = null; try{ if(ro.ok) own = fields((await ro.json()).fields); }catch(e){}
     if(rj.nextPageToken) return fail(502, {err:'rounds paged'});   /* أكثر من 300 جولة؟ نرجع لـFirestore */
     const rounds = {};
     (rj.documents || []).forEach(d => { rounds[d.name.split('/').pop()] = fields(d.fields); });
@@ -61,7 +63,7 @@ exports.handler = async (event) => {
         'Cache-Control': 'public, max-age=0, must-revalidate',
         'Netlify-CDN-Cache-Control': 'public, durable, s-maxage=30, stale-while-revalidate=120',
       },
-      body: JSON.stringify({ at: new Date().toISOString(), game, players: { list: pv.list || [], priceVer: +pv.priceVer || 0 }, rounds }),
+      body: JSON.stringify({ at: new Date().toISOString(), game, players: { list: pv.list || [], priceVer: +pv.priceVer || 0 }, rounds, own }),
     };
   }catch(e){ return fail(502, {err:String(e.message||e)}); }
 };

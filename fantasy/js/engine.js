@@ -59,7 +59,7 @@ const DB = {
     /* أول تحميل في الجلسة: من لقطة CDN (سريعة على شبكة الجوال) ثم يتحقق APP من Firestore في الخلفية */
     let snap = null;
     if(!this._snapTried){ this._snapTried = true; if(!CLOUD.admin) snap = await CLOUD.loadSnapshot(); }   // المدير يقرأ Firestore دائماً: لا ينشر فوق لقطة متأخرة
-    const ownP = CLOUD.loadOwn();   // بعد اللقطة: لا تتقاسم معها عرض الشبكة البطيئة
+    const ownP = (snap && snap.own) ? null : CLOUD.loadOwn();   // بعد اللقطة: لا تتقاسم معها عرض الشبكة البطيئة
     this.fromSnap = !!snap;
     const game = snap ? snap.game : await CLOUD.loadGame();
     if(game===undefined) return {ok:false, err:'offline'};   // الخادم لم يرد
@@ -93,7 +93,10 @@ const DB = {
     if(game.managerCount!=null) st.managerCount = +game.managerCount;
     if(game.ownUpdated)     st.ownUpdated = game.ownUpdated;
     if(game.transferStats)  st.transferStats = game.transferStats;
-    ownP.then(ownDoc=>{                                            // meta/own أحدث من نسخة مستند اللعبة (ينشرها المدير كل ساعة)
+    /* اللقطة تحمل meta/own: تُطبَّق فوراً — على الشبكة البطيئة كانت قراءته في الخلفية تتجاوز المهلة فيبقى عدد المشاركين
+       ودوريات المشجعين من لقطة قديمة (842 فريق، القادسية 1) — 2026-10-09 */
+    if(snap && snap.own) CLOUD.applyOwn(st, snap.own);
+    else ownP.then(ownDoc=>{                                            // meta/own أحدث من نسخة مستند اللعبة (ينشرها المدير كل ساعة)
       if(!CLOUD.applyOwn(st, ownDoc)) return;
       try{ localStorage.setItem(this.KEY, JSON.stringify(st)); }catch(e){}
       if(typeof APP!=='undefined' && APP.cloudState==='ready' && CLOUD.user && ['players','stats','player','leagues','dashboard'].includes(APP.route)) APP.render();
