@@ -185,6 +185,9 @@ const APP = {
     this._retryBusy=true;
     try{
       const r = await CLOUD.race(CLOUD.root().get(), 10000);
+      /* تعافت الصفحة أثناء الانتظار (اكتمل التحميل الأول): لا نعيد تحميلها فوق شاشة الدخول وما كتبه المشترك —
+         كان هذا يُرجع «تعذّر الاتصال» بعد دقيقة من الفتح (محمد القلاف 2026-10-09) */
+      if(this.cloudState!=='offline'){ this._retryBusy=false; return; }
       if(r.ok && r.v && r.v.exists){
         /* حماية من حلقة إعادة تحميل لو ردّ الخادم وفشلت المزامنة لسبب آخر: 3 مرات تلقائية كحد أقصى كل 10 دقائق */
         let log=[]; try{ log=JSON.parse(sessionStorage.getItem('kwf_retry')||'[]').filter(t=>Date.now()-t<600000); }catch(e){}
@@ -233,7 +236,8 @@ const APP = {
     const u=(typeof VIEWS!=='undefined' && VIEWS.ui)||{};
     return !!(document.getElementById('sheetBack') || document.getElementById('modalBack') || document.querySelector('.addp-open')
       || (u.tIn&&u.tIn.length) || (u.tOut&&u.tOut.length) || (u.pickerSquad&&u.pickerSquad.length) || u.sel
-      || (document.activeElement && /INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)));
+      || (document.activeElement && /INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName))
+      || [...document.querySelectorAll('#main input:not([type=checkbox]):not([type=radio]):not([type=hidden]), #main textarea')].some(i=>i.value));   /* نموذج دخول/تسجيل فيه كتابة — لا نمسحه بتحديث */
   },
   async newVersion(html){
     this._verPending=true;
