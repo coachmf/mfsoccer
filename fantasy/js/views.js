@@ -1004,6 +1004,14 @@ const VIEWS = {
     const gwList=[...new Set(rows.flatMap(r=>(r.hist||[]).map(h=>+h.gw)))].filter(g=>g>=(st.rules.scoringFromGW||1)).sort((a,b)=>a-b);
     const mode = (!isH2H && gwList.length && this.ui.lgMode==='gw')? 'gw' : 'total';
     const selGw = gwList.includes(this.ui.lgGw)? this.ui.lgGw : gwList[gwList.length-1];
+    /* الإجمالي مباشر أثناء الجولة (منصور 2026-10-09: «خل الترتيب لايف ترتيب العام و كلهم»): المجموع = الرسمي + نقاط الجولة الجارية،
+       والترتيب والسهم (الحركة) منه — للترتيب العام ودوريات المشجعين والخاصة (الكلاسيكية) */
+    if(liveCol && mode==='total' && !isH2H && LIVEGW.cache.rows && LIVEGW.cache.rows.length){
+      const base=new Map(rows.map((r,i)=>[r.id, r.rank||i+1]));
+      rows=rows.map(r=>{ const lv=LIVEGW.liveOf(r.id); return {...r, total:(+r.total||0)+(lv||0)}; })
+        .sort((a,b)=>b.total-a.total || String(a.name||'').localeCompare(String(b.name||''),'ar'));
+      let prev=null, rk=0; rows.forEach((r,i)=>{ if(prev===null || r.total<prev){ rk=i+1; prev=r.total; } r.rank=rk; r.move=(base.get(r.id)||rk)-rk; });
+    }
     if(mode==='gw'){
       liveCol=false;
       rows=rows.map(r=>{ const h=(r.hist||[]).find(x=>+x.gw===+selGw); return h? {...r, gwPts:+h.pts||0} : null; }).filter(Boolean)

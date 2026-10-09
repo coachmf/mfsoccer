@@ -41,7 +41,9 @@ const LIVEGW = {
   todayKicks(){ const gw=this.gw(), today=this.kwDay(Date.now());
     return DB.state.fixtures.filter(f=>f.gw===gw && f.date).map(f=>kwDate(f.date).getTime()).filter(k=>!isNaN(k) && this.kwDay(k)===today); },
   unlockAt(){ const ks=this.todayKicks(); return ks.length ? Math.max(...ks) + 3*3600e3 : 0; },
-  frozenNow(){ const ks=this.todayKicks(); if(!ks.length) return false; const now=Date.now(); return now >= Math.min(...ks) && now < this.unlockAt(); },
+  /* منصور 2026-10-09 (لاحقاً): «خل الترتيب لايف» — أُلغي التجميد اليومي؛ المتوسط والترتيب والدوريات مباشرة كل 3 دقائق */
+  LIVE_ALWAYS: true,
+  frozenNow(){ if(this.LIVE_ALWAYS) return false; const ks=this.todayKicks(); if(!ks.length) return false; const now=Date.now(); return now >= Math.min(...ks) && now < this.unlockAt(); },
   loadFrozen(gw){ try{ const v=JSON.parse(localStorage.getItem(this.FROZEN_KEY)||'null'); return (v && v.gw===gw && Array.isArray(v.rows)) ? v : null; }catch(e){ return null; } },
   saveFrozen(gw, rows, at){ try{ localStorage.setItem(this.FROZEN_KEY, JSON.stringify({gw, at, rows})); }catch(e){} },
   async refresh(force){
@@ -55,7 +57,7 @@ const LIVEGW = {
       return this.cache.rows;
     }
     /* الحداثة لا تشترط وجود صفوف: فشل الجلب كان يعيد الطلب مع كل رسم (حلقة refresh ↔ render — 2026-10-09) */
-    if(!force && this.cache.gw===gw && Date.now()-this.cache.at < 10*60000) return this.cache.rows;
+    if(!force && this.cache.gw===gw && Date.now()-this.cache.at < 3*60000) return this.cache.rows;
     this.busy=true;
     try{
       let rows=null;
@@ -71,8 +73,8 @@ const LIVEGW = {
         const fz=this.loadFrozen(gw); if(fz){ rows=fz.rows; this.snapAt=fz.at; }
       }
       /* بلا صفوف (فشل/بلا اتصال): إعادة المحاولة بعد دقيقتين لا مع كل رسم */
-      this.cache={ at: rows ? Date.now() : Date.now()-8*60000, rows, gw };
-    }catch(e){ console.warn('live refresh failed', e); this.cache={ at:Date.now()-8*60000, rows:this.cache.rows, gw }; }
+      this.cache={ at: rows ? Date.now() : Date.now()-60000, rows, gw };   /* فشل: إعادة بعد دقيقتين */
+    }catch(e){ console.warn('live refresh failed', e); this.cache={ at:Date.now()-60000, rows:this.cache.rows, gw }; }
     this.busy=false;
     if(this.cache.rows && typeof APP!=='undefined' && ['dashboard','points','leagues'].includes(APP.route)) APP.render();   // لا رسم بعد نتيجة فارغة
     return this.cache.rows;
