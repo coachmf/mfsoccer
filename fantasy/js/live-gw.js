@@ -54,7 +54,8 @@ const LIVEGW = {
       this.cache={ at:Date.now(), rows: fz? fz.rows : null, gw }; this.snapAt = fz? fz.at : null;
       return this.cache.rows;
     }
-    if(!force && this.cache.rows && this.cache.gw===gw && Date.now()-this.cache.at < 10*60000) return this.cache.rows;
+    /* الحداثة لا تشترط وجود صفوف: فشل الجلب كان يعيد الطلب مع كل رسم (حلقة refresh ↔ render — 2026-10-09) */
+    if(!force && this.cache.gw===gw && Date.now()-this.cache.at < 10*60000) return this.cache.rows;
     this.busy=true;
     try{
       let rows=null;
@@ -69,10 +70,11 @@ const LIVEGW = {
       } else {
         const fz=this.loadFrozen(gw); if(fz){ rows=fz.rows; this.snapAt=fz.at; }
       }
-      this.cache={ at:Date.now(), rows, gw };
-    }catch(e){ console.warn('live refresh failed', e); }
+      /* بلا صفوف (فشل/بلا اتصال): إعادة المحاولة بعد دقيقتين لا مع كل رسم */
+      this.cache={ at: rows ? Date.now() : Date.now()-8*60000, rows, gw };
+    }catch(e){ console.warn('live refresh failed', e); this.cache={ at:Date.now()-8*60000, rows:this.cache.rows, gw }; }
     this.busy=false;
-    if(typeof APP!=='undefined' && ['dashboard','points','leagues'].includes(APP.route)) APP.render();
+    if(this.cache.rows && typeof APP!=='undefined' && ['dashboard','points','leagues'].includes(APP.route)) APP.render();   // لا رسم بعد نتيجة فارغة
     return this.cache.rows;
   },
   /* نص يوضح متى يتحدث المتوسط والترتيب */
