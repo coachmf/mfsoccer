@@ -765,10 +765,11 @@ const TEAM = {
     const played = pid => { const r=DB.pgw(pid,gw); return r && r.min>0; };
     // مباشر: لاعب لم تُلعب مباراة ناديه بعد يبقى في التشكيلة (لا تبديل تلقائي ولا نقل شارة الكابتن)
     const fxOf = clubId => st.fixtures.find(f=>f.gw===gw && (f.h===clubId||f.a===clubId));
-    const pending = pid => { if(!opts.live) return false; const p=DB.player(pid); if(!p) return false;
-      /* status 'F' تعني أن للمباراة نتيجة — وقد تكون جارية (over=false): لاعب الدكة لم يدخل بعد لا يُستبدل ولا تنتقل الشارة
-         حتى تنتهي مباراته (2026-10-09: يوسف ناصر على الدكة استُبدل تلقائياً أثناء المباراة) */
-      return st.fixtures.some(f=>f.gw===gw && (f.h===p.club||f.a===p.club) && f.status!=='P' && (f.status!=='F' || f.over===false)); };   /* جولة مزدوجة: أي مباراة لم تنتهِ */
+    /* التبديل التلقائي ونقل الشارة عند نهاية الجولة فقط (منصور 2026-10-09، مثل FPL): ما دامت في الجولة مباراة لم تنتهِ
+       (لم تُلعب، أو status 'F' وهي جارية over=false) يبقى كل لاعب في مكانه — ومنهم من جلس على الدكة في مباراة انتهت
+       (يوسف ناصر كابتن بصفر حتى تُحتسب الجولة ثم ينزل وتنتقل الشارة للنائب). المؤجلة 'P' لا تؤخّر الاحتساب. */
+    const roundOpen = !!opts.live && st.fixtures.some(f=>f.gw===gw && f.status!=='P' && (f.status!=='F' || f.over===false));
+    const pending = pid => roundOpen && !!DB.player(pid);
 
     let xi=[...picks.xi].filter(pid=>DB.player(pid)), bench=[...picks.bench].filter(pid=>DB.player(pid));
     const chip = picks.chip;
