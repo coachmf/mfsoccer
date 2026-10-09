@@ -158,7 +158,8 @@ Object.assign(TEAM, {
     const done=Math.max(0, st.currentGW-since);            // جولات اكتملت تحت العقد
     const c=COACHES.get(st, team.coach);
     const replaced = !!(c && c.replacedGW && +c.replacedGW>=since);   // تغيّر مدرب النادي أثناء العقد: تغيير مجاني استثنائي
-    return { has:true, since, n:Math.min(len, done+1), len, done, free: done>=len || replaced, replaced };
+    /* تغيير المدرب مجاني دائماً (منصور 2026-10-09: «المفروض مجاني على طول») — حتى لو عُيّن في الجولة نفسها، ولا يمسّ التبديلات المجانية */
+    return { has:true, since, n:Math.min(len, done+1), len, done, free: true, replaced };
   },
   /* تكلفة تعيين مدرب جديد الآن: {free, hits, usesFT} */
   coachChangeCost(team, st){

@@ -7,8 +7,8 @@
 'use strict';
 /* صياغة مدة العقد (منصور 2026-10-09: «المدرب تقدر تغيره كل جولة» → contract 1) */
 const COACH_TERM = {
-  ar: n => +n<=1 ? 'تقدر تغيّر المدرب مجاناً كل جولة' : +n===2 ? 'عقد من جولتين، بعدهما يفتح تغيير مجاني' : `عقد من ${n} جولات، بعدها يفتح تغيير مجاني`,
-  en: n => +n<=1 ? 'You can change your coach for free every gameweek.' : `Contract of ${n} gameweeks: after it a free change opens.`,
+  ar: () => 'تغيير المدرب مجاني دائماً ولا يُحسب من تبديلاتك',
+  en: () => 'Changing your coach is always free and never uses a transfer.',
 };
 
 
@@ -75,7 +75,7 @@ Object.assign(VIEWS, {
     else {
       const ct=TEAM.coachContract(team, st);
       const next=FDR.next(c.club,1)[0];
-      sub = next ? `${DB.club(next.opp).short} ${UI.ha(next.home)}` : `عقد ج${ct.since}→ج${ct.since+ct.len}`;
+      sub = next ? `${DB.club(next.opp).short} ${UI.ha(next.home)}` : 'تغيير مجاني';
     }
     const click = opt.view ? `onclick="VIEWS.openCoach('${c.id}')"` : `onclick="VIEWS.coachSheet('${c.id}','${opt.mode||'team'}')"`;
     return `<div class="pslot cslot" ${click} data-testid="coach-slot">
@@ -123,7 +123,7 @@ Object.assign(VIEWS, {
       if(next) sub += ` · ${DB.club(next.opp).short} ${UI.ha(next.home)}`;
       click=`onclick="VIEWS.coachSheet('${c.id}','team')"`;
       const ct=TEAM.coachContract(team, st);
-      ctLine = ct.free ? 'العقد انتهى — التغيير مجاني' : `العقد: من الجولة ${ct.since} إلى الجولة ${ct.since+ct.len}`;
+      ctLine = 'التغيير مجاني في أي وقت قبل إغلاق الجولة';
     }
     return `<div class="coach-bar" ${click} data-testid="coach-bar">
       <div class="cb-ph cb-bust" style="--cc:${club.color}"><img class="ccut" src="${esc(COACHES.photo(c,false))}" alt="" onerror="this.onerror=null;this.src='${esc(COACHES.photo(c,true))}'"></div>
@@ -151,7 +151,7 @@ Object.assign(VIEWS, {
       /* ثلاثة أزرار بعرض الجوال: عناوين قصيرة، وسطر العقد فوقها بعرض كامل */
       actions=`<button class="btn sec" ${locked?'disabled':''} onclick="UI.closeSheet();VIEWS.openAddCoach({ctx:'team'})">تغيير</button>
         <button class="btn ghost" ${locked?'disabled':''} onclick="UI.closeSheet();VIEWS.removeCoach()">إزالة</button>`;
-      if(ct) note=`<div class="tiny" style="margin:0 16px 10px">العقد: من الجولة ${ct.since} إلى الجولة ${ct.since+ct.len}${ct.free? ' — التغيير مجاني الآن' : (st.rules.freeChanges? ' — تغييرات حرة حتى الإغلاق' : ' — التغيير المبكر يستهلك انتقالاً أو −'+st.rules.transferCost)}</div>`;
+      if(ct) note=`<div class="tiny" style="margin:0 16px 10px">تغيير المدرب مجاني في أي وقت قبل إغلاق الجولة، ولا يُحسب من تبديلاتك</div>`;
     }
     UI.sheet(`
       <div class="ps-head ps-head-photo" style="background:linear-gradient(135deg,${club.color} 0%,${club.dark} 100%)">
@@ -324,7 +324,7 @@ Object.assign(VIEWS, {
         <div style="flex:1 1 0;min-width:0">
           <h2>${esc(c.name)} ${COACH_UI.flag(c,20)}</h2>
           <div class="row" style="gap:8px;margin-top:4px;flex-wrap:wrap">${UI.crest(c.club)} <b>${club.name}</b> <span class="pill">المدرب</span>
-          <span class="pill blue">${fmtK(c.price)}</span>${mine? `<span class="pill gold">مدربك · عقد ج${ct.since}→ج${ct.since+ct.len}</span>`:''}${COACHES.gone(c, st.currentGW)? '<span class="pill red">غادر النادي</span>':''}</div>
+          <span class="pill blue">${fmtK(c.price)}</span>${mine? `<span class="pill gold">مدربك</span>`:''}${COACHES.gone(c, st.currentGW)? '<span class="pill red">غادر النادي</span>':''}</div>
         </div>
       </div>
       <div class="pp-actions">
@@ -391,7 +391,7 @@ Object.assign(VIEWS, {
       `<b>Result:</b> win +${R.win}, draw +${R.draw}, loss ${R.loss}. <b>Clean sheet</b> +${R.cs}. <b>Win by two or more</b> +${R.margin}.`,
       `<b>Opponent difficulty</b> (league table before the gameweek): beating a team above you adds +${R.diffWin.join(' / +')} for a gap of 1–2 / 3–4 / 5–6 / 7–8 / 9+ places; a draw adds +${R.diffDraw.join(' / +')}.`,
       `<b>Losing to a team below you</b> costs ${R.lossPen.map(x=>'−'+x).join(' / ')} for a gap of 1–3 / 4–6 / 7+ places. Best possible match: 12 points, worst: −2.`,
-      `<b>${COACH_TERM.en(R.contract)}</b> An early change follows the transfer rules (free while free changes are on, otherwise a free transfer or −${st.rules.transferCost}).`,
+      `<b>${COACH_TERM.en(R.contract)}</b>`,
       `Wildcard and Free Hit include the coach; Bench Boost and Triple Captain do not touch him. No coach = 0 points, never a deduction. If a club changes its coach, your slot moves to the new coach automatically and you get a free change.`,
       `Coach points count from Gameweek ${R.fromGW}. A postponed match counts in the gameweek it is played; a double gameweek adds both matches.`,
     ] : [
@@ -399,7 +399,7 @@ Object.assign(VIEWS, {
       `<b>النتيجة:</b> فوز +${R.win}، تعادل +${R.draw}، خسارة ${R.loss}. <b>شباك نظيفة</b> +${R.cs}. <b>فوز بفارق هدفين أو أكثر</b> +${R.margin}.`,
       `<b>صعوبة المنافس</b> (جدول الدوري قبل الجولة): الفوز على فريق أعلى منك يضيف +${R.diffWin.join(' / +')} لفارق 1–2 / 3–4 / 5–6 / 7–8 / 9+ مراكز، والتعادل يضيف +${R.diffDraw.join(' / +')}.`,
       `<b>الخسارة أمام فريق أقل منك</b> تخصم ${R.lossPen.map(x=>'−'+x).join(' / ')} لفارق 1–3 / 4–6 / 7+ مراكز. أعلى حصيلة في مباراة 12 نقطة، وأدنى −2.`,
-      `<b>${COACH_TERM.ar(R.contract)}.</b> التغيير المبكر يتبع قاعدة انتقالات اللاعبين (حر مع التغييرات الحرة، وإلا انتقال مجاني أو −${st.rules.transferCost}).`,
+      `<b>${COACH_TERM.ar(R.contract)}.</b>`,
       `Wildcard و Free Hit يشملان المدرب؛ Bench Boost و Triple Captain لا يمسّانه. بلا مدرب = صفر نقاط ولا خصم. إذا غيّر النادي مدربه تنتقل خانتك للمدرب الجديد تلقائياً ولك تغيير مجاني.`,
       `تُحتسب نقاط المدرب من الجولة ${R.fromGW}. المباراة المؤجلة تُحتسب في الجولة التي تُلعب فيها، والجولة المزدوجة تجمع المباراتين.`,
     ];
