@@ -929,8 +929,10 @@ const VIEWS = {
     /* إدارة الدوريات على طراز FPL (منصور 2026-10-08): خاصة / عامة، لكل دوري مركزك وسهم الحركة */
     const priv=mine.filter(l=>!l.global), fav=FAV.mine(), favLg=fav? FAV.league(fav) : null;
     const pub=[...(favLg? [favLg] : []), ...mine.filter(l=>l.global)];
+    if(typeof LIVEGW!=='undefined' && LIVEGW.active()) LIVEGW.refresh();
     const myRow=l=>{
-      const rows= l.global? this.globalTable() : l.fav? this.favTable(l.fav) : LEAGUES.table(l);
+      let rows= l.global? this.globalTable() : l.fav? this.favTable(l.fav) : LEAGUES.table(l);
+      if(l.type!=='h2h') rows=this.liveApply(rows);   /* مركزك المباشر في القائمة كما في الجدول */
       const i=rows.findIndex(r=>r.id===m.id); const r=i>=0? rows[i] : null;
       let rank= r? (r.rank||i+1) : null;
       if(!r && l.global && !LEAGUES.online()){ const or_=RANKS.overallRank(st,TEAM.totalPoints(DB.myTeam())); if(typeof or_.rank==='number') rank=or_.rank; }
@@ -992,6 +994,16 @@ const VIEWS = {
     if(ok===false){ if(b){ b.disabled=false; b.textContent='تأكيد'; } UI.toast('تعذّر الحفظ — حاول مرة ثانية',true); return; }
     UI.closeModal(); APP._favOpen=false; UI.toast('تم — صرت في دوري مشجعي '+DB.club(c).name); APP.render();
   },
+  /* المجموع المباشر = الرسمي + نقاط الجولة الجارية (LIVEGW)، والترتيب والحركة منه. الحركة تُخفى إن كان الكل متعادلاً قبل الجولة
+     (الجولة 4 أول جولة نقاط: الجميع «1» فيبدو كل سهم هبوطاً) */
+  liveApply(rows){
+    if(typeof LIVEGW==='undefined' || !LIVEGW.active() || !LIVEGW.cache.rows || !LIVEGW.cache.rows.length) return rows;
+    const base=new Map(rows.map((r,i)=>[r.id, r.rank||i+1])), tied=new Set(base.values()).size<=1;
+    const out=rows.map(r=>{ const lv=LIVEGW.liveOf(r.id); return {...r, total:(+r.total||0)+(lv||0)}; })
+      .sort((a,b)=>b.total-a.total || String(a.name||'').localeCompare(String(b.name||''),'ar'));
+    let prev=null, rk=0; out.forEach((r,i)=>{ if(prev===null || r.total<prev){ rk=i+1; prev=r.total; } r.rank=rk; r.move= tied? 0 : (base.get(r.id)||rk)-rk; });
+    return out;
+  },
   leagueDetail(lg){
     const st=DB.state, m=DB.me();
     let rows= lg.global? this.globalTable() : lg.fav? this.favTable(lg.fav) : LEAGUES.table(lg);
@@ -1006,12 +1018,7 @@ const VIEWS = {
     const selGw = gwList.includes(this.ui.lgGw)? this.ui.lgGw : gwList[gwList.length-1];
     /* الإجمالي مباشر أثناء الجولة (منصور 2026-10-09: «خل الترتيب لايف ترتيب العام و كلهم»): المجموع = الرسمي + نقاط الجولة الجارية،
        والترتيب والسهم (الحركة) منه — للترتيب العام ودوريات المشجعين والخاصة (الكلاسيكية) */
-    if(liveCol && mode==='total' && !isH2H && LIVEGW.cache.rows && LIVEGW.cache.rows.length){
-      const base=new Map(rows.map((r,i)=>[r.id, r.rank||i+1]));
-      rows=rows.map(r=>{ const lv=LIVEGW.liveOf(r.id); return {...r, total:(+r.total||0)+(lv||0)}; })
-        .sort((a,b)=>b.total-a.total || String(a.name||'').localeCompare(String(b.name||''),'ar'));
-      let prev=null, rk=0; rows.forEach((r,i)=>{ if(prev===null || r.total<prev){ rk=i+1; prev=r.total; } r.rank=rk; r.move=(base.get(r.id)||rk)-rk; });
-    }
+    if(liveCol && mode==='total' && !isH2H) rows=this.liveApply(rows);
     if(mode==='gw'){
       liveCol=false;
       rows=rows.map(r=>{ const h=(r.hist||[]).find(x=>+x.gw===+selGw); return h? {...r, gwPts:+h.pts||0} : null; }).filter(Boolean)
