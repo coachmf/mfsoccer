@@ -62,6 +62,7 @@ const DB = {
     const ownP = CLOUD.loadOwn();   // بعد اللقطة: لا تتقاسم معها عرض الشبكة البطيئة
     this.fromSnap = !!snap;
     const game = snap ? snap.game : await CLOUD.loadGame();
+    if(game===undefined) return {ok:false, err:'offline'};   // الخادم لم يرد
     if(!game) return {ok:false, err:'no-game'};      // المدير لم ينشر بعد
     /* اللاعبون والجولات (23 مستنداً) لا تُقرأ إلا إذا تغيّرت اللعبة منذ آخر تحميل ناجح على هذا الجهاز:
        الفتح المعتاد يكلّف قراءتين بدل ~25 — أكبر توفير في حصة القراءات المجانية */

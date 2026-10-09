@@ -51,6 +51,7 @@ const CLOUD = {
       this.auth = firebase.auth();
       this.db   = firebase.firestore();
       try{ this.db.settings({ experimentalAutoDetectLongPolling:true, merge:true }); }catch(e){}
+      this.boundOps();
       /* الجلسة تبقى محفوظة على الجهاز (سفاري أحياناً يفقدها بلا هذا) */
       try{ this.auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL); }catch(e){}
       this.ready = true; this.state='ready';
@@ -59,6 +60,29 @@ const CLOUD = {
       this.auth.onAuthStateChanged(u => this._onAuth(u));
       return true;
     }catch(e){ console.warn('cloud init failed', e); this.state='offline'; return false; }
+  },
+
+  /* لا شيء يعلق بلا نهاية (منصور 2026-10-09: «وايد اشياء قاعده تعلق»): كل قراءة/كتابة Firestore في الصفحة
+     تُرفض بخطأ deadline-exceeded إن لم يرد الخادم خلال المهلة — كل المستدعين أصلاً في try/catch فيظهر خطأ
+     مفهوم («الشبكة بطيئة») ويرجع الزر بدل «جارٍ…» للأبد. الكتابة نفسها تبقى في طابور Firestore وتُرسل لما يرجع الاتصال. */
+  OP_MS: { docGet:15000, queryGet:25000, write:30000 },
+  boundOps(){
+    const fs = firebase.firestore; if(!fs || fs.__bounded) return; fs.__bounded = true;
+    const lim = (p, ms, what) => new Promise((res, rej) => {
+      const t = setTimeout(() => { const e = new Error('timeout: '+what); e.code = 'deadline-exceeded'; rej(e); }, ms);
+      Promise.resolve(p).then(v => { clearTimeout(t); res(v); }, e => { clearTimeout(t); rej(e); });
+    });
+    const wrap = (C, name, ms) => {
+      const P = C && C.prototype; if(!P || typeof P[name] !== 'function') return;
+      const orig = P[name];
+      P[name] = function(...a){ return lim(orig.apply(this, a), ms, (C.name||'')+'.'+name); };
+    };
+    const M = this.OP_MS;
+    wrap(fs.DocumentReference, 'get', M.docGet);
+    wrap(fs.Query, 'get', M.queryGet);
+    ['set','update','delete'].forEach(n => wrap(fs.DocumentReference, n, M.write));
+    wrap(fs.CollectionReference, 'add', M.write);
+    wrap(fs.WriteBatch, 'commit', M.write);
   },
 
   async _onAuth(u){
@@ -165,7 +189,9 @@ const CLOUD = {
   async login(email, pass){
     if(!this.ready) return {ok:false, err:'السحابة غير متاحة — تأكد من الاتصال'};
     try{
-      await this.auth.signInWithEmailAndPassword(String(email||'').trim().toLowerCase(), pass);
+      const r = await this.race(this.auth.signInWithEmailAndPassword(String(email||'').trim().toLowerCase(), pass), 30000);
+      if(r.timeout) return {ok:false, err:'الشبكة بطيئة — حاول مرة ثانية بعد لحظات'};
+      if(!r.ok) throw r.err;
       return {ok:true};
     }catch(e){ return {ok:false, err:this.errAr(e)}; }
   },
@@ -411,7 +437,9 @@ const CLOUD = {
       'auth/user-cancelled':'أُلغي التأكيد. سجّل خروجاً ثم ادخل من جديد وأعد المحاولة مباشرة',
       'auth/popup-blocked':'المتصفح حجب نافذة التأكيد — سجّل خروجاً ثم ادخل من جديد وأعد المحاولة مباشرة',
       'auth/user-mismatch':'الحساب الذي أكّدت به لا يطابق حسابك الحالي',
-      'permission-denied':'لا تملك صلاحية هذه العملية'
+      'permission-denied':'لا تملك صلاحية هذه العملية',
+      'deadline-exceeded':'الشبكة بطيئة — ما وصلنا رد الخادم، حاول مرة ثانية',
+      'unavailable':'تعذّر الوصول للخادم — تأكد من الإنترنت وحاول مرة ثانية'
     };
     return map[c] || ((e && e.message) || 'حدث خطأ غير متوقع');
   },
@@ -672,7 +700,7 @@ const CLOUD = {
     try{
       const s = await this.root().get();
       return s.exists ? s.data() : null;
-    }catch(e){ return null; }
+    }catch(e){ return undefined; }   // فشل الشبكة (undefined) ≠ لا لعبة منشورة (null)
   },
   /* التملّك واللقطة من meta/own (أحدث من نسخة مستند اللعبة عادةً) */
   async loadOwn(){
