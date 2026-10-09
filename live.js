@@ -1244,13 +1244,13 @@ function hookManual(){
     const key = EDIT && EDIT.match ? {round:+EDIT.match.round, comp:EDIT.match.comp, home:EDIT.match.home, away:EDIT.match.away} : null;
     const linked = !!(EDIT && EDIT.match && EDIT.match.rec==="live");
     const r = await orig.apply(this, arguments);
-    if(!key || !linked || EDIT) return r;          /* EDIT باقٍ = فشل التحقق */
+    if(!key || !linked || (r!==true && EDIT)) return r;          /* EDIT باقٍ بلا نجاح = فشل التحقق (الحفظ التلقائي يُبقي المحرّر مفتوحاً) */
     try{
       const m = (ALL.matches||[]).find(x=>x.round===key.round && compOf(x)===key.comp && x.home===key.home && x.away===key.away);
       if(!m) return r;
       const d = await REC.pull(m);
       if(d && !d.detached) await REC.push(d);       /* صفوف جديدة بلا lid تأخذ معرّفاتها */
-      toast("حُدّث اللعب الفعلي بتعديلاتك", "ok");
+      if(!(arguments[0] && arguments[0].quiet)) toast("حُدّث اللعب الفعلي بتعديلاتك", "ok");
     }catch(e){ console.error(e); toast("حُفظ السجل، لكن تعذّر تحديث اللعب الفعلي", "err"); }
     return r;
   };

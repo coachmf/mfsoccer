@@ -2183,7 +2183,7 @@ main{padding-bottom:48px}
 <script src="site-i18n.js?v=24" defer></script>
 <!-- مركز المباراة المباشر: صفحة الجمهور + الربط (غرفة التحكم live-admin.js تُحمَّل عند فتحها فقط) -->
 <link rel="stylesheet" href="live.css?v=9">
-<script src="live.js?v=17" defer></script>
+<script src="live.js?v=18" defer></script>
 <!-- تبويبات لوحة الإدارة: إعادة تنظيم للأقسام الموجودة فقط -->
 <link rel="stylesheet" href="admin-tabs.css?v=1">
 <script src="admin-tabs.js?v=5" defer></script>
@@ -3154,8 +3154,8 @@ const mclkHTML = m => { const P=m&&PH_CLOCK[m.status]; if(!P||!+m.pst) return ""
   return `<span class="mclk" dir="ltr" data-ph="${m.status}" data-pst="${+m.pst}" data-ad="${+m[P[2]]||0}">${phaseMinute(m)}</span>`; };
 setInterval(()=>document.querySelectorAll(".mclk[data-pst]").forEach(el=>{ const P=PH_CLOCK[el.dataset.ph]; if(!P) return;
   const v=phaseMinute({status:el.dataset.ph, pst:el.dataset.pst, [P[2]]:el.dataset.ad}); if(el.textContent!==v) el.textContent=v; }), 10000);
-/* في البطاقات: الدقيقة نفسها حين تجري الساعة، وإلا اسم المرحلة */
-const liveStHTML = (ph, m) => ph==="ht" ? '<span class="mc-st ht">استراحة</span>' : `<span class="mc-st live"><i></i>${(m&&mclkHTML(m))||LIVE_PH_AR[ph]||"جارية الآن"}</span>`;
+/* في البطاقات: الشوط والدقيقة معاً (منصور 2026-10-09: «يبين فقط الدقيقة والشوط من برا»)، و«بين الشوطين» في الاستراحة */
+const liveStHTML = (ph, m) => ph==="ht" ? '<span class="mc-st ht">بين الشوطين</span>' : `<span class="mc-st live"><i></i>${LIVE_PH_AR[ph]||"جارية الآن"}${m&&mclkHTML(m)?` · ${mclkHTML(m)}`:""}</span>`;
 function matchOver(m){
   if(!m) return false; if(m.status==="ft") return true;
   if(["pre","h1","ht","h2","e1","e2","pso"].includes(m.status)) return false;
@@ -6223,33 +6223,56 @@ function applyEdit(E){
 }
 let ADM_MCOMP = "الكل";   /* فلتر البطولة في قائمة مباريات الإدارة */
 let SAVING_MATCH = false;
-async function saveMatch(){
+/* opt.quiet = الحفظ التلقائي (منصور 2026-10-09): بلا تعتيم ولا رسائل، والمحرّر يبقى مفتوحاً على صفّ المباراة نفسه بعد الحفظ —
+   applyEdit يستبدل صفوف المباراة وmergeEdit يدمج بالتوقيع، فلا تتكرر مباراة ولا حدث */
+async function saveMatch(opt){
   if(SAVING_MATCH || !EDIT) return;          /* ضغطة ثانية أثناء الحفظ لا تبدأ حفظاً آخر */
-  toast("جارٍ حفظ المباراة…","busy",true);
+  const quiet = !!(opt && opt.quiet);
+  if(!quiet) toast("جارٍ حفظ المباراة…","busy",true);
   FORMERR = validateEdit();
-  if(FORMERR){ renderMatchAdmin(); return; }
-  SAVING_MATCH = true; document.documentElement.classList.add("mx-saving");
+  if(FORMERR){ if(quiet){ FORMERR=""; return; } renderMatchAdmin(); return; }
+  SAVING_MATCH = true; if(!quiet) document.documentElement.classList.add("mx-saving");
   try{
   /* نبني على أحدث نسخة سحابية حتى لا نمحو ما أدخله محرّر آخر بيننا */
   const reb = await rebaseOnCloud();
-  if(!reb.ok){ toast("الاتصال ضعيف — لم يُحفظ بعد. تعديلاتك باقية، اضغط «حفظ» مرة ثانية","err"); setTimeout(()=>renderMatchAdmin(),0); return; }
+  if(!reb.ok){ if(quiet) return; toast("الاتصال ضعيف — لم يُحفظ بعد. تعديلاتك باقية، اضغط «حفظ» مرة ثانية","err"); setTimeout(()=>renderMatchAdmin(),0); return; }
+  /* فُتحت نافذة إدخال أثناء الانتظار: أرقام الصفوف فيها تخص هذه النسخة — نؤجل الحفظ التلقائي */
+  if(quiet && (!EDIT || (window.MX && MX.sheet))) return;
   if(reb.changed) toast(`وصل تحديث من ${reb.by||"محرّر آخر"} — دُمج قبل الحفظ`,"busy");
   EDIT = mergeEdit(EDIT);                     /* ما غيّرناه فقط، فوق أحدث صفوف المباراة */
   const m=EDIT.match;
   applyEdit(EDIT);
   applyComp(); DATA_SOURCE="إدخال يدوي في الموقع"; DATA_UPDATED=new Date().toISOString();
   DATA_BY=(FBUSER&&FBUSER.email)||"";
-  EDIT=null; FORMERR="";
-  toast("جارٍ حفظ المباراة…","busy",true);
+  if(quiet){ const x=(ALL.matches||[]).find(z=>+z.round===+m.round && compOf(z)===m.comp && z.home===m.home && z.away===m.away);
+    EDIT = x ? loadEdit(x) : null; if(window.MX) MX._edit=EDIT; MX_ASAVED=Date.now(); }
+  else EDIT=null;
+  FORMERR="";
+  if(!quiet) toast("جارٍ حفظ المباراة…","busy",true);
+  if(quiet && !mxTyping()) renderMatchAdmin();
   const okm = await persistData();
-  if(okm===true){ LASTSYNC=new Date(); toast(`حُفظت المباراة: ${m.home} ضد ${m.away} ✅`,"ok"); }
+  if(okm===true){ LASTSYNC=new Date(); if(!quiet) toast(`حُفظت المباراة: ${m.home} ضد ${m.away} ✅`,"ok"); }
   else if(okm==="pending") toast(SYNCMSG,"busy");
   else toast(SYNCMSG||"حُفظت محلياً، لكن تعذّر الحفظ في السحابة","err");
   /* أي لقطة وصلت أثناء التحرير أقدم من حفظنا — تطبيقها يتراجع عنه */
   dropStaleRemote();
-  paintRail(); renderAll(); renderMatchAdmin();
+  paintRail(); renderAll(); if(!quiet || !mxTyping()) renderMatchAdmin();
+  return true;
   } finally { SAVING_MATCH = false; document.documentElement.classList.remove("mx-saving"); }
 }
+/* الحفظ التلقائي في المحرّر: أي تعديل على مباراة محفوظة سابقاً يُحفظ بعد ثانيتين من آخر تغيير، ما دامت لا نافذة إدخال
+   مفتوحة ولا حقل قيد الكتابة. مباراة جديدة تُحفظ أول مرة بالزر. */
+let MX_ASAVED = 0, MX_ASIG = "", MX_AT = 0;
+const mxTyping = () => { const a=document.activeElement; return !!(a && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)); };
+setInterval(()=>{
+  if(!EDIT || !EDIT.orig || !EDIT.base || EDIT.gulf || SAVING_MATCH || !window.MX){ MX_ASIG=""; return; }
+  const {base, ...cur} = EDIT; const s = JSON.stringify(cur);
+  if(s === JSON.stringify(base)){ MX_ASIG=""; return; }
+  if(s !== MX_ASIG){ MX_ASIG=s; MX_AT=Date.now(); return; }
+  if(Date.now()-MX_AT < 2000 || MX.sheet) return;
+  if(mxTyping() || validateEdit()) return;
+  MX_ASIG=""; saveMatch({quiet:true});
+}, 700);
 
 /* أزرار المزامنة والشعارات — كانت مدفونة داخل معالج «إضافة هدف» فلا تُربط أبداً */
 function wireAdminIO(){
@@ -7221,8 +7244,8 @@ function liveMatches(){
   return MATCHES.filter(isLive).sort((a,b)=>(kickoffTS(a)||0)-(kickoffTS(b)||0));
 }
 function liveMinute(m){
-  if(m.status==="ht") return "الاستراحة";
-  return mclkHTML(m) || LIVE_PH_AR[m.status] || "";   /* الدقيقة من ساعة المحرّر فقط — لا تخمين من موعد الانطلاق */
+  if(m.status==="ht") return "بين الشوطين";
+  return [LIVE_PH_AR[m.status], mclkHTML(m)].filter(Boolean).join(" · ");   /* الدقيقة من ساعة المحرّر فقط — لا تخمين من موعد الانطلاق */
 }
 function liveCard(){
   const ms=liveMatches();
@@ -13960,7 +13983,7 @@ function tvOf(m){
 }
 function mpHeader(m){
   const soon=isUpcoming(m), live=isLive(m);
-  const MS={pre:"لم تبدأ", h1:"الشوط الأول", ht:"استراحة", h2:"الشوط الثاني", e1:"الشوط الإضافي الأول", e2:"الشوط الإضافي الثاني", pso:"ركلات الترجيح", ft:"انتهت"};
+  const MS={pre:"لم تبدأ", h1:"الشوط الأول", ht:"بين الشوطين", h2:"الشوط الثاني", e1:"الشوط الإضافي الأول", e2:"الشوط الإضافي الثاني", pso:"ركلات الترجيح", ft:"انتهت"};
   const stLive = ["h1","h2","e1","e2","pso"].includes(m.status) || (!m.status && live);
   const st = m.status ? MS[m.status]||"" : soon ? "لم تبدأ" : live ? "جارية الآن" : "انتهت";
   /* القنوات في سطر مستقل تحت الموعد، كلها في صف واحد (منصور 2026-09-23) */
@@ -14610,6 +14633,7 @@ html[data-theme="dark"] .mx select option{color:#E6EEF8;background:#0F1E35}   /*
 @media(max-width:620px){.mx-phase{grid-template-columns:repeat(3,minmax(0,1fr))}}
 .mx-ph{padding:11px 4px;border-radius:12px;border:1px solid var(--mx-ln)!important;background:var(--mx-soft)!important;font-weight:800;font-size:.8rem;color:var(--slate)}
 .mx-ph.on{background:linear-gradient(135deg,#1c6fd1,#0e3f86)!important;border-color:#1c6fd1!important;color:#fff}
+.mx-auto{font-size:.72rem;font-weight:800;color:#3ecf8e;white-space:nowrap;align-self:center}
 .mx-clk{display:flex;align-items:center;flex-wrap:wrap;gap:8px 12px;margin-top:12px}
 .mx-clk .mx-lbl{margin:0}
 .mx-clk .mclk{font-weight:900;font-size:1.35rem;font-variant-numeric:tabular-nums}
@@ -14849,7 +14873,7 @@ html.mx-editing #waFab{display:none!important}   /* زر واتساب كان ي�
         ${isKO(m)?`<div class="mx-phase" style="margin-top:8px">${PHASES_KO.map(([k,t])=>`<button class="mx-ph${(m.status||"")===k?" on":""}" data-mstatus="${k}">${t}</button>`).join("")}</div>`:""}
         ${PH_CLOCK[m.status]&&+m.pst?`<div class="mx-clk"><span class="mx-lbl">الدقيقة عند الجمهور</span>${mclkHTML(m)}
           <span class="mx-clk-adj"><button type="button" class="mx-ghost" data-mclk="-1">− دقيقة</button><button type="button" class="mx-ghost" data-mclk="1">+ دقيقة</button></span></div>`:""}
-        <p class="mx-hint">اضغط «الشوط الأول» مع صافرة البداية فتبدأ الدقيقة عند الجمهور وتُحفظ المباراة فوراً. تقف الساعة عند 45 (و90) حتى تُدخل الوقت بدل الضائع فتكمل 45+1، 45+2… ثم اختر «استراحة» و«الشوط الثاني» و«انتهت» في وقتها. «− / + دقيقة» لتصحيح الساعة إن تأخّرت الضغطة.</p></div>
+        <p class="mx-hint">اضغط «الشوط الأول» مع صافرة البداية فتبدأ الدقيقة عند الجمهور وتُحفظ المباراة فوراً. تقف الساعة عند 45 (و90) حتى تُدخل الوقت بدل الضائع فتكمل 45+1، 45+2… ثم اختر «بين الشوطين» و«الشوط الثاني» و«انتهت» في وقتها. «− / + دقيقة» لتصحيح الساعة إن تأخّرت الضغطة.</p></div>
       <div class="mx-card"><h3>البث</h3>
         <span class="mx-lbl">القناة الناقلة</span>
         <div class="mx-chips">${TV_LIST.map(t=>`<button class="mx-chip${m.tv===t?" on":""}" data-mtv="${esc(t)}">${esc(t)}</button>`).join("")}</div>
@@ -15006,7 +15030,7 @@ html.mx-editing #waFab{display:none!important}   /* زر واتساب كان ي�
   const CLUBKEY={goal:"sc",card:"club",pen:"by",sub:"club",chance:"club",var:"club",note:"club"};
   const TITLE={goal:"هدف",card:"بطاقة",pen:"ركلة جزاء",sub:"تبديل",chance:"فرصة خطيرة",var:"مراجعة VAR",note:"تعليق"};
   const PHASE_NOTE={h1:[1,"بداية المباراة"],ht:[45,"نهاية الشوط الأول"],h2:[46,"بداية الشوط الثاني"],e1:[91,"بداية الشوط الإضافي الأول"],e2:[106,"بداية الشوط الإضافي الثاني"],pso:[120,"ركلات الترجيح"],ft:[90,"نهاية المباراة"]};
-  const PHASES=[["pre","قبل البداية"],["h1","الشوط الأول"],["ht","استراحة"],["h2","الشوط الثاني"],["ft","انتهت"]];
+  const PHASES=[["pre","قبل البداية"],["h1","الشوط الأول"],["ht","بين الشوطين"],["h2","الشوط الثاني"],["ft","انتهت"]];
   /* مباريات خروج المغلوب فقط (نصف نهائي ونهائي الخليج، والكؤوس): أشواط إضافية وركلات ترجيح (منصور 2026-10-03) */
   const isKO=m=>EDIT && EDIT.gulf ? +m.round>=4 : String(m.comp||"")!=="الدوري";
   const PHASES_KO=[["e1","الشوط الإضافي الأول"],["e2","الشوط الإضافي الثاني"],["pso","ركلات الترجيح"]];
@@ -15184,7 +15208,7 @@ html.mx-editing #waFab{display:none!important}   /* زر واتساب كان ي�
       </nav>
       <section>${MX.tab==="lineup"?tabLineup():MX.tab==="events"?tabEvents():tabMatch()}</section>
       <div class="mx-bar"><div class="sum">${esc(m.home||"—")} ${hg} - ${ag} ${esc(m.away||"—")}<br>${hx+ax} لاعباً أساسياً · ${evs} حدث</div>
-        <button class="mx-ghost" data-act="cancel">إلغاء</button><button class="mx-ghost" data-act="savestay">حفظ ومتابعة</button><button class="mx-save" data-act="save">${SV.save}حفظ وإغلاق</button></div>
+        ${EDIT.orig?`<span class="mx-auto">حفظ تلقائي</span>`:`<button class="mx-ghost" data-act="cancel">إلغاء</button>`}<button class="mx-ghost" data-act="savestay">حفظ الآن</button><button class="mx-save" data-act="save">${SV.save}حفظ وإغلاق</button></div>
     </div>`;
     /* النافذة على مستوى body: داخل المحتوى تبقى تحت شريط التنقل السفلي مهما ارتفع z-index */
     let host=document.getElementById("mxSheetHost");
@@ -15211,6 +15235,7 @@ html.mx-editing #waFab{display:none!important}   /* زر واتساب كان ي�
     q("[data-act]",b=>b.onclick=()=>{ const a=b.dataset.act;
       if(a==="cancel"){ if(!confirm("الخروج بدون حفظ؟ ستضيع التعديلات غير المحفوظة.")) return; MX.sheet=null; MX.sel=null; document.documentElement.classList.remove("mx-open"); EDIT=null; FORMERR=""; renderMatchAdmin(); flushRemote(); }
       if(a==="savestay"){ saveStay(); return; }
+      if(a==="save" && SAVING_MATCH){ toast("لحظة — يُكمل الحفظ التلقائي…","busy"); const t=setInterval(()=>{ if(!SAVING_MATCH){ clearInterval(t); const nb=document.querySelector('[data-act="save"]'); if(nb) nb.click(); } },300); return; }
       if(a==="save"){ MX.sheet=null; MX.sel=null; document.documentElement.classList.remove("mx-open"); const pre=validateEdit(); if(pre){ FORMERR=pre; MX.tab=errTab(pre); rerender(); return; }
         saveMatch(); }
     });
@@ -15228,7 +15253,9 @@ html.mx-editing #waFab{display:none!important}   /* زر واتساب كان ي�
           MX._edit=EDIT; MX.tab=tab; MX.side=side; renderMatchAdmin(); });
         return true; }
     /* تغيير الشوط أو بدل الضائع أو تصحيح الدقيقة يُحفظ فوراً لتجري الساعة عند الجمهور (مباراة محفوظة سابقاً فقط) */
-    function clockSave(){ if(!EDIT || !EDIT.orig){ toast("احفظ المباراة أولاً لتظهر الدقيقة للجمهور","busy"); return false; } return saveStay(); }
+    function clockSave(){ if(!EDIT || !EDIT.orig){ toast("احفظ المباراة أولاً لتظهر الدقيقة للجمهور","busy"); return false; }
+      if(EDIT.gulf) return saveStay();
+      rerender(); saveMatch({quiet:true}); return true; }   /* إن كان حفظ آخر جارياً يلتقطه الحفظ التلقائي بعد ثانيتين */
     q("[data-mlive]",b=>b.onclick=()=>{ const k=b.dataset.mlive; if(!confirm("فتح غرفة التحكم؟ التعديلات غير المحفوظة هنا ستضيع.")) return; EDIT=null; renderMatchAdmin(); try{ history.pushState({lv:1},"","#livectl/"+k); }catch(e){} LIVE.openControl(k); });
     q("[data-mtab]",b=>b.onclick=()=>{ MX.tab=b.dataset.mtab; MX.sel=null; rerender(); window.scrollTo({top:box.getBoundingClientRect().top+scrollY-80,behavior:"smooth"}); });
     q("[data-mcomp]",b=>b.onclick=()=>{ EDIT.match.comp=b.dataset.mcomp; rerender(); });
