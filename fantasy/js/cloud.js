@@ -645,6 +645,20 @@ const CLOUD = {
   },
 
   /* ---------- حالة اللعبة (المدير يكتبها، الجميع يقرؤها) ---------- */
+  /* لقطة CDN (netlify/functions/fantasy.js): اللعبة + اللاعبون + الجولات في ~80 ك.ب — أسرع بكثير من قناة Firestore
+     على شبكة الجوال (2026-10-09). أي فشل/مهلة = null فنرجع لـFirestore كما كان */
+  async loadSnapshot(ms){
+    if(typeof fetch==='undefined' || /^(localhost|127\.0\.0\.1)$/.test(location.hostname)) return null;
+    try{
+      const ctl = typeof AbortController!=='undefined' ? new AbortController() : null;
+      const t = setTimeout(()=>{ try{ ctl && ctl.abort(); }catch(e){} }, ms||8000);
+      const r = await fetch('/api/fantasy/'+this.SEASON, ctl ? {signal:ctl.signal} : {});
+      clearTimeout(t);
+      if(!r.ok) return null;
+      const v = await r.json();
+      return (v && v.game && v.players && v.rounds && Object.keys(v.rounds).length) ? v : null;
+    }catch(e){ return null; }
+  },
   async loadGame(){
     if(!this.ready) return null;
     try{

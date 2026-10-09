@@ -132,6 +132,8 @@ const APP = {
       this.authSynced = !!u;
       this.render();
       if(this.freshAccount){ this.freshAccount=false; setTimeout(()=>VIEWS.completeProfile(), 400); }
+      /* فُتحت من لقطة CDN (قد تتأخر حتى دقيقتين عن النشر): تحقّق فوري من Firestore في الخلفية */
+      if(DB.fromSnap){ DB.fromSnap=false; setTimeout(()=>this.pollCloud(), 2500); }
       // الجدول والنتائج من mfsoccer على كل جهاز عند كل تحميل؛ الكشوفات للمدير فقط (تُنشر مع اللعبة)
       if(typeof MFSYNC!=='undefined') MFSYNC.autoFixtures(true);
       if(CLOUD.admin && typeof ROSTER!=='undefined') ROSTER.auto();

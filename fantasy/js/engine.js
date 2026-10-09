@@ -56,13 +56,17 @@ const DB = {
     if(typeof CLOUD==='undefined' || !CLOUD.ready) return {ok:false, err:'offline'};
     const st=this.state;
     /* meta/own (~0.8MB: التملّك ولقطة الترتيب) لا يؤخر الفتح على شبكة بطيئة — يصل في الخلفية ويُطبَّق إن كان أحدث (2026-10-09) */
-    const ownP = CLOUD.loadOwn();
-    const game = await CLOUD.loadGame();
+    /* أول تحميل في الجلسة: من لقطة CDN (سريعة على شبكة الجوال) ثم يتحقق APP من Firestore في الخلفية */
+    let snap = null;
+    if(!this._snapTried){ this._snapTried = true; if(!CLOUD.admin) snap = await CLOUD.loadSnapshot(); }   // المدير يقرأ Firestore دائماً: لا ينشر فوق لقطة متأخرة
+    const ownP = CLOUD.loadOwn();   // بعد اللقطة: لا تتقاسم معها عرض الشبكة البطيئة
+    this.fromSnap = !!snap;
+    const game = snap ? snap.game : await CLOUD.loadGame();
     if(!game) return {ok:false, err:'no-game'};      // المدير لم ينشر بعد
     /* اللاعبون والجولات (23 مستنداً) لا تُقرأ إلا إذا تغيّرت اللعبة منذ آخر تحميل ناجح على هذا الجهاز:
        الفتح المعتاد يكلّف قراءتين بدل ~25 — أكبر توفير في حصة القراءات المجانية */
     const unchanged = !!game.updated && st.cloudUpdated===game.updated && st.fromCloud && (st.players||[]).length>0 && (st.fixtures||[]).length>0;
-    const [players, rounds] = unchanged ? [null, null] : await Promise.all([CLOUD.loadPlayers(), CLOUD.loadRounds()]);
+    const [players, rounds] = snap ? [snap.players, snap.rounds] : unchanged ? [null, null] : await Promise.all([CLOUD.loadPlayers(), CLOUD.loadRounds()]);
 
     if(game.rules)   st.rules   = game.rules;
     /* أسماء الكروت ووصفها من الكود دائماً (قابلة للتحديث فوراً على كل الأجهزة)،
