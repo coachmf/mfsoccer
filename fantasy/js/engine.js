@@ -578,6 +578,7 @@ function genMatchStats(st, fx){
     const now=Math.max(0, Math.min(FPL_MATCH_MIN, +fx.liveMin||0));
     for(const clubId of [fx.h, fx.a]) for(const pid in fx.stats[clubId]){
       const r=fx.stats[clubId][pid]; const on=r.on||0;
+      if(on>now){ r.min=0; r.off=on; continue; }                 /* لم يدخل بعد */
       if(r.off==null || r.off>now){ r.off=Math.max(on, now); r.min=Math.max(r.min>0?1:0, now-on); }
     }
   }

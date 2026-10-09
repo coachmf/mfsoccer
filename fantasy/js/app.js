@@ -345,7 +345,7 @@ const APP = {
     }
     // قفل التشكيلة عند تجاوز الموعد
     const team=DB.myTeam();
-    if(team && team.squad.length && GWADMIN.deadlinePassed(st.currentGW) && !team.gwPicks[st.currentGW]){
+    if(team && team.squad.length && !(+team.joinedGW>st.currentGW) && GWADMIN.deadlinePassed(st.currentGW) && !team.gwPicks[st.currentGW]){   /* المنضم للجولة التالية بلا لقطة */
       GWADMIN.snapshotPicks(team, st.currentGW);
       DB.save();
     }

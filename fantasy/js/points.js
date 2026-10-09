@@ -172,7 +172,7 @@ Object.assign(VIEWS, {
     const st=DB.state, team=DB.myTeam(), m=DB.me();
     const {gws, liveOn}=this.pointsGws(team);
     if(!gws.length) return `<div class="pts-page"><div class="card"><h3>النقاط</h3>
-      <div class="muted">لا نقاط بعد — تظهر نقاط فريقك هنا بعد موعد إغلاق الجولة، وتتحدث مع كل مباراة تُلعب.</div>
+      <div class="muted">${GWADMIN.lateJoiner(team) ? `فريقك يبدأ من الجولة ${team.joinedGW} — تظهر نقاطك هنا من موعد إغلاقها، وتتحدث مع كل مباراة تُلعب.` : 'لا نقاط بعد — تظهر نقاط فريقك هنا بعد موعد إغلاق الجولة، وتتحدث مع كل مباراة تُلعب.'}</div>
       <button class="btn sec" style="margin-top:12px" onclick="APP.go('live')">${UI.icon('live',18)} المركز المباشر — مباريات الجولة</button></div></div>`;
     const gw = gws.includes(this.ui.pointsGw) ? this.ui.pointsGw : gws[gws.length-1];
     const isLive = liveOn && gw===st.currentGW;

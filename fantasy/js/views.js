@@ -129,7 +129,9 @@ const VIEWS = {
     if(clash){ UI.toast(`اسم المستخدم يشبه «${clash}» — اختر اسماً مميّزاً`, true); return; }
     if(typeof CLOUD!=='undefined' && CLOUD.user){
       const ok = await CLOUD.saveMyTeam({username:u, teamName:t});
-      if(ok!==true){ UI.toast('تعذّر الحفظ — تأكد من الاتصال وحاول مرة ثانية', true); return; }
+      if(ok!==true){ UI.toast('تعذّر الحفظ — تأكد من الاتصال وحاول مرة ثانية', true);
+        const box=document.getElementById('modalBox'); if(force && box && !box.querySelector('[data-later]')) box.insertAdjacentHTML('beforeend','<button class="btn sec" data-later style="width:100%;margin-top:8px" onclick="UI.closeModal()">لاحقاً</button>');
+        return; }
     }
     m.username=u; m.teamName=t; DB.save(); UI.closeModal();
     /* من عنده تشكيلة أصلاً (ملفه كان ناقصاً على الخادم فعومل كحساب جديد) لا يُطلب منه تكوين فريق — 2026-10-09 */
@@ -651,6 +653,7 @@ const VIEWS = {
     const v=TEAM.validateSquad(sq, st, this.ui.pickerCoach||null);
     if(!v.ok){ UI.toast(v.errs[0],true); return; }
     team.squad=[...sq];
+    if(GWADMIN.deadlinePassed(st.currentGW) && !(team.gwPicks||{})[st.currentGW] && !(team.history||[]).length) team.joinedGW=st.currentGW+1;   /* فريق أول بعد الإغلاق */
     team.coach=this.ui.pickerCoach||null; team.coachSince=st.currentGW;
     // اختيار تشكيلة تلقائية: الأغلى مع احترام القيود
     const ps=sq.map(pid=>DB.player(pid));

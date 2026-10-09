@@ -107,6 +107,9 @@ const MFSYNC = {
     if(P && +m.pst) return Math.min(P[1], P[0]+Math.max(0, Math.floor((Date.now()- +m.pst)/60000))+1);
     const ko=m.date ? kwDate(m.date+'T'+(m.time||'23:59')).getTime() : NaN; if(isNaN(ko)) return null;
     const el=Math.max(0, Math.floor((Date.now()-ko)/60000));
+    if(m.status==='h1') return Math.min(45, el);                 /* الشوط الأول المتأخر لا يُقدَّر بأكثر من 45 */
+    if(m.status==='e1') return Math.max(91, Math.min(105, el));
+    if(m.status==='e2') return Math.max(106, Math.min(120, el));
     if(m.status==='h2') return Math.max(46, Math.min(90, el-15));
     return el<=45 ? el : el<60 ? 45 : Math.min(90, el-15);
   },
