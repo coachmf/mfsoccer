@@ -34,7 +34,8 @@ const APP = {
     document.addEventListener('visibilitychange', ()=>{
       if(document.hidden){ this._hiddenAt=Date.now(); return; }
       this.pollCloud(); this.retryCloud();
-      if(Date.now()-(this._hiddenAt||0) > 60000) this.checkVersion('resume');   // رجع للتطبيق من الخلفية: نسخة جديدة؟
+      if(this._verPending){ this.applyUpdate(); }
+      else if(Date.now()-(this._hiddenAt||0) > 60000) this.checkVersion('resume');   // رجع للتطبيق من الخلفية: نسخة جديدة؟
     });
     this.initVersionWatch();
     // وضع بلا اتصال لا يبقى للأبد: كل 20 ثانية نجرّب الخادم، وأول ما يرد نعيد التحميل فتصل الجولة واللاعبون الجدد
@@ -224,7 +225,7 @@ const APP = {
       || (document.activeElement && /INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)));
   },
   async newVersion(html){
-    if(this._verShown) return;
+    this._verPending=true;
     /* نحفظ الصفحة الجديدة في ذاكرة sw.js حتى تفتح إعادة التحميل عليها مباشرة (لا على القديمة) */
     if(html && window.caches){
       try{ const keys=await caches.keys(); const k=keys.find(x=>/^shell-/.test(x));
@@ -232,14 +233,18 @@ const APP = {
           await c.put(new Request(location.origin+'/fantasy/'), new Response(html, hdr));
           await c.put(new Request(location.origin+'/fantasy/index.html'), new Response(html, hdr)); } }catch(e){}
     }
-    /* حماية من حلقة: تحديث تلقائي مرتين كحد أقصى كل 10 دقائق، بعدها زر فقط */
+    this.applyUpdate();
+  },
+  /* بلا أزرار ولا رسائل (منصور 2026-10-09: «مو احترافي»): التحديث يتم بصمت فوراً إن لم يكن المشترك في منتصف شيء،
+     وإلا ينتظر حتى ينتقل لصفحة أخرى أو يرجع للتطبيق من الخلفية. route = الصفحة التي سيفتح عليها بعد التحديث */
+  applyUpdate(route){
+    if(!this._verPending || this.busyUser()) return false;
+    /* حماية من حلقة: تحديث تلقائي مرتين كحد أقصى كل 10 دقائق */
     let log=[]; try{ log=JSON.parse(sessionStorage.getItem('kwf_verreload')||'[]').filter(t=>Date.now()-t<600000); }catch(e){}
-    if(!this.busyUser() && log.length<2){ log.push(Date.now()); try{ sessionStorage.setItem('kwf_verreload', JSON.stringify(log)); }catch(e){} location.reload(); return; }
-    this._verShown=true;
-    const bar=document.createElement('div'); bar.id='verBar';
-    bar.style.cssText='position:fixed;left:12px;right:12px;bottom:calc(76px + env(safe-area-inset-bottom));z-index:9999;display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:14px;background:var(--surface,#0b1430);border:1px solid var(--accent,#5aa0ff);box-shadow:0 8px 24px rgba(0,0,0,.35)';
-    bar.innerHTML='<span style="flex:1;font-size:.9rem">صدرت نسخة جديدة من اللعبة</span><button class="btn sm" onclick="location.reload()">تحديث</button>';
-    document.body.appendChild(bar);
+    if(log.length>=2){ this._verPending=false; return false; }
+    log.push(Date.now()); try{ sessionStorage.setItem('kwf_verreload', JSON.stringify(log)); }catch(e){}
+    if(route) history.replaceState(null,'','#'+route);
+    location.reload(); return true;
   },
 
   /* هل المشترك داخل بحساب سحابي حقيقي؟ */
@@ -288,6 +293,7 @@ const APP = {
   go(route){
     if(!this._noHist && route!==this.route && this.route){ this.hist.push(this.route); if(this.hist.length>30) this.hist.shift(); }
     this.leavePage(route);
+    if(this._verPending && this.applyUpdate(route)) return;   // نسخة جديدة معلّقة: تُطبَّق بصمت مع الانتقال (بعد إغلاق الأوراق)
     this.route=route; location.hash=route; this.render(); window.scrollTo(0,0);
     if((route==='dashboard' || route==='about') && typeof FEEDBACK!=='undefined') FEEDBACK.pollMine();   // ردود الدعم (مخفَّف: مرة بالدقيقة)
   },
