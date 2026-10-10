@@ -91,6 +91,17 @@ service cloud.firestore {
       allow read:  if true;
       allow write: if isOwner() || isEditor();
     }
+    /* تصويت أفضل لاعب لكل مباراة (2026-10-11): صوت واحد لكل مشجع في كل مباراة */
+    match /motm/{vid} {
+      allow read: if true;
+      allow create, update: if request.auth != null
+        && request.resource.data.uid == request.auth.uid
+        && vid == request.resource.data.mid + "_" + request.auth.uid
+        && request.resource.data.keys().hasOnly(['uid','mid','name','n','c','ts'])
+        && request.resource.data.n is string && request.resource.data.n.size() < 80
+        && request.resource.data.c is string && request.resource.data.c.size() < 40;
+      allow delete: if isOwner() || isEditor();
+    }
     match /tots/{vid} {
       allow read: if true;
       allow create, update: if request.auth != null
