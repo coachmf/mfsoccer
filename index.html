@@ -1029,7 +1029,7 @@ table.lb tr.pk td{background:rgba(14,43,82,.35);padding:8px 11px}
 .pkl{display:flex;flex-direction:column;gap:5px;font-size:.76rem}
 .pkl .r{display:flex;align-items:center;gap:8px;justify-content:space-between}
 .pkl .r i{font-style:normal;font-family:var(--display);font-variant-numeric:tabular-nums;padding:1px 8px;border-radius:7px;background:rgba(143,166,196,.15)}
-.pkl .r i.ex{background:rgba(46,180,100,.25);color:#7be3a3}.pkl .r i.ok{background:rgba(232,190,90,.2);color:#f0cf7a}.pkl .r i.no{color:var(--slate)}
+.pkl .r i.ex{background:rgba(46,180,100,.25);color:#7be3a3}.pkl .r i.ok{background:rgba(232,190,90,.2);color:#f0cf7a}.pkl .r i.no{color:var(--slate)}.pkl .r i.bad{background:rgba(220,60,60,.22);color:#ff8a8a}
 .pkl .r em{font-style:normal;color:var(--slate);font-size:.7rem}
 .lb-more{display:block;width:100%;margin-top:8px}
 table.lb tr.me td{color:#fff;font-weight:600}
@@ -9959,9 +9959,9 @@ function boardBlock(){
     const res = (pk.res||{});
     return `<tr class="pk"><td colspan="3"><div class="pkl">${Object.entries(d.pk||{}).map(([k,v])=>{
       const [h,a]=k.split("|"), act=res[k]; let cls="no";
-      if(act){ if(+v[0]===act[0] && +v[1]===act[1]) cls="ex"; else if(Math.sign(v[0]-v[1])===Math.sign(act[0]-act[1])) cls="ok"; }
+      if(act){ if(+v[0]===act[0] && +v[1]===act[1]) cls="ex"; else if(Math.sign(v[0]-v[1])===Math.sign(act[0]-act[1])) cls="ok"; else cls="bad"; }
       return `<div class="r"><span>${esc(h)} – ${esc(a)}</span><span><i class="${cls}" dir="ltr">${+v[0]} - ${+v[1]}</i>${act?` <em dir="ltr">(${act[0]} - ${act[1]})</em>`:""}</span></div>`;
-    }).join("")}${d.sc?`<div class="r"><span>الهداف</span><span><i class="${d.scOk?"ex":"no"}">${esc(d.sc)}</i></span></div>`:""}</div></td></tr>`;
+    }).join("")}${d.sc?`<div class="r"><span>الهداف</span><span><i class="${d.scOk?"ex":"bad"}">${esc(d.sc)}</i></span></div>`:""}</div></td></tr>`;
   };
   const rowHTML = (r, pos) => `<tr class="${FAN&&r.uid===FAN.uid?"me":""}${pk?" pr":""}" ${pk?`data-pkuid="${esc(r.uid)}"`:""}>
           <td class="rk ${pos<=3?"top":""}">${pos}${mv(r.uid, pos)}</td>
