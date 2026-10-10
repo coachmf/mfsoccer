@@ -108,12 +108,12 @@ Object.assign(VIEWS, {
           <div class="nm" style="text-decoration:line-through;opacity:.75">${esc(p.name.split(' ').slice(-1)[0])}</div>
           <div class="pt">اختر ${POS_ONE[p.pos]}</div></div>`;
       }
-      const next=FDR.next(p.club,1)[0];
+      const next=FDR.upcoming(p.club,1)[0];
       return `<div class="pslot" onclick="VIEWS.playerSheet('${pid}','transfer')">
         <div class="club-tag">${DB.club(p.club).short}</div>
         ${UI.pitchKit(p,50)}
         <div class="nm">${esc(p.name.split(' ').slice(-1)[0])}</div>
-        <div class="pt">${next? `${DB.club(next.opp).short} ${UI.ha(next.home)}` : fmtM(p.price)}</div></div>`;
+        <div class="pt">${next? (next.postponed? `<span class="pp-off">مؤجلة ج${next.gw}</span>` : `${DB.club(next.opp).short} ${UI.ha(next.home)}`) : fmtM(p.price)}</div></div>`;
     };
     const board=['G','D','M','F'].map(pos=>
       `<div class="pitch-row row-${pos.toLowerCase()}">${team.squad.filter(pid=>DB.player(pid).pos===pos).map(card).join('')}${pos==='G' && COACH_UI.layout()==='row' ? this.coachSlotHTML(team,{mode:'transfer', locked}) : ''}</div>`).join('');

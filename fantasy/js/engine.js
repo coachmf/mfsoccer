@@ -945,6 +945,18 @@ const FDR = {
         return { gw:f.gw, opp, home, ...this.rate(opp,home) };
       });
   },
+  /* القادمة مع المؤجلة في جولتها (منصور 2026-10-10: «تكتب الجولة الخامسة مؤجلة» حتى يفهم المستخدم أنه لن يلعب فيها).
+     FDR.next يبقى للمعدّلات والترتيب؛ هذه للعرض فقط */
+  upcoming(clubId, n){
+    const st=DB.state, cur=+st.currentGW||1;
+    return st.fixtures
+      .filter(f=>(f.h===clubId||f.a===clubId) && (f.status==='U' || (f.status==='P' && f.gw>=cur)))
+      .sort((a,b)=>a.gw-b.gw).slice(0,n||5)
+      .map(f=>{
+        const home=f.h===clubId; const opp=home?f.a:f.h;
+        return { gw:f.gw, opp, home, postponed:f.status==='P', ...this.rate(opp,home) };
+      });
+  },
   avgNext(clubId, n){
     const fx=this.next(clubId,n||3);
     if(!fx.length) return 3;

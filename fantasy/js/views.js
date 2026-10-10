@@ -459,8 +459,8 @@ const VIEWS = {
     const sel=this.ui.sel===pid;
     const liveGw = st.gws.find(g=>g.status==='live');
     const r = liveGw? DB.pgw(pid, liveGw.n) : null;
-    const next=FDR.next(p.club,1)[0];
-    const sub = opt.pts ? `${opt.pts[pid]??'—'} نقطة` : r? `${r.pts} نقطة` : next? `${DB.club(next.opp).short} ${UI.ha(next.home)}` : '—';
+    const next=FDR.upcoming(p.club,1)[0];
+    const sub = opt.pts ? `${opt.pts[pid]??'—'} نقطة` : r? `${r.pts} نقطة` : next? (next.postponed? `<span class="pp-off">مؤجلة ج${next.gw}</span>` : `${DB.club(next.opp).short} ${UI.ha(next.home)}`) : '—';
     if(opt.view){                       // تشكيلة مشترك آخر: عرض فقط، والضغط يفتح ملف اللاعب
       return `<div class="pslot ${UI.statusCls(p)}" onclick="VIEWS.playerSheet('${pid}','addp-out')">
         ${team.cap===pid? '<div class="badge">C</div>' : team.vice===pid? '<div class="badge v">V</div>':''}
@@ -551,10 +551,10 @@ const VIEWS = {
         <div class="tiny">${opp?DB.club(opp).short:'—'} ${UI.ha(home)}</div>
         <span class="ptschip ${cls}">${pts}</span></div>`;
     }).join('') || '<div class="muted tiny">لا جولات بعد</div>';
-    const fxCells=FDR.next(p.club,3).map(x=>`
+    const fxCells=FDR.upcoming(p.club,3).map(x=>`
       <div class="fcell"><div class="tiny">ج${x.gw}</div>${UI.crest(x.opp)}
         <div class="tiny">${DB.club(x.opp).short} ${UI.ha(x.home)}</div>
-        <span class="ptschip nolbl fdr-l${x.lvl}" title="${x.label}"></span></div>`).join('');
+        ${x.postponed? '<span class="ptschip pp-chip">مؤجلة</span>' : `<span class="ptschip nolbl fdr-l${x.lvl}" title="${x.label}"></span>`}</div>`).join('');
     UI.sheet(`
       ${UI.statusBanner(p)}
       <div class="ps-head ps-head-photo" style="background:linear-gradient(135deg,${c.color} 0%,${c.dark} 100%)">
@@ -868,9 +868,9 @@ const VIEWS = {
     <div class="grid g2">
       <div class="card"><h3>نقاط الفانتسي عبر الجولات</h3>${UI.lineChart(hist,560,180)}</div>
       <div class="card"><h3>المباريات القادمة</h3>
-        ${FDR.next(p.club,6).map(x=>`<div class="fx"><div class="team">ج${x.gw}</div>
+        ${FDR.upcoming(p.club,6).map(x=>`<div class="fx${x.postponed?' fx-pp':''}"><div class="team">ج${x.gw}</div>
           <div class="team">${UI.crest(x.opp)} ${DB.club(x.opp).name} ${UI.ha(x.home)}</div>
-          <span class="fdr nolbl l${x.lvl}" title="${x.label}"></span></div>`).join('')||'<div class="muted">انتهى الموسم</div>'}
+          ${x.postponed? '<span class="pp-chip">مؤجلة — لا يلعب هذه الجولة</span>' : `<span class="fdr nolbl l${x.lvl}" title="${x.label}"></span>`}</div>`).join('')||'<div class="muted">انتهى الموسم</div>'}
       </div>
       <div class="card" style="grid-column:1/-1"><h3>سجل الجولات</h3>
         <div class="scroll-x"><table class="tbl"><tr><th>جولة</th><th>دقائق</th><th>أهداف</th><th>صناعة</th><th>شباك</th><th>إنذار</th><th>طرد</th><th>بونص</th><th>نقاط</th></tr>
