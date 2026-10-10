@@ -771,6 +771,8 @@ details.squadbox summary label.lb{margin:0;cursor:pointer}
 .pp-b.card{top:-5px;right:-5px;width:clamp(7px,2cqw,9px);height:clamp(10px,2.8cqw,12px);border-radius:2px}
 .pp-b.card.y{background:#E9B949}
 .pp-b.card.r{background:#D9453B}
+/* كرت اللاعب يحمل الكلاس «card» فكانت خلفية البطاقات الكحلية في الوضع الداكن (html.mf[data-theme=dark] .card) تغطي لونه — منصور 2026-10-11 «شنو الاسود هذا» */
+html .pp-b.card.y{background:#E9B949 !important}html .pp-b.card.r{background:#D9453B !important}
 /* الخروج: أسفل اليسار، دائرة حمراء بسهم أبيض للأسفل */
 .pp-b.off{bottom:-5px;left:-5px;width:clamp(11px,3cqw,15px);height:clamp(11px,3cqw,15px);
   border-radius:50%;background:#D9453B}
