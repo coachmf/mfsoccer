@@ -1017,6 +1017,21 @@ table.lb th{font-family:var(--display);font-weight:600;font-size:.7rem;color:var
   background:rgba(14,43,82,.5)}
 table.lb tr:last-child td{border-bottom:0}
 table.lb tr.me{background:rgba(95,178,232,.09)}
+/* ترتيب التوقعات (منصور 2026-10-11): بطاقتي فوق، سطري تحت الخمسين، توقعات كل مشترك */
+.mystat{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:10px 0 4px}
+.mystat div{background:var(--navy-800);border:1px solid rgba(143,166,196,.18);border-radius:12px;padding:10px 8px;text-align:center}
+.mystat b{display:block;font-family:var(--display);font-size:1.25rem;color:#fff;font-variant-numeric:tabular-nums}
+.mystat small{font-size:.66rem;color:var(--slate)}
+table.lb tr.gap td{text-align:center;color:var(--slate);padding:4px}
+table.lb tr.pr{cursor:pointer}
+table.lb tr.pr td:nth-child(2):after{content:" ▾";color:var(--slate);font-size:.7em}
+table.lb tr.pk td{background:rgba(14,43,82,.35);padding:8px 11px}
+.pkl{display:flex;flex-direction:column;gap:5px;font-size:.76rem}
+.pkl .r{display:flex;align-items:center;gap:8px;justify-content:space-between}
+.pkl .r i{font-style:normal;font-family:var(--display);font-variant-numeric:tabular-nums;padding:1px 8px;border-radius:7px;background:rgba(143,166,196,.15)}
+.pkl .r i.ex{background:rgba(46,180,100,.25);color:#7be3a3}.pkl .r i.ok{background:rgba(232,190,90,.2);color:#f0cf7a}.pkl .r i.no{color:var(--slate)}
+.pkl .r em{font-style:normal;color:var(--slate);font-size:.7rem}
+.lb-more{display:block;width:100%;margin-top:8px}
 table.lb tr.me td{color:#fff;font-weight:600}
 table.lb td.rk{font-family:var(--display);color:var(--slate);font-variant-numeric:tabular-nums}
 table.lb td.rk.top{color:var(--sand);font-weight:700}
@@ -9451,6 +9466,9 @@ let MYPRED = null;     /* توقعات المشترك للجولة المفتو�
 let BOARD = null;      /* وثيقة الترتيب المجمّعة */
 let ROUNDMETA = null;  /* {round,lockAt,month,open} للجولة المفتوحة */
 let BOARDTAB = "season";
+let BOARDALL = false;   /* «عرض الكل» بدل أول 50 */
+let OPENPK = null;      /* المشترك المفتوحة توقعاته في جدول الجولة */
+const PICKS = {};       /* boards/{sid}_p{r} — توقعات كل المشتركين لجولة محتسبة (عامة بعد الاحتساب) */
 let SCCLUB = "";        /* نادي الهداف المختار في نموذج التوقعات */
 let AUTHTAB = "name";   /* name | mail */
 let AUTHMODE = "in";    /* in | up */
@@ -9658,6 +9676,12 @@ async function saveTotVote(round, comp, body){
 }
 
 /* ===== الترتيب ===== */
+/* توقعات الجولة المحتسبة لكل المشتركين — وثيقة عامة يكتبها المالك عند الاحتساب */
+async function loadPicks(r){
+  if(!fbDb || !r) return;
+  try{ const s = await fbDb.collection("boards").doc(seasonId() + "_p" + r).get(); PICKS[r] = s.exists ? s.data() : {rows:{}}; }
+  catch(e){ PICKS[r] = {rows:{}}; }
+}
 async function loadBoard(){
   if(!fbDb) return;
   try{
@@ -9730,6 +9754,7 @@ async function scoreRound(r){
   catch(e){ return {ok:false, msg:"تعذّرت قراءة التوقعات"}; }
 
   const rows = (BOARD && BOARD.rows) ? JSON.parse(JSON.stringify(BOARD.rows)) : {};
+  const pub = {};   /* توقعات كل مشترك لهذه الجولة — تُنشر بعد الاحتساب فقط (التوقعات مقفلة) */
   let n = 0;
   snap.forEach(doc=>{
     const p = doc.data(); if(!p || !p.uid) return;
@@ -9741,6 +9766,7 @@ async function scoreRound(r){
       else if(Math.sign(ph-pa) === Math.sign(a[0]-a[1])) pts += PT_RIGHT;
     });
     if(p.scorer && scorers.has(p.scorer)) pts += PT_SCORER;
+    if(!(rows[p.uid] && rows[p.uid].h)) pub[p.uid] = {n:p.name||"مشترك", pk:p.picks||{}, sc:p.scorer||"", scOk:!!(p.scorer && scorers.has(p.scorer)), pts};
     const row = rows[p.uid] || {n:p.name||"مشترك", t:0, r:{}, m:{}};
     row.n = p.name || row.n;
     const prev = (row.r||{})[r] || 0;      /* إعادة الاحتساب لا تُضاعف النقاط */
@@ -9755,6 +9781,8 @@ async function scoreRound(r){
   try{ await fbDb.collection("boards").doc(seasonId()).set(body); }
   catch(e){ return {ok:false, msg:"تعذّر حفظ جدول الترتيب"}; }
   BOARD = body;
+  try{ await fbDb.collection("boards").doc(seasonId() + "_p" + r).set({r:+r, res:actual, rows:pub, updated:body.updated}); PICKS[r] = {r:+r, res:actual, rows:pub}; }
+  catch(e){ console.warn("picks publish", e); }
   return {ok:true, msg:`احتُسبت الجولة ${r} لـ ${n} مشتركاً`};
 }
 
@@ -9779,7 +9807,10 @@ function renderPredict(){
   if(!FAN){ box.innerHTML = authCard(); wireAuth(); return; }
 
   const picks = (MYPRED && MYPRED.picks) || {};
-  const myRank = BOARD ? boardRows("season").findIndex(x=>x.uid===FAN.uid) + 1 : 0;
+  const seasonRows = BOARD ? boardRows("season") : [];
+  const myRank = seasonRows.findIndex(x=>x.uid===FAN.uid) + 1;
+  const myRow = (BOARD && BOARD.rows && BOARD.rows[FAN.uid]) || null;
+  const lastR = BOARD && BOARD.lastRound;
 
   box.innerHTML = `
     <div class="fanbar">
@@ -9789,6 +9820,11 @@ function renderPredict(){
       </div>
       <button class="lnk" id="editName">تغيير الاسم</button>
       <button class="lnk" id="fanOut">خروج</button>
+    </div>
+    <div class="mystat">
+      <div><b>${myRank ? myRank : "—"}</b><small>${myRank ? "مركزك من " + seasonRows.length : "مركزك"}</small></div>
+      <div><b>${myRow ? (myRow.t||0) : 0}</b><small>نقاطك في الموسم</small></div>
+      <div><b>${myRow && lastR ? ((myRow.r||{})[lastR]||0) : 0}</b><small>${lastR ? "نقاطك في الجولة " + lastR : "آخر جولة"}</small></div>
     </div>
     ${isAnonFan() ? `<div class="anonbar">
       نقاطك محفوظة على هذا المتصفح فقط — أضف بريداً لتدخل بها من أي جهاز.
@@ -9910,7 +9946,28 @@ function boardBlock(){
   const lastR = BOARD.lastRound, lastM = BOARD.lastMonth;
   const months = [...new Set(Object.values(BOARD.rows).flatMap(r=>Object.keys(r.m||{})))].sort();
   const key = BOARDTAB==="round" ? lastR : BOARDTAB==="month" ? (lastM||months[months.length-1]) : null;
-  const rows = boardRows(BOARDTAB, key).filter(r=>BOARDTAB==="season" || r.pts>0).slice(0,50);
+  const allRows = boardRows(BOARDTAB, key).filter(r=>BOARDTAB==="season" || r.pts>0);
+  const rows = BOARDALL ? allRows : allRows.slice(0,50);
+  /* سطري إن كنت بعد الخمسين (منصور 2026-10-11: «٥٠ واحد بس… اسمي مو موجود») */
+  const meIdx = FAN ? allRows.findIndex(r=>r.uid===FAN.uid) : -1;
+  const meExtra = (!BOARDALL && meIdx >= 50) ? allRows[meIdx] : null;
+  /* توقعات كل مشترك في جدول الجولة (اقتراح جمهور 2026-10-11: «تحطون اسم كل واحد شنو متوقع… للمصداقية») */
+  const pk = BOARDTAB==="round" ? PICKS[key] : null;
+  if(BOARDTAB==="round" && key && PICKS[key]===undefined){ PICKS[key]=null; loadPicks(key).then(()=>{ const vp=document.getElementById("v-predict"); if(vp && vp.offsetParent!==null) renderPredict(); }); }
+  const pkRow = uid => {
+    const d = pk && pk.rows && pk.rows[uid]; if(!d) return `<tr class="pk"><td colspan="3"><span class="hint" style="margin:0">التوقعات تظهر بعد احتساب الجولة.</span></td></tr>`;
+    const res = (pk.res||{});
+    return `<tr class="pk"><td colspan="3"><div class="pkl">${Object.entries(d.pk||{}).map(([k,v])=>{
+      const [h,a]=k.split("|"), act=res[k]; let cls="no";
+      if(act){ if(+v[0]===act[0] && +v[1]===act[1]) cls="ex"; else if(Math.sign(v[0]-v[1])===Math.sign(act[0]-act[1])) cls="ok"; }
+      return `<div class="r"><span>${esc(h)} – ${esc(a)}</span><span><i class="${cls}" dir="ltr">${+v[0]} - ${+v[1]}</i>${act?` <em dir="ltr">(${act[0]} - ${act[1]})</em>`:""}</span></div>`;
+    }).join("")}${d.sc?`<div class="r"><span>الهداف</span><span><i class="${d.scOk?"ex":"no"}">${esc(d.sc)}</i></span></div>`:""}</div></td></tr>`;
+  };
+  const rowHTML = (r, pos) => `<tr class="${FAN&&r.uid===FAN.uid?"me":""}${pk?" pr":""}" ${pk?`data-pkuid="${esc(r.uid)}"`:""}>
+          <td class="rk ${pos<=3?"top":""}">${pos}${mv(r.uid, pos)}</td>
+          <td>${esc(r.name)}</td>
+          <td class="pt">${r.pts}</td>
+        </tr>${pk && OPENPK===r.uid ? pkRow(r.uid) : ""}`;
   /* سهم التحرك (منصور 2026-10-11): ترتيب الموسم قبل نقاط آخر جولة محتسبة مقابل الآن — أخضر صعد، أحمر نزل */
   const prevPos = {};
   if(BOARDTAB==="season" && lastR>1){
@@ -9930,13 +9987,13 @@ function boardBlock(){
     <div class="card">
       <table class="lb">
         <thead><tr><th style="width:44px">#</th><th>المشترك</th><th style="width:64px">النقاط</th></tr></thead>
-        <tbody>${rows.length?rows.map((r,i)=>`<tr class="${FAN&&r.uid===FAN.uid?"me":""}">
-          <td class="rk ${i<3?"top":""}">${i+1}${mv(r.uid, i+1)}</td>
-          <td>${esc(r.name)}</td>
-          <td class="pt">${r.pts}</td>
-        </tr>`).join(""):`<tr><td colspan="3" style="color:var(--slate);text-align:center">لا نقاط في هذه الفترة.</td></tr>`}</tbody>
+        <tbody>${rows.length?rows.map((r,i)=>rowHTML(r, i+1)).join("")
+          + (meExtra ? `<tr class="gap"><td colspan="3">⋯</td></tr>` + rowHTML(meExtra, meIdx+1) : "")
+          :`<tr><td colspan="3" style="color:var(--slate);text-align:center">لا نقاط في هذه الفترة.</td></tr>`}</tbody>
       </table>
-    </div>`;
+    </div>
+    ${allRows.length > 50 ? `<button class="btn ghost lb-more" id="lbMore">${BOARDALL ? "عرض أول 50" : "عرض الكل (" + allRows.length + ")"}</button>` : ""}
+    ${pk ? `<p class="hint" style="margin-top:8px">اضغط على أي اسم تشوف توقعاته في الجولة ${key}.</p>` : ""}`;
 }
 const AR_MONTHS_LB = {"01":"يناير","02":"فبراير","03":"مارس","04":"أبريل","05":"مايو","06":"يونيو",
   "07":"يوليو","08":"أغسطس","09":"سبتمبر","10":"أكتوبر","11":"نوفمبر","12":"ديسمبر"};
@@ -9976,7 +10033,9 @@ function wirePredict(o, locked){
     toast(await saveFanName(n.slice(0,24)) ? "حُدّث الاسم ✅" : "تعذّر تغيير الاسم","ok");
     renderPredict();
   };
-  document.querySelectorAll("[data-bt]").forEach(b=>b.onclick=()=>{ BOARDTAB=b.dataset.bt; renderPredict(); });
+  document.querySelectorAll("[data-bt]").forEach(b=>b.onclick=()=>{ BOARDTAB=b.dataset.bt; OPENPK=null; renderPredict(); });
+  const lbm=$("#lbMore"); if(lbm) lbm.onclick=()=>{ BOARDALL=!BOARDALL; renderPredict(); };
+  document.querySelectorAll("[data-pkuid]").forEach(tr=>tr.onclick=()=>{ OPENPK = OPENPK===tr.dataset.pkuid ? null : tr.dataset.pkuid; renderPredict(); });
 
   if(!o || locked) return;
   const picks = (MYPRED && MYPRED.picks) || {};
