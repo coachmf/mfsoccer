@@ -11576,6 +11576,24 @@ html[data-theme="light"] .hm{--bg-card:#FFFFFF;--border-card:#E2E8F0;--text-prim
 .motm-pct small{font-size:.62rem;color:var(--text-muted,#8fa6c4)}
 .motm-empty{flex:1;display:grid;place-items:center;text-align:center;font-size:.74rem;color:var(--text-muted,#8fa6c4);padding:18px 6px}
 .motm-lists{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:8px}
+.mv-btn{margin-top:4px;border:1px solid rgba(233,185,73,.55);background:rgba(233,185,73,.14);color:#f2c94c;font:700 .74rem/1 var(--body,inherit);
+  padding:8px 16px;border-radius:999px;cursor:pointer;min-height:34px}
+.mv-btn.on{background:transparent;color:var(--text-muted,#8fa6c4);border-color:rgba(143,166,196,.35)}
+.mv-box{margin-top:10px;padding:12px;border:1px solid rgba(233,185,73,.3);border-radius:12px;background:rgba(233,185,73,.05)}
+.mv-box>p{margin:0 0 10px;font-size:.78rem;color:var(--text-muted,#8fa6c4);text-align:center}
+.mv-box>p b{color:#f2c94c}
+.mv-box>.btn{display:block;margin:0 auto;width:auto;padding-inline:22px}
+.mv-team+.mv-team{margin-top:12px}
+.mv-team h4{display:flex;align-items:center;gap:6px;margin:0 0 8px;font-size:.8rem;color:var(--text-primary,#fff)}
+.mv-team h4 .crest{width:18px;height:18px}
+.mv-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px 6px}
+.mv-p{display:flex;flex-direction:column;align-items:center;gap:4px;padding:6px 2px;border:1px solid transparent;border-radius:10px;background:none;color:inherit;cursor:pointer;min-width:0}
+.mv-p .mv-ph{width:48px;height:48px;border-radius:50%;overflow:hidden;display:grid;place-items:center;background:radial-gradient(circle at 50% 30%,rgba(var(--ca-rgb),.45),rgba(var(--ca-rgb),.12))}
+.mv-p .mv-ph img{width:100%;height:100%;object-fit:cover}
+.mv-p .mv-ph .crest{width:28px;height:28px}
+.mv-p b{font-size:.64rem;font-weight:600;line-height:1.25;color:var(--text-primary,#fff);max-width:100%;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;text-align:center}
+.mv-p.on{border-color:#E9B949;background:rgba(233,185,73,.14)}
+.mv-p:disabled{opacity:.5}
 .fanpct{min-width:40px;text-align:center;font-family:var(--display);font-weight:800;font-size:.8rem;color:#f2c94c;background:rgba(233,185,73,.14);border-radius:5px;padding:2px 4px}
 .motm-lists .rt-row{gap:7px}
 .motm-lists .rt-ph{width:32px;height:32px}
@@ -14088,8 +14106,70 @@ function teamAvgRating(m, club){
   return Math.round(R.reduce((a,x)=>a+x.r.v,0)/R.length*100)/100;
 }
 const tavgHTML = v => v==null ? "" : `<span class="rtg tavg ${ratingCls(v)}">${v.toFixed(2)}</span>`;
-/* اختيار الجمهور: أصوات «أفضل لاعب» في تصويت تشكيلة الجمهور لجولة المباراة، للاعبي الفريقين فقط */
+/* ===== تصويت «أفضل لاعب» لكل مباراة (منصور 2026-10-11: «بعد المباره يفتح تصويت للمباره نفسها منو افضل لاعب») =====
+   الوثائق: motm/{mid}_{uid} = {uid, mid, name, n, c, ts}. يفتح بعد صافرة النهاية ولمدة 4 أيام من الانطلاق. */
+const MOTMV = {};          /* mid ← مصفوفة الأصوات (null = جارٍ التحميل) */
+let MP_VOTE = false;       /* قائمة التصويت مفتوحة في صفحة المباراة */
+const motmId = m => [compOf(m), m.round, m.home, m.away].join("|").replace(/\//g, "-");
+function motmOpen(m){
+  if(!m || isGulfMatch(m) || !ratingsReady(m)) return false;
+  const k=kickoffTS(m);
+  return k===null || Date.now() < k + 4*24*60*60*1000;
+}
+async function loadMotmVotes(m){
+  const mid=motmId(m);
+  if(!fbDb){ MOTMV[mid]=[]; return; }
+  MOTMV[mid]=null;
+  try{
+    const q=fbDb.collection("motm").where("mid","==",mid).get();
+    const s=await Promise.race([q, new Promise((_,rej)=>setTimeout(()=>rej(new Error("timeout")),12000))]);
+    MOTMV[mid]=s.docs.map(d=>d.data());
+  }catch(e){ MOTMV[mid]=[]; }
+  if(MP.m===m && MP.tab==="details") renderMatchPage();
+}
+async function saveMotmVote(m, n, c){
+  if(!FAN || !fbDb){ toast("سجّل دخولك أولاً","err"); return false; }
+  if(!motmOpen(m)){ toast("التصويت مغلق لهذه المباراة","err"); return false; }
+  const mid=motmId(m), doc={uid:FAN.uid, mid, name:FAN.name||"مشترك", n, c, ts:new Date().toISOString()};
+  try{
+    await fbDb.collection("motm").doc(mid+"_"+FAN.uid).set(doc);
+    MOTMV[mid]=(MOTMV[mid]||[]).filter(v=>v.uid!==FAN.uid).concat([doc]);
+    return true;
+  }catch(e){ console.warn("motm vote", e); toast("تعذّر حفظ صوتك — حاول مرة ثانية","err"); return false; }
+}
+/* اللاعبون الذين شاركوا (أساسي + بديل دخل) من الفريقين */
+function motmCandidates(m){
+  return [m.home, m.away].map(club=>{
+    const men=new Set(xiNames(m.round, compOf(m), club));
+    matchSubs(m).filter(x=>x.club===club && x.in).forEach(x=>men.add(x.in));
+    return {club, men:[...men]};
+  });
+}
+function motmVoteHTML(m){
+  const mine=(MOTMV[motmId(m)]||[]).find(v=>FAN && v.uid===FAN.uid);
+  if(!FAN) return `<div class="mv-box"><p>سجّل دخولك عشان تصوّت لأفضل لاعب في المباراة.</p>
+    <button type="button" class="btn" data-mv-login>تسجيل الدخول</button></div>`;
+  return `<div class="mv-box"><p>${mine?`صوتك الحالي: <b>${esc(mine.n)}</b> — تقدر تغيّره`:"اختر أفضل لاعب في المباراة"}</p>
+    ${motmCandidates(m).map(t=>`<div class="mv-team"><h4>${crest(t.club)}${esc(t.club)}</h4><div class="mv-grid">${t.men.map(n=>{
+      const cut=photoCut(n,t.club), on=mine && mine.n===n && mine.c===t.club;
+      return `<button type="button" class="mv-p${on?" on":""}" data-mv-n="${esc(n)}" data-mv-c="${esc(t.club)}">
+        <span class="mv-ph" style="${accentVars(t.club)}">${cut?`<img src="${cut}_f.webp?v=37" alt="" loading="lazy">`:crest(t.club)}</span><b>${esc(n)}</b></button>`;
+    }).join("")}</div></div>`).join("")}
+  </div>`;
+}
+/* اختيار الجمهور: تصويت المباراة نفسها؛ المباريات القديمة بلا أصوات مباراة تعرض «أفضل لاعب» من تشكيلة الجمهور للجولة */
 function mpFanPick(m){
+  const mid=motmId(m), mv=MOTMV[mid];
+  if(mv===undefined && !isGulfMatch(m)){ loadMotmVotes(m); }
+  if(mv && (mv.length || motmOpen(m))){   /* أثناء التصويت نعرض أصوات المباراة فقط */
+    const cnt={}; mv.forEach(v=>{ const k=v.n+"|"+v.c; cnt[k]=(cnt[k]||0)+1; });
+    const list=Object.entries(cnt).map(([key,v])=>({n:key.split("|")[0], c:key.split("|")[1], v}))
+      .filter(x=>x.c===m.home || x.c===m.away).sort((a,b)=>b.v-a.v);
+    const total=list.reduce((a,x)=>a+x.v,0);
+    list.forEach(x=>x.pct=total?Math.round(x.v/total*100):0);
+    return {loading:false, list, total, src:"match"};
+  }
+  if(mv===null) return {loading:true, list:[]};
   const k=totKey(m.round, compOf(m)), ballots=TOTVOTES[k];
   if(ballots===undefined){
     if(typeof loadTotVotes==="function" && mpFanPick.busy!==k){ mpFanPick.busy=k;
@@ -14102,7 +14182,7 @@ function mpFanPick(m){
     .filter(x=>x.c===m.home || x.c===m.away).sort((a,b)=>b.v-a.v);
   const total=list.reduce((a,x)=>a+x.v,0);
   list.forEach(x=>x.pct=total?Math.round(x.v/total*100):0);
-  return {loading:false, list, total};
+  return {loading:false, list, total, src:"tots"};
 }
 function motmPlayerHTML(n, c, extra){
   const cut=photoCut(n, c);
@@ -14120,7 +14200,9 @@ function mpMotmHTML(m){
   const top=man ? {n:man.n, c:man.c, r:null} : all[0], fan=mpFanPick(m), f0=fan.list[0];
   const fanCol = fan.loading ? `<div class="motm-empty">جارٍ تحميل الأصوات…</div>`
     : f0 ? motmPlayerHTML(f0.n, f0.c, `<span class="motm-pct"><b>${f0.pct}%</b><small>${nVotes(f0.v)}</small></span>`)
-    : `<div class="motm-empty">لا أصوات لأفضل لاعب من هذه المباراة بعد</div>`;
+    : `<div class="motm-empty">${motmOpen(m)?"كن أول من يصوّت":"لا أصوات لأفضل لاعب من هذه المباراة بعد"}</div>`;
+  const vOpen=motmOpen(m), mine=FAN && (MOTMV[motmId(m)]||[]).find(v=>v.uid===FAN.uid);
+  const voteBtn = vOpen ? `<button type="button" class="mv-btn${MP_VOTE?" on":""}" data-mv-toggle>${MP_VOTE?"إغلاق التصويت":mine?"غيّر صوتك":"صوّت الحين"}</button>` : "";
   const fanRows = fan.list.slice(f0?1:0, (f0?1:0)+3).map(x=>{ const cut=photoCut(x.n,x.c);
     return `<div class="rt-row" data-player="${esc(x.n)}" data-club="${esc(x.c)}">
       <span class="rt-ph">${cut?`<img src="${cut}_f.webp?v=37" alt="" loading="lazy">`:`<i></i>`}${crest(x.c)}</span>
@@ -14129,15 +14211,16 @@ function mpMotmHTML(m){
   return `<div class="mp-card mp-motm"><div class="mp-hd"><h3>أفضل لاعب في المباراة</h3></div>
     <div class="motm2">
       <div class="motm-col"><span class="motm-lbl">${top.r?"تقييم mfsoccer":"اختيار mfsoccer"}</span>${motmPlayerHTML(top.n, top.c, top.r ? ratingBadge(top.r.v,true) : "")}</div>
-      <div class="motm-col fan"><span class="motm-lbl">اختيار الجمهور</span>${fanCol}</div>
+      <div class="motm-col fan"><span class="motm-lbl">اختيار الجمهور</span>${fanCol}${voteBtn}</div>
     </div>
+    ${vOpen && MP_VOTE ? motmVoteHTML(m) : ""}
     <div class="motm-lists">
       <div class="rt-list">${all.slice(1,4).map(x=>ratingRowHTML({n:x.n,c:x.c,v:x.r.v})).join("")}</div>
       <div class="rt-list fan">${fanRows}</div>
     </div>
     ${(hA!=null||aA!=null)?`<div class="motm-avg"><span>متوسط تقييم الفريقين</span>
       <div><b>${crest(m.home)}${esc(m.home)}</b>${tavgHTML(hA)}</div><div><b>${crest(m.away)}${esc(m.away)}</b>${tavgHTML(aA)}</div></div>`:""}
-    <p class="rt-note">${G?"":`تقييم mfsoccer محسوب من إحصاءات الموقع: ${RATING.rules.map(r=>r.label).join("، ")}. `}اختيار الجمهور من تصويت «أفضل لاعب» في تشكيلة الجمهور للجولة ${m.round}.</p></div>`;
+    <p class="rt-note">${G?"":`تقييم mfsoccer محسوب من إحصاءات الموقع: ${RATING.rules.map(r=>r.label).join("، ")}. `}${fan.src==="tots"?`اختيار الجمهور من تصويت «أفضل لاعب» في تشكيلة الجمهور للجولة ${m.round}.`:`اختيار الجمهور من تصويت الجمهور لأفضل لاعب في المباراة${vOpen?" — التصويت مفتوح 4 أيام بعد المباراة":""}.`}</p></div>`;
 }
 function mpRatingsHTML(m){
   const H=matchRatings(m,m.home), A=matchRatings(m,m.away);
@@ -14519,7 +14602,7 @@ function openMatch(m, opts){
   const box=$("#mpage"); if(!m||!box) return;
   const wasOpen = !box.hidden;
   const same = MP.m===m;
-  MP.m=m; if(!same){ MP.tab="details"; MP_MX="h2h"; MP_SQ="home"; MP_LT="home"; }
+  MP.m=m; if(!same){ MP_VOTE=false; MP.tab="details"; MP_MX="h2h"; MP_SQ="home"; MP_LT="home"; }
   renderMatchPage();
   box.hidden=false; box.classList.add("on"); document.documentElement.classList.add("mp-open");
   const sh=box.querySelector(".mp-sheet"); if(sh) sh.scrollTop=0;
@@ -14549,6 +14632,13 @@ document.addEventListener("click", e=>{
     if(e.target.closest("[data-player]")) return;                 /* ملف اللاعب يفتح فوقها */
     if(e.target.closest("[data-mp-close]")){ closeMatch(); return; }
     const t=e.target.closest("[data-mp-tab]"); if(t){ MP.tab=t.dataset.mpTab; renderMatchPage(); box.querySelector(".mp-sheet").scrollTop=0; return; }
+    const keepY=()=>{ const sh=box.querySelector(".mp-sheet"), y=sh?sh.scrollTop:0; renderMatchPage(); const s2=box.querySelector(".mp-sheet"); if(s2) s2.scrollTop=y; };
+    if(e.target.closest("[data-mv-toggle]")){ MP_VOTE=!MP_VOTE; keepY(); return; }
+    if(e.target.closest("[data-mv-login]")){ closeMatch(); go("predict"); return; }
+    const mvp=e.target.closest("[data-mv-n]");
+    if(mvp && MP.m){ if(mvp.disabled) return; mvp.disabled=true;
+      saveMotmVote(MP.m, mvp.dataset.mvN, mvp.dataset.mvC).then(ok=>{ if(ok){ MP_VOTE=false; toast("تم تسجيل صوتك","ok"); } keepY(); });
+      return; }
     const x=e.target.closest("[data-mp-mx]"); if(x){ MP_MX=x.dataset.mpMx; renderMatchPage(); return; }
     const q=e.target.closest("[data-mp-sq]"); if(q){ MP_SQ=q.dataset.mpSq; renderMatchPage(); return; }
     const lt=e.target.closest("[data-mp-lt]"); if(lt){ const y=box.querySelector(".mp-sheet").scrollTop; MP_LT=lt.dataset.mpLt; renderMatchPage(); box.querySelector(".mp-sheet").scrollTop=y; return; }
