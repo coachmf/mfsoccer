@@ -42,6 +42,9 @@ function enc(x){
 }
 
 const compOf = x => x.comp || 'الدوري';
+/* اسم الهداف للمقارنة — توقعات قديمة محفوظة برقم القميص «33-فيتور دا سيلفا» (نفس scKey في index.html) */
+const scKey = n => String(n || '').replace(/^\s*\d+\s*[-–]\s*/, '').replace(/[\u064B-\u0652\u0640]/g, '')
+  .replace(/[أإآ]/g, 'ا').replace(/ى/g, 'ي').replace(/\s+/g, ' ').trim();
 /* موعد المباراة بتوقيت الكويت (+03:00) */
 function kickoff(m){
   if(!m.date) return null;
@@ -87,6 +90,7 @@ async function run(){
   const rounds = [...new Set([lastR, curR].filter(Boolean))].sort((a, b) => a - b);
   const rows = (board && board.rows) ? JSON.parse(JSON.stringify(board.rows)) : {};
   let lastRound = lastR, lastMonth = board && board.lastMonth || '', scored = [], changed = false;
+  const picksDocs = {};
 
   for(const r of rounds){
     const ms = (season.matches || []).filter(m => compOf(m) === 'الدوري' && (+m.round || 0) === r && finished(m, season));
@@ -95,9 +99,10 @@ async function run(){
     const actual = {}; ms.forEach(m => actual[m.home + '|' + m.away] = [+m.hg || 0, +m.ag || 0]);
     /* هداف الجولة: من المباريات المنتهية فقط */
     const scorers = new Set((season.goals || []).filter(g => compOf(g) === 'الدوري' && +g.r === r
-      && (keys.has(g.sc + '|' + g.cd) || keys.has(g.cd + '|' + g.sc))).map(g => g.p));
+      && (keys.has(g.sc + '|' + g.cd) || keys.has(g.cd + '|' + g.sc))).map(g => scKey(g.p)));
     const month = String(ms[0].date || '').slice(0, 7);
     const preds = await predsOf(`${SEASON}_${r}`, auth);
+    const pub = {};   /* توقعات كل مشترك — تظهر في بروفايله (boards/{season}_p{round})؛ الجولة مقفلة فلا ضرر من نشرها */
     preds.forEach(p => {
       if(!p || !p.uid) return;
       let pts = 0;
@@ -107,7 +112,9 @@ async function run(){
         if(ph === a[0] && pa === a[1]) pts += PT_EXACT;
         else if(Math.sign(ph - pa) === Math.sign(a[0] - a[1])) pts += PT_RIGHT;
       });
-      if(p.scorer && scorers.has(p.scorer)) pts += PT_SCORER;
+      const scOk = !!(p.scorer && scorers.has(scKey(p.scorer)));
+      if(scOk) pts += PT_SCORER;
+      if(!(rows[p.uid] && rows[p.uid].h)) pub[p.uid] = { n:p.name || 'مشترك', pk:p.picks || {}, sc:p.scorer || '', scOk, pts };
       const row = rows[p.uid] || { n:p.name || 'مشترك', t:0, r:{}, m:{} };
       row.n = p.name || row.n;
       row.r = row.r || {}; row.m = row.m || {};
@@ -119,15 +126,53 @@ async function run(){
       rows[p.uid] = row;
     });
     scored.push({ round:r, matches:ms.length, preds:preds.length });
+    picksDocs[r] = { r, res:actual, rows:pub, updated:new Date().toISOString() };
     if(r >= lastRound){ lastRound = r; lastMonth = month; }
   }
-  if(!scored.length) return { ok:true, scored, written:false };
-  if(!changed && lastRound === lastR) return { ok:true, scored, written:false };
+  const opened = await openNext(season, cur, auth);
+  if(!scored.length) return { ok:true, scored, written:false, opened };
+  /* توقعات الجولات المحتسبة (للبروفايلات) — تُكتب كل مرة تتغير فيها النقاط أو لم تُنشر بعد */
+  for(const r in picksDocs){
+    const ex = await get(`boards/${SEASON}_p${r}`, auth);
+    if(ex && !changed && Object.keys(ex.rows || {}).length === Object.keys(picksDocs[r].rows).length) continue;
+    const pw = await fetch(`${DOCS}/boards/${SEASON}_p${r}`, { method:'PATCH', headers:{ ...auth, 'Content-Type':'application/json' },
+      body: JSON.stringify({ fields:enc(picksDocs[r]).mapValue.fields }) });
+    if(!pw.ok) console.warn('write picks', r, pw.status);
+  }
+  if(!changed && lastRound === lastR) return { ok:true, scored, written:false, opened };
   const body = { rows, lastRound, lastMonth, updated:new Date().toISOString() };
   const w = await fetch(`${DOCS}/boards/${SEASON}`, { method:'PATCH', headers:{ ...auth, 'Content-Type':'application/json' },
     body: JSON.stringify({ fields:enc(body).mapValue.fields }) });
   if(!w.ok) throw new Error('write board ' + w.status + ' ' + (await w.text()).slice(0, 200));
-  return { ok:true, scored, written:true, lastRound };
+  return { ok:true, scored, written:true, lastRound, opened };
+}
+
+/* فتح توقعات الجولة التالية تلقائياً (منصور 2026-10-11: «بعد اخر مباره بالجوله… ينحسب و يفتح توقعات الجوله الي بعدها»).
+   الجولة الحالية «انتهت» إذا انتهت كل مبارياتها التي موعدها قبل أول مباراة في الجولة التالية (المؤجلة لما بعدها لا توقفها).
+   الإقفال = أول مباراة في الجولة التالية. لا نغيّر شيئاً إن كانت التالية مفتوحة أصلاً. */
+async function openNext(season, cur, auth){
+  const curR = cur && +cur.round || 0;
+  if(!curR) return null;
+  const league = (season.matches || []).filter(m => compOf(m) === 'الدوري');
+  const nextR = curR + 1;
+  const nextMs = league.filter(m => (+m.round || 0) === nextR).map(m => ({ m, k:kickoff(m) })).filter(x => x.k !== null).sort((a, b) => a.k - b.k);
+  if(!nextMs.length) return null;
+  const firstNext = nextMs[0].k;
+  if(Date.now() >= firstNext) return null;                       /* فات موعدها — لا نفتح جولة مقفلة */
+  const curMs = league.filter(m => (+m.round || 0) === curR);
+  const pending = curMs.filter(m => { const k = kickoff(m); return k !== null && k < firstNext && !finished(m, season); });
+  if(!curMs.length || pending.length) return null;
+  const rk = `${SEASON}_${nextR}`;
+  const month = String(nextMs[0].m.date || '').slice(0, 7);
+  const lockISO = new Date(firstNext).toISOString();
+  const doc = { fields:{ round:{ integerValue:String(nextR) }, month:{ stringValue:month }, open:{ booleanValue:true },
+    lockAt:{ timestampValue:lockISO }, lockLabel:{ stringValue:lockISO }, auto:{ booleanValue:true } } };
+  const w1 = await fetch(`${DOCS}/rounds/${rk}`, { method:'PATCH', headers:{ ...auth, 'Content-Type':'application/json' }, body:JSON.stringify(doc) });
+  if(!w1.ok) throw new Error('open round ' + w1.status);
+  const w2 = await fetch(`${DOCS}/rounds/current`, { method:'PATCH', headers:{ ...auth, 'Content-Type':'application/json' },
+    body:JSON.stringify({ fields:{ rk:{ stringValue:rk }, round:{ integerValue:String(nextR) }, open:{ booleanValue:true } } }) });
+  if(!w2.ok) throw new Error('current round ' + w2.status);
+  return { round:nextR, lockAt:lockISO };
 }
 
 async function isStaff(uid, auth){
