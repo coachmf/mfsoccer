@@ -9817,13 +9817,15 @@ async function publishRound(round, lockMs, open){
   }catch(e){ return {ok:false, msg:"تعذّر الحفظ — تأكد أن قواعد الأمان منشورة"}; }
 }
 
+/* اسم الهداف للمقارنة: توقعات قديمة محفوظة برقم القميص «33-فيتور دا سيلفا» (منصور 2026-10-11: إعادة الاحتساب كانت تُسقط الهداف الصحيح) */
+const scKey = n => String(n||"").replace(/^\s*\d+\s*[-–]\s*/,"").replace(/[ً-ْـ]/g,"").replace(/[أإآ]/g,"ا").replace(/ى/g,"ي").replace(/\s+/g," ").trim();
 /* احتساب جولة — يشغّله المالك بعد إدخال النتائج */
 async function scoreRound(r){
   if(!(isOwner || canPreds()) || !fbDb) return {ok:false, msg:"غير مصرّح"};
   /* مباريات وأهداف الدوري فقط — لا الكؤوس بنفس رقم الجولة */
   const {ms, scorers} = (ALL ? (f=>withComp("الدوري", f)) : (f=>f()))(()=>({
     ms: MATCHES.filter(m=>(+m.round||0)===+r && !isUpcoming(m)),
-    scorers: new Set(GOALS.filter(g=>(+g.r||0)===+r).map(g=>g.p)) }));
+    scorers: new Set(GOALS.filter(g=>(+g.r||0)===+r && g.bp!=="هدف عكسي").map(g=>scKey(g.p))) }));
   if(!ms.length) return {ok:false, msg:"لا توجد نتائج مسجّلة لهذه الجولة"};
   const key = m => m.home+"|"+m.away;
   const actual = {}; ms.forEach(m=>actual[key(m)] = [+m.hg||0, +m.ag||0]);
@@ -9845,8 +9847,8 @@ async function scoreRound(r){
       if(ph===a[0] && pa===a[1]) pts += PT_EXACT;
       else if(Math.sign(ph-pa) === Math.sign(a[0]-a[1])) pts += PT_RIGHT;
     });
-    if(p.scorer && scorers.has(p.scorer)) pts += PT_SCORER;
-    if(!(rows[p.uid] && rows[p.uid].h)) pub[p.uid] = {n:p.name||"مشترك", pk:p.picks||{}, sc:p.scorer||"", scOk:!!(p.scorer && scorers.has(p.scorer)), pts};
+    if(p.scorer && scorers.has(scKey(p.scorer))) pts += PT_SCORER;
+    if(!(rows[p.uid] && rows[p.uid].h)) pub[p.uid] = {n:p.name||"مشترك", pk:p.picks||{}, sc:p.scorer||"", scOk:!!(p.scorer && scorers.has(scKey(p.scorer))), pts};
     const row = rows[p.uid] || {n:p.name||"مشترك", t:0, r:{}, m:{}};
     row.n = p.name || row.n;
     const prev = (row.r||{})[r] || 0;      /* إعادة الاحتساب لا تُضاعف النقاط */
