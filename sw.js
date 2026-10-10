@@ -9,7 +9,7 @@
 
    عند كل نشر: ارفع رقم VER فتُبنى ذاكرة جديدة وتُحذف القديمة.
    ========================================================= */
-const VER   = 'mf-2026-10-10-419-soulimani';
+const VER   = 'mf-2026-10-10-420-soulimani-photo';
 const SHELL = 'shell-' + VER;
 const RUN   = 'run-'   + VER;
 
