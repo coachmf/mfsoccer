@@ -460,7 +460,7 @@ const VIEWS = {
     const liveGw = st.gws.find(g=>g.status==='live');
     const r = liveGw? DB.pgw(pid, liveGw.n) : null;
     const next=FDR.upcoming(p.club,1)[0];
-    const sub = opt.pts ? `${opt.pts[pid]??'—'} نقطة` : r? `${r.pts} نقطة` : next? (next.postponed? `<span class="pp-off">مؤجلة ج${next.gw}</span>` : `${DB.club(next.opp).short} ${UI.ha(next.home)}`) : '—';
+    const sub = opt.pts ? `${opt.pts[pid]??'—'} نقطة` : r? `${r.pts} نقطة` : next? (next.postponed? `<span class="pp-off">مؤجلة</span>` : `${DB.club(next.opp).short} ${UI.ha(next.home)}`) : '—';
     if(opt.view){                       // تشكيلة مشترك آخر: عرض فقط، والضغط يفتح ملف اللاعب
       return `<div class="pslot ${UI.statusCls(p)}" onclick="VIEWS.playerSheet('${pid}','addp-out')">
         ${team.cap===pid? '<div class="badge">C</div>' : team.vice===pid? '<div class="badge v">V</div>':''}
