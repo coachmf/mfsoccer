@@ -4591,6 +4591,11 @@ function fbInit(){
     FBSTATE="متصل";
     fbAuth.onAuthStateChanged(async u=>{
       FBUSER = u || null;
+      /* المشترك يظهر فوراً باسمه المحفوظ — كان ينتظر الطاقم والملف والتوقع (~3 ث) وتظهر شاشة «سم اسم جديد» */
+      if(u && (!FAN || FAN.uid!==u.uid)) FAN = {uid:u.uid, name:fanNameCache.get(u.uid) || u.displayName || (u.email||"مشترك").split("@")[0], email:u.email||""};
+      if(!u) FAN = null;
+      FANAUTH = true;
+      if($("#v-predict") && $("#v-predict").classList.contains("on")) renderPredict();
       isOwner = !!(u && u.uid===ADMIN_UID);
       MYROLE = ""; STAFF = {};
       if(u){
@@ -9495,6 +9500,9 @@ async function loadVisits(days){
    ================================================================ */
 const PT_EXACT = 5, PT_RIGHT = 2, PT_SCORER = 3;
 let FAN = null;        /* {uid,name,email} المشترك العام */
+let FANAUTH = false;   /* أول ردّ من Firebase Auth وصل؟ قبله نعرض «جارٍ التحميل» لا شاشة التسجيل (منصور 2026-10-11) */
+const fanNameCache = { get: uid => { try{ return localStorage.getItem("mf_fan_"+uid)||""; }catch(e){ return ""; } },
+                       set: (uid,n) => { try{ localStorage.setItem("mf_fan_"+uid, n); }catch(e){} } };
 let MYPRED = null;     /* توقعات المشترك للجولة المفتوحة */
 let BOARD = null;      /* وثيقة الترتيب المجمّعة */
 let ROUNDMETA = null;  /* {round,lockAt,month,open} للجولة المفتوحة */
@@ -9639,12 +9647,13 @@ async function loadFan(u){
     else if(name) await fbDb.collection("fans").doc(u.uid).set({name, joined:new Date().toISOString()},{merge:true});
   }catch(e){}
   FAN = {uid:u.uid, name:name || (u.email||"مشترك").split("@")[0], email:u.email||""};
+  fanNameCache.set(u.uid, FAN.name);
 }
 async function saveFanName(name){
   if(!FAN) return false;
   try{
     await fbDb.collection("fans").doc(FAN.uid).set({name, joined:new Date().toISOString()},{merge:true});
-    FAN.name = name; return true;
+    FAN.name = name; fanNameCache.set(FAN.uid, name); return true;
   }catch(e){ return false; }
 }
 
@@ -9709,10 +9718,26 @@ async function saveTotVote(round, comp, body){
 
 /* ===== الترتيب ===== */
 /* توقعات الجولة المحتسبة لكل المشتركين — وثيقة عامة يكتبها المالك عند الاحتساب */
+/* قراءة وثيقة boards: لقطة CDN أولاً (/api/doc/boards~…) ثم Firestore — كلاهما بمهلة.
+   في تطبيق الآيفون قناة Firestore تتأخر وكان البروفايل يعلق على «جارٍ التحميل» (منصور 2026-10-11) */
+async function boardDoc(id, fresh){
+  const race = (p, ms) => Promise.race([p, new Promise((_, rej)=>setTimeout(()=>rej(new Error("timeout")), ms))]);
+  if(!fresh){
+    try{
+      const r = await race(fetch("/api/doc/boards~" + id, {cache:"no-cache"}), 7000);
+      const t = (r.ok || r.status === 404) ? await r.text() : "";
+      if(r.status === 404 && t.trim() === "null") return {exists:false};   /* 404 من الدالة نفسها = الوثيقة غير موجودة؛ غير ذلك نرجع لـ Firestore */
+      if(r.ok && t.trim().startsWith("{")){ const d = JSON.parse(t); return {exists:true, data:d}; }
+    }catch(e){}
+  }
+  if(!fbDb) throw new Error("no db");
+  const s = await race(fbDb.collection("boards").doc(id).get(), 12000);
+  return {exists:s.exists, data:s.exists ? s.data() : null};
+}
 async function loadPicks(r){
-  if(!fbDb || !r) return;
-  try{ const s = await fbDb.collection("boards").doc(seasonId() + "_p" + r).get(); PICKS[r] = s.exists ? s.data() : {rows:{}}; }
-  catch(e){ PICKS[r] = {rows:{}}; }
+  if(!r) return;
+  try{ const d = await boardDoc(seasonId() + "_p" + r); PICKS[r] = d.exists ? d.data : {rows:{}}; }
+  catch(e){ PICKS[r] = {err:true, rows:{}}; }   /* خطأ مؤقت: يظهر «إعادة المحاولة» */
 }
 /* ===== بروفايل المتوقّع (منصور 2026-10-11: «كل واحد بالتوقعات اقدر اضغط عليه ب بروفايله و اختار الجوله…») ===== */
 let FANP = null;   /* {uid, round} */
@@ -9732,8 +9757,8 @@ function fanProfileHTML(){
   const rounds = Object.keys(row.r||{}).map(Number).sort((a,b)=>a-b);
   const r = FANP.round && rounds.includes(FANP.round) ? FANP.round : rounds[rounds.length-1];
   FANP.round = r;
-  const doc = r ? PICKS[r] : null;
   if(r && PICKS[r]===undefined){ PICKS[r]=null; loadPicks(r).then(()=>{ if(FANP && FANP.round===r) paintFanProfile(); }); }
+  const doc = r ? PICKS[r] : null;
   return `<div class="fp-card" role="dialog" aria-modal="true">
     <button class="fp-x" data-fpx aria-label="إغلاق">✕</button>
     <div class="fp-h"><b>${esc(name)}</b><span>${pos?`المركز ${pos} من ${season.length}`:""}</span></div>
@@ -9745,6 +9770,7 @@ function fanProfileHTML(){
     <div class="bchips" style="margin:12px 0 10px">${rounds.map(x=>`<button class="chip ${x===r?"on":""}" data-fpr="${x}">الجولة ${x}</button>`).join("")}</div>
     ${!r ? `<p class="hint" style="margin:0">لا توجد جولات محتسبة لهذا المشترك.</p>`
       : doc===null ? `<p class="hint" style="margin:0;text-align:center">جارٍ التحميل…</p>`
+      : doc && doc.err ? `<div style="text-align:center"><p class="hint" style="margin:0 0 8px">تعذّر التحميل — تحقق من الاتصال.</p><button class="btn ghost" data-fpretry="${r}" style="width:auto;padding-inline:20px">إعادة المحاولة</button></div>`
       : pickListHTML(doc && doc.rows && doc.rows[uid], doc && doc.res)}
   </div>`;
 }
@@ -9757,17 +9783,16 @@ function paintFanProfile(){
   document.documentElement.classList.add("pp-open");
   ov.querySelectorAll("[data-fpr]").forEach(b=>b.onclick=()=>{ FANP.round=+b.dataset.fpr; paintFanProfile(); });
   const x = ov.querySelector("[data-fpx]"); if(x) x.onclick = closeFanProfile;
+  const rt = ov.querySelector("[data-fpretry]"); if(rt) rt.onclick = ()=>{ delete PICKS[+rt.dataset.fpretry]; paintFanProfile(); };
 }
 function openFanProfile(uid){ FANP = {uid, round: BOARDTAB==="round" && BOARD ? BOARD.lastRound : null}; paintFanProfile(); }
 function closeFanProfile(){ FANP = null; paintFanProfile(); }
 document.addEventListener("keydown", e=>{ if(e.key==="Escape" && FANP) closeFanProfile(); });
 
-async function loadBoard(){
-  if(!fbDb) return;
-  try{
-    const s = await fbDb.collection("boards").doc(seasonId()).get();
-    BOARD = s.exists ? s.data() : null;
-  }catch(e){ BOARD=null; }
+async function loadBoard(fresh){
+  /* المدير يقرأ من Firestore مباشرة (بعد الاحتساب)، والزائر من لقطة CDN أسرع */
+  try{ const d = await boardDoc(seasonId(), fresh || (typeof canPreds==="function" && canPreds()) || isOwner); BOARD = d.exists ? d.data : null; }
+  catch(e){ BOARD = BOARD || null; }
 }
 function boardRows(mode, key){
   const rows = BOARD && BOARD.rows ? BOARD.rows : {};
@@ -9886,6 +9911,11 @@ function renderPredict(){
   const box = $("#v-predict");
   const o = predRound(), locked = isLocked(o);
 
+  if(!FAN && !FANAUTH && fbAuth){
+    box.innerHTML = `<div class="card pad" style="text-align:center;color:var(--slate)">جارٍ التحميل…</div>`;
+    clearTimeout(renderPredict._t); renderPredict._t = setTimeout(()=>{ FANAUTH = true; renderPredict(); }, 6000);   /* حد أقصى ثم شاشة الدخول */
+    return;
+  }
   if(!FAN){ box.innerHTML = authCard(); wireAuth(); return; }
 
   const picks = (MYPRED && MYPRED.picks) || {};

@@ -10,7 +10,7 @@ const { accessToken } = require('./lib/google');
 
 const PROJECT = 'mfsoccer-c7ee4';
 const API_KEY = 'AIzaSyD_ZzAE4HEKPIuAKCmta8tzN5KOa8IUfuo';   /* نفس المفتاح العام في index.html */
-const ALLOWED = /^(\d{4}-\d{4}|assets|gulf27|div1)$/;   /* gulf27 = كأس الخليج 27، div1 = دوري الدرجة الأولى */
+const ALLOWED = /^(\d{4}-\d{4}|assets|gulf27|div1|boards~\d{4}-\d{4}(_p\d{1,2})?)$/;   /* gulf27 = كأس الخليج 27، div1 = دوري الدرجة الأولى، boards~… = ترتيب التوقعات وتوقعات الجولات (عامة) */
 
 /* قيمة Firestore المُنمَّطة ← قيمة JSON عادية كما يعيدها SDK للصفحة */
 function val(v){
@@ -35,7 +35,8 @@ function fields(f){
 }
 
 async function readDoc(id){
-  const base = `https://firestore.googleapis.com/v1/projects/${PROJECT}/databases/(default)/documents/seasons/${id}`;
+  const [col, doc] = id.startsWith('boards~') ? ['boards', id.slice(7)] : ['seasons', id];
+  const base = `https://firestore.googleapis.com/v1/projects/${PROJECT}/databases/(default)/documents/${col}/${doc}`;
   let r = await fetch(`${base}?key=${API_KEY}`);
   /* المفتاح العام محدود الحصة (429) — نعيد المحاولة بحساب الخدمة إن كان مضبوطاً */
   if(r.status === 429 || r.status === 403){
