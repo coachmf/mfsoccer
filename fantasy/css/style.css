@@ -1657,10 +1657,10 @@ html.lang-en .pp-actions{justify-content:flex-start;}
 .dream-card .dc-side{ display:flex; align-items:center; gap:8px; flex:none; }
 .dream-card .dc-chev{ display:grid; place-items:center; width:30px; height:30px; border-radius:50%; border:1px solid var(--line); transform:rotate(-90deg); transition:transform .2s; }
 .dream-card.open .dc-chev{ transform:rotate(90deg); }
-/* مباراة مؤجلة في الجولة القادمة (منصور 2026-10-10): تنبيه واضح أن اللاعب لن يلعب فيها */
-.pp-off{ color:#d92d20; font-weight:800; }
-.ptschip.pp-chip{ background:#fde7e5; color:#b42318; font-size:.68rem; }
-.pp-chip{ display:inline-block; background:#fde7e5; color:#b42318; font-weight:800; font-size:.78rem; border-radius:999px; padding:3px 10px; white-space:nowrap; }
-.fx.fx-pp{ opacity:.85; }
-[data-theme="dark"] .pp-off{ color:#ff8a80; }
-[data-theme="dark"] .ptschip.pp-chip, [data-theme="dark"] .pp-chip{ background:rgba(217,45,32,.18); color:#ffb4ab; }
+/* مباراة مؤجلة في الجولة القادمة (منصور 2026-10-10) — بلون النص العادي، بلا أحمر («خل اللون طبيعي») */
+.pp-off{ color:inherit; }
+.ptschip.pp-chip{ background:#e4e7ec; color:#344054; font-size:.68rem; }
+.pp-chip{ display:inline-block; background:#e4e7ec; color:#344054; font-weight:700; font-size:.78rem; border-radius:999px; padding:3px 10px; white-space:nowrap; }
+.fx.fx-pp{ opacity:1; }
+[data-theme="dark"] .pp-off{ color:inherit; }
+[data-theme="dark"] .ptschip.pp-chip, [data-theme="dark"] .pp-chip{ background:rgba(255,255,255,.1); color:inherit; }
