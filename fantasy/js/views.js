@@ -357,7 +357,7 @@ const VIEWS = {
         <div class="sh-stats">
           <div><b>${fmtM(TEAM.teamValue(team))}</b><span>القيمة (${CUR})</span></div>
           <div><b>${fmtM(team.bank)}</b><span>بالبنك (${CUR})</span></div>
-          <div><b>${team.ft}</b><span>انتقالات</span></div>
+          <div><b>${VIEWS.ftShown(team)}</b><span>انتقالات</span></div>
         </div>
       </div>
       ${late? `<div class="card" style="border-color:#E7D093;margin:0 0 10px"><b>فريقك يبدأ من الجولة ${team.joinedGW}</b><div class="tiny" style="margin-top:4px">انضممت بعد إغلاق الجولة ${gw}، فلا تُحتسب لك نقاطها. فريقك محفوظ، وتقدر تعدّل الكابتن والدكة حتى موعد الجولة ${team.joinedGW}.</div></div>` : ''}
@@ -407,7 +407,7 @@ const VIEWS = {
         <div class="side-row"><span>مجموع النقاط</span><b style="color:var(--accent)">${total}</b></div>
         <div class="side-row"><span>قيمة الفريق</span><b>${fmtK(TEAM.teamValue(team))}</b></div>
         <div class="side-row"><span>بالبنك</span><b>${fmtK(team.bank)}</b></div>
-        <div class="side-row"><span>انتقالات مجانية</span><b>${team.ft}</b></div>
+        <div class="side-row"><span>انتقالات مجانية</span><b>${VIEWS.ftShown(team)}</b></div>
         <button class="btn" style="width:100%;margin-top:10px" onclick="APP.go('transfers')">الانتقالات</button>
       </div>
       <div class="card" style="margin-bottom:12px"><h3>مباريات الجولة ${gw}</h3>
@@ -451,6 +451,13 @@ const VIEWS = {
       <div class="pitch-board l"></div><div class="pitch-board r"></div>
       <div class="pf-goal"></div><div class="pf-box6"></div><div class="pf-box"></div><div class="pf-circle"></div>
       ${rows.join('')}</div>`;
+  },
+  /* رصيد الانتقالات المعروض (منصور 2026-10-10: «ليش 3؟ المفروض 1»): في الفترة الحرة الرصيد المخزّن بلا معنى —
+     قبل الإغلاق ∞، وبعده ما تبدأ به الجولة التالية (احتساب الجولة الحرة يعيده لانتقال واحد) */
+  ftShown(team){
+    const st=DB.state;
+    if(st.rules && st.rules.freeChanges) return GWADMIN.deadlinePassed(st.currentGW) ? (+st.rules.freeTransfers||1) : '∞';
+    return team.ft;
   },
   slotHTML(pid, team, opt){
     opt=opt||{};
