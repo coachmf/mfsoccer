@@ -20,6 +20,9 @@ const POS_ORDER = { G:0, D:1, M:2, F:3 };
 /* لاعب خرج من كشف الموقع وفي فرق مشتركين (منصور 2026-09-17): يبقى «غير متوفر» بدل حذفه حتى لا يختفي فجأة من فرقهم.
    p189 = المهاجم السعودي (11 مالكاً، لم يلعب أي مباراة): اسمه «تركي» بلا رقم ولا صورة — «تركي المطيري» صار لاعب الوسط. */
 const FORCED_STATUS = { p189: {status:'n', name:'تركي', shirt:0} };
+/* لاعبون تركوا الفريق (منصور 2026-10-10): «غير متوفر» فقط — بلا أي تغيير آخر. اسمهم وصورتهم ونقاطهم ومالكوهم
+   ومطابقتهم مع أحداث الموقع تبقى كما هي (بخلاف FORCED_STATUS الذي يمنع المطابقة)، فلا تضيع أرقامهم إن أُعيد الاحتساب. */
+const FORCED_UNAVAIL = ['QAD|غابرييل اوروك', 'ARB|خادم رسول', 'KUW|فينيسيوس'];
 const DB = {
   /* رقم النسخة يُرفع عند أي تغيير جوهري في البذرة (كشف اللاعبين أو
      أسعارهم). الحالة المحفوظة تُبنى من جديد بدل أن تبقى على بيانات
@@ -39,7 +42,8 @@ const DB = {
     this.save();
     this.syncCoaches();   // أول تشغيل: المدربون من البذرة
   },
-  applyForcedStatus(){ (this.state&&this.state.players||[]).forEach(p=>{ const f=FORCED_STATUS[p.id]; if(f) Object.assign(p, f, {photo:''}); }); },
+  applyForcedStatus(){ (this.state&&this.state.players||[]).forEach(p=>{ const f=FORCED_STATUS[p.id]; if(f) Object.assign(p, f, {photo:''});
+    else if(FORCED_UNAVAIL.includes(p.club+'|'+p.name)) p.status='n'; }); },
   save(){
     this.dirtyAt=Date.now();
     try{ const me=this.state.session; if(me && this.state.teams[me] && typeof TEAM!=='undefined') TEAM.normalize(this.state.teams[me], this.state); }catch(e){}

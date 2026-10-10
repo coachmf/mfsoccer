@@ -2183,7 +2183,7 @@ main{padding-bottom:48px}
 <script src="site-i18n.js?v=26" defer></script>
 <!-- مركز المباراة المباشر: صفحة الجمهور + الربط (غرفة التحكم live-admin.js تُحمَّل عند فتحها فقط) -->
 <link rel="stylesheet" href="live.css?v=9">
-<script src="live.js?v=20" defer></script>
+<script src="live.js?v=21" defer></script>
 <!-- تبويبات لوحة الإدارة: إعادة تنظيم للأقسام الموجودة فقط -->
 <link rel="stylesheet" href="admin-tabs.css?v=1">
 <script src="admin-tabs.js?v=5" defer></script>
@@ -5527,6 +5527,11 @@ function fld(label, key, kind, list, val){
     <input type="${kind}" data-k="${key}" value="${esc(v)}"></div>`;
 }
 
+/* لاعبون خرجوا من الفريق: يختفون من القائمة المعروضة ومن قوائم الاختيار في التحرير
+   (التشكيلة، الأحداث، غرفة التحكم) — لكنهم يبقون في الكشف بقاعدة البيانات فلا تضيع
+   أرقامهم ولا مبارياتهم السابقة ولا الفانتسي (منصور 2026-09-16 / 2026-10-10) */
+const SQUAD_HIDE=[{c:"الكويت", n:"فينيسيوس"}, {c:"القادسية", n:"غابرييل اوروك"}, {c:"العربي", n:"خادم رسول"}];
+const isHidden=(club,name)=>SQUAD_HIDE.some(h=>h.c===club && _natKey(h.c,h.n)===_natKey(club,name));
 /* حقل لاعب برقمه: اكتب الرقم يطلع الاسم، أو اكتب الاسم يطلع رقمه */
 function squadEntriesOf(club, sides){
   const cs = club ? [club] : (sides||[]);
@@ -5538,7 +5543,8 @@ function squadEntriesOf(club, sides){
 }
 function editSides(){ return [EDIT?.match?.home, EDIT?.match?.away].filter(Boolean); }
 function pfld(label, key, club, sides, val){
-  const ent=squadEntriesOf(club, sides), cur=String(val==null?"":val);
+  const cur=String(val==null?"":val);
+  const ent=squadEntriesOf(club, sides).filter(e=>!isHidden(e.club,e.n) || e.n===cur);
   const mine=ent.find(e=>e.n===cur);
   const id="dl_"+key.replace(/[^A-Za-z0-9_]/g,"_");
   return `<div class="fld pfld">
@@ -6446,7 +6452,7 @@ function renderMatchAdmin(){
       const hint=box.querySelector(`[data-phint="${key}"]`);
       if(hint) hint.textContent="";
       if(!el.value || !target) return;
-      const hits=squadEntriesOf(el.dataset.pclub, editSides()).filter(e=>e.s===+el.value);
+      const hits=squadEntriesOf(el.dataset.pclub, editSides()).filter(e=>e.s===+el.value && !isHidden(e.club,e.n));
       if(hits.length===1){ target.value=hits[0].n; setPath(key, hits[0].n); }
       else if(hits.length>1){ if(hint) hint.textContent="أكثر من لاعب بهذا الرقم: "+hits.map(e=>`${e.n} (${e.club})`).join(" · "); }
       else if(hint) hint.textContent="ما فيه لاعب بهذا الرقم في الكشف";
@@ -12801,10 +12807,7 @@ function coachCardHTML(c){
     <div class="ps">المدرب</div>
   </div>`;
 }
-/* لاعبون لا يظهرون في القائمة المعروضة فقط — يبقون في النظام فلا تتأثر الفانتسي
-   ولا بيانات المباريات (منصور 2026-09-16) */
-const SQUAD_HIDE=[{c:"الكويت", n:"فينيسيوس"}];
-const isHidden=(club,name)=>SQUAD_HIDE.some(h=>h.c===club && _natKey(h.c,h.n)===_natKey(club,name));
+/* SQUAD_HIDE / isHidden معرّفة قرب squadEntriesOf */
 function clubSquadHTML(c){
   const men=squadEntriesOf(c).filter(x=>!isHidden(c, x.n));
   const coach=coachCardHTML(c);
@@ -14863,10 +14866,12 @@ html.mx-editing #waFab{display:none!important}   /* زر واتساب كان ي�
   const starters=club=>{ const seen={},out=[]; (EDIT.lineup||[]).forEach(x=>{ if(x.club===club&&x.p&&!seen[x.p]){ seen[x.p]=1; out.push(x.p);} }); return out; };
   const roster=club=>{
     if(!club) return [];
-    const ent=squadEntriesOf(club,[club]);
+    const used=[...starters(club), ...(EDIT.subs||[]).filter(s=>s.club===club).flatMap(s=>[s.in,s.out])];
+    /* المخفيون (SQUAD_HIDE) لا يُعرضون للاختيار — إلا إن كانوا مسجّلين في هذه المباراة (مباراة قديمة) */
+    const ent=squadEntriesOf(club,[club]).filter(e=>!isHidden(club,e.n) || used.includes(e.n));
     const names=new Set(ent.map(e=>e.n));
     /* أسماء مسجّلة في المباراة وليست في الكشف (قديمة/مكتوبة يدوياً) تبقى قابلة للاختيار */
-    const extra=[...starters(club), ...(EDIT.subs||[]).filter(s=>s.club===club).flatMap(s=>[s.in,s.out])].filter(n=>n&&!names.has(n));
+    const extra=used.filter(n=>n&&!names.has(n));
     [...new Set(extra)].forEach(n=>ent.push({n, s:0, p:"", club}));
     return ent;
   };

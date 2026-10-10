@@ -18,8 +18,10 @@ const livePhaseOf = c => LV.isLivePh(c.phase) ? c.phase : c.phase==="ht" ? "h1" 
 /* ───────────── قوائم اللاعبين ───────────── */
 function roster(side, mode){
   const d = S.doc, club = side==="h" ? d.home : d.away;
-  const all = U.squadList(club).sort((a,b)=>(a.s||99)-(b.s||99));
   const on = LV.onPitch(d, side);
+  /* المخفيون (SQUAD_HIDE) لا يظهرون — إلا إن كانوا على أرض الملعب في هذه المباراة */
+  const all = U.squadList(club).filter(x=>!(typeof isHidden==="function" && isHidden(club, x.n)) || (on && on.has(x.n)))
+    .sort((a,b)=>(a.s||99)-(b.s||99));
   if(!on){   /* بلا تشكيلة: الخارجون لا يعودون، والداخلون ليسوا على الدكة */
     const sb = LV.subbed(d, side);
     if(mode==="bench") return all.filter(x=>!sb.out.has(x.n) && !sb.inn.has(x.n));
