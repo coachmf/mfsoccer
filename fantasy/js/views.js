@@ -1147,7 +1147,8 @@ const VIEWS = {
     const lastFin=finished.length? finished[finished.length-1] : 0;
     // كما في فانتسي الدوري الإنجليزي: قبل الإغلاق تظهر آخر تشكيلة مقفلة، وبعده تشكيلة الجولة الجارية
     let showGw=null, picks=null;
-    if(locked){ showGw=gw; picks=(team.gwPicks||{})[gw] || {xi:team.xi||[], bench:team.bench||[], cap:team.cap, vice:team.vice, chip:team.activeChip||null}; }
+    /* بلا لقطة للجولة: نفس اختيارات الاحتساب (TEAM.picksFrom) — كانت تُبنى يدوياً بلا المدرب والخصم، فتظهر «نقاطه الآن» أقل من الترتيب (منصور 2026-10-10: 73 بدل 79) */
+    if(locked){ showGw=gw; picks=(team.gwPicks||{})[gw] || TEAM.picksFrom(team); }
     else if(lastFin && (team.gwPicks||{})[lastFin]){ showGw=lastFin; picks=(team.gwPicks||{})[lastFin]; }
     /* التنقل بين جولات المشترك (السابق/التالي) — كل جولة مقفلة لها تشكيلة محفوظة */
     const mGws=Object.keys(team.gwPicks||{}).map(Number).filter(n=>{ const g0=st.gws.find(x=>x.n===n); return g0 && (g0.status==='finished' || g0.status==='live' || (n===gw && locked)); });
