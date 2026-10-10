@@ -106,6 +106,8 @@ Object.assign(VIEWS, {
         mult: r.cap ? mult : (counted ? 1 : 0),
         sub: (!r.bench && origXI.length && !inOrig) ? 'in' : (r.bench && inOrig) ? 'out' : '',
         pending: !!fx && fx.status!=='F', noMatch: !fx, played: !!(s && s.min>0),
+        /* مباراته لم تُلعب: نعرض خصمها (منصور 2026-10-10: «تحته الجولة اللي بتنلعب مثلاً القادسية (A)») */
+        opp: fx ? (fx.h===p.club ? fx.a : fx.h) : null, home: !!fx && fx.h===p.club, postponed: !!fx && fx.status==='P',
       };
     });
     return info;
@@ -116,7 +118,7 @@ Object.assign(VIEWS, {
     const p=DB.player(pid); if(!p) return '';
     i=i||{};
     const shown = i.counted ? i.eff : i.pts;
-    const txt = i.pending ? 'لم تُلعب' : i.noMatch ? 'بلا مباراة' : String(shown);
+    const txt = i.pending ? (i.postponed ? 'مؤجلة' : i.opp ? `${DB.club(i.opp).short} ${UI.ha(i.home)}` : 'لم تُلعب') : i.noMatch ? 'بلا مباراة' : String(shown);
     const cls = (i.pending||i.noMatch) ? 'pend' : !i.counted ? 'bn' : shown<0 ? 'neg' : shown===0 ? 'zero' : '';
     const tag = i.sub==='in' ? '<div class="sub">دخل</div>' : i.sub==='out' ? '<div class="sub">خرج</div>' : '';
     return `<div class="pslot pts-slot ${i.sub==='out'?'out':''}" onclick="VIEWS.pointsSheet('${pid}',${gw},${i.mult==null?1:i.mult},'${i.sub||''}')">
@@ -154,7 +156,7 @@ Object.assign(VIEWS, {
       const s=DB.pgw(r.pid,gw), i=info[r.pid]||{};
       return `<tr onclick="VIEWS.pointsSheet('${p.id}',${gw},${i.mult==null?1:i.mult},'${i.sub||''}')" style="cursor:pointer">
         <td><div class="row">${UI.playerAvatar(p,28)} <div><b>${esc(p.name)}</b> ${r.cap?'<span class="pill gold">C</span>':''} ${i.sub==='in'?'<span class="pill green">دخل</span>':i.sub==='out'?'<span class="pill">خرج</span>':''}<div class="tiny">${DB.club(p.club).short} · ${POS_AR[p.pos]}</div></div></div></td>
-        <td class="tiny">${i.pending? 'لم تُلعب' : s? s.min+"'" : '—'}</td><td class="tiny">${s? s.g:0}/${s? s.a:0}</td><td class="tiny">${s&&s.bonus? '+'+s.bonus:'—'}</td>
+        <td class="tiny">${i.pending? (i.postponed ? 'مؤجلة' : i.opp ? `${DB.club(i.opp).short} ${UI.ha(i.home)}` : 'لم تُلعب') : s? s.min+"'" : '—'}</td><td class="tiny">${s? s.g:0}/${s? s.a:0}</td><td class="tiny">${s&&s.bonus? '+'+s.bonus:'—'}</td>
         <td class="num" style="color:var(--accent)">${r.cap? r.eff+' ('+r.pts+'×'+mult+')' : (i.counted? r.eff : r.pts)}</td></tr>`;
     };
     return `<div class="card"><h3>التشكيلة الأساسية — الكابتن: ${esc(res.capName)}</h3>
