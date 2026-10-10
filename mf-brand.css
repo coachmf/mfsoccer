@@ -1470,3 +1470,7 @@ html.mf .mf-tools .hero-admin.on{background:rgba(231,208,147,.14);color:var(--mf
 .mf-stdsw button{border:0; background:transparent; color:var(--mf-tx2,#aab); font:700 .86rem/1 inherit; padding:9px 16px; border-radius:999px; cursor:pointer; white-space:nowrap}
 .mf-stdsw button[aria-selected="true"]{background:linear-gradient(180deg,#E7D093,#AD8F59); color:#07112B}
 .mf-d1t .mf-d1h{text-align:center; margin:0 0 12px; font-size:1.35rem}
+/* ترتيب الجمهور (منصور 2026-10-11): الجدول كان يرث min-width:520px العام فيُقصّ عمود «النقاط» على الجوال،
+   والزر المختار كان نصاً داكناً على خلفية داكنة (قاعدة الوضع الداكن تغلب خلفية .on) */
+table.lb{min-width:0}
+html.mf .bchips .chip.on,html.mf[data-theme="dark"] .bchips .chip.on{background:var(--mf-grad);border-color:transparent;color:var(--mf-on-acc)}
