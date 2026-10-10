@@ -65,6 +65,8 @@ const LIVEGW = {
       if(T && Array.isArray(T.rows) && T.rows.length){
         rows = T.rows.map(v=>{ let live=0; try{ live=+this.calc(v.team, gw).total||0; }catch(e){ live=0; }
           return { id:v.id, name:v.name, teamName:v.teamName, live, total:v.total }; });
+        /* نقاط كل فريق قبل آخر مباراة انتهت — لأسهم الترتيب بعد كل مباراة (منصور 2026-10-11) */
+        const pv=this.beforeLast(T.rows, gw); if(pv) rows.forEach(r=>{ if(pv[r.id]!=null) r.prev=pv[r.id]; });
         rows.sort((a,b)=>b.live-a.live);
         let prev=null, rank=0; rows.forEach((r,i)=>{ if(prev===null || r.live<prev){ rank=i+1; prev=r.live; } r.liveRank=rank; });
         this.snapAt = new Date().toISOString();
@@ -98,6 +100,27 @@ const LIVEGW = {
     return 'آخر تحديث '+d.toLocaleTimeString('ar-KW',{hour:'2-digit',minute:'2-digit'});
   },
   liveOf(id){ const r=(this.cache.rows||[]).find(x=>x.id===id); return r? r.live : null; },
+  /* نقاط الجولة قبل آخر مباراة انتهت (نفس الاحتساب والمباراة تُعامل كأنها لم تُلعب) — null إن لم تنتهِ مباراة بعد */
+  prevOf(id){ const r=(this.cache.rows||[]).find(x=>x.id===id); return r && r.prev!=null ? r.prev : null; },
+  beforeLast(teams, gw){
+    const st=DB.state;
+    const fin=st.fixtures.filter(f=>f.gw===gw && f.status==='F' && f.over!==false && f.stats);
+    if(!fin.length) return null;
+    const f=fin.slice().sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')))[0];   /* آخر مباراة بالموعد */
+    const pids=new Set(); for(const c in f.stats) for(const pid in (f.stats[c]||{})) pids.add(pid);
+    const saved={}; pids.forEach(pid=>{ saved[pid]=st.playerGW[pid] ? st.playerGW[pid][gw] : undefined; });
+    const sStats=f.stats, sStatus=f.status, sOver=f.over;
+    const out={};
+    try{
+      f.stats=null; f.status='U'; f.over=false;
+      pids.forEach(pid=>{ const r=aggPGW(st, pid, gw); st.playerGW[pid]=st.playerGW[pid]||{}; if(r) st.playerGW[pid][gw]=r; else delete st.playerGW[pid][gw]; });
+      teams.forEach(v=>{ try{ out[v.id]=+this.calc(v.team, gw).total||0; }catch(e){} });
+    }finally{
+      f.stats=sStats; f.status=sStatus; f.over=sOver;
+      pids.forEach(pid=>{ if(saved[pid]===undefined){ if(st.playerGW[pid]) delete st.playerGW[pid][gw]; } else st.playerGW[pid][gw]=saved[pid]; });
+    }
+    return out;
+  },
   /* كتلة الرئيسية */
   heroBlock(){
     if(!this.active()) return '';

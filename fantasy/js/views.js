@@ -1052,9 +1052,16 @@ const VIEWS = {
   liveApply(rows){
     if(typeof LIVEGW==='undefined' || !LIVEGW.active() || !LIVEGW.cache.rows || !LIVEGW.cache.rows.length) return rows;
     const base=new Map(rows.map((r,i)=>[r.id, r.rank||i+1])), tied=new Set(base.values()).size<=1;
-    const out=rows.map(r=>{ const lv=LIVEGW.liveOf(r.id); return {...r, total:(+r.total||0)+(lv||0)}; })
+    const out=rows.map(r=>{ const lv=LIVEGW.liveOf(r.id), pv=LIVEGW.prevOf(r.id);
+        return {...r, total:(+r.total||0)+(lv||0), _pt:(+r.total||0)+(pv!=null? pv : (lv||0))}; })
       .sort((a,b)=>b.total-a.total || String(a.name||'').localeCompare(String(b.name||''),'ar'));
-    let prev=null, rk=0; out.forEach((r,i)=>{ if(prev===null || r.total<prev){ rk=i+1; prev=r.total; } r.rank=rk; r.move= tied? 0 : (base.get(r.id)||rk)-rk; });
+    /* الحركة بعد كل مباراة (منصور 2026-10-11): المركز الآن مقابل المركز قبل آخر مباراة انتهت؛
+       إن كان الكل متعادلاً قبلها (أول مباراة في أول جولة نقاط) نعود لمقارنة ما قبل الجولة */
+    const prevRank=new Map(); { const ps=[...out].sort((a,b)=>b._pt-a._pt || String(a.name||'').localeCompare(String(b.name||''),'ar'));
+      let p=null, k=0; ps.forEach((r,i)=>{ if(p===null || r._pt<p){ k=i+1; p=r._pt; } prevRank.set(r.id,k); }); }
+    const prevTied=new Set(prevRank.values()).size<=1;
+    let prev=null, rk=0; out.forEach((r,i)=>{ if(prev===null || r.total<prev){ rk=i+1; prev=r.total; } r.rank=rk;
+      r.move= !prevTied ? (prevRank.get(r.id)||rk)-rk : tied? 0 : (base.get(r.id)||rk)-rk; delete r._pt; });
     return out;
   },
   leagueDetail(lg){
