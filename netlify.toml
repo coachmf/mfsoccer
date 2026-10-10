@@ -31,6 +31,17 @@
   status = 200
   force = true
 
+# ——— احتساب تحدي التوقعات أولاً بأول (netlify/functions/preds-score.js) ———
+[[redirects]]
+  from = "/api/preds-score"
+  to = "/.netlify/functions/preds-score"
+  status = 200
+  force = true
+
+# احتياط: احتساب كل 10 دقائق حتى لو لم يُستدعَ بعد الحفظ
+[functions."preds-score-cron"]
+  schedule = "*/10 * * * *"
+
 # ——— صفحة الروابط (للبايو) ———
 [[redirects]]
   from = "/links"

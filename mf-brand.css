@@ -1474,3 +1474,8 @@ html.mf .mf-tools .hero-admin.on{background:rgba(231,208,147,.14);color:var(--mf
    والزر المختار كان نصاً داكناً على خلفية داكنة (قاعدة الوضع الداكن تغلب خلفية .on) */
 table.lb{min-width:0}
 html.mf .bchips .chip.on,html.mf[data-theme="dark"] .bchips .chip.on{background:var(--mf-grad);border-color:transparent;color:var(--mf-on-acc)}
+/* سهم تحرك المركز في ترتيب الجمهور */
+table.lb td.rk{white-space:nowrap}
+.lb-mv{display:inline-block;margin-inline-start:5px;font-size:.62rem;vertical-align:1px}
+.lb-mv.up{color:#12b76a}
+.lb-mv.down{color:#f04438}

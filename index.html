@@ -2200,7 +2200,7 @@ main{padding-bottom:48px}
 <script src="tstats-data.js?v=1" defer></script>
 <script src="analysis.js?v=24" defer></script>
 <!-- هوية MF SOCCER الذهبية + هيكل التطبيق (منصور 2026-10-05) -->
-<link rel="stylesheet" href="mf-brand.css?v=8">
+<link rel="stylesheet" href="mf-brand.css?v=9">
 <script>document.documentElement.classList.add("mf")</script>
 <script src="mf-shell.js?v=11" defer></script>
 <style>
@@ -6240,6 +6240,18 @@ let ADM_MCOMP = "الكل";   /* فلتر البطولة في قائمة مبا�
 let SAVING_MATCH = false;
 /* opt.quiet = الحفظ التلقائي (منصور 2026-10-09): بلا تعتيم ولا رسائل، والمحرّر يبقى مفتوحاً على صفّ المباراة نفسه بعد الحفظ —
    applyEdit يستبدل صفوف المباراة وmergeEdit يدمج بالتوقيع، فلا تتكرر مباراة ولا حدث */
+/* تحدي التوقعات أولاً بأول (منصور 2026-10-11): بعد كل حفظ ناجح لمباراة يُعاد احتساب جدول الجمهور على الخادم
+   (netlify/functions/preds-score.js بحساب الخدمة — المنتهية فقط). مرة كل دقيقة على الأكثر، بلا انتظار */
+let PREDS_SCORE_AT = 0;
+function predsScoreSoon(){
+  try{
+    const u = (typeof firebase!=="undefined" && firebase.auth) ? firebase.auth().currentUser : null;
+    if(!u || Date.now()-PREDS_SCORE_AT < 60000) return;
+    PREDS_SCORE_AT = Date.now();
+    u.getIdToken().then(t=>fetch("/api/preds-score",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({idToken:t})}))
+      .then(r=>r&&r.json()).then(j=>{ if(j&&j.written&&typeof loadBoard==="function") loadBoard(); }).catch(()=>{});
+  }catch(e){}
+}
 async function saveMatch(opt){
   if(SAVING_MATCH || !EDIT) return;          /* ضغطة ثانية أثناء الحفظ لا تبدأ حفظاً آخر */
   const quiet = !!(opt && opt.quiet);
@@ -6267,7 +6279,7 @@ async function saveMatch(opt){
   if(quiet && !mxTyping()) renderMatchAdmin();
   const okm = await persistData();
   if(quiet) MX_ACLOUD = okm===true;
-  if(okm===true){ LASTSYNC=new Date(); if(!quiet) toast(`حُفظت المباراة: ${m.home} ضد ${m.away} ✅`,"ok"); }
+  if(okm===true){ LASTSYNC=new Date(); if(!quiet) toast(`حُفظت المباراة: ${m.home} ضد ${m.away} ✅`,"ok"); predsScoreSoon(); }
   else if(okm==="pending") toast(SYNCMSG,"busy");
   else toast(SYNCMSG||"حُفظت محلياً، لكن تعذّر الحفظ في السحابة","err");
   /* أي لقطة وصلت أثناء التحرير أقدم من حفظنا — تطبيقها يتراجع عنه */
@@ -9899,6 +9911,15 @@ function boardBlock(){
   const months = [...new Set(Object.values(BOARD.rows).flatMap(r=>Object.keys(r.m||{})))].sort();
   const key = BOARDTAB==="round" ? lastR : BOARDTAB==="month" ? (lastM||months[months.length-1]) : null;
   const rows = boardRows(BOARDTAB, key).filter(r=>BOARDTAB==="season" || r.pts>0).slice(0,50);
+  /* سهم التحرك (منصور 2026-10-11): ترتيب الموسم قبل نقاط آخر جولة محتسبة مقابل الآن — أخضر صعد، أحمر نزل */
+  const prevPos = {};
+  if(BOARDTAB==="season" && lastR>1){
+    const all = BOARD.rows||{};
+    boardRows("season").map(r=>({uid:r.uid, name:r.name, p:(r.pts||0)-(((all[r.uid]||{}).r||{})[lastR]||0)}))
+      .sort((a,b)=> b.p-a.p || a.name.localeCompare(b.name,"ar")).forEach((r,i)=>{ prevPos[r.uid]=i+1; });
+  }
+  const mv = (uid, pos) => { const was=prevPos[uid]; if(!was || was===pos) return "";
+    return was>pos ? `<span class="lb-mv up" title="صعد ${was-pos}">▲</span>` : `<span class="lb-mv down" title="نزل ${pos-was}">▼</span>`; };
 
   return `
     <div class="bchips">
@@ -9910,7 +9931,7 @@ function boardBlock(){
       <table class="lb">
         <thead><tr><th style="width:44px">#</th><th>المشترك</th><th style="width:64px">النقاط</th></tr></thead>
         <tbody>${rows.length?rows.map((r,i)=>`<tr class="${FAN&&r.uid===FAN.uid?"me":""}">
-          <td class="rk ${i<3?"top":""}">${i+1}</td>
+          <td class="rk ${i<3?"top":""}">${i+1}${mv(r.uid, i+1)}</td>
           <td>${esc(r.name)}</td>
           <td class="pt">${r.pts}</td>
         </tr>`).join(""):`<tr><td colspan="3" style="color:var(--slate);text-align:center">لا نقاط في هذه الفترة.</td></tr>`}</tbody>
