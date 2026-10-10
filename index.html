@@ -2181,9 +2181,8 @@ main{padding-bottom:48px}
 <link rel="stylesheet" href="site-theme.css?v=6">
 <script src="fantasy/js/i18n-more.js?v=12" defer></script>
 <script src="site-i18n.js?v=26" defer></script>
-<!-- مركز المباراة المباشر: صفحة الجمهور + الربط (غرفة التحكم live-admin.js تُحمَّل عند فتحها فقط) -->
-<link rel="stylesheet" href="live.css?v=9">
-<script src="live.js?v=20" defer></script>
+<!-- غرفة التحكم (live.js / live-admin.js / live.css) مخفية منذ 2026-10-10 بطلب منصور — الملفات باقية؛ للإرجاع أعد السطرين:
+     <link rel="stylesheet" href="live.css?v=9"> و <script src="live.js?v=21" defer></script> -->
 <!-- تبويبات لوحة الإدارة: إعادة تنظيم للأقسام الموجودة فقط -->
 <link rel="stylesheet" href="admin-tabs.css?v=1">
 <script src="admin-tabs.js?v=5" defer></script>
@@ -6408,8 +6407,8 @@ function renderMatchAdmin(){
           <span class="am-score${isUpcoming(m)?" soon":""}">${isUpcoming(m)?(m.time?esc(m.time):"—"):`${m.hg} - ${m.ag}`}</span>
           <span class="am-t a">${crest(m.away)}<b>${esc(m.away)}</b></span>
         </div>
-        <div class="am-meta">${isUpcoming(m)?'<span class="mstat soon">لم تبدأ</span>':""}${m.rec==="live"?'<span class="mstat live">مرتبطة باللعب الفعلي</span>':""}<span>${esc(compOf(m))}</span><span dir="ltr">${esc(m.date||"بلا تاريخ")}</span>${m.venue?`<span>${esc(m.venue)}</span>`:""}${m.tv?`<span class="am-tv">${esc(m.tv)}</span>`:""}</div>
-        <div class="am-btns"><button class="am-eff" data-eff-open="${esc(matchKey(m))}" title="ساعة الوقت الفعلي للعب — مستقلة عن الأحداث والإحصاءات">الوقت الفعلي</button>${window.LIVE?`<button class="am-live" data-live-open="${esc(matchKey(m))}" title="تسجيل الأحداث أثناء المباراة">لعب فعلي</button>`:""}<button data-edit="${esc(mkey(m))}" title="إدخال الأحداث يدوياً بعد المباراة">${window.LIVE?"إدخال يدوي":"تعديل"}</button><button class="dl" data-rm="${esc(mkey(m))}">حذف</button></div>
+        <div class="am-meta">${isUpcoming(m)?'<span class="mstat soon">لم تبدأ</span>':""}<span>${esc(compOf(m))}</span><span dir="ltr">${esc(m.date||"بلا تاريخ")}</span>${m.venue?`<span>${esc(m.venue)}</span>`:""}${m.tv?`<span class="am-tv">${esc(m.tv)}</span>`:""}</div>
+        <div class="am-btns"><button class="am-eff" data-eff-open="${esc(matchKey(m))}" title="ساعة الوقت الفعلي للعب — مستقلة عن الأحداث والإحصاءات">الوقت الفعلي</button><button data-edit="${esc(mkey(m))}" title="إدخال الأحداث يدوياً بعد المباراة">${window.LIVE?"إدخال يدوي":"تعديل"}</button><button class="dl" data-rm="${esc(mkey(m))}">حذف</button></div>
       </div>`;
     const cc={}; ms.forEach(m=>{ const c=compOf(m); cc[c]=(cc[c]||0)+1; });
     const mf = (typeof ADM_MCOMP!=="undefined" && ADM_MCOMP) || "الكل";
@@ -6483,7 +6482,6 @@ function renderMatchAdmin(){
     box.querySelectorAll(".rndbox").forEach(d=>{ const n=[...d.querySelectorAll("[data-mcomp-row]")].filter(r=>!r.hidden).length; d.hidden=!n; const rc=d.querySelector(".rc"); if(rc) rc.textContent=n+" مباراة"; }); };
   box.querySelectorAll("[data-mcompf]").forEach(b=>b.onclick=()=>{ ADM_MCOMP=b.dataset.mcompf; box.querySelectorAll("[data-mcompf]").forEach(x=>x.setAttribute("aria-pressed", x===b)); applyMF(); });
   applyMF();
-  box.querySelectorAll("[data-live-open]").forEach(b=>b.onclick=()=>{ const k=b.dataset.liveOpen; try{ history.pushState({lv:1},"","#livectl/"+k); }catch(e){} if(window.LIVE) LIVE.openControl(k); });
   box.querySelectorAll("[data-rm]").forEach(b=>b.onclick=async()=>{
     if(!confirm("حذف هذه المباراة وكل أهدافها وبطاقاتها وركلاتها؟")) return;
     await rebaseOnCloud();   /* v27 */
@@ -15247,7 +15245,6 @@ html.mx-editing #waFab{display:none!important}   /* زر واتساب كان ي�
     box.innerHTML=`<div class="mx" style="--hrgb:${rgbOf(m.home)};--argb:${rgbOf(m.away)}">
       <div class="mx-top"><button class="mx-ghost" data-act="cancel">${SV.back}القائمة</button><h2>${EDIT.orig?"تعديل مباراة":"مباراة جديدة"}</h2></div>
       ${FORMERR?`<div class="mx-err">${SV.warn}${esc(FORMERR)}</div>`:""}
-      ${m.rec==="live"?`<div class="mx-livenote"><b>مرتبطة باللعب الفعلي</b><span>أحداث هذه المباراة مصدرها واحد: أي تعديل أو إضافة أو حذف هنا يعود إلى غرفة التحكم تلقائياً بعد الحفظ، والعكس. المسابقة والجولة والفريقان مقفلة.</span>${window.LIVE?`<button class="mx-ghost" data-mlive="${esc(matchKey({comp:m.comp, round:+m.round, home:m.home, away:m.away}))}">فتح غرفة التحكم</button>`:""}</div>`:""}
       <div class="mx-board">
         <div class="mx-teams">${teamBtn("home")}
           <div class="mx-sc"><div class="n">${ag}<i>:</i>${hg}</div><span class="st${m.status&&m.status!=="ft"&&m.status!=="pre"?" live":""}">${m.status?(PHASES.find(p=>p[0]===m.status)||["",""])[1]:upcoming?"لم تبدأ":m.round?`الجولة ${esc(m.round)}`:"—"}</span></div>
@@ -15309,7 +15306,6 @@ html.mx-editing #waFab{display:none!important}   /* زر واتساب كان ي�
     function clockSave(){ if(!EDIT || !EDIT.orig){ toast("احفظ المباراة أولاً لتظهر الدقيقة للجمهور","busy"); return false; }
       if(EDIT.gulf) return saveStay();
       rerender(); saveMatch({quiet:true}); return true; }   /* إن كان حفظ آخر جارياً يلتقطه الحفظ التلقائي بعد ثانيتين */
-    q("[data-mlive]",b=>b.onclick=()=>{ const k=b.dataset.mlive; if(!confirm("فتح غرفة التحكم؟ التعديلات غير المحفوظة هنا ستضيع.")) return; EDIT=null; renderMatchAdmin(); try{ history.pushState({lv:1},"","#livectl/"+k); }catch(e){} LIVE.openControl(k); });
     q("[data-mtab]",b=>b.onclick=()=>{ MX.tab=b.dataset.mtab; MX.sel=null; rerender(); window.scrollTo({top:box.getBoundingClientRect().top+scrollY-80,behavior:"smooth"}); });
     q("[data-mcomp]",b=>b.onclick=()=>{ EDIT.match.comp=b.dataset.mcomp; rerender(); });
     q("[data-mf]",el=>{ el.oninput=()=>{ EDIT.match[el.dataset.mf]=el.value; }; el.onchange=()=>{ if(!EDIT) return; EDIT.match[el.dataset.mf]=el.value;

@@ -409,7 +409,7 @@ function matchCard(m){
   const hg = L ? L.hg : m.hg, ag = L ? L.ag : m.ag;
   const d = m.date ? new Date(m.date+"T12:00:00") : null;
   const dl = d && !isNaN(d) ? `${d.getDate()} ${typeof AR_MON!=="undefined"?AR_MON[d.getMonth()]:""}` : "";
-  return `<button type="button" class="gc-m${live?" live":""}" data-gopen="${H(LIVE?LIVE.keyOf(m):"")}">
+  return `<button type="button" class="gc-m${live?" live":""}" data-gopen="${H(matchKey(m))}">
     <span class="gc-m-meta">${m.round<=3?`الجولة ${m.round}`:m.round===4?"نصف النهائي":"النهائي"}${dl?` · ${dl}`:""}${m.time&&up?` · <bdi dir="ltr">${H(m.time)}</bdi>`:""}</span>
     <span class="gc-m-t">${flagImg(m.home)}<b>${H(m.home)}</b></span>
     <span class="gc-m-s">${up&&!live?`<em>${m.time?H(m.time):"—"}</em>`:`<b>${hg}</b><i>-</i><b>${ag}</b>`}${live?`<small class="lv${m.status==="ht"?" ht":""}"><i class="lv-dot"></i>${phLbl}</small>`:""}${(()=>{
@@ -597,7 +597,6 @@ function hookEditor(){
       EDIT = null; FORMERR = "";
       try{ const w = await store.save(DATA); if(w && w.updated){ DATA.updated = w.updated; DATA.updatedBy = w.updatedBy; } toast(`حُفظت: ${key.home} ضد ${key.away} ✅`,"ok"); }
       catch(e){ toast("تعذّر الحفظ: "+(e.code||e.message),"err"); EDIT = E0; }
-      if(linked && window.LIVE && LIVE.rec){ try{ const m = findGulf(LIVE.keyOf({comp:COMP_G, ...key})); if(m){ const d = await LIVE.rec.pull(m); if(d && !d.detached) await LIVE.rec.push(d); } }catch(e){ console.error(e); } }
       repaint(); renderMatchAdmin();
     };
     saveMatch.__gulf = true; saveMatch.__lv = true;
@@ -615,7 +614,7 @@ function admState(m){
   });
 }
 function admRowHTML(m){
-  const st = admState(m), k = H(LIVE ? LIVE.keyOf(m) : "");
+  const st = admState(m), k = H(matchKey(m));
   const badge = st==="live" ? `<span class="gadm-st live"><i></i>جارية${PH_AR[m.status]?` · ${PH_AR[m.status]}`:""}</span>`
               : st==="done" ? `<span class="gadm-st done">انتهت</span>` : `<span class="gadm-st soon">لم تبدأ</span>`;
   const score = st==="soon" ? (m.time ? `<bdi dir="ltr">${H(m.time)}</bdi>` : "—") : `<bdi dir="ltr">${m.ag} - ${m.hg}</bdi>`;   /* LTR: الضيف يساراً والمضيف يميناً تحت اسمه */
@@ -623,7 +622,7 @@ function admRowHTML(m){
         <span class="t">${flagImg(m.home,"sm")}<b>${H(m.home)}</b></span>
         <span class="s">${score}</span>
         <span class="t a"><b>${H(m.away)}</b>${flagImg(m.away,"sm")}</span>
-        <span class="meta">${badge}${st!=="soon"&&m.time?` · <bdi dir="ltr">${H(m.time)}</bdi>`:""}${m.rec==="live"?` · <b class="lvtag">مرتبطة باللعب الفعلي</b>`:""}</span>
+        <span class="meta">${badge}${st!=="soon"&&m.time?` · <bdi dir="ltr">${H(m.time)}</bdi>`:""}</span>
         ${motmSelectHTML(m)}
         <span class="btns"><button class="am-eff" data-eff-open="${k}" title="ساعة الوقت الفعلي للعب — مستقلة عن الأحداث والإحصاءات">الوقت الفعلي</button><button data-gadm="edit" data-k="${k}">إدخال يدوي</button><button class="dl" data-gadm="rm" data-k="${k}">حذف</button></span>
       </div>`;
@@ -894,7 +893,6 @@ document.addEventListener("click", async e=>{
   const toMatches = () => { if(window.ADMIN_TABS) ADMIN_TABS.open("matches"); setTimeout(()=>{ const x=document.getElementById("matchAdmin"); if(x) x.scrollIntoView({block:"start"}); }, 80); };
   if(a==="new"){ EDIT = withGulf(()=>newEdit()); EDIT.gulf = true; EDIT.match.comp = COMP_G; EDIT.match.round = "1"; FORMERR = ""; toMatches(); renderMatchAdmin(); }
   if(a==="edit" && m){ EDIT = withGulf(()=>loadEdit(m)); EDIT.gulf = true; FORMERR = ""; toMatches(); renderMatchAdmin(); }
-  if(a==="live" && m){ try{ history.pushState({lv:1},"","#livectl/"+b.dataset.k); }catch(x){} LIVE.openControl(b.dataset.k); }
   if(a==="rm" && m){ if(!confirm(`حذف ${m.home} × ${m.away} وكل أحداثها من البطولة؟`)) return;
     withGulf(()=>removeMatchByKey(mkey(m))); DATA = normalize(DATA);
     try{ await store.save(DATA); toast("حُذفت المباراة","ok"); }catch(x){ toast("تعذّر الحذف","err"); } repaint(); }

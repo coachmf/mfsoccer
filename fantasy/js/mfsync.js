@@ -93,9 +93,10 @@ const MFSYNC = {
   isOver(m, data){
     if(!this.isPlayed(m, data)) return false;
     if(m.status==='ft') return true;
-    if(['pre','h1','ht','h2','e1','e2','pso'].includes(m.status)) return false;
     if(!m.date) return false;
     const ko = kwDate(m.date+'T'+(m.time||'23:59'));
+    /* حالة شوط عالقة (الكويت–الجهراء ج3 بقيت «h1» شهراً فجُمّدت الدقائق عند 45): بعد 6 ساعات من الانطلاق تُعدّ منتهية مهما كانت الحالة (منصور 2026-10-10) */
+    if(['pre','h1','ht','h2','e1','e2','pso'].includes(m.status)) return !isNaN(ko) && Date.now() > ko.getTime() + 6*3600e3;
     return !isNaN(ko) && Date.now() > ko.getTime() + 2*3600e3;
   },
 
