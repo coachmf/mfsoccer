@@ -2179,8 +2179,10 @@ main{padding-bottom:48px}
 </style>
 <!-- اللغة الإنجليزية والوضع الداكن -->
 <link rel="stylesheet" href="site-theme.css?v=6">
-<script src="fantasy/js/i18n-more.js?v=12" defer></script>
+<script src="fantasy/js/i18n-more.js?v=13" defer></script>
 <script src="site-i18n.js?v=26" defer></script>
+<script src="i18n-data.js?v=4" defer></script>   <!-- إضافات الإنجليزية + البرتغالية (البرازيل/البرتغال) -->
+<script src="i18n-langs.js?v=5" defer></script>   <!-- قائمة اللغات بالأعلام + البرتغالية فوق محرك الإنجليزية -->
 <!-- مركز المباراة المباشر: صفحة الجمهور + الربط (غرفة التحكم live-admin.js تُحمَّل عند فتحها فقط) -->
 <link rel="stylesheet" href="live.css?v=9">
 <script src="live.js?v=21" defer></script>
@@ -2201,7 +2203,7 @@ main{padding-bottom:48px}
 <!-- هوية MF SOCCER الذهبية + هيكل التطبيق (منصور 2026-10-05) -->
 <link rel="stylesheet" href="mf-brand.css?v=7">
 <script>document.documentElement.classList.add("mf")</script>
-<script src="mf-shell.js?v=9" defer></script>
+<script src="mf-shell.js?v=10" defer></script>
 <style>
 /* تبويب التحليل — التصميم الجديد (منصور 2026-09-17) */
 .an{--an-card:#0F1E35;--an-line:#213653;--an-txt:#EDF3FA;--an-mut:#8FA6C4;--an-track:rgba(143,166,196,.16);--an-acc:#2EB0F0;--an-acc2:#1878BE}
@@ -12752,14 +12754,14 @@ const HON_EN = {
 function honT(s){
   if(typeof I18N==="undefined" || !I18N.isEn || !I18N.isEn()) return s;
   const k=String(s||"").trim(); if(!k) return s;
-  if(HON_EN[k]!=null) return HON_EN[k];
+  if(HON_EN[k]!=null) return I18N.post ? I18N.post(HON_EN[k]) : HON_EN[k];   /* البرتغالية تمر على I18N_PT */
   const d=I18N.tr ? I18N.tr(k) : null;
   return d!=null ? d : s;
 }
 /* تاريخ المحطة: «20 أكتوبر 1960» ← «20 October 1960» (الأرقام كما هي) */
 function honDate(s){
   if(typeof I18N==="undefined" || !I18N.isEn || !I18N.isEn()) return s;
-  return String(s||"").replace(/[ء-ي]+/g, w => (I18N.MON && I18N.MON[w]) || w);
+  return String(s||"").replace(/[ء-ي]+/g, w => I18N.mon ? I18N.mon(w) : ((I18N.MON && I18N.MON[w]) || w));
 }
 function clubHonoursHTML(c){
   const H=CLUB_HONOURS[c]; if(!H) return "";

@@ -299,6 +299,12 @@ const DICT_MORE = {
 
 /* أنماط بمتغيرات (أرقام/أسماء) */
 const RX_MORE = [
+  /* أنماط بأرقام متغيرة (منصور 2026-10-10: تغطية الإنجليزية كاملة) */
+  [/^(.+) · (حارس|مدافع|وسط|مهاجم) · (\d+(?:\.\d+)?)$/, (m, c, p, v) => I18N.trIn(c) + ' · ' + ({'حارس':'GK','مدافع':'DEF','وسط':'MID','مهاجم':'FWD'})[p] + ' · ' + v],
+  [/^صفقات المشتركين الفعلية في آخر جولة محتسبة \(الجولة (\d+)\) — تُجمع عند الاحتساب من فرق كل المشتركين \(([\d,٬]+) مشترك\)\. السعر يرتفع\/ينخفض ([\d.]+) عند صافي (\d+) (?:صفقات|صفقة) فأكثر\.$/,
+    "Actual manager transfers in the last scored gameweek (Gameweek $1) — collected at scoring from every manager's team ($2 managers). Price rises/falls by $3 at a net of $4 transfers or more."],
+  [/^(\d+) من (\d+) (?:مباريات|مباراة) لُعبت$/, '$1 of $2 matches played'],
+  [/^نقاط الدكة: (\d+)$/, 'Bench points: $1'],
   [/^الجولة (\d+)$/, 'Gameweek $1'],
   [/^الاحتساب يبدأ من الجولة (\d+)$/, 'Scoring starts from Gameweek $1'],
   [/^الجولات السابقة لا تُحتسب لأحد — أول نقاط بعد الجولة (\d+)\.?$/, 'Earlier gameweeks are not scored for anyone — first points after Gameweek $1.'],

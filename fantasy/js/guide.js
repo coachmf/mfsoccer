@@ -215,7 +215,8 @@ Object.assign(VIEWS, {
   guide(){
     const st=DB.state, R=st.rules, S=st.scoring;
     const EN = typeof I18N!=='undefined' && I18N.isEn();
-    const T = (ar,en)=> EN? en : ar;
+    const P = s => (typeof I18N!=='undefined' && I18N.post) ? I18N.post(s) : s;   /* البرتغالية: الإنجليزي ← قاموس I18N_PT */
+    const T = (ar,en)=> EN? P(en) : ar;
     const row=(k)=>S[k]? `<tr><td>${esc(S[k].label)}</td><td class="num" style="color:${S[k].val<0?'var(--red)':'var(--accent)'}">${S[k].val>0?'+':''}${S[k].val}</td></tr>` : '';
     const groups=[
       [T('المشاركة','Appearance'), ['appearance','appearance60']],
@@ -227,9 +228,9 @@ Object.assign(VIEWS, {
     const extra=Object.keys(S).filter(k=>!known.has(k));
     const chips=Object.entries(R.chips||{}).filter(([k,c])=>c.enabled);
     const sec=(title,body)=>`<div class="card" style="margin-bottom:12px"><h3>${title}</h3><div class="muted" style="line-height:2">${body}</div></div>`;
-    const li=arr=>`<ul style="margin:6px 0 0;padding-inline-start:20px">${arr.map(x=>`<li>${x}</li>`).join('')}</ul>`;
+    const li=arr=>`<ul style="margin:6px 0 0;padding-inline-start:20px">${arr.map(x=>`<li>${EN?P(x):x}</li>`).join('')}</ul>`;
     const chipLine=([k,c])=> EN
-      ? `<b>${esc(c.label)}</b> — ${esc(I18N.DICT[c.desc]||c.desc)} (${c.uses>1? c.uses+' times' : 'once'} per season).`
+      ? `<b>${esc(c.label)}</b> — ${esc(I18N.tr(c.desc)||c.desc)} (${c.uses>1? c.uses+' times' : 'once'} per season).`
       : `<b>${esc(c.label)}</b> — ${esc(c.desc)} (${c.uses>1? c.uses+' مرات' : 'مرة واحدة'} في الموسم).`;
     return `<div class="row spread" style="margin-bottom:12px;flex-wrap:wrap;gap:8px"><h2>${T('عن اللعبة','About the game')}</h2>
       <button class="btn sm sec" onclick="APP.go('about')">${T('المطوّر والاقتراحات','Developer and feedback')}</button></div>

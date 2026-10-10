@@ -17,7 +17,7 @@
     "كرة القدم الكويتية":"Kuwaiti Football", "الترتيب":"Table", "الإحصائيات":"Stats", "الحكام":"Referees",
     "الكؤوس":"Cups", "المنتخب الوطني":"National team", "الاتحاد الكويتي":"Kuwait FA", "كأس الخليج":"Gulf Cup",
     "آخر النتائج":"Latest results", "المحلية":"Domestic", "الخارجية":"International", "جميع المباريات":"All matches", "الدقائق":"Minutes", "أبرز الأرقام":"Top stats", "كل الأرقام":"All stats", "الهجوم":"Attack", "الحراسة والدفاع":"Defence", "الانضباط":"Discipline", "المشاركة":"Playing time", "لا توجد أرقام بعد":"No stats yet", "الفانتسي":"Fantasy", "نظرة عامة":"Overview", "الفرق":"Teams", "الإجمالي":"Total", "الجدول كاملاً":"Full table", "إخفاء":"Show less", "أرقام الموسم":"Season numbers",
-    "أرقام لافتة":"Standout numbers", "تابعنا":"Follow us", "إغلاق":"Close", "بحث":"Search", "القائمة":"Menu",
+    "أرقام لافتة":"Standout numbers", "تابعنا":"Follow us", "إغلاق":"Close", "بحث":"Search",
     "التنقل الرئيسي":"Main navigation", "كرة القدم":"Football", "جارية الآن":"Live now", "لا مباريات منتهية بعد":"No finished matches yet",
     "ستظهر النتائج هنا بعد أول صافرة نهاية.":"Results will appear here after the first full-time whistle.",
     "إعداد وإشراف الإحصائيات":"Statistics by", "مشاركة وتقارير":"Share & reports", "الجولة":"Round"
