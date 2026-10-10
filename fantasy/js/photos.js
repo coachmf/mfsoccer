@@ -356,4 +356,5 @@ const PLAYER_PHOTOS = {
   'TDM|فواز الخالدي': '/assets/players/tdm/44',
   'TDM|تركي اليوسف': '/assets/players/tdm/55',
   'TDM|عبدالرحمن الرشيدي': '/assets/players/tdm/99',
+  'TDM|محمد القبندي': '/assets/players/tdm/14',   // Gemini بطقم التضامن (منصور 2026-10-10)
 };
