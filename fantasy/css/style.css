@@ -1669,6 +1669,9 @@ html.lang-en .pp-actions{justify-content:flex-start;}
 .pts-slot .sub.in,.pts-slot .sub.out{width:22px;height:22px;padding:0;display:grid;place-items:center;border-radius:50%;color:#fff;box-shadow:0 1px 4px rgba(0,0,0,.35)}
 /* أعلى يسار بطاقة اللاعب مقابل شارة الكابتن (منصور 2026-10-12) */
 .pts-slot .sub.in,.pts-slot .sub.out{top:4px;left:4px;right:auto}
+/* منصور 2026-10-12: «السهم أصغر وما يدخل على بلوزة اللاعب» — بحجم شارة الكابتن (17px) وفي الزاوية المقابلة لها، خارج حافة البطاقة مثلها */
+.pts-slot .sub.in,.pts-slot .sub.out{width:16px!important;height:16px!important;top:-3px!important;left:1px!important;right:auto!important;box-shadow:0 1px 3px rgba(0,0,0,.35)}
+.pts-slot .sub.in svg,.pts-slot .sub.out svg{width:10px!important;height:10px!important}
 .pts-slot .sub.in{background:#16a34a}
 .pts-slot .sub.out{background:#dc2626}
 html.mff .pts-slot .sub.in,html.mff .pts-slot .sub.out{color:#fff}
