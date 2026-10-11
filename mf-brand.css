@@ -1226,7 +1226,8 @@ html.mf[data-theme="light"] .mf-dl-k{color:var(--mf-acc-tx)}
 .hm-td-time{font-family:'Rubik',sans-serif;font-size:1.15rem;color:var(--mf-tx);padding:3px 12px;border-radius:9px;border:1px dashed var(--mf-ln2)}
 .hm-td-sc{font-family:'Rubik',sans-serif;font-size:1.3rem;color:var(--mf-tx);font-variant-numeric:tabular-nums}
 .hm-td-st{font-size:.72rem;font-weight:700;color:var(--mf-tx3)}
-.hm-td-st.live{color:#fff;padding:1px 9px;border-radius:999px;border:1px solid rgba(52,195,143,.5);background:rgba(52,195,143,.12);font-family:'Rubik',sans-serif;font-size:.8rem}
+/* دقيقة المباراة الجارية: رقم أبيض بلا خلفية خضراء ولا إطار (منصور 2026-10-11) */
+.hm-td-st.live{color:#fff;padding:1px 9px;font-family:'Rubik',sans-serif;font-size:.8rem}
 .hm-td-st.ht{color:#E0B23C}
 html.mf[data-theme="light"] .hm-nm .hm-btn:not(.primary){color:#F6F3EA;border-color:rgba(231,208,147,.3)}
 
