@@ -6,6 +6,11 @@
    يُحمَّل بعد live-gw.js ويستبدل VIEWS.points القديمة (الجدول).
    ========================================================= */
 'use strict';
+/* سهما التبديل التلقائي (أعلى = دخل، أسفل = خرج) */
+const SUB_ARROW = {
+  in:  '<svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M12 4l7 8h-4.5v8h-5v-8H5z" fill="currentColor"/></svg>',
+  out: '<svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M12 20l-7-8h4.5V4h5v8H19z" fill="currentColor"/></svg>'
+};
 
 Object.assign(VIEWS, {
   /* ترتيب الجولة وأعلى نقاطها من لقطة الترتيب board (تحمل hist لكل مشترك) — بلا قراءات إضافية (منصور 2026-10-08) */
@@ -120,7 +125,8 @@ Object.assign(VIEWS, {
     const shown = i.counted ? i.eff : i.pts;
     const txt = i.pending ? (i.postponed ? 'مؤجلة' : i.opp ? `${DB.club(i.opp).short} ${UI.ha(i.home)}` : 'لم تُلعب') : i.noMatch ? 'بلا مباراة' : String(shown);
     const cls = (i.pending||i.noMatch) ? 'pend' : !i.counted ? 'bn' : shown<0 ? 'neg' : shown===0 ? 'zero' : '';
-    const tag = i.sub==='in' ? '<div class="sub">دخل</div>' : i.sub==='out' ? '<div class="sub">خرج</div>' : '';
+    /* التبديل التلقائي: سهم أخضر للداخل وأحمر للخارج بدل كلمتي «دخل/خرج» (منصور 2026-10-12) */
+    const tag = i.sub==='in' ? `<div class="sub in" title="دخل" aria-label="دخل">${SUB_ARROW.in}</div>` : i.sub==='out' ? `<div class="sub out" title="خرج" aria-label="خرج">${SUB_ARROW.out}</div>` : '';
     return `<div class="pslot pts-slot ${i.sub==='out'?'out':''}" onclick="VIEWS.pointsSheet('${pid}',${gw},${i.mult==null?1:i.mult},'${i.sub||''}')">
       ${i.cap? '<div class="badge">C</div>' : i.vice? '<div class="badge v">V</div>' : ''}
       ${tag}
@@ -155,7 +161,7 @@ Object.assign(VIEWS, {
       const p=DB.player(r.pid); if(!p) return '';
       const s=DB.pgw(r.pid,gw), i=info[r.pid]||{};
       return `<tr onclick="VIEWS.pointsSheet('${p.id}',${gw},${i.mult==null?1:i.mult},'${i.sub||''}')" style="cursor:pointer">
-        <td><div class="row">${UI.playerAvatar(p,28)} <div><b>${esc(p.name)}</b> ${r.cap?'<span class="pill gold">C</span>':''} ${i.sub==='in'?'<span class="pill green">دخل</span>':i.sub==='out'?'<span class="pill">خرج</span>':''}<div class="tiny">${DB.club(p.club).short} · ${POS_AR[p.pos]}</div></div></div></td>
+        <td><div class="row">${UI.playerAvatar(p,28)} <div><b>${esc(p.name)}</b> ${r.cap?'<span class="pill gold">C</span>':''} ${i.sub==='in'?`<span class="sub-ar in" title="دخل">${SUB_ARROW.in}</span>`:i.sub==='out'?`<span class="sub-ar out" title="خرج">${SUB_ARROW.out}</span>`:''}<div class="tiny">${DB.club(p.club).short} · ${POS_AR[p.pos]}</div></div></div></td>
         <td class="tiny">${i.pending? (i.postponed ? 'مؤجلة' : i.opp ? `${DB.club(i.opp).short} ${UI.ha(i.home)}` : 'لم تُلعب') : s? s.min+"'" : '—'}</td><td class="tiny">${s? s.g:0}/${s? s.a:0}</td><td class="tiny">${s&&s.bonus? '+'+s.bonus:'—'}</td>
         <td class="num" style="color:var(--accent)">${r.cap? r.eff+' ('+r.pts+'×'+mult+')' : (i.counted? r.eff : r.pts)}</td></tr>`;
     };

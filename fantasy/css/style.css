@@ -1664,3 +1664,12 @@ html.lang-en .pp-actions{justify-content:flex-start;}
 .fx.fx-pp{ opacity:1; }
 [data-theme="dark"] .pp-off{ color:inherit; }
 [data-theme="dark"] .ptschip.pp-chip, [data-theme="dark"] .pp-chip{ background:rgba(255,255,255,.1); color:inherit; }
+
+/* سهما التبديل التلقائي على الملعب وفي الجدول (2026-10-12) */
+.pts-slot .sub.in,.pts-slot .sub.out{width:22px;height:22px;padding:0;display:grid;place-items:center;border-radius:50%;color:#fff;box-shadow:0 1px 4px rgba(0,0,0,.35)}
+.pts-slot .sub.in{background:#16a34a}
+.pts-slot .sub.out{background:#dc2626}
+html.mff .pts-slot .sub.in,html.mff .pts-slot .sub.out{color:#fff}
+.sub-ar{display:inline-grid;place-items:center;width:18px;height:18px;border-radius:50%;color:#fff;vertical-align:middle;margin-inline-start:4px}
+.sub-ar.in{background:#16a34a}.sub-ar.out{background:#dc2626}
+.sub-ar svg{width:12px;height:12px}
