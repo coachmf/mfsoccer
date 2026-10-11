@@ -11057,7 +11057,7 @@ html[data-theme="dark"] .mc{background:#0F1E35;border-color:#213653;box-shadow:n
   padding:3px 12px;border-radius:9px;background:rgba(143,166,196,.12)}
 html[data-theme="dark"] .mc-score{background:#182C48}
 .mc-time{font-family:var(--display);font-weight:700;font-size:.95rem;color:var(--head,#fff);font-variant-numeric:tabular-nums;padding:3px 12px;border-radius:9px;border:1px dashed var(--line2,rgba(143,166,196,.35))}
-.mc-mid .mc-time.mc-now{color:#fff;border:1px solid rgba(52,195,143,.45);background:rgba(52,195,143,.08)}
+.mc-mid .mc-time.mc-now{color:#fff;border-color:transparent;background:none}
 .mc-mid .mc-time.mc-now.ht{color:#E0B23C;border-color:rgba(224,178,60,.45);background:rgba(224,178,60,.08);font-size:.85rem}
 .mc-go{display:inline-flex;align-items:center;gap:3px;height:22px;padding:0 6px 0 9px;border-radius:999px;margin-top:3px;color:var(--sky,#5FB2E8);background:rgba(95,178,232,.14);transition:transform .15s;white-space:nowrap}
 .mc-go em{font-style:normal;font-size:.66rem;font-weight:700}   /* منصور 2026-09-16: «التفاصيل» حتى يعرف الزائر أن البطاقة تُفتح */
@@ -11069,9 +11069,12 @@ html[data-theme="dark"] .mc-score{background:#182C48}
 .mc-tv.off,.mp-tv.off{color:var(--slate)}
 .mp-tv{display:inline-flex;align-items:center;gap:6px}
 .mc-st{font-size:.62rem;font-weight:600;color:var(--slate);letter-spacing:.01em;display:inline-flex;align-items:center;gap:4px}
-.mc-st.live{color:var(--win)}
+/* المباراة الجارية: الدقيقة والنقطة بالأبيض بلا أخضر (منصور 2026-10-11) */
+.mc-st.live{color:#fff}
+html[data-theme="light"] .mc-st.live{color:#0B1F3A}
+html[data-theme="light"] .mc-st.live i{background:#0B1F3A}
 .mc-st.ht{color:#F5C518}
-.mc-st.live i{width:6px;height:6px;border-radius:50%;background:var(--win);animation:mcpulse 1.2s ease-in-out infinite}
+.mc-st.live i{width:6px;height:6px;border-radius:50%;background:#fff;animation:mcpulse 1.2s ease-in-out infinite}
 @keyframes mcpulse{0%,100%{opacity:1}50%{opacity:.35}}
 .mc-sc{display:grid;grid-template-columns:1fr 1fr;gap:4px 16px;padding:0 12px 8px;font-size:.7rem;color:var(--slate)}   /* هدافو البطولات الخارجية: نص فقط */
 .mc-sc>div{display:flex;flex-direction:column;gap:2px;min-width:0}.mc-sc .a{text-align:end}
