@@ -2207,7 +2207,7 @@ main{padding-bottom:48px}
 <!-- اللغة الإنجليزية والوضع الداكن -->
 <link rel="stylesheet" href="site-theme.css?v=6">
 <script src="fantasy/js/i18n-more.js?v=14" defer></script>
-<script src="site-i18n.js?v=28" defer></script>
+<script src="site-i18n.js?v=29" defer></script>
 <script src="i18n-data.js?v=10" defer></script>   <!-- إضافات الإنجليزية + البرتغالية (البرازيل/البرتغال) + الإسبانية + الصربية/الكرواتية -->
 <script src="i18n-langs.js?v=7" defer></script>   <!-- قائمة اللغات بالأعلام + البرتغالية والإسبانية والصربية/الكرواتية فوق محرك الإنجليزية -->
 <!-- غرفة التحكم (live.js / live-admin.js / live.css) مخفية منذ 2026-10-10 بطلب منصور — الملفات باقية؛ للإرجاع أعد السطرين:
@@ -7923,6 +7923,39 @@ function lineNeeds(f){
   return [["G",1],["D",D],["M",M],["F",F]].filter(([,n])=>n>0);
 }
 const LINE_AR={G:"حراسة", D:"دفاع", M:"وسط", F:"هجوم"};
+/* أسماء خانات التصويت حسب الرسم الفنّي (منصور 2026-10-11: «4-2-3-1 جناح يمين، جناح يسار، ارتكاز يمين، ارتكاز يسار») —
+   بنفس ترتيب lineNeeds (الدفاع ثم الوسط بكل صفوفه ثم الهجوم)، من اليمين لليسار. لكل خانة المراكز المفضّلة لترتيب القائمة */
+const SL = {RB:["ظهير أيمن",["RB","RWB"]], LB:["ظهير أيسر",["LB","LWB"]], RCB:["قلب دفاع أيمن",["CB"]], CB:["قلب دفاع",["CB"]], LCB:["قلب دفاع أيسر",["CB"]],
+  RWB:["ظهير جناح أيمن",["RWB","RB","RM"]], LWB:["ظهير جناح أيسر",["LWB","LB","LM"]],
+  DM:["ارتكاز",["CDM","CM"]], RDM:["ارتكاز أيمن",["CDM","CM"]], LDM:["ارتكاز أيسر",["CDM","CM"]],
+  RCM:["وسط أيمن",["CM","CDM","CAM"]], LCM:["وسط أيسر",["CM","CDM","CAM"]],
+  RM:["جناح أيمن",["RM","RW"]], LM:["جناح أيسر",["LM","LW"]], AM:["صانع ألعاب",["CAM","CM"]],
+  RAM:["صانع ألعاب أيمن",["CAM","RM","CM"]], LAM:["صانع ألعاب أيسر",["CAM","LM","CM"]], SS:["مهاجم ثانٍ",["CAM","ST"]],
+  ST:["رأس حربة",["ST","CF"]], RS:["مهاجم أيمن",["ST","CF"]], LS:["مهاجم أيسر",["ST","CF"]],
+  RW:["جناح أيمن",["RM","RW","ST"]], LW:["جناح أيسر",["LM","LW","ST"]], GK:["حارس مرمى",["GK"]]};
+const D4=["RB","RCB","LCB","LB"], D3=["RCB","CB","LCB"], D5=["RB","RCB","CB","LCB","LB"];
+const FORM_SLOTS = {
+  "4-4-2":[...D4,"RM","RCM","LCM","LM","RS","LS"],
+  "4-3-3":[...D4,"RCM","DM","LCM","RW","ST","LW"],
+  "4-2-3-1":[...D4,"RDM","LDM","RM","AM","LM","ST"],
+  "4-5-1":[...D4,"RM","RCM","DM","LCM","LM","ST"],
+  "4-1-4-1":[...D4,"DM","RM","RCM","LCM","LM","ST"],
+  "3-5-2":[...D3,"RWB","RCM","DM","LCM","LWB","RS","LS"],
+  "3-4-3":[...D3,"RWB","RCM","LCM","LWB","RW","ST","LW"],
+  "5-3-2":[...D5,"RCM","DM","LCM","RS","LS"],
+  "5-4-1":[...D5,"RM","RCM","LCM","LM","ST"],
+  "4-4-1-1":[...D4,"RM","RCM","LCM","LM","SS","ST"],
+  "4-2-2-2":[...D4,"RDM","LDM","RAM","LAM","RS","LS"],
+  "4-1-2-1-2":[...D4,"DM","RCM","LCM","AM","RS","LS"],
+  "4-3-2-1":[...D4,"RCM","DM","LCM","RAM","LAM","ST"]};
+/* الخانة رقم k في خط line: [الاسم، المراكز المفضّلة] — رسم غير معروف يرجع للأسماء القديمة «وسط 1» */
+function slotInfo(f, line, k, n){
+  if(line==="G") return SL.GK;
+  const codes=FORM_SLOTS[normForm(f)]||FORM_SLOTS[f]; if(!codes) return [LINE_AR[line]+(n>1?" "+(k+1):""), []];
+  const need=lineNeeds(f); let off=0;
+  for(const [l,c] of need){ if(l==="G") continue; if(l===line) break; off+=c; }
+  const code=codes[off+k]; return code&&SL[code] ? SL[code] : [LINE_AR[line]+(n>1?" "+(k+1):""), []];
+}
 
 function ballotHTML(round, comp){
   if(!FAN) return `<h2 class="sec">صوّت بتشكيلتك</h2>
@@ -7940,12 +7973,15 @@ function ballotHTML(round, comp){
   const RT=roundRatingMap(round, comp), rv=p=>RT[p.n+"|"+p.club];
   const topLine=(line,k)=>pool.filter(p=>p.line===line && rv(p)!=null).sort((a,b)=>rv(b)-rv(a)).slice(0,k);
   const slots=lineNeeds(BALLOT.f).map(([line,n])=>{
-    const opts=topLine(line, 3*n);
+    const base=topLine(line, 3*n);
     const cells=[];
     for(let k=0;k<n;k++,i++){
       const cur=BALLOT.xi[i]||null;
       const key=cur?cur.n+"|"+cur.club:"";
-      cells.push(`<label class="bl-f"><span>${LINE_AR[line]} ${n>1?k+1:""}</span>
+      const [lbl,pref]=slotInfo(BALLOT.f, line, k, n);
+      /* لاعبو المركز المناسب للخانة أولاً (بالتقييم)، ثم بقية الخط */
+      const opts=[...base.filter(p=>pref.includes(p.role)), ...base.filter(p=>!pref.includes(p.role))];
+      cells.push(`<label class="bl-f"><span>${esc(lbl)}</span>
         <select data-slot="${i}">
           <option value="">— اختر —</option>
           ${opts.map(p=>{const v=p.n+"|"+p.club;
@@ -7958,6 +7994,10 @@ function ballotHTML(round, comp){
 
   const done=BALLOT.xi.filter(Boolean).length;
   const opt=(p,cur)=>`<option value="${esc(p.n+"|"+p.club)}" ${cur&&cur.n===p.n&&cur.club===p.club?"selected":""}>${esc(p.n)} — ${esc(p.club)}</option>`;
+  /* أفضل لاعب: أعلى 10 تقييماً في الجولة فقط (منصور 2026-10-11) — صوت سابق لغيرهم يبقى ظاهراً حتى لا يضيع */
+  const optR=(p,cur)=>`<option value="${esc(p.n+"|"+p.club)}" ${cur&&cur.n===p.n&&cur.club===p.club?"selected":""}>${esc(p.n)} — ${esc(p.club)}${rv(p)!=null?" · "+rv(p).toFixed(1):""}</option>`;
+  const bestPool=pool.filter(p=>rv(p)!=null).sort((a,b)=>rv(b)-rv(a)).slice(0,10);
+  if(BALLOT.best && !bestPool.some(p=>p.n===BALLOT.best.n && p.club===BALLOT.best.club)){ const o=pool.find(p=>p.n===BALLOT.best.n && p.club===BALLOT.best.club); if(o) bestPool.push(o); }
   return `<h2 class="sec">${MYTOT?"عدّل تصويتك":"صوّت بتشكيلتك"}</h2>
   <div class="card pad">
     ${MYTOT?`<div class="fx-hd"><span class="fx-badge live">صوتك مسجَّل</span>
@@ -7972,7 +8012,7 @@ function ballotHTML(round, comp){
     <h4 class="bl-h">اختيارات الجولة</h4>
     <div class="bl-extra">
       <label class="bl-f"><span>أفضل لاعب</span>
-        <select id="blBest"><option value="">— اختر —</option>${pool.map(p=>opt(p,BALLOT.best)).join("")}</select></label>
+        <select id="blBest"><option value="">— اختر —</option>${bestPool.map(p=>optR(p,BALLOT.best)).join("")}</select></label>
       <label class="bl-f"><span>أفضل حارس</span>
         <select id="blGk"><option value="">— اختر —</option>${topLine("G",3).map(p=>opt(p,BALLOT.gk)).join("")}</select></label>
       <label class="bl-f"><span>هدف الجولة</span>
