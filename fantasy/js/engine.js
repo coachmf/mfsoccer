@@ -906,11 +906,11 @@ const MARKET = {
     const t=((DB.state.transferStats||{})[pid])||{in:0,out:0};
     return { in:+t.in||0, out:+t.out||0 };
   },
-  /* عتبة تغيّر السعر: صافي 5% من المشتركين (3 على الأقل) */
+  /* عتبة تغيّر السعر: صافي 3% من المشتركين (3 على الأقل) — كانت 5% (منصور 2026-10-12: لا لاعب وصلها في الجولة 4) */
   threshold(st){
     st=st||DB.state;
     const n=Math.max(1, st.managerCount||Object.keys(st.teams||{}).length||1);
-    return Math.max(3, Math.ceil(n*0.05));
+    return Math.max(3, Math.ceil(n*0.03));
   },
   applyPriceChanges(st){
     const changes=[]; const thr=this.threshold(st);

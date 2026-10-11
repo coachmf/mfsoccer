@@ -9,7 +9,7 @@
 
    عند كل نشر: ارفع رقم VER فتُبنى ذاكرة جديدة وتُحذف القديمة.
    ========================================================= */
-const VER   = 'mf-2026-10-12-460-sub-arrow-small';
+const VER   = 'mf-2026-10-12-461-price-3pct';
 const SHELL = 'shell-' + VER;
 const RUN   = 'run-'   + VER;
 
