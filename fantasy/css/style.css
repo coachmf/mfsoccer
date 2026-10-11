@@ -1667,6 +1667,8 @@ html.lang-en .pp-actions{justify-content:flex-start;}
 
 /* سهما التبديل التلقائي على الملعب وفي الجدول (2026-10-12) */
 .pts-slot .sub.in,.pts-slot .sub.out{width:22px;height:22px;padding:0;display:grid;place-items:center;border-radius:50%;color:#fff;box-shadow:0 1px 4px rgba(0,0,0,.35)}
+/* أعلى يسار بطاقة اللاعب مقابل شارة الكابتن (منصور 2026-10-12) */
+.pts-slot .sub.in,.pts-slot .sub.out{top:4px;left:4px;right:auto}
 .pts-slot .sub.in{background:#16a34a}
 .pts-slot .sub.out{background:#dc2626}
 html.mff .pts-slot .sub.in,html.mff .pts-slot .sub.out{color:#fff}
