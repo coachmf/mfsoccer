@@ -5302,7 +5302,9 @@ const add2Of = m => Math.max(0, Math.min(30, +((m||{}).add2) || 0));
 const ET_PH = ["e1","e2","pso"];
 const add3Of = m => Math.max(0, Math.min(30, +((m||{}).add3) || 0));
 const add4Of = m => Math.max(0, Math.min(30, +((m||{}).add4) || 0));
-const hasET = m => !!(m && (m.et || m.status==="e1" || m.status==="e2"));
+/* مباريات الدوري بلا أشواط إضافية أصلاً (منصور 2026-10-11): علامة et خاطئة من المحرّر لا تُظهر «بعد الأشواط الإضافية» */
+const etAllowed = m => !(compOf(m)==="الدوري" && !(typeof isGulfMatch==="function" && isGulfMatch(m)));
+const hasET = m => !!(m && etAllowed(m) && (m.et || m.status==="e1" || m.status==="e2"));
 const etAbs = (m, mm, x) => 90 + add1Of(m) + add2Of(m) + (mm - 90) + (mm > 105 ? add3Of(m) : 0) + (+x || 0);
 /* ركلات الترجيح للعرض فقط (منصور 2026-10-03): m.psk = [{t:"h"|"a", p:اسم, ok:سجّل؟}] بالترتيب — لا تدخل أهدافاً ولا ركلات جزاء
    ولا أي إحصاء؛ النتيجة تُحسب من الركلات، أو من m.pso إن أُدخلت النتيجة وحدها */
@@ -15550,7 +15552,7 @@ html.mx-editing #waFab{display:none!important}   /* زر واتساب كان ي�
     { const per=perOf(k,d), mm=+d.m||0;      /* «الإضافي الأول، الدقيقة 5» = 95 */
       if(per==="3" && mm>=1 && mm<=15) d.m=String(90+mm);
       if(per==="4" && mm>=1 && mm<=15) d.m=String(105+mm);
-      if(+per>=3) EDIT.match.et=true; delete d._per; }
+      if(+per>=3 && etAllowed(EDIT.match)) EDIT.match.et=true; delete d._per; }
     const arr=EDIT[ARR[k]];
     if(S.i>=0) arr[S.i]=d; else arr.push(d);
     MX.sheet=null; FORMERR=""; renderMatchAdmin();
@@ -15709,7 +15711,7 @@ html.mx-editing #waFab{display:none!important}   /* زر واتساب كان ي�
         if(MX.sheet.k==="sub") d.h=v; else d._per=v;
         /* الدقيقة خارج مدى الشوط المختار → بداية الشوط (التبديل في الشوطين الأصليين يحتفظ بطريقة الإدخال القديمة) */
         if(!(MX.sheet.k==="sub" && +v<=2) && ((m && (m<row[2] || m>row[3])) || (!m && +v>=3))) d.m=String(row[2]);
-        if(+v>=3) EDIT.match.et=true; rerender(); });
+        if(+v>=3 && etAllowed(EDIT.match)) EDIT.match.et=true; rerender(); });
       q("[data-mbench]",b=>b.onclick=()=>{ const S=MX.sheet; S.bench=S.bench||{}; S.bench[b.dataset.mbench]=true; rerender(); });
       q("[data-mpick]",b=>b.onclick=()=>{ const key=b.dataset.mpick, v=b.dataset.mname; d[key]=(d[key]===v&&key==="a")?"":v; rerender(); });
       q("[data-msf]",el=>{ el.oninput=()=>{ d[el.dataset.msf]=el.value; }; el.onchange=()=>{ d[el.dataset.msf]=el.value;
