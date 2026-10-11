@@ -1097,6 +1097,17 @@ html.mf[data-theme="light"] .mf-hub-sheet{background:radial-gradient(120% 60% at
 .mf-nt button:hover{border-color:var(--mf-gold-mid);background:rgba(231,208,147,.05)}
 .mf-nt img{width:36px;height:36px;object-fit:contain}
 .mf-nt svg{width:24px;height:24px;color:var(--mf-gold);margin:6px}
+/* البطولات الخارجية (2026-10-11): صف لكل بطولة — شعارها، اسمها، وأنديتنا المشاركة */
+.mf-ext{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:var(--mf-s2)}
+.mf-ext button{display:flex;align-items:center;gap:12px;min-height:64px;padding:10px 12px;border-radius:var(--mf-rb);background:rgba(255,255,255,.03);border:1px solid var(--mf-ln);color:inherit;text-align:start;transition:border-color var(--mf-fast),background var(--mf-fast)}
+.mf-ext button:hover{border-color:var(--mf-gold-mid);background:rgba(231,208,147,.05)}
+.mf-ext .mf-ext-lg{width:44px;height:44px;flex:none;object-fit:contain;border-radius:10px;background:#fff;padding:3px}
+.mf-ext-tx{display:flex;flex-direction:column;gap:6px;min-width:0}
+.mf-ext-tx b{font-size:.92rem;font-weight:700;line-height:1.3}
+.mf-ext-cl{display:flex;flex-wrap:wrap;gap:4px 12px}
+.mf-ext-cl i{display:inline-flex;align-items:center;gap:5px;font-style:normal}
+.mf-ext-cl img{width:18px;height:18px;object-fit:contain}
+.mf-ext-cl small{font-size:.72rem;color:var(--mf-tx3)}
 .mf-crests{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:6px}
 .mf-crests button{display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 2px;border-radius:var(--mf-rb);transition:background var(--mf-fast)}
 .mf-crests button:hover{background:rgba(231,208,147,.06)}

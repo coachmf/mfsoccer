@@ -128,6 +128,9 @@
       const c=e.target.closest("[data-hub-club]"); if(c){ closeHub(true); const k=c.dataset.hubClub; setTimeout(()=>safe(()=>openClub(k)),0); return; }
       const g=e.target.closest("[data-hub-gulf]"); if(g){ closeHub(true); setTimeout(()=>nav("gulf"),0); }
       const d1=e.target.closest("[data-hub-div1]"); if(d1){ closeHub(true); setTimeout(()=>nav("div1"),0); }
+      /* البطولات الخارجية: صفحة المباريات على البطولة نفسها (جدول المجموعة ثم المباريات) */
+      const ex=e.target.closest("[data-hub-ext]"); if(ex){ const id=ex.dataset.hubExt; closeHub(true);
+        setTimeout(()=>{ nav("matches"); setTimeout(()=>safe(()=>{ MXC=id; SELDAY=null; renderMatches(); }),60); },0); }
     });
     D.addEventListener("keydown", e=>{
       if(hub.hidden) return;
@@ -139,6 +142,19 @@
         else if(!e.shiftKey && D.activeElement===z){ e.preventDefault(); a.focus(); }
       }
     });
+  }
+  /* البطولات الخارجية التي تشارك فيها الأندية الكويتية (منصور 2026-10-11): شعار البطولة + شعارات أنديتنا فيها.
+     البيانات من EXT_COMPS / EXT_GROUPS في index.html — الترتيب والمواجهات موجودة أصلاً في صفحة المباريات */
+  const EXT_CLUB_COMPS=["acl2","gcl","acc"];
+  function extHTML(){
+    const comps=safe(()=>EXT_COMPS)||[], groups=safe(()=>EXT_GROUPS)||{}, clubs=safe(()=>CLUBS)||[];
+    const list=EXT_CLUB_COMPS.map(id=>comps.find(c=>c.id===id)).filter(Boolean);
+    if(!list.length) return "";
+    return `<div class="mf-hub-sec"><h3>البطولات الخارجية</h3><div class="mf-ext">${list.map(c=>{
+      const ours=[...new Set((groups[c.id]||[]).flatMap(g=>g.teams).filter(t=>clubs.includes(t)))];
+      return `<button type="button" data-hub-ext="${esc(c.id)}"><img class="mf-ext-lg" src="assets/comps/${esc(c.id)}.webp" alt="" width="44" height="44" loading="lazy">
+        <span class="mf-ext-tx"><b>${esc(c.name)}</b><span class="mf-ext-cl">${ours.map(t=>{ const s=crestSrc(t);
+          return `<i>${s?`<img src="${s}" alt="" width="18" height="18" loading="lazy">`:""}<small>${esc(t)}</small></i>`; }).join("")}</span></span></button>`; }).join("")}</div></div>`;
   }
   function hubHTML(){
     const items=hubItems(), n=items.length;
@@ -156,6 +172,7 @@
         <button type="button" data-hub-club="${esc(kfa)}">${kfaImg?`<img src="${kfaImg}" alt="" width="40" height="40">`:""}<span>الاتحاد الكويتي</span></button>
         ${shown("gulf")?`<button type="button" data-hub-gulf>${IC.cups}<span>كأس الخليج</span></button>`:""}
       </div></div>`:""}
+      ${extHTML()}
       ${shown("div1")?`<div class="mf-hub-sec"><h3>دوري الدرجة الأولى</h3><div class="mf-nt"><button type="button" data-hub-div1>${IC.cups}<span>الترتيب والمباريات</span></button></div></div>`:""}
       ${clubs.length?`<div class="mf-hub-sec"><h3>الأندية</h3><div class="mf-crests">${clubs.map(c=>{ const s=crestSrc(c);
         return `<button type="button" data-hub-club="${esc(c)}" aria-label="${esc(c)}" title="${esc(c)}">${s?`<img src="${s}" alt="" width="40" height="40" loading="lazy">`:`<span>${esc(c.slice(0,2))}</span>`}<small>${esc(c)}</small></button>`; }).join("")}</div></div>`:""}
