@@ -172,8 +172,8 @@
         <button type="button" data-hub-club="${esc(kfa)}">${kfaImg?`<img src="${kfaImg}" alt="" width="40" height="40">`:""}<span>الاتحاد الكويتي</span></button>
         ${shown("gulf")?`<button type="button" data-hub-gulf>${IC.cups}<span>كأس الخليج</span></button>`:""}
       </div></div>`:""}
-      ${extHTML()}
       ${shown("div1")?`<div class="mf-hub-sec"><h3>دوري الدرجة الأولى</h3><div class="mf-nt"><button type="button" data-hub-div1>${IC.cups}<span>الترتيب والمباريات</span></button></div></div>`:""}
+      ${extHTML()}
       ${clubs.length?`<div class="mf-hub-sec"><h3>الأندية</h3><div class="mf-crests">${clubs.map(c=>{ const s=crestSrc(c);
         return `<button type="button" data-hub-club="${esc(c)}" aria-label="${esc(c)}" title="${esc(c)}">${s?`<img src="${s}" alt="" width="40" height="40" loading="lazy">`:`<span>${esc(c.slice(0,2))}</span>`}<small>${esc(c)}</small></button>`; }).join("")}</div></div>`:""}
       ${soc.length?`<div class="mf-hub-ft"><span>تابعنا</span>${soc.map(([u,t])=>`<a href="${u}" target="_blank" rel="noopener">${t}</a>`).join("")}<span class="mf-handle">@mfsoccerkw</span></div>`:""}
