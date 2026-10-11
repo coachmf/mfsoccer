@@ -1,6 +1,6 @@
 /* =========================================================
    mfsoccer — لغات إضافية فوق محرك الإنجليزية (الموقع والفانتسي)
-   البرتغالية بنسختين: البرازيل (pt-BR) والبرتغال (pt-PT)، والإسبانية (es)،
+   البرتغالية بنسختين: البرازيل (pt-BR) والبرتغال (pt-PT)، والإسبانية (es)، والفرنسية (fr، 2026-10-11)،
    و BCMS (البوسنية/الكرواتية/الجبل الأسود/الصربية) لغة واحدة (sh: لاتينية، نطق ijekavski، بلا علم — شارة BCMS) (منصور 2026-10-10).
    الفكرة: المحرك الأصلي يترجم العربية ← الإنجليزية كما هو، ثم كل ناتج
    إنجليزي يمر على قاموس اللغة في I18N_PT (إنجليزي ← BR/PT/ES/SH، من i18n-data.js).
@@ -25,14 +25,16 @@
     {id:'pt-BR', label:'Português (Brasil)',   flag:'br', short:'BR'},
     {id:'pt-PT', label:'Português (Portugal)', flag:'pt', short:'PT'},
     {id:'es',    label:'Español',              flag:'es', short:'ES'},
+    {id:'fr',    label:'Français',             flag:'fr', short:'FR'},
     {id:'sh',    label:'BCMS',                 flag:null, short:'BCMS'},    /* البوسنية/الكرواتية/الجبل الأسود/الصربية: لغة واحدة بلا علم خاص بها */
   ];
   /* اللغة ← مفتاح قاموسها في I18N_PT / I18N_PT_AR */
-  const VAR = {'pt-BR':'BR', 'pt-PT':'PT', 'es':'ES', 'sh':'SH'};
+  const VAR = {'pt-BR':'BR', 'pt-PT':'PT', 'es':'ES', 'fr':'FR', 'sh':'SH'};
   const STORE = ['mf_lang', 'kwf_lang'];
   const norm = q => {
     q = String(q || '').trim().toLowerCase();
-    if(q === 'ar' || q === 'en' || q === 'es') return q;
+    if(q === 'ar' || q === 'en' || q === 'es' || q === 'fr') return q;
+    if(q === 'fr-fr' || q === 'fr-be' || q === 'fr-ch' || q === 'fr-ca') return 'fr';
     if(q === 'sh' || q === 'bcms' || q === 'sr' || q === 'hr' || q === 'bs' || q === 'cnr' || q === 'sr-latn') return 'sh';
     if(q === 'pt' || q === 'pt-br' || q === 'br') return 'pt-BR';
     if(q === 'pt-pt') return 'pt-PT';
@@ -54,7 +56,7 @@
   /* isPt = لغة فوق الإنجليزية (برتغالية/إسبانية/صربية-كرواتية) — الاسم القديم باقٍ لأن الكود يستعمله */
   I18N.isPt = function(){ return VAR[this.lang()] != null; };
   I18N.isOv = I18N.isPt;
-  I18N.locale = function(){ const l = this.lang(); return l === 'ar' ? 'ar-KW' : l === 'en' ? 'en-GB' : l === 'es' ? 'es-ES' : l === 'sh' ? 'bs-Latn' : l; };
+  I18N.locale = function(){ const l = this.lang(); return l === 'ar' ? 'ar-KW' : l === 'en' ? 'en-GB' : l === 'es' ? 'es-ES' : l === 'fr' ? 'fr-FR' : l === 'sh' ? 'bs-Latn' : l; };
 
   /* ---------- القاموس البرتغالي ---------- */
   const PTD = () => {
@@ -81,15 +83,18 @@
   const DOWS = {
     pt:{Sun:'Dom',Mon:'Seg',Tue:'Ter',Wed:'Qua',Thu:'Qui',Fri:'Sex',Sat:'Sáb',Sunday:'Domingo',Monday:'Segunda-feira',Tuesday:'Terça-feira',Wednesday:'Quarta-feira',Thursday:'Quinta-feira',Friday:'Sexta-feira',Saturday:'Sábado'},
     es:{Sun:'Dom',Mon:'Lun',Tue:'Mar',Wed:'Mié',Thu:'Jue',Fri:'Vie',Sat:'Sáb',Sunday:'Domingo',Monday:'Lunes',Tuesday:'Martes',Wednesday:'Miércoles',Thursday:'Jueves',Friday:'Viernes',Saturday:'Sábado'},
+    fr:{Sun:'Dim',Mon:'Lun',Tue:'Mar',Wed:'Mer',Thu:'Jeu',Fri:'Ven',Sat:'Sam',Sunday:'Dimanche',Monday:'Lundi',Tuesday:'Mardi',Wednesday:'Mercredi',Thursday:'Jeudi',Friday:'Vendredi',Saturday:'Samedi'},
     sh:{Sun:'Ned',Mon:'Pon',Tue:'Uto',Wed:'Sri',Thu:'Čet',Fri:'Pet',Sat:'Sub',Sunday:'Nedjelja',Monday:'Ponedjeljak',Tuesday:'Utorak',Wednesday:'Srijeda',Thursday:'Četvrtak',Friday:'Petak',Saturday:'Subota'}};
   const MONS_ = {
     pt:{Jan:'jan',Feb:'fev',Mar:'mar',Apr:'abr',May:'mai',Jun:'jun',Jul:'jul',Aug:'ago',Sep:'set',Sept:'set',Oct:'out',Nov:'nov',Dec:'dez',
       January:'janeiro',February:'fevereiro',March:'março',April:'abril',June:'junho',July:'julho',August:'agosto',September:'setembro',October:'outubro',November:'novembro',December:'dezembro'},
     es:{Jan:'ene',Feb:'feb',Mar:'mar',Apr:'abr',May:'may',Jun:'jun',Jul:'jul',Aug:'ago',Sep:'sept',Sept:'sept',Oct:'oct',Nov:'nov',Dec:'dic',
       January:'enero',February:'febrero',March:'marzo',April:'abril',June:'junio',July:'julio',August:'agosto',September:'septiembre',October:'octubre',November:'noviembre',December:'diciembre'},
+    fr:{Jan:'janv.',Feb:'févr.',Mar:'mars',Apr:'avr.',May:'mai',Jun:'juin',Jul:'juil.',Aug:'août',Sep:'sept.',Sept:'sept.',Oct:'oct.',Nov:'nov.',Dec:'déc.',
+      January:'janvier',February:'février',March:'mars',April:'avril',June:'juin',July:'juillet',August:'août',September:'septembre',October:'octobre',November:'novembre',December:'décembre'},
     sh:{Jan:'jan',Feb:'feb',Mar:'mar',Apr:'apr',May:'maj',Jun:'jun',Jul:'jul',Aug:'avg',Sep:'sep',Sept:'sep',Oct:'okt',Nov:'nov',Dec:'dec',
       January:'januar',February:'februar',March:'mart',April:'april',June:'juni',July:'juli',August:'avgust',September:'septembar',October:'oktobar',November:'novembar',December:'decembar'}};
-  const fam = () => { const l = I18N.lang(); return l === 'es' ? 'es' : l === 'sh' ? 'sh' : 'pt'; };
+  const fam = () => { const l = I18N.lang(); return l === 'es' ? 'es' : l === 'fr' ? 'fr' : l === 'sh' ? 'sh' : 'pt'; };
   /* أسماء الأشهر الكاملة بحرف كبير (كما يكتبها المسار كلمة-كلمة) — تُصغَّر داخل النص */
   const capMonths = () => { const M = MONS_[fam()], out = [];
     ['January','February','March','April','May','June','July','August','September','October','November','December'].forEach(k => { const v = M[k] || M[k.slice(0, 3)]; if(v) out.push(v.charAt(0).toUpperCase() + v.slice(1)); });
