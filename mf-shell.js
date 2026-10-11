@@ -182,7 +182,7 @@
       </div>
       ${kfa?`<div class="mf-hub-sec"><h3>المنتخب الوطني</h3><div class="mf-nt">
         <button type="button" data-hub-club="${esc(kfa)}">${kfaImg?`<img src="${kfaImg}" alt="" width="40" height="40">`:""}<span>الاتحاد الكويتي</span></button>
-        ${shown("gulf")?`<button type="button" data-hub-gulf>${IC.cups}<span>كأس الخليج</span></button>`:""}
+        ${shown("gulf")?`<button type="button" data-hub-gulf><img src="assets/comps/gulf27.webp" alt="" width="40" height="40"><span>كأس الخليج</span></button>`:""}
       </div></div>`:""}
       ${localHTML()}
       ${extHTML()}
