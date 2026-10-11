@@ -4672,6 +4672,7 @@ async function rebaseOnCloud(keep){
 /* استماع حيّ لوثيقة الموسم: أي حفظ من أي عضو يظهر عند الجميع فوراً بلا تحديث للصفحة */
 function watchSeason(){
   if(!fbDb) return;
+  watchFantasyBonus();
   if(SEASON_UNSUB){ try{ SEASON_UNSUB(); }catch(e){} SEASON_UNSUB=null; }
   try{
     SEASON_UNSUB = fbDb.collection("seasons").doc(seasonId()).onSnapshot(snap=>{
@@ -14053,6 +14054,40 @@ document.addEventListener("DOMContentLoaded", ()=>{
     } else if(++tries<40) setTimeout(tick,300);
   }; setTimeout(tick,400);
 })();
+/* ================= بونص الفانتسي في التقييم (منصور 2026-10-11) =================
+   «اللي نسويه بالفانتسي يرتبط بالموقع على طول ويتحدث»: نقاط البونص (3/2/1) التي يعتمدها المحررون لكل مباراة
+   في fantasy/{season}/rounds/{gw}.fixtures[].bonus [{name, club:رمز, pts}] تُقرأ بمستمع حيّ وتدخل التقييم كقاعدة.
+   الدوري فقط (الجولة = جولة الفانتسي). مفتاح المباراة: الجولة|المضيف|الضيف بأسماء أندية الموقع. */
+const FCLUB = {QAD:"القادسية", KUW:"الكويت", ARB:"العربي", KAZ:"كاظمة", SAL:"السالمية", NSR:"النصر",
+               SHB:"الشباب", JAH:"الجهراء", FAH:"الفحيحيل", SAH:"الساحل", TDM:"التضامن", SLB:"الصليبخات"};
+let FBONUS = {};            /* "r|home|away" → {"club|name": pts} */
+let FBONUS_UNSUB = null, FBONUS_SIG = "";
+const bonusName = s => String(s||"").replace(/ـ/g,"").replace(/[إأآ]/g,"ا").replace(/ى/g,"ي").replace(/ة/g,"ه").replace(/\s+/g," ").trim();
+function fantasyBonusOf(m, club, name){
+  if(!m || compOf(m)!=="الدوري") return 0;
+  const t = FBONUS[m.round+"|"+m.home+"|"+m.away]; if(!t) return 0;
+  return +(t[club+"|"+bonusName(name)] || 0);
+}
+function watchFantasyBonus(){
+  if(!fbDb || FBONUS_UNSUB) return;
+  try{
+    FBONUS_UNSUB = fbDb.collection("fantasy").doc(seasonId()).collection("rounds").onSnapshot(q=>{
+      const nx = {};
+      q.forEach(doc=>{ const d=doc.data()||{};
+        (d.fixtures||[]).forEach(fx=>{
+          const h=FCLUB[fx.h], a=FCLUB[fx.a], r=+(fx.gw||doc.id); if(!h || !a || !r || !Array.isArray(fx.bonus) || !fx.bonus.length) return;
+          const t = nx[r+"|"+h+"|"+a] = {};
+          fx.bonus.forEach(b=>{ const c=FCLUB[b.club], pts=+b.pts||0; if(c && b.name && pts>0) t[c+"|"+bonusName(b.name)] = pts; });
+        }); });
+      const sig = JSON.stringify(nx); if(sig===FBONUS_SIG) return;
+      FBONUS_SIG = sig; FBONUS = nx;
+      if(typeof EDIT!=="undefined" && EDIT) return;
+      try{ renderAll(); }catch(e){}
+      try{ const b=$("#mpage"); if(b && !b.hidden && MP && MP.m) renderMatchPage(); }catch(e){}
+    }, ()=>{});
+  }catch(e){}
+}
+
 /* ================= تقييم اللاعبين (2026-09-15) =================
    تقييم لكل لاعب في كل مباراة من 3 إلى 10 يُحسب فقط من إحصاءات الموقع المسجّلة من الإدارة
    (التشكيلة والتبديلات = الدقائق، الأهداف، الصناعة، الأهداف العكسية، الإنذارات والطرد، ركلات الجزاء، النتيجة،
@@ -14074,6 +14109,9 @@ const RATING = {
     /* الحارس: الموقع لا يسجّل التصديات، فخصم الأهداف عليه −0.2 للهدف بحد أقصى −0.6 في المباراة (منصور 2026-09-19) */
     {key:"against", label:"الأهداف المستقبَلة",      fn:c => c.line==="G" ? -Math.min(0.6, c.conceded*0.2) : c.conceded * ({D:-0.15, M:-0.05}[c.line] || 0)},
     {key:"minutes", label:"دقائق اللعب",             fn:c => c.mins>=(c.csLimit||60) ? 0.15 : 0},
+    /* نقاط البونص التي يعتمدها المحررون في الفانتسي (منصور 2026-10-11): تعوّض قلة الإحصاءات المسجّلة.
+       3 → +0.6 · 2 → +0.4 · 1 → +0.2 — تُقرأ حيّاً من fantasy/{season}/rounds/{gw} (FBONUS) */
+    {key:"bonus",   label:"نقاط البونص (الفانتسي)",  fn:c => ({3:0.6, 2:0.4, 1:0.2}[c.bonus] || 0)},
   ]
 };
 function playerLine(club, name){
@@ -14101,7 +14139,8 @@ function ratingCtx(m, club, name){
     yellow: cards.filter(x=>isYellow(x.type) && !isRed(x.type)).length, red,
     penMissed: pens.filter(p=>p.res && p.res!=="سجلت").length,
     conceded: gs.filter(g=>g.cd===club && on(g)).length,
-    teamConceded: ga};
+    teamConceded: ga,
+    bonus: fantasyBonusOf(m, club, name)};
 }
 function playerRating(m, club, name){
   const c=ratingCtx(m, club, name);
