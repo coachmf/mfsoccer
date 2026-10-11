@@ -146,14 +146,13 @@
     });
   }
   /* الدوريات المحلية (منصور 2026-10-11): الدوري الممتاز ودوري الدرجة الأولى، كل واحد بشعاره — نفس شكل البطولات الخارجية.
-     دوري الدرجة الأولى بلا شعار خاص في الموقع → شعار الاتحاد الكويتي (المنظّم) إلى أن يتوفر شعاره الرسمي */
+     دوري الدرجة الأولى بنفس شعار الممتاز (منصور 2026-10-11) */
   function localHTML(){
-    const kfaImg=safe(()=>KFA_INFO.img.logo)||"";
     const row=(attr,img,t)=>`<button type="button" ${attr}><img class="mf-ext-lg" src="${img}" alt="" width="44" height="44" loading="lazy">
         <span class="mf-ext-tx"><b>${t}</b><span class="mf-ext-cl"><small>الترتيب والمباريات</small></span></span></button>`;
     return `<div class="mf-hub-sec"><h3>الدوريات المحلية</h3><div class="mf-ext">
       ${row("data-hub-kpl","assets/hero/kpl-mark.webp","الدوري الكويتي الممتاز")}
-      ${shown("div1")?row("data-hub-div1",kfaImg||"assets/hero/kpl-mark.webp","دوري الدرجة الأولى"):""}
+      ${shown("div1")?row("data-hub-div1","assets/hero/kpl-mark.webp","دوري الدرجة الأولى"):""}
     </div></div>`;
   }
   /* البطولات الخارجية التي تشارك فيها الأندية الكويتية (منصور 2026-10-11): شعار البطولة + شعارات أنديتنا فيها.
