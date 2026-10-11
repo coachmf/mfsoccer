@@ -14,7 +14,7 @@
 
   /* ---------- القاموس الإنجليزي للنصوص الجديدة (يُدمج قبل I18N.init) ---------- */
   const MF_DICT={
-    "كرة القدم الكويتية":"Kuwaiti Football", "الترتيب":"Table", "الإحصائيات":"Stats", "الحكام":"Referees",
+    "كرة القدم الكويتية":"Kuwaiti Football", "الدوريات المحلية":"Domestic leagues", "البطولات الخارجية":"International competitions", "الترتيب والمباريات":"Table & matches", "الترتيب":"Table", "الإحصائيات":"Stats", "الحكام":"Referees",
     "الكؤوس":"Cups", "المنتخب الوطني":"National team", "الاتحاد الكويتي":"Kuwait FA", "كأس الخليج":"Gulf Cup",
     "آخر النتائج":"Latest results", "المحلية":"Domestic", "الخارجية":"International", "جميع المباريات":"All matches", "الدقائق":"Minutes", "أبرز الأرقام":"Top stats", "كل الأرقام":"All stats", "الهجوم":"Attack", "الحراسة والدفاع":"Defence", "الانضباط":"Discipline", "المشاركة":"Playing time", "لا توجد أرقام بعد":"No stats yet", "الفانتسي":"Fantasy", "نظرة عامة":"Overview", "الفرق":"Teams", "الإجمالي":"Total", "الجدول كاملاً":"Full table", "إخفاء":"Show less", "أرقام الموسم":"Season numbers",
     "أرقام لافتة":"Standout numbers", "تابعنا":"Follow us", "إغلاق":"Close", "بحث":"Search",
@@ -71,7 +71,7 @@
   function hubItems(){
     const L=[
       {k:"matches", t:"المباريات", go:()=>nav("matches")},
-      {k:"table",   t:"الترتيب",   go:()=>{ nav("home"); setTimeout(()=>openStandings(true),60); }},
+      {k:"table",   t:"الترتيب",   go:()=>{ nav("home"); toStandings(); }},
       {k:"clubs",   t:"الأندية",   go:()=>nav("clubs")},
       {k:"players", t:"اللاعبون",  go:()=>nav("players")},
       {k:"stats",   t:"الإحصائيات", ok:()=>shown("analysis"), go:()=>nav("stats")},
@@ -127,6 +127,8 @@
       const n=e.target.closest("[data-hub]"); if(n){ const it=hubItems().find(x=>x.k===n.dataset.hub); closeHub(true); if(it) setTimeout(it.go,0); return; }
       const c=e.target.closest("[data-hub-club]"); if(c){ closeHub(true); const k=c.dataset.hubClub; setTimeout(()=>safe(()=>openClub(k)),0); return; }
       const g=e.target.closest("[data-hub-gulf]"); if(g){ closeHub(true); setTimeout(()=>nav("gulf"),0); }
+      /* الدوري الممتاز: جدول الترتيب الكامل (نفس عقدة «الترتيب») */
+      const kp=e.target.closest("[data-hub-kpl]"); if(kp){ closeHub(true); setTimeout(()=>{ const it=hubItems().find(x=>x.k==="table"); if(it) it.go(); },0); return; }
       const d1=e.target.closest("[data-hub-div1]"); if(d1){ closeHub(true); setTimeout(()=>nav("div1"),0); }
       /* البطولات الخارجية: صفحة المباريات على البطولة نفسها (جدول المجموعة ثم المباريات) */
       const ex=e.target.closest("[data-hub-ext]"); if(ex){ const id=ex.dataset.hubExt; closeHub(true);
@@ -142,6 +144,17 @@
         else if(!e.shiftKey && D.activeElement===z){ e.preventDefault(); a.focus(); }
       }
     });
+  }
+  /* الدوريات المحلية (منصور 2026-10-11): الدوري الممتاز ودوري الدرجة الأولى، كل واحد بشعاره — نفس شكل البطولات الخارجية.
+     دوري الدرجة الأولى بلا شعار خاص في الموقع → شعار الاتحاد الكويتي (المنظّم) إلى أن يتوفر شعاره الرسمي */
+  function localHTML(){
+    const kfaImg=safe(()=>KFA_INFO.img.logo)||"";
+    const row=(attr,img,t)=>`<button type="button" ${attr}><img class="mf-ext-lg" src="${img}" alt="" width="44" height="44" loading="lazy">
+        <span class="mf-ext-tx"><b>${t}</b><span class="mf-ext-cl"><small>الترتيب والمباريات</small></span></span></button>`;
+    return `<div class="mf-hub-sec"><h3>الدوريات المحلية</h3><div class="mf-ext">
+      ${row("data-hub-kpl","assets/hero/kpl-mark.webp","الدوري الكويتي الممتاز")}
+      ${shown("div1")?row("data-hub-div1",kfaImg||"assets/hero/kpl-mark.webp","دوري الدرجة الأولى"):""}
+    </div></div>`;
   }
   /* البطولات الخارجية التي تشارك فيها الأندية الكويتية (منصور 2026-10-11): شعار البطولة + شعارات أنديتنا فيها.
      البيانات من EXT_COMPS / EXT_GROUPS في index.html — الترتيب والمواجهات موجودة أصلاً في صفحة المباريات */
@@ -172,7 +185,7 @@
         <button type="button" data-hub-club="${esc(kfa)}">${kfaImg?`<img src="${kfaImg}" alt="" width="40" height="40">`:""}<span>الاتحاد الكويتي</span></button>
         ${shown("gulf")?`<button type="button" data-hub-gulf>${IC.cups}<span>كأس الخليج</span></button>`:""}
       </div></div>`:""}
-      ${shown("div1")?`<div class="mf-hub-sec"><h3>دوري الدرجة الأولى</h3><div class="mf-nt"><button type="button" data-hub-div1>${IC.cups}<span>الترتيب والمباريات</span></button></div></div>`:""}
+      ${localHTML()}
       ${extHTML()}
       ${clubs.length?`<div class="mf-hub-sec"><h3>الأندية</h3><div class="mf-crests">${clubs.map(c=>{ const s=crestSrc(c);
         return `<button type="button" data-hub-club="${esc(c)}" aria-label="${esc(c)}" title="${esc(c)}">${s?`<img src="${s}" alt="" width="40" height="40" loading="lazy">`:`<span>${esc(c.slice(0,2))}</span>`}<small>${esc(c)}</small></button>`; }).join("")}</div></div>`:""}
@@ -262,6 +275,17 @@
     const rows=T.length;
     return `<section class="mf-sec mf-std" id="mfStd">${stdSwitch()}<div class="hm">${hmStandingsHTML(T)}</div>
       ${rows>6?`<button type="button" class="mf-more" data-mf-std aria-expanded="false"><span>الجدول كاملاً</span>${IC.chev}</button>`:""}</section>`;
+  }
+  /* بعد الانتقال للرئيسية: ننتظر ظهور جدول الترتيب ثم نفتحه وننزل له — مهلة 60ms ثابتة كانت تسبق انتقال الصفحة فلا ينزل (2026-10-11) */
+  function toStandings(){
+    /* انتقال الصفحة وتحديث البيانات يعيدان رسم الرئيسية (جدول جديد مغلق، والصفحة للأعلى) — نراقب 7 ثوانٍ:
+       كلما ظهر جدول غير مفتوح نفتحه وننزل له؛ وإذا بقي مفتوحاً لا نلمس التمرير (المستخدم حر يتحرك) */
+    let n=0, last=null; const t=setInterval(()=>{ const s=D.getElementById("mfStd");
+      if(++n>58){ clearInterval(t); return; }
+      if(!s || !s.offsetParent || curView()!=="home") return;
+      if(s===last && s.classList.contains("open")) return;
+      last=s; openStandings(false); s.scrollIntoView({block:"start"}); window.scrollBy(0,-72);   /* عنوان الجدول تحت الشريط العلوي */
+    },120);
   }
   function openStandings(scroll){
     const s=D.getElementById("mfStd"); if(!s) return;
