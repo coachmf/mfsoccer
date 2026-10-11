@@ -37,6 +37,7 @@ const PLAYER_PHOTOS = {
   'SLB|لوكاس شالون': '/assets/players/slb/27',
   'SLB|عبدالله عيسى': '/assets/players/slb/36',
   'SLB|إيليلسون بيبي': '/assets/players/slb/44',
+  'SLB|فهد الهولي': '/assets/players/slb/6',
   'SLB|برونو دومنيغيس': '/assets/players/slb/55',
   'SLB|عبدالعزيز القطان': '/assets/players/slb/77',
   'SLB|عبدالله العوضي': '/assets/players/slb/88',
