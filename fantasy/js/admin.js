@@ -217,9 +217,35 @@ const ADMIN = {
       <div class="row" style="gap:8px;margin-top:12px"><button class="btn danger" onclick="ADMIN.doFinalize()">احتساب وإغلاق</button>
       <button class="btn sec" onclick="UI.closeModal()">إلغاء</button></div>`);
   },
-  async doFinalize(){
+  /* احتساب الجولة تلقائياً (منصور 2026-10-11: «بعد نهاية آخر مباراة بالجولة تفتح التالية»):
+     أي جهاز مدير مفتوح يحتسب الجولة الجارية متى انتهت كل مبارياتها وأُدخل بونصها كاملاً، أو بعد 18 ساعة من آخر انطلاق
+     إن لم يُدخل البونص. مهلة 3 ساعات بعد آخر انطلاق لتصحيحات المحرّرين. قفل 15 دقيقة على الجهاز حتى لا يتكرر. */
+  AUTO_FIN_KEY:'kwf_autofin', _autoFinBusy:false,
+  autoFinalizeReady(st){
+    st=st||DB.state; const gw=st.currentGW;
+    if(!(gw>=(st.rules.scoringFromGW||1))) return {ok:false, why:'before scoring'};
+    const g=DB.gw(gw); if(!g || g.status==='finished') return {ok:false, why:'finished'};
+    const played=st.fixtures.filter(f=>f.gw===gw && f.status!=='P');
+    if(!played.length) return {ok:false, why:'no fixtures'};
+    if(played.some(f=>f.status!=='F' || f.over===false)) return {ok:false, why:'matches left'};
+    const last=Math.max(...played.map(f=>Date.parse(f.date)).filter(n=>!isNaN(n)));
+    const now=Date.now();
+    if(!isFinite(last) || now < last + 3*3600e3) return {ok:false, why:'too soon'};
+    const bonus=played.every(f=>(f.bonus||[]).length>=3);
+    if(!bonus && now < last + 18*3600e3) return {ok:false, why:'waiting bonus'};
+    return {ok:true, gw};
+  },
+  async autoFinalize(){
+    const st=DB.state;
+    if(typeof CLOUD==='undefined' || !CLOUD.admin || !st.fromCloud || this._autoFinBusy) return;
+    const r=this.autoFinalizeReady(st); if(!r.ok) return;
+    try{ const l=+localStorage.getItem(this.AUTO_FIN_KEY)||0; if(Date.now()-l < 15*60e3) return; localStorage.setItem(this.AUTO_FIN_KEY, String(Date.now())); }catch(e){}
+    this._autoFinBusy=true;
+    try{ await this.doFinalize(true); } finally{ this._autoFinBusy=false; }
+  },
+  async doFinalize(auto){
     const st=DB.state, gw=st.currentGW;
-    UI.closeModal();
+    if(!auto) UI.closeModal();
     if(gw < (st.rules.scoringFromGW||1)){ UI.toast(`الاحتساب يبدأ من الجولة ${st.rules.scoringFromGW} — الجولة ${gw} لا تُحتسب`, true); return; }
     const fxs=st.fixtures.filter(f=>f.gw===gw);
     if(!fxs.length){ UI.toast(`الجولة ${gw} بلا جدول بعد — اسحب الجدول من mfsoccer أولاً`, true); return; }
@@ -235,6 +261,8 @@ const ADMIN = {
       const all = await CLOUD.finalizeForAll(st, gw, (team, g)=>TEAM.gwPoints(team, g, st));
       if(!all.ok){ UI.toast(all.err, true); return; }
       agg={avg:all.avg, high:all.high, own:all.own, count:all.count, transfers:all.transfers, ranked:all.ranked, board:all.board};
+      /* احتساب سابق انقطع في منتصفه: الترتيب والمتوسط حُسبا على جزء فقط — إعادة احتساب الجولة للجميع بعد النشر */
+      if(all.alreadyDone) this._needRefin=gw;
       if(all.skipped) UI.toast(`تنبيه: ${all.skipped} فريقاً فيه لاعب غير معروف على هذا الجهاز فلم يُحتسب — أعد تحميل الصفحة ثم «إعادة احتساب»`, true);
     } else if(typeof CLOUD!=='undefined' && CLOUD.ready){
       UI.toast('سجّل دخول المدير في السحابة أولاً — الاحتساب المحلي لا يصل للمشتركين', true); return;
@@ -250,7 +278,8 @@ const ADMIN = {
       if(pub.ok) UI.toast(`نُشرت الجولة ${gw} واحتُسبت لـ${agg.ranked} مشتركاً (متوسط ${agg.avg??'—'} · الأعلى ${agg.high??'—'}) — تغيّر سعر ${res.changes} لاعباً`);
       else UI.toast('احتُسبت على الخادم لكن تعذّر النشر: '+pub.err+' — اضغط «نشر حالة اللعبة» من قسم السحابة', true);
     } else UI.toast(`احتُسبت الجولة ${gw} محلياً — تغيّر سعر ${res.changes} لاعباً`);
-    APP.go('dashboard');
+    if(this._needRefin===gw){ this._needRefin=null; await this.refinalize(gw); }
+    if(auto) APP.render(); else APP.go('dashboard');
   },
 
   /* فريق قادم من مستند مشترك: نكمّل الحقول الناقصة حتى تعمل عليه دوال الاحتساب */

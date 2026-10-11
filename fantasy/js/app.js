@@ -155,6 +155,11 @@ const APP = {
       if(typeof MFSYNC!=='undefined') MFSYNC.autoFixtures(true);
       if(CLOUD.admin && typeof ROSTER!=='undefined') ROSTER.auto();
       if(CLOUD.admin) this.autoOwnership();
+      /* احتساب الجولة وفتح التالية تلقائياً عند اكتمالها (بعد سحب النتائج) — ثم كل 10 دقائق ما دامت اللعبة مفتوحة */
+      if(CLOUD.admin && typeof ADMIN!=='undefined' && ADMIN.autoFinalize && !this._autoFinT){
+        setTimeout(()=>ADMIN.autoFinalize(), 25000);
+        this._autoFinT=setInterval(()=>ADMIN.autoFinalize(), 10*60*1000);
+      }
     });
   },
 

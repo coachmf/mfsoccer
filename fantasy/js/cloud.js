@@ -897,7 +897,7 @@ const CLOUD = {
     return true;
   },
   async finalizeForAll(st, gw, computeFn, opts){
-    this._badPicks=0;
+    this._badPicks=0; this._alreadyDone=0;
     opts=opts||{};                       // {recompute:true} = إعادة احتساب جولة محتسبة بعد تصحيح نتيجة
     if(!this.admin) return {ok:false, err:'الاحتساب والنشر للمدير فقط'};
     if(!st.fromCloud) return {ok:false, err:'قائمة اللاعبين على هذا الجهاز ليست النسخة المنشورة — أعد تحميل الصفحة ثم حاول'};
@@ -933,7 +933,7 @@ const CLOUD = {
       const joined = v.joinedGW || team.joinedGW || 1;
       if(joined > gw){ board.push(this.boardRow(d.id, v)); return; }                                    // اشترك بعد هذه الجولة
       const prev=(v.history||[]).find(h=>h.gw===gw);
-      if(prev && (team.rolledGW||0)>=gw && !opts.recompute){ board.push(this.boardRow(d.id, v)); return; }   // محتسبة ومرحَّلة مسبقاً
+      if(prev && (team.rolledGW||0)>=gw && !opts.recompute){ this._alreadyDone=(this._alreadyDone||0)+1; board.push(this.boardRow(d.id, v)); return; }   // محتسبة ومرحَّلة مسبقاً
       team.gwPicks = team.gwPicks||{};
       /* لقطة تشكيلة غير صالحة (عُدّلت من المتصفح: 15 لاعباً في التشكيلة، كابتن من خارجها، كرت غير معروف…)
          لا تُعتمد — تُبنى من الفريق المقفل على الخادم عند الموعد (منصور 2026-09-30) */
@@ -971,19 +971,20 @@ const CLOUD = {
       }]);
     });
 
-    // الكتابة على دفعات (حد Firestore 500 عملية للدفعة)
+    // الكتابة على دفعات (حد Firestore 500 عملية للدفعة). 2026-10-11: دفعة 400 فريق تستغرق أكثر من 20 ث
+    // (كل فريق بسجل اختياراته) فكانت «تفشل» وهي تُكتب فعلاً — 200 لكل دفعة ومهلة دقيقتين
     let done=0;
-    for(let i=0;i<writes.length;i+=400){
-      const chunk=writes.slice(i,i+400);
+    for(let i=0;i<writes.length;i+=200){
+      const chunk=writes.slice(i,i+200);
       const batch=this.db.batch();
       chunk.forEach(([uid,data])=>batch.set(this.managers().doc(uid), data, {merge:true}));
-      const w = await this.race(batch.commit(), 20000);
+      const w = await this.race(batch.commit(), 120000);
       if(!w.ok) return {ok:false, err:`تعذّر حفظ نتائج المشتركين (${done} من ${writes.length})`, done};
       done += chunk.length;
     }
     const pts=rows.map(r=>r.res.total);
     board.sort((a,b)=>b.total-a.total || a.name.localeCompare(b.name,'ar'));
-    return { ok:true, count, ranked:rows.length, own, transfers, board, skipped,
+    return { ok:true, count, ranked:rows.length, own, transfers, board, skipped, alreadyDone:this._alreadyDone||0,
       avg: pts.length? Math.round(pts.reduce((a,b)=>a+b,0)/pts.length) : null,
       high: pts.length? Math.max(...pts) : null };
   },
