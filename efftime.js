@@ -53,6 +53,19 @@ function calc(d, now){
   now = now==null ? Date.now() : now;
   const out = {ph:{}, dur:0, stop:0, eff:0, n:0, reasons:{}, longest:null, cur:null, open:null, live:false, started:false};
   if(!d) return out;
+  /* رصد يدوي من مصدر خارجي (منصور 2026-10-11): مجاميع الشوطين فقط بلا سجل توقفات —
+     manual:{h1:{eff,dur?}, h2:{…}, dur?, pct?} بالثواني. لا يُستعمل إن وُقّتت الأشواط بالساعة. */
+  const M = d.manual, timed = d.halves && PHS.some(([p])=>d.halves[p] && d.halves[p].s);
+  if(M && !timed){
+    for(const [p] of PHS){ const x = M[p]; if(!x || !(x.eff>0)) continue;
+      const eff = x.eff*1000, dur = x.dur>0 ? x.dur*1000 : 0;
+      out.ph[p] = {dur, stop:dur ? Math.max(0, dur-eff) : 0, eff, n:0, live:false, s:null, e:null};
+      out.eff += eff; }
+    out.dur = M.dur>0 ? M.dur*1000 : Object.values(out.ph).reduce((a,x)=>a+x.dur, 0);
+    out.stop = out.dur ? Math.max(0, out.dur - out.eff) : 0;
+    out.started = out.eff > 0; out.manual = true; out.pct = M.pct>0 ? M.pct : null;
+    return out;
+  }
   const stops = (d.stops||[]).slice().sort((a,b)=>a.s-b.s);
   for(const [p] of PHS){
     const h = d.halves && d.halves[p]; if(!h || !h.s) continue;
@@ -435,11 +448,12 @@ function cardHTML(d, live){
   const c = calc(d); if(!c.started) return "";
   const rs = Object.entries(c.reasons).sort((a,b)=>b[1].t-a[1].t), mx = rs.length ? rs[0][1].t : 1;
   const halves = PHS.filter(([p])=>c.ph[p]).map(([p,t])=>{ const x = c.ph[p];
-    return `<div class="effp-h"><span>${t}${x.live ? `<i class="effp-live">جارٍ</i>` : ""}</span><b dir="ltr">${fmt(x.eff)}</b><small>من <bdi dir="ltr">${fmt(x.dur)}</bdi> · <bdi dir="ltr">${pct(x.eff, x.dur)}%</bdi></small></div>`; }).join("");
+    return `<div class="effp-h"><span>${t}${x.live ? `<i class="effp-live">جارٍ</i>` : ""}</span><b dir="ltr">${fmt(x.eff)}</b>${x.dur ? `<small>من <bdi dir="ltr">${fmt(x.dur)}</bdi> · <bdi dir="ltr">${pct(x.eff, x.dur)}%</bdi></small>` : ""}</div>`; }).join("");
+  const P = c.pct!=null ? c.pct : pct(c.eff, c.dur);
   return `<div class="mp-card effp" data-effp="1">
     <div class="mp-hd"><h3>الوقت الفعلي للعب</h3><span class="mp-sub">${c.live ? "يُحدَّث مباشرة" : "زمن الكرة في اللعب"}</span></div>
-    <div class="effp-top"><b dir="ltr" data-effpc="eff">${fmt(c.eff)}</b><span>من زمن المباراة <span dir="ltr" data-effpc="dur">${fmt(c.dur)}</span></span>
-      <div class="effp-bar"><i style="width:${pct(c.eff, c.dur)}%"></i></div><em data-effpc="pct">${pct(c.eff, c.dur)}%</em></div>
+    <div class="effp-top"><b dir="ltr" data-effpc="eff">${fmt(c.eff)}</b>${c.dur ? `<span>من زمن المباراة <span dir="ltr" data-effpc="dur">${fmt(c.dur)}</span></span>` : ""}
+      ${c.dur || c.pct!=null ? `<div class="effp-bar"><i style="width:${Math.min(100, P)}%"></i></div><em data-effpc="pct">${P}%</em>` : ""}</div>
     <div class="effp-hs">${halves}</div>
     ${rs.length ? `<div class="effp-rh">التوقفات <span>${c.n} توقفاً · <bdi dir="ltr">${fmt(c.stop)}</bdi></span></div>
     <ul class="effp-rs">${rs.map(([k,v])=>`<li><span class="n">${H(RN[k]||k)}</span><span class="c">${v.n}</span><span class="b"><i style="width:${Math.max(4, Math.round(v.t/mx*100))}%"></i></span><span class="t" dir="ltr">${fmt(v.t)}</span></li>`).join("")}</ul>` : ""}
