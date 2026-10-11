@@ -2207,8 +2207,8 @@ main{padding-bottom:48px}
 <!-- اللغة الإنجليزية والوضع الداكن -->
 <link rel="stylesheet" href="site-theme.css?v=6">
 <script src="fantasy/js/i18n-more.js?v=14" defer></script>
-<script src="site-i18n.js?v=26" defer></script>
-<script src="i18n-data.js?v=7" defer></script>   <!-- إضافات الإنجليزية + البرتغالية (البرازيل/البرتغال) + الإسبانية + الصربية/الكرواتية -->
+<script src="site-i18n.js?v=28" defer></script>
+<script src="i18n-data.js?v=9" defer></script>   <!-- إضافات الإنجليزية + البرتغالية (البرازيل/البرتغال) + الإسبانية + الصربية/الكرواتية -->
 <script src="i18n-langs.js?v=7" defer></script>   <!-- قائمة اللغات بالأعلام + البرتغالية والإسبانية والصربية/الكرواتية فوق محرك الإنجليزية -->
 <!-- غرفة التحكم (live.js / live-admin.js / live.css) مخفية منذ 2026-10-10 بطلب منصور — الملفات باقية؛ للإرجاع أعد السطرين:
      <link rel="stylesheet" href="live.css?v=9"> و <script src="live.js?v=21" defer></script> -->
@@ -4598,6 +4598,8 @@ function fbInit(){
       if(!u) FAN = null;
       FANAUTH = true;
       if($("#v-predict") && $("#v-predict").classList.contains("on")) renderPredict();
+      /* صفحة مباراة مفتوحة: زر «صوّت الحين/غيّر صوتك» وصندوق الدخول يتبعان حالة الدخول (2026-10-11) */
+      try{ if(MP.m && MP.tab==="details" && !MP_VOTE) mpRerenderKeep(); }catch(e){}
       isOwner = !!(u && u.uid===ADMIN_UID);
       MYROLE = ""; STAFF = {};
       if(u){
@@ -11574,6 +11576,8 @@ html[data-theme="light"] .hm{--bg-card:#FFFFFF;--border-card:#E2E8F0;--text-prim
 .motm-pct{display:flex;flex-direction:column;align-items:center;padding:4px 12px;border-radius:8px;background:rgba(233,185,73,.16)}
 .motm-pct b{font-family:var(--display);font-size:1.1rem;color:#f2c94c;line-height:1.1}
 .motm-pct small{font-size:.62rem;color:var(--text-muted,#8fa6c4)}
+.motm-tot{display:block;margin-top:6px;font-size:.66rem;color:var(--text-muted,#8fa6c4)}
+.motm-tie{display:block;margin-top:2px;font-size:.66rem;font-weight:700;color:#f2c94c}
 .motm-empty{flex:1;display:grid;place-items:center;text-align:center;font-size:.74rem;color:var(--text-muted,#8fa6c4);padding:18px 6px}
 .motm-lists{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:8px}
 .mv-btn{margin-top:4px;border:1px solid rgba(233,185,73,.55);background:rgba(233,185,73,.14);color:#f2c94c;font:700 .74rem/1 var(--body,inherit);
@@ -11641,6 +11645,8 @@ html[data-theme="light"] .hm{--bg-card:#FFFFFF;--border-card:#E2E8F0;--text-prim
 .rtg.big{min-width:52px;height:34px;font-size:1.15rem;border-radius:7px}
 .rtg.r8{background:#1f9ed6}.rtg.r7{background:#1fa64a}.rtg.r65{background:#79b92f}.rtg.r6{background:#d9a318}.rtg.r5{background:#e0612b}
 .rt-list{display:flex;flex-direction:column}
+/* عنوان صغير لكل قائمة تحت «أفضل لاعب» — قائمة الأصوات كانت تبدو تكملة للتقييمات (2026-10-11) */
+.rt-cap{display:block;margin:10px 0 2px;font-size:.7rem;font-weight:700;color:var(--text-muted,#8fa6c4)}
 .rt-row{display:flex;align-items:center;gap:10px;padding:8px 2px;border-top:1px solid var(--border-card,rgba(143,166,196,.14));cursor:pointer}
 .rt-row:first-child{border-top:0}
 .rt-i{width:18px;text-align:center;font-size:.75rem;color:var(--text-muted,var(--slate));font-weight:700}
@@ -14109,6 +14115,8 @@ const tavgHTML = v => v==null ? "" : `<span class="rtg tavg ${ratingCls(v)}">${v
 /* ===== تصويت «أفضل لاعب» لكل مباراة (منصور 2026-10-11: «بعد المباره يفتح تصويت للمباره نفسها منو افضل لاعب») =====
    الوثائق: motm/{mid}_{uid} = {uid, mid, name, n, c, ts}. يفتح بعد صافرة النهاية ولمدة 4 أيام من الانطلاق. */
 const MOTMV = {};          /* mid ← مصفوفة الأصوات (null = جارٍ التحميل) */
+const MOTMT = {};          /* mid ← {at: وقت آخر تحميل ناجح، fail: فشل آخر محاولة، busy} — للتحديث والإعادة (2026-10-11) */
+const MOTM_FRESH = 60*1000, MOTM_RETRY = 15*1000;
 let MP_VOTE = false;       /* قائمة التصويت مفتوحة في صفحة المباراة */
 const motmId = m => [compOf(m), m.round, m.home, m.away].join("|").replace(/\//g, "-");
 function motmOpen(m){
@@ -14116,16 +14124,39 @@ function motmOpen(m){
   const k=kickoffTS(m);
   return k===null || Date.now() < k + 4*24*60*60*1000;
 }
+/* تحميل أصوات المباراة. أول مرة يُظهر «جارٍ التحميل»؛ بعدها يحدّث في الخلفية مع إبقاء الأرقام الحالية.
+   (2026-10-11) كان: يقارن MP.m===m فلا يعيد الرسم إذا تجدّدت بيانات الموسم (كائن مباراة جديد) فيعلق على «جارٍ التحميل»،
+   ولا يحدّث الأصوات أبداً بعد أول تحميل، والفشل مرة واحدة يعرض «كن أول من يصوّت» بلا إعادة محاولة. */
 async function loadMotmVotes(m){
-  const mid=motmId(m);
+  const mid=motmId(m), st=MOTMT[mid]=MOTMT[mid]||{};
   if(!fbDb){ MOTMV[mid]=[]; return; }
-  MOTMV[mid]=null;
+  if(st.busy) return;
+  st.busy=true;
+  if(!Array.isArray(MOTMV[mid])) MOTMV[mid]=null;
   try{
     const q=fbDb.collection("motm").where("mid","==",mid).get();
     const s=await Promise.race([q, new Promise((_,rej)=>setTimeout(()=>rej(new Error("timeout")),12000))]);
-    MOTMV[mid]=s.docs.map(d=>d.data());
-  }catch(e){ MOTMV[mid]=[]; }
-  if(MP.m===m && MP.tab==="details") renderMatchPage();
+    const got=s.docs.map(d=>d.data());
+    /* صوت المستخدم الذي حفظه للتو قد لا يظهر بعد في الاستعلام — نبقيه */
+    const mine=FAN && (MOTMV[mid]||[]).find(v=>v.uid===FAN.uid);
+    MOTMV[mid]= mine && !got.some(v=>v.uid===mine.uid) ? got.concat([mine]) : (mine ? got.map(v=>v.uid===mine.uid && (v.ts||"")<(mine.ts||"") ? mine : v) : got);
+    st.at=Date.now(); st.fail=0;
+  }catch(e){ if(!Array.isArray(MOTMV[mid])) MOTMV[mid]=[]; st.fail=Date.now(); }
+  st.busy=false;
+  if(MP.m && motmId(MP.m)===mid && MP.tab==="details" && !MP_VOTE) mpRerenderKeep();
+}
+/* إعادة رسم صفحة المباراة مع إبقاء موضع التمرير — التحديث في الخلفية كان يرجع الصفحة لأولها */
+function mpRerenderKeep(){
+  const box=$("#mpage"); if(!box || box.hidden) return;
+  const sh=box.querySelector(".mp-sheet"), y=sh?sh.scrollTop:0;
+  renderMatchPage();
+  const s2=box.querySelector(".mp-sheet"); if(s2) s2.scrollTop=y;
+}
+/* هل نحتاج تحميلاً جديداً؟ لم يُحمَّل بعد، أو مضت دقيقة (أصوات الآخرين)، أو فشل قبل 15 ثانية */
+function motmStale(m){
+  const st=MOTMT[motmId(m)]; if(!st) return true; if(st.busy) return false;
+  if(st.fail) return Date.now()-st.fail > MOTM_RETRY;
+  return !st.at || Date.now()-st.at > MOTM_FRESH;
 }
 async function saveMotmVote(m, n, c){
   if(!FAN || !fbDb){ toast("سجّل دخولك أولاً","err"); return false; }
@@ -14159,12 +14190,14 @@ function motmVoteHTML(m){
 }
 /* اختيار الجمهور: تصويت المباراة نفسها؛ المباريات القديمة بلا أصوات مباراة تعرض «أفضل لاعب» من تشكيلة الجمهور للجولة */
 function mpFanPick(m){
-  const mid=motmId(m), mv=MOTMV[mid];
-  if(mv===undefined && !isGulfMatch(m)){ loadMotmVotes(m); }
+  const mid=motmId(m);
+  if(!isGulfMatch(m) && motmStale(m)) loadMotmVotes(m);
+  const mv=MOTMV[mid];
   if(mv && (mv.length || motmOpen(m))){   /* أثناء التصويت نعرض أصوات المباراة فقط */
-    const cnt={}; mv.forEach(v=>{ const k=v.n+"|"+v.c; cnt[k]=(cnt[k]||0)+1; });
-    const list=Object.entries(cnt).map(([key,v])=>({n:key.split("|")[0], c:key.split("|")[1], v}))
-      .filter(x=>x.c===m.home || x.c===m.away).sort((a,b)=>b.v-a.v);
+    /* التعادل: يتقدّم من وصل لهذا العدد أولاً (وقت آخر صوت له أقدم) — كان الترتيب عشوائياً */
+    const cnt={}, last={}; mv.forEach(v=>{ const k=v.n+"|"+v.c; cnt[k]=(cnt[k]||0)+1; if(!last[k] || (v.ts||"")>last[k]) last[k]=v.ts||""; });
+    const list=Object.entries(cnt).map(([key,v])=>({n:key.split("|")[0], c:key.split("|")[1], v, t:last[key]}))
+      .filter(x=>x.c===m.home || x.c===m.away).sort((a,b)=>(b.v-a.v) || (a.t<b.t?-1:a.t>b.t?1:0));
     const total=list.reduce((a,x)=>a+x.v,0);
     list.forEach(x=>x.pct=total?Math.round(x.v/total*100):0);
     return {loading:false, list, total, src:"match"};
@@ -14199,7 +14232,10 @@ function mpMotmHTML(m){
   const man = G ? (m.motm && m.motm.n ? m.motm : raw[0]) : null;
   const top=man ? {n:man.n, c:man.c, r:null} : all[0], fan=mpFanPick(m), f0=fan.list[0];
   const fanCol = fan.loading ? `<div class="motm-empty">جارٍ تحميل الأصوات…</div>`
-    : f0 ? motmPlayerHTML(f0.n, f0.c, `<span class="motm-pct"><b>${f0.pct}%</b><small>${nVotes(f0.v)}</small></span>`)
+    : f0 ? motmPlayerHTML(f0.n, f0.c, `<span class="motm-pct"><b>${f0.pct}%</b><small>${nVotes(f0.v)}</small></span>`
+        /* عدد المصوّتين الكلي + التعادل على الصدارة — «33% صوتان» وحدها كانت تُفهم غلط (منصور 2026-10-11) */
+        + `<small class="motm-tot">${`من أصل ${nVoters(fan.total)}`}</small>`
+        + (fan.list[1] && fan.list[1].v===f0.v ? `<small class="motm-tie">${`بالتساوي مع ${esc(fan.list[1].n)}`}</small>` : ""))
     : `<div class="motm-empty">${motmOpen(m)?"كن أول من يصوّت":"لا أصوات لأفضل لاعب من هذه المباراة بعد"}</div>`;
   const vOpen=motmOpen(m), mine=FAN && (MOTMV[motmId(m)]||[]).find(v=>v.uid===FAN.uid);
   const voteBtn = vOpen ? `<button type="button" class="mv-btn${MP_VOTE?" on":""}" data-mv-toggle>${MP_VOTE?"إغلاق التصويت":mine?"غيّر صوتك":"صوّت الحين"}</button>` : "";
@@ -14215,12 +14251,12 @@ function mpMotmHTML(m){
     </div>
     ${vOpen && MP_VOTE ? motmVoteHTML(m) : ""}
     <div class="motm-lists">
-      <div class="rt-list">${all.slice(1,4).map(x=>ratingRowHTML({n:x.n,c:x.c,v:x.r.v})).join("")}</div>
-      <div class="rt-list fan">${fanRows}</div>
+      <div class="rt-list">${all.length>1?`<span class="rt-cap">تقييم mfsoccer</span>`:""}${all.slice(1,4).map(x=>ratingRowHTML({n:x.n,c:x.c,v:x.r.v})).join("")}</div>
+      <div class="rt-list fan">${fanRows?`<span class="rt-cap">أصوات الجمهور</span>`:""}${fanRows}</div>
     </div>
     ${(hA!=null||aA!=null)?`<div class="motm-avg"><span>متوسط تقييم الفريقين</span>
       <div><b>${crest(m.home)}${esc(m.home)}</b>${tavgHTML(hA)}</div><div><b>${crest(m.away)}${esc(m.away)}</b>${tavgHTML(aA)}</div></div>`:""}
-    <p class="rt-note">${G?"":`تقييم mfsoccer محسوب من إحصاءات الموقع: ${RATING.rules.map(r=>r.label).join("، ")}. `}${fan.src==="tots"?`اختيار الجمهور من تصويت «أفضل لاعب» في تشكيلة الجمهور للجولة ${m.round}.`:`اختيار الجمهور من تصويت الجمهور لأفضل لاعب في المباراة${vOpen?" — التصويت مفتوح 4 أيام بعد المباراة":""}.`}</p></div>`;
+    <p class="rt-note">${G?"":`<span>تقييم mfsoccer محسوب من إحصاءات الموقع: ${RATING.rules.map(r=>r.label).join("، ")}.</span> `}<span>${fan.src==="tots"?`اختيار الجمهور من تصويت «أفضل لاعب» في تشكيلة الجمهور للجولة ${m.round}.`:`اختيار الجمهور من تصويت الجمهور لأفضل لاعب في المباراة${vOpen?" — التصويت مفتوح 4 أيام بعد المباراة":""}.`}</span></p></div>`;
 }
 function mpRatingsHTML(m){
   const H=matchRatings(m,m.home), A=matchRatings(m,m.away);
