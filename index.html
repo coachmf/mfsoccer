@@ -1024,6 +1024,9 @@ table.lb tr.me{background:rgba(95,178,232,.09)}
 .mystat div{background:var(--navy-800);border:1px solid rgba(143,166,196,.18);border-radius:12px;padding:10px 8px;text-align:center}
 .mystat b{display:block;font-family:var(--display);font-size:1.25rem;color:#fff;font-variant-numeric:tabular-nums}
 .mystat small{font-size:.66rem;color:var(--slate)}
+/* الوضع النهاري: أرقام بطاقات التوقعات بالأسود (منصور 2026-10-12 — كانت بيضاء على خلفية فاتحة) */
+html:not([data-theme="dark"]) .mystat b{color:#000}
+html:not([data-theme="dark"]) .mystat small{color:#3A4556}
 table.lb tr.gap td{text-align:center;color:var(--slate);padding:4px}
 table.lb tr.pr{cursor:pointer}
 table.lb tr.pr td:nth-child(2):after{content:" ▾";color:var(--slate);font-size:.7em}
