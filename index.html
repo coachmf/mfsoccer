@@ -13184,7 +13184,7 @@ function playerProfileHTML(D){
   const played = D.apps>0 || D.goals>0 || D.assists>0 || D.y>0 || D.rd>0;
   /* البطولات الخارجية التي شارك فيها (ext.js) + «الإجمالي» لكل البطولات — كل واحدة بأرقامها وتقييمها (منصور 2026-10-12) */
   const PK = (typeof PROF_COMP==="string" && PROF_COMP) || COMP;
-  const XO = (()=>{ try{ const L = window.EXT && EXT.profileComps ? EXT.profileComps(D.name, D.club) : []; return L.length ? [...L, {key:"*", label:"إجمالي كل البطولات"}] : []; }catch(e){ return []; } })();
+  const XO = (()=>{ try{ const L = window.EXT && EXT.profileComps ? EXT.profileComps(D.name, D.club) : []; return L; }catch(e){ return []; } })();
   const badge=(n,cls,inner)=> n?`<span class="pp-b ${cls}">${inner}${n>1?`<em>${n}</em>`:""}</span>`:"";
   const logHTML = D.log.length ? `<div class="pprof-log"><h4>مباراة بمباراة</h4><div class="plog">${D.log.map(l=>`
     <div class="plog-r">
@@ -13207,10 +13207,10 @@ function playerProfileHTML(D){
       </div>
     </div>
     <div class="segbar compbar pprof-cbar" role="tablist" aria-label="المسابقة">
-      ${["الكل",...COMPS].map(c=>`<button type="button" class="seg" role="tab" data-pcomp="${esc(c)}" aria-pressed="${c===PK}">${esc(compLabel(c))}</button>`).join("")}${XO.map(o=>`<button type="button" class="seg pp-xc" role="tab" data-pcomp="${esc(o.key)}" aria-pressed="${o.key===PK}">${esc(o.label)}</button>`).join("")}</div>
+      <button type="button" class="seg" role="tab" data-pcomp="*" aria-pressed="${PK==="*"}">إجمالي كل البطولات</button>${COMPS.map(c=>`<button type="button" class="seg" role="tab" data-pcomp="${esc(c)}" aria-pressed="${c===PK}">${esc(compLabel(c))}</button>`).join("")}${XO.map(o=>`<button type="button" class="seg pp-xc" role="tab" data-pcomp="${esc(o.key)}" aria-pressed="${o.key===PK}">${esc(o.label)}</button>`).join("")}</div>
     <div class="pprof-comp">${esc(SEASON)}</div>   <!-- اسم المسابقة ظاهر في الشريحة المختارة فوقه (منصور 2026-09-16) -->
     ${D.former&&D.former.length?`<p class="pprof-prev">شارك هذا الموسم أيضاً مع ${D.former.map(c=>esc(c)).join(" و")}</p>`:""}
-    ${played ? `<div class="pprof-stats">${cards.filter(Boolean).join("")}</div>` : `<p class="pprof-empty">لم تُرصد مشاركة لهذا اللاعب في ${esc((XO.find(o=>o.key===PK)||{}).label || compLabel(COMP||"الدوري"))} بعد.</p>`}
+    ${played ? `<div class="pprof-stats">${cards.filter(Boolean).join("")}</div>` : `<p class="pprof-empty">لم تُرصد مشاركة لهذا اللاعب في ${esc(PK==="*" ? "أي بطولة" : ((XO.find(o=>o.key===PK)||{}).label || compLabel(PK||"الدوري")))} بعد.</p>`}
     ${logHTML}
   </div>`;
 }
@@ -13250,17 +13250,18 @@ function profRun(k, fn){
   const x=/^x:(.+)$/.exec(k||""), X=window.EXT;
   if(k==="*" && X && X.withAll) return X.withAll(fn);
   if(x && X && X.withExt && X.compName && X.compName(x[1])) return X.withExt(fn, X.compName(x[1]));
-  if(k==="*" || x){ PROF_COMP=COMP; k=COMP; }
+  if(k==="*") return withComp("الكل", fn);   /* بلا ext.js: الإجمالي = كل البطولات المحلية */
+  if(x){ PROF_COMP=COMP; k=COMP; }
   return withComp(k, fn);
 }
 function openPlayer(name, club, opts){
   name=String(name||"").trim(); if(!name) return;
   club=String(club||"").trim() || clubOfPlayer(name);
   const box=$("#pprof"); if(!box) return;
-  if(!(opts&&opts.keepComp)) PROF_COMP=COMP;
+  if(!(opts&&opts.keepComp)) PROF_COMP="*";   /* منصور 2026-10-12: الملف يفتح على «إجمالي كل البطولات» أولاً */
   box.innerHTML=profRun(PROF_COMP, ()=>playerProfileHTML(playerProfileData(name, club)));
   { const bar=box.querySelector(".pprof-cbar"), on=bar&&bar.querySelector('[aria-pressed="true"]');   /* الشريحة المختارة ظاهرة (البطولات الخارجية و«الإجمالي» في آخر الشريط) */
-    if(bar&&on&&PROF_COMP!==COMP) bar.scrollLeft=on.offsetLeft-(bar.clientWidth-on.offsetWidth)/2; }
+    if(bar&&on&&PROF_COMP!=="*") bar.scrollLeft=on.offsetLeft-(bar.clientWidth-on.offsetWidth)/2; }
   box.querySelectorAll("[data-pcomp]").forEach(b=>b.onclick=()=>{
     PROF_COMP=b.dataset.pcomp; const sh=box.querySelector(".pprof-sheet"), top=sh?sh.scrollTop:0;
     openPlayer(name, club, {noHistory:true, keepComp:true});
