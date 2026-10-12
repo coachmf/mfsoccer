@@ -9,7 +9,7 @@
 
    عند كل نشر: ارفع رقم VER فتُبنى ذاكرة جديدة وتُحذف القديمة.
    ========================================================= */
-const VER   = 'mf-2026-10-12-468-pred-tiles-light';
+const VER   = 'mf-2026-10-12-469-ext-profile';
 const SHELL = 'shell-' + VER;
 const RUN   = 'run-'   + VER;
 

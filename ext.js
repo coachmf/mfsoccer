@@ -188,6 +188,50 @@ function withExt(fn, comp){
   }
 }
 X.withExt = withExt;
+X.compName = id => cOf(id) ? cName(id) : null;
+
+/* ───────────── ملف اللاعب (منصور 2026-10-12): كل بطولة خارجية قسم بأرقامه وتقييمه، و«الإجمالي» لكل البطولات ─────────────
+   القراءة فقط: لا شيء يُكتب، ولا يمسّ الدوري — التقييم في البطولة يُحسب داخل withExt(fn, البطولة) من مبارياتها وحدها،
+   و«الإجمالي» داخل withAll من الدوري والكؤوس المحلية والبطولات الخارجية معاً، ثم تعود كل المتغيّرات كما كانت. */
+/* البطولات الخارجية التي شارك فيها لاعب من أنديتنا (بالاسم والنادي) */
+X.profileComps = (name, club) => {
+  if(!DATA || !name || !ours().includes(club)) return [];
+  return CX.filter(c=>{ const comp = cName(c.id), mine = x => x.comp===comp;
+    return DATA.lineups.some(x=>mine(x) && x.club===club && x.p===name) || DATA.subs.some(x=>mine(x) && x.club===club && x.in===name)
+        || DATA.goals.some(g=>mine(g) && g.sc===club && (g.p===name || g.a===name)) || DATA.cards.some(x=>mine(x) && x.club===club && x.p===name); })
+    .map(c=>({key:"x:"+c.id, label:cName(c.id)}));
+};
+/* «الإجمالي»: الدوري والكؤوس المحلية + البطولات الخارجية في سياق واحد للقراءة */
+function withAll(fn){
+  if(!DATA) DATA = normalize(null);
+  if(depth) return fn();
+  ours();
+  const saved = GLOBALS();
+  depth++;
+  if(typeof PASS_MEMO==="object" && PASS_MEMO) PASS_MEMO.m = null;
+  try{
+    const L0 = saved.ALL || {}, cat = k => [...(L0[k]||[]), ...(DATA[k]||[])];
+    const A = Object.assign({}, L0, {updated:"all|"+(L0.updated||"")+"|"+(DATA.updated||""),
+      matches:cat("matches"), goals:cat("goals"), cards:cat("cards"), pens:cat("pens"), lineups:cat("lineups"), subs:cat("subs"), shapes:cat("shapes"), mev:cat("mev")});
+    const league = new Set(saved.CLUBS||[]), opp = opponents().filter(c=>!league.has(c));
+    ALL = A; COMP = "الكل";
+    SQUADS = Object.assign({}, saved.SQUADS); opp.forEach(c=>{ SQUADS[c] = DATA.squads[c] || []; });
+    CLUBS = [...(saved.CLUBS||[]), ...opp];
+    const L = Object.assign({}, saved.LOGOS); opp.forEach(c=>{ const s = oppCrest(c); if(s) L[c] = s; }); LOGOS = L;
+    photoCut = (name, club) => { if(!name) return null; if(league.has(club)) return saved.pc(name, club);
+      const e = (DATA.squads[club]||[]).find(x=>x && x.n===name); return (e && e.f) || null; };
+    natFlag = (name, club, cls) => league.has(club) ? saved.nf(name, club, cls) : "";
+    window.CLUB_COLORS = Object.assign({}, saved.cc||{}, OPP_COLORS);
+    MATCHES = A.matches.slice(); GOALS = A.goals.slice(); PENS = A.pens.slice(); CARDS = A.cards.slice();
+    return fn();
+  } finally {
+    ({ALL, SQUADS, CLUBS, LOGOS, COMP, MATCHES, GOALS, PENS, CARDS, LSCALE} = saved);
+    photoCut = saved.pc; natFlag = saved.nf; window.CLUB_COLORS = saved.cc;
+    if(typeof PASS_MEMO==="object" && PASS_MEMO) PASS_MEMO.m = null;
+    depth--;
+  }
+}
+X.withAll = withAll;
 X.inCtx = () => depth > 0;
 X.isKO = m => { const c = cOfName(m && m.comp); return !!(c && +m.round > c.g); };
 
