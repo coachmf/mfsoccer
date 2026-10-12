@@ -496,8 +496,15 @@ const CLOUD = {
       created: new Date().toISOString(),
       team: null, history: [], total: 0, lastGW: 0
     };
-    const r = await this.race(this.managers().doc(uid).set(doc, {merge:true}));
-    return r.ok === true ? doc : null;
+    /* إنشاء فقط: إن وُجد الملف (قراءة سابقة فشلت أو سباق) يُعاد كما هو — كان set+merge يصفّر history/total لمشترك قائم
+       فضاعت نقاط الجولة 4 لمشتركَين (2026-10-12) */
+    const ref = this.managers().doc(uid);
+    const r = await this.race(this.db.runTransaction(async tx => {
+      const s = await tx.get(ref);
+      if(s.exists) return s.data();
+      tx.set(ref, doc); return doc;
+    }));
+    return r.ok === true ? (r.v || doc) : null;
   },
 
   /* ملف المشترك عبر الخادم (netlify/functions/fantasy-me.js) — HTTPS عادي لا قناة Firestore: يقرأ الملف، وإن لم يوجد

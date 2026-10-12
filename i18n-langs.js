@@ -26,7 +26,7 @@
     {id:'pt-PT', label:'Português (Portugal)', flag:'pt', short:'PT'},
     {id:'es',    label:'Español',              flag:'es', short:'ES'},
     {id:'fr',    label:'Français',             flag:'fr', short:'FR'},
-    {id:'sh',    label:'BCMS',                 flag:null, short:'BCMS'},    /* البوسنية/الكرواتية/الجبل الأسود/الصربية: لغة واحدة بلا علم خاص بها */
+    {id:'sh',    label:'BCMS',                 flag:['ba','hr','me','rs'], short:'BCMS'},    /* البوسنية/الكرواتية/الجبل الأسود/الصربية: لغة واحدة — أعلام الدول الأربع (منصور 2026-10-12) */
   ];
   /* اللغة ← مفتاح قاموسها في I18N_PT / I18N_PT_AR */
   const VAR = {'pt-BR':'BR', 'pt-PT':'PT', 'es':'ES', 'fr':'FR', 'sh':'SH'};
@@ -197,7 +197,11 @@
 
   /* ---------- الاتجاه وزر اللغة ---------- */
   /* لغة بلا علم (الصربية/الكرواتية): شارة نص بنفس مقاس العلم */
-  const flagImg = (c, w, short) => !c ? `<span style="display:inline-flex;align-items:center;justify-content:center;flex:none;width:${w}px;height:${Math.round(w * .75)}px;border-radius:2px;background:#e7d093;color:#0e1730;font:800 ${Math.max(7, Math.round(w * .3))}px/1 system-ui,sans-serif;letter-spacing:-.02em">${short || ''}</span>` : `<img src="https://flagcdn.com/w40/${c}.png" srcset="https://flagcdn.com/w80/${c}.png 2x" width="${w}" height="${Math.round(w * .75)}" alt="" style="border-radius:2px;object-fit:cover;flex:none;display:block">`;
+  /* علم واحد، أو عدة أعلام (BCMS): في القائمة متتالية بينها «/»، وفي الزر الصغير شبكة 2×2 */
+  const flagMulti = (cs, w) => w <= 20
+    ? `<span style="display:inline-grid;grid-template-columns:1fr 1fr;gap:1px;flex:none;width:${w}px;height:${Math.round(w * .75)}px;border-radius:2px;overflow:hidden">${cs.map(c => `<img src="https://flagcdn.com/w20/${c}.png" alt="" style="width:100%;height:100%;object-fit:cover;display:block">`).join('')}</span>`
+    : `<span style="display:inline-flex;align-items:center;gap:2px;flex:none">${cs.map(c => `<img src="https://flagcdn.com/w40/${c}.png" srcset="https://flagcdn.com/w80/${c}.png 2x" width="${Math.round(w * .75)}" height="${Math.round(w * .5)}" alt="" style="border-radius:2px;object-fit:cover;display:block">`).join('<span style="opacity:.5;font-size:11px;line-height:1">/</span>')}</span>`;
+  const flagImg = (c, w, short) => Array.isArray(c) ? flagMulti(c, w) : !c ? `<span style="display:inline-flex;align-items:center;justify-content:center;flex:none;width:${w}px;height:${Math.round(w * .75)}px;border-radius:2px;background:#e7d093;color:#0e1730;font:800 ${Math.max(7, Math.round(w * .3))}px/1 system-ui,sans-serif;letter-spacing:-.02em">${short || ''}</span>` : `<img src="https://flagcdn.com/w40/${c}.png" srcset="https://flagcdn.com/w80/${c}.png 2x" width="${w}" height="${Math.round(w * .75)}" alt="" style="border-radius:2px;object-fit:cover;flex:none;display:block">`;
   I18N.cur = function(){ const l = this.lang(); return LANGS.find(x => x.id === l) || LANGS[0]; };
   /* محتوى الزر: علم اللغة الحالية */
   I18N.btnHTML = function(){ const c = this.cur(); return `<span style="display:inline-flex;align-items:center;justify-content:center;line-height:1">${flagImg(c.flag, 20, c.short)}</span>`; };
