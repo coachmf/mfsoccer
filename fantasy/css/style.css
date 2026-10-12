@@ -1693,3 +1693,8 @@ html.mff .pts-slot .sub.in,html.mff .pts-slot .sub.out{color:#fff}
 .chips-strip .cs-t.on span{opacity:1;color:var(--accent);font-weight:800}
 .chips-strip .cs-t.free{opacity:.6}
 html.mff:not([data-theme="dark"]) .chips-strip .cs-t.used span{color:#8B6C3C}
+/* بطاقة الكرت في «فريقي»: المتبقي وجولة الاستعمال (2026-10-12) */
+.chip-card .cs{font-size:.6rem;font-weight:700;opacity:.7;white-space:nowrap;line-height:1.2}
+.chip-card.spent .cs{opacity:1;color:#E7D093;font-weight:800}
+.chip-card.on .cs{opacity:1;color:var(--accent);font-weight:800}
+html.mff:not([data-theme="dark"]) .chip-card.spent .cs{color:#8B6C3C}

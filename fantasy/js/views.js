@@ -342,9 +342,13 @@ const VIEWS = {
       const used=team.usedChips[key]||0;
       const active=team.activeChip===key;
       const disabled= locked || late || (used>=c.uses && !active) || (team.activeChip && !active);   /* المنضم للجولة التالية: الكروت تفتح معها */
-      return `<div class="chip-card ${active?'on':''}" title="${esc(c.desc)}">
+      /* كم باقي وجولة الاستعمال (منصور 2026-10-12): المستهلك يبين جولته من السجل، والمتعدد (الوايلد كارد) «متبقي X من Y» */
+      const left=Math.max(0, c.uses-used), gwsUsed=(team.history||[]).filter(h=>h.chip===key).map(h=>h.gw);
+      const cs= active? 'مفعّل هذي الجولة' : left===0? (gwsUsed.length? 'الجولة '+gwsUsed.join(' و ') : 'مستخدم') : c.uses>1? `متبقي ${left} من ${c.uses}` : 'متاح';
+      return `<div class="chip-card ${active?'on':''}${left===0&&!active?' spent':''}" title="${esc(c.desc)}">
         <div class="ci">${UI.icon(CHIP_IC[key]||'spark',22)}</div>
         <div class="cl">${esc(c.label)}</div>
+        <div class="cs">${cs}</div>
         <button class="cp" ${disabled?'disabled':''} onclick="VIEWS.toggleChip('${key}')">${active?'إلغاء':used>=c.uses?'مستخدم':'تفعيل'}</button>
       </div>`;
     };
