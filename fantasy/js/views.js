@@ -1240,6 +1240,8 @@ const VIEWS = {
     // مع نقاط محتسبة: بطاقات صفحة النقاط (الضغط يفتح تفصيل النقاط) بدل بطاقة العرض العادية
     const info = (res && typeof this.pointsSlotInfo==='function') ? this.pointsSlotInfo(res, picks, showGw) : null;
     const opt = info ? {view:true, pts, slot:pid=>this.pointsSlot(pid, info[pid], showGw), coachPts:res.coach||null, gw:showGw} : {view:true, pts};
+    /* التبديل التلقائي: الملعب يعرض التشكيلة بعد التبديل كما احتُسبت (الداخل في الملعب والخارج في الدكة) مثل صفحة نقاطي — منصور 2026-10-12 */
+    const dv = res ? {...vt, xi:res.rows.filter(r=>!r.bench).map(r=>r.pid), bench:res.rows.filter(r=>r.bench).map(r=>r.pid)} : vt;
     let k=0;
     this.needBoard();
     const gi2=mGws.indexOf(showGw), pGw=mGws[gi2-1], nGw=mGws[gi2+1];
@@ -1259,11 +1261,11 @@ const VIEWS = {
       </div>
       ${typeof this.chipsStrip==='function' ? this.chipsStrip(hist, (()=>{ const pk=(team.gwPicks||{})[gw]; return locked && pk && pk.chip ? {key:pk.chip, gw} : null; })()) : ''}
       <div class="pitch-frame">
-        ${this.pitchHTML(vt, opt)}
-        ${this.coachBarHTML(vt, info ? {coachPts:res.coach||null, gw:showGw} : {view:true})}
+        ${this.pitchHTML(dv, opt)}
+        ${this.coachBarHTML(dv, info ? {coachPts:res.coach||null, gw:showGw} : {view:true})}
         <div class="bench-strip">
-          ${vt.bench.map(pid=>{ const p=DB.player(pid); const lbl=p.pos==='G'?'حارس':`بديل ${++k} · ${POS_AR[p.pos]}`;
-            return `<div class="bench-slot"><div class="bench-pos">${lbl}</div>${opt.slot? opt.slot(pid) : this.slotHTML(pid, vt, opt)}</div>`; }).join('')}
+          ${dv.bench.map(pid=>{ const p=DB.player(pid); const lbl=p.pos==='G'?'حارس':`بديل ${++k} · ${POS_AR[p.pos]}`;
+            return `<div class="bench-slot"><div class="bench-pos">${lbl}</div>${opt.slot? opt.slot(pid) : this.slotHTML(pid, dv, opt)}</div>`; }).join('')}
         </div>
       </div>
       ${!locked? `<div class="tiny" style="margin-top:8px">تشكيلته الحالية تظهر بعد إغلاق الجولة ${gw}، كما في فانتسي الدوري الإنجليزي.</div>`:''}
