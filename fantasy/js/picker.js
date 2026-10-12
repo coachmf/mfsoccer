@@ -120,11 +120,6 @@ Object.assign(VIEWS, {
 
     return `
     <div class="row" style="margin-bottom:10px;flex-wrap:wrap;gap:8px;justify-content:center">
-      ${['wildcard','freehit'].map(k=>{
-        const c=st.rules.chips[k]; if(!c.enabled) return '';
-        const used=team.usedChips[k]||0; const active=chip===k;
-        return `<button class="btn sm ${active?'':'sec'}" ${locked||(used>=c.uses&&!active)||(chip&&!active)?'disabled':''}
-          onclick="VIEWS.toggleChip('${k}')">${c.label}</button>`;}).join('')}
       ${locked? '' : `<span class="pill ${freeMode?'green':'blue'}">${st.rules.freeChanges? 'تغييرات حرة حتى موعد الإغلاق' : (freeMode? 'انتقالات حرة — كرت مفعّل' : `مجاني: ${team.ft} · الإضافي −${st.rules.transferCost}`)}</span>`}
     </div>
     ${locked? '<div class="card" style="border-color:var(--red);margin-bottom:12px">أُغلقت الجولة — الانتقالات تفتح بعد احتساب النتائج.</div>':''}
