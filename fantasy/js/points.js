@@ -20,6 +20,21 @@ Object.assign(VIEWS, {
     rows.sort((a,b)=>b.p-a.p); return rows;
   },
   gwRankOf(gw, uid){ const rows=this.gwBoard(gw); const i=rows.findIndex(r=>r.id===uid); if(i<0) return null; const p=rows[i].p; return rows.findIndex(r=>r.p===p)+1; },
+  /* شريط الخواص (منصور 2026-10-12): كل كرت وجولة استعماله من السجل، والمفعّل للجولة الجارية، والباقي «متاح».
+     pend = {key, gw} كرت الجولة الجارية قبل احتسابها — للآخرين بعد الإغلاق فقط (لا نكشف كرته قبل الموعد) */
+  chipsStrip(hist, pend){
+    const chips=DB.state.rules.chips; const IC={wildcard:'swap', benchboost:'stats', triplecap:'trophy', freehit:'spark'};
+    const used={}; (hist||[]).forEach(h=>{ if(h && h.chip) (used[h.chip]=used[h.chip]||[]).push(+h.gw); });
+    const tiles=Object.keys(chips).filter(k=>chips[k].enabled).map(k=>{
+      const c=chips[k], u=(used[k]||[]).sort((a,b)=>a-b);
+      const on=pend && pend.key===k && !u.includes(+pend.gw);
+      const left=c.uses-u.length-(on?1:0);
+      const st=[...u.map(g=>'الجولة '+g), ...(on? ['مفعّل · الجولة '+pend.gw] : [])];
+      if(!st.length || (left>0 && c.uses>1)) st.push(left>0? 'متاح' : '');
+      return `<div class="cs-t ${on?'on':u.length?'used':'free'}"><i>${UI.icon(IC[k]||'spark',16)}</i><b>${esc(c.label)}</b><span>${st.filter(Boolean).join(' · ')}</span></div>`;
+    }).join('');
+    return `<div class="chips-strip"><div class="cs-h">الخواص</div><div class="cs-row">${tiles}</div></div>`;
+  },
   needBoard(){ if(typeof LEAGUES!=='undefined' && LEAGUES.online() && !LEAGUES.cloud.board && !this._boardAsk){ this._boardAsk=true; LEAGUES.refresh().then(()=>APP.render()); } },
   /* لوحة نقاط الجولة — 3 تصاميم للاختيار (منصور 2026-10-08: الشريط ما عجبه). PTS_STYLE يحدد المعتمد */
   ptsGrid(o){
@@ -213,6 +228,7 @@ Object.assign(VIEWS, {
         ${this.ptsGrid({gw, pts:h.pts, live:isLive, avg:d.avg, high:d.high, rank:isLive? (h.rank||null) : myRank, hits:h.hits, chip:chipLabel})}
         <div class="pts-note">${notes.filter(n=>!/^ترتيب الجولة|^خصم انتقالات/.test(n)).map(n=>`<span>${n}</span>`).join(' · ')}</div>
       </div>
+      ${this.chipsStrip(team.history, (()=>{ const cg=st.currentGW, pk=(team.gwPicks||{})[cg]; const k=GWADMIN.deadlinePassed(cg)? (pk&&pk.chip) : team.activeChip; return k? {key:k, gw:cg} : null; })())}
       <div class="pt-toggle">
         <button class="${view==='pitch'?'active':''}" onclick="VIEWS.ui.pointsView='pitch';APP.render()">الملعب</button>
         <button class="${view==='list'?'active':''}" onclick="VIEWS.ui.pointsView='list';APP.render()">قائمة</button>

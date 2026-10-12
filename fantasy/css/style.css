@@ -1678,3 +1678,18 @@ html.mff .pts-slot .sub.in,html.mff .pts-slot .sub.out{color:#fff}
 .sub-ar{display:inline-grid;place-items:center;width:18px;height:18px;border-radius:50%;color:#fff;vertical-align:middle;margin-inline-start:4px}
 .sub-ar.in{background:#16a34a}.sub-ar.out{background:#dc2626}
 .sub-ar svg{width:12px;height:12px}
+/* شريط الخواص — صفحة النقاط وتشكيلة أي مدرب (2026-10-12) */
+.chips-strip{margin:12px 0}
+.chips-strip .cs-h{font-size:.72rem;font-weight:800;opacity:.75;margin:0 2px 6px}
+.chips-strip .cs-row{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.chips-strip .cs-t{display:flex;flex-direction:column;align-items:center;gap:3px;text-align:center;padding:9px 4px 8px;border-radius:12px;border:1px solid var(--line);background:var(--surface,rgba(255,255,255,.04));min-width:0}
+.chips-strip .cs-t i{display:grid;place-items:center;width:28px;height:28px;border-radius:50%;background:color-mix(in srgb,var(--accent) 14%,transparent);color:var(--accent)}
+.chips-strip .cs-t b{font-size:.7rem;font-weight:800;line-height:1.2}
+.chips-strip .cs-t span{font-size:.64rem;font-weight:600;opacity:.7;line-height:1.3}
+.chips-strip .cs-t.used{border-color:#E7D093;background:color-mix(in srgb,#E7D093 12%,transparent)}
+.chips-strip .cs-t.used i{background:#E7D093;color:#0D1532}
+.chips-strip .cs-t.used span{opacity:1;font-weight:800;color:#E7D093}
+.chips-strip .cs-t.on{border-color:var(--accent)}
+.chips-strip .cs-t.on span{opacity:1;color:var(--accent);font-weight:800}
+.chips-strip .cs-t.free{opacity:.6}
+html.mff:not([data-theme="dark"]) .chips-strip .cs-t.used span{color:#8B6C3C}

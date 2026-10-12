@@ -96,7 +96,9 @@ Object.assign(VIEWS, {
     const st=DB.state; const me=DB.me();
     const gws=RANKS.finishedGWs(st).sort((a,b)=>b-a);
     const rows=gws.map(gw=>{ const c=GWADMIN.champion(gw); if(!c) return '';
-      return `<tr class="${c.id===me.id?'hl':''}"><td class="num">${gw}</td><td><b>${esc(c.teamName)}</b><div class="tiny">${esc(c.name)}${c.id===me.id?' · أنت':''}</div></td><td class="num" style="color:var(--accent)">${c.pts}</td></tr>`; }).join('');
+      /* الضغط يفتح تشكيلة البطل في تلك الجولة (منصور 2026-10-12) — صفّك أنت يفتح نقاطك */
+      const go = c.id===me.id ? `VIEWS.ui.pointsGw=${gw};APP.go('points')` : `VIEWS.openManager('${c.id}');VIEWS.ui.mgrGw=${gw}`;
+      return `<tr class="champ-row${c.id===me.id?' hl':''}" style="cursor:pointer" onclick="${go}" title="عرض التشكيلة"><td class="num">${gw}</td><td><b>${esc(c.teamName)}</b><div class="tiny">${esc(c.name)}${c.id===me.id?' · أنت':''}</div></td><td class="num" style="color:var(--accent)">${c.pts}</td></tr>`; }).join('');
     const mine=GWADMIN.championCount(me.id);
     return `<h2 style="margin-bottom:12px">أبطال الجولات</h2>
       <div class="card" style="margin-bottom:12px"><div class="row" style="gap:10px;align-items:center">${UI.icon('trophy',28)}<div><b>${mine? `أنت بطل الجولة ${mine} ${mine===1?'مرة':'مرات'}`:'لم تحصل على لقب بطل الجولة بعد'}</b><div class="tiny">أعلى نقاط في الجولة بين كل المدربين = بطل الجولة</div></div></div></div>
