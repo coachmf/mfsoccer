@@ -199,7 +199,9 @@ function computeRatings(cut){
       const G=RATING_MODEL.groups[gk];
       const all=[...P.values()].filter(p=>groupOf(p.c,p.n)===gk);
       all.forEach(p=>{ p.n90=p.mins/90; p.teamMins=teamMins[p.c]||0; p.grp=gk; });
-      const pool=all.filter(p=>p.mins>=RATING_MODEL.minMinutes);
+      /* منصور 2026-10-12: التقييم لكل من لعب، بحسب دقائقه — العيّنة المرجعية من لعب 90 دقيقة فأكثر (أو الجميع إن لم يبلغها أحد، مثل بطولة خارجية بمباراة واحدة) */
+      let pool=all.filter(p=>p.mins>=RATING_MODEL.minMinutes);
+      if(!pool.length) pool=all.filter(p=>p.mins>0);
       if(!pool.length) return;
       /* قيمة كل مقياس بعد السحب نحو متوسط المركز */
       const val={}, avail={};
@@ -222,7 +224,7 @@ function computeRatings(cut){
         return 100*(below+0.5*(eq-1))/Math.max(1,pool.length-(pool.includes(p)?1:0)); };
       const rows=[];
       all.forEach(p=>{
-        if(p.mins<RATING_MODEL.minMinutes) return;
+        if(!(p.mins>0)) return;
         const cats=G.cats.map(c=>{ const ms=c.m.filter(mk=>avail[mk]);
           if(!ms.length) return {k:c.k, label:c.label, w:c.w, v:null, raw:[]};
           const v=ms.reduce((s,mk)=>s+pctl(mk,p),0)/ms.length;
@@ -231,12 +233,14 @@ function computeRatings(cut){
         });
         const on=cats.filter(c=>c.v!=null), W=on.reduce((s,c)=>s+c.w,0);
         const comp=W ? on.reduce((s,c)=>s+c.w*c.v,0)/W : 50;
-        rows.push({n:p.n, c:p.c, grp:gk, pos:posOf(p.c,p.n), mins:p.mins, apps:p.apps, comp, cats, poolN:pool.length});
+        rows.push({n:p.n, c:p.c, grp:gk, pos:posOf(p.c,p.n), mins:p.mins, apps:p.apps, comp, cats, poolN:pool.length, inPool:pool.includes(p), low:p.mins<RATING_MODEL.minMinutes});
       });
       /* توحيد المراكز: نفس المتوسط والمدى لكل مركز */
-      const mu=rows.reduce((s,x)=>s+x.comp,0)/rows.length;
-      const sd=Math.sqrt(rows.reduce((s,x)=>s+(x.comp-mu)**2,0)/rows.length) || 1;
-      rows.forEach(x=>{ x.z=(x.comp-mu)/sd; x.v=RATING_MODEL.scale(x.z); out.set(x.n+"|"+x.c, x); });
+      const ref=rows.filter(x=>x.inPool);
+      const mu=ref.reduce((s,x)=>s+x.comp,0)/ref.length;
+      const sd=Math.sqrt(ref.reduce((s,x)=>s+(x.comp-mu)**2,0)/ref.length) || 1;
+      /* أقل من 90 دقيقة: يُسحب التقييم نحو متوسط المركز بنسبة دقائقه (45 دقيقة = نصف الفرق عن المتوسط) */
+      rows.forEach(x=>{ x.z=(x.comp-mu)/sd * Math.min(1, x.mins/RATING_MODEL.minMinutes); x.v=RATING_MODEL.scale(x.z); out.set(x.n+"|"+x.c, x); });
     });
     return out;
   });
@@ -625,7 +629,7 @@ function gkHTML(){
 function rateHTML(){
   if(AX.sel) return playerCard(AX.sel.n, AX.sel.c);
   if(!played().length) return noPlayed();
-  const st=AX.rate, all=[...PRATING.all().values()].filter(x=>!st.grp || x.grp===st.grp);
+  const st=AX.rate, all=[...PRATING.all().values()].filter(x=>!x.low && (!st.grp || x.grp===st.grp));   /* قائمة الترتيب: من لعب 90 دقيقة فأكثر */
   const S=sortBy(all,"rate",{v:x=>x.v, n:x=>x.n, mins:x=>x.mins, apps:x=>x.apps});
   return `${sec("تقييم اللاعبين", "من 10 — كل لاعب يُقارَن بلاعبي مركزه فقط.")}
     <div class="segbar ax-pills" role="group" aria-label="المركز">${POS_F.map(([k,t])=>`<button type="button" class="seg" data-ax-grp="${k}" aria-pressed="${st.grp===k}">${t}</button>`).join("")}</div>
