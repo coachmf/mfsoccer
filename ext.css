@@ -1,0 +1,44 @@
+/* المشاركات الخارجية لأنديتنا — الإدارة (منصور 2026-10-12). الصفوف والأيام من gulf.css (gadm-*) */
+#extAdmin .xadm-comp{margin-top:12px}
+.xadm-hd{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin:0 0 10px}
+.xadm-hd img{width:40px;height:40px;object-fit:contain;flex:none}
+.xadm-hd div{flex:1 1 0;min-width:0;display:flex;flex-direction:column}
+.xadm-hd b{font:800 .95rem var(--display);color:var(--head)}
+.xadm-hd small{font-size:.7rem;color:var(--slate)}
+.xadm-hd .btn{flex:1 1 100%;width:100%;padding:9px 12px;font-size:.82rem}
+.xadm-row .t .crest{width:26px;height:26px;border-radius:7px}
+.xadm-row .t b{font-size:.84rem;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.xadm-seed{font-style:normal;color:var(--slate);font-weight:600}
+/* تبويب التشكيلة لفريق خصم: إضافة لاعب بالاسم */
+.xadd{display:flex;gap:6px;margin:8px 0 4px}
+.xadd input{flex:1;min-width:0;height:38px;padding:0 10px;border:1px solid var(--line);border-radius:9px;background:var(--navy-900);color:var(--head);font:600 .84rem var(--display)}
+.xadd button{flex:none;white-space:nowrap}
+html[data-theme="dark"] .xadd input{background:#0e1a2c;border-color:#213653}
+.mp-when .xt-comp{font-weight:800}
+/* اختيار البطولة في الإدارة: عالم كل بطولة على حدة */
+.xadm-pick{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0 0}
+.xadm-pick .seg{display:inline-flex;align-items:center;gap:6px}
+.xadm-pick .seg img{width:22px;height:22px;object-fit:contain}
+/* صفحة البطولة: إحصاءات أنديتنا */
+.xt-st{margin-top:22px}
+.xt-st-c{background:var(--navy-800);border:1px solid var(--line);border-radius:14px;padding:12px}
+.xt-st-c h3{margin:0 0 8px;font:800 .9rem var(--display);color:var(--head)}
+.xt-st-t{overflow-x:auto}
+.xt-st-t table{width:100%;min-width:0;border-collapse:collapse;font-size:.8rem}   /* الجدول العام min-width:520px */
+.xt-st-t th,.xt-st-t td{padding:7px 4px;text-align:center;border-bottom:1px solid var(--line);font-variant-numeric:tabular-nums}
+.xt-st-t th{color:var(--slate);font-weight:700;font-size:.7rem}
+.xt-st-t .tl{text-align:start}.xt-st-t td.tl span{display:flex;align-items:center;gap:6px}
+.xt-st-t .crest{width:24px;height:24px;border-radius:7px}
+.xt-st-t tr:last-child td{border-bottom:0}
+.xt-st-g{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:10px;margin-top:10px}
+.xt-st-r{display:grid;grid-template-columns:22px 34px minmax(0,1fr) auto;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--line);cursor:pointer}
+.xt-st-r:last-child{border-bottom:0}
+.xt-st-r .rk{font:800 .78rem var(--display);color:var(--slate);text-align:center}
+.xt-st-r .ph{width:34px;height:34px;border-radius:50%;overflow:hidden;background:var(--navy-900);display:grid;place-items:center}
+.xt-st-r .ph img{width:100%;height:100%;object-fit:cover}.xt-st-r .ph i{font:800 .72rem var(--display);font-style:normal;color:var(--slate)}
+.xt-st-r .nm{display:flex;flex-direction:column;min-width:0}.xt-st-r .nm b{font-size:.84rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.xt-st-r .nm small{font-size:.68rem;color:var(--slate)}
+.xt-st-r .v{font:900 1rem var(--display);color:var(--head)}
+.xt-st-e{margin:0;font-size:.78rem;color:var(--slate)}
+.xt-st-n{margin:10px 2px 0;font-size:.7rem;color:var(--slate)}
+html[data-theme="dark"] .xt-st-c{background:#132238;border-color:#213653}

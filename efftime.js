@@ -219,6 +219,7 @@ function allMatches(){
     out.push({m, k, gulf, comp}); };
   try{ ((typeof ALL!=="undefined" && ALL && ALL.matches) || []).forEach(m=>add(m, false)); }catch(e){}
   try{ if(window.GULF && GULF.data){ const D = GULF.data(); (D && D.matches || []).forEach(m=>add(m, true)); } }catch(e){}
+  try{ if(window.EXT && EXT.data){ const D = EXT.data(); (D && D.matches || []).forEach(m=>add(m, false)); } }catch(e){}   /* مشاركات أنديتنا الخارجية (ext.js) */
   /* اليوم وما قبله أولاً (الأحدث فالأقدم)، ثم القادمة (الأقرب فالأبعد) */
   const t = new Date(), today = `${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,"0")}-${String(t.getDate()).padStart(2,"0")}`;
   const past = x => !x.m.date || String(x.m.date) <= today;

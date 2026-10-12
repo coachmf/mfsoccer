@@ -2214,14 +2214,16 @@ main{padding-bottom:48px}
      <link rel="stylesheet" href="live.css?v=9"> و <script src="live.js?v=21" defer></script> -->
 <!-- تبويبات لوحة الإدارة: إعادة تنظيم للأقسام الموجودة فقط -->
 <link rel="stylesheet" href="admin-tabs.css?v=1">
-<script src="admin-tabs.js?v=5" defer></script>
+<script src="admin-tabs.js?v=6" defer></script>
 <!-- كأس الخليج 27: قسم مستقل ببيانات منفصلة (seasons/gulf27) -->
 <link rel="stylesheet" href="gulf.css?v=18">
 <script src="gulf.js?v=46" defer></script>
 <link rel="stylesheet" href="efftime.css?v=3">
-<script src="efftime.js?v=4" defer></script>
+<script src="efftime.js?v=5" defer></script>
 <link rel="stylesheet" href="div1.css?v=1">
 <script src="div1.js?v=3" defer></script>   <!-- دوري الدرجة الأولى: الترتيب والمباريات فقط (seasons/div1) -->
+<link rel="stylesheet" href="ext.css?v=1">
+<script src="ext.js?v=1" defer></script>   <!-- المشاركات الخارجية لأنديتنا: تحرير كامل مثل الدوري في وثيقة مستقلة (seasons/ext2627) -->
 <!-- التحليل الموسّع + تقييم اللاعبين 0–100 + البحث العام (منصور 2026-09-29) -->
 <link rel="stylesheet" href="analysis.css?v=10">
 <script src="tstats-data.js?v=1" defer></script>
@@ -2982,11 +2984,17 @@ function extTableHTML(c, evs){
     const GD = c.id==="gulf27" && window.GULF && typeof GULF.data==="function" ? GULF.data() : null;
     const res = GD ? (GD.matches||[]).filter(m=>+m.round<=3 && (m.status==="ft" || GULF.withGulf(()=>matchOver(m))))
                       .map(m=>({an:m.home, bn:m.away, hg:+m.hg||0, ag:+m.ag||0}))
-                   : evs.map(e=>{
-      if(e.hg==null || e.ag==null || e.live || (e.to && e.to!==e.d)) return null;   /* المباراة الجارية لا تدخل الجدول حتى تنتهي */
+                   : (()=>{ const seenK=new Set(); return evs.map(e=>{
+      if(e.to && e.to!==e.d) return null;
       const parts=evParts(e); if(parts.length<2) return null;
       const a=evTeam(parts[0],e.k), b=evTeam(parts[1],e.k); if(!a||!b) return null;
-      return {an:a.n, bn:b.n, hg:+e.hg, ag:+e.ag}; }).filter(Boolean);
+      /* مشاركات أنديتنا (ext.js): المباراة التي أدخلها المحررون تتقدّم — المنتهية فقط ودور المجموعات فقط */
+      const gx=extGx(c.id, e, parts[0], parts[1]);
+      if(gx && gx.k){ if(seenK.has(gx.k)) return null; seenK.add(gx.k); }   /* نتيجة ثابتة ومباراة الوثيقة نفسها لا تُحسبان مرتين */
+      if(gx && gx.st) return gx.st==="done" && !gx.ko ? {an:a.n, bn:b.n, hg:+gx.hg, ag:+gx.ag} : null;
+      if(e.hg==null || e.ag==null || e.live) return null;   /* المباراة الجارية لا تدخل الجدول حتى تنتهي */
+      return {an:a.n, bn:b.n, hg:+e.hg, ag:+e.ag}; }).filter(Boolean); })()
+        .concat(window.EXT && EXT.tableExtra ? EXT.tableExtra(c.id, evs) : []);   /* مباريات البطولة المضافة من الإدارة (ext.js) */
     res.forEach(({an,bn,hg,ag})=>{
       const ra=byKey[_norm(an)], rb=byKey[_norm(bn)]; if(!ra||!rb) return;
       ra.P++; rb.P++; ra.GF+=hg; ra.GA+=ag; rb.GF+=ag; rb.GA+=hg;
@@ -3022,6 +3030,12 @@ function extScorersHTML(e){
   const col=xs=>xs.map(x=>`<span>${esc(x.name||"")}${x.min?` <i dir="ltr">${esc(String(x.min))}′</i>`:""}</span>`).join("");
   return `<div class="mc-sc" aria-label="الهدافون"><div class="h">${col(h)}</div><div class="a">${col(a)}</div></div>`;
 }
+/* سجل البطولة المستقل للمباراة: خليجي 27 (gulf.js) أو مشاركات أنديتنا الخارجية (ext.js، منصور 2026-10-12) —
+   الحالة والنتيجة والحكم والقناة والهدافون ومفتاح صفحة المباراة */
+function extGx(cid, e, an, bn){
+  if(cid==="gulf27") return (window.GULF && GULF.extra) ? GULF.extra(e.d, an, bn) : null;
+  return (window.EXT && EXT.extra) ? EXT.extra(cid, e, an, bn) : null;
+}
 function extCardsHTML(evs, compName){
   const t=new Date(); const todayIso=`${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,"0")}-${String(t.getDate()).padStart(2,"0")}`;
   const dayLabel=iso=>{ if(!iso) return "مؤجلة — يُحدَّد موعدها لاحقاً"; const d=new Date(iso+"T00:00:00"); if(isNaN(d)) return esc(iso); return `${AR_DOW[d.getDay()]} ${d.getDate()} ${AR_MON[d.getMonth()]}`; };
@@ -3032,7 +3046,7 @@ function extCardsHTML(evs, compName){
     const a=parts.length>=2?evTeam(parts[0],e.k):null, b=parts.length>=2?evTeam(parts[1],e.k):null;
     const isMatch=!span && a && b && (a.t!=="other"||b.t!=="other") && !/نصف|نهائي|ربع|مباريات/.test(parts[0]);
     /* خليجي 27: القناة والحكم والحالة والنتيجة من سجل البطولة (gulf.js) — منصور 2026-09-23 */
-    const gx=(isMatch && extCompOf(e)==="gulf27" && window.GULF && GULF.extra) ? GULF.extra(e.d, a.n, b.n) : null;
+    const gx=isMatch ? extGx(extCompOf(e), e, a.n, b.n) : null;
     let played = e.hg!=null && e.ag!=null, up = !played && e.d>=todayIso, liveNow = played && e.live, eh=e.hg, ea=e.ag;
     if(gx && gx.st){ up = gx.st==="soon"; played = !up; liveNow = gx.st==="live"; eh = gx.hg; ea = gx.ag; }
     const dayHead=e.d!==lastDay?`<div class="mc-day"><span>${span?esc(evRange(e)):dayLabel(e.d)}</span></div>`:""; lastDay=e.d;
@@ -3047,7 +3061,7 @@ function extCardsHTML(evs, compName){
         <div class="mc-mid">${mid}${st}</div>
         <div class="mc-team a">${extTeamCell(b)}</div>
       </div>
-      ${extScorersHTML(e)}
+      ${extScorersHTML(gx && gx.st && gx.scorers ? {hg:eh, ag:ea, scorers:gx.scorers} : e)}
       <div class="mc-foot"><span>${esc(compName)}</span>${e.n?`<span>${esc(e.n)}</span>`:""}${(played&&e.time)?`<span class="mc-date" dir="ltr">${esc(e.time)}</span>`:""}${e.venue?`<span>${esc(e.venue)}</span>`:""}</div>
       ${gx&&(gx.ref||gx.v)?`<div class="mc-foot">${gx.ref?`<span class="mc-ref">${refRoleIco("ref","sm")}<span class="nm">${esc(gx.ref)}</span></span>`:""}${gx.v?`<span class="mc-ref">${refRoleIco("var","sm")}<span class="nm">${esc(gx.v)}</span></span>`:""}</div>`:""}
       ${gx&&gx.tv?`<div class="mc-foot mc-gtv"><span class="mc-tv">${TV_ICO}<span>${esc(gx.tv)}</span></span></div>`:""}
@@ -3065,8 +3079,8 @@ function upcomingItems(){
   EXT_COMPS.forEach(c=>extEvents(c.id).forEach(e=>{
     if(e.to && e.to!==e.d) return;
     const parts=evParts(e); if(parts.length<2 || /نصف|نهائي|ربع|مباريات/.test(parts[0])) return;
-    if(c.id==="gulf27" && window.GULF && GULF.extra){ const gx=GULF.extra(e.d, parts[0], parts[1]); if(gx && gx.st==="done") return; }   /* خليجي 27 انتهت: تخرج من القادمة */
-    if(e.live || (e.hg==null && e.d>=todayIso)) ext.push({d:e.d, time:String(e.time||""), ts:new Date(e.d+"T"+(normTime(e.time)||"23:59")+":00").getTime(), e, c});
+    const gx=extGx(c.id, e, parts[0], parts[1]); if(gx && gx.st==="done") return;   /* خليجي 27 / مشاركات أنديتنا انتهت: تخرج من القادمة */
+    if(e.live || (gx && gx.st==="live") || (e.hg==null && e.d>=todayIso)) ext.push({d:e.d, time:String(e.time||""), ts:new Date(e.d+"T"+(normTime(e.time)||"23:59")+":00").getTime(), e, c});
   }));
   return [...loc,...ext].sort((a,b)=>String(a.d).localeCompare(String(b.d))||((a.ts||0)-(b.ts||0)));
 }
@@ -3106,7 +3120,8 @@ function renderExtMatches(){
     ${extTableHTML(c, evs)}
     <h2 class="sec xt-mx">المباريات<span class="sq-n">${esc(c.name)}</span></h2>
     ${(soon+done)?`<div class="msum"><span><b>${done}</b>أُقيمت</span><span><b>${soon}</b>لم تبدأ</span></div>`:""}
-    <div class="mx-list">${cards||'<div class="mx-empty">لا توجد مباريات مضافة لهذه البطولة بعد.</div>'}</div>`;
+    <div class="mx-list">${cards||'<div class="mx-empty">لا توجد مباريات مضافة لهذه البطولة بعد.</div>'}</div>
+    ${window.EXT && EXT.statsHTML ? EXT.statsHTML(c.id) : ""}`;   /* صفحة البطولة: إحصاءاتها من مبارياتها وحدها (ext.js) */
   const V=$("#v-matches"); wireComp(V); wireDropdowns(V);
 }
 /* القوائم المنسدلة (الجولة/المسابقة): فتح وإغلاق وخارج النقر وEscape */
@@ -7102,7 +7117,9 @@ function allEvents(){
   const fixed=new Set(EXT_FIXTURES.map(key));
   return [...cloud.filter(e=>!(extCompOf(e) && fixed.has(key(e)))), ...EXT_FIXTURES];
 }
-function extEvents(id){ return allEvents().filter(e=>extCompOf(e)===id).sort((a,b)=>String(a.d).localeCompare(String(b.d))||String(a.time||"").localeCompare(String(b.time||""))); }
+function extEvents(id){ let L=allEvents().filter(e=>extCompOf(e)===id);
+  if(window.EXT && EXT.events) L=EXT.events(id, L)||L;   /* مشاركات أنديتنا: موعد المباراة المعدّلة + المباريات المضافة من الإدارة (ext.js) */
+  return L.sort((a,b)=>String(a.d).localeCompare(String(b.d))||String(a.time||"").localeCompare(String(b.time||""))); }
 function evDays(e){                                  /* أيام المناسبة من d إلى to */
   const out=[]; if(!e || !e.d) return out;
   const a=new Date(e.d+"T12:00:00"), b=new Date((e.to||e.d)+"T12:00:00");
@@ -14213,7 +14230,7 @@ const MOTM_FRESH = 60*1000, MOTM_RETRY = 15*1000;
 let MP_VOTE = false;       /* قائمة التصويت مفتوحة في صفحة المباراة */
 const motmId = m => [compOf(m), m.round, m.home, m.away].join("|").replace(/\//g, "-");
 function motmOpen(m){
-  if(!m || isGulfMatch(m) || !ratingsReady(m)) return false;
+  if(!m || isGulfMatch(m) || m.__ext || !ratingsReady(m)) return false;   /* المشاركات الخارجية بلا تصويت جمهور (عزل عن الدوري) */
   const k=kickoffTS(m);
   return k===null || Date.now() < k + 4*24*60*60*1000;
 }
@@ -14284,6 +14301,7 @@ function motmVoteHTML(m){
 /* اختيار الجمهور: تصويت المباراة نفسها؛ المباريات القديمة بلا أصوات مباراة تعرض «أفضل لاعب» من تشكيلة الجمهور للجولة */
 function mpFanPick(m){
   const mid=motmId(m);
+  if(m.__ext) return {loading:false, list:[]};
   if(!isGulfMatch(m) && motmStale(m)) loadMotmVotes(m);
   const mv=MOTMV[mid];
   if(mv && (mv.length || motmOpen(m))){   /* أثناء التصويت نعرض أصوات المباراة فقط */
@@ -15493,7 +15511,7 @@ html.mx-editing #waFab{display:none!important}   /* زر واتساب كان ي�
   const PHASE_NOTE={h1:[1,"بداية المباراة"],ht:[45,"نهاية الشوط الأول"],h2:[46,"بداية الشوط الثاني"],e1:[91,"بداية الشوط الإضافي الأول"],e2:[106,"بداية الشوط الإضافي الثاني"],pso:[120,"ركلات الترجيح"],ft:[90,"نهاية المباراة"]};
   const PHASES=[["pre","قبل البداية"],["h1","الشوط الأول"],["ht","بين الشوطين"],["h2","الشوط الثاني"],["ft","انتهت"]];
   /* مباريات خروج المغلوب فقط (نصف نهائي ونهائي الخليج، والكؤوس): أشواط إضافية وركلات ترجيح (منصور 2026-10-03) */
-  const isKO=m=>EDIT && EDIT.gulf ? +m.round>=4 : String(m.comp||"")!=="الدوري";
+  const isKO=m=>EDIT && EDIT.gulf ? +m.round>=4 : EDIT && EDIT.ext && window.EXT ? EXT.isKO(m) : String(m.comp||"")!=="الدوري";
   const PHASES_KO=[["e1","الشوط الإضافي الأول"],["e2","الشوط الإضافي الثاني"],["pso","ركلات الترجيح"]];
   const TV_LIST=["كويت سبورت","كويت سبورت بلس","الكويت الأولى","غير منقولة"];
   const stadiums=()=>{ const set=new Set(); if(typeof CLUB_INFO!=="undefined") Object.values(CLUB_INFO).forEach(i=>i&&i.st&&set.add(i.st)); (ALL.matches||[]).forEach(x=>x.venue&&set.add(String(x.venue).trim())); return [...set].filter(Boolean).slice(0,16); };
@@ -15704,13 +15722,14 @@ html.mx-editing #waFab{display:none!important}   /* زر واتساب كان ي�
     function saveStay(){
         MX.sheet=null; MX.sel=null; document.documentElement.classList.remove("mx-open"); const pre=validateEdit(); if(pre){ FORMERR=pre; MX.tab=errTab(pre); rerender(); toast("لم يُحفظ: "+pre,"err"); return false; }
         const mm=EDIT.match, key={round:+mm.round, comp:mm.comp, home:mm.home, away:mm.away}, tab=MX.tab, side=MX.side;
-        const gulf=!!EDIT.gulf;
+        const gulf=!!EDIT.gulf, ext=!!EDIT.ext;
         saveMatch().then(()=>{ if(EDIT) return;
           /* مباراة كأس الخليج في وثيقتها الخاصة: البحث في ALL (الدوري) لا يجدها فكان المحرّر يُغلق بدل أن يبقى مفتوحاً (المحررون 2026-09-30) */
           const find=()=>(ALL.matches||[]).find(z=>z.round===key.round && compOf(z)===key.comp && z.home===key.home && z.away===key.away);
-          const G=gulf && window.GULF && GULF.withGulf;
-          const x=G ? GULF.withGulf(find) : find();
-          if(!x) return; EDIT=G ? GULF.withGulf(()=>loadEdit(x)) : loadEdit(x); if(gulf) EDIT.gulf=true;
+          /* مشاركات أنديتنا الخارجية (ext.js) في وثيقتها الخاصة كذلك */
+          const W=gulf && window.GULF ? GULF.withGulf : ext && window.EXT ? EXT.withExt : null;
+          const x=W ? W(find) : find();
+          if(!x) return; EDIT=W ? W(()=>loadEdit(x)) : loadEdit(x); if(gulf) EDIT.gulf=true; if(ext) EDIT.ext=true;
           MX._edit=EDIT; MX.tab=tab; MX.side=side; renderMatchAdmin(); });
         return true; }
     /* تغيير الشوط أو بدل الضائع أو تصحيح الدقيقة يُحفظ فوراً لتجري الساعة عند الجمهور (مباراة محفوظة سابقاً فقط) */
