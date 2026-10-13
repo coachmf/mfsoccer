@@ -730,6 +730,7 @@ details.squadbox summary label.lb{margin:0;cursor:pointer}
   background:linear-gradient(180deg,rgba(6,16,34,.55),rgba(6,16,34,.92));backdrop-filter:blur(2px);color:#fff;
   font-size:clamp(7px,2.4cqw,10px);font-weight:700;padding:0 3px;letter-spacing:.1px;
   border-radius:0 0 9px 9px;text-shadow:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:none}
+html[dir="ltr"] .pp-card .pp-nm{letter-spacing:-.25px;padding:0 2px}   /* الأسماء اللاتينية أعرض — لا تُقص من الطرفين (2026-10-13) */
 .pp-card.nophoto .pp-num{position:absolute;inset:0 0 22% 0;display:grid;place-items:center;width:auto;height:auto;background:none;
   color:var(--pt,#fff);font-size:clamp(13px,4.6cqw,20px);padding:0;border-radius:8px 8px 0 0}
 .pp-card .pp-num{position:absolute;top:-11px;right:-7px;min-width:1.6em;padding:1px 3px;border-radius:6px;
@@ -2211,7 +2212,7 @@ main{padding-bottom:48px}
 <link rel="stylesheet" href="site-theme.css?v=6">
 <script src="fantasy/js/i18n-more.js?v=14" defer></script>
 <script src="site-i18n.js?v=29" defer></script>
-<script src="i18n-data.js?v=11" defer></script>   <!-- إضافات الإنجليزية + البرتغالية (البرازيل/البرتغال) + الإسبانية + الصربية/الكرواتية -->
+<script src="i18n-data.js?v=12" defer></script>   <!-- إضافات الإنجليزية + البرتغالية (البرازيل/البرتغال) + الإسبانية + الصربية/الكرواتية -->
 <script src="i18n-langs.js?v=8" defer></script>   <!-- قائمة اللغات بالأعلام + البرتغالية والإسبانية والصربية/الكرواتية فوق محرك الإنجليزية -->
 <!-- غرفة التحكم (live.js / live-admin.js / live.css) مخفية منذ 2026-10-10 بطلب منصور — الملفات باقية؛ للإرجاع أعد السطرين:
      <link rel="stylesheet" href="live.css?v=9"> و <script src="live.js?v=21" defer></script> -->
@@ -2226,7 +2227,7 @@ main{padding-bottom:48px}
 <link rel="stylesheet" href="div1.css?v=1">
 <script src="div1.js?v=3" defer></script>   <!-- دوري الدرجة الأولى: الترتيب والمباريات فقط (seasons/div1) -->
 <link rel="stylesheet" href="ext.css?v=1">
-<script src="ext.js?v=2" defer></script>   <!-- المشاركات الخارجية لأنديتنا: تحرير كامل مثل الدوري في وثيقة مستقلة (seasons/ext2627) -->
+<script src="ext.js?v=3" defer></script>   <!-- المشاركات الخارجية لأنديتنا: تحرير كامل مثل الدوري في وثيقة مستقلة (seasons/ext2627) -->
 <!-- التحليل الموسّع + تقييم اللاعبين 0–100 + البحث العام (منصور 2026-09-29) -->
 <link rel="stylesheet" href="analysis.css?v=10">
 <script src="tstats-data.js?v=1" defer></script>
@@ -5934,9 +5935,12 @@ function spotHTML(p, x, y, n, kit, ev, compact, extraNm){
    من الطرفين): الشريط يتسع لنحو 12 حرفاً، فالأطول يُعرض بالاسم الأول والأخير، ثم الأخير وحده. الاسم الكامل في الملف. */
 const PP_NM_MAX = 12;
 function cardName(n){
-  const full=String(n||"").trim(); if(full.length<=PP_NM_MAX) return full;
+  let full=String(n||"").trim(), max=PP_NM_MAX;
+  /* اللغات الأخرى: يُترجم الاسم أولاً ثم يُقصَّر — الحروف اللاتينية أعرض («Saad Al-Mutairi» كان مقصوصاً، منصور 2026-10-13) */
+  if(typeof I18N!=="undefined" && I18N.isEn && I18N.isEn()){ const t=I18N.tr(full); if(t && !/[؀-ۿ]/.test(t)){ full=String(t).trim(); max=11; } }
+  if(full.length<=max) return full;
   const w=full.split(/\s+/);
-  if(w.length>2){ const two=w[0]+" "+w[w.length-1]; if(two.length<=PP_NM_MAX) return two; }
+  if(w.length>2){ const two=w[0]+" "+w[w.length-1]; if(two.length<=max) return two; }
   return w.length>1 ? w[w.length-1] : full;
 }
 /* القميص الفاتح يحتاج حافة غامقة ليُرى على العشب، والغامق حافة فاتحة */
@@ -13188,7 +13192,7 @@ function playerProfileHTML(D){
   const badge=(n,cls,inner)=> n?`<span class="pp-b ${cls}">${inner}${n>1?`<em>${n}</em>`:""}</span>`:"";
   const logHTML = D.log.length ? `<div class="pprof-log"><h4>مباراة بمباراة</h4><div class="plog">${D.log.map(l=>`
     <div class="plog-r">
-      <span class="rd">ج${l.m.round}${compOf(l.m)!=="الدوري"?" · "+esc(compOf(l.m)):""}</span>
+      <span class="rd">ج${l.m.round}${compOf(l.m)!=="الدوري"?"<span> · </span><span>"+esc(compOf(l.m))+"</span>":""}</span>
       <span class="op">${crest(l.opp)}<span>${esc(l.opp)}<i> · ${l.home?"أرضه":"خارج أرضه"}</i>${l.wc&&l.wc!==D.club?`<i class="wth"> · مع ${esc(l.wc)}</i>`:""}</span></span>
       <span class="ev">${badge(l.g,"goal",ICO_BALL)}${badge(l.a,"assist",ICO_BOOT)}${l.r?`<span class="pp-b card r"></span>`:l.y?`<span class="pp-b card y"></span>`:""}
         ${(!l.sub&&!l.off)?`<span class="mn full" title="لعب المباراة كاملة"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.2"/><path d="M5.2 8.2l1.9 1.9 3.8-4"/></svg>${l.mins}′</span>`:""}${l.sub?`<span class="mn in">↑${clockLabel(l.m,l.on)}</span>`:""}${l.off?`<span class="mn out">↓${clockLabel(l.m,l.offAt)}</span>`:""}<span class="rs ${l.k}">${l.res}</span></span>
