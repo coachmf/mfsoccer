@@ -656,9 +656,17 @@ function panelHTML(){
 }
 function paint(anim){
   const p=$a("#axPanel"); if(!p) return;
+  /* شريط الأقسام: يبدأ من موضعه السابق وينزلق إلى المختار بعد إضافة «أبرز الأرقام» (mf-shell) — كان يعلق بالإنجليزي */
+  const sn0=p.querySelector(".ax-subnav"), x0=(sn0 && p.dataset.subTab===AX.tab) ? sn0.scrollLeft : null;
+  p.dataset.subTab=AX.tab;
   p.innerHTML=`<div class="ax-body${anim?" in":""}">${panelHTML()}</div>`;
   if(AX.tab==="overview" && $a("#heatLeague") && typeof renderLeagueHeat==="function") renderLeagueHeat();
-  const on=p.querySelector('.ax-subnav [aria-selected="true"]'); if(on) on.scrollIntoView({block:"nearest", inline:"center"});
+  requestAnimationFrame(()=>{
+    const sn=p.querySelector(".ax-subnav"), on=sn && sn.querySelector('[aria-selected="true"]'); if(!on) return;
+    if(x0!==null) sn.scrollLeft=x0;
+    const a=sn.getBoundingClientRect(), b=on.getBoundingClientRect();
+    sn.scrollBy({left:(b.left+b.width/2)-(a.left+a.width/2), behavior:x0===null?"auto":"smooth"});
+  });
 }
 function setIndicator(noAnim){
   const w=$a("#v-analysis .an"); if(!w) return;
