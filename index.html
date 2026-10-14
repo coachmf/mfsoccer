@@ -75,6 +75,7 @@ var DCL_FIRED=false; document.addEventListener('DOMContentLoaded', ()=>{ DCL_FIR
 <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.12.2/firebase-app-compat.min.js" defer></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.12.2/firebase-auth-compat.min.js" defer></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.12.2/firebase-firestore-compat.min.js" defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.12.2/firebase-messaging-compat.min.js" defer></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <!-- الخطوط لا تحجب أول رسم: تُحمَّل كـprint ثم تُفعَّل، والنص يظهر بخط النظام حتى وصولها -->
@@ -2223,6 +2224,8 @@ main{padding-bottom:48px}
 <link rel="stylesheet" href="gulf.css?v=18">
 <script src="gulf.js?v=46" defer></script>
 <script src="livepush.js?v=1" defer></script>
+<script src="fantasy/js/push.js?v=285" defer></script>
+<script src="notify.js?v=2" defer></script>
 <link rel="stylesheet" href="efftime.css?v=3">
 <script src="efftime.js?v=5" defer></script>
 <link rel="stylesheet" href="div1.css?v=1">
@@ -10316,6 +10319,7 @@ function paintFoot(){
       <a class="hchip" href="${X_URL}" target="_blank" rel="noopener" aria-label="X">${X_SVG}</a>
       <a class="hchip" href="${TT_URL}" target="_blank" rel="noopener" aria-label="تيك توك">${TT_SVG}</a>
         <a class="hchip wa" href="${WA_URL}" target="_blank" rel="noopener">${WA_SVG}اقتراحاتكم</a>
+      ${(window.NOTIFY ? NOTIFY.chip() : '')}
     </div>`;
 }
 /* لمسة حقيقية من المستخدم على التنقل أثناء الإقلاع: نهاية الإقلاع لا تُرجعه للرئيسية */
@@ -11574,6 +11578,37 @@ html[data-theme="light"] .hm{--bg-card:#FFFFFF;--border-card:#E2E8F0;--text-prim
 </style>
 <div class="pprof" id="pprof" hidden role="dialog" aria-modal="true" aria-label="ملف اللاعب"></div>
 <div class="sharebox" id="sharebox" hidden role="dialog" aria-modal="true" aria-label="مشاركة البطاقة"></div>
+<div class="ntask" id="ntAsk" hidden role="dialog" aria-label="تفعيل الإشعارات"></div>
+<style>
+.ntask{position:fixed;left:12px;right:12px;bottom:calc(var(--nav-h,64px) + 12px);z-index:95;
+  opacity:0;transform:translateY(14px);transition:opacity .22s ease, transform .22s ease;pointer-events:none}
+.ntask[hidden]{display:none!important}
+.ntask.on{opacity:1;transform:none;pointer-events:auto}
+.nt-in{display:flex;align-items:center;gap:12px;max-width:640px;margin:0 auto;padding:12px 14px;
+  border-radius:16px;background:linear-gradient(165deg,rgba(14,43,82,.98),rgba(10,26,50,.98));
+  border:1px solid rgba(201,162,77,.38);box-shadow:0 18px 44px rgba(0,0,0,.5)}
+.nt-ic{flex:0 0 auto;width:40px;height:40px;border-radius:12px;display:grid;place-items:center;
+  background:rgba(201,162,77,.14);border:1px solid rgba(201,162,77,.34)}
+.nt-ic svg{width:21px;height:21px;color:#F0D79A}
+.nt-tx{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.nt-tx b{font-size:.88rem;color:#fff;font-weight:700;line-height:1.35}
+.nt-tx span{font-size:.74rem;color:#8FA6C4;line-height:1.45}
+.nt-yes{flex:0 0 auto;padding:9px 18px;border-radius:11px;border:0;cursor:pointer;
+  background:linear-gradient(120deg,#8C6B28,#C9A24D);color:#15203a;font-weight:800;font-size:.84rem}
+.nt-no{flex:0 0 auto;width:30px;height:30px;border-radius:50%;cursor:pointer;
+  border:1px solid rgba(255,255,255,.18);background:transparent;color:#8FA6C4;font-size:.85rem}
+.hchip.nt{cursor:pointer;font:inherit}
+.hchip.nt svg{width:16px;height:16px}
+.hchip.nt.on{border-color:rgba(201,162,77,.5);color:#F0D79A}
+@media(max-width:430px){
+  .nt-tx span{display:none}
+  .nt-in{padding:10px 11px;gap:9px}
+  .nt-ic{width:34px;height:34px}.nt-ic svg{width:18px;height:18px}
+  .nt-tx b{font-size:.8rem}
+  .nt-yes{padding:8px 13px;font-size:.79rem}
+  .nt-no{width:26px;height:26px}
+}
+</style>
 <style>
 .sharebox{position:fixed;inset:0;z-index:120;background:rgba(4,12,24,.86);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);
   display:grid;place-items:center;padding:20px;opacity:0;transition:opacity .18s ease}
