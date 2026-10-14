@@ -2222,6 +2222,7 @@ main{padding-bottom:48px}
 <!-- كأس الخليج 27: قسم مستقل ببيانات منفصلة (seasons/gulf27) -->
 <link rel="stylesheet" href="gulf.css?v=18">
 <script src="gulf.js?v=46" defer></script>
+<script src="livepush.js?v=1" defer></script>
 <link rel="stylesheet" href="efftime.css?v=3">
 <script src="efftime.js?v=5" defer></script>
 <link rel="stylesheet" href="div1.css?v=1">
@@ -6337,6 +6338,7 @@ async function saveMatch(opt){
   if(quiet && (!EDIT || (window.MX && MX.sheet))) return;
   if(reb.changed) toast(`وصل تحديث من ${reb.by||"محرّر آخر"} — دُمج قبل الحفظ`,"busy");
   EDIT = mergeEdit(EDIT);                     /* ما غيّرناه فقط، فوق أحدث صفوف المباراة */
+  const _lp = (window.LIVEPUSH ? LIVEPUSH.capture(EDIT) : null);   /* أحداث جديدة تُبثّ بعد نجاح الحفظ */
   const m=EDIT.match;
   applyEdit(EDIT);
   applyComp(); DATA_SOURCE="إدخال يدوي في الموقع"; DATA_UPDATED=new Date().toISOString();
@@ -6350,6 +6352,7 @@ async function saveMatch(opt){
   const okm = await persistData();
   if(quiet) MX_ACLOUD = okm===true;
   if(okm===true){ LASTSYNC=new Date(); if(!quiet) toast(`حُفظت المباراة: ${m.home} ضد ${m.away} ✅`,"ok"); predsScoreSoon(); }
+  if(okm===true && _lp && _lp.length) LIVEPUSH.send(_lp);
   else if(okm==="pending") toast(SYNCMSG,"busy");
   else toast(SYNCMSG||"حُفظت محلياً، لكن تعذّر الحفظ في السحابة","err");
   /* أي لقطة وصلت أثناء التحرير أقدم من حفظنا — تطبيقها يتراجع عنه */
@@ -15101,6 +15104,11 @@ html[data-theme="dark"] .mx select option{color:#E6EEF8;background:#0F1E35}   /*
 .mx-tab.bad small{color:#ffb0b4}
 .mx-tab.on.bad small{color:#ffd1d3}
 
+.mx-lp{display:flex;align-items:center;gap:14px;padding:14px 16px;border-radius:14px;cursor:pointer;
+  background:rgba(201,162,77,.07);border:1px solid rgba(201,162,77,.3)}
+.mx-lp input{width:22px;height:22px;accent-color:#C9A24D;flex:0 0 auto;cursor:pointer}
+.mx-lp span{font-weight:600;font-size:.9rem;color:var(--head,#fff)}
+.mx-lp.off{opacity:.45;cursor:not-allowed}
 .mx-card{border-radius:var(--mx-r);background:var(--mx-card);border:1px solid var(--mx-ln);padding:14px;margin-bottom:12px}
 .mx-card h3{margin:0 0 12px;font-family:var(--display);font-size:.95rem;font-weight:800;display:flex;align-items:center;gap:8px}
 .mx-card h3 small{font-family:var(--body);font-weight:600;font-size:.72rem;color:var(--slate);margin-inline-start:auto}
@@ -15379,6 +15387,15 @@ html.mx-editing #waFab{display:none!important}   /* زر واتساب كان ي�
         <span class="mx-lbl">القناة الناقلة</span>
         <div class="mx-chips">${TV_LIST.map(t=>`<button class="mx-chip${m.tv===t?" on":""}" data-mtv="${esc(t)}">${esc(t)}</button>`).join("")}</div>
         <input data-mf="tv" value="${esc(m.tv||"")}" placeholder="أو اكتب اسم القناة" style="margin-top:10px"></div>
+      <div class="mx-card"><h3>بثّ أحداث هذه المباراة<small>إشعار فوري لكل مشترك</small></h3>
+        <label class="mx-lp${EDIT.orig?"":" off"}"><input type="checkbox" id="lpOn" ${EDIT.orig?"":"disabled"}
+          ${(EDIT.orig && window.LIVEPUSH && LIVEPUSH.isOn(matchKey(m)))?"checked":""}
+          onchange="LIVEPUSH.toggle(matchKey(EDIT.match)); toast(this.checked?'بثّ الأحداث مُفعّل لهذه المباراة':'أُوقف البثّ', this.checked?'ok':'busy')">
+          <span>أرسل إشعاراً عند كل هدف وطرد وعند صافرة النهاية</span></label>
+        <p class="mx-hint">${EDIT.orig?`مطفأ افتراضياً. فعّله قبل انطلاق المباراة وأنت ترصد مباشرة —
+          كل حدث تُدخله يصل للمشتركين خلال ثوانٍ. ثلاثة إشعارات كحد أقصى في الحفظة الواحدة،
+          ولا يُعاد إرسال حدث أُرسل. لا يمكن سحب إشعار بعد إرساله.`
+          :`احفظ المباراة أولاً، ثم يصير البثّ متاحاً.`}</p></div>
       <div class="mx-card"><h3>الوقت بدل الضائع</h3>
         <div class="mx-grid">
           <div><span class="mx-lbl">الشوط الأول +</span>
