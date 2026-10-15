@@ -5769,6 +5769,8 @@ function arCount(n, one, two, few, many){
 }
 const nVotes  = n => arCount(n, "صوت واحد", "صوتان", "أصوات", "صوتاً");
 const nVoters = n => arCount(n, "مصوّت واحد", "مصوّتان", "مصوّتين", "مصوّتاً");
+/* أثناء التصويت: الفرز اللحظي بلا أرقام ولا قائمة مصوّتين للجمهور (فريق العمل يراها)، وبعد الإغلاق تظهر كما كانت (منصور 2026-10-15) */
+const TOT_SHOWN = () => !!isAdmin;
 
 function totKey(round, comp){ return round + "|" + comp; }
 function totRow(round, comp){
@@ -7888,7 +7890,7 @@ async function paintFansBody(round, comp){
   else if(!row || !row.done) parts.push(`<div class="card pad"><p class="hint" style="margin:0">
     لم يُفتح التصويت لهذه الجولة بعد. يفتحه فريق العمل بعد رصد المباريات.</p></div>`);
 
-  parts.push(votersHTML(ballots));
+  if(!(row && row.open) || TOT_SHOWN()) parts.push(votersHTML(ballots));
   box.innerHTML = parts.join("");
   wireBallot(round, comp);
 }
@@ -7902,7 +7904,7 @@ function officialXIHTML(row, round, comp, n){
       <div class="fx-v">${esc(p.club)}${v?` · ${nVotes(v)}`:""}</div></div>`:"";
   return `<div class="card pad">
     <div class="fx-hd"><span class="fx-badge">معتمدة</span>
-      <span class="hint" style="margin:0">من ${nVoters(n)} · اعتمدها ${esc(row.by||"فريق العمل")}</span></div>
+      <span class="hint" style="margin:0">من ${nVoters(n)} · اعتمدها ${esc(/@/.test(row.by||"")||!row.by?"فريق العمل":row.by)}</span></div>
     ${fansPitchHTML(row)}
     <div class="fx-grid">
       ${card("أفضل لاعب", row.best, row.bestV)}
@@ -7919,17 +7921,17 @@ function liveTallyHTML(ballots, round, comp){
   const g=roundGoals(round,comp).find(x=>tal.topGoal && x.id===tal.topGoal.id);
   const card=(t,p)=>p?`<div class="fx-card"><div class="fx-t">${t}</div>
       <div class="fx-p" data-player="${esc(p.n)}" data-club="${esc(p.club)}">${pav(p.n,0,false,p.club)}${crest(p.club)}<b>${esc(p.n)}</b></div>
-      <div class="fx-v">${esc(p.club)} · ${nVotes(p.v)}</div></div>`:"";
+      <div class="fx-v">${esc(p.club)}${TOT_SHOWN()?` · ${nVotes(p.v)}`:""}</div></div>`:"";
   return `<div class="card pad">
     <div class="fx-hd"><span class="fx-badge live">الفرز حتى الآن</span>
-      <span class="hint" style="margin:0">${nVoters(ballots.length)} · تصير رسمية باعتماد فريق العمل</span></div>
-    ${built.xi.length>=7 ? fansPitchHTML({f:built.f, xi:built.xi}, tal) : `<p class="hint">لم تكتمل الأصوات لرسم التشكيلة بعد.</p>`}
+      <span class="hint" style="margin:0">${TOT_SHOWN()?`${nVoters(ballots.length)} · `:""}تصير رسمية باعتماد فريق العمل</span></div>
+    ${built.xi.length>=7 ? fansPitchHTML({f:built.f, xi:built.xi}, TOT_SHOWN()?tal:null) : `<p class="hint">لم تكتمل الأصوات لرسم التشكيلة بعد.</p>`}
     <div class="fx-grid">
       ${card("أفضل لاعب", tal.topBest)}
       ${card("أفضل حارس", tal.topGk)}
       ${g?`<div class="fx-card"><div class="fx-t">هدف الجولة</div>
         <div class="fx-p" data-player="${esc(g.p)}" data-club="${esc(g.club)}">${pav(g.p,0,false,g.club)}${crest(g.club)}<b>${esc(g.p)}</b></div>
-        <div class="fx-v">${g.m}' · ${esc(g.club)} · ${nVotes(tal.topGoal.v)}</div></div>`:""}
+        <div class="fx-v">${g.m}' · ${esc(g.club)}${TOT_SHOWN()?` · ${nVotes(tal.topGoal.v)}`:""}</div></div>`:""}
     </div></div>`;
 }
 /* ملعب تشكيلة الجمهور: لاعبون من أندية مختلفة، فلكل واحد لون ناديه */
