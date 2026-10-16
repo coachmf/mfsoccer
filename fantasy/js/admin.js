@@ -561,7 +561,7 @@ const ADMIN = {
         <td><div class="row">${UI.playerAvatar(p,26)} <div><b>${esc(p.name)}</b>${p.newAt?' <span class="pill new">جديد</span>':''}<div class="tiny">${DB.club(p.club).short}</div></div></div></td>
         <td><select style="width:auto;padding:4px" onchange="ADMIN.setPos('${p.id}',this)">${['G','D','M','F'].map(x=>`<option value="${x}" ${p.pos===x?'selected':''}>${POS_AR[x]}</option>`).join('')}</select></td>
         <td><input type="number" step="0.1" value="${p.price}" style="width:70px;padding:4px" onchange="DB.player('${p.id}').price=+this.value;DB.save()"></td>
-        <td><select style="width:auto;padding:4px" onchange="DB.player('${p.id}').status=this.value;DB.save();if(this.value!=='a')ADMIN.injuryNotify('${p.id}')">
+        <td><select style="width:auto;padding:4px" onchange="ADMIN.setStatus('${p.id}',this.value)">
           <option value="a" ${p.status==='a'?'selected':''}>متاح</option><option value="i" ${p.status==='i'?'selected':''}>مصاب</option>
           <option value="s" ${p.status==='s'?'selected':''}>موقوف</option><option value="n" ${(p.status==='n'||p.status==='d')?'selected':''}>غير متوفر</option></select></td>
         <td class="num">${DB.playerTotal(p.id)}</td>
@@ -617,6 +617,15 @@ const ADMIN = {
     UI.toast('جاري نشر اللاعبين الجدد للمشتركين…');
     const r=await CLOUD.publishGame(st);
     if(r.ok) UI.toast(`نُشر ${P.length} لاعباً جديداً للجميع`); else UI.toast(r.err||'تعذّر النشر — انشر اللعبة يدوياً', true);
+  },
+  /* الحالة تُنشر فوراً للمشتركين (منصور 2026-10-16) بدل أن تبقى على جهاز المدير حتى «نشر اللعبة» */
+  async setStatus(pid,val){
+    DB.player(pid).status=val; DB.save();
+    if(val!=='a') this.injuryNotify(pid);
+    if(typeof CLOUD==='undefined' || !CLOUD.ready || !CLOUD.admin){ UI.toast('حُفظت على هذا الجهاز فقط — سجّل دخول المدير في السحابة لنشرها', true); return; }
+    UI.toast('جاري نشر الحالة للمشتركين…');
+    const r=await CLOUD.publishPlayerFields(pid,{status:val});
+    if(r.ok) UI.toast(`نُشرت حالة ${DB.player(pid).name} للجميع`); else UI.toast(r.err||'تعذّر نشر الحالة', true);
   },
   injuryNotify(pid){
     const p=DB.player(pid); const st=DB.state;

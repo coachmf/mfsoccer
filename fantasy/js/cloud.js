@@ -833,6 +833,20 @@ const CLOUD = {
       return !!(u && mine && u!==mine); }catch(e){ return false; }
   },
   markPublished(st, u){ if(typeof DB!=='undefined') DB.cloudUpdated=u; if(st) st.cloudUpdated=u; },
+  /* تعديل لاعب واحد في meta/players (الحالة: مصاب/موقوف…) — منصور 2026-10-16: كانت الحالة تُحفظ على جهاز المدير فقط
+     ولا تصل للمشتركين إلا بـ«نشر اللعبة» الثقيل. نقرأ نسخة الخادم ونغيّر حقول هذا اللاعب وحده حتى لا نكتب فوق تعديلات جهاز آخر. */
+  async publishPlayerFields(pid, fields){
+    if(!this.admin) return {ok:false, err:'النشر للمدير فقط'};
+    const g = await this.race(this.playersDoc().get({source:'server'}));
+    if(!g.ok) return {ok:false, err: g.timeout ? 'الاتصال بطيء — لم تُنشر الحالة' : this.errAr(g.err)};
+    const list = ((g.v.data()||{}).list || []).slice();
+    const i = list.findIndex(p=>p.id===pid);
+    if(i<0) return {ok:false, err:'اللاعب غير موجود في القائمة المنشورة — انشر اللعبة أولاً'};
+    list[i] = {...list[i], ...fields};
+    const r = await this.race(this.playersDoc().update({list, updated: new Date().toISOString()}));
+    return r.ok ? {ok:true} : {ok:false, err: r.timeout ? 'الاتصال بطيء — لم تُنشر الحالة' : this.errAr(r.err)};
+  },
+
   async publishGame(st){
     if(!this.admin) return {ok:false, err:'الاحتساب والنشر للمدير فقط'};
     if(await this.newerElsewhere()) return {ok:false, err:'نُشرت نسخة أحدث من جهاز مدير آخر — أعد تحميل الصفحة ثم انشر'};

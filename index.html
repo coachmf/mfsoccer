@@ -9609,12 +9609,14 @@ const monthOf  = d => String(d||"").slice(0,7);
 
 /* الجولة المفتوحة للتوقع: أقرب جولة فيها مباريات لم تُلعب بعد */
 /* التوقعات للدوري فقط (فحص 2026-10-07): MATCHES تتبع المسابقة المختارة («الكل»/كأس) فتختلط مباريات الكؤوس بجولة التوقعات */
+/* مباراة مؤجلة بلا موعد لا تدخل التوقعات حتى يُحدَّد موعدها (منصور 2026-10-16: القادسية والعربي ظهرا في الجولة 5 مع أنهما مؤجلتان) */
+const predOK = m => !(isUpcoming(m) && kickoffTS(m)===null);
 function openRound(){ return ALL ? withComp("الدوري", openRoundL) : openRoundL(); }
 function openRoundL(){
   const up = MATCHES.filter(isUpcoming).filter(m=>kickoffTS(m)!==null);
   if(!up.length) return null;
   const r = Math.min(...up.map(m=>+m.round||0));
-  const ms = MATCHES.filter(m=>(+m.round||0)===r)
+  const ms = MATCHES.filter(m=>(+m.round||0)===r && predOK(m))
     .sort((a,b)=>(kickoffTS(a) ?? Infinity) - (kickoffTS(b) ?? Infinity));
   const first = ms.find(m=>kickoffTS(m)!==null);
   return {round:r, matches:ms, lockMatch:first||null,
@@ -9624,7 +9626,7 @@ function openRoundL(){
 function predRound(){ return ALL ? withComp("الدوري", predRoundL) : predRoundL(); }
 function predRoundL(){
   if(ROUNDMETA && ROUNDMETA.open){
-    const ms = MATCHES.filter(m=>(+m.round||0)===+ROUNDMETA.round)
+    const ms = MATCHES.filter(m=>(+m.round||0)===+ROUNDMETA.round && predOK(m))
       .sort((a,b)=>(kickoffTS(a) ?? Infinity)-(kickoffTS(b) ?? Infinity));
     if(ms.length) return {round:+ROUNDMETA.round, matches:ms, lockMatch:ms[0],
                           lockAt:ROUNDMETA.lockAt, month:ROUNDMETA.month||monthOf(ms[0].date),
