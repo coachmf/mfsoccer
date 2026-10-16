@@ -247,7 +247,7 @@ function computeRatings(cut){
       /* أقل من 90 دقيقة: يُسحب التقييم نحو متوسط المركز بنسبة دقائقه (45 دقيقة = نصف الفرق عن المتوسط) */
       rows.forEach(x=>{ x.z=(x.comp-mu)/sd * Math.min(1, x.mins/RATING_MODEL.minMinutes); x.model=RATING_MODEL.scale(x.z);
         /* التقييم المعروض = متوسط تقييمات مبارياته؛ النموذج (الفئات) يبقى شرحاً تحته، ويُستخدم فقط إن لم تكن له مباراة مقيَّمة */
-        x.v = x.mAvg!=null ? Math.round(x.mAvg*10)/10 : x.model; out.set(x.n+"|"+x.c, x); });
+        x.v = x.mAvg!=null ? Math.round(x.mAvg*10+1e-6)/10 : x.model;   /* +1e-6: 7.475 = 7.5 لا 7.4 (كسور الحاسبة) */ out.set(x.n+"|"+x.c, x); });
     });
     return out;
   });

@@ -2235,7 +2235,7 @@ main{padding-bottom:48px}
 <!-- التحليل الموسّع + تقييم اللاعبين 0–100 + البحث العام (منصور 2026-09-29) -->
 <link rel="stylesheet" href="analysis.css?v=11">
 <script src="tstats-data.js?v=1" defer></script>
-<script src="analysis.js?v=29" defer></script>
+<script src="analysis.js?v=30" defer></script>
 <!-- هوية MF SOCCER الذهبية + هيكل التطبيق (منصور 2026-10-05) -->
 <link rel="stylesheet" href="mf-brand.css?v=12">
 <script>document.documentElement.classList.add("mf")</script>
@@ -14181,20 +14181,21 @@ function watchFantasyBonus(){
    الأهداف المستقبَلة أثناء وجوده). كل قاعدة مستقلة في RATING.rules: أي إحصائية جديدة تُضاف كقاعدة واحدة
    فتدخل تلقائياً في تقييم كل المباريات والمتوسطات. التقييم يظهر لمن لعب 10 دقائق فأكثر. */
 const RATING = {
-  base: 6.3, min: 3, max: 10, minMinutes: 10,
+  /* منصور 2026-10-16 «الدفاع الأقوى»: الهدف والصناعة أقوى من نتيجة الفريق، والحارس والمدافع يرتفعون بالشباك النظيفة والصناعة */
+  base: 6.5, min: 3, max: 10, minMinutes: 10,
   /* ctx: {m, club, name, line(G|D|M|F), mins, share, win, draw, loss, goals, penGoals, assists, ownGoals,
           yellow, red, penMissed, conceded(أثناء وجوده), teamConceded} */
   rules: [
-    {key:"goal",    label:"الأهداف",                 fn:c => c.goals * ({G:1.3, D:1.2, M:1.0, F:0.9}[c.line] || 1.0) + c.penGoals * 0.7},
-    {key:"assist",  label:"الصناعة",                 fn:c => c.assists * 0.6},
+    {key:"goal",    label:"الأهداف",                 fn:c => c.goals * ({G:1.5, D:1.6, M:1.2, F:1.1}[c.line] || 1.1) + c.penGoals * 0.8},
+    {key:"assist",  label:"الصناعة",                 fn:c => c.assists * ({G:1.1, D:1.1}[c.line] || 0.8)},
     {key:"og",      label:"الأهداف العكسية",         fn:c => c.ownGoals * -0.8},
     {key:"yellow",  label:"الإنذارات",               fn:c => c.yellow * -0.25},
     {key:"red",     label:"الطرد",                   fn:c => c.red * -1.2},
     {key:"penMiss", label:"ركلات الجزاء الضائعة",    fn:c => c.penMissed * -0.6},
-    {key:"result",  label:"نتيجة المباراة",          fn:c => (c.win ? 0.35 : c.loss ? -0.35 : 0) * c.share},
-    {key:"cs",      label:"الشباك النظيفة",          fn:c => (c.mins>=(c.csLimit||60) && c.conceded===0) ? ({G:1.2, D:0.5, M:0.15}[c.line] || 0) : 0},
+    {key:"result",  label:"نتيجة المباراة",          fn:c => (c.win ? 0.15 : c.loss ? -0.15 : 0) * c.share},
+    {key:"cs",      label:"الشباك النظيفة",          fn:c => (c.mins>=(c.csLimit||60) && c.conceded===0) ? ({G:1.6, D:1.0, M:0.15}[c.line] || 0) : 0},
     /* الحارس: الموقع لا يسجّل التصديات، فخصم الأهداف عليه −0.2 للهدف بحد أقصى −0.6 في المباراة (منصور 2026-09-19) */
-    {key:"against", label:"الأهداف المستقبَلة",      fn:c => c.line==="G" ? -Math.min(0.6, c.conceded*0.2) : c.conceded * ({D:-0.15, M:-0.05}[c.line] || 0)},
+    {key:"against", label:"الأهداف المستقبَلة",      fn:c => c.line==="G" ? -Math.min(0.6, c.conceded*0.2) : c.line==="D" ? -Math.min(0.4, c.conceded*0.1) : c.line==="M" ? -Math.min(0.15, c.conceded*0.05) : 0},
     {key:"minutes", label:"دقائق اللعب",             fn:c => c.mins>=(c.csLimit||60) ? 0.15 : 0},
     /* نقاط البونص التي يعتمدها المحررون في الفانتسي (منصور 2026-10-11): تعوّض قلة الإحصاءات المسجّلة.
        3 → +0.6 · 2 → +0.4 · 1 → +0.2 — تُقرأ حيّاً من fantasy/{season}/rounds/{gw} (FBONUS) */
