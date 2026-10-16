@@ -140,7 +140,7 @@
 .ax-br .l small{font-size:.66rem;color:var(--an-mut);font-weight:600}
 .ax-br .b{height:10px;border-radius:6px;background:var(--an-track);overflow:hidden}
 .ax-br .b i{display:block;height:100%;border-radius:6px;transition:width .7s var(--mo-out,ease)}
-.ax-br .b i.r8{background:#1f9ed6}.ax-br .b i.r7{background:#1fa64a}.ax-br .b i.r65{background:#79b92f}.ax-br .b i.r6{background:#d9a318}.ax-br .b i.r5{background:#e0612b}   /* ألوان .rtg في الموقع */
+.ax-br .b i.r8{background:#1fa64a}.ax-br .b i.r7{background:#1fa64a}.ax-br .b i.r65{background:#d9a318}.ax-br .b i.r6{background:#d9a318}.ax-br .b i.r5{background:#d63a2f}   /* ألوان .rtg في الموقع */
 .ax-rt-link .rtg.big,.ax .rtg.big{min-width:48px;height:34px;font-size:1.05rem;border-radius:9px}
 .ax-br>b{font-weight:800;text-align:center;color:var(--an-txt);font-variant-numeric:tabular-nums}
 .ax-br em{grid-column:1/-1;font-style:normal;font-size:.68rem;color:var(--an-mut);line-height:1.5}
@@ -265,7 +265,7 @@ html.gs-open{overflow:hidden}
 .ax-rhead b{display:block;font-size:1.05rem;font-weight:800;color:var(--an-txt)}
 .ax-rhead small{display:block;font-size:.76rem;color:var(--an-mut);margin-top:2px}
 .ax-break .ax-br{grid-template-columns:minmax(0,130px) 1fr 40px;padding:11px 0}
-.ax-br>b.r8{color:#1f9ed6}.ax-br>b.r7{color:#1fa64a}.ax-br>b.r65{color:#79b92f}.ax-br>b.r6{color:#d9a318}.ax-br>b.r5{color:#e0612b}
+.ax-br>b.r8{color:#1fa64a}.ax-br>b.r7{color:#1fa64a}.ax-br>b.r65{color:#d9a318}.ax-br>b.r6{color:#d9a318}.ax-br>b.r5{color:#d63a2f}
 .ax-rawd{border-top:1px solid var(--an-line);padding:10px 0 2px;font-size:.76rem;color:var(--an-mut)}
 .ax-rawd summary{cursor:pointer;font-weight:700;color:var(--an-txt)}
 .ax-rawd p{margin:8px 0;line-height:1.6}.ax-rawd p b{color:var(--an-txt)}

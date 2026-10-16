@@ -586,7 +586,7 @@ function modelNote(only){
       <li>غير مسجّل في الموقع فلا يدخل: التصديات، المساهمات الدفاعية، التسديدات والتمريرات.</li>
     </ol>
     ${gs.map(g=>{ const G=RATING_MODEL.groups[g]; return `<div class="ax-mg"><b>${G.label}</b><ul>${G.cats.map(c=>`<li><span>${H(c.label)} <em>${c.w}%</em></span><small>${c.m.map(mk=>H(M[mk].label)).join("، ")}</small></li>`).join("")}</ul></div>`; }).join("")}
-    <div class="ax-scale">${[[8,"8.0 فأكثر ممتاز"],[7,"7.0–7.9 جيد"],[6.5,"6.5–6.9 فوق المتوسط"],[6,"6.0–6.4 متوسط"],[5,"أقل من 6.0 ضعيف"]].map(([v,t])=>`<span><i class="rtg ${ratingCls(v)}"></i>${t}</span>`).join("")}</div>
+    <div class="ax-scale">${[[7,"7.0 فأكثر جيد"],[6,"6.0–6.9 متوسط"],[5,"أقل من 6.0 ضعيف"]].map(([v,t])=>`<span><i class="rtg ${ratingCls(v)}"></i>${t}</span>`).join("")}</div>
   </details>`;
 }
 

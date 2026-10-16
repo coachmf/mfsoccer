@@ -587,7 +587,7 @@ html.mf .mpt-row{border-top:1px solid var(--border-card,rgba(155,161,184,0.084))
 html.mf .mpt-nm b em{color:var(--text-muted,#9BA1B8)}
 html.mf .mpt-nm small{color:var(--text-muted,#9BA1B8)}
 html.mf .mpt-b>span em{color:var(--text-muted,#9BA1B8)}
-html.mf .rtg.r8{background:#AF9055}
+html.mf .rtg.r8{background:#1fa64a}
 html.mf .rt-row{border-top:1px solid var(--border-card,rgba(155,161,184,0.084))}
 html.mf .rt-board>div:not(:first-child) .rt-row{border-top:1px solid var(--border-card,rgba(155,161,184,0.084))}
 html.mf .rt-colhd{border-bottom:1px solid var(--border-card,rgba(155,161,184,0.108))}
