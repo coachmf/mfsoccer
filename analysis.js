@@ -191,10 +191,13 @@ function computeRatings(cut){
     es.forEach(e=>{ const k=e.club+"|"+matchKey(e.m); if(seen.has(k)) return; seen.add(k); teamMins[e.club]=(teamMins[e.club]||0)+e.LEN; });
     const P=new Map();
     es.forEach(e=>{ const k=e.n+"|"+e.club;
-      const p=P.get(k)||P.set(k,{n:e.n,c:e.club,mins:0,apps:0,full:0,cs:0,g:0,npg:0,pg:0,pkm:0,a:0,og:0,y:0,r:0,gfOn:0,gaOn:0,ptsW:0,shareSum:0,faced:0,saved:0}).get(k);
+      const p=P.get(k)||P.set(k,{n:e.n,c:e.club,mins:0,apps:0,full:0,cs:0,g:0,npg:0,pg:0,pkm:0,a:0,og:0,y:0,r:0,gfOn:0,gaOn:0,ptsW:0,shareSum:0,faced:0,saved:0,rSum:0,rN:0}).get(k);
       p.mins+=e.mins; p.apps++; if(e.full) p.full++; if(e.csOK) p.cs++;
       p.g+=e.g; p.pg+=e.pg; p.npg+=e.g-e.pg; p.pkm+=e.pk-e.pks; p.a+=e.a; p.og+=e.og; p.y+=e.y; p.r+=e.r;
-      p.gfOn+=e.gfOn; p.gaOn+=e.gaOn; p.ptsW+=e.pts*e.share; p.shareSum+=e.share; p.faced+=e.faced; p.saved+=e.saved; });
+      p.gfOn+=e.gfOn; p.gaOn+=e.gaOn; p.ptsW+=e.pts*e.share; p.shareSum+=e.share; p.faced+=e.faced; p.saved+=e.saved;
+      /* منصور 2026-10-16 «المفروض ينبني على كل مباره الافرج»: تقييم كل مباراة (نفس تقييم صفحة المباراة) يدخل في المتوسط */
+      const mr=(typeof isGulfMatch==="function" && isGulfMatch(e.m)) || (typeof ratingsReady==="function" && !ratingsReady(e.m)) ? null : playerRating(e.m, e.club, e.n);
+      if(mr){ p.rSum+=mr.v; p.rN++; } });
     const out=new Map();
     const M=RATING_MODEL.metrics;
     Object.keys(RATING_MODEL.groups).forEach(gk=>{
@@ -235,14 +238,16 @@ function computeRatings(cut){
         });
         const on=cats.filter(c=>c.v!=null), W=on.reduce((s,c)=>s+c.w,0);
         const comp=W ? on.reduce((s,c)=>s+c.w*c.v,0)/W : 50;
-        rows.push({n:p.n, c:p.c, grp:gk, pos:posOf(p.c,p.n), mins:p.mins, apps:p.apps, comp, cats, poolN:pool.length, inPool:pool.includes(p), low:p.mins<RATING_MODEL.minMinutes});
+        rows.push({n:p.n, c:p.c, grp:gk, pos:posOf(p.c,p.n), mins:p.mins, apps:p.apps, comp, cats, mAvg:p.rN? p.rSum/p.rN : null, mN:p.rN, poolN:pool.length, inPool:pool.includes(p), low:p.mins<RATING_MODEL.minMinutes});
       });
       /* توحيد المراكز: نفس المتوسط والمدى لكل مركز */
       const ref=rows.filter(x=>x.inPool);
       const mu=ref.reduce((s,x)=>s+x.comp,0)/ref.length;
       const sd=Math.sqrt(ref.reduce((s,x)=>s+(x.comp-mu)**2,0)/ref.length) || 1;
       /* أقل من 90 دقيقة: يُسحب التقييم نحو متوسط المركز بنسبة دقائقه (45 دقيقة = نصف الفرق عن المتوسط) */
-      rows.forEach(x=>{ x.z=(x.comp-mu)/sd * Math.min(1, x.mins/RATING_MODEL.minMinutes); x.v=RATING_MODEL.scale(x.z); out.set(x.n+"|"+x.c, x); });
+      rows.forEach(x=>{ x.z=(x.comp-mu)/sd * Math.min(1, x.mins/RATING_MODEL.minMinutes); x.model=RATING_MODEL.scale(x.z);
+        /* التقييم المعروض = متوسط تقييمات مبارياته؛ النموذج (الفئات) يبقى شرحاً تحته، ويُستخدم فقط إن لم تكن له مباراة مقيَّمة */
+        x.v = x.mAvg!=null ? Math.round(x.mAvg*10)/10 : x.model; out.set(x.n+"|"+x.c, x); });
     });
     return out;
   });
@@ -544,7 +549,7 @@ function ratingBlock(R, hist){
   const line = hist && hist.length>1 ? histSVG(hist) : "";
   const on=R.cats.filter(c=>c.v!=null);
   return `<section id="axRate">${sec("التقييم")}
-    <div class="an-card ax-rhead">${rateBadge(R.v, true)}<div><b>${rateLbl(R.v)}</b><small>مقارنةً بلاعبي ${H(G.label==="حارس مرمى"?"حراسة المرمى":G.label==="مدافع"?"الدفاع":G.label==="لاعب وسط"?"الوسط":"الهجوم")} فقط</small></div></div>
+    <div class="an-card ax-rhead">${rateBadge(R.v, true)}<div><b>${rateLbl(R.v)}</b><small>${R.mN?`متوسط تقييمه في ${R.mN} ${R.mN===1?"مباراة":R.mN===2?"مباراتين":R.mN<=10?"مباريات":"مباراة"} · الفئات مقارنةً بلاعبي `:"مقارنةً بلاعبي "}${H(G.label==="حارس مرمى"?"حراسة المرمى":G.label==="مدافع"?"الدفاع":G.label==="لاعب وسط"?"الوسط":"الهجوم")} فقط</small></div></div>
     <div class="an-card ax-break">${on.map(c=>{ const v=catVal(c.v); return `<div class="ax-br">
         <span class="l">${H(c.label)}</span>
         <span class="b"><i style="width:${v*10}%" class="${rateCls(v)}"></i></span>
@@ -571,6 +576,7 @@ function modelNote(only){
   const gs=only?[only]:Object.keys(RATING_MODEL.groups);
   return `<details class="an-card ax-model"><summary>كيف يُحسب التقييم${only?` (${RATING_MODEL.groups[only].label})`:""}</summary>
     <ol class="ax-steps">
+      <li>التقييم = متوسط تقييماته في كل مباراة لعبها (نفس تقييم صفحة المباراة). الفئات تحته تشرح مستواه مقارنةً بلاعبي مركزه.</li>
       <li>المركز من كشف النادي: حارس، مدافع (CB/LB/RB/LWB/RWB)، وسط (CDM/CM/CAM/LM/RM)، مهاجم (ST/CF/LW/RW).</li>
       <li>المقاييس لكل 90 دقيقة أو لكل مباراة، لا مجاميع.</li>
       <li>العيّنة الصغيرة: يُضاف لكل لاعب ${RATING_MODEL.K} مباريات افتراضية بمستوى متوسط مركزه، فتستقر الأرقام دون معاقبة المتألق.</li>
