@@ -55,6 +55,7 @@ const PLAYER_PHOTOS = {
   'SAH|فيصل المكيمي': '/assets/players/sah/12',
   'SAH|ناصر القحطاني': '/assets/players/sah/14',
   'SAH|موريسيو': '/assets/players/sah/15',
+  'SAH|عمر الهنودي': '/assets/players/sah/hanoudi',
   'SAH|جابر العجاجي': '/assets/players/sah/19',
   'SAH|فواز الدوسري': '/assets/players/sah/22',
   'SAH|لوكاس دي سوزا': '/assets/players/sah/23',

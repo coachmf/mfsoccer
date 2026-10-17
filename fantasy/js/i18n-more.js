@@ -137,7 +137,7 @@ const NAMES_EN = {
   'همام صبحي':'Humam Sobhi', 'فيتور دا سيلفا':'Vitor Da Silva', 'خالد سليمان الشمري':'Khalid Sulaiman Al-Shammari',
   // الساحل
   'مشعل الرشيدي':'Meshal Al-Rashidi', 'فيصل المكيمي':'Faisal Al-Mukaimi', 'فواز الدوسري':'Fawaz Al-Dosari', 'علي جوهر':'Ali Jawhar',
-  'عبدالرحمن الديحاني':'Abdulrahman Al-Daihani', 'موريسيو':'Mauricio', 'لوكاس دي سوزا':'Lucas De Souza', 'محمد الراشد':'Mohammad Al-Rashed',
+  'عبدالرحمن الديحاني':'Abdulrahman Al-Daihani', 'موريسيو':'Mauricio', 'عمر الهنودي':'Omar Al-Hanoudi', 'لوكاس دي سوزا':'Lucas De Souza', 'محمد الراشد':'Mohammad Al-Rashed',
   'عبدالعزيز العنزي':'Abdulaziz Al-Enezi', 'بدر الزايد':'Bader Al-Zayed', 'حمزه زياد':'Hamza Ziyad', 'عمر العنزي':'Omar Al-Enezi', 'يوسف بادي':'Yousef Badi',
   'محمد العلاطي':'Mohammad Al-Alati', 'أحمد غازي':'Ahmad Ghazi', 'محمد العتيبي':'Mohammad Al-Otaibi', 'ناصر القحطاني':'Nasser Al-Qahtani', 'كليتون':'Cleiton',
   'جواو':'Joao', 'راشد بن علي':'Rashed Bin Ali', 'غازي العتيبي':'Ghazi Al-Otaibi', 'جابر العجاجي':'Jaber Al-Ajaji', 'ألن دي سوزا':'Alan De Souza',
