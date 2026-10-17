@@ -156,7 +156,10 @@ const GLOBALS = () => ({ALL, SQUADS, CLUBS, LOGOS, COMP, MATCHES, GOALS, PENS, C
 function ctxSquads(saved){
   const out = {};
   ours().forEach(c=>{ const L = clone((saved.SQUADS||{})[c] || []), have = new Set(L.map(x=>typeof x==="string" ? x : x && x.n));
-    (DATA.squads[c]||[]).forEach(x=>{ if(x && x.n && !have.has(x.n)){ have.add(x.n); L.push(clone(x)); } });   /* لاعبون أُضيفوا للمشاركات الخارجية فقط (محمد الفيلكاوي 2026-10-17) */
+    (DATA.squads[c]||[]).forEach(x=>{ if(!x || !x.n) return;
+      if(x.ov){ const i = L.findIndex(e=>(typeof e==="string" ? e : e && e.n)===x.n);   /* رقم للمشاركات الخارجية فقط (منصور 2026-10-17) */
+        if(i>=0) L[i] = Object.assign({}, typeof L[i]==="string" ? {n:L[i]} : L[i], {s:x.s}); return; }
+      if(!have.has(x.n)){ have.add(x.n); L.push(clone(x)); } });   /* لاعبون أُضيفوا للمشاركات الخارجية فقط (محمد الفيلكاوي 2026-10-17) */
     out[c] = L; });                                                                   /* نسخة للقراءة — كشف الدوري لا يُكتب */
   opponents().forEach(c=>{ out[c] = DATA.squads[c] || (DATA.squads[c] = []); });    /* قوائم الخصوم من الوثيقة */
   return out;
@@ -539,7 +542,7 @@ function adminHTML(){
   return `<div id="extAdmin"><h2 class="sec">المشاركات الخارجية</h2>
     <div class="card pad">
       <p class="hint" style="margin:0 0 4px">اختر البطولة: مبارياتها كلها (أنديتنا والفرق الأخرى) بالتشكيلة والخطة والأهداف والبطاقات والتبديلات والأحداث، والمباشر من «إدخال يدوي» (اضغط «الشوط الأول» مع صافرة البداية فتظهر الدقيقة للجمهور ويُحفظ تلقائياً).</p>
-      <p class="hint" style="margin:0 0 4px">لاعبو الفرق الأجنبية يُكتبون في التشكيلة والأحداث مباشرة ويُحفظون للمباريات التالية. أنديتنا بقوائمها في الدوري.</p>
+      <p class="hint" style="margin:0 0 4px">لاعبو الفرق الأجنبية يُكتبون في التشكيلة والأحداث مباشرة ويُحفظون للمباريات التالية، وأسماؤهم وأرقامهم تُعدَّل من «قوائم الفرق» أسفل البطولة.</p>
       <p class="hint" style="margin:0">تُحفظ في وثيقة مستقلة (${DOC_ID})، فلا تدخل ترتيب الدوري ولا الهدافين ولا ملفات اللاعبين ولا التقييمات ولا الفانتسي.</p>
     </div>
     <div class="segbar xadm-pick" role="tablist">${CX.map(c=>`<button class="seg" type="button" data-xadm="comp" data-c="${c.id}" aria-pressed="${c.id===ADM_C}"><img src="assets/comps/${c.id}.webp" alt="" width="22" height="22">${H(cName(c.id))}</button>`).join("")}</div>
@@ -551,8 +554,119 @@ function adminHTML(){
         <div class="gadm-list">${ms.length ? daysHTML(ms) : `<p class="hint">لا مباريات بعد.</p>`}</div>
         <p class="hint" style="margin:10px 0 0">الجولات 1–${c.g} = دور المجموعات، وما بعدها خروج المغلوب (أشواط إضافية وركلات ترجيح).</p>
       </div>`; }).join("")}
+    ${xsqHTML(ADM_C)}
     </div>`;
 }
+
+/* ───────────── قوائم الفرق: تعديل الأسماء والأرقام والمراكز (منصور 2026-10-17) ─────────────
+   الخصوم: القائمة كلها تُعدَّل وتُحذف ويُضاف لها. أنديتنا: لاعبو الدوري أسماؤهم من كشف الدوري (لا تُغيَّر هنا)
+   ورقمهم يُغيَّر للمشاركات الخارجية فقط (تجاوز ov:1 في squads[النادي]، كشف الدوري والفانتسي بلا مساس)،
+   واللاعبون المضافون للمشاركات فقط يُعدَّلون كاملاً. تغيير الاسم يُطبَّق على كل أحداث الفريق في بطولته
+   (تشكيلة/تبديلات/أهداف/صناعة/بطاقات/ركلات/خطة/أحداث) فلا تنقطع أرقام اللاعب. */
+const XPOS = [["","المركز"],["GK","حارس"],["D","دفاع"],["M","وسط"],["F","هجوم"]];
+const sqN = x => String(typeof x==="string" ? x : (x && x.n) || "").trim();
+const leagueSq = c => (depth===0 && typeof SQUADS==="object" && SQUADS && Array.isArray(SQUADS[c])) ? SQUADS[c] : [];
+let XSQ = {c:"", t:"", rows:null, dirty:false};
+function xsqUsed(d, comp, club, n){
+  const mine = x => x.comp===comp;
+  return d.lineups.some(x=>mine(x) && x.club===club && x.p===n) || d.subs.some(x=>mine(x) && x.club===club && (x.in===n || x.out===n))
+      || d.cards.some(x=>mine(x) && x.club===club && x.p===n) || d.goals.some(x=>mine(x) && (x.sc===club || x.cd===club) && (x.p===n || x.a===n));
+}
+function xsqBuild(cid, team){
+  const our = ours().includes(team), ext = DATA.squads[team] || [];
+  let rows;
+  if(our){
+    const lg = leagueSq(team), lgN = new Set(lg.map(sqN));
+    rows = lg.map(x=>{ const n = sqN(x), ov = ext.find(e=>e && e.ov && e.n===n), s0 = (x && x.s) || null;
+        return {o:n, n, s:(ov && ov.s!==undefined) ? ov.s : s0, s0, p:(x && x.p) || "", lg:1}; })
+      .concat(ext.filter(e=>e && e.n && !e.ov && !lgN.has(e.n)).map(e=>({o:e.n, n:e.n, s:e.s || null, p:e.p || ""})));
+  } else rows = ext.filter(e=>e && e.n).map(e=>({o:e.n, n:e.n, s:e.s || null, p:e.p || ""}));
+  rows.sort((a,b)=>(a.s||999)-(b.s||999) || a.n.localeCompare(b.n, "ar"));
+  XSQ = {c:cid, t:team, rows, dirty:false};
+}
+function xsqHTML(cid){
+  const teams = teamsOf(cid); if(!teams.length) return "";
+  if(XSQ.c!==cid || !teams.includes(XSQ.t)) xsqBuild(cid, teams.find(t=>ours().includes(t)) || teams[0]);
+  else if(!XSQ.rows || !XSQ.dirty) xsqBuild(cid, XSQ.t);
+  const our = ours().includes(XSQ.t), comp = cName(cid);
+  const row = (r, i) => { const used = r.o && xsqUsed(DATA, comp, XSQ.t, r.o);
+    return `<div class="xsq-r${r.lg?" lg":""}" data-i="${i}">
+      <input class="s" type="number" inputmode="numeric" min="0" max="99" value="${r.s==null?"":H(r.s)}" placeholder="#" aria-label="الرقم">
+      <input class="n" type="text" value="${H(r.n)}" placeholder="اسم اللاعب" aria-label="الاسم"${r.lg?" readonly":""}>
+      ${r.lg ? `<span class="tag">الدوري</span>` : `<select class="p" aria-label="المركز">${XPOS.map(([v,l])=>`<option value="${v}"${(r.p||"")===v?" selected":""}>${l}</option>`).join("")}</select>`}
+      ${r.lg ? `<i class="sp"></i>` : `<button type="button" class="del" data-xsq="del" data-i="${i}" title="${used?"له أحداث في المباريات — عدّل اسمه بدل الحذف":"حذف"}"${used?" disabled":""}>×</button>`}
+    </div>`; };
+  return `<div class="card pad xsq" id="xsq">
+    <div class="xsq-hd"><b>قوائم الفرق · الأسماء والأرقام</b>
+      <small>عدّل ثم «حفظ التعديلات». تغيير الاسم يتغيّر معه في كل مباريات الفريق بهذه البطولة.${our ? " لاعبو الدوري: الرقم هنا للمشاركات الخارجية فقط، والاسم من كشف الدوري." : ""}</small></div>
+    <div class="xsq-teams">${teams.map(t=>`<button type="button" class="seg" data-xsq="team" data-t="${H(t)}" aria-pressed="${t===XSQ.t}">${crestOf(t)}<span>${H(t)}</span></button>`).join("")}</div>
+    <div class="xsq-list">${XSQ.rows.length ? XSQ.rows.map(row).join("") : `<p class="hint">لا لاعبين بعد — أضف من «+ لاعب».</p>`}</div>
+    <div class="xsq-act"><button type="button" class="mx-ghost" data-xsq="add">+ لاعب</button>
+      <button type="button" class="mx-ghost" data-xsq="undo"${XSQ.dirty?"":" disabled"}>تراجع</button>
+      <button type="button" class="btn" data-xsq="save"${XSQ.dirty?"":" disabled"}>حفظ التعديلات</button></div>
+  </div>`;
+}
+function xsqRepaint(){ const b = document.getElementById("xsq"); if(!b) return; const t = document.createElement("div"); t.innerHTML = xsqHTML(XSQ.c); b.replaceWith(t.firstElementChild); }
+function xsqDirty(){ XSQ.dirty = true; const b = document.getElementById("xsq"); if(b) b.querySelectorAll('[data-xsq="save"],[data-xsq="undo"]').forEach(x=>x.disabled = false); }
+function renameIn(d, comp, club, a, b){
+  const mine = x => x.comp===comp;
+  d.lineups.forEach(x=>{ if(mine(x) && x.club===club && x.p===a) x.p = b; });
+  d.subs.forEach(x=>{ if(mine(x) && x.club===club){ if(x.in===a) x.in = b; if(x.out===a) x.out = b; } });
+  d.cards.forEach(x=>{ if(mine(x) && x.club===club && x.p===a) x.p = b; });
+  d.goals.forEach(x=>{ if(!mine(x)) return; const own = x.bp==="هدف عكسي" || !!x.og;
+    if((own ? x.cd : x.sc)===club && x.p===a) x.p = b; if(x.sc===club && x.a===a) x.a = b; });
+  d.pens.forEach(x=>{ if(mine(x) && x.by===club && x.p===a) x.p = b; });
+  d.shapes.forEach(x=>{ if(mine(x) && x.club===club && x.pos && x.pos[a] && !x.pos[b]){ x.pos[b] = x.pos[a]; delete x.pos[a]; } });
+  d.mev.forEach(x=>{ if(mine(x) && x.club===club && x.p===a) x.p = b; });
+}
+async function xsqSave(btn){
+  const comp = cName(XSQ.c), team = XSQ.t, our = ours().includes(team);
+  const num = v => (v==="" || v==null) ? null : (Math.max(0, Math.min(99, Math.round(+v) || 0)) || null);
+  const rows = XSQ.rows.map(r=>Object.assign({}, r, {n:String(r.n||"").trim().replace(/\s+/g," "), s:num(r.s)})).filter(r=>r.n || r.o);
+  if(rows.some(r=>!r.n)){ toast("اسم لاعب فارغ — اكتب الاسم أو احذف الصف","err"); return; }
+  const seen = new Set(); for(const r of rows){ if(seen.has(r.n)){ toast(`الاسم مكرّر: ${r.n}`,"err"); return; } seen.add(r.n); }
+  const ren = rows.filter(r=>r.o && !r.lg && r.n!==r.o).map(r=>[r.o, r.n]);
+  const orig = new Set(XSQ.rows.map(r=>r.o).filter(Boolean));
+  btn.disabled = true;
+  try{
+    await saveFresh(d=>{
+      ren.forEach(([a,b])=>renameIn(d, comp, team, a, b));
+      const prev = d.squads[team] || [], keep = n => clone(prev.find(e=>e && e.n===n && !e.ov) || {});
+      const list = [];
+      rows.forEach(r=>{
+        if(r.lg){ if((r.s||null)!==(r.s0||null)) list.push({n:r.n, s:r.s, ov:1}); return; }   /* رقم لاعب الدوري: تجاوز فقط عند الاختلاف */
+        list.push(Object.assign(keep(r.o || r.n), {n:r.n, p:r.p || "", s:r.s}));
+      });
+      /* إضافات محرّر آخر منذ فتح القائمة لا تضيع */
+      prev.forEach(e=>{ if(e && e.n && !orig.has(e.n) && !list.some(x=>x.n===e.n) && !(our && e.ov)) list.push(e); });
+      d.squads[team] = list;
+    });
+    toast(ren.length ? `حُفظت القائمة وتغيّر ${ren.length === 1 ? "اسم واحد" : ren.length + " أسماء"} في المباريات` : "حُفظت القائمة","ok");
+    XSQ.dirty = false; xsqBuild(XSQ.c, team); repaint();
+  }catch(x){ toast("تعذّر الحفظ: "+(x.code||x.message),"err"); btn.disabled = false; }
+}
+document.addEventListener("input", e=>{
+  const r = e.target.closest && e.target.closest(".xsq-r"); if(!r || !XSQ.rows) return;
+  const o = XSQ.rows[+r.dataset.i]; if(!o) return;
+  const k = e.target.classList;
+  if(k.contains("s")) o.s = e.target.value; else if(k.contains("n") && !o.lg) o.n = e.target.value; else if(k.contains("p")) o.p = e.target.value; else return;
+  xsqDirty();
+}, true);
+document.addEventListener("change", e=>{
+  const r = e.target.closest && e.target.closest(".xsq-r"); if(!r || !XSQ.rows || !e.target.classList.contains("p")) return;
+  const o = XSQ.rows[+r.dataset.i]; if(o){ o.p = e.target.value; xsqDirty(); }
+}, true);
+document.addEventListener("click", e=>{
+  const b = e.target.closest("[data-xsq]"); if(!b) return;
+  const a = b.dataset.xsq;
+  if(a==="team"){ if(b.dataset.t===XSQ.t) return; if(XSQ.dirty && !confirm("تعديلات غير محفوظة — تجاهلها؟")) return; xsqBuild(XSQ.c, b.dataset.t); xsqRepaint(); }
+  if(a==="add"){ XSQ.rows.push({o:"", n:"", s:null, p:""}); XSQ.dirty = true; xsqRepaint();
+    const ins = document.querySelectorAll("#xsq .xsq-r .n"); if(ins.length) ins[ins.length-1].focus(); }
+  if(a==="del"){ const i = +b.dataset.i, r = XSQ.rows[i]; if(!r) return;
+    if(r.o && !confirm(`حذف ${r.o} من قائمة ${XSQ.t}؟`)) return; XSQ.rows.splice(i,1); XSQ.dirty = true; xsqRepaint(); }
+  if(a==="undo"){ xsqBuild(XSQ.c, XSQ.t); xsqRepaint(); }
+  if(a==="save") xsqSave(b);
+}, true);
 
 async function saveFresh(mutate){
   const base = await store.fresh();

@@ -48,3 +48,24 @@ html[data-theme="dark"] .xadd input,html[data-theme="dark"] .xadd select{backgro
 .xt-st-e{margin:0;font-size:.78rem;color:var(--slate)}
 .xt-st-n{margin:10px 2px 0;font-size:.7rem;color:var(--slate)}
 html[data-theme="dark"] .xt-st-c{background:#132238;border-color:#213653}
+/* قوائم الفرق: الأسماء والأرقام (منصور 2026-10-17) */
+#extAdmin .xsq{margin-top:12px}
+.xsq-hd{display:flex;flex-direction:column;gap:3px;margin-bottom:10px}
+.xsq-hd b{font:800 .95rem var(--display);color:var(--head)}
+.xsq-hd small{font-size:.72rem;line-height:1.6;color:var(--slate)}
+.xsq-teams{display:flex;gap:6px;overflow-x:auto;padding-bottom:6px;margin-bottom:8px;scrollbar-width:thin}
+.xsq-teams .seg{flex:none;display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.xsq-teams .crest{width:22px;height:22px;border-radius:6px}
+.xsq-list{display:flex;flex-direction:column;gap:6px}
+.xsq-r{display:grid;grid-template-columns:54px minmax(0,1fr) 84px 34px;gap:6px;align-items:center}
+.xsq-r input,.xsq-r select{min-width:0;width:100%;box-sizing:border-box;margin:0;height:38px;padding:0 9px;border:1px solid var(--line);border-radius:9px;background:var(--navy-900);color:var(--head);font:600 .84rem var(--display)}
+.xsq-r .s{text-align:center;padding:0 4px;font-variant-numeric:tabular-nums}
+.xsq-r select{padding:0 6px;-webkit-appearance:menulist;appearance:auto}
+.xsq-r.lg .n{opacity:.8;border-style:dashed}
+.xsq-r .tag{font:700 .68rem var(--display);color:var(--slate);text-align:center}
+.xsq-r .del{height:34px;border:1px solid var(--line);border-radius:9px;background:transparent;color:#e5484d;font:800 1.05rem/1 var(--display);cursor:pointer}
+.xsq-r .del:disabled{opacity:.3;cursor:not-allowed}
+.xsq-act{display:flex;gap:6px;margin-top:10px}
+.xsq-act>*{flex:1;justify-content:center;white-space:nowrap}
+.xsq-act .btn:disabled,.xsq-act .mx-ghost:disabled{opacity:.45}
+html[data-theme="dark"] .xsq-r input,html[data-theme="dark"] .xsq-r select{background:#0e1a2c;border-color:#213653}
