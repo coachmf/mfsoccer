@@ -14,7 +14,7 @@ const COACH_TERM = {
 
 /* أسماء المدربين بالإنجليزية (بطاقات الملعب تعرض الكلمة الأخيرة) */
 const COACH_NAMES_EN = {
-  'فراس الخطيب':'Firas Al-Khatib', 'غوران سابليتش':'Goran Sablić', 'محمد إبراهيم':'Mohammed Ibrahim',
+  'فراس الخطيب':'Firas Al-Khatib', 'غوران سابليتش':'Goran Sablić', 'محمد عبدالنبي':'Mohammed Abdulnabi', 'محمد إبراهيم':'Mohammed Ibrahim',
   'علي عاشور':'Ali Ashour', 'دراغان تاديتش':'Dragan Tadić', 'ظاهر العدواني':'Dhaher Al-Adwani',
   'مارتن سيفيلا':'Martin Ševela', 'أحمد عبدالكريم':'Ahmad Abdulkarim', 'أنطونيو ميراندا':'António Miranda',
   'واغنر أندرادي':'Wagner Andrade', 'إيغور ريميتش':'Igor Remetić', 'علي عبدالرضا':'Ali Abdulredha',
