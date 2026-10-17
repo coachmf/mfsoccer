@@ -10,10 +10,16 @@
 .xadm-row .t b{font-size:.84rem;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .xadm-seed{font-style:normal;color:var(--slate);font-weight:600}
 /* تبويب التشكيلة لفريق خصم: إضافة لاعب بالاسم */
-.xadd{display:flex;gap:6px;margin:8px 0 4px}
-.xadd input{flex:1;min-width:0;height:38px;padding:0 10px;border:1px solid var(--line);border-radius:9px;background:var(--navy-900);color:var(--head);font:600 .84rem var(--display)}
-.xadd button{flex:none;white-space:nowrap}
-html[data-theme="dark"] .xadd input{background:#0e1a2c;border-color:#213653}
+.xadd{margin:8px 0 6px;padding:10px;border:1px dashed var(--line);border-radius:11px}
+.xadd-h{font:700 .78rem var(--display);color:var(--slate);margin-bottom:8px}
+.xadd-r{display:flex;gap:6px}
+.xadd-r+.xadd-r{margin-top:6px}
+.xadd input,.xadd select{min-width:0;width:100%;box-sizing:border-box;margin:0;height:38px;padding:0 10px;border:1px solid var(--line);border-radius:9px;background:var(--navy-900);color:var(--head);font:600 .84rem var(--display)}
+.xadd [data-xaddp]{flex:1}
+.xadd [data-xadds]{flex:1;width:auto;text-align:center}
+.xadd select{flex:1;width:auto !important;padding:0 8px !important;line-height:normal;-webkit-appearance:menulist;appearance:auto}
+.xadd button{flex:1;white-space:nowrap;justify-content:center}
+html[data-theme="dark"] .xadd input,html[data-theme="dark"] .xadd select{background:#0e1a2c;border-color:#213653}
 .mp-when .xt-comp{font-weight:800}
 /* اختيار البطولة في الإدارة: عالم كل بطولة على حدة */
 .xadm-pick{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0 0}

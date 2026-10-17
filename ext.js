@@ -155,7 +155,9 @@ let depth = 0;
 const GLOBALS = () => ({ALL, SQUADS, CLUBS, LOGOS, COMP, MATCHES, GOALS, PENS, CARDS, LSCALE, pc:photoCut, nf:natFlag, cc:window.CLUB_COLORS});
 function ctxSquads(saved){
   const out = {};
-  ours().forEach(c=>{ out[c] = clone((saved.SQUADS||{})[c] || []); });              /* نسخة للقراءة — لا تُكتب */
+  ours().forEach(c=>{ const L = clone((saved.SQUADS||{})[c] || []), have = new Set(L.map(x=>typeof x==="string" ? x : x && x.n));
+    (DATA.squads[c]||[]).forEach(x=>{ if(x && x.n && !have.has(x.n)){ have.add(x.n); L.push(clone(x)); } });   /* لاعبون أُضيفوا للمشاركات الخارجية فقط (محمد الفيلكاوي 2026-10-17) */
+    out[c] = L; });                                                                   /* نسخة للقراءة — كشف الدوري لا يُكتب */
   opponents().forEach(c=>{ out[c] = DATA.squads[c] || (DATA.squads[c] = []); });    /* قوائم الخصوم من الوثيقة */
   return out;
 }
@@ -410,7 +412,7 @@ function hookEditor(){
   if(typeof renderMatchAdmin==="function" && !renderMatchAdmin.__ext){
     const o = renderMatchAdmin;
     renderMatchAdmin = function(){
-      if(EDIT_OPEN()){ const r = withExt(()=>o.apply(this, arguments), cOfName(EDIT.match.comp) ? EDIT.match.comp : null); const mb = document.getElementById("matchAdmin"); try{ compChips(mb); }catch(e){} try{ oppAddBox(mb); }catch(e){} return r; }
+      if(EDIT_OPEN()){ const r = withExt(()=>o.apply(this, arguments), cOfName(EDIT.match.comp) ? EDIT.match.comp : null); const mb = document.getElementById("matchAdmin"); try{ compChips(mb); }catch(e){} try{ addBox(mb); }catch(e){} return r; }
       const r = o.apply(this, arguments);
       if(PENDING){ DATA = normalize(PENDING); PENDING = null; repaint(); }
       return r;
@@ -461,8 +463,11 @@ function hookEditor(){
 /* أسماء لاعبي الخصم المكتوبة في هذه المباراة ← squads[الخصم] (بلا مركز) فتظهر للاختيار لاحقاً */
 function rememberNames(d, m){
   const mine = x => x.comp===m.comp && +x.r===+m.round;
-  [m.home, m.away].filter(c=>!ours().includes(c)).forEach(c=>{
-    const L = d.squads[c] || (d.squads[c] = []), have = new Set(L.map(x=>x && x.n));
+  ADDED.forEach(a=>{ const L = d.squads[a.club] || (d.squads[a.club] = []); if(!L.some(x=>x && x.n===a.n)) L.push({n:a.n, p:a.p||"", s:a.s||null}); });
+  ADDED = [];
+  [m.home, m.away].forEach(c=>{
+    const our = ours().includes(c), lg = new Set(((typeof SQUADS==="object" && SQUADS && SQUADS[c]) || []).map(x=>typeof x==="string" ? x : x && x.n));
+    const L = d.squads[c] || (d.squads[c] = []), have = new Set([...L.map(x=>x && x.n), ...(our ? lg : [])]);
     const add = n => { n = String(n||"").trim(); if(n && !have.has(n)){ have.add(n); L.push({n, p:""}); } };
     d.lineups.filter(x=>mine(x) && x.club===c).forEach(x=>add(x.p));
     d.subs.filter(x=>mine(x) && x.club===c).forEach(x=>{ add(x.in); add(x.out); });
@@ -470,19 +475,31 @@ function rememberNames(d, m){
     d.cards.filter(x=>mine(x) && x.club===c).forEach(x=>add(x.p));
   });
 }
-/* تبويب التشكيلة لفريق خصم: حقل لكتابة اسم لاعب غير موجود في قائمته فينزل أساسياً مباشرة */
-function oppAddBox(box){
+/* تبويب التشكيلة (الفريقان): لاعب غير موجود في القائمة ← يُضاف لقائمة النادي في المشاركات الخارجية فقط (لا يمسّ كشف الدوري ولا الفانتسي)
+   «للقائمة» = يظهر للاختيار (احتياط/تبديل/هدف/إنذار)، «أساسي» = ينزل للتشكيلة مباشرة. محمد الفيلكاوي 2026-10-17 */
+let ADDED = [];   /* إضافات هذا المحرّر — تُعاد بعد جلب أحدث نسخة من الخادم عند الحفظ */
+function addBox(box){
   if(!window.MX || MX.tab!=="lineup" || !EDIT) return;
-  const club = EDIT.match[MX.side]; if(!club || ours().includes(club)) return;
+  const club = EDIT.match[MX.side]; if(!club) return;
   const srch = box && box.querySelector(".mx-search"); if(!srch || box.querySelector(".xadd")) return;
-  srch.insertAdjacentHTML("afterend", `<div class="xadd"><input type="text" data-xaddp placeholder="لاعب غير موجود؟ اكتب اسمه" autocomplete="off"><button type="button" class="mx-ghost" data-xaddp-go>إضافة للأساسيين</button></div>`);
-  const inp = box.querySelector("[data-xaddp]"), go = box.querySelector("[data-xaddp-go]");
-  const add = () => { const n = String(inp.value||"").trim().replace(/\s+/g," "); if(!n || !EDIT) return;
-    const xi = (EDIT.lineup||[]).filter(x=>x.club===club);
-    if(xi.some(x=>x.p===n)){ toast("اللاعب في التشكيلة أصلاً","busy"); return; }
-    if(xi.length>=11){ toast("التشكيلة مكتملة (11) — أخرج لاعباً أولاً","err"); return; }
-    (EDIT.lineup ||= []).push({club, p:n}); renderMatchAdmin(); };
-  go.onclick = add; inp.onkeydown = e=>{ if(e.key==="Enter"){ e.preventDefault(); add(); } };
+  srch.insertAdjacentHTML("afterend", `<div class="xadd"><div class="xadd-h">لاعب غير موجود في قائمة ${H(club)}؟</div>
+    <div class="xadd-r"><input type="text" data-xaddp placeholder="اسم اللاعب" autocomplete="off"></div>
+    <div class="xadd-r"><input type="number" inputmode="numeric" min="1" max="99" data-xadds placeholder="الرقم">
+    <select data-xaddpos><option value="">المركز</option><option value="GK">حارس</option><option value="D">دفاع</option><option value="M">وسط</option><option value="F">هجوم</option></select></div>
+    <div class="xadd-r"><button type="button" class="mx-ghost" data-xadd-go="list">إضافة للقائمة</button><button type="button" class="mx-ghost" data-xadd-go="xi">إضافة للأساسيين</button></div></div>`);
+  const inp = box.querySelector("[data-xaddp]"), num = box.querySelector("[data-xadds]"), pos = box.querySelector("[data-xaddpos]");
+  const add = xi => { const n = String(inp.value||"").trim().replace(/\s+/g," "); if(!n || !EDIT){ toast("اكتب اسم اللاعب","err"); return; }
+    const s = Math.max(0, Math.min(99, +num.value||0)) || null, p = pos.value || "";
+    const inList = withExt(()=>(SQUADS[club]||[]).some(x=>(typeof x==="string" ? x : x && x.n)===n), EDIT.match.comp);
+    if(!inList){ const L = DATA.squads[club] || (DATA.squads[club] = []); if(!L.some(x=>x && x.n===n)) L.push({n, p, s}); ADDED.push({club, n, p, s}); }
+    if(xi){ const cur = (EDIT.lineup||[]).filter(x=>x.club===club);
+      if(cur.some(x=>x.p===n)){ toast("اللاعب في التشكيلة أصلاً","busy"); return; }
+      if(cur.length>=11){ toast("التشكيلة مكتملة (11) — أخرج لاعباً أولاً","err"); renderMatchAdmin(); return; }
+      (EDIT.lineup ||= []).push({club, p:n}); }
+    toast(inList ? (xi ? `${n} نزل أساسياً` : `${n} موجود في القائمة`) : `أُضيف ${n} لقائمة ${club}${xi ? " وأساسياً" : ""}`, "ok");
+    renderMatchAdmin(); };
+  box.querySelectorAll("[data-xadd-go]").forEach(b=>b.onclick = () => add(b.dataset.xaddGo==="xi"));
+  inp.onkeydown = e=>{ if(e.key==="Enter"){ e.preventDefault(); add(false); } };
 }
 
 /* ───────────── الإدارة: تبويب «المشاركات الخارجية» ───────────── */
