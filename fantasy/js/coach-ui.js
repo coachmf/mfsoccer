@@ -45,6 +45,15 @@ const COACH_UI = {
   },
   formPills(form){ return (form||[]).map(f=>`<span class="cform ${f}">${f==='w'?'ف':f==='d'?'ت':'خ'}</span>`).join(''); },
   rankNow(club){ return STANDINGS.rankOf(DB.state, 99, club); },
+  /* سجل النادي من جولة from (مدرب جديد يبدأ ملفه من الصفر — منصور 2026-10-17) */
+  recordFrom(st, club, from){
+    const R={P:0,W:0,D:0,L:0,GF:0,GA:0,Pts:0,form:[]};
+    st.fixtures.filter(f=>f.status==='F' && f.gw>=from && (f.h===club||f.a===club) && f.hs!=null && f.as!=null).sort((a,b)=>a.gw-b.gw).forEach(f=>{
+      const home=f.h===club, gf=home?f.hs:f.as, ga=home?f.as:f.hs; R.P++; R.GF+=gf; R.GA+=ga;
+      if(gf>ga){ R.W++; R.Pts+=3; R.form.push('w'); } else if(gf<ga){ R.L++; R.form.push('l'); } else { R.D++; R.Pts++; R.form.push('d'); }
+    });
+    return R;
+  },
 };
 
 Object.assign(VIEWS, {
@@ -104,7 +113,7 @@ Object.assign(VIEWS, {
         <div class="cb-side"><span class="pill cb-pill">إضافة</span></div></div>`;
     }
     const club=DB.club(c.club), next=FDR.next(c.club,1)[0];
-    const rec=STANDINGS.record(st, c.club)||{form:[]}, rank=COACH_UI.rankNow(c.club);
+    const rec=(+c.replacedGW ? COACH_UI.recordFrom(st, c.club, +c.replacedGW) : STANDINGS.record(st, c.club))||{form:[]}, rank=COACH_UI.rankNow(c.club);
     const formHTML=`<div class="cb-form" title="آخر 5 مباريات">${COACH_UI.formPills(rec.form.slice(-5))||'<span class="cb-cap">لا مباريات بعد</span>'}</div>`;
     let side='', sub=`${UI.crest(c.club)} ${esc(club.short)}${rank? ` · المركز ${rank}` : ''}`, click='', ctLine='';   // الشريط: صورة واسم وسطر النادي (+ سطر العقد) — منصور
     if(opt.coachPts!==undefined){
@@ -301,15 +310,17 @@ Object.assign(VIEWS, {
     const st=DB.state; const c=COACHES.get(st, this.ui.coachOpen);
     if(!c) return '<div class="card">مدرب غير موجود</div>';
     const club=DB.club(c.club), team=DB.myTeam();
-    const rec=STANDINGS.record(st, c.club)||{P:0,W:0,D:0,L:0,GF:0,GA:0,Pts:0,form:[]};
+    /* مدرب جديد للنادي (replacedGW): ملفه يبدأ من الصفر — منصور 2026-10-17 */
+    const from=+c.replacedGW||0;
+    const rec=from ? COACH_UI.recordFrom(st, c.club, from) : (STANDINGS.record(st, c.club)||{P:0,W:0,D:0,L:0,GF:0,GA:0,Pts:0,form:[]});
     const rank=COACH_UI.rankNow(c.club);
-    const season=COACH.season(st, c.id);
+    const season=COACH.season(st, c.id).filter(x=>x.gw>=from);
     const total=season.reduce((s,x)=>s+x.total,0);
     const mine = team && team.coach===c.id;
     const ct = mine ? TEAM.coachContract(team, st) : null;
     const stat=(v,l,hi)=>`<div class="statbox ${hi?'hi':''}"><div class="v" style="font-size:1.15rem">${v}</div><div class="l">${l}</div></div>`;
     const hist=season.map(x=>({x:'ج'+x.gw, y:x.total}));
-    const log = st.fixtures.filter(f=>f.status==='F' && (f.h===c.club||f.a===c.club)).sort((a,b)=>a.gw-b.gw).map(f=>{
+    const log = st.fixtures.filter(f=>f.status==='F' && (f.h===c.club||f.a===c.club) && f.gw>=from).sort((a,b)=>a.gw-b.gw).map(f=>{
       const home=f.h===c.club, opp=home? f.a : f.h, gf=home? f.hs:f.as, ga=home? f.as:f.hs;
       const k=gf>ga?'w':gf<ga?'l':'d';
       const cp = COACHES.active(st,f.gw) && DB.gw(f.gw) && DB.gw(f.gw).status==='finished' ? COACH.points(st,c.id,f.gw) : null;
