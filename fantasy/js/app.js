@@ -54,7 +54,10 @@ const APP = {
       if(typeof MFSYNC!=='undefined') MFSYNC.autoFixtures(true);   // الجدول والنتائج من mfsoccer حتى بلا سحابة
       return;
     }
-    try{ CLOUD.auth.getRedirectResult().then(r=>{ if(r && r.user) setTimeout(()=>{ if(!APP.authSynced) location.reload(); }, 9000); }).catch(()=>{}); }catch(e){}
+    /* فشل العودة من Apple/Google كان صامتاً فيرجع المشترك لشاشة الدخول ويُطلب منه Apple مرة بعد مرة (2026-10-18) — نُظهر السبب */
+    try{ CLOUD.auth.getRedirectResult().then(r=>{ if(r && r.user) setTimeout(()=>{ if(!APP.authSynced) location.reload(); }, 9000); })
+      .catch(e=>{ const c=(e&&e.code)||''; if(!c || c==='auth/no-auth-event' || c==='auth/redirect-cancelled-by-user') return;
+        console.warn('redirect sign-in failed', c, e); setTimeout(()=>UI.toast(CLOUD.errAr(e)+' ('+c.replace('auth/','')+')', true), 1500); }); }catch(e){}
     CLOUD.onAuth(async (u)=>{
       // أثناء التسجيل ينتظر المستمع حتى يكتب signup اسم المستخدم واسم الفريق أولاً
       while(CLOUD.signingUp) await new Promise(r=>setTimeout(r,150));

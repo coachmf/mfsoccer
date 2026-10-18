@@ -171,6 +171,7 @@ Object.assign(VIEWS, {
 
   /* عرض القائمة */
   pointsList(res, info, gw){
+    const st=DB.state;
     const mult = res.chip==='triplecap' ? 3 : 2;
     const row=r=>{
       const p=DB.player(r.pid); if(!p) return '';
