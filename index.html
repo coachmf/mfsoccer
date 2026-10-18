@@ -5437,7 +5437,7 @@ function crewOf(m){ const b=REF_BOOK[`${m.round}|${m.home}|${m.away}`]||{}, save
   return {ref:m.ref||b.ref||"", refs}; }
 function newEdit(){
   return {orig:null, match:{round:"", comp:(compsPresent()[0]||"الدوري"), home:"", away:"",
-          venue:"", date:"", time:"", note:"", ref:"", refs:{}, tv:"", status:"", pst:0, add1:"", add2:"", et:false, add3:"", add4:"", pso:{h:"",a:""}, psk:[], abs:[]}, goals:[], cards:[], pens:[], lineup:[], subs:[], shapes:{}, mev:[]};
+          venue:"", date:"", time:"", note:"", ref:"", refs:{}, tv:"", status:"", pst:0, add1:"", add2:"", et:false, add3:"", add4:"", pso:{h:"",a:""}, psk:[], abs:[], pres:[]}, goals:[], cards:[], pens:[], lineup:[], subs:[], shapes:{}, mev:[]};
 }
 function loadEditRaw(m){
   const gs=(ALL.goals||[]).filter(g=>g.r===m.round && compOf(g)===compOf(m) &&
@@ -5452,7 +5452,7 @@ function loadEditRaw(m){
   (ALL.shapes||[]).filter(x=>x.r===m.round && compOf(x)===compOf(m) && (x.club===m.home||x.club===m.away))
     .forEach(x=>{ shp[x.club]={f:x.f||"", pos:JSON.parse(JSON.stringify(x.pos||{}))}; });
   return {orig:mkey(m), shapes:shp,
-    match:{round:m.round, comp:compOf(m), home:m.home, away:m.away, venue:m.venue||"", date:m.date||"", time:m.time||"", note:m.note||"", ref:crewOf(m).ref, refs:crewOf(m).refs, tv:m.tv||"", status:m.status||"", pst:+m.pst||0, add1:(m.add1??""), add2:(m.add2??""), et:!!m.et, add3:(m.add3??""), add4:(m.add4??""), abs:(m.abs||[]).map(x=>({c:x.c, p:x.p})), pso:{h:(m.pso&&m.pso.h!=null?m.pso.h:""), a:(m.pso&&m.pso.a!=null?m.pso.a:"")}, psk:pskOf(m).map(k=>({t:k.t, p:k.p||"", ok:!!k.ok})), rec:m.rec||""},
+    match:{round:m.round, comp:compOf(m), home:m.home, away:m.away, venue:m.venue||"", date:m.date||"", time:m.time||"", note:m.note||"", ref:crewOf(m).ref, refs:crewOf(m).refs, tv:m.tv||"", status:m.status||"", pst:+m.pst||0, add1:(m.add1??""), add2:(m.add2??""), et:!!m.et, add3:(m.add3??""), add4:(m.add4??""), abs:(m.abs||[]).map(x=>({c:x.c, p:x.p})), pres:(m.pres||[]).map(x=>({c:x.c, p:x.p})), pso:{h:(m.pso&&m.pso.h!=null?m.pso.h:""), a:(m.pso&&m.pso.a!=null?m.pso.a:"")}, psk:pskOf(m).map(k=>({t:k.t, p:k.p||"", ok:!!k.ok})), rec:m.rec||""},
     mev:(ALL.mev||[]).filter(x=>x.r===m.round && compOf(x)===compOf(m) && x.home===m.home && x.away===m.away).map(x=>({k:x.k, club:x.club||"", p:x.p||"", m:x.m||"", x:x.x||0, note:x.note||"", lid:x.lid||""})),
     lineup:lus.map(x=>({club:x.club, p:x.p})),
     subs:sbs.map(x=>({club:x.club, out:x.out||"", in:x.in||"", h:x.h||1, m:x.m||"", x:x.x||0, lid:x.lid||""})),
@@ -5631,15 +5631,23 @@ function loadFantAbs(){
 }
 const fantAbsApplies = m => { if(!m) return false; if(isUpcoming(m) || LIVE_PHASES.includes(m.status)) return true;
   const k=kickoffTS(m); return k!==null && Date.now()-k < 3*24*60*60*1000; };
-/* سبب الغياب أو "" — abs = قائمة المباراة (m.abs، أو EDIT.match.abs في المحرّر) */
-function absentWhy(m, club, name, abs){
-  const L = abs || (m && m.abs) || [];
-  if(L.some(x=>x.c===club && _natKey(club,x.p)===_natKey(club,name))) return "غائب";
-  if(fantAbsApplies(m)){ if(!FANT_ABS){ loadFantAbs(); return ""; } return FANT_ABS[_natKey(club,name)]||""; }
-  return "";
+/* حالة الفانتسي وحدها (مصاب/موقوف/غير متوفر) أو "" */
+function fantWhy(m, club, name){
+  if(!fantAbsApplies(m)) return "";
+  if(!FANT_ABS){ loadFantAbs(); return ""; }
+  return FANT_ABS[_natKey(club,name)]||"";
 }
-const absList = m => { const seen={}; return ((m&&m.abs)||[]).filter(x=>x && x.p && (x.c===m.home||x.c===m.away))
+const inPL = (L, club, name) => (L||[]).some(x=>x.c===club && _natKey(club,x.p)===_natKey(club,name));
+/* سبب الغياب أو "" — abs = قائمة المباراة (m.abs، أو EDIT.match.abs في المحرّر).
+   m.pres = «جاهز» (منصور 2026-10-18: «ممكن اعدله اذا مو مصاب»): المحرّر يلغي حالة الفانتسي لهذه المباراة فيرجع اللاعب للاحتياط */
+function absentWhy(m, club, name, abs){
+  if(inPL(abs || (m && m.abs), club, name)) return "غائب";
+  if(inPL(m && m.pres, club, name)) return "";
+  return fantWhy(m, club, name);
+}
+const plList = (m, L) => { const seen={}; return (L||[]).filter(x=>x && x.p && (x.c===m.home||x.c===m.away))
   .filter(x=>{ const k=_natKey(x.c,x.p); return seen[k] ? false : (seen[k]=1); }).map(x=>({c:x.c, p:x.p})); };
+const absList = m => plList(m, m && m.abs);
 /* حقل لاعب برقمه: اكتب الرقم يطلع الاسم، أو اكتب الاسم يطلع رقمه */
 function squadEntriesOf(club, sides){
   const cs = club ? [club] : (sides||[]);
@@ -6313,7 +6321,7 @@ function applyEdit(E){
                     ...((m.et || ["e1","e2"].includes(m.status)) ? {et:true, add3:+m.add3||0, add4:+m.add4||0} : {}),
                     ...(pskOf(m).length ? {psk:pskOf(m).map(k=>({t:k.t, p:String(k.p||""), ok:!!k.ok})), pso:psoOf({psk:m.psk})}
                         : m.pso && m.pso.h!=="" && m.pso.a!=="" && m.pso.h!=null && m.pso.a!=null ? {pso:{h:+m.pso.h, a:+m.pso.a}} : {}),
-                    ...(absList(m).length ? {abs:absList(m)} : {}), hg:0, ag:0});   /* abs = الغائبون عن قائمة المباراة */   /* ref = حكم الساحة، refs = بقية الطاقم */
+                    ...(absList(m).length ? {abs:absList(m)} : {}), ...(plList(m, m.pres).length ? {pres:plList(m, m.pres)} : {}), hg:0, ag:0});   /* abs = الغائبون عن قائمة المباراة */   /* ref = حكم الساحة، refs = بقية الطاقم */
   E.goals.forEach(g=>ALL.goals.push({r:round, comp:m.comp, sc:g.sc, cd:other(g.sc), p:g.p, a:g.a||"",
       m:+g.m, x:+g.x||0, cat:catOf(g.det), det:g.det, bp:g.bp||"", zone:g.zone||"",
       og: g.bp==="هدف عكسي" ? (g.og||"") : "", ...(isDefErr(g) && g.err ? {err:g.err} : {}), ...(g.lid?{lid:g.lid}:{})}));
@@ -15551,10 +15559,11 @@ html.mx-editing #waFab{display:none!important}   /* زر واتساب كان ي�
     const groups=[["G","حراس المرمى"],["D","الدفاع"],["M","الوسط"],["F","الهجوم"],["","بدون مركز"]];
     /* الغائب عن المباراة (زر «تحديد الغائبين» أو حالة الفانتسي) يظهر بالأحمر مع سببه ولا يُعرض في اختيار البدلاء */
     const why=n=>absentWhy(EDIT.match, club, n, EDIT.match.abs||[]);
+    const readyTag=n=>{ const f=fantWhy(EDIT.match, club, n); return f && inPL(EDIT.match.pres, club, n) ? `جاهز (الفانتسي: ${f})` : ""; };
     const nOut=roster(club).filter(e=>!xi.includes(e.n) && why(e.n)).length;
     const plBtn=e=>{ const on=xi.includes(e.n), w=on?"":why(e.n);
       return `<button class="mx-pl${on?" in":""}${w?" out":""}${MX.sel&&!on&&!MX.abs?" swap":""}" data-mpl="${esc(e.n)}" style="--srgb:${rgbOf(club)}">
-        ${face(e.n,club)}<span class="tx"><b>${esc(e.n)}</b><small>${esc(w||posLabel(e.p)||"—")}</small></span>${e.s?`<span class="num">${e.s}</span>`:""}</button>`; };
+        ${face(e.n,club)}<span class="tx"><b>${esc(e.n)}</b><small>${esc(w||readyTag(e.n)||posLabel(e.p)||"—")}</small></span>${e.s?`<span class="num">${e.s}</span>`:""}</button>`; };
     const clubSubs=(EDIT.subs||[]).map((s,i)=>({s,i})).filter(o=>o.s.club===club);
     return `<div class="mx-sides">${sideBtn("home")}${sideBtn("away")}</div>
       <div class="mx-xi">
@@ -15575,7 +15584,7 @@ html.mx-editing #waFab{display:none!important}   /* زر واتساب كان ي�
           <div class="mx-card"><h3>قائمة ${esc(club)}<small>${xi.length} من 11</small></h3>
             <div class="mx-search">${SV.search}<input data-mq="1" value="${esc(MX.q)}" placeholder="ابحث بالاسم أو الرقم"></div>
             <div class="mx-absbar"><button class="mx-ghost${MX.abs?" on":""}" data-mabs="1">${MX.abs?"تم":"تحديد الغائبين"}</button>
-              <p class="mx-hint">${MX.abs?"اضغط المصاب أو الغائب ليُستبعد من قائمة هذه المباراة، واضغطه مرة ثانية لإرجاعه."
+              <p class="mx-hint">${MX.abs?"اضغط المصاب أو الغائب ليُستبعد من قائمة هذه المباراة، واضغطه مرة ثانية لإرجاعه. المسجّل «مصاب» في الفانتسي: اضغطه إذا كان جاهزاً فيرجع للاحتياط."
                 :nOut?`${nOut} غائب عن هذه المباراة — لا يظهرون في الاحتياط.`:"المصابون والغائبون لا يظهرون في الاحتياط."}</p></div>
             ${groups.map(([k,t])=>{ const L=ent.filter(e=>(POS_MAIN[String(e.p||"").toUpperCase()]||"")===k); if(!L.length) return "";
               return `<div class="mx-grp">${t}</div><div class="mx-roster">${L.map(plBtn).join("")}</div>`; }).join("") || `<div class="mx-none">لا يوجد لاعب بهذا البحث</div>`}
@@ -15923,7 +15932,10 @@ html.mx-editing #waFab{display:none!important}   /* زر واتساب كان ي�
         if(xi.includes(n)){ toast("لاعب أساسي — أخرجه من التشكيلة أولاً","err"); return; }
         const A=EDIT.match.abs=EDIT.match.abs||[], k=_natKey(cl,n), i=A.findIndex(x=>x.c===cl && _natKey(cl,x.p)===k);
         if(i>=0) A.splice(i,1);
-        else { const f=absentWhy(EDIT.match, cl, n, []); if(f){ toast(`«${f}» في الفانتسي — مستبعد تلقائياً`); return; } A.push({c:cl, p:n}); }
+        else if(fantWhy(EDIT.match, cl, n)){   /* مصاب في الفانتسي: الضغط يجعله «جاهز» لهذه المباراة، والضغط ثانية يرجع حالة الفانتسي */
+          const P=EDIT.match.pres=EDIT.match.pres||[], j=P.findIndex(x=>x.c===cl && _natKey(cl,x.p)===k);
+          if(j>=0) P.splice(j,1); else P.push({c:cl, p:n}); }
+        else { A.push({c:cl, p:n}); }
         rerender(); return; }
       if(xi.includes(n)){ if(MX.sel===n){ MX.sel=null; } else { removeStarter(cl,n); } rerender(); return; }
       if(MX.sel){ swapStarter(cl, MX.sel, n); MX.sel=null; rerender(); return; }
