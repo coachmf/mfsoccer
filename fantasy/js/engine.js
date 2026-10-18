@@ -46,6 +46,9 @@ const DB = {
     else if(FORCED_UNAVAIL.includes(p.club+'|'+p.name)) p.status='n'; }); },
   save(){
     this.dirtyAt=Date.now();
+    /* تعديلات لم تصل للخادم (منصور 2026-10-18، «احمد ١٦»: تشكيلة الجولة تنمسح وكل شوي يطلب دخول Apple):
+       علامة دائمة على الجهاز لكل حساب، تُمسح فقط بعد حفظ ناجح للتشكيلة أو اعتماد نسخة الخادم — فلا يطمسها الدخول من جديد */
+    try{ const me=this.state.session; if(me && me!=='u1local' && !this.muted){ (this.state.unsaved ??= {})[me]=Date.now(); } }catch(e){}
     try{ const me=this.state.session; if(me && this.state.teams[me] && typeof TEAM!=='undefined') TEAM.normalize(this.state.teams[me], this.state); }catch(e){}
     try{ localStorage.setItem(this.KEY, JSON.stringify(this.state)); }
     catch(e){ console.warn('storage write failed', e); }
@@ -190,7 +193,20 @@ const DB = {
     if(typeof CLOUD==='undefined' || !CLOUD.user) return;
     if(this.muted){ this.pendingPush=true; return; }     // يُرفع بعد انتهاء المزامنة
     clearTimeout(this._pushT);
-    this._pushT = setTimeout(()=>this.pushTeamNow(), 900);
+    this._pushT = setTimeout(()=>this.pushWithRetry(), 900);
+  },
+  clearUnsaved(uid){ const u=this.state.unsaved; if(u && u[uid]){ delete u[uid]; try{ localStorage.setItem(this.KEY, JSON.stringify(this.state)); }catch(e){} } },
+  /* الحفظ كان يفشل بصمت (قراءة الخادم متعذّرة، جلسة منتهية…) فتبقى التعديلات على الجهاز وحده ثم يطمسها الدخول التالي.
+     الآن: إعادة محاولة متدرّجة وتنبيه ظاهر ما دامت هناك تعديلات لم تُحفظ والجولة مفتوحة */
+  async pushWithRetry(){
+    clearTimeout(this._retryT);
+    let ok=false; try{ ok = await this.pushTeamNow(); }catch(e){ console.warn('push failed', e); }
+    const uid=CLOUD.user && CLOUD.user.uid;
+    if(ok===true || !uid || !(this.state.unsaved||{})[uid] || GWADMIN.deadlinePassed(this.state.currentGW)){ this._retryN=0; return ok; }
+    this._retryN=(this._retryN||0)+1;
+    if(this._retryN===2 && typeof UI!=='undefined') UI.toast('تشكيلتك لم تُحفظ على الخادم بعد — نعيد المحاولة تلقائياً، لا تسكّر التطبيق', true);
+    this._retryT=setTimeout(()=>{ if(this.muted){ this.pendingPush=true; return; } this.pushWithRetry(); }, [4000,10000,20000,40000,60000][Math.min(this._retryN-1,4)]);
+    return ok;
   },
   async pushTeamNow(){
     if(typeof CLOUD==='undefined' || !CLOUD.user) return false;
@@ -203,18 +219,18 @@ const DB = {
     if(remote===undefined){ this.pendingPush=true; return false; }    // تعذّرت قراءة الخادم: لا نرفع على العمياني
     if(this.noPush){                                                    // كان الإقلاع بلا قراءة ناجحة: أول قراءة ناجحة تُعتمد أولاً
       this.noPush=false;
-      if(remote){ this.muted=true; try{ await this.adoptManager(uid, remote); } finally{ this.muted=false; }
+      if(remote){ this.muted=true; try{ await this.adoptManager(uid, remote); } finally{ this.muted=false; } this.clearUnsaved(uid);
         if(typeof APP!=='undefined') APP.render(); return false; }
     }
     if(remote && remote.lastGW>0 && remote.lastGW!==(t.rolledGW||0) && remote.team && (remote.team.squad||[]).length){
-      await this.adoptManager(uid, remote);
+      await this.adoptManager(uid, remote); this.clearUnsaved(uid);
       if(typeof UI!=='undefined') UI.toast(`حُدّث فريقك بعد احتساب الجولة ${remote.lastGW}`);
       if(typeof APP!=='undefined') APP.render();
       return false;
     }
     // المدير أصلح الفريق أو أرجع الكروت على الخادم بعد آخر تحميل: نعتمد نسخته بدل طمسها
     if(remote && remote.team && remote.team.repairedAt && remote.team.repairedAt!==(t.repairedAt||null)){
-      await this.adoptManager(uid, remote);
+      await this.adoptManager(uid, remote); this.clearUnsaved(uid);
       if(typeof UI!=='undefined') UI.toast('حُدّث فريقك من الخادم');
       if(typeof APP!=='undefined') APP.render();
       return false;
@@ -241,7 +257,9 @@ const DB = {
        محفوظة على الخادم (ملف مؤقت بعد قراءة فاشلة، جهاز جديد، ذاكرة ممسوحة…) — يُحفظ الملف الشخصي وحده */
     if(!(t.squad||[]).length && remote && remote.team && (remote.team.squad||[]).length) return await CLOUD.saveMyTeam(profile, undefined);
     const {history, ...team} = t;                 // السجل لا يُرفع: المدير يكتبه
-    return await CLOUD.saveMyTeam(profile, team);
+    const okT = await CLOUD.saveMyTeam(profile, team);
+    if(okT===true) this.clearUnsaved(uid);
+    return okT;
   },
   reset(){ try{ localStorage.removeItem(this.KEY);}catch(e){} this.state = buildSeedState(); this.save(); },
 

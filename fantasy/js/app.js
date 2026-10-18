@@ -136,6 +136,16 @@ const APP = {
                    team:null, history:[], total:0};
             UI.toast('تعذّر الوصول لبياناتك على الخادم — تحقق من الشبكة', true);
           }
+          /* تعديلات على هذا الجهاز لم تصل للخادم قبل انقطاع الجلسة (دخول Apple من جديد): لا يطمسها مستند الخادم الأقدم —
+             نعتمدها ونرفعها، ما دامت الجولة مفتوحة ولم تُحتسب جولة بعدها ولم يُحفظ من جهاز آخر بعدها (منصور 2026-10-18) */
+          const unAt=(DB.state.unsaved||{})[u.uid], lt=DB.state.teams && DB.state.teams[u.uid];
+          if(unAt && lt && (lt.squad||[]).length && doc.team && (doc.team.squad||[]).length
+             && !GWADMIN.deadlinePassed(DB.state.currentGW)
+             && +(doc.team.rolledGW||0)===+(lt.rolledGW||0) && !(doc.team.repairedAt && doc.team.repairedAt!==(lt.repairedAt||null))
+             && !(doc.updated && Date.parse(doc.updated) >= unAt)){
+            doc = {...doc, team: lt}; DB.pendingPush = true;
+            setTimeout(()=>UI.toast('رجّعنا تعديلات فريقك اللي ما انحفظت — جارٍ حفظها على الخادم'), 1200);
+          } else if(unAt) DB.clearUnsaved(u.uid);
           await DB.adoptManager(u.uid, doc);
           const me=DB.me(); if(me) me.verified = !!u.emailVerified;
         }else{
