@@ -179,6 +179,7 @@ Object.assign(TEAM, {
     const bankAfter=Math.round(((+team.bank||0)+(old? +old.price:0)-(+c.price))*10)/10;
     if(bankAfter < -1e-9) return 'الرصيد لا يكفي لهذا المدرب';
     const cost=this.coachChangeCost(team, st);
+    if(typeof TEAM!=='undefined' && TEAM.snapStart) TEAM.snapStart(team, st);   /* بداية الجولة قبل تغيير المدرب — للضربة الحرة */
     if(!cost.free){ if(cost.usesFT) team.ft=Math.max(0,(+team.ft||0)-1); else team.pendingHits=(+team.pendingHits||0)+cost.hits; }
     team.bank=bankAfter;
     team.coach=coachId; team.coachSince=st.currentGW;

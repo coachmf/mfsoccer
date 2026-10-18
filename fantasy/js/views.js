@@ -642,14 +642,16 @@ const VIEWS = {
         UI.toast('نفّذت صفقات تحت الوايلد كارد — لا يمكن إلغاؤه الآن',true); return;
       }
       if(key==='freehit' && team.fhBackup){
-        Object.assign(team, {squad:team.fhBackup.squad, xi:team.fhBackup.xi, bench:team.fhBackup.bench,
-          cap:team.fhBackup.cap, vice:team.fhBackup.vice, bank:team.fhBackup.bank});
-        if('coach' in team.fhBackup){ team.coach=team.fhBackup.coach; team.coachSince=team.fhBackup.coachSince; }
-        team.fhBackup=null;
+        /* الإلغاء يرجع الفريق كما كان لحظة التفعيل (fhCancel) — صفقات ما قبل الكرت تبقى بخصمها — لا لبداية الجولة */
+        const back=team.fhCancel||team.fhBackup;
+        Object.assign(team, {squad:back.squad, xi:back.xi, bench:back.bench, cap:back.cap, vice:back.vice, bank:back.bank});
+        if('coach' in back){ team.coach=back.coach; team.coachSince=back.coachSince; }
+        team.fhBackup=null; team.fhCancel=null;
         team.transfers=(team.transfers||[]).filter(t=>!(t.gw===st.currentGW && (t.date||'')>=since));   // صفقات الضربة الحرة أُلغيت معها
         this.tReset();
       }
       team.chipAt=null;
+      if(team.chipHits!=null){ team.pendingHits=+team.chipHits||0; team.chipHits=null; }   /* خصم صفقات ما قبل الكرت يعود مع الإلغاء */
       // الإلغاء قبل الإغلاق لا يكلّف شيئاً: الاستخدام لا يُحسب إلا عند احتساب الجولة (rollover)
       team.activeChip=null; DB.save(); UI.toast('أُلغي الكرت — ما زال متاحاً لك'); APP.render(); return;
     }
@@ -667,9 +669,15 @@ const VIEWS = {
     const team=DB.myTeam(); const st=DB.state;
     if(GWADMIN.deadlinePassed(st.currentGW)){ UI.toast('أُغلقت الجولة — لا يمكن تفعيل الكروت بعد انطلاق المباراة',true); return; }
     if(team.activeChip) return;
+    const cur={squad:[...team.squad], xi:[...team.xi], bench:[...team.bench], cap:team.cap, vice:team.vice, bank:team.bank, coach:team.coach||null, coachSince:team.coachSince||null};
+    if(key==='freehit'){
+      /* الرجوع بعد الجولة لبداية الجولة (قبل أي صفقة فيها) — صفقات ما قبل التفعيل تُعدّ من الضربة الحرة */
+      const gs=(team.gwStart && team.gwStart.gw===st.currentGW) ? team.gwStart : null;
+      team.fhBackup = gs ? {squad:[...gs.squad], xi:[...gs.xi], bench:[...gs.bench], cap:gs.cap, vice:gs.vice, bank:gs.bank, coach:gs.coach, coachSince:gs.coachSince} : cur;
+      team.fhCancel = cur;
+    }
+    if(key==='freehit' || key==='wildcard'){ team.chipHits=+team.pendingHits||0; team.pendingHits=0; }   /* الكرت يلغي خصم صفقات الجولة السابقة له (FPL) */
     team.activeChip=key; team.chipAt=new Date().toISOString();
-    if(key==='freehit' || key==='wildcard') team.pendingHits=0;   /* الكرت يلغي خصم صفقات الجولة السابقة له (FPL) */
-    if(key==='freehit'){ team.fhBackup={squad:[...team.squad], xi:[...team.xi], bench:[...team.bench], cap:team.cap, vice:team.vice, bank:team.bank, coach:team.coach||null, coachSince:team.coachSince||null}; }
     DB.save(); UI.toast(`فُعّل كرت ${st.rules.chips[key].label} لهذه الجولة`); APP.render();
   },
 
@@ -763,6 +771,7 @@ const VIEWS = {
     const freeMode=team.activeChip==='wildcard'||team.activeChip==='freehit'||!!st.rules.freeChanges;
     const n=tOut.length;
     const hits=freeMode?0:Math.max(0,n-team.ft)*st.rules.transferCost;
+    TEAM.snapStart(team, st);   /* الفريق كما بدأ الجولة — للضربة الحرة إن فُعّلت بعد هذه الصفقات */
     tOut.forEach((outPid,i)=>{
       const inPid=tIn[i];
       team.squad[team.squad.indexOf(outPid)]=inPid;

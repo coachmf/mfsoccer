@@ -1190,6 +1190,14 @@ const GWADMIN = {
   },
   /* ترحيل فريق بعد احتساب جولة: كروت وخصومات وانتقالات مجانية والضربة الحرة.
      يُطبَّق على الخادم لكل مشترك، ومحلياً لفرق الجهاز. لا يتكرر (rolledGW). */
+  /* لقطة الفريق كما بدأ الجولة — تُؤخذ قبل أول صفقة (لاعب أو مدرب) في الجولة. الضربة الحرة المفعّلة بعدها
+     تعتبر صفقات الجولة كلها من ضمنها وترجع الفريق لهذه اللقطة بعد الجولة (منصور 2026-10-18: «ترجع نفس الجولة الرابعة») */
+  snapStart(team, st){
+    st=st||DB.state;
+    if(team.activeChip || (team.gwStart && team.gwStart.gw===st.currentGW)) return;
+    team.gwStart={gw:st.currentGW, squad:[...(team.squad||[])], xi:[...(team.xi||[])], bench:[...(team.bench||[])],
+      cap:team.cap||null, vice:team.vice||null, bank:+team.bank||0, coach:team.coach||null, coachSince:team.coachSince||null};
+  },
   rollover(team, gw, st){
     st=st||DB.state;
     if((team.rolledGW||0)>=gw) return team;
@@ -1199,7 +1207,7 @@ const GWADMIN = {
       team.cap=team.fhBackup.cap; team.vice=team.fhBackup.vice; team.bank=team.fhBackup.bank;
       if('coach' in team.fhBackup){ team.coach=team.fhBackup.coach; team.coachSince=team.fhBackup.coachSince; }
     }
-    team.fhBackup=null;
+    team.fhBackup=null; team.fhCancel=null; team.gwStart=null; team.chipHits=null;
     // الكرت يُحسب مستخدماً هنا فقط (بعد احتساب الجولة) — قبلها يمكن إلغاؤه بلا خسارة
     const freeGW = typeof SEED_RULES!=='undefined' && !!SEED_RULES.freeChanges && gw <= (+SEED_RULES.scoringFromGW||1);   /* جولة التغييرات الحرة */
     if(picks && picks.chip && !(freeGW && picks.chip==='wildcard')){ team.usedChips=team.usedChips||{}; team.usedChips[picks.chip]=(team.usedChips[picks.chip]||0)+1; }   /* الوايلد كارد بلا أثر في جولة حرة — لا يُستهلك */
