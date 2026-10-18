@@ -829,7 +829,9 @@ const TEAM = {
       if(chip==='benchboost') total+=p_;
       rows.push({pid, pts:p_, eff:chip==='benchboost'?p_:0, cap:false, bench:true});
     });
-    const hits = picks.hits||0;
+    /* الوايلد كارد والضربة الحرة يلغيان خصم انتقالات الجولة كلها، حتى ما نُفّذ قبل تفعيل الكرت — مثل FPL
+       (منصور 2026-10-18: «فريق ابو» فعّل Free Hit بعد 8 صفقات فبقي عليه -28) */
+    const hits = (chip==='freehit' || chip==='wildcard') ? 0 : (picks.hits||0);
     total -= hits;
     // المدرب: خانة مستقلة، لا يتأثر بالكابتن ولا بالدكة القوية
     let coach=null;

@@ -668,6 +668,7 @@ const VIEWS = {
     if(GWADMIN.deadlinePassed(st.currentGW)){ UI.toast('أُغلقت الجولة — لا يمكن تفعيل الكروت بعد انطلاق المباراة',true); return; }
     if(team.activeChip) return;
     team.activeChip=key; team.chipAt=new Date().toISOString();
+    if(key==='freehit' || key==='wildcard') team.pendingHits=0;   /* الكرت يلغي خصم صفقات الجولة السابقة له (FPL) */
     if(key==='freehit'){ team.fhBackup={squad:[...team.squad], xi:[...team.xi], bench:[...team.bench], cap:team.cap, vice:team.vice, bank:team.bank, coach:team.coach||null, coachSince:team.coachSince||null}; }
     DB.save(); UI.toast(`فُعّل كرت ${st.rules.chips[key].label} لهذه الجولة`); APP.render();
   },
