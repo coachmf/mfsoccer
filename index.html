@@ -5437,7 +5437,7 @@ function crewOf(m){ const b=REF_BOOK[`${m.round}|${m.home}|${m.away}`]||{}, save
   return {ref:m.ref||b.ref||"", refs}; }
 function newEdit(){
   return {orig:null, match:{round:"", comp:(compsPresent()[0]||"الدوري"), home:"", away:"",
-          venue:"", date:"", time:"", note:"", ref:"", refs:{}, tv:"", status:"", pst:0, add1:"", add2:"", et:false, add3:"", add4:"", pso:{h:"",a:""}, psk:[]}, goals:[], cards:[], pens:[], lineup:[], subs:[], shapes:{}, mev:[]};
+          venue:"", date:"", time:"", note:"", ref:"", refs:{}, tv:"", status:"", pst:0, add1:"", add2:"", et:false, add3:"", add4:"", pso:{h:"",a:""}, psk:[], abs:[]}, goals:[], cards:[], pens:[], lineup:[], subs:[], shapes:{}, mev:[]};
 }
 function loadEditRaw(m){
   const gs=(ALL.goals||[]).filter(g=>g.r===m.round && compOf(g)===compOf(m) &&
@@ -5452,7 +5452,7 @@ function loadEditRaw(m){
   (ALL.shapes||[]).filter(x=>x.r===m.round && compOf(x)===compOf(m) && (x.club===m.home||x.club===m.away))
     .forEach(x=>{ shp[x.club]={f:x.f||"", pos:JSON.parse(JSON.stringify(x.pos||{}))}; });
   return {orig:mkey(m), shapes:shp,
-    match:{round:m.round, comp:compOf(m), home:m.home, away:m.away, venue:m.venue||"", date:m.date||"", time:m.time||"", note:m.note||"", ref:crewOf(m).ref, refs:crewOf(m).refs, tv:m.tv||"", status:m.status||"", pst:+m.pst||0, add1:(m.add1??""), add2:(m.add2??""), et:!!m.et, add3:(m.add3??""), add4:(m.add4??""), pso:{h:(m.pso&&m.pso.h!=null?m.pso.h:""), a:(m.pso&&m.pso.a!=null?m.pso.a:"")}, psk:pskOf(m).map(k=>({t:k.t, p:k.p||"", ok:!!k.ok})), rec:m.rec||""},
+    match:{round:m.round, comp:compOf(m), home:m.home, away:m.away, venue:m.venue||"", date:m.date||"", time:m.time||"", note:m.note||"", ref:crewOf(m).ref, refs:crewOf(m).refs, tv:m.tv||"", status:m.status||"", pst:+m.pst||0, add1:(m.add1??""), add2:(m.add2??""), et:!!m.et, add3:(m.add3??""), add4:(m.add4??""), abs:(m.abs||[]).map(x=>({c:x.c, p:x.p})), pso:{h:(m.pso&&m.pso.h!=null?m.pso.h:""), a:(m.pso&&m.pso.a!=null?m.pso.a:"")}, psk:pskOf(m).map(k=>({t:k.t, p:k.p||"", ok:!!k.ok})), rec:m.rec||""},
     mev:(ALL.mev||[]).filter(x=>x.r===m.round && compOf(x)===compOf(m) && x.home===m.home && x.away===m.away).map(x=>({k:x.k, club:x.club||"", p:x.p||"", m:x.m||"", x:x.x||0, note:x.note||"", lid:x.lid||""})),
     lineup:lus.map(x=>({club:x.club, p:x.p})),
     subs:sbs.map(x=>({club:x.club, out:x.out||"", in:x.in||"", h:x.h||1, m:x.m||"", x:x.x||0, lid:x.lid||""})),
@@ -5608,6 +5608,38 @@ function fld(label, key, kind, list, val){
    أرقامهم ولا مبارياتهم السابقة ولا الفانتسي (منصور 2026-09-16 / 2026-10-10) */
 const SQUAD_HIDE=[{c:"الكويت", n:"فينيسيوس"}, {c:"القادسية", n:"غابرييل اوروك"}, {c:"العربي", n:"خادم رسول"}, {c:"الساحل", n:"جواو"}];
 const isHidden=(club,name)=>SQUAD_HIDE.some(h=>h.c===club && _natKey(h.c,h.n)===_natKey(club,name));
+/* الغائبون عن قائمة المباراة (منصور 2026-10-18: «اللاعبين المصابين او الغيابات لا تحطونهم من ضمن قائمة الفريق بالمباراة»):
+   لا يظهرون في «الاحتياط» بصفحة المباراة ولا في اختيار البدلاء بالمحرّر. مصدران:
+   (1) زر «الغائبون» في تبويب التشكيلة بالمحرّر — لكل مباراة وحدها (m.abs = [{c,p}])
+   (2) حالة اللاعب في الفانتسي (مصاب/موقوف/غير متوفر) — حالة اليوم، فتُطبَّق فقط على المباراة القادمة أو الجارية
+       أو ما انتهى خلال 3 أيام، لا على المباريات القديمة. من دخل بديلاً يبقى ظاهراً في التبديلات دائماً. */
+const FANT_CLUB={QAD:"القادسية",KUW:"الكويت",ARB:"العربي",KAZ:"كاظمة",SAL:"السالمية",NSR:"النصر",SHB:"الشباب",JAH:"الجهراء",FAH:"الفحيحيل",SAH:"الساحل",TDM:"التضامن",SLB:"الصليبخات"};
+const FANT_OUT={i:"مصاب", s:"موقوف", n:"غير متوفر", d:"غير متوفر"};
+let FANT_ABS=null, FANT_ABS_P=null;   /* _natKey → وصف الحالة */
+function loadFantAbs(){
+  if(FANT_ABS || FANT_ABS_P) return FANT_ABS_P;
+  FANT_ABS_P = fetch("/api/fantasy/"+seasonId()).then(r=>r.ok?r.json():null).then(j=>{
+    const o={}; ((j&&j.players&&j.players.list)||[]).forEach(p=>{ const c=FANT_CLUB[p.club], t=FANT_OUT[p.status];
+      if(c && t) o[_natKey(c,p.name)]=t; });
+    FANT_ABS=o;
+  }).catch(()=>{ FANT_ABS={}; }).then(()=>{
+    const pg=$("#mpage");
+    if(MP.m && MP.tab==="lineups" && pg && !pg.hidden) renderMatchPage();
+    if(typeof window.mxRerender==="function") window.mxRerender();
+  });
+  return FANT_ABS_P;
+}
+const fantAbsApplies = m => { if(!m) return false; if(isUpcoming(m) || LIVE_PHASES.includes(m.status)) return true;
+  const k=kickoffTS(m); return k!==null && Date.now()-k < 3*24*60*60*1000; };
+/* سبب الغياب أو "" — abs = قائمة المباراة (m.abs، أو EDIT.match.abs في المحرّر) */
+function absentWhy(m, club, name, abs){
+  const L = abs || (m && m.abs) || [];
+  if(L.some(x=>x.c===club && _natKey(club,x.p)===_natKey(club,name))) return "غائب";
+  if(fantAbsApplies(m)){ if(!FANT_ABS){ loadFantAbs(); return ""; } return FANT_ABS[_natKey(club,name)]||""; }
+  return "";
+}
+const absList = m => { const seen={}; return ((m&&m.abs)||[]).filter(x=>x && x.p && (x.c===m.home||x.c===m.away))
+  .filter(x=>{ const k=_natKey(x.c,x.p); return seen[k] ? false : (seen[k]=1); }).map(x=>({c:x.c, p:x.p})); };
 /* حقل لاعب برقمه: اكتب الرقم يطلع الاسم، أو اكتب الاسم يطلع رقمه */
 function squadEntriesOf(club, sides){
   const cs = club ? [club] : (sides||[]);
@@ -6280,7 +6312,8 @@ function applyEdit(E){
                     venue:m.venue, home:m.home, away:m.away, note:(m.note||"").trim(), ref:(m.ref||"").trim(), refs:REF_ROLES.reduce((o,[k])=>{ const v=String((m.refs||{})[k]||"").trim(); if(v) o[k]=v; return o; },{}), tv:(m.tv||"").trim(), status:m.status||"", ...(PH_CLOCK[m.status]&&+m.pst?{pst:+m.pst}:{}), ...(m.rec?{rec:m.rec}:{}), add1:+m.add1||0, add2:+m.add2||0,
                     ...((m.et || ["e1","e2"].includes(m.status)) ? {et:true, add3:+m.add3||0, add4:+m.add4||0} : {}),
                     ...(pskOf(m).length ? {psk:pskOf(m).map(k=>({t:k.t, p:String(k.p||""), ok:!!k.ok})), pso:psoOf({psk:m.psk})}
-                        : m.pso && m.pso.h!=="" && m.pso.a!=="" && m.pso.h!=null && m.pso.a!=null ? {pso:{h:+m.pso.h, a:+m.pso.a}} : {}), hg:0, ag:0});   /* ref = حكم الساحة، refs = بقية الطاقم */
+                        : m.pso && m.pso.h!=="" && m.pso.a!=="" && m.pso.h!=null && m.pso.a!=null ? {pso:{h:+m.pso.h, a:+m.pso.a}} : {}),
+                    ...(absList(m).length ? {abs:absList(m)} : {}), hg:0, ag:0});   /* abs = الغائبون عن قائمة المباراة */   /* ref = حكم الساحة، refs = بقية الطاقم */
   E.goals.forEach(g=>ALL.goals.push({r:round, comp:m.comp, sc:g.sc, cd:other(g.sc), p:g.p, a:g.a||"",
       m:+g.m, x:+g.x||0, cat:catOf(g.det), det:g.det, bp:g.bp||"", zone:g.zone||"",
       og: g.bp==="هدف عكسي" ? (g.og||"") : "", ...(isDefErr(g) && g.err ? {err:g.err} : {}), ...(g.lid?{lid:g.lid}:{})}));
@@ -14748,7 +14781,7 @@ function mpTeamSection(m){
         <small><i class="mpt-in"></i><span dir="ltr">${absMinute(x.h,x.m)}'</span><span class="mpt-out">خروج: ${esc(x.out||"—")}</span></small></span>
       ${R[x.in]!=null?ratingBadge(R[x.in]):""}</div>`).join("")}` : "";
   const played=new Set([...xiNames(m.round, comp, club), ...subs.flatMap(x=>[x.in, x.out]).filter(Boolean)]);   /* الخارج أيضاً: حتى لو سُجّل خطأً خارج التشكيلة */
-  const bench=sq.filter(x=>!played.has(x.n));
+  const bench=sq.filter(x=>!played.has(x.n) && !absentWhy(m, club, x.n));   /* المصاب والغائب ليسوا في قائمة المباراة (منصور 2026-10-18) */
   const benchBlock = bench.length ? `<div class="mpt-hd">الاحتياط<span class="sq-n">${bench.length}</span></div><div class="mpt-bench">${bench.map(x=>`<div class="mpt-b" data-player="${esc(x.n)}" data-club="${esc(club)}">
       ${mpFacePh(x.n, club)}<span>${x.s?`<em>${x.s}</em>`:""}${esc(shortName(x.n))}${gkTag(x.p)}</span></div>`).join("")}</div>` : "";
   return `<div class="mp-card mpt" style="${accentVars(club)}">${seg}${coachHTML}${subsBlock}${benchBlock}</div>`;
@@ -15264,6 +15297,11 @@ html[data-theme="dark"] .mx select option{color:#E6EEF8;background:#0F1E35}   /*
 .mx-pl.swap{border-color:#ffd84d!important;background:rgba(255,216,77,.10)!important}
 .mx-pl.picked{border-color:#1c6fd1!important;background:rgba(28,111,209,.22)!important;box-shadow:0 0 0 1px #1c6fd1 inset}
 .mx-pl.dim{opacity:.45}
+.mx-pl.out{border-color:rgba(255,92,92,.6)!important;background:rgba(255,92,92,.08)!important}
+.mx-pl.out .tx small{color:#ff7a7a}
+.mx-absbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:0 0 10px}
+.mx-absbar .mx-hint{margin:0;flex:1;min-width:150px}
+.mx-absbar .mx-ghost.on{border-color:#ff5c5c!important;background:rgba(255,92,92,.14)!important}
 
 /* البدلاء والتبديلات + خط الأحداث */
 .mx-add{display:flex;flex-wrap:wrap;gap:8px}
@@ -15511,9 +15549,12 @@ html.mx-editing #waFab{display:none!important}   /* زر واتساب كان ي�
     const q=MX.q.trim();
     const ent=roster(club).filter(e=>!q||e.n.includes(q)||String(e.s)===q);
     const groups=[["G","حراس المرمى"],["D","الدفاع"],["M","الوسط"],["F","الهجوم"],["","بدون مركز"]];
-    const plBtn=e=>{ const on=xi.includes(e.n);
-      return `<button class="mx-pl${on?" in":""}${MX.sel&&!on?" swap":""}" data-mpl="${esc(e.n)}" style="--srgb:${rgbOf(club)}">
-        ${face(e.n,club)}<span class="tx"><b>${esc(e.n)}</b><small>${esc(posLabel(e.p)||"—")}</small></span>${e.s?`<span class="num">${e.s}</span>`:""}</button>`; };
+    /* الغائب عن المباراة (زر «تحديد الغائبين» أو حالة الفانتسي) يظهر بالأحمر مع سببه ولا يُعرض في اختيار البدلاء */
+    const why=n=>absentWhy(EDIT.match, club, n, EDIT.match.abs||[]);
+    const nOut=roster(club).filter(e=>!xi.includes(e.n) && why(e.n)).length;
+    const plBtn=e=>{ const on=xi.includes(e.n), w=on?"":why(e.n);
+      return `<button class="mx-pl${on?" in":""}${w?" out":""}${MX.sel&&!on&&!MX.abs?" swap":""}" data-mpl="${esc(e.n)}" style="--srgb:${rgbOf(club)}">
+        ${face(e.n,club)}<span class="tx"><b>${esc(e.n)}</b><small>${esc(w||posLabel(e.p)||"—")}</small></span>${e.s?`<span class="num">${e.s}</span>`:""}</button>`; };
     const clubSubs=(EDIT.subs||[]).map((s,i)=>({s,i})).filter(o=>o.s.club===club);
     return `<div class="mx-sides">${sideBtn("home")}${sideBtn("away")}</div>
       <div class="mx-xi">
@@ -15533,13 +15574,16 @@ html.mx-editing #waFab{display:none!important}   /* زر واتساب كان ي�
         <div>
           <div class="mx-card"><h3>قائمة ${esc(club)}<small>${xi.length} من 11</small></h3>
             <div class="mx-search">${SV.search}<input data-mq="1" value="${esc(MX.q)}" placeholder="ابحث بالاسم أو الرقم"></div>
+            <div class="mx-absbar"><button class="mx-ghost${MX.abs?" on":""}" data-mabs="1">${MX.abs?"تم":"تحديد الغائبين"}</button>
+              <p class="mx-hint">${MX.abs?"اضغط المصاب أو الغائب ليُستبعد من قائمة هذه المباراة، واضغطه مرة ثانية لإرجاعه."
+                :nOut?`${nOut} غائب عن هذه المباراة — لا يظهرون في الاحتياط.`:"المصابون والغائبون لا يظهرون في الاحتياط."}</p></div>
             ${groups.map(([k,t])=>{ const L=ent.filter(e=>(POS_MAIN[String(e.p||"").toUpperCase()]||"")===k); if(!L.length) return "";
               return `<div class="mx-grp">${t}</div><div class="mx-roster">${L.map(plBtn).join("")}</div>`; }).join("") || `<div class="mx-none">لا يوجد لاعب بهذا البحث</div>`}
           </div>
           <div class="mx-card"><h3>البدلاء والتبديلات<small>${clubSubs.length} تبديل</small></h3>
             <div class="mx-add"><button class="mx-addb" data-mnew="sub" data-mclub="${esc(club)}">${SV.swap}إضافة تبديل</button></div>
             ${clubSubs.length?`<div class="mx-tl">${clubSubs.sort((a,b)=>absMinute(a.s.h,a.s.m,a.s.x,(EDIT.match&&EDIT.match.add1))-absMinute(b.s.h,b.s.m,b.s.x,(EDIT.match&&EDIT.match.add1))).map(o=>evRow({k:"sub",i:o.i,r:o.s})).join("")}</div>`
-              :`<p class="mx-hint">لم يُسجَّل تبديل بعد. الاحتياط = كل من في القائمة وليس أساسياً.</p>`}
+              :`<p class="mx-hint">لم يُسجَّل تبديل بعد. الاحتياط = كل من في القائمة وليس أساسياً ولا غائباً.</p>`}
           </div>
         </div>
       </div>`;
@@ -15659,14 +15703,14 @@ html.mx-editing #waFab{display:none!important}   /* زر واتساب كان ي�
       const groups=["F","M","D","G"].filter(k=>PG.G[k].length).map(k=>`<div class="mx-grp"><span class="mx-glbl">${LBL[k]}</span>${
         rowsOf(PG.G[k]).map(r=>`<div class="mx-roster">${r.a.map(o=>btn({...(byN[o.n]||{n:o.n}), tag:xi.includes(o.n)?"أساسي":"دخل بديلاً"})).join("")}</div>`).join("")}</div>`).join("");
       if(opt.only==="xi") return none+groups;   /* «خرج» في التبديل: من في الملعب فقط */
-      const rest=ent.filter(e=>!PG.onP.has(e.n)).map(e=>({...e, tag:PG.off.has(e.n)?"خرج":"احتياط"}));
+      const rest=ent.filter(e=>!PG.onP.has(e.n) && (PG.off.has(e.n) || e.n===cur || !absentWhy(EDIT.match, club, e.n, EDIT.match.abs||[]))).map(e=>({...e, tag:PG.off.has(e.n)?"خرج":"احتياط"}));
       const open=(MX.sheet&&MX.sheet.bench&&MX.sheet.bench[key]) || rest.some(e=>e.n===cur);
       const more=!rest.length ? "" : open ? `<div class="mx-grp"><span class="mx-glbl">الاحتياط ومن خرج</span><div class="mx-roster">${rest.map(btn).join("")}</div></div>`
         : `<button class="mx-more" data-mbench="${key}">عرض الاحتياط ومن خرج (${rest.length})</button>`;
       return none+groups+more;
     }
     if(opt.only==="xi") ent=ent.filter(e=>xi.includes(e.n)||(EDIT.subs||[]).some(s=>s.club===club&&s.in===e.n));
-    if(opt.only==="bench") ent=ent.filter(e=>!xi.includes(e.n));
+    if(opt.only==="bench") ent=ent.filter(e=>!xi.includes(e.n) && (e.n===cur || !absentWhy(EDIT.match, club, e.n, EDIT.match.abs||[])));   /* المصاب/الغائب ليس من البدلاء */
     ent.sort((a,b)=>(xi.includes(b.n)-xi.includes(a.n))||((a.s||999)-(b.s||999)));
     return `${none}<div class="mx-roster">${ent.map(btn).join("")}</div>`;
   }
@@ -15799,6 +15843,7 @@ html.mx-editing #waFab{display:none!important}   /* زر واتساب كان ي�
   }
   /* busy: إزالة حقل مُركَّز أثناء إعادة الرسم تُطلق change ← إعادة رسم متداخلة تكسر innerHTML */
   function rerender(){ if(MX.busy) return; renderMatchAdmin(); }
+  window.mxRerender = () => { if(MX.tab==="lineup" && document.getElementById("mxSheetHost")) rerender(); };   /* بعد وصول حالات الفانتسي */
   function wire(box){
     const host=document.getElementById("mxSheetHost");
     const q=(s,f)=>[box,host].forEach(r=>r&&r.querySelectorAll(s).forEach(f));
@@ -15872,7 +15917,14 @@ html.mx-editing #waFab{display:none!important}   /* زر واتساب كان ي�
       S.spots.forEach(({p,x,y})=>{ pos[p.n]={x:+(100-x).toFixed(1),y}; }); EDIT.shapes[cl]={f:S.form,pos}; rerender(); });
     q("[data-mxsel]",b=>b.onclick=()=>{ MX.sel=null; rerender(); });
     q("[data-mxout]",b=>b.onclick=()=>{ const cl=sideClub(MX.side), n=MX.sel; removeStarter(cl,n); MX.sel=null; rerender(); });
+    q("[data-mabs]",b=>b.onclick=()=>{ MX.abs=!MX.abs; MX.sel=null; rerender(); });
     q("[data-mpl]",b=>b.onclick=()=>{ const cl=sideClub(MX.side), n=b.dataset.mpl, xi=starters(cl);
+      if(MX.abs){   /* وضع «تحديد الغائبين»: الضغط يستبعد اللاعب من قائمة هذه المباراة أو يرجعه */
+        if(xi.includes(n)){ toast("لاعب أساسي — أخرجه من التشكيلة أولاً","err"); return; }
+        const A=EDIT.match.abs=EDIT.match.abs||[], k=_natKey(cl,n), i=A.findIndex(x=>x.c===cl && _natKey(cl,x.p)===k);
+        if(i>=0) A.splice(i,1);
+        else { const f=absentWhy(EDIT.match, cl, n, []); if(f){ toast(`«${f}» في الفانتسي — مستبعد تلقائياً`); return; } A.push({c:cl, p:n}); }
+        rerender(); return; }
       if(xi.includes(n)){ if(MX.sel===n){ MX.sel=null; } else { removeStarter(cl,n); } rerender(); return; }
       if(MX.sel){ swapStarter(cl, MX.sel, n); MX.sel=null; rerender(); return; }
       if(xi.length>=11){ toast("التشكيلة مكتملة (11) — اضغط لاعباً على الملعب ثم اختر بديله","err"); return; }
@@ -15881,6 +15933,7 @@ html.mx-editing #waFab{display:none!important}   /* زر واتساب كان ي�
       const S0=slotsFor(cl), st=EDIT.shapes[cl]=EDIT.shapes[cl]||{f:"",pos:{}}; st.pos=st.pos||{};
       S0.spots.forEach(({p,x,y})=>{ if(!st.pos[p.n]) st.pos[p.n]={x:+x.toFixed(1),y:+y.toFixed(1)}; });
       EDIT.lineup=EDIT.lineup.filter(x=>!(x.club===cl&&!x.p)); EDIT.lineup.push({club:cl,p:n});
+      if(EDIT.match.abs) EDIT.match.abs=EDIT.match.abs.filter(x=>!(x.c===cl && _natKey(cl,x.p)===_natKey(cl,n)));   /* أساسي = ليس غائباً */
       /* الداخل يأخذ مكان آخر من أُخرج، وإلا موضعه في الترتيب التلقائي (بعيداً قليلاً عن أي لاعب فوقه) */
       const vac=(MX.vac||{})[cl];
       if(!st.pos[n] && vac && vac.length) st.pos[n]=vac.pop();
