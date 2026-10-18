@@ -2747,8 +2747,10 @@ const isOG = g => !!g && g.bp==="هدف عكسي";
 const isDefErr = g => !!g && /خطأ دفاعي/.test(g.det||"");
 const goalDetTxt = g => !g ? "" : (isDefErr(g) && g.err) ? `خطأ دفاعي من ${g.err}` : (g.det||"");
 /* وسم الهدف العكسي: اسم المدافع الذي ارتدت عنه الكرة */
+/* الهدف العكسي بلا مسجّل من الفريق المستفيد (منصور 2026-10-18): يُعرض باسم من سجّل في مرماه (og)، والقديم بلا og يرجع لـ p */
+const goalWho = g => isOG(g) ? (g.og || g.p || "") : (g.p || "");
 const ogLabel = g => (g && g.bp==="هدف عكسي")
-  ? ` <span style="color:var(--loss);font-size:.72rem">هدف عكسي${g.og?" · ارتدت عن "+esc(g.og):""}</span>`
+  ? ` <span style="color:var(--loss);font-size:.72rem">هدف عكسي</span>`
   : "";
 const isYellow = t => /إنذار/.test(t||"") && !isRed(t);   /* الإنذار الثاني = طرد فقط، لا إنذار وطرد معاً (منصور 2026-09-30 — كان يُعدّ مرتين في صفحة اللاعبين والملف) */
 const isRed    = t => /طرد/.test(t||"") || /إنذار\s*ثان/.test(t||"");
@@ -3591,7 +3593,7 @@ function anHeatSVG(list){
 function ahGoalsHTML(k, list){
   const gs=list.filter(g=>zoneKeyOf(g.zone)===k).sort((a,b)=>(a.r-b.r)||((+a.m||0)+(+a.x||0)/100-((+b.m||0)+(+b.x||0)/100)));
   return `<div class="ah-gh"><b>${esc(k)}</b><span>${gs.length===1?"هدف واحد":gs.length===2?"هدفان":gs.length<=10?gs.length+" أهداف":gs.length+" هدفاً"}</span><button type="button" class="ah-gx" data-ahclose aria-label="إغلاق">×</button></div>
-    <ol class="ah-gl">${gs.map(g=>`<li><span class="m">${esc(minLabel(g))}</span><span class="p"><b>${esc(g.p||"—")}</b><small>${esc(g.sc||"")}${g.cd?` ضد ${esc(g.cd)}`:""} · الجولة ${esc(g.r)}${g.bp==="هدف عكسي"?" · هدف عكسي":""}</small></span></li>`).join("")}</ol>`;
+    <ol class="ah-gl">${gs.map(g=>`<li><span class="m">${esc(minLabel(g))}</span><span class="p"><b>${esc(goalWho(g)||"—")}</b><small>${esc(g.sc||"")}${g.cd?` ضد ${esc(g.cd)}`:""} · الجولة ${esc(g.r)}${g.bp==="هدف عكسي"?" · هدف عكسي":""}</small></span></li>`).join("")}</ol>`;
 }
 document.addEventListener("click", e=>{
   const x=e.target.closest("[data-ahclose]");
@@ -6270,7 +6272,8 @@ function validateEdit(){
       return "هذه المباراة مرتبطة باللعب الفعلي — لا يمكن تغيير المسابقة أو الجولة أو الفريقين. افصلها عن اللعب الفعلي أولاً من غرفة التحكم."; }
   for(const [i,g] of EDIT.goals.entries()){
     if(!g.sc) return `الهدف ${i+1}: اختر الفريق المسجل.`;
-    if(!g.p) return `الهدف ${i+1}: اكتب اسم اللاعب.`;
+    if(g.bp==="هدف عكسي"){ if(!g.og) return `الهدف ${i+1}: اختر اللاعب الذي سجّل في مرماه (هدف عكسي).`; }
+    else if(!g.p) return `الهدف ${i+1}: اكتب اسم اللاعب.`;
     if(!g.m || +g.m<1) return `الهدف ${i+1}: أدخل الدقيقة.`;
     if(!g.det && !EDIT.ext) return `الهدف ${i+1}: اختر تفصيل طريقة التسجيل.`;   /* المباريات الخارجية: طريقة التسجيل اختيارية (منصور 2026-10-12) */
   }
@@ -7587,9 +7590,8 @@ function goalsTimeline(m,gs,mc){
     const og = isOG(g);
     const body=`<div class="tl-ev${isH?" h":" a"}">
         <div class="tl-card">
-          <div class="tl-name" data-player="${esc(g.p)}" data-club="${esc(g.sc)}">${ICO_BALL}${esc(g.p)}${og?`<i class="tl-og">هدف عكسي</i>`:""}</div>
-          ${og ? (g.og?`<div class="tl-assist" data-player="${esc(g.og)}" data-club="${esc(g.cd||"")}">${ICO_BOOT}ارتدت عن ${esc(g.og)}</div>`:"")
-               : (g.a?`<div class="tl-assist" data-player="${esc(g.a)}" data-club="${esc(g.sc)}">${ICO_BOOT}${esc(g.a)}</div>`:"")}
+          <div class="tl-name" data-player="${esc(goalWho(g))}" data-club="${esc(og?(g.cd||""):g.sc)}">${ICO_BALL}${esc(goalWho(g))}${og?`<i class="tl-og">هدف عكسي</i>`:""}</div>
+          ${!og && g.a?`<div class="tl-assist" data-player="${esc(g.a)}" data-club="${esc(g.sc)}">${ICO_BOOT}${esc(g.a)}</div>`:""}
           ${g.det?`<div class="tl-det">${esc(goalDetTxt(g))}</div>`:""}
         </div>
         <div class="tl-score" dir="ltr">${isH?`<b>${h}</b> - ${a}`:`${h} - <b>${a}</b>`}</div>
@@ -7826,7 +7828,7 @@ function renderClubBody(c){
   <h2 class="sec">أهداف النادي</h2>
   <div class="card pad">${s.gf.length?s.gf.map(g=>`<div class="gline" style="padding:6px 0;border-bottom:1px dashed rgba(143,166,196,.14)">
       <span class="gmin">${minLabel(g)}</span>
-      <span style="flex:1"><span data-player="${esc(g.p)}" data-club="${esc(c)}">${esc(g.p)}</span>${ogLabel(g)} <span style="color:var(--slate);font-size:.72rem">ضد ${esc(g.cd)}</span></span>
+      <span style="flex:1"><span data-player="${esc(goalWho(g))}" data-club="${esc(isOG(g)?g.cd:c)}">${esc(goalWho(g))}</span>${ogLabel(g)} <span style="color:var(--slate);font-size:.72rem">ضد ${esc(g.cd)}</span></span>
       <span class="gtag">${esc(g.zone)}</span></div>`).join(""):'<span style="color:var(--slate)">لا توجد أهداف مسجّلة بعد.</span>'}</div>
   </div>
   <div class="ctab-panel" data-cp="squad">${clubSquadHTML(c)}</div>
@@ -15613,8 +15615,8 @@ html.mx-editing #waFab{display:none!important}   /* زر واتساب كان ي�
   }
   function evRow({k,i,r}){
     let club="", who="", sub="", ic="", mn="";
-    if(k==="goal"){ club=r.sc; who=r.p; ic=ICO_BALL; mn=r.m?`${r.m}${+r.x?`+${r.x}`:""}'`:"—";
-      sub=[r.bp==="هدف عكسي"?"هدف عكسي":"", r.a?`صناعة: ${r.a}`:"", goalDetTxt(r)].filter(Boolean).join(" · "); }
+    if(k==="goal"){ club=r.sc; who=goalWho(r); ic=ICO_BALL; mn=r.m?`${r.m}${+r.x?`+${r.x}`:""}'`:"—";
+      sub=[r.bp==="هدف عكسي"?`هدف عكسي لصالح ${r.sc}`:"", r.a&&r.bp!=="هدف عكسي"?`صناعة: ${r.a}`:"", goalDetTxt(r)].filter(Boolean).join(" · "); }
     if(k==="card"){ club=r.club; who=r.p; mn=r.m?`${r.m}${+r.x?`+${r.x}`:""}'`:"—";
       const t=r.type||""; ic=`<span class="ic-card ${/ثان/.test(t)?"yr":isRed(t)?"r":"y"}"></span>`; sub=t; }
     if(k==="pen"){ club=r.by; who=r.p; ic=SV.pen; mn=r.m?`${r.m}'`:"—"; sub=`ركلة جزاء · ${r.res||""}`; }
@@ -15747,10 +15749,12 @@ html.mx-editing #waFab{display:none!important}   /* زر واتساب كان ي�
     let body=team;
     if(k==="goal"){
       body+=`${perChips(k,d)}<div class="mx-grid">${stepper("m",d.m,"الدقيقة",130)}${stepper("x",d.x||0,"وقت بدل ضائع +",20)}</div>${minChips("m",perOf(k,d))}${rangeHint(d.m)}
-        <div><span class="mx-lbl">المسجّل</span>${pickGrid(club,"p",d.p)}</div>
         <div><span class="mx-lbl">طريقة التسجيل</span>${chips("bp",LIST.bp,d.bp)}</div>
-        ${d.bp==="هدف عكسي"?`<div><span class="mx-lbl">ارتدت عن (لاعب ${esc(opp||"الخصم")})</span>${pickGrid(opp,"og",d.og)}</div>`:""}
-        <div><span class="mx-lbl">صانع الهدف</span>${pickGrid(club,"a",d.a,{none:"بدون صناعة",exclude:d.p})}</div>
+        ${d.bp==="هدف عكسي"
+          ? `<div><span class="mx-lbl">سجّل في مرماه (لاعب ${esc(opp||"الخصم")})</span>${pickGrid(opp,"og",d.og)}</div>
+             <p class="mx-hint">الهدف العكسي يُحتسب لـ${esc(club||"الفريق المختار")} بلا مسجّل ولا صانع من لاعبيه، ويُنسب للاعب الخصم الذي سجّل في مرماه.</p>`
+          : `<div><span class="mx-lbl">المسجّل</span>${pickGrid(club,"p",d.p)}</div>
+             <div><span class="mx-lbl">صانع الهدف</span>${pickGrid(club,"a",d.a,{none:"بدون صناعة",exclude:d.p})}</div>`}
         <div class="mx-grid">
           <div><span class="mx-lbl">تفصيل الهجمة</span><select data-msf="det">${opt(LIST.det,d.det,"اختر")}</select></div>
           <div><span class="mx-lbl">منطقة التسجيل</span><select data-msf="zone">${opt(LIST.zone,d.zone,"اختر")}</select></div>
@@ -15968,7 +15972,7 @@ html.mx-editing #waFab{display:none!important}   /* زر واتساب كان ي�
       const d=MX.sheet.d;
       q("[data-mset]",b=>b.onclick=()=>{ const key=b.dataset.mset, v=b.dataset.mval;
         if(key===CLUBKEY[MX.sheet.k] && d[key]!==v){ ["p","a","og","err","out","in"].forEach(f=>{ if(f in d) d[f]=""; }); }
-        d[key]=v; if(key==="bp"&&v!=="هدف عكسي") d.og=""; rerender(); });
+        d[key]=v; if(key==="bp"){ if(v!=="هدف عكسي") d.og=""; else { d.p=""; d.a=""; } } rerender(); });
       q("[data-mper]",b=>b.onclick=()=>{ const v=b.dataset.mper, row=PERS.find(r=>r[0]===v), m=+d.m||0;
         if(MX.sheet.k==="sub") d.h=v; else d._per=v;
         /* الدقيقة خارج مدى الشوط المختار → بداية الشوط (التبديل في الشوطين الأصليين يحتفظ بطريقة الإدخال القديمة) */
