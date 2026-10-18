@@ -97,7 +97,7 @@ const PLAYER_PHOTOS = {
   'SHB|محمد غانم': '/assets/players/shb/30',   // جلسة النادي، رقم القميص
   'SHB|عبدالعزيز كميل': '/assets/players/shb/32',   // جلسة النادي، رقم القميص
   'SHB|ضاري العتيبي': '/assets/players/shb/34',   // جلسة النادي، رقم القميص
-  'SHB|فيكتور فيليب': '/assets/players/shb/44',   // جلسة النادي، رقم القميص
+  'SHB|فيكتور فيليب': '/assets/players/shb/93',   // منصور 2026-10-18: صورة جيمناي بالرقم 93 والطقم الحالي (كانت 44)
   // الفحيحيل (20)
   'FAH|كارلوس': '/assets/players/fah/35',
   'FAH|فيتور دا سيلفا': '/assets/players/fah/33',
