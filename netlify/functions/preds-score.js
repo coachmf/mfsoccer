@@ -65,6 +65,12 @@ function finished(m, d){
   const hasXI = (d.lineups || []).some(x => +x.r === r && compOf(x) === c && (x.club === m.home || x.club === m.away));
   return hasGoal || hasXI;
 }
+/* انطلقت (منصور 2026-10-18، طلب مشجع: «تحطون توقعات اللاعبين لمن المباراة تبلش… للمصداقية»): التوقعات تُنشر من أول صافرة في الجولة */
+function started(m){
+  if(m.status === 'ft' || LIVE.includes(m.status)) return true;
+  if(m.status === 'pre') return false;
+  const k = kickoff(m); return k !== null && Date.now() >= k;
+}
 
 async function get(path, auth){
   const r = await fetch(`${DOCS}/${path}`, { headers:auth });
@@ -93,14 +99,16 @@ async function run(){
   const picksDocs = {};
 
   for(const r of rounds){
-    const ms = (season.matches || []).filter(m => compOf(m) === 'الدوري' && (+m.round || 0) === r && finished(m, season));
-    if(!ms.length) continue;
+    const all = (season.matches || []).filter(m => compOf(m) === 'الدوري' && (+m.round || 0) === r);
+    const ms = all.filter(m => finished(m, season));
+    if(!ms.length && !all.some(started)) continue;   /* لا نتيجة بعد لكن الجولة انطلقت: ننشر التوقعات وحدها بلا احتساب */
+    const scoreIt = ms.length > 0;
     const keys = new Set(ms.map(m => m.home + '|' + m.away));
     const actual = {}; ms.forEach(m => actual[m.home + '|' + m.away] = [+m.hg || 0, +m.ag || 0]);
     /* هداف الجولة: من المباريات المنتهية فقط */
     const scorers = new Set((season.goals || []).filter(g => compOf(g) === 'الدوري' && +g.r === r
       && (keys.has(g.sc + '|' + g.cd) || keys.has(g.cd + '|' + g.sc))).map(g => scKey(g.p)));
-    const month = String(ms[0].date || '').slice(0, 7);
+    const month = String((ms[0] || all[0]).date || '').slice(0, 7);
     const preds = await predsOf(`${SEASON}_${r}`, auth);
     const pub = {};   /* توقعات كل مشترك — تظهر في بروفايله (boards/{season}_p{round})؛ الجولة مقفلة فلا ضرر من نشرها */
     preds.forEach(p => {
@@ -115,6 +123,7 @@ async function run(){
       const scOk = !!(p.scorer && scorers.has(scKey(p.scorer)));
       if(scOk) pts += PT_SCORER;
       if(!(rows[p.uid] && rows[p.uid].h)) pub[p.uid] = { n:p.name || 'مشترك', pk:p.picks || {}, sc:p.scorer || '', scOk, pts };
+      if(!scoreIt) return;
       const row = rows[p.uid] || { n:p.name || 'مشترك', t:0, r:{}, m:{} };
       row.n = p.name || row.n;
       row.r = row.r || {}; row.m = row.m || {};
@@ -125,20 +134,22 @@ async function run(){
       row.t = Math.max(0, (+row.t || 0) - prev + pts);
       rows[p.uid] = row;
     });
-    scored.push({ round:r, matches:ms.length, preds:preds.length });
     picksDocs[r] = { r, res:actual, rows:pub, updated:new Date().toISOString() };
+    if(!scoreIt) continue;
+    scored.push({ round:r, matches:ms.length, preds:preds.length });
     if(r >= lastRound){ lastRound = r; lastMonth = month; }
   }
   const opened = await openNext(season, cur, auth);
-  if(!scored.length) return { ok:true, scored, written:false, opened };
-  /* توقعات الجولات المحتسبة (للبروفايلات) — تُكتب كل مرة تتغير فيها النقاط أو لم تُنشر بعد */
+  /* توقعات الجولات المنطلقة/المحتسبة (للبروفايلات وصفحة المباراة) — تُكتب كل مرة تتغير فيها النقاط أو النتائج أو لم تُنشر بعد */
   for(const r in picksDocs){
     const ex = await get(`boards/${SEASON}_p${r}`, auth);
-    if(ex && !changed && Object.keys(ex.rows || {}).length === Object.keys(picksDocs[r].rows).length) continue;
+    if(ex && !changed && Object.keys(ex.rows || {}).length === Object.keys(picksDocs[r].rows).length
+       && JSON.stringify(ex.res || {}) === JSON.stringify(picksDocs[r].res)) continue;
     const pw = await fetch(`${DOCS}/boards/${SEASON}_p${r}`, { method:'PATCH', headers:{ ...auth, 'Content-Type':'application/json' },
       body: JSON.stringify({ fields:enc(picksDocs[r]).mapValue.fields }) });
     if(!pw.ok) console.warn('write picks', r, pw.status);
   }
+  if(!scored.length) return { ok:true, scored, written:false, opened, published:Object.keys(picksDocs) };
   if(!changed && lastRound === lastR) return { ok:true, scored, written:false, opened };
   const body = { rows, lastRound, lastMonth, updated:new Date().toISOString() };
   const w = await fetch(`${DOCS}/boards/${SEASON}`, { method:'PATCH', headers:{ ...auth, 'Content-Type':'application/json' },

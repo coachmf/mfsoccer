@@ -1038,6 +1038,23 @@ table.lb tr.pk td{background:rgba(14,43,82,.35);padding:8px 11px}
 .pkl .r i{font-style:normal;font-family:var(--display);font-variant-numeric:tabular-nums;padding:1px 8px;border-radius:7px;background:rgba(143,166,196,.15)}
 .pkl .r i.ex{background:rgba(46,180,100,.85);color:#fff}.pkl .r i.ok{background:rgba(46,180,100,.3);color:#8ff0b5}.pkl .r i.no{color:var(--slate)}.pkl .r i.bad{background:rgba(220,60,60,.85);color:#fff}
 .pkl .r em{font-style:normal;color:var(--slate);font-size:.7rem}
+/* توقعات الجمهور في صفحة المباراة */
+.mpk-n{font-size:.72rem;color:var(--slate);font-weight:600}
+.mpk-bar{display:flex;height:10px;border-radius:999px;overflow:hidden;gap:2px;background:rgba(143,166,196,.12)}
+.mpk-bar i{background:var(--hc,#2EB0F0)}.mpk-bar i.d{background:rgba(143,166,196,.55)}.mpk-bar i.a{background:var(--ac,#E7D093)}
+.mpk-leg{display:flex;justify-content:space-between;align-items:center;margin-top:8px;font-size:.74rem;color:var(--slate)}
+.mpk-leg span{display:flex;align-items:center;gap:6px}.mpk-leg b{color:var(--text-primary,#fff);font-family:var(--display);font-variant-numeric:tabular-nums}
+.mpk-leg .crest{width:20px;height:20px}
+.mpk-top{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+.mpk-top span{display:flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;border:1px solid rgba(143,166,196,.25);font-size:.72rem;color:var(--slate)}
+.mpk-top span b{font-family:var(--display);color:var(--text-primary,#fff);font-variant-numeric:tabular-nums}
+.mpk-top span.hit{border-color:rgba(46,180,100,.85);background:rgba(46,180,100,.15)}
+.mpk-res{margin:10px 0 0;font-size:.76rem;color:var(--slate)}
+.mpk-all{margin-top:12px}.mpk-all summary{cursor:pointer;font-size:.78rem;font-weight:700;color:var(--gold,#E7D093);list-style:none;padding:6px 0}
+.mpk-all summary::-webkit-details-marker{display:none}.mpk-all .pkl{margin-top:6px;max-height:420px;overflow:auto;padding-inline-end:4px;font-size:.8rem;gap:7px}
+html[data-theme="light"] .mpk-leg b,html[data-theme="light"] .mpk-top span b{color:#0b1530}
+html[data-theme="light"] .mpk .pkl .r i.ok{color:#126b3a}
+html[data-theme="light"] .mpk-bar{background:rgba(11,31,58,.08)} html[data-theme="light"] .mpk-bar i{box-shadow:inset 0 0 0 1px rgba(11,31,58,.22)} html[data-theme="light"] .mpk-all summary{color:#8A6A2E}
 .lb-more{display:block;width:100%;margin-top:8px}
 #fanProf{position:fixed;inset:0;z-index:2147482000;background:rgba(3,8,20,.72);display:flex;align-items:flex-end;justify-content:center;padding:0}
 #fanProf .fp-card{position:relative;width:100%;max-width:560px;max-height:86vh;overflow:auto;background:var(--navy-900,#0b1736);border:1px solid rgba(143,166,196,.2);
@@ -14634,7 +14651,41 @@ function mpDetails(m){
                : `<div class="mp-card mp-empty">لم تُسجَّل أحداث لهذه المباراة.</div>`;
   }
   const comp=`<button type="button" class="mp-card mp-compcard" data-mp-tab="table"><span>${esc(compOf(m))} · الجولة ${m.round} · ${esc(SEASON)}</span><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg></button>`;
-  return comp + body + (soon?"":mpMotmHTML(m)) + mpInfoRows(m) + mpMiniTable(m);
+  return comp + body + (soon?"":mpFansPicksHTML(m)) + (soon?"":mpMotmHTML(m)) + mpInfoRows(m) + mpMiniTable(m);
+}
+/* توقعات الجمهور في صفحة المباراة (منصور 2026-10-18، طلب مشجع «للمصداقية والإثارة»): تظهر من أول صافرة —
+   الخادم ينشر boards/{season}_p{round} عند انطلاق الجولة (preds-score.js). التوزيع + أكثر النتائج + القائمة كاملة،
+   وبعد النهاية تتلوّن مثل بروفايل المشجع (أخضر غامق مطابقة، فاتح اتجاه صحيح، أحمر غلط). الدوري فقط. */
+function mpFansPicksHTML(m){
+  if(compOf(m)!=="الدوري" || isGulfMatch(m)) return "";
+  const r=+m.round;
+  if(PICKS[r]===undefined){ PICKS[r]=null; loadPicks(r).then(()=>{ if(MP.m && +MP.m.round===r && MP.tab==="details" && !$("#mpage").hidden) renderMatchPage(); }); }
+  const doc=PICKS[r];
+  if(!doc || doc.err) return "";
+  /* الصفحة مفتوحة قبل النشر أو قبل النتيجة: تحديث هادئ كل دقيقتين (النسخة القديمة تبقى معروضة حتى يصل الجديد) */
+  if(!doc._busy && Date.now()-(doc._t||(doc._t=Date.now()))>120000){ doc._busy=1;
+    boardDoc(seasonId()+"_p"+r).then(d=>{ if(d && d.exists){ PICKS[r]=d.data; if(MP.m && +MP.m.round===r && MP.tab==="details" && !$("#mpage").hidden) renderMatchPage(); } else { doc._busy=0; doc._t=Date.now(); } })
+      .catch(()=>{ doc._busy=0; doc._t=Date.now(); }); }
+  const key=m.home+"|"+m.away, act=(doc.res||{})[key];
+  const L=Object.entries(doc.rows||{}).map(([uid,x])=>({uid, n:x.n||"مشترك", v:(x.pk||{})[key]})).filter(x=>Array.isArray(x.v) && x.v.length===2);
+  if(!L.length) return "";
+  const N=L.length, sg=x=>Math.sign(+x.v[0]-+x.v[1]);
+  const hw=L.filter(x=>sg(x)>0).length, dr=L.filter(x=>sg(x)===0).length, aw=N-hw-dr, pc=k=>Math.round(k/N*100);
+  const cnt={}; L.forEach(x=>{ const k=+x.v[0]+"-"+(+x.v[1]); cnt[k]=(cnt[k]||0)+1; });
+  const top=Object.entries(cnt).sort((a,b)=>b[1]-a[1]).slice(0,4);
+  const cls=x=>!act?"no":(+x.v[0]===act[0] && +x.v[1]===act[1])?"ex":(sg(x)===Math.sign(act[0]-act[1]))?"ok":"bad";
+  const rank={ex:0, ok:1, bad:2, no:3};
+  const rows=L.slice().sort((a,b)=>(rank[cls(a)]-rank[cls(b)]) || a.n.localeCompare(b.n,"ar"));
+  const ex=act?L.filter(x=>cls(x)==="ex").length:0;
+  return `<div class="mp-card mpk"><div class="mp-hd"><h3>توقعات الجمهور</h3><span class="mpk-n">${N} توقع</span></div>
+    <div class="mpk-bar" dir="rtl">
+      <i style="flex:${hw||.0001}" title="فوز ${esc(m.home)}"></i><i class="d" style="flex:${dr||.0001}" title="تعادل"></i><i class="a" style="flex:${aw||.0001}" title="فوز ${esc(m.away)}"></i></div>
+    <div class="mpk-leg"><span>${crest(m.home)}<b>${pc(hw)}%</b></span><span>تعادل <b>${pc(dr)}%</b></span><span><b>${pc(aw)}%</b>${crest(m.away)}</span></div>
+    <div class="mpk-top">${top.map(([k,c])=>`<span class="${act && k===act[0]+"-"+act[1]?"hit":""}"><b dir="ltr">${k}</b>${c}</span>`).join("")}</div>
+    ${act?`<p class="mpk-res">${ex?`${ex} ${ex===1?"مشجع توقّع":"مشجعين توقعوا"} النتيجة بالضبط`:"لا أحد توقّع النتيجة بالضبط"}</p>`:""}
+    <details class="mpk-all"><summary>كل التوقعات (${N})</summary>
+      <div class="pkl">${rows.map(x=>`<div class="r"><span>${esc(x.n)}</span><span><i class="${cls(x)}" dir="ltr">${+x.v[0]} - ${+x.v[1]}</i></span></div>`).join("")}</div></details>
+  </div>`;
 }
 /* ملعب صفحة المباراة: توزيع مرتّب حسب خطة كل فريق — الخطوط تُستنتج من ترتيب اللاعبين عمقاً (y) وعدد كل خط
    من الخطة، ثم تتوزع البطاقات أفقياً بالتساوي داخل الخط، مع هامش للحارس داخل الملعب فلا تتداخل ولا تُقصّ. */
