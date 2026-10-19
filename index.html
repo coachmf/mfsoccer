@@ -3994,6 +3994,47 @@ async function persistData(opt){
   return r;
 }
 
+/* حفظ المباراة كمعاملة واحدة (منصور 2026-10-19: «مو راضي يحفظ… ينمسح… ابي اثنين يحررون مع بعض»):
+   كانت القراءة (rebaseOnCloud) والكتابة (set للوثيقة كاملة) خطوتين منفصلتين، فإذا حفظ محرّر آخر بينهما
+   محته كتابتنا؛ وعلى اتصال بطيء تبقى الكتابة معلّقة في الجهاز وتُرسل لاحقاً فوق ما أدخله غيرنا.
+   الآن: runTransaction يقرأ أحدث نسخة من الخادم، يطبّق فرقنا فقط (mergeEdit: ما أضفناه/حذفناه/غيّرناه)،
+   ويكتب — وإذا تغيّرت الوثيقة قبل الكتابة يعيد المحاولة تلقائياً على النسخة الأحدث.
+   والمعاملة لا تُحفظ في الجهاز بلا اتصال، فلا كتابة قديمة تُرسل لاحقاً؛ التعديل يبقى في النموذج ويُعاد الحفظ. */
+async function txSaveMatch(E0){
+  if(!fbDb){   /* بلا سحابة (وضع الاختبار المحلي): نفس الدمج ثم حفظ على الجهاز */
+    const merged = mergeEdit(JSON.parse(JSON.stringify(E0)));
+    applyEdit(JSON.parse(JSON.stringify(merged))); applyComp(); DATA_SOURCE="إدخال يدوي في الموقع"; DATA_UPDATED=new Date().toISOString();
+    const r0 = await persistData({noBackup:true});
+    return r0===true || r0===false ? {r:"ok", E:merged, obj:dataObject(), lp:null, by:"", changed:false} : {r:"timeout"};
+  }
+  if(!isAdmin) return {r:"err", msg:"سجّل الدخول"};
+  const ref = fbDb.collection("seasons").doc(seasonId());
+  const before = CUR_STAMP;
+  let out = null;
+  const p = fbDb.runTransaction(async tx=>{
+    const snap = await tx.get(ref);
+    const d = snap.exists ? snap.data() : null;
+    if(d && d.clubs && d.matches) applyData(d, "السحابة (قبل الحفظ)");
+    const merged = mergeEdit(JSON.parse(JSON.stringify(E0)));   /* فرقنا فوق أحدث صفوف المباراة */
+    const lp = (window.LIVEPUSH && E0.base) ? LIVEPUSH.capture(Object.assign({}, merged, {base:E0.base})) : null;
+    applyEdit(JSON.parse(JSON.stringify(merged)));
+    applyComp(); DATA_SOURCE="إدخال يدوي في الموقع"; DATA_UPDATED=new Date().toISOString();
+    DATA_BY=(FBUSER&&FBUSER.email)||"";
+    const obj = dataObject();
+    tx.set(ref, obj);
+    out = {E:merged, obj, lp, by:(d&&d.updatedBy)||"", changed: !!d && stampOf(d)!==before};
+  });
+  const r = await withTimeout(p, 25000);
+  if(r==="ok" && out){
+    CUR_STAMP = LASTSTAMP = stampOf(out.obj); SYNCMSG="";
+    try{ await localSet("zain_data", JSON.stringify(out.obj)); }catch(e){}
+    if(Date.now()-LAST_BACKUP_AT > 15*60*1000){ LAST_BACKUP_AT=Date.now(); pushBackup(); }
+    return Object.assign({r:"ok"}, out);
+  }
+  if(r==="timeout") return {r:"timeout"};
+  return {r:"err", msg:((r&&r.err&&(r.err.code||r.err.message))||"خطأ غير معروف")};
+}
+
 /* ===== المناسبات وفترات التوقف — إدارة =====
    مباريات المنتخب والبطولات الخارجية وأي مناسبة توقف الدوري.
    تظهر للجمهور في الرزنامة فيعرف سبب الانقطاع. */
@@ -6458,30 +6499,34 @@ async function saveMatch(opt){
   if(FORMERR){ if(quiet){ FORMERR=""; return; } renderMatchAdmin(); return; }
   SAVING_MATCH = true; if(!quiet) document.documentElement.classList.add("mx-saving");
   try{
-  /* نبني على أحدث نسخة سحابية حتى لا نمحو ما أدخله محرّر آخر بيننا */
-  const reb = await rebaseOnCloud();
-  if(!reb.ok){ if(quiet) return; toast("الاتصال ضعيف — لم يُحفظ بعد. تعديلاتك باقية، اضغط «حفظ» مرة ثانية","err"); setTimeout(()=>renderMatchAdmin(),0); return; }
-  /* فُتحت نافذة إدخال أثناء الانتظار: أرقام الصفوف فيها تخص هذه النسخة — نؤجل الحفظ التلقائي */
+  /* فُتحت نافذة إدخال: أرقام الصفوف فيها تخص هذه النسخة — نؤجل الحفظ التلقائي */
   if(quiet && (!EDIT || (window.MX && MX.sheet))) return;
-  if(reb.changed) toast(`وصل تحديث من ${reb.by||"محرّر آخر"} — دُمج قبل الحفظ`,"busy");
-  EDIT = mergeEdit(EDIT);                     /* ما غيّرناه فقط، فوق أحدث صفوف المباراة */
-  const _lp = (window.LIVEPUSH ? LIVEPUSH.capture(EDIT) : null);   /* أحداث جديدة تُبثّ بعد نجاح الحفظ */
-  const m=EDIT.match;
-  applyEdit(EDIT);
-  applyComp(); DATA_SOURCE="إدخال يدوي في الموقع"; DATA_UPDATED=new Date().toISOString();
-  DATA_BY=(FBUSER&&FBUSER.email)||"";
-  if(quiet){ const x=(ALL.matches||[]).find(z=>+z.round===+m.round && compOf(z)===m.comp && z.home===m.home && z.away===m.away);
-    EDIT = x ? loadEdit(x) : null; if(window.MX) MX._edit=EDIT; MX_ASAVED=Date.now(); }
+  const E0 = JSON.parse(JSON.stringify(EDIT));      /* تعديلنا كما هو (مع base) — يُعاد دمجه في كل محاولة */
+  const sig0 = JSON.stringify(EDIT);
+  const tx = await txSaveMatch(E0);
+  if(tx.r!=="ok"){
+    /* لا شيء انكتب: النموذج باقٍ كما هو، والحفظ التلقائي يعيد المحاولة */
+    if(quiet){ MX_ACLOUD=false; return; }
+    toast(tx.r==="timeout" ? "الاتصال بطيء — لم يُحفظ بعد. تعديلاتك باقية وتنحفظ تلقائياً" : `تعذّر الحفظ (${tx.msg}) — تعديلاتك باقية`, "err");
+    setTimeout(()=>renderMatchAdmin(),0); return;
+  }
+  if(tx.changed) toast(`وصل تحديث من ${tx.by||"محرّر آخر"} — دُمج مع تعديلك`,"busy");
+  const m = tx.E.match;
+  const typedMore = !!EDIT && JSON.stringify(EDIT)!==sig0;   /* عدّل أثناء الحفظ: نبقي ما كتبه فوق النسخة المحفوظة */
+  if(quiet){
+    const x=(ALL.matches||[]).find(z=>+z.round===+m.round && compOf(z)===m.comp && z.home===m.home && z.away===m.away);
+    if(typedMore && x){   /* ما أضافه بعد بدء الحفظ = الفرق بين النموذج الآن وما أُرسل؛ نطبّقه فوق المحفوظ ويُحفظ في الدورة الجاية */
+      const tmp=JSON.parse(JSON.stringify(EDIT)), sent=JSON.parse(JSON.stringify(E0)); delete sent.base; tmp.base=sent;
+      const nx=mergeEdit(tmp); nx.base=loadEdit(x).base; EDIT=nx; }
+    else EDIT = x ? loadEdit(x) : null;
+    if(window.MX) MX._edit=EDIT; MX_ASAVED=Date.now();
+  }
   else EDIT=null;
   FORMERR="";
-  if(!quiet) toast("جارٍ حفظ المباراة…","busy",true);
+  MX_ACLOUD = true;
+  LASTSYNC=new Date(); if(!quiet) toast(`حُفظت المباراة: ${m.home} ضد ${m.away} ✅`,"ok"); predsScoreSoon();
+  if(tx.lp && tx.lp.length) LIVEPUSH.send(tx.lp);
   if(quiet && !mxTyping()) renderMatchAdmin();
-  const okm = await persistData();
-  if(quiet) MX_ACLOUD = okm===true;
-  if(okm===true){ LASTSYNC=new Date(); if(!quiet) toast(`حُفظت المباراة: ${m.home} ضد ${m.away} ✅`,"ok"); predsScoreSoon(); }
-  if(okm===true && _lp && _lp.length) LIVEPUSH.send(_lp);
-  else if(okm==="pending") toast(SYNCMSG,"busy");
-  else toast(SYNCMSG||"حُفظت محلياً، لكن تعذّر الحفظ في السحابة","err");
   /* أي لقطة وصلت أثناء التحرير أقدم من حفظنا — تطبيقها يتراجع عنه */
   dropStaleRemote();
   paintRail(); renderAll(); if(!quiet || !mxTyping()) renderMatchAdmin();
@@ -6502,7 +6547,16 @@ setInterval(()=>{
   if(!EDIT || !EDIT.orig || !EDIT.base || EDIT.gulf || !window.MX){ MX_ASIG=""; return; }
   if(SAVING_MATCH){ mxAutoPaint("busy","جارٍ الحفظ…"); return; }
   const {base, ...cur} = EDIT; const s = JSON.stringify(cur);
-  if(s === JSON.stringify(base)){ MX_ASIG=""; mxAutoPaint(MX_ACLOUD?"ok":"wait", MX_ACLOUD?"محفوظ ✓":"على الجهاز، بانتظار الشبكة"); return; }
+  if(s === JSON.stringify(base)){
+    MX_ASIG="";
+    /* محرّر آخر حفظ وما عندنا تعديل معلّق: نعرض ما أدخله فوراً (منصور 2026-10-19: اثنين يحررون مع بعض) */
+    if(PENDING_REMOTE && !MX.sheet && !mxTyping()){
+      const d=PENDING_REMOTE; PENDING_REMOTE=null; const em=EDIT.match;
+      applyData(d,"السحابة (تحديث حيّ)"); LASTSTAMP=CUR_STAMP=stampOf(d); cacheSeasonLocal(d);
+      const x=(ALL.matches||[]).find(z=>+z.round===+em.round && compOf(z)===em.comp && z.home===em.home && z.away===em.away);
+      if(x){ EDIT=loadEdit(x); MX._edit=EDIT; renderMatchAdmin(); if(d.updatedBy && d.updatedBy!==((FBUSER&&FBUSER.email)||"")) toast(`وصل تحديث من ${d.updatedBy}`,"ok"); }
+    }
+    mxAutoPaint(MX_ACLOUD?"ok":"wait", MX_ACLOUD?"محفوظ ✓":"لم يُحفظ بعد — يعيد المحاولة"); return; }
   if(validateEdit()){ mxAutoPaint("err","لم يُحفظ: اضغط هنا"); return; }
   /* أثناء ضبط التشكيلة لا حفظ تلقائي (منصور 2026-10-09: «قاعد يعلق») — يُحفظ عند الانتقال لتبويب آخر أو بزر الحفظ */
   if(MX.tab==="lineup"){ MX_ASIG=""; mxAutoPaint("busy","يُحفظ عند الخروج"); return; }
