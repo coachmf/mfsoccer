@@ -168,11 +168,11 @@ const APP = {
       if(typeof MFSYNC!=='undefined') MFSYNC.autoFixtures(true);
       if(CLOUD.admin && typeof ROSTER!=='undefined') ROSTER.auto();
       if(CLOUD.admin) this.autoOwnership();
-      if(CLOUD.admin) this.adminFixes();
+      if(CLOUD.admin){ this.adminFixes(); setTimeout(()=>this.adminFixes(), 20000); }   /* ثانية بعد اكتمال تحميل الجولة */
       /* احتساب الجولة وفتح التالية تلقائياً عند اكتمالها (بعد سحب النتائج) — ثم كل 10 دقائق ما دامت اللعبة مفتوحة */
       if(CLOUD.admin && typeof ADMIN!=='undefined' && ADMIN.autoFinalize && !this._autoFinT){
         setTimeout(()=>ADMIN.autoFinalize(), 25000);
-        this._autoFinT=setInterval(()=>ADMIN.autoFinalize(), 10*60*1000);
+        this._autoFinT=setInterval(()=>{ ADMIN.autoFinalize(); this.adminFixes(); }, 10*60*1000);
       }
     });
   },
@@ -185,7 +185,7 @@ const APP = {
     patch:t=>({'team.pendingHits':0, 'team.usedChips.wildcard':(+((t.usedChips||{}).wildcard)||0)+1})}],
   async adminFixes(){
     for(const f of this.ADMIN_FIXES){ try{
-      if(+DB.state.currentGW!==f.gw) continue;
+      if(+DB.state.currentGW!==f.gw){ console.info('adminFix skip', f.id, 'gw', DB.state.currentGW); continue; }
       const ref=CLOUD.managers().doc(f.uid), s=await ref.get(); if(!s.exists) continue;
       const t=s.data().team||{}; if(t.fixes && t.fixes[f.id]) continue;
       const now=new Date().toISOString();
