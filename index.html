@@ -6066,7 +6066,7 @@ function spotBadges(ev){
   if(!ev) return "";
   let b="";
   if(ev.goals)   b+=`<span class="pp-b goal${ev.goals>1?" n":""}">${ICO_BALL}${ev.goals>1?`<em>${ev.goals}</em>`:""}</span>`;
-  if(ev.assists) b+=`<span class="pp-b assist">${ICO_BOOT}${ev.assists>1?`<em>${ev.assists}</em>`:""}</span>`;   /* عدد الصناعات كعدد الأهداف (منصور 2026-10-19) */
+  if(ev.assists) b+=`<span class="pp-b assist${ev.assists>1?" n":""}">${ICO_BOOT}${ev.assists>1?`<em>${ev.assists}</em>`:""}</span>`;   /* عدد الصناعات كعدد الأهداف (منصور 2026-10-19) */
   if(ev.red||ev.yellow) b+=`<span class="pp-b card ${ev.red?"r":"y"}"></span>`;
   if(ev.off)     b+=`<span class="pp-b off" title="خرج"></span>`;
   return b;
@@ -11913,9 +11913,13 @@ html[data-theme="light"] .hm{--bg-card:#FFFFFF;--border-card:#E2E8F0;--text-prim
 .mpx-card .pp-b.assist .ico-boot{width:82%;height:82%}
 .mpx-card .pp-b.goal .ico-ball{width:82%;height:82%;margin:0;filter:none}   /* الكرة بحجم حذاء الصناعة وداخل نفس الدائرة البيضاء (منصور 2026-09-16) */
 .mpx-card .pp-b.goal{top:-7px;left:-7px}
-/* عدد الأهداف (هاتريك يوسف ناصر 2026-10-19): فقاعة ذهبية برقم كحلي — قاعدة أخرى كانت تجعل الرقم بلون الخلفية فيختفي وتبدو الفقاعة الكحلية قضمة من الكرة */
-.mpx-card .pp-b.goal em{background:#F5C518!important;color:#0B1F3A!important;box-shadow:0 0 0 1.5px #fff,0 1px 3px rgba(0,0,0,.5)}
-.pp-b.assist em{position:absolute;top:-5px;left:-6px;min-width:11px;height:11px;border-radius:6px;padding:0 2px;font:800 7.5px/11px var(--body,system-ui);font-style:normal;text-align:center;background:#F5C518!important;color:#0B1F3A!important;box-shadow:0 0 0 1.5px #fff,0 1px 3px rgba(0,0,0,.5)}
+/* عدد الأهداف/الصناعات (منصور 2026-10-19 «الرقم يغطي على الكورة، لا تخليه أصفر»): الرقم داخل نفس الشريحة البيضاء جنب الأيقونة بكحلي —
+   كانت فقاعة فوق الكورة، وقاعدة أخرى تجعل رقمها بلون الخلفية */
+.mpx-card .pp-b.goal.n,.mpx-card .pp-b.assist.n{width:auto;min-width:clamp(13px,4cqw,17px);border-radius:999px;padding:0 3px 0 1px;gap:1px}
+.pp-b.assist.n{border-radius:999px;gap:1px}
+.mpx-card .pp-b.goal.n .ico-ball,.mpx-card .pp-b.assist.n .ico-boot{width:clamp(10px,3.2cqw,14px);height:clamp(10px,3.2cqw,14px)}
+.mpx-card .pp-b.goal em,.pp-b.assist em{position:static!important;min-width:0;height:auto;padding:0 1px 0 0;border-radius:0;background:none!important;box-shadow:none;
+  color:#0B1F3A!important;font:800 clamp(8px,2.6cqw,11px)/1 var(--body,system-ui);font-style:normal}
 .mpx-card .pp-b.goal em{position:absolute;top:-5px;right:-6px;min-width:11px;height:11px;border-radius:6px;background:#0B1F3A;color:#fff;
   font-size:7.5px;line-height:11px;text-align:center;padding:0 2px}
 .mpx-card .pp-b.assist{top:-7px;right:-7px;left:auto;bottom:auto}
