@@ -11917,6 +11917,9 @@ html[data-theme="light"] .hm{--bg-card:#FFFFFF;--border-card:#E2E8F0;--text-prim
    كانت فقاعة فوق الكورة، وقاعدة أخرى تجعل رقمها بلون الخلفية */
 .mpx-card .pp-b.goal.n,.mpx-card .pp-b.assist.n{width:auto;min-width:clamp(13px,4cqw,17px);border-radius:999px;padding:0 3px 0 1px;gap:1px}
 .pp-b.assist.n{border-radius:999px;gap:1px}
+/* الشريحة الأطول تمتد للخارج بعيداً عن الصورة (لا تغطي الشعر): الكرة لليسار والحذاء لليمين */
+.mpx-card .pp-b.goal.n{left:auto;right:calc(100% - 8px);top:-10px}
+.mpx-card .pp-b.assist.n{right:auto;left:calc(100% - 8px);top:-10px}
 .mpx-card .pp-b.goal.n .ico-ball,.mpx-card .pp-b.assist.n .ico-boot{width:clamp(10px,3.2cqw,14px);height:clamp(10px,3.2cqw,14px)}
 .mpx-card .pp-b.goal em,.pp-b.assist em{position:static!important;min-width:0;height:auto;padding:0 1px 0 0;border-radius:0;background:none!important;box-shadow:none;
   color:#0B1F3A!important;font:800 clamp(8px,2.6cqw,11px)/1 var(--body,system-ui);font-style:normal}
