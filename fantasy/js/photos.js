@@ -9,7 +9,6 @@ const PLAYER_PHOTOS_VER = '38';
 const PLAYER_PHOTOS = {
   // الصليبخات (17)
   'SLB|دانيل سيلفا': '/assets/players/slb/21',   // من رسم تشكيلة النادي
-  'SLB|خالد عيد': '/assets/players/slb/7',   // النادي يكتب رقم 7 «خالد عيد»
   'SLB|عثمان الفيلكاوي': '/assets/players/slb/11',   // من صورة تتويج
   'SLB|مساعد طراد': '/assets/players/slb/5',   // تركيب: وجهه الحقيقي على طقم النادي (مؤقت)
   'SLB|مبارك سعيد': '/assets/players/slb/23',   // صورة من Sports Corner (دقة أقل)
@@ -20,7 +19,6 @@ const PLAYER_PHOTOS = {
   'SLB|علي صفر': '/assets/players/slb/28',
   'SLB|صالح خميس': '/assets/players/slb/2',
   'SLB|علي الموسوي': '/assets/players/slb/4',
-  'SLB|خالد الشهري': '/assets/players/slb/7',
   'SLB|محمد الرويعي': '/assets/players/slb/15',
   'TDM|أبوبكر دوما': '/assets/players/tdm/77',
   'TDM|وليد سعد': '/assets/players/tdm/3',
