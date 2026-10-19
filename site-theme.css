@@ -185,6 +185,7 @@ html[data-theme="dark"] .sqrow.nopos select.sqp{background:#3E3112}
 html[data-theme="dark"] .sqrow .sqx{background:#0D1C30}
 html[data-theme="dark"] .sqtools button{background:#0D1C30;color:#BAC5D3}
 html[data-theme="dark"] .mrow.adm{background:#0D1C30}
+html[data-theme="dark"] .am-score{color:#00061A}   /* --head فاتح في الوضع الداكن فكانت النتيجة بيضاء على أبيض (منصور 2026-10-19) */
 html[data-theme="dark"] .am-score.soon{background:#534318;color:#EBD8BA}
 html[data-theme="dark"] .am-meta{color:#C1C6CD}
 html[data-theme="dark"] .am-meta span+span::before{background:#293A4E}
