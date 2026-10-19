@@ -15384,6 +15384,8 @@ html[data-theme="dark"] .mx select option{color:#E6EEF8;background:#0F1E35}   /*
 .mx-pc{position:relative;width:clamp(40px,13.5cqw,64px);aspect-ratio:4/5;border-radius:10px;overflow:hidden;
   background:linear-gradient(180deg,var(--pc,#1c6fd1),var(--pd,#0e3f86));box-shadow:0 0 0 1.5px var(--pe,rgba(255,255,255,.85)),0 6px 12px rgba(0,0,0,.35);transition:transform .15s,box-shadow .15s}
 .mx-spot:hover .mx-pc{transform:translateY(-2px)}
+.mx-pc.jer{background:none;box-shadow:none;overflow:visible}
+.mx-jer{position:absolute;inset:-6% -10% 18% -10%;display:grid;place-items:center;pointer-events:none}
 .mx-spot.drag .mx-pc{transform:scale(1.08);box-shadow:0 0 0 2px #fff,0 14px 24px rgba(0,0,0,.45)}
 .mx-spot.sel .mx-pc{box-shadow:0 0 0 3px #ffd84d,0 8px 18px rgba(0,0,0,.45)}
 .mx-pc img{position:absolute;inset:0 0 22% 0;width:100%;height:78%;object-fit:cover;object-position:top center;pointer-events:none}
@@ -15411,6 +15413,7 @@ html[data-theme="dark"] .mx select option{color:#E6EEF8;background:#0F1E35}   /*
 .mx-sqadd{display:grid;grid-template-columns:1fr 64px 84px auto;gap:6px;margin-bottom:10px}
 .mx-sqadd input,.mx-sqadd select,.mx-sqrow input,.mx-sqrow select{min-width:0;height:38px;padding:0 8px;border-radius:10px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.05);color:inherit;font:inherit}
 .mx-sqlist{display:flex;flex-direction:column;gap:6px}
+.mx-pl .num.ed{cursor:pointer;outline:1px dashed rgba(255,255,255,.45);outline-offset:1px}
 .mx-sqrow{display:grid;grid-template-columns:38px 1fr 58px 76px 34px;align-items:center;gap:6px}
 .mx-sqrow b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.86rem}
 @media(max-width:420px){.mx-sqadd{grid-template-columns:1fr 64px}}
@@ -15539,15 +15542,10 @@ html.mx-editing #waFab{display:none!important}   /* زر واتساب كان ي�
   /* كشف أندية الدرجة الأولى من المحرّر (منصور 2026-10-19): إضافة لاعب وتعديل رقمه ومركزه — يُحفظ مع المباراة */
   const SQ_POS=[["GK","حارس"],["CB","مدافع"],["CM","وسط"],["ST","مهاجم"]];
   const posKey=p=>({G:"GK",D:"CB",M:"CM",F:"ST"})[POS_MAIN[String(p||"").toUpperCase()]]||"";
-  const sqEditHTML=club=>{
-    const L=(SQUADS[club]||[]).map((x,i)=>({i,n:sqName(x),s:sqNum(x),p:sqPos(x)})).sort((a,b)=>(a.s||999)-(b.s||999));
-    const sel=(v,attr)=>`<select ${attr}><option value="">المركز</option>${SQ_POS.map(([k,t])=>`<option value="${k}" ${posKey(v)===k?"selected":""}>${t}</option>`).join("")}</select>`;
-    return `<div class="mx-card mx-sqed"><h3>لاعبو ${esc(club)}<small>${L.length} لاعب</small></h3>
-      <div class="mx-sqadd"><input data-msqn placeholder="اسم اللاعب"><input data-msqs type="number" min="1" max="99" inputmode="numeric" placeholder="الرقم">${sel("","data-msqp")}<button class="mx-addb" data-msqadd="${esc(club)}">إضافة</button></div>
-      ${L.length?`<div class="mx-sqlist">${L.map(e=>`<div class="mx-sqrow">${face(e.n,club)}<b>${esc(e.n)}</b>
-        <input type="number" min="1" max="99" inputmode="numeric" value="${e.s||""}" placeholder="رقم" data-msqnum="${e.i}" data-msqclub="${esc(club)}">
-        ${sel(e.p,`data-msqpos="${e.i}" data-msqclub="${esc(club)}"`)}<button class="mx-ghost" data-msqdel="${e.i}" data-msqclub="${esc(club)}" aria-label="حذف">×</button></div>`).join("")}</div>`
-        :`<p class="mx-hint">لا يوجد لاعبون بعد. أضف اللاعب برقمه ومركزه، ثم اختره في التشكيلة. يُحفظ الكشف مع حفظ المباراة.</p>`}</div>`;
+  const sqAddHTML=club=>{
+    const sel=`<select data-msqp><option value="">المركز</option>${SQ_POS.map(([k,t])=>`<option value="${k}">${t}</option>`).join("")}</select>`;
+    return `<div class="mx-sqadd"><input data-msqn placeholder="لاعب جديد"><input data-msqs type="number" min="1" max="99" inputmode="numeric" placeholder="الرقم">${sel}<button class="mx-addb" data-msqadd="${esc(club)}">إضافة</button></div>
+      <p class="mx-hint" style="margin:-4px 0 10px">اللاعب الجديد ينزل على الملعب مباشرة، واضغط رقم أي لاعب لتعديله.</p>`;
   };
   const starters=club=>{ const seen={},out=[]; (EDIT.lineup||[]).forEach(x=>{ if(x.club===club&&x.p&&!seen[x.p]){ seen[x.p]=1; out.push(x.p);} }); return out; };
   const roster=club=>{
@@ -15593,8 +15591,8 @@ html.mx-editing #waFab{display:none!important}   /* زر واتساب كان ي�
       /* حدود المواضع تُبقي البطاقة كاملة داخل الملعب */
       const xx=Math.max(9,Math.min(91,x)), yy=Math.max(9,Math.min(92,y));
       return `<div class="mx-spot${MX.sel===p.n?" sel":""}" data-sp="${esc(p.n)}" style="right:${xx}%;top:${yy}%">
-        <span class="mx-pc" style="${dotVars(k)}">${cut?`<img src="${cut}_f.webp?v=37" alt="" draggable="false">`:`<span class="ini">${initials(p.n)}</span>`}
-          ${p.s?`<span class="no">${p.s}</span>`:""}<span class="nm">${esc(shortName(p.n))}</span></span></div>`;
+        <span class="mx-pc${cut?"":" jer"}" style="${dotVars(k)}">${cut?`<img src="${cut}_f.webp?v=37" alt="" draggable="false">`:`<span class="mx-jer">${jerseySVG(club, p.s, gk)}</span>`}
+          ${p.s&&cut?`<span class="no">${p.s}</span>`:""}<span class="nm">${esc(shortName(p.n))}</span></span></div>`;
     }).join("");
     return `<div class="mx-pitch" data-mxpitch="${esc(club)}">${PITCH_SVG}${spots||`<div class="mx-empty">اختر اللاعبين الأساسيين من القائمة — ينزلون على الملعب مباشرة</div>`}</div>`;
   }
@@ -15700,7 +15698,7 @@ html.mx-editing #waFab{display:none!important}   /* زر واتساب كان ي�
     const nOut=roster(club).filter(e=>!xi.includes(e.n) && why(e.n)).length;
     const plBtn=e=>{ const on=xi.includes(e.n), w=on?"":why(e.n);
       return `<button class="mx-pl${on?" in":""}${w?" out":""}${MX.sel&&!on&&!MX.abs?" swap":""}" data-mpl="${esc(e.n)}" style="--srgb:${rgbOf(club)}">
-        ${face(e.n,club)}<span class="tx"><b>${esc(e.n)}</b><small>${esc(w||readyTag(e.n)||posLabel(e.p)||"—")}</small></span>${e.s?`<span class="num">${e.s}</span>`:""}</button>`; };
+        ${face(e.n,club)}<span class="tx"><b>${esc(e.n)}</b><small>${esc(w||readyTag(e.n)||posLabel(e.p)||"—")}</small></span>${CUP_CLUBS.includes(club)?`<span class="num ed" data-msqnumed="${esc(e.n)}" title="تعديل الرقم">${e.s||"#"}</span>`:e.s?`<span class="num">${e.s}</span>`:""}</button>`; };
     const clubSubs=(EDIT.subs||[]).map((s,i)=>({s,i})).filter(o=>o.s.club===club);
     return `<div class="mx-sides">${sideBtn("home")}${sideBtn("away")}</div>
       <div class="mx-xi">
@@ -15720,13 +15718,13 @@ html.mx-editing #waFab{display:none!important}   /* زر واتساب كان ي�
         <div>
           <div class="mx-card"><h3>قائمة ${esc(club)}<small>${xi.length} من 11</small></h3>
             <div class="mx-search">${SV.search}<input data-mq="1" value="${esc(MX.q)}" placeholder="ابحث بالاسم أو الرقم"></div>
+            ${CUP_CLUBS.includes(club)?sqAddHTML(club):""}
             <div class="mx-absbar"><button class="mx-ghost${MX.abs?" on":""}" data-mabs="1">${MX.abs?"تم":"تحديد الغائبين"}</button>
               <p class="mx-hint">${MX.abs?"اضغط المصاب أو الغائب ليُستبعد من قائمة هذه المباراة، واضغطه مرة ثانية لإرجاعه. المسجّل «مصاب» في الفانتسي: اضغطه إذا كان جاهزاً فيرجع للاحتياط."
                 :nOut?`${nOut} غائب عن هذه المباراة — لا يظهرون في الاحتياط.`:"المصابون والغائبون لا يظهرون في الاحتياط."}</p></div>
             ${groups.map(([k,t])=>{ const L=ent.filter(e=>(POS_MAIN[String(e.p||"").toUpperCase()]||"")===k); if(!L.length) return "";
               return `<div class="mx-grp">${t}</div><div class="mx-roster">${L.map(plBtn).join("")}</div>`; }).join("") || `<div class="mx-none">لا يوجد لاعب بهذا البحث</div>`}
           </div>
-          ${CUP_CLUBS.includes(club)?sqEditHTML(club):""}
           <div class="mx-card"><h3>البدلاء والتبديلات<small>${clubSubs.length} تبديل</small></h3>
             <div class="mx-add"><button class="mx-addb" data-mnew="sub" data-mclub="${esc(club)}">${SV.swap}إضافة تبديل</button></div>
             ${clubSubs.length?`<div class="mx-tl">${clubSubs.sort((a,b)=>absMinute(a.s.h,a.s.m,a.s.x,(EDIT.match&&EDIT.match.add1))-absMinute(b.s.h,b.s.m,b.s.x,(EDIT.match&&EDIT.match.add1))).map(o=>evRow({k:"sub",i:o.i,r:o.s})).join("")}</div>`
@@ -16031,13 +16029,12 @@ html.mx-editing #waFab{display:none!important}   /* زر واتساب كان ي�
       const L=SQUADS[c]=SQUADS[c]||[], i=L.findIndex(x=>sqName(x)===n);
       if(sN && L.some((x,j)=>j!==i && sqNum(x)===sN)) toast(`الرقم ${sN} مستخدم في ${c}`,"busy");
       if(i>=0) L[i]=Object.assign({}, typeof L[i]==="object"?L[i]:{n}, {s:sN||sqNum(L[i]), p:pP||sqPos(L[i])}); else L.push({n, s:sN, p:pP});
-      sqTouch(c); rerender(); });
-    q("[data-msqnum]",el=>el.onchange=()=>{ const c=el.dataset.msqclub, L=SQUADS[c]||[], i=+el.dataset.msqnum; if(!L[i]) return;
-      L[i]=Object.assign({}, typeof L[i]==="object"?L[i]:{n:L[i]}, {s:+el.value||0}); sqTouch(c); rerender(); });
-    q("[data-msqpos]",el=>el.onchange=()=>{ const c=el.dataset.msqclub, L=SQUADS[c]||[], i=+el.dataset.msqpos; if(!L[i]) return;
-      L[i]=Object.assign({}, typeof L[i]==="object"?L[i]:{n:L[i]}, {p:el.value}); sqTouch(c); rerender(); });
-    q("[data-msqdel]",b=>b.onclick=()=>{ const c=b.dataset.msqclub, L=SQUADS[c]||[], i=+b.dataset.msqdel; if(!L[i]) return;
-      if(!confirm(`حذف ${sqName(L[i])} من كشف ${c}؟`)) return; L.splice(i,1); sqTouch(c); rerender(); });
+      sqTouch(c); MX.q=""; rerender();
+      if(i<0 && starters(c).length<11){ const nb=[...box.querySelectorAll("[data-mpl]")].find(x=>x.dataset.mpl===n); if(nb) nb.click(); } });
+    q("[data-msqnumed]",el=>el.onclick=ev=>{ ev.stopPropagation(); const c=sideClub(MX.side), L=SQUADS[c]||[], i=L.findIndex(x=>sqName(x)===el.dataset.msqnumed);
+      if(i<0) return; const v=prompt(`رقم ${sqName(L[i])}`, sqNum(L[i])||""); if(v===null) return; const sN=+String(v).replace(/[^0-9]/g,"")||0;
+      if(sN && L.some((x,j)=>j!==i && sqNum(x)===sN)) toast(`الرقم ${sN} مستخدم في ${c}`,"busy");
+      L[i]=Object.assign({}, typeof L[i]==="object"?L[i]:{n:L[i]}, {s:sN}); sqTouch(c); rerender(); });
     q("[data-mf]",el=>{ el.oninput=()=>{ EDIT.match[el.dataset.mf]=el.value; }; el.onchange=()=>{ if(!EDIT) return; EDIT.match[el.dataset.mf]=el.value;
       /* لا نعيد الرسم إن انتقل التركيز لحقل آخر في المحرّر — كان يمسح ما يُكتب في الحقل التالي */
       if(PH_CLOCK[EDIT.match.status] && PH_CLOCK[EDIT.match.status][2]===el.dataset.mf && clockSave()) return;   /* بدل الضائع للشوط الجاري يظهر عند الجمهور فوراً */
