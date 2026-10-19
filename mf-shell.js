@@ -464,7 +464,8 @@
   /* داخل الدائرة: شعار البطولة إن وُجد في الموقع وإلا أيقونة؛ تحت الاسم عدد المباريات بكلمة واضحة */
   /* رموز البطولات (الكأس/الشعار بلا الكتابة): الدولية مقصوصة من شعاراتها الرسمية في ويكيبيديا (2026-10-05) */
   const COMP_LOGO={"c:الدوري":"assets/hero/kpl-mark.webp","d:div1":"assets/hero/kpl-mark.webp","e:gulf27":"assets/comps/gulf27.webp","e:gcl":"assets/comps/gcl.webp",
-    "e:acl2":"assets/comps/acl2.webp","e:acc":"assets/comps/acc.webp","e:asiad":"assets/comps/asiad.webp"};
+    "e:acl2":"assets/comps/acl2.webp","e:acc":"assets/comps/acc.webp","e:asiad":"assets/comps/asiad.webp",
+    "c:كأس سمو ولي العهد":"assets/comps/cpcup.webp?v=1"};
   const mw2=n=>n===1?"مباراة واحدة":n===2?"مباراتان":(n>=3&&n<=10)?n+" مباريات":n+" مباراة";
   function compCirc(x,i){
     const logo=COMP_LOGO[x.key], total=x.key==="c:الكل";

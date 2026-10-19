@@ -2256,7 +2256,7 @@ main{padding-bottom:48px}
 <!-- هوية MF SOCCER الذهبية + هيكل التطبيق (منصور 2026-10-05) -->
 <link rel="stylesheet" href="mf-brand.css?v=12">
 <script>document.documentElement.classList.add("mf")</script>
-<script src="mf-shell.js?v=20" defer></script>
+<script src="mf-shell.js?v=21" defer></script>
 <style>
 /* تبويب التحليل — التصميم الجديد (منصور 2026-09-17) */
 .an{--an-card:#0F1E35;--an-line:#213653;--an-txt:#EDF3FA;--an-mut:#8FA6C4;--an-track:rgba(143,166,196,.16);--an-acc:#2EB0F0;--an-acc2:#1878BE}
@@ -2681,6 +2681,16 @@ html[data-theme="light"] .rf-kpis .y b{color:#B98A00}
 /* ================= البيانات — مستخرجة من ملف الاستوديو التحليلي ================= */
 let SEASON = "2026/2027";
 const COMPS = ["الدوري","كأس الأمير","كأس سمو ولي العهد","كأس السوبر"];
+/* الكؤوس (منصور 2026-10-19): أندية الدرجة الأولى تشارك فيها — تظهر في محرّر مباريات الكؤوس فقط، لا في CLUBS ولا الدوري ولا الفانتسي.
+   «الفائز من المباراة N» مكان مؤقت حتى يُعرف الطرف، ثم يُستبدل بالنادي من المحرّر. الدور (stage) يظهر بدل «الجولة N» في الكؤوس. */
+const CUP_CLUBS = ["سبورتي","خيطان","برقان","الجزيرة","الشامية","اتحاد الشرطة","اليرموك"];
+const CUP_TBD = ["الفائز من المباراة 1","الفائز من المباراة 2","الفائز من المباراة 3"];
+const CUP_STAGES = ["الملحق","دور الـ16","ربع النهائي","نصف النهائي","النهائي"];
+const COMP_LOGO = {"كأس سمو ولي العهد":"assets/comps/cpcup.webp?v=1"};
+const isCupComp = c => !!c && c!=="الدوري" && c!=="الكل";
+const editClubs = m => isCupComp(m && m.comp) ? CLUBS.concat(CUP_CLUBS, CUP_TBD) : CLUBS;
+const rndLabel = m => isCupComp(m && m.comp) && m.stage ? String(m.stage) : `الجولة ${m.round}`;
+const compLogo = (c, sz) => COMP_LOGO[c] ? `<img class="comp-logo" src="${COMP_LOGO[c]}" alt="" width="${sz||16}" height="${sz||16}" decoding="async">` : "";
 let COMP = "الدوري";
 let MXC = "upcoming";   /* صفحة المباريات: "upcoming" = المباريات القادمة من كل المسابقات (الافتراضي، منصور 2026-09-16)، أو بطولة خارجية (معرّف من EXT_COMPS)، أو null = المسابقة المحلية COMP */
 let CARDS = [];
@@ -2910,7 +2920,7 @@ const pw = n => (n>=3&&n<=10) ? `${n} ركلات` : `${n} ركلة`;
    (أقراص المباراة القادمة بقيت بيضاء ~5 ث)، والملفات صغيرة ومخزّنة أصلاً فلا فائدة من التأجيل. */
 function crest(club, big){
   const l = LOGOS[club];
-  if(!l) return `<div class="crest${big?' lg':''}" style="background:${TINT[club]||'#3B5578'}">${esc(MONO[club]||club.slice(0,2))}</div>`;
+  if(!l) return `<div class="crest${big?' lg':''}" style="background:${TINT[club]||'#3B5578'}">${esc(MONO[club]||(CUP_TBD.includes(club)?"؟":club.slice(0,2)))}</div>`;
   const sc = (GSCALE/100) * ((LSCALE[club]??100)/100);
   const bg = LOGOBG ? "#fff" : "transparent";
   return `<div class="crest has-logo${big?' lg':''}" style="background:${bg}">
@@ -2984,7 +2994,7 @@ function compSelect(){
     <div class="rs-menu" role="listbox" hidden>
       ${opt(`data-ext="upcoming"`,"المباريات القادمة",upcomingItems().length,MXC==="upcoming")}
       <div class="rs-grp">محلي</div>
-      ${COMPS.map(c=>opt(`data-comp="${esc(c)}"`,c,cnt[c]||0,!MXC&&COMP===c)).join("")}
+      ${COMPS.map(c=>opt(`data-comp="${esc(c)}"`,c,cnt[c]||0,!MXC&&COMP===c).replace('role="option" ',`role="option" `)).join("")}
       ${opt(`data-comp="الكل"`,COMP_TOTAL_LABEL,(ALL?.matches||[]).length,!MXC&&COMP==="الكل")}
       <div class="rs-grp">خارجي</div>
       ${ext.map(c=>opt(`data-ext="${c.id}"`,c.name,c.n,MXC===c.id)).join("")}
@@ -3128,7 +3138,7 @@ function renderUpcomingMatches(){
           : `<span class="mc-time" dir="ltr">${m.time?esc(m.time):"—"}</span><span class="mc-st soon">لم تبدأ</span>`}${(()=>{ const tv=tvOf(m); return tv?`<span class="mc-tv${tv==="غير منقولة"?" off":""}">${TV_ICO}<span>${esc(tv)}</span></span>`:""; })()}${(()=>{ const r=String(crewOf(m).ref||"").trim(); return r && r!=="لا يوجد" ? `<span class="mc-tv mc-refl">${refRoleIco("ref","sm")}<span>${esc(r)}</span></span>` : ""; })()}   <!-- حكم الساحة تحت القناة (منصور 2026-10-09) --></div>
         <div class="mc-team a">${crest(m.away)}<b>${esc(m.away)}</b></div>
       </div>
-      <div class="mc-foot"><span>${esc(compOf(m))}</span><span>الجولة ${m.round}</span>${m.venue?`<span>${esc(m.venue)}</span>`:""}</div>
+      <div class="mc-foot"><span class="mc-comp">${compLogo(compOf(m))}${esc(compOf(m))}</span><span>${esc(rndLabel(m))}</span>${m.venue?`<span>${esc(m.venue)}</span>`:""}</div>
       ${m.note?`<div class="mc-note">${esc(m.note)}</div>`:""}
     </article>`;
   }).join("");
@@ -4783,7 +4793,10 @@ const LOCAL_CRESTS={
   "القادسية":"assets/crests/sq/qadsia.png","الكويت":"assets/crests/sq/kuwait.png","العربي":"assets/crests/sq/arabi.png",
   "كاظمة":"assets/crests/sq/kazma.png","السالمية":"assets/crests/sq/salmiya.png","النصر":"assets/crests/sq/nasr.png",
   "الجهراء":"assets/crests/sq/jahra.png","الساحل":"assets/crests/sq/sahel.png","الفحيحيل":"assets/crests/sq/fahaheel.png",
-  "التضامن":"assets/crests/sq/tadamon.png","الشباب":"assets/crests/sq/shabab.png","الصليبخات":"assets/crests/sq/sulaibikhat.png"
+  "التضامن":"assets/crests/sq/tadamon.png","الشباب":"assets/crests/sq/shabab.png","الصليبخات":"assets/crests/sq/sulaibikhat.png",
+  /* الدرجة الأولى — لمباريات الكؤوس */
+  "سبورتي":"assets/crests/div1/sporty.png","خيطان":"assets/crests/div1/khaitan.png","برقان":"assets/crests/div1/burgan.png","الجزيرة":"assets/crests/div1/jazeera.png",
+  "الشامية":"assets/crests/div1/shamiya.png","اتحاد الشرطة":"assets/crests/div1/police.png","اليرموك":"assets/crests/div1/yarmouk.png"
 };
 /* قصّات لاعبين رسمية محلية (assets/players/<نادي>/<رقم>) — تُستخدم حين لا توجد صورة مرفوعة في السحابة للاسم نفسه.
    القيمة مسار أساس: <base>_s.webp للقوائم (240×300 شفافة) و<base>.webp كبيرة. مطابقة بالرقم مع الكشف والوجه (منصور 2026-09-14). */
@@ -5471,7 +5484,7 @@ function loadEditRaw(m){
   (ALL.shapes||[]).filter(x=>x.r===m.round && compOf(x)===compOf(m) && (x.club===m.home||x.club===m.away))
     .forEach(x=>{ shp[x.club]={f:x.f||"", pos:JSON.parse(JSON.stringify(x.pos||{}))}; });
   return {orig:mkey(m), shapes:shp,
-    match:{round:m.round, comp:compOf(m), home:m.home, away:m.away, venue:m.venue||"", date:m.date||"", time:m.time||"", note:m.note||"", ref:crewOf(m).ref, refs:crewOf(m).refs, tv:m.tv||"", status:m.status||"", pst:+m.pst||0, add1:(m.add1??""), add2:(m.add2??""), et:!!m.et, add3:(m.add3??""), add4:(m.add4??""), abs:(m.abs||[]).map(x=>({c:x.c, p:x.p})), pres:(m.pres||[]).map(x=>({c:x.c, p:x.p})), pso:{h:(m.pso&&m.pso.h!=null?m.pso.h:""), a:(m.pso&&m.pso.a!=null?m.pso.a:"")}, psk:pskOf(m).map(k=>({t:k.t, p:k.p||"", ok:!!k.ok})), rec:m.rec||""},
+    match:{round:m.round, comp:compOf(m), stage:m.stage||"", home:m.home, away:m.away, venue:m.venue||"", date:m.date||"", time:m.time||"", note:m.note||"", ref:crewOf(m).ref, refs:crewOf(m).refs, tv:m.tv||"", status:m.status||"", pst:+m.pst||0, add1:(m.add1??""), add2:(m.add2??""), et:!!m.et, add3:(m.add3??""), add4:(m.add4??""), abs:(m.abs||[]).map(x=>({c:x.c, p:x.p})), pres:(m.pres||[]).map(x=>({c:x.c, p:x.p})), pso:{h:(m.pso&&m.pso.h!=null?m.pso.h:""), a:(m.pso&&m.pso.a!=null?m.pso.a:"")}, psk:pskOf(m).map(k=>({t:k.t, p:k.p||"", ok:!!k.ok})), rec:m.rec||""},
     mev:(ALL.mev||[]).filter(x=>x.r===m.round && compOf(x)===compOf(m) && x.home===m.home && x.away===m.away).map(x=>({k:x.k, club:x.club||"", p:x.p||"", m:x.m||"", x:x.x||0, note:x.note||"", lid:x.lid||""})),
     lineup:lus.map(x=>({club:x.club, p:x.p})),
     subs:sbs.map(x=>({club:x.club, out:x.out||"", in:x.in||"", h:x.h||1, m:x.m||"", x:x.x||0, lid:x.lid||""})),
@@ -6160,9 +6173,10 @@ function matchFormHTML(){
     <div class="fgrid">
       ${fld("الجولة","match.round","number",null,m.round)}
       ${fld("المسابقة","match.comp","select",COMPS,m.comp)}
+      ${isCupComp(m.comp)?fld("الدور (للكؤوس)","match.stage","select",CUP_STAGES,m.stage):""}
       ${fld("الملعب","match.venue","text",null,m.venue)}
-      ${fld("الفريق المضيف","match.home","select",CLUBS,m.home)}
-      ${fld("الفريق الضيف","match.away","select",CLUBS,m.away)}
+      ${fld("الفريق المضيف","match.home","select",editClubs(m),m.home)}
+      ${fld("الفريق الضيف","match.away","select",editClubs(m),m.away)}
       ${fld("التاريخ","match.date","date",null,m.date)}
       ${fld("الوقت","match.time","time",null,m.time)}
       ${fld("ملاحظة تظهر للجمهور (اختيارية)","match.note","text",null,m.note)}
@@ -6337,7 +6351,7 @@ function applyEdit(E){
   if(E.orig) removeMatchByKey(E.orig);
   const other = t => t===m.home ? m.away : m.home;
   ALL.matches.push({n:ALL.matches.length+1, round, comp:m.comp, date:m.date, time:m.time,
-                    venue:m.venue, home:m.home, away:m.away, note:(m.note||"").trim(), ref:(m.ref||"").trim(), refs:REF_ROLES.reduce((o,[k])=>{ const v=String((m.refs||{})[k]||"").trim(); if(v) o[k]=v; return o; },{}), tv:(m.tv||"").trim(), status:m.status||"", ...(PH_CLOCK[m.status]&&+m.pst?{pst:+m.pst}:{}), ...(m.rec?{rec:m.rec}:{}), add1:+m.add1||0, add2:+m.add2||0,
+                    venue:m.venue, home:m.home, away:m.away, note:(m.note||"").trim(), ref:(m.ref||"").trim(), refs:REF_ROLES.reduce((o,[k])=>{ const v=String((m.refs||{})[k]||"").trim(); if(v) o[k]=v; return o; },{}), tv:(m.tv||"").trim(), status:m.status||"", ...(PH_CLOCK[m.status]&&+m.pst?{pst:+m.pst}:{}), ...(m.rec?{rec:m.rec}:{}), ...(isCupComp(m.comp)&&m.stage?{stage:String(m.stage)}:{}), add1:+m.add1||0, add2:+m.add2||0,
                     ...((m.et || ["e1","e2"].includes(m.status)) ? {et:true, add3:+m.add3||0, add4:+m.add4||0} : {}),
                     ...(pskOf(m).length ? {psk:pskOf(m).map(k=>({t:k.t, p:String(k.p||""), ok:!!k.ok})), pso:psoOf({psk:m.psk})}
                         : m.pso && m.pso.h!=="" && m.pso.a!=="" && m.pso.h!=null && m.pso.a!=null ? {pso:{h:+m.pso.h, a:+m.pso.a}} : {}),
@@ -6595,7 +6609,7 @@ function renderMatchAdmin(){
   box.querySelectorAll("[data-k]").forEach(el=>{
     el.oninput=()=>{ setPath(el.dataset.k, el.value); syncPNum(box, el); };
     el.onchange=()=>{ setPath(el.dataset.k, el.value);
-      if(/^match\.(home|away)$/.test(el.dataset.k) || /\.det$/.test(el.dataset.k)
+      if(/^match\.(home|away|comp)$/.test(el.dataset.k) || /\.det$/.test(el.dataset.k)
          || /^goals\.\d+\.(sc|bp)$/.test(el.dataset.k) || /^cards\.\d+\.club$/.test(el.dataset.k)
          || /^pens\.\d+\.by$/.test(el.dataset.k)
          || /^(lineup|subs)\.\d+\.club$/.test(el.dataset.k)) renderMatchAdmin(); };
@@ -6897,7 +6911,7 @@ async function exportImage(mode, club, arg){
     const hc = await load(crestSrcOf(m.home)), aw = await load(crestSrcOf(m.away));
     x.textAlign="center";
     x.fillStyle="#B3C4D9"; x.font=F(600,30);
-    x.fillText(`${compLabel(compOf(m))} · الجولة ${m.round}`, W/2, 112);
+    x.fillText(`${compLabel(compOf(m))} · ${rndLabel(m)}`, W/2, 112);
     const sub=[(typeof mpDateLabel==="function"?mpDateLabel(m):(m.date||"")), m.venue||""].filter(Boolean).join(" · ");
     if(sub){ x.fillStyle="#8FA6C4"; x.font=F(500,26); x.fillText(sub, W/2, 158); }
     /* الشعارات والنتيجة — المضيف يميناً */
@@ -6969,8 +6983,8 @@ async function exportImage(mode, club, arg){
     ftext = D.gk ? `${D.name} · ${D.club} — ${D.cs} شباك نظيفة في ${mw(D.apps)}`
                  : `${D.name} · ${D.club} — ${D.goals>=3&&D.goals<=10 ? D.goals+' أهداف' : D.goals+' هدفاً'} و${D.assists} صناعة في ${mw(D.apps)}`; }
   else if(mode==="match"){ const m=matchByKey(arg)||{}; fname=`${m.home}-${m.away}`;
-    ftext = isUpcoming(m) ? `${m.home} × ${m.away} — الجولة ${m.round}`
-                          : `${m.home} ${m.hg} - ${m.ag} ${m.away} — الجولة ${m.round}`; }
+    ftext = isUpcoming(m) ? `${m.home} × ${m.away} — ${rndLabel(m)}`
+                          : `${m.home} ${m.hg} - ${m.ag} ${m.away} — ${rndLabel(m)}`; }
   else { fname="ملخص-الدوري"; ftext=`ملخص الدوري الكويتي الممتاز — الجولة ${round}`; }
   shareSheet(c, `${fname}-${round}.png`, ftext);
 }
@@ -7362,16 +7376,17 @@ function roundStrip(){
   const cr=currentRound();
   const cur = SELR===null ? "all" : String(SELR);
   const i = rounds.indexOf(SELR);
+  const rl = r => { const m=MATCHES.find(x=>x.round==r); return m ? rndLabel(m) : `الجولة ${r}`; };   /* الكؤوس: اسم الدور (الملحق…) */
   const chevR=`<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>`;
   const chevL=`<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>`;
   return `<div class="rsel" aria-label="الجولة">
     <span class="rp-lab">الجولة</span>
     <button type="button" class="rs-nav" data-rstep="-1" ${SELR===null||i<=0?"disabled":""} aria-label="الجولة السابقة">${chevR}</button>
     <div class="rs-dd">
-      <button type="button" class="rs-btn" id="rsBtn" aria-haspopup="listbox" aria-expanded="false"><span>${cur==="all"?"كل الجولات":`الجولة ${SELR}${SELR===cr?" · الحالية":""}`}</span><i class="chev"></i></button>
+      <button type="button" class="rs-btn" id="rsBtn" aria-haspopup="listbox" aria-expanded="false"><span>${cur==="all"?"كل الجولات":`${esc(rl(SELR))}${SELR===cr?" · الحالية":""}`}</span><i class="chev"></i></button>
       <div class="rs-menu" id="rsMenu" role="listbox" hidden>
         <button type="button" class="rs-opt" role="option" data-round="all" aria-selected="${cur==="all"}">كل الجولات</button>
-        ${rounds.map(r=>`<button type="button" class="rs-opt" role="option" data-round="${r}" aria-selected="${cur===String(r)}">الجولة ${r}${r===cr?`<em>الحالية</em>`:""}</button>`).join("")}
+        ${rounds.map(r=>`<button type="button" class="rs-opt" role="option" data-round="${r}" aria-selected="${cur===String(r)}">${esc(rl(r))}${r===cr?`<em>الحالية</em>`:""}</button>`).join("")}
       </div>
     </div>
     <button type="button" class="rs-nav" data-rstep="1" ${SELR===null||i<0||i>=rounds.length-1?"disabled":""} aria-label="الجولة التالية">${chevL}</button>
@@ -7452,7 +7467,7 @@ function nextMatchCard(){
       aria-label="المباراة القادمة — ${esc(m.home)} أمام ${esc(m.away)}">
     <div class="nextm-top">
       <span class="nextm-tag"><i></i>المباراة القادمة</span>
-      <span>الجولة ${m.round}</span>
+      <span>${esc(rndLabel(m))}</span>
       ${COMP==="الكل"?`<span>·</span><span>${esc(compOf(m))}</span>`:""}
     </div>
     <div class="nextm-body">
@@ -7700,7 +7715,7 @@ function renderMatches(){
       </div>
       <div class="mc-foot">
         ${(!soon && m.time)?`<span class="mc-date" dir="ltr">${esc(m.time)}</span>`:""}
-        <span>الجولة ${m.round}</span>
+        <span>${esc(rndLabel(m))}</span>
         ${m.venue?`<span>${esc(m.venue)}</span>`:""}
         ${COMP==="الكل"?`<span>${esc(compOf(m))}</span>`:""}
         ${(y||r)?`<span class="mc-cards">${y?`<b><i class="cardpill y"></i>${y}</b>`:""}${r?`<b><i class="cardpill r"></i>${r}</b>`:""}</span>`:""}
@@ -7882,7 +7897,7 @@ function renderClubXI(c){
     <div class="card pad xi-card">
       <div class="xi-pick">
         <label class="lb" for="clubRound">الجولة</label>
-        <select id="clubRound">${rs.map(x=>`<option value="${esc(x.key)}" ${x.key===cur.key?"selected":""}>الجولة ${x.m.round}${compOf(x.m)!=="الدوري"?" · "+esc(compOf(x.m)):""} — ${esc(x.m.home===c?x.m.away:x.m.home)}</option>`).join("")}</select>
+        <select id="clubRound">${rs.map(x=>`<option value="${esc(x.key)}" ${x.key===cur.key?"selected":""}>${esc(rndLabel(x.m))}${compOf(x.m)!=="الدوري"?" · "+esc(compOf(x.m)):""} — ${esc(x.m.home===c?x.m.away:x.m.home)}</option>`).join("")}</select>
       </div>
       <div class="xi-meta">
         <span>${homeSide?"على أرضه":"خارج أرضه"} أمام ${crest(opp)}<b>${esc(opp)}</b></span>${res}
@@ -11232,6 +11247,9 @@ html[data-theme="light"] .mc-st.live i{background:#0B1F3A}
 .mc-sc>div{display:flex;flex-direction:column;gap:2px;min-width:0}.mc-sc .a{text-align:end}
 .mc-sc span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.mc-sc i{font-style:normal;font-variant-numeric:tabular-nums;opacity:.8}
 .mc-foot{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;padding:0 12px 10px;font-size:.68rem;color:var(--slate)}
+.comp-logo{width:16px;height:16px;border-radius:50%;flex:none;object-fit:cover;vertical-align:middle}
+.mc-comp{display:inline-flex;align-items:center;gap:5px}
+.rs-opt .comp-logo{margin-inline-end:6px}
 .mc-foot>span+span::before{content:"·";margin-inline-end:10px;opacity:.6}
 .mc-foot .mc-ref{display:inline-flex;align-items:center;gap:0;white-space:nowrap}
 .mc-refl .ref-role.sm{width:14px;height:14px;flex:0 0 auto}
@@ -13648,7 +13666,7 @@ function hmNextMatchHTML(){
   const ts=kickoffTS(m); const c=hmCountdownParts(ts);
   const pad=n=>String(n).padStart(2,"0");
   return `<section class="hm-nm" data-ts="${ts}">
-    <div class="hm-nm-hd"><span class="hm-tag"><i></i>المباراة القادمة</span><span class="hm-muted">الجولة ${m.round}${COMP==="الكل"?` · ${esc(compOf(m))}`:""}</span></div>
+    <div class="hm-nm-hd"><span class="hm-tag"><i></i>المباراة القادمة</span><span class="hm-muted">${esc(rndLabel(m))}${COMP==="الكل"?` · ${esc(compOf(m))}`:""}</span></div>
     <div class="hm-nm-body">
       <button type="button" class="hm-nm-team" data-club-open="${esc(m.home)}">${crest(m.home,true)}<b>${esc(m.home)}</b></button>
       <div class="hm-nm-mid">
@@ -13687,7 +13705,7 @@ function hmTodayHTML(){
       <span class="hm-td-team a"><b>${esc(m.away)}</b>${crest(m.away)}</span></button>`;
   };
   return `<section class="hm-nm hm-today">
-    <div class="hm-nm-hd"><span class="hm-tag"><i></i>مباريات اليوم</span><span class="hm-muted">${dayLabel(list[0].date)} · الجولة ${list[0].round}</span></div>
+    <div class="hm-nm-hd"><span class="hm-tag"><i></i>مباريات اليوم</span><span class="hm-muted">${dayLabel(list[0].date)} · ${esc(rndLabel(list[0]))}</span></div>
     <div class="hm-td-list">${list.map(row).join("")}</div>
     <div class="hm-cta">
       <button type="button" class="hm-btn" data-go-view="predict">التوقعات</button>
@@ -13778,7 +13796,7 @@ function hmFansHTML(){
 function hmCalendarHTML(){
   const now=Date.now(), horizon=now+45*864e5;
   const ups=MATCHES.filter(m=>isUpcoming(m)&&m.date).sort((a,b)=>(kickoffTS(a)||9e15)-(kickoffTS(b)||9e15)).slice(0,3)
-    .map(m=>({d:m.date, html:`<span class="hm-cal-m">${crest(m.home)}<b>${esc(m.home)}</b><i>–</i><b>${esc(m.away)}</b>${crest(m.away)}</span>`, sub:`الجولة ${m.round}${m.time?` · ${esc(m.time)}`:""}`}));
+    .map(m=>({d:m.date, html:`<span class="hm-cal-m">${crest(m.home)}<b>${esc(m.home)}</b><i>–</i><b>${esc(m.away)}</b>${crest(m.away)}</span>`, sub:`${rndLabel(m)}${m.time?` · ${esc(m.time)}`:""}`}));
   const evs=(typeof allEvents==="function"?allEvents():[]).filter(e=>{ const t=new Date(String(e.d)+"T12:00:00").getTime(); return t>=now-864e5 && t<=horizon; })
     .sort((a,b)=>String(a.d).localeCompare(String(b.d))).slice(0,3)
     .map(e=>({d:e.d, html:(typeof evTitleHTML==="function")?evTitleHTML(e):esc(e.t||""), sub:esc(e.k||"")}));
@@ -14650,7 +14668,7 @@ function mpDetails(m){
     body += tl ? `<div class="mp-card"><div class="mp-hd"><h3>أحداث المباراة</h3></div>${tl}</div>`
                : `<div class="mp-card mp-empty">لم تُسجَّل أحداث لهذه المباراة.</div>`;
   }
-  const comp=`<button type="button" class="mp-card mp-compcard" data-mp-tab="table"><span>${esc(compOf(m))} · الجولة ${m.round} · ${esc(SEASON)}</span><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg></button>`;
+  const comp=`<button type="button" class="mp-card mp-compcard" data-mp-tab="table"><span class="mc-comp">${compLogo(compOf(m),20)}${esc(compOf(m))} · ${esc(rndLabel(m))} · ${esc(SEASON)}</span><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg></button>`;
   return comp + body + (soon?"":mpFansPicksHTML(m)) + (soon?"":mpMotmHTML(m)) + mpInfoRows(m) + mpMiniTable(m);
 }
 /* توقعات الجمهور في صفحة المباراة (منصور 2026-10-18، طلب مشجع «للمصداقية والإثارة»): تظهر من أول صافرة —
@@ -15522,6 +15540,7 @@ html.mx-editing #waFab{display:none!important}   /* زر واتساب كان ي�
     const stHome=m.home&&typeof CLUB_INFO!=="undefined"&&CLUB_INFO[m.home]?CLUB_INFO[m.home].st:"";
     return `<div class="mx-card"><h3>المسابقة والجولة</h3>
         <div class="mx-chips">${COMPS.map(c=>`<button class="mx-chip${m.comp===c?" on":""}" data-mcomp="${esc(c)}">${esc(c)}</button>`).join("")}</div>
+        ${isCupComp(m.comp)?`<span class="mx-lbl" style="margin-top:12px;display:block">الدور</span><div class="mx-chips">${CUP_STAGES.map(t=>`<button class="mx-chip${m.stage===t?" on":""}" data-mstage="${esc(t)}">${esc(t)}</button>`).join("")}</div>`:""}
         <div class="mx-grid g3" style="margin-top:14px">
           <div><span class="mx-lbl">الجولة</span><div class="mx-step"><button data-mround="-1" aria-label="أنقص">−</button>
             <input type="number" min="1" inputmode="numeric" data-mf="round" value="${esc(m.round)}"><button data-mround="1" aria-label="زد">+</button></div></div>
@@ -15792,7 +15811,7 @@ html.mx-editing #waFab{display:none!important}   /* زر واتساب كان ي�
       const other=S.side==="home"?EDIT.match.away:EDIT.match.home, cur=EDIT.match[S.side];
       return `<div class="mx-sheet" data-mclose="bg"><div class="box" role="dialog" aria-modal="true">
         <div class="hd"><h3>${S.side==="home"?"الفريق المضيف":"الفريق الضيف"}</h3><button data-mclose="x" aria-label="إغلاق">${SV.x}</button></div>
-        <div class="bd"><div class="mx-clubs">${CLUBS.map(c=>`<button class="mx-clubb${c===cur?" on":""}" data-mclub="${esc(c)}" ${c===other?"disabled":""}>${crest(c)}<span>${esc(c)}</span></button>`).join("")}</div></div></div></div>`;
+        <div class="bd"><div class="mx-clubs">${editClubs(EDIT.match).map(c=>`<button class="mx-clubb${c===cur?" on":""}" data-mclub="${esc(c)}" ${c===other?"disabled":""}>${crest(c)}<span>${esc(c)}</span></button>`).join("")}</div></div></div></div>`;
     }
     const {k,i,d}=S, h=EDIT.match.home, a=EDIT.match.away, ck=CLUBKEY[k], club=d[ck], opp=club===h?a:h;
     const team=`<div><span class="mx-lbl">${k==="goal"?"الفريق المسجّل":k==="pen"?"الفريق المنفّذ":"الفريق"}</span><div class="mx-tsw">
@@ -15880,7 +15899,7 @@ html.mx-editing #waFab{display:none!important}   /* زر واتساب كان ي�
         <div class="mx-meta">${m.date?`<span>${SV.cal}<bdi dir="ltr">${esc(m.date)}${m.time?` · ${esc(m.time)}`:""}</bdi></span>`:""}${m.venue?`<span>${SV.pin}${esc(m.venue)}</span>`:""}${m.ref?`<span>${REF_PHOTOS[m.ref]?refFace(m.ref,"sm"):SV.whistle}${esc(m.ref)}</span>`:""}${m.tv?`<span>${SV.tv}${esc(m.tv)}</span>`:""}<span>${esc(m.comp||"")}</span></div>
       </div>
       <nav class="mx-tabs">
-        <button class="mx-tab${MX.tab==="match"?" on":""}" data-mtab="match">المباراة<small>${m.round?`الجولة ${esc(m.round)}`:"البيانات"}</small></button>
+        <button class="mx-tab${MX.tab==="match"?" on":""}" data-mtab="match">المباراة<small>${m.round?esc(rndLabel(m)):"البيانات"}</small></button>
         <button class="mx-tab${MX.tab==="lineup"?" on":""}${(hx&&hx!==11)||(ax&&ax!==11)?" bad":""}" data-mtab="lineup">التشكيلة<small>${hx}/11 · ${ax}/11</small></button>
         <button class="mx-tab${MX.tab==="events"?" on":""}" data-mtab="events">الأحداث<small>${evs} حدث</small></button>
       </nav>
@@ -15937,7 +15956,8 @@ html.mx-editing #waFab{display:none!important}   /* زر واتساب كان ي�
       if(EDIT.gulf) return saveStay();
       rerender(); saveMatch({quiet:true}); return true; }   /* إن كان حفظ آخر جارياً يلتقطه الحفظ التلقائي بعد ثانيتين */
     q("[data-mtab]",b=>b.onclick=()=>{ MX.tab=b.dataset.mtab; MX.sel=null; rerender(); window.scrollTo({top:box.getBoundingClientRect().top+scrollY-80,behavior:"smooth"}); });
-    q("[data-mcomp]",b=>b.onclick=()=>{ EDIT.match.comp=b.dataset.mcomp; rerender(); });
+    q("[data-mcomp]",b=>b.onclick=()=>{ EDIT.match.comp=b.dataset.mcomp; if(!isCupComp(EDIT.match.comp)) delete EDIT.match.stage; rerender(); });
+    q("[data-mstage]",b=>b.onclick=()=>{ EDIT.match.stage=(EDIT.match.stage===b.dataset.mstage?"":b.dataset.mstage); rerender(); });
     q("[data-mf]",el=>{ el.oninput=()=>{ EDIT.match[el.dataset.mf]=el.value; }; el.onchange=()=>{ if(!EDIT) return; EDIT.match[el.dataset.mf]=el.value;
       /* لا نعيد الرسم إن انتقل التركيز لحقل آخر في المحرّر — كان يمسح ما يُكتب في الحقل التالي */
       if(PH_CLOCK[EDIT.match.status] && PH_CLOCK[EDIT.match.status][2]===el.dataset.mf && clockSave()) return;   /* بدل الضائع للشوط الجاري يظهر عند الجمهور فوراً */
