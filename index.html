@@ -4666,6 +4666,9 @@ const ADMIN_UID = "iiTgVfDryXNLb9IrOyLkkNMHDxq2";   /* المالك — صلاح
 /* احتساب التوقعات ونشرها: المالك + منصور (2026-10-11 «اعطني الصلاحيه») — قواعد Firestore فيها نفس الاستثناء */
 const PRED_ADMINS = [ADMIN_UID, "8wlEYODqGPTqZKSQEtevcz0MGEl2"];
 const canPreds = () => !!(FBUSER && PRED_ADMINS.includes(FBUSER.uid));
+/* تحديد صلاحيات فريق العمل: المالك + منصور (2026-10-19 «خل بس انا و المالك نقدر نحدد صلاحيات») — قواعد Firestore على seasons/staff بنفس القائمة */
+const STAFF_ADMINS = [ADMIN_UID, "8wlEYODqGPTqZKSQEtevcz0MGEl2"];
+const canStaff = () => !!(FBUSER && STAFF_ADMINS.includes(FBUSER.uid));
 let STAFF = {};      /* فريق العمل: { uid: {name, email, role, active} } */
 let isOwner = false; /* المالك وحده */
 let MYROLE = "";     /* دور الحساب الحالي: owner | editor | "" */
@@ -4805,7 +4808,7 @@ function flushRemote(){
 function dropStaleRemote(){ PENDING_REMOTE=null; }
 
 async function fbSaveStaff(){
-  if(!fbDb || !isOwner) return false;
+  if(!fbDb || !canStaff()) return false;
   const r = await withTimeout(fbDb.collection("seasons").doc("staff")
               .set({members:STAFF, updated:new Date().toISOString()}), 9000);
   if(r==="ok"){ SYNCMSG=""; return true; }
@@ -9035,6 +9038,37 @@ function wireFanList(){
     if(ok) renderAdmin();
   });
 }
+/* قسم «فريق العمل» — للمالك ولمنصور (canStaff) */
+function staffSectionHTML(){
+  if(!canStaff()) return "";
+  return `
+    <h2 class="sec">فريق العمل</h2>
+    <p class="hint">«مدير»: يرى كل لوحة فريق العمل. «محرر»: تحرير المباريات فقط، ولا يرى أي قسم آخر. الصلاحيات يحددها المالك ومنصور فقط.</p>
+    <div class="card pad">
+      ${Object.keys(STAFF).length?Object.entries(STAFF).map(([uid,m])=>`
+        <div class="staffrow">
+          <div class="sm">
+            <b>${esc(m.name||"بلا اسم")} <span class="cnt">${esc(PERM_AR[permOf(m)])}</span>${m.active===false?' <span class="cnt off">موقوف</span>':""}</b>
+            <span>${esc(m.email||"—")}</span>
+            <code>${esc(uid)}</code>
+          </div>
+          ${STAFF_ADMINS.includes(uid)?`<span class="cnt">يحدد الصلاحيات</span>`:`<select class="staffperm" data-staff-perm="${esc(uid)}" aria-label="الصلاحية">${Object.entries(PERM_AR).map(([k,t])=>`<option value="${k}" ${permOf(m)===k?"selected":""}>${t}</option>`).join("")}</select>
+          <button data-staff-toggle="${esc(uid)}">${m.active===false?"تفعيل":"إيقاف"}</button>
+          <button class="dl" data-staff-rm="${esc(uid)}">حذف</button>`}
+        </div>`).join(""):'<span style="color:var(--slate)">لا أعضاء بعد.</span>'}
+      <div style="height:14px"></div>
+      <label class="lb">إضافة عضو</label>
+      <div class="fgrid">
+        <div class="fld"><label>الاسم</label><input type="text" id="stName"></div>
+        <div class="fld"><label>البريد الإلكتروني</label><input type="text" id="stMail" dir="ltr"></div>
+      </div>
+      <div class="fld"><label>رمز الحساب (UID)</label><input type="text" id="stUid" dir="ltr" placeholder="ينسخه العضو من شاشة الدخول"></div>
+      <div class="fld"><label>الصلاحية</label><select id="stPerm"><option value="matches">محرر — تحرير المباريات فقط</option><option value="full">مدير — كل لوحة فريق العمل</option></select></div>
+      <div style="height:10px"></div>
+      <button class="btn" id="addStaff">إضافة العضو</button>
+      <p class="hint" style="margin:12px 0 0">الخطوات: أنشئ الحساب من Firebase Console ← Authentication ← Users ← Add user (بريد وكلمة مرور). يدخل العضو من صفحة «التحليل ← الإعدادات» فيظهر له رمز حسابه، يرسله لك، وتضيفه هنا.</p>
+    </div>`;
+}
 function wireStaff(){
   const add=$("#addStaff");
   if(add) add.onclick=async()=>{
@@ -9049,7 +9083,7 @@ function wireStaff(){
     await saveStaff(add, `أُضيف ${name||"العضو"} ك${PERM_AR[perm]} ✅`);
   };
   document.querySelectorAll("[data-staff-perm]").forEach(sel=>sel.onchange=async()=>{
-    const uid=sel.dataset.staffPerm, m=STAFF[uid]; if(!m) return;
+    const uid=sel.dataset.staffPerm, m=STAFF[uid]; if(!m || STAFF_ADMINS.includes(uid)) return;
     m.perm = sel.value==="matches" ? "matches" : "full"; m.role = "editor";
     await saveStaff(null, `${m.name||"العضو"}: ${PERM_AR[m.perm]} ✅`);
   });
@@ -9119,6 +9153,8 @@ function renderEditorAdmin(){
       <button class="btn" id="scGo">احتسب نقاط الجمهور</button>
     </div>` : ""}
 
+    ${staffSectionHTML()}
+
     <h2 class="sec">حالة الحفظ</h2>
     <div class="card pad">
       <div class="stat"><span>الحساب</span><span class="v" style="font-size:.78rem;direction:ltr">${esc(FBUSER.email||"—")}</span></div>
@@ -9130,6 +9166,7 @@ function renderEditorAdmin(){
       <p class="hint" style="margin:10px 0 0">كل حفظ يُرفع للسحابة تلقائياً ويظهر للزوار مباشرة.</p>
     </div>`;
   renderMatchAdmin();
+  if(canStaff()) wireStaff();
   wireSquads();
   wireKits();
   wireRefs();
@@ -9263,32 +9300,7 @@ function renderAdmin(){
       <div id="fanList">${fanListHTML("")}</div>
     </div>`:""}
 
-    <h2 class="sec">فريق العمل</h2>
-    <p class="hint">«مدير»: يرى كل لوحة فريق العمل. «محرر»: تحرير المباريات فقط، ولا يرى أي قسم آخر. الشعارات والهوية وملفات البيانات وفريق العمل تبقى لك وحدك.</p>
-    <div class="card pad">
-      ${Object.keys(STAFF).length?Object.entries(STAFF).map(([uid,m])=>`
-        <div class="staffrow">
-          <div class="sm">
-            <b>${esc(m.name||"بلا اسم")} <span class="cnt">${esc(PERM_AR[permOf(m)])}</span>${m.active===false?' <span class="cnt off">موقوف</span>':""}</b>
-            <span>${esc(m.email||"—")}</span>
-            <code>${esc(uid)}</code>
-          </div>
-          <select class="staffperm" data-staff-perm="${esc(uid)}" aria-label="الصلاحية">${Object.entries(PERM_AR).map(([k,t])=>`<option value="${k}" ${permOf(m)===k?"selected":""}>${t}</option>`).join("")}</select>
-          <button data-staff-toggle="${esc(uid)}">${m.active===false?"تفعيل":"إيقاف"}</button>
-          <button class="dl" data-staff-rm="${esc(uid)}">حذف</button>
-        </div>`).join(""):'<span style="color:var(--slate)">لا أعضاء بعد.</span>'}
-      <div style="height:14px"></div>
-      <label class="lb">إضافة عضو</label>
-      <div class="fgrid">
-        <div class="fld"><label>الاسم</label><input type="text" id="stName"></div>
-        <div class="fld"><label>البريد الإلكتروني</label><input type="text" id="stMail" dir="ltr"></div>
-      </div>
-      <div class="fld"><label>رمز الحساب (UID)</label><input type="text" id="stUid" dir="ltr" placeholder="ينسخه العضو من شاشة الدخول"></div>
-      <div class="fld"><label>الصلاحية</label><select id="stPerm"><option value="matches">محرر — تحرير المباريات فقط</option><option value="full">مدير — كل لوحة فريق العمل</option></select></div>
-      <div style="height:10px"></div>
-      <button class="btn" id="addStaff">إضافة العضو</button>
-      <p class="hint" style="margin:12px 0 0">الخطوات: أنشئ الحساب من Firebase Console ← Authentication ← Users ← Add user (بريد وكلمة مرور). يدخل العضو من صفحة «التحليل ← الإعدادات» فيظهر له رمز حسابه، يرسله لك، وتضيفه هنا.</p>
-    </div>
+    ${staffSectionHTML()}
 
     <h2 class="sec">المزامنة السحابية</h2>
     <div class="card pad">
