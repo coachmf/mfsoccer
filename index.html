@@ -5951,9 +5951,9 @@ function totKey(round, comp){ return round + "|" + comp; }
 function totRow(round, comp){
   return (ALL&&ALL.tots||[]).find(t=>t.r===round && (t.comp||"الدوري")===comp) || null;
 }
-/* الجولة صالحة للتصويت متى لُعبت كل مبارياتها */
+/* الجولة صالحة للتصويت متى لُعبت كل مبارياتها المجدولة — المؤجلة بلا موعد لا تمنع فتحها (منصور 2026-10-20: الجولة 5 فيها مباراتان مؤجلتان فلم يُفتح تصويتها) */
 function roundPlayed(round, comp){
-  const ms=MATCHES.filter(m=>m.round===round && compOf(m)===comp);
+  const ms=MATCHES.filter(m=>m.round===round && compOf(m)===comp && (m.date || !isUpcoming(m)));
   return ms.length>0 && ms.every(m=>!isUpcoming(m));
 }
 function voteRounds(){
