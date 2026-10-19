@@ -710,14 +710,18 @@ const ADMIN = {
 
   /* ---------- المستخدمون (المشتركون الحقيقيون من السحابة) ---------- */
   /* تغيير مركز لاعب: يُعاد بناء تشكيلة كل من يملكه عند الاحتساب — تأكيد صريح مع عدد المالكين */
-  setPos(pid, sel){
+  async setPos(pid, sel){   /* يُنشر للجميع فوراً كالحالة (منصور 2026-10-19 — كان محلياً حتى «نشر اللعبة») */
     const p=DB.player(pid); if(!p) return;
     const owners=+(DB.state.own||{})[pid]||0;
     const msg = owners
       ? `يملك «${p.name}» ${owners} مشتركاً. تغيير مركزه من ${POS_AR[p.pos]} إلى ${POS_AR[sel.value]} سيغيّر عدد اللاعبين في مراكز فرقهم وقد يُعاد بناء تشكيلاتهم تلقائياً عند الاحتساب. متأكد؟`
       : `تغيير مركز «${p.name}» من ${POS_AR[p.pos]} إلى ${POS_AR[sel.value]}؟`;
     if(!confirm(msg)){ sel.value=p.pos; return; }
-    p.pos=sel.value; DB.save(); UI.toast('تغيّر المركز محلياً — يصل للمشتركين عند النشر');
+    p.pos=sel.value; DB.save();
+    if(typeof CLOUD==='undefined' || !CLOUD.ready || !CLOUD.admin){ UI.toast('حُفظ على هذا الجهاز فقط — سجّل دخول المدير في السحابة لنشره', true); return; }
+    UI.toast('جاري نشر المركز للمشتركين…');
+    const r=await CLOUD.publishPlayerFields(pid,{pos:sel.value});
+    if(r.ok) UI.toast(`نُشر مركز ${p.name}: ${POS_AR[sel.value]}`); else UI.toast(r.err||'تعذّر نشر المركز', true);
   },
   loadManagers(force){
     if(this._mgrsLoading) return;
