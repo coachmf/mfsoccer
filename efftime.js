@@ -155,7 +155,8 @@ const canEdit = () => TEST || (typeof isAdmin!=="undefined" && !!isAdmin);
 const say = (msg, kind) => { if(typeof toast==="function") toast(msg, kind); };
 
 /* ───────────── غرفة المشغّل ───────────── */
-let S = null;   /* {key, id, doc, unsub, tick, undo:[], ph, busy, lock} */
+let S = null;
+EFF.isOpen = () => !!S;   /* المحرّر يوقف حفظه التلقائي ما دامت الساعة مفتوحة */   /* {key, id, doc, unsub, tick, undo:[], ph, busy, lock} */
 function blank(m, key){
   const gulf = !!(m && (m.__gulf || m.comp==="كأس الخليج"));
   return {key, home:m.home, away:m.away, comp:(typeof compOf==="function" ? compOf(m) : m.comp)||"", round:m.round, date:m.date||"", gulf, halves:{}, stops:[], v:1};

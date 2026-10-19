@@ -2245,7 +2245,7 @@ main{padding-bottom:48px}
 <script src="fantasy/js/push.js?v=286" defer></script>
 <script src="notify.js?v=2" defer></script>
 <link rel="stylesheet" href="efftime.css?v=3">
-<script src="efftime.js?v=5" defer></script>
+<script src="efftime.js?v=6" defer></script>
 <link rel="stylesheet" href="div1.css?v=1">
 <script src="div1.js?v=3" defer></script>   <!-- دوري الدرجة الأولى: الترتيب والمباريات فقط (seasons/div1) -->
 <link rel="stylesheet" href="ext.css?v=3">
@@ -3359,6 +3359,18 @@ function clubStats(c){
 const MATCH_MIN = 90;                       /* الأساس فقط — لا يُستعمل سقفاً */
 const capTo = (len, v) => Math.max(0, Math.min(len, v));
 const capMin = x => Math.max(0, Math.min(MATCH_MIN, x));   /* متبقٍّ لمن لا يعرف المباراة */
+/* طول المباراة حتى اللحظة: المنتهية = matchLen، الجارية = ما مضى حسب المرحلة وساعة المحرّر (pst) */
+function liveLen(m){
+  if(!m || !LIVE_PHASES.includes(m.status) || staleLive(m)) return matchLen(m);
+  const a1=add1Of(m), a2=add2Of(m), full=matchLen(m);
+  const run = (cap) => +m.pst ? Math.min(cap, Math.max(1, Math.floor((Date.now()-(+m.pst))/60000)+1)) : cap;
+  if(m.status==="h1") return run(45+a1);
+  if(m.status==="ht") return 45+a1;
+  if(m.status==="h2") return Math.min(full, 45+a1+run(45+a2));
+  if(m.status==="e1") return Math.min(full, 90+a1+a2+run(15+(add3Of(m)||0)));
+  if(m.status==="e2") return Math.min(full, 105+a1+a2+(add3Of(m)||0)+run(15+(add4Of(m)||0)));
+  return full;
+}
 function playerMatchMinutes(m, club, name){
   const comp = compOf(m);
   const starter = xiNames(m.round, comp, club).includes(name);
@@ -3366,7 +3378,7 @@ function playerMatchMinutes(m, club, name){
   const inSub  = subs.find(s=>s.in===name);
   const outSub = subs.find(s=>s.out===name);
   /* بدل الضائع محسوب في دقائق اللاعبين — للدوري وكأس الخليج معاً (منصور 2026-09-26، ألغى حدّ الـ90 للخليج) */
-  const LEN = matchLen(m);
+  const LEN = liveLen(m);   /* مباراة جارية: الدقائق حتى الآن، لا 90 كاملة (منصور 2026-10-19: الكويت×الصليبخات بين الشوطين أعطت 91) */
   const at = s => capTo(LEN, evAbs(m, s.h, s.m, s.x));
   let start;
   if(starter) start = 0;
@@ -6500,7 +6512,7 @@ async function saveMatch(opt){
   SAVING_MATCH = true; if(!quiet) document.documentElement.classList.add("mx-saving");
   try{
   /* فُتحت نافذة إدخال: أرقام الصفوف فيها تخص هذه النسخة — نؤجل الحفظ التلقائي */
-  if(quiet && (!EDIT || (window.MX && MX.sheet))) return;
+  if(quiet && (!EDIT || (window.MX && MX.sheet) || (window.EFFTIME && EFFTIME.isOpen && EFFTIME.isOpen()))) return;
   const E0 = JSON.parse(JSON.stringify(EDIT));      /* تعديلنا كما هو (مع base) — يُعاد دمجه في كل محاولة */
   const sig0 = JSON.stringify(EDIT);
   const tx = await txSaveMatch(E0);
@@ -6545,6 +6557,8 @@ function mxAutoPaint(st, tx){
 }
 setInterval(()=>{
   if(!EDIT || !EDIT.orig || !EDIT.base || EDIT.gulf || !window.MX){ MX_ASIG=""; return; }
+  /* ساعة الوقت الفعلي مفتوحة على هذا الجهاز: لا حفظ للمباراة منه أبداً (منصور 2026-10-19: «خلهم منفصلين») */
+  if(window.EFFTIME && EFFTIME.isOpen && EFFTIME.isOpen()){ MX_ASIG=""; return; }
   if(SAVING_MATCH){ mxAutoPaint("busy","جارٍ الحفظ…"); return; }
   const {base, ...cur} = EDIT; const s = JSON.stringify(cur);
   if(s === JSON.stringify(base)){
@@ -13385,7 +13399,7 @@ function playerWindow(m, club, name){
   const starter=xiNames(m.round, comp, club).includes(name);
   const subs=matchSubs(m).filter(s=>s.club===club);
   const inSub=subs.find(s=>s.in===name), outSub=subs.find(s=>s.out===name);
-  const LEN=matchLen(m);
+  const LEN=liveLen(m);   /* جارية: حتى الدقيقة الحالية */
   let start; if(starter) start=0; else if(inSub) start=capTo(LEN, evAbs(m,inSub.h,inSub.m,inSub.x)); else return null;
   let end = outSub ? capTo(LEN, evAbs(m,outSub.h,outSub.m,outSub.x)) : LEN;
   const rc = redCardAt(m, club, name); if(rc!=null && rc<end) end = Math.max(start, capTo(LEN, rc));   /* طُرد: نافذته تنتهي عند البطاقة */
@@ -13426,12 +13440,12 @@ function playerProfileData(name, club){
       const gs=matchGoals(m);
       const g=gs.filter(x=>x.sc===cl && x.p===name && x.bp!=="هدف عكسي").length;
       const a=gs.filter(x=>x.sc===cl && x.a===name && !isOG(x)).length;
-      const con=gs.filter(x=>x.sc!==cl && goalAbs(m,x)>=w.start && (w.end>=matchLen(m) || goalAbs(m,x)<=w.end)).length; conceded+=con;   /* ما لم يُستبدل، أهداف الوقت المحتسب عليه أيضاً */
+      const con=gs.filter(x=>x.sc!==cl && goalAbs(m,x)>=w.start && (w.end>=liveLen(m) || goalAbs(m,x)<=w.end)).length; conceded+=con;   /* ما لم يُستبدل، أهداف الوقت المحتسب عليه أيضاً */
       const cd=CARDS.filter(x=>x.r===m.round && compOf(x)===compOf(m) && x.club===cl && x.p===name);
       const home=m.home===cl, opp=home?m.away:m.home;
       const gf=home?+m.hg:+m.ag, ga=home?+m.ag:+m.hg;
       log.push({m,opp,home,wc:cl,mins:w.end-w.start,on:w.start,offAt:w.end,g,a,con,y:cd.some(x=>isYellow(x.type)),r:cd.some(x=>isRed(x.type)),
-                res:`${gf} - ${ga}`, k: gf>ga?"w":gf<ga?"l":"d", sub: w.start>0, off: w.end<matchLen(m)});
+                res:`${gf} - ${ga}`, k: gf>ga?"w":gf<ga?"l":"d", sub: w.start>0, off: w.end<liveLen(m)});
     });
   });
   /* في الإجمالي تختلط جولات المسابقات (ج1 كأس بعد ج3 دوري)، فالترتيب بالتاريخ؛ داخل مسابقة واحدة كما كان */
@@ -14445,7 +14459,7 @@ function playerLine(club, name){
 function ratingCtx(m, club, name){
   const mins=playerMatchMinutes(m, club, name);
   if(mins<=0) return null;
-  const w=playerWindow(m, club, name) || {start:0, end:matchLen(m)};
+  const w=playerWindow(m, club, name) || {start:0, end:liveLen(m)};
   const gf = club===m.home ? +m.hg : +m.ag, ga = club===m.home ? +m.ag : +m.hg;
   const gs=matchGoals(m);
   const on = g => { const t=Math.min(matchLen(m), goalAbs(m,g)); return t>=w.start && t<=w.end; };
