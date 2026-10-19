@@ -2256,7 +2256,7 @@ main{padding-bottom:48px}
 <!-- هوية MF SOCCER الذهبية + هيكل التطبيق (منصور 2026-10-05) -->
 <link rel="stylesheet" href="mf-brand.css?v=12">
 <script>document.documentElement.classList.add("mf")</script>
-<script src="mf-shell.js?v=21" defer></script>
+<script src="mf-shell.js?v=22" defer></script>
 <style>
 /* تبويب التحليل — التصميم الجديد (منصور 2026-09-17) */
 .an{--an-card:#0F1E35;--an-line:#213653;--an-txt:#EDF3FA;--an-mut:#8FA6C4;--an-track:rgba(143,166,196,.16);--an-acc:#2EB0F0;--an-acc2:#1878BE}
@@ -2686,7 +2686,7 @@ const COMPS = ["الدوري","كأس الأمير","كأس سمو ولي الع
 const CUP_CLUBS = ["سبورتي","خيطان","برقان","الجزيرة","الشامية","اتحاد الشرطة","اليرموك"];
 const CUP_TBD = ["الفائز من المباراة 1","الفائز من المباراة 2","الفائز من المباراة 3"];
 const CUP_STAGES = ["الملحق","دور الـ16","ربع النهائي","نصف النهائي","النهائي"];
-const COMP_LOGO = {"كأس سمو ولي العهد":"assets/comps/cpcup.webp?v=1"};
+const COMP_LOGO = {"كأس سمو ولي العهد":"assets/comps/cpcup.webp?v=2"};
 const isCupComp = c => !!c && c!=="الدوري" && c!=="الكل";
 const editClubs = m => isCupComp(m && m.comp) ? CLUBS.concat(CUP_CLUBS, CUP_TBD) : CLUBS;
 const rndLabel = m => isCupComp(m && m.comp) && m.stage ? String(m.stage) : `الجولة ${m.round}`;
