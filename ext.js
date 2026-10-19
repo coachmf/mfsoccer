@@ -355,7 +355,7 @@ X.statsHTML = id => {
   const sc = tally(G.filter(g=>g.bp!=="هدف عكسي"), g=>g.p, g=>g.sc), as = tally(G, g=>g.a, g=>g.sc);
   const CD = DATA.cards.filter(inM), red = t => /طرد|ثان/.test(t||"");
   const yc = tally(CD.filter(x=>!red(x.type)), x=>x.p, x=>x.club), rc = tally(CD.filter(x=>red(x.type)), x=>x.p, x=>x.club);
-  const face = (n, cl) => { const f = withExt(()=>photoCut(n, cl), comp); return f ? `<img src="${H(f)}_f.webp?v=37" alt="" loading="lazy" decoding="async">` : `<i>${H(String((typeof I18N!=="undefined" && I18N.isEn && I18N.isEn() && I18N.tr(String(n).trim())) || n).trim().split(/\s+/).slice(0,2).map(w=>w[0]||"").join(""))}</i>`; };
+  const face = (n, cl) => { const f = withExt(()=>photoCut(n, cl), comp); return f ? `<img src="${H(f)}_f.webp?v=38" alt="" loading="lazy" decoding="async">` : `<i>${H(String((typeof I18N!=="undefined" && I18N.isEn && I18N.isEn() && I18N.tr(String(n).trim())) || n).trim().split(/\s+/).slice(0,2).map(w=>w[0]||"").join(""))}</i>`; };
   const list = (t, L, unit) => `<section class="xt-st-c"><h3>${t}</h3>${L.length ? L.map((x,i)=>`<div class="xt-st-r" ${ours().includes(x.c)?` data-player="${H(x.n)}" data-club="${H(x.c)}"`:""}><span class="rk">${i+1}</span><span class="ph">${face(x.n,x.c)}</span><span class="nm"><b>${H(x.n)}</b><small>${H(x.c)}</small></span><span class="v">${x.v}</span></div>`).join("") : `<p class="xt-st-e">لا ${unit} بعد.</p>`}</section>`;
   return `<section class="xt-st">
     <h2 class="sec">إحصاءات البطولة<span class="sq-n">${H(comp)}</span></h2>
