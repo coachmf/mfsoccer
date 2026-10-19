@@ -5,6 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=5">
 <meta name="theme-color" content="#061529">
 <script>
+/* الرابط القديم mfsoccer.netlify.app ← mfsoccer.com (منصور 2026-10-19): نسخة كل رابط منفصلة في الجوال فبقي محرّر على نسخة قديمة.
+   في متصفح عادي فقط — تطبيق الآيفون (PWAShell / app-platform) وتطبيق أندرويد والتطبيق المثبّت (standalone) لا يتحوّلون حتى لا تضيع جلستهم. */
+(function(){ try{ if(location.hostname!=="mfsoccer.netlify.app") return;
+  if(/PWAShell/.test(navigator.userAgent||"") || /app-platform=/.test(document.cookie||"")) return;
+  if(matchMedia("(display-mode: standalone)").matches || navigator.standalone || /^android-app:/.test(document.referrer||"")) return;
+  location.replace("https://mfsoccer.com"+location.pathname+location.search+location.hash); }catch(e){} })();
+</script>
+<script>
 /* المظهر (فاتح/داكن): يُضبط قبل الرسم حتى لا تومض الصفحة — مفتاح mf_theme */
 const THEME={KEY:'mf_theme',
   get(){ try{ const q=new URLSearchParams(location.search).get('theme'); if(q==='dark'||q==='light'){ localStorage.setItem(this.KEY,q); return q; }
