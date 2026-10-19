@@ -879,7 +879,11 @@ function paintAdmin(){
   const tmp = document.createElement("div"); tmp.innerHTML = adminHTML(); box.replaceWith(tmp.firstElementChild);
   greRefresh(); paintGulfRefAdmin();
 }
+/* منصور 2026-10-19: «شيل كاس الخليج و حكام الخليج من الاداره» — البطولة انتهت؛ القسمان لا يُضافان للوحة الإدارة.
+   البيانات (seasons/gulf27) وصفحة البطولة العامة كما هي. للإرجاع: GULF_ADMIN = true. */
+const GULF_ADMIN = false;
 function injectAdmin(){
+  if(!GULF_ADMIN) return;
   const v = document.getElementById("v-admin"); if(!v || document.getElementById("gulfAdmin")) return;
   if(typeof isAdmin==="undefined" || !isAdmin) return;
   const ma = document.getElementById("matchAdmin"); if(!ma) return;
