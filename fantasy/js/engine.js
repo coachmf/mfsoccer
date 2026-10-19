@@ -1259,6 +1259,8 @@ const GWADMIN = {
   },
   refreshDeadlines(st){ st=st||DB.state; computeDeadlines(st.gws, st.fixtures); },
 };
+/* snapStart تُعرَّف في GWADMIN لكن الواجهة تستدعيها TEAM.snapStart (منذ 1513cac): كان «تنفيذ» الصفقات يفشل بخطأ صامت لكل المشتركين (2026-10-20) */
+if(typeof TEAM!=='undefined' && !TEAM.snapStart) TEAM.snapStart = (team, st) => GWADMIN.snapStart(team, st);
 
 /* =========================================================
    إشعارات
