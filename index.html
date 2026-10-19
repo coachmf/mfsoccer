@@ -2690,6 +2690,19 @@ const COMP_LOGO = {"كأس سمو ولي العهد":"assets/comps/cpcup.webp?v=
 const isCupComp = c => !!c && c!=="الدوري" && c!=="الكل";
 const editClubs = m => isCupComp(m && m.comp) ? CLUBS.concat(CUP_CLUBS, CUP_TBD) : CLUBS;
 const rndLabel = m => isCupComp(m && m.comp) && m.stage ? String(m.stage) : `الجولة ${m.round}`;
+/* ملحق كأس سمو ولي العهد من ملصق الاتحاد (منصور 2026-10-19): أُضيف بالكود لأن الكتابة في السحابة تحتاج حساب محرّر.
+   يُضاف للبيانات فقط إن لم تكن المباراة مسجّلة (المسابقة + المضيف + الدور)، فأول حفظ من أي محرّر يكتبها في السحابة
+   كمباريات عادية تُحرَّر وتُعدَّل (ومنها استبدال «الفائز من المباراة 1» بالفائز) ولا تتكرر. */
+const CUP_SEED = [
+  {date:"2026-10-20", time:"17:40", home:"سبورتي", away:"اتحاد الشرطة", venue:"استاد ناصر العصيمي"},
+  {date:"2026-10-20", time:"20:40", home:"برقان", away:"الشامية", venue:"استاد عبدالله الخليفة الصباح"},
+  {date:"2026-10-29", time:"17:30", home:"خيطان", away:"الفائز من المباراة 1", venue:"استاد عبدالله الخليفة الصباح"}
+].map(x=>Object.assign({comp:"كأس سمو ولي العهد", stage:"الملحق", round:1, note:"", ref:"", refs:{}, tv:"", status:"", add1:0, add2:0, hg:0, ag:0}, x));
+function seedCupMatches(A){
+  if(!A || !Array.isArray(A.matches)) return;
+  CUP_SEED.forEach(s=>{ if(A.matches.some(m=>compOf(m)===s.comp && m.home===s.home && String(m.stage||"")===s.stage)) return;
+    A.matches.push(Object.assign({}, s, {refs:{}, n:A.matches.length+1})); });
+}
 const compLogo = (c, sz) => COMP_LOGO[c] ? `<img class="comp-logo" src="${COMP_LOGO[c]}" alt="" width="${sz||16}" height="${sz||16}" decoding="async">` : "";
 let COMP = "الدوري";
 let MXC = "upcoming";   /* صفحة المباريات: "upcoming" = المباريات القادمة من كل المسابقات (الافتراضي، منصور 2026-09-16)، أو بطولة خارجية (معرّف من EXT_COMPS)، أو null = المسابقة المحلية COMP */
@@ -3915,6 +3928,7 @@ function applyData(d, source){
   if(typeof paintFantasyTab==="function") paintFantasyTab();  /* التبويب يظهر فور وصول حالة الإشهار */
   SQNUMS_FOUND = squadsExtractNums();   /* فصل الأرقام المكتوبة داخل الأسماء */
   CLUBS = d.clubs;
+  seedCupMatches(ALL);
   if(COMP!=="الكل" && !COMPS.includes(COMP)) COMP = "الدوري";   /* مسابقة فارغة أو «الإجمالي» تبقى مختارة عند وصول تحديث */
   SELR=null; SELDAY=null; CALM=null;
   applyComp();
