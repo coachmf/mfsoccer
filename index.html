@@ -13673,8 +13673,14 @@ function hmCountdownParts(ts){
   const d=Math.floor(ms/864e5), h=Math.floor(ms%864e5/36e5), m=Math.floor(ms%36e5/6e4);
   return {d,h,m};
 }
+/* التوقعات وتشكيلة الجمهور للدوري فقط — مباريات الكؤوس بلا الزرّين (منصور 2026-10-19: «حق مباريات الكؤوس شيل التوقعات و صوت بتشكيلتك») */
+const hmCTA=ms=>ms.some(m=>compOf(m)==="الدوري") ? `<div class="hm-cta">
+      <button type="button" class="hm-btn" data-go-view="predict">التوقعات</button>
+      <button type="button" class="hm-btn primary" data-go-view="fans">صوّت بتشكيلتك</button>
+    </div>` : "";
 function hmNextMatchHTML(){
   const m=nextMatch(); if(!m) return "";
+  const HM_CTA=hmCTA([m]);
   const I=(typeof CLUB_INFO!=="undefined" && CLUB_INFO[m.home])||{};
   const venue=m.venue || I.st || "";
   const ts=kickoffTS(m); const c=hmCountdownParts(ts);
@@ -13695,10 +13701,7 @@ function hmNextMatchHTML(){
       <span><b data-cd="h">${pad(c.h)}</b><small>ساعات</small></span><i>:</i>
       <span><b data-cd="m">${pad(c.m)}</b><small>دقائق</small></span>
     </div>
-    <div class="hm-cta">
-      <button type="button" class="hm-btn" data-go-view="predict">التوقعات</button>
-      <button type="button" class="hm-btn primary" data-go-view="fans">صوّت بتشكيلتك</button>
-    </div>
+    ${HM_CTA}
   </section>`;
 }
 /* مباريات اليوم (منصور 2026-10-09: «نحط كل مباريات اليوم بدل مباراة وحدة»): في يوم فيه مباريات تصير البطاقة قائمة —
@@ -13708,6 +13711,7 @@ function todayISO(){ const d=new Date(), p=n=>String(n).padStart(2,"0"); return 
 function todayMatches(){ const t=todayISO(); return MATCHES.filter(m=>m.date===t).sort((a,b)=>(kickoffTS(a)||0)-(kickoffTS(b)||0)); }
 function hmTodayHTML(){
   const list=todayMatches(); if(!list.length) return "";
+  const HM_CTA=hmCTA(list);
   const row=m=>{
     const live=LIVE_PHASES.includes(m.status) && !staleLive(m), over=!live && matchOver(m), sc=`<b class="hm-td-sc" dir="ltr">${+m.ag} - ${+m.hg}</b>`;
     const mid = live ? `${sc}${m.status==="ht" ? '<span class="hm-td-st ht">بين الشوطين</span>' : `<span class="hm-td-st live" dir="ltr">${mclkHTML(m)||esc(LIVE_PH_AR[m.status]||"")}</span>`}`
@@ -13721,10 +13725,7 @@ function hmTodayHTML(){
   return `<section class="hm-nm hm-today">
     <div class="hm-nm-hd"><span class="hm-tag"><i></i>مباريات اليوم</span><span class="hm-muted">${dayLabel(list[0].date)} · ${esc(rndLabel(list[0]))}</span></div>
     <div class="hm-td-list">${list.map(row).join("")}</div>
-    <div class="hm-cta">
-      <button type="button" class="hm-btn" data-go-view="predict">التوقعات</button>
-      <button type="button" class="hm-btn primary" data-go-view="fans">صوّت بتشكيلتك</button>
-    </div>
+    ${HM_CTA}
   </section>`;
 }
 function hmTickCountdown(){

@@ -255,7 +255,7 @@ Object.assign(VIEWS, {
     const side=id=>`<span class="tm ${id===p.club?'me':''}">${UI.crest(id)}<b>${DB.club(id).short}</b></span>`;
     const match = !fx
       ? `<div class="bd-match"><span class="muted">لا مباراة لناديه في هذه الجولة</span></div>`
-      : `<div class="bd-match">${side(fx.h)}${(done||fx.status==='L') ? `<span class="sc"><i>${fx.hs}</i><i>-</i><i>${fx.as}</i></span>` : `<span class="sc tm">${UI.fmtDateShort(fx.date)}</span>`}${side(fx.a)}</div>`;
+      : `<div class="bd-match">${side(fx.h)}${(done||fx.status==='L') ? `<span class="sc"><i>${fx.hs}</i><i>-</i><i>${fx.as}</i></span>` : `<span class="sc tm">${fx.status==='P'? 'مؤجلة' : UI.fmtDateShort(fx.date)}</span>`}${side(fx.a)}</div>`;
     let body='', tot='';
     if(!fx) body=`<tr><td colspan="3" class="muted">لا مباراة — لا نقاط في هذه الجولة</td></tr>`;
     else if(!done && !played) body=`<tr><td colspan="3" class="muted">${fx.status==='L' ? 'المباراة جارية' : 'لم تُلعب المباراة بعد'} — النقاط تظهر بعد تسجيل المباراة</td></tr>`;

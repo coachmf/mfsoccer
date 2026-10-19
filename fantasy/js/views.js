@@ -403,7 +403,7 @@ const VIEWS = {
     const st=DB.state, m=DB.me();
     const gw=st.currentGW;
     const fx=st.fixtures.filter(f=>f.gw===gw).slice(0,6);
-    const rows=VIEWS.globalTable().slice(0,5);
+    const rows=VIEWS.liveApply(VIEWS.globalTable()).slice(0,5);   /* المجموع المباشر أثناء الجولة كجدول الدوريات (منصور 2026-10-19: «الترتيب العام مو قاعد يتحدث») */
     const hist=team.history||[];
     const total=hist.reduce((s,h)=>s+h.pts,0);
     return `
@@ -416,13 +416,13 @@ const VIEWS = {
       </div>
       <div class="card" style="margin-bottom:12px"><h3>مباريات الجولة ${gw}</h3>
         ${fx.map(f=>`<div class="side-fx">${UI.crest(f.h)} <b>${DB.club(f.h).short}</b>
-          <span class="tiny">${f.status==='F'? f.hs+' - '+f.as : UI.fmtDateShort(f.date)}</span>
+          <span class="tiny">${f.status==='F'? f.hs+' - '+f.as : f.status==='P'? 'مؤجلة' : UI.fmtDateShort(f.date)}</span>
           <b>${DB.club(f.a).short}</b> ${UI.crest(f.a)}</div>`).join('')}
         <button class="btn sm sec" style="width:100%;margin-top:8px" onclick="APP.go('fixtures')">كل المباريات والصعوبة</button>
       </div>
       <div class="card"><h3>الترتيب العام</h3>
         <table class="tbl">${rows.map((r,i)=>`<tr ${r.id===m.id?'style="background:color-mix(in srgb,var(--accent) 10%,transparent)"':''}>
-          <td class="num">${i+1}</td><td>${esc(r.name)}</td><td class="num">${r.total}</td></tr>`).join('')}</table>
+          <td class="num">${r.rank||i+1}</td><td>${esc(r.name)}</td><td class="num">${r.total}</td></tr>`).join('')}</table>
         <button class="btn sm sec" style="width:100%;margin-top:8px" onclick="APP.go('leagues')">الدوريات</button>
       </div>`;
   },
@@ -969,7 +969,7 @@ const VIEWS = {
           <div class="team" style="flex:1;font-weight:700">${UI.crest(f.h,'lg')} ${DB.club(f.h).name}</div>
           <div class="score ${f.status==='L'?'live':''}" style="font-size:1.3rem;min-width:88px">
             ${f.status==='P'? 'مؤجلة' : f.status!=='U'? f.hs+' - '+f.as : ''}
-            <span class="t">${f.status==='L'? f.live.min+"'" : f.status==='F'?'انتهت':UI.fmtDateShort(f.date)}</span></div>
+            <span class="t">${f.status==='L'? f.live.min+"'" : f.status==='F'?'انتهت':f.status==='P'?'مؤجلة':UI.fmtDateShort(f.date)}</span></div>
           <div class="team a" style="flex:1;font-weight:700">${UI.crest(f.a,'lg')} ${DB.club(f.a).name}</div>
         </div>
         ${this.goalSides(f, true)}

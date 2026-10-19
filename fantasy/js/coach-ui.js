@@ -376,7 +376,7 @@ Object.assign(VIEWS, {
     else if(!cp.matches.length) body=`<div class="bd-card"><div class="muted">لا مباراة لناديه في هذه الجولة.</div></div>`;
     else body=cp.matches.map(m=>{
       const f=m.fx;
-      const match=`<div class="bd-match">${side(f.h)}${m.pending? `<span class="sc tm">${UI.fmtDateShort(f.date)}</span>` : `<span class="sc"><i>${f.hs}</i><i>-</i><i>${f.as}</i></span>`}${side(f.a)}</div>`;
+      const match=`<div class="bd-match">${side(f.h)}${m.pending? `<span class="sc tm">${f.status==='P'? 'مؤجلة' : UI.fmtDateShort(f.date)}</span>` : `<span class="sc"><i>${f.hs}</i><i>-</i><i>${f.as}</i></span>`}${side(f.a)}</div>`;
       if(m.pending) return match+`<div class="bd-card"><div class="muted">لم تُلعب المباراة بعد — النقاط تظهر بعد تسجيلها.</div></div>`;
       const rows=m.rows.map(x=>`<tr><td>${x.label}</td><td>${x.val||''}</td><td class="${x.pts<0?'neg':''}">${x.pts>0?'+':''}${x.pts}</td></tr>`).join('');
       return match+`<div class="bd-card">
