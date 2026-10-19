@@ -186,6 +186,7 @@ const APP = {
     patch:t=>({'team.pendingHits':0, 'team.usedChips.wildcard':(+((t.usedChips||{}).wildcard)||0)+1})}],
   async syncPrices(){
     if(this._syncP || typeof CLOUD==='undefined' || !CLOUD.admin) return; this._syncP=true;
+    try{ const lk=await CLOUD.syncLock(DB.state); if(lk.ok && lk.n) UI.toast(`فُتحت انتقالات الجولة ${lk.gw}`); }catch(e){ console.warn('syncLock', e); }
     try{ const r=await CLOUD.syncPrices(DB.state); if(r.ok && r.n){ console.info('syncPrices', r.changed); UI.toast(`نُشرت أسعار ${r.n} لاعباً للجميع`); } else if(!r.ok) console.info('syncPrices skip', r.skip); }
     catch(e){ console.warn('syncPrices', e); } finally{ this._syncP=false; }
   },

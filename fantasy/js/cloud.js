@@ -834,6 +834,16 @@ const CLOUD = {
   },
   /* أسعار لم تصل للخادم (نشر قائمة اللاعبين تعذّر بعد الاحتساب): يرسلها جهاز المدير تلقائياً عند الفتح وكل 10 دقائق.
      الأسعار وحدها فوق نسخة الخادم (لا تُمس الحالة ولا المركز ولا الأسماء)، وفقط إن كان هذا الجهاز آخر من نشر اللعبة — فلا يرسل أسعاراً قديمة (2026-10-19) */
+  /* قفل الخادم على جولة أقدم من الجولة الحالية (نشر سابق لم يكتمل): يُصلحه جهاز المدير عند الفتح */
+  async syncLock(st){
+    if(!this.admin || !st || !st.currentGW) return {ok:false, skip:'n/a'};
+    const g=await this.race(this.lockDoc().get({source:'server'}), 15000); if(!g.ok) return {ok:false, skip:'offline'};
+    const d=(g.v && g.v.exists) ? g.v.data() : null;
+    if(d && +d.gw >= +st.currentGW) return {ok:true, n:0};
+    const root=await this.race(this.root().get({source:'server'}), 15000); if(!root.ok) return {ok:false, skip:'offline'};
+    if(+((root.v.data()||{}).currentGW) !== +st.currentGW) return {ok:false, skip:'stale-device'};   // الجهاز نفسه متأخر عن الخادم
+    const r=await this.publishLock(st); return r.ok ? {ok:true, n:1, gw:r.gw} : {ok:false, skip:'write-failed'};
+  },
   async syncPrices(st){
     if(!this.admin || !st || !st.cloudUpdated || !(st.players||[]).length) return {ok:false, skip:'n/a'};
     const root=await this.race(this.root().get({source:'server'}), 15000); if(!root.ok) return {ok:false, skip:'offline'};
@@ -884,6 +894,8 @@ const CLOUD = {
     let r = await this.race(this.root().set(meta, {merge:true}));
     if(r.ok) this.markPublished(st, meta.updated);
     if(!r.ok) return {ok:false, err: r.timeout ? 'الاتصال بطيء — لم يكتمل النشر' : this.errAr(r.err)};
+    /* قفل الانتقالات أولاً (صغير وحاسم): 2026-10-20 تعذّر نشر اللاعبين بعد احتساب الجولة 5 فلم يُنشر القفل وبقيت الانتقالات مغلقة على موعد الجولة 5 */
+    const lk0 = await this.publishLock(st); if(!lk0.ok) return {ok:false, err:lk0.err};
 
     /* قائمة اللاعبين كبيرة: تُعاد حتى 3 مرات بمهلة أطول — 2026-10-19 تعذّر نشرها بعد احتساب الجولة 5 فبقيت الأسعار الجديدة على جهاز المدير وحده */
     for(let t=0; t<3; t++){ r = await this.race(this.playersDoc().set({list: st.players, priceVer: (typeof SEED_PRICE_VER!=='undefined'? SEED_PRICE_VER : 1), updated: meta.updated}), 20000+t*15000); if(r.ok) break; }
