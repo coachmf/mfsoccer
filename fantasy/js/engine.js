@@ -932,13 +932,19 @@ const MARKET = {
     const n=Math.max(1, st.managerCount||Object.keys(st.teams||{}).length||1);
     return Math.max(3, Math.ceil(n*0.03));
   },
-  applyPriceChanges(st){
-    const changes=[]; const thr=this.threshold(st);
+  /* نادٍ لم يلعب في الجولة (مباراته مؤجلة/بلا نتيجة): لاعبوه لا ينخفض سعرهم (منصور 2026-10-20 «الاعبين الي مالعبوا هالجوله لا ينزلون اسعارهم») */
+  idleClubs(st, gw){
+    const fx=(st.fixtures||[]).filter(f=>f.gw===gw), out=new Set(); if(!fx.length) return out;
+    (st.clubs||[]).forEach(c=>{ const id=c.id||c; if(!fx.some(f=>(f.h===id||f.a===id) && f.status==='F')) out.add(id); });
+    return out;
+  },
+  applyPriceChanges(st, gw){
+    const changes=[]; const thr=this.threshold(st), idle=gw ? this.idleClubs(st, gw) : new Set();
     st.players.forEach(p=>{
       const tc=this.transferCounts(p.id);
       const net=tc.in-tc.out;
       if(net>=thr){ p.price=Math.round((p.price+st.rules.priceRise)*10)/10; changes.push({p,d:+st.rules.priceRise}); }
-      else if(net<=-thr && p.price>3.5){ p.price=Math.round((p.price-st.rules.priceDrop)*10)/10; changes.push({p,d:-st.rules.priceDrop}); }
+      else if(net<=-thr && p.price>3.5 && !idle.has(p.club)){ p.price=Math.round((p.price-st.rules.priceDrop)*10)/10; changes.push({p,d:-st.rules.priceDrop}); }
     });
     return changes;
   },
@@ -1173,7 +1179,7 @@ const GWADMIN = {
       NOTIF.push(uid,'points',`احتُسبت الجولة ${gw}: ${scored[uid]} نقطة${rk}`);
     }
     // أسعار — من صافي صفقات المشتركين الحقيقية
-    const changes=MARKET.applyPriceChanges(st);
+    const changes=MARKET.applyPriceChanges(st, gw);
     for(const uid in st.teams){
       changes.slice(0,6).forEach(ch=>{
         if(st.teams[uid].squad.includes(ch.p.id))

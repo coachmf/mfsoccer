@@ -840,7 +840,13 @@ const CLOUD = {
     if(((root.v.data()||{}).updated) !== st.cloudUpdated) return {ok:false, skip:'not-last-publisher'};
     const g=await this.race(this.playersDoc().get({source:'server'}), 20000); if(!g.ok) return {ok:false, skip:'offline'};
     const list=((g.v.data()||{}).list||[]).slice(), mine={}; st.players.forEach(p=>{ mine[p.id]=p; });
-    const changed=[]; list.forEach((p,i)=>{ const m=mine[p.id]; if(m && m.price!=null && +m.price!==+p.price){ changed.push({id:p.id, name:p.name, from:+p.price, to:+m.price}); list[i]={...p, price:+m.price}; } });
+    /* لا ينخفض سعر لاعب لم يلعب ناديه في آخر جولة محتسبة (مؤجلة) — ويُعاد سعره على هذا الجهاز لسعر الخادم (2026-10-20: 8 لاعبين من القادسية والعربي والسالمية) */
+    const lastGW=(+st.currentGW||1)-1, idle=(typeof MARKET!=='undefined' && MARKET.idleClubs && lastGW>0) ? MARKET.idleClubs(st, lastGW) : new Set();
+    let restored=0;
+    const changed=[]; list.forEach((p,i)=>{ const m=mine[p.id]; if(!(m && m.price!=null && +m.price!==+p.price)) return;
+      if(+m.price < +p.price && idle.has(p.club)){ m.price=+p.price; restored++; return; }
+      changed.push({id:p.id, name:p.name, from:+p.price, to:+m.price}); list[i]={...p, price:+m.price}; });
+    if(restored){ try{ DB.save(); }catch(e){} }
     if(!changed.length){ if(st.playersPending){ st.playersPending=null; try{ DB.save(); }catch(e){} } return {ok:true, n:0}; }
     let r; for(let t=0; t<3; t++){ r=await this.race(this.playersDoc().update({list, updated:new Date().toISOString()}), 20000+t*15000); if(r.ok) break; }
     if(!r.ok) return {ok:false, skip:'write-failed', n:changed.length};
