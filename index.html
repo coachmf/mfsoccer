@@ -490,6 +490,7 @@ details.squadbox summary label.lb{margin:0;cursor:pointer}
   opacity:.75;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .staffrow button{font-size:.7rem;border:1px solid rgba(143,166,196,.35);border-radius:8px;
   padding:5px 10px;color:var(--mist);white-space:nowrap}
+.staffrow select.staffperm{flex:none;width:auto!important;max-width:96px;height:auto;font-size:.72rem;border:1px solid rgba(143,166,196,.35);border-radius:8px;padding:5px 6px;background:transparent;color:inherit}
 .staffrow button.dl{border-color:rgba(224,100,79,.45);color:var(--loss)}
 .uidbox{background:var(--navy-800);border:1px solid rgba(95,178,232,.3);border-radius:10px;
   padding:12px;margin-bottom:14px}
@@ -2236,7 +2237,7 @@ main{padding-bottom:48px}
      <link rel="stylesheet" href="live.css?v=9"> و <script src="live.js?v=21" defer></script> -->
 <!-- تبويبات لوحة الإدارة: إعادة تنظيم للأقسام الموجودة فقط -->
 <link rel="stylesheet" href="admin-tabs.css?v=1">
-<script src="admin-tabs.js?v=6" defer></script>
+<script src="admin-tabs.js?v=7" defer></script>
 <!-- كأس الخليج 27: قسم مستقل ببيانات منفصلة (seasons/gulf27) -->
 <link rel="stylesheet" href="gulf.css?v=18">
 <script src="gulf.js?v=46" defer></script>
@@ -4669,6 +4670,12 @@ let STAFF = {};      /* فريق العمل: { uid: {name, email, role, active} 
 let isOwner = false; /* المالك وحده */
 let MYROLE = "";     /* دور الحساب الحالي: owner | editor | "" */
 const ROLE_AR = {owner:"مالك", editor:"محرّر"};
+/* صلاحيات فريق العمل (منصور 2026-10-19): «مدير» يرى كل لوحة فريق العمل كما كانت، و«محرر» يرى تحرير المباريات فقط.
+   الحقل perm بجانب role — role يبقى "editor" لأن قواعد Firestore تشترطه للكتابة. عضو بلا perm = مدير (لا يفقد أحد صلاحيته). */
+const PERM_AR = {full:"مدير", matches:"محرر"};
+const permOf = m => (m && m.perm==="matches") ? "matches" : "full";
+let MYPERM = "full";
+window.MF_MATCHES_ONLY = () => MYROLE==="editor" && MYPERM==="matches";
 let fbDb=null, fbAuth=null, FBUSER=null, FBSTATE="لم يُهيّأ", SYNCMSG="", LASTSYNC=null;
 
 function fbInit(){
@@ -4691,13 +4698,14 @@ function fbInit(){
       /* صفحة مباراة مفتوحة: زر «صوّت الحين/غيّر صوتك» وصندوق الدخول يتبعان حالة الدخول (2026-10-11) */
       try{ if(MP.m && MP.tab==="details" && !MP_VOTE) mpRerenderKeep(); }catch(e){}
       isOwner = !!(u && u.uid===ADMIN_UID);
-      MYROLE = ""; STAFF = {};
+      MYROLE = ""; STAFF = {}; MYPERM = "full";
       if(u){
         const s = await fbLoad("staff");
         STAFF = (s && s.members) || {};
         const me = STAFF[u.uid];
         MYROLE = isOwner ? "owner"
                : (me && me.active!==false && me.role==="editor") ? "editor" : "";
+        MYPERM = isOwner ? "full" : permOf(me);
       }
       isAdmin = isOwner || MYROLE==="editor";
       if(u && !isAdmin) ADMIN_HINT.set(false);   /* حساب مسجّل وليس مديراً — لا يُمسح قبل استرجاع الجلسة */
@@ -9036,9 +9044,15 @@ function wireStaff(){
     if(!uid){ toast("الصق رمز الحساب (UID)","err"); return; }
     if(uid===ADMIN_UID){ toast("هذا حسابك أنت — المالك مضاف أصلاً","err"); return; }
     if(STAFF[uid]){ toast("هذا العضو مضاف مسبقاً","err"); return; }
-    STAFF[uid]={name, email:mail, role:"editor", active:true};
-    await saveStaff(add, `أُضيف ${name||"العضو"} كمحرّر ✅`);
+    const perm=($("#stPerm")&&$("#stPerm").value)==="full"?"full":"matches";
+    STAFF[uid]={name, email:mail, role:"editor", perm, active:true};
+    await saveStaff(add, `أُضيف ${name||"العضو"} ك${PERM_AR[perm]} ✅`);
   };
+  document.querySelectorAll("[data-staff-perm]").forEach(sel=>sel.onchange=async()=>{
+    const uid=sel.dataset.staffPerm, m=STAFF[uid]; if(!m) return;
+    m.perm = sel.value==="matches" ? "matches" : "full"; m.role = "editor";
+    await saveStaff(null, `${m.name||"العضو"}: ${PERM_AR[m.perm]} ✅`);
+  });
   document.querySelectorAll("[data-staff-toggle]").forEach(b=>b.onclick=async()=>{
     const uid=b.dataset.staffToggle, m=STAFF[uid]; if(!m) return;
     m.active = m.active===false;
@@ -9054,11 +9068,29 @@ function wireStaff(){
 
 /* لوحة المحرّر — إدخال البيانات فقط، بلا هوية ولا ملفات ولا صلاحيات */
 function renderEditorAdmin(){
+  if(MF_MATCHES_ONLY()){
+    $("#v-admin").innerHTML=`
+    <div class="brandcard" style="border-color:rgba(95,178,232,.32)">
+      <div class="bt"><b>${esc((STAFF[FBUSER.uid]&&STAFF[FBUSER.uid].name)||FBUSER.email)}</b>
+        <div class="handles" style="display:flex;align-items:center;gap:8px"><span class="cnt" style="width:auto;height:auto;border-radius:999px;padding:3px 12px">محرر</span><button class="btn ghost" id="logout" style="width:auto;padding:6px 16px">خروج</button></div></div>
+    </div>
+    ${SYNCMSG?`<div class="formerr">${esc(SYNCMSG)}</div>`:""}
+    <h2 class="sec">إدارة المباريات</h2>
+    <div id="matchAdmin"></div>`;
+    renderMatchAdmin();
+    const lo=$("#logout");
+    if(lo) lo.onclick=async()=>{
+      if(fbAuth && FBUSER){ try{ await fbAuth.signOut(); }catch(e){} }
+      isAdmin=false; isOwner=false; MYROLE=""; MYPERM="full";
+      $("#adminBtn").classList.remove("on"); ADMIN_REVEAL=false; ADMIN_HINT.set(false); paintAdminBtn(); paintFantasyTab(); go("home");
+    };
+    return;
+  }
   $("#v-admin").innerHTML=`
     <div class="brandcard" style="border-color:rgba(95,178,232,.32)">
       <div class="bt">
         <b>${esc((STAFF[FBUSER.uid]&&STAFF[FBUSER.uid].name)||FBUSER.email)}</b>
-        <div class="handles"><span class="cnt">محرّر</span></div>
+        <div class="handles"><span class="cnt">مدير</span></div>
       </div>
     </div>
     ${SYNCMSG?`<div class="formerr">${esc(SYNCMSG)}</div>`:""}
@@ -9232,15 +9264,16 @@ function renderAdmin(){
     </div>`:""}
 
     <h2 class="sec">فريق العمل</h2>
-    <p class="hint">حسابات المحرّرين: يدخلون لإضافة المباريات والأهداف والبطاقات وركلات الجزاء والكشوفات فقط. الشعارات والهوية وملفات البيانات وفريق العمل تبقى لك وحدك.</p>
+    <p class="hint">«مدير»: يرى كل لوحة فريق العمل. «محرر»: تحرير المباريات فقط، ولا يرى أي قسم آخر. الشعارات والهوية وملفات البيانات وفريق العمل تبقى لك وحدك.</p>
     <div class="card pad">
       ${Object.keys(STAFF).length?Object.entries(STAFF).map(([uid,m])=>`
         <div class="staffrow">
           <div class="sm">
-            <b>${esc(m.name||"بلا اسم")} <span class="cnt">${esc(ROLE_AR[m.role]||m.role||"محرّر")}</span>${m.active===false?' <span class="cnt off">موقوف</span>':""}</b>
+            <b>${esc(m.name||"بلا اسم")} <span class="cnt">${esc(PERM_AR[permOf(m)])}</span>${m.active===false?' <span class="cnt off">موقوف</span>':""}</b>
             <span>${esc(m.email||"—")}</span>
             <code>${esc(uid)}</code>
           </div>
+          <select class="staffperm" data-staff-perm="${esc(uid)}" aria-label="الصلاحية">${Object.entries(PERM_AR).map(([k,t])=>`<option value="${k}" ${permOf(m)===k?"selected":""}>${t}</option>`).join("")}</select>
           <button data-staff-toggle="${esc(uid)}">${m.active===false?"تفعيل":"إيقاف"}</button>
           <button class="dl" data-staff-rm="${esc(uid)}">حذف</button>
         </div>`).join(""):'<span style="color:var(--slate)">لا أعضاء بعد.</span>'}
@@ -9251,6 +9284,7 @@ function renderAdmin(){
         <div class="fld"><label>البريد الإلكتروني</label><input type="text" id="stMail" dir="ltr"></div>
       </div>
       <div class="fld"><label>رمز الحساب (UID)</label><input type="text" id="stUid" dir="ltr" placeholder="ينسخه العضو من شاشة الدخول"></div>
+      <div class="fld"><label>الصلاحية</label><select id="stPerm"><option value="matches">محرر — تحرير المباريات فقط</option><option value="full">مدير — كل لوحة فريق العمل</option></select></div>
       <div style="height:10px"></div>
       <button class="btn" id="addStaff">إضافة العضو</button>
       <p class="hint" style="margin:12px 0 0">الخطوات: أنشئ الحساب من Firebase Console ← Authentication ← Users ← Add user (بريد وكلمة مرور). يدخل العضو من صفحة «التحليل ← الإعدادات» فيظهر له رمز حسابه، يرسله لك، وتضيفه هنا.</p>

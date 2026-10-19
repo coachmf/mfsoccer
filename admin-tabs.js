@@ -58,6 +58,19 @@ function organize(){
     if(!cur){ head.push(el); return; }
     (groups[t || cur] ||= []).push(el);
   });
+  /* صلاحية «محرر» (منصور 2026-10-19): تحرير المباريات فقط — أي قسم آخر تضيفه الوحدات (الخليج، الدرجة الأولى، الخارجية…) يُحذف */
+  if(typeof window.MF_MATCHES_ONLY==="function" && window.MF_MATCHES_ONLY()){
+    Object.keys(groups).forEach(k=>{ if(k!=="matches") groups[k].forEach(el=>el.remove()); });
+    /* أقسام تضيفها الوحدات بعد الرسم (الخليج، الخارجية…) تُحذف لحظة إضافتها */
+    if(!v._mo){
+      const headOf = el => el.matches("h2.sec") ? el : el.querySelector(":scope > h2.sec");
+      const tabOfEl = el => { for(let x=el; x; x=x.previousElementSibling){ if(x.id==="lvAdminCard" || x.querySelector && x.querySelector("#matchAdmin")) return "matches"; const h=headOf(x); if(h) return tabOfTitle(h.textContent); } return null; };   /* قبل أول عنوان = رأس اللوحة */
+      v._mo = new MutationObserver(ms=>{ if(!(window.MF_MATCHES_ONLY && window.MF_MATCHES_ONLY())) return;
+        const add=[]; ms.forEach(m=>m.addedNodes.forEach(el=>{ if(el.nodeType===1 && el.isConnected) add.push(el); }));
+        add.map(el=>[el, tabOfEl(el)]).forEach(([el,t])=>{ if(t && t!=="matches") el.remove(); }); });   /* التحديد قبل الحذف: بطاقة بلا عنوان تتبع عنوانها */
+      v._mo.observe(v, {childList:true}); }
+    return;
+  }
   const present = TABS.filter(([k])=>groups[k] && groups[k].length);
   if(present.length < 2) return;
   if(!present.some(([k])=>k===CUR)) CUR = present[0][0];

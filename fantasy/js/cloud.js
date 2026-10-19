@@ -100,7 +100,7 @@ const CLOUD = {
           const s = await this.db.collection('seasons').doc('staff').get();
           const m = (s.exists && s.data().members) || {};
           const me = m[u.uid];
-          this.admin = !!(me && me.role==='editor' && me.active===true);
+          this.admin = !!(me && me.role==='editor' && me.active===true && me.perm!=='matches');   // «محرر» = تحرير مباريات الموقع فقط (2026-10-19)
         }catch(e){ /* اللاعب العادي لا يقرأ هذا المستند — يبقى غير مدير */ }
       }
     }
