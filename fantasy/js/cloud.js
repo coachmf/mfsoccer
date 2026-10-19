@@ -832,6 +832,21 @@ const CLOUD = {
       const mine=(typeof DB!=='undefined') ? (DB.cloudUpdated || (DB.state&&DB.state.cloudUpdated) || null) : null;
       return !!(u && mine && u!==mine); }catch(e){ return false; }
   },
+  /* أسعار لم تصل للخادم (نشر قائمة اللاعبين تعذّر بعد الاحتساب): يرسلها جهاز المدير تلقائياً عند الفتح وكل 10 دقائق.
+     الأسعار وحدها فوق نسخة الخادم (لا تُمس الحالة ولا المركز ولا الأسماء)، وفقط إن كان هذا الجهاز آخر من نشر اللعبة — فلا يرسل أسعاراً قديمة (2026-10-19) */
+  async syncPrices(st){
+    if(!this.admin || !st || !st.cloudUpdated || !(st.players||[]).length) return {ok:false, skip:'n/a'};
+    const root=await this.race(this.root().get({source:'server'}), 15000); if(!root.ok) return {ok:false, skip:'offline'};
+    if(((root.v.data()||{}).updated) !== st.cloudUpdated) return {ok:false, skip:'not-last-publisher'};
+    const g=await this.race(this.playersDoc().get({source:'server'}), 20000); if(!g.ok) return {ok:false, skip:'offline'};
+    const list=((g.v.data()||{}).list||[]).slice(), mine={}; st.players.forEach(p=>{ mine[p.id]=p; });
+    const changed=[]; list.forEach((p,i)=>{ const m=mine[p.id]; if(m && m.price!=null && +m.price!==+p.price){ changed.push({id:p.id, name:p.name, from:+p.price, to:+m.price}); list[i]={...p, price:+m.price}; } });
+    if(!changed.length){ if(st.playersPending){ st.playersPending=null; try{ DB.save(); }catch(e){} } return {ok:true, n:0}; }
+    let r; for(let t=0; t<3; t++){ r=await this.race(this.playersDoc().update({list, updated:new Date().toISOString()}), 20000+t*15000); if(r.ok) break; }
+    if(!r.ok) return {ok:false, skip:'write-failed', n:changed.length};
+    st.playersPending=null; try{ DB.save(); }catch(e){}
+    return {ok:true, n:changed.length, changed};
+  },
   markPublished(st, u){ if(typeof DB!=='undefined') DB.cloudUpdated=u; if(st) st.cloudUpdated=u; },
   /* تعديل لاعب واحد في meta/players (الحالة: مصاب/موقوف…) — منصور 2026-10-16: كانت الحالة تُحفظ على جهاز المدير فقط
      ولا تصل للمشتركين إلا بـ«نشر اللعبة» الثقيل. نقرأ نسخة الخادم ونغيّر حقول هذا اللاعب وحده حتى لا نكتب فوق تعديلات جهاز آخر. */
@@ -864,8 +879,10 @@ const CLOUD = {
     if(r.ok) this.markPublished(st, meta.updated);
     if(!r.ok) return {ok:false, err: r.timeout ? 'الاتصال بطيء — لم يكتمل النشر' : this.errAr(r.err)};
 
-    r = await this.race(this.playersDoc().set({list: st.players, priceVer: (typeof SEED_PRICE_VER!=='undefined'? SEED_PRICE_VER : 1), updated: meta.updated}));
-    if(!r.ok) return {ok:false, err:'نُشرت الإعدادات لكن تعذّر نشر اللاعبين'};
+    /* قائمة اللاعبين كبيرة: تُعاد حتى 3 مرات بمهلة أطول — 2026-10-19 تعذّر نشرها بعد احتساب الجولة 5 فبقيت الأسعار الجديدة على جهاز المدير وحده */
+    for(let t=0; t<3; t++){ r = await this.race(this.playersDoc().set({list: st.players, priceVer: (typeof SEED_PRICE_VER!=='undefined'? SEED_PRICE_VER : 1), updated: meta.updated}), 20000+t*15000); if(r.ok) break; }
+    if(!r.ok){ st.playersPending = meta.updated; try{ DB.save(); }catch(e){} return {ok:false, err:'نُشرت الإعدادات لكن تعذّر نشر اللاعبين — ستُعاد تلقائياً عند فتح اللعبة'}; }
+    st.playersPending = null;
 
     // الجولات: كل جولة في مستند مستقل حتى لا يتجاوز الحد الأعلى للمستند
     const byGW = {};

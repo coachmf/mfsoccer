@@ -168,11 +168,12 @@ const APP = {
       if(typeof MFSYNC!=='undefined') MFSYNC.autoFixtures(true);
       if(CLOUD.admin && typeof ROSTER!=='undefined') ROSTER.auto();
       if(CLOUD.admin) this.autoOwnership();
-      if(CLOUD.admin){ this.adminFixes(); setTimeout(()=>this.adminFixes(), 20000); }   /* ثانية بعد اكتمال تحميل الجولة */
+      if(CLOUD.admin){ this.adminFixes(); setTimeout(()=>this.adminFixes(), 20000); }
+      if(CLOUD.admin) setTimeout(()=>this.syncPrices(), 15000);   /* أسعار احتساب سابق لم تصل للخادم */   /* ثانية بعد اكتمال تحميل الجولة */
       /* احتساب الجولة وفتح التالية تلقائياً عند اكتمالها (بعد سحب النتائج) — ثم كل 10 دقائق ما دامت اللعبة مفتوحة */
       if(CLOUD.admin && typeof ADMIN!=='undefined' && ADMIN.autoFinalize && !this._autoFinT){
         setTimeout(()=>ADMIN.autoFinalize(), 25000);
-        this._autoFinT=setInterval(()=>{ ADMIN.autoFinalize(); this.adminFixes(); }, 10*60*1000);
+        this._autoFinT=setInterval(()=>{ ADMIN.autoFinalize(); this.adminFixes(); this.syncPrices(); }, 10*60*1000);
       }
     });
   },
@@ -183,6 +184,11 @@ const APP = {
      الـBench Boost يبقى، ويُسجَّل عليه وايلد كارد مستخدم. */
   ADMIN_FIXES:[{id:'farous_gw5', uid:'UGfiGxd8CmXn6DJ8R4hkroknFB32', gw:5,
     patch:t=>({'team.pendingHits':0, 'team.usedChips.wildcard':(+((t.usedChips||{}).wildcard)||0)+1})}],
+  async syncPrices(){
+    if(this._syncP || typeof CLOUD==='undefined' || !CLOUD.admin) return; this._syncP=true;
+    try{ const r=await CLOUD.syncPrices(DB.state); if(r.ok && r.n){ console.info('syncPrices', r.changed); UI.toast(`نُشرت أسعار ${r.n} لاعباً للجميع`); } else if(!r.ok) console.info('syncPrices skip', r.skip); }
+    catch(e){ console.warn('syncPrices', e); } finally{ this._syncP=false; }
+  },
   async adminFixes(){
     for(const f of this.ADMIN_FIXES){ try{
       if(+DB.state.currentGW!==f.gw){ console.info('adminFix skip', f.id, 'gw', DB.state.currentGW); continue; }
