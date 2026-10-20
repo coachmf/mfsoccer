@@ -1038,6 +1038,8 @@ table.lb tr.me{background:rgba(95,178,232,.09)}
 /* الوضع النهاري: أرقام بطاقات التوقعات بالأسود (منصور 2026-10-12 — كانت بيضاء على خلفية فاتحة) */
 html:not([data-theme="dark"]) .mystat b{color:#000}
 html:not([data-theme="dark"]) .mystat small{color:#3A4556}
+table.lb th.ex,table.lb td.ex{text-align:center;font-variant-numeric:tabular-nums;padding-inline:4px}
+table.lb td.ex{color:#4CAF7A;font-weight:700}
 table.lb tr.gap td{text-align:center;color:var(--slate);padding:4px}
 table.lb tr.pr{cursor:pointer}
 table.lb tr.pr td:nth-child(2):after{content:" ▾";color:var(--slate);font-size:.7em}
@@ -10391,6 +10393,37 @@ function authCard(){
     </div>`;
 }
 
+/* عمود «توقعات دقيقة» (اقتراح متابع 2026-10-20: «كل متسابق جم توقع صحيح دقيق… قبل خانة النقاط»):
+   يُعدّ من توقعات الجولات المنشورة (boards/{sid}_p{r}: pk مقابل res) — بلا مساس بالنقاط. يُملأ بعد تحميل الجولات
+   برقعة الخلايا وحدها (لا إعادة رسم، حتى لا تضيع توقعات يكتبها المشترك). */
+function exRoundMonth(r){
+  const ms = (ALL ? withComp("الدوري", ()=>MATCHES) : MATCHES).filter(m=>(+m.round||0)===+r && m.date)
+    .sort((a,b)=>String(a.date).localeCompare(String(b.date)));
+  return ms.length ? monthOf(ms[0].date) : "";
+}
+function exRounds(mode, key){
+  const all = [...new Set(Object.values((BOARD&&BOARD.rows)||{}).flatMap(x=>Object.keys(x.r||{}).map(Number)))].sort((a,b)=>a-b);
+  if(mode==="round") return key ? [+key] : [];
+  if(mode==="month") return all.filter(r=>exRoundMonth(r)===key);
+  return all;
+}
+function exCount(uid, rounds){
+  let n = 0;
+  rounds.forEach(r=>{ const d = PICKS[r], row = d && d.rows && d.rows[uid]; if(!row) return;
+    Object.entries(row.pk||{}).forEach(([k,v])=>{ const a = (d.res||{})[k]; if(a && +v[0]===+a[0] && +v[1]===+a[1]) n++; }); });
+  return n;
+}
+const exReady = rounds => rounds.every(r=>PICKS[r] && !PICKS[r].err);
+function exPaint(rounds){
+  if(!exReady(rounds)) return;
+  document.querySelectorAll("table.lb td.ex[data-exu]").forEach(td=>{ td.textContent = exCount(td.dataset.exu, rounds); });
+}
+function exLoad(rounds){
+  const miss = rounds.filter(r=>PICKS[r]===undefined || (PICKS[r] && PICKS[r].err));
+  if(!miss.length) return;
+  miss.forEach(r=>{ PICKS[r]=null; });
+  Promise.all(miss.map(r=>loadPicks(r))).then(()=>exPaint(rounds));
+}
 function boardBlock(){
   if(!BOARD || !BOARD.rows || !Object.keys(BOARD.rows).length)
     return `<div class="card pad" style="color:var(--slate);text-align:center">
@@ -10400,6 +10433,8 @@ function boardBlock(){
   const months = [...new Set(Object.values(BOARD.rows).flatMap(r=>Object.keys(r.m||{})))].sort();
   const key = BOARDTAB==="round" ? lastR : BOARDTAB==="month" ? (lastM||months[months.length-1]) : null;
   const allRows = boardRows(BOARDTAB, key).filter(r=>BOARDTAB==="season" || r.pts>0);
+  const exR = exRounds(BOARDTAB, key), exOk = exReady(exR);
+  if(!exOk) setTimeout(()=>exLoad(exR), 0);
   const rows = BOARDALL ? allRows : allRows.slice(0,50);
   /* سطري إن كنت بعد الخمسين (منصور 2026-10-11: «٥٠ واحد بس… اسمي مو موجود») */
   const meIdx = FAN ? allRows.findIndex(r=>r.uid===FAN.uid) : -1;
@@ -10407,6 +10442,7 @@ function boardBlock(){
   const rowHTML = (r, pos) => `<tr class="${FAN&&r.uid===FAN.uid?"me":""} pr" data-fanp="${esc(r.uid)}">
           <td class="rk ${pos<=3?"top":""}">${pos}${mv(r.uid, pos)}</td>
           <td>${esc(r.name)}</td>
+          <td class="ex" data-exu="${esc(r.uid)}">${exOk ? exCount(r.uid, exR) : "·"}</td>
           <td class="pt">${r.pts}</td>
         </tr>`;
   /* سهم التحرك (منصور 2026-10-11): ترتيب الموسم قبل نقاط آخر جولة محتسبة مقابل الآن — أخضر صعد، أحمر نزل */
@@ -10427,14 +10463,14 @@ function boardBlock(){
     </div>
     <div class="card">
       <table class="lb">
-        <thead><tr><th style="width:44px">#</th><th>المشترك</th><th style="width:64px">النقاط</th></tr></thead>
+        <thead><tr><th style="width:44px">#</th><th>المشترك</th><th class="ex" style="width:50px" title="توقعات النتيجة الدقيقة">دقيقة</th><th style="width:56px">النقاط</th></tr></thead>
         <tbody>${rows.length?rows.map((r,i)=>rowHTML(r, i+1)).join("")
-          + (meExtra ? `<tr class="gap"><td colspan="3">⋯</td></tr>` + rowHTML(meExtra, meIdx+1) : "")
-          :`<tr><td colspan="3" style="color:var(--slate);text-align:center">لا نقاط في هذه الفترة.</td></tr>`}</tbody>
+          + (meExtra ? `<tr class="gap"><td colspan="4">⋯</td></tr>` + rowHTML(meExtra, meIdx+1) : "")
+          :`<tr><td colspan="4" style="color:var(--slate);text-align:center">لا نقاط في هذه الفترة.</td></tr>`}</tbody>
       </table>
     </div>
     ${allRows.length > 50 ? `<button class="btn ghost lb-more" id="lbMore">${BOARDALL ? "عرض أول 50" : "عرض الكل (" + allRows.length + ")"}</button>` : ""}
-    <p class="hint" style="margin-top:8px">اضغط على أي اسم تشوف بروفايله وتوقعاته في كل جولة.</p>`;
+    <p class="hint" style="margin-top:8px">«دقيقة» = عدد المباريات التي توقّع نتيجتها بالضبط. اضغط على أي اسم تشوف بروفايله وتوقعاته في كل جولة.</p>`;
 }
 const AR_MONTHS_LB = {"01":"يناير","02":"فبراير","03":"مارس","04":"أبريل","05":"مايو","06":"يونيو",
   "07":"يوليو","08":"أغسطس","09":"سبتمبر","10":"أكتوبر","11":"نوفمبر","12":"ديسمبر"};
