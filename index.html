@@ -5589,7 +5589,7 @@ function loadEditRaw(m){
   (ALL.shapes||[]).filter(x=>x.r===m.round && compOf(x)===compOf(m) && (x.club===m.home||x.club===m.away))
     .forEach(x=>{ shp[x.club]={f:x.f||"", pos:JSON.parse(JSON.stringify(x.pos||{}))}; });
   return {orig:mkey(m), shapes:shp,
-    match:{round:m.round, comp:compOf(m), stage:m.stage||"", home:m.home, away:m.away, venue:m.venue||"", date:m.date||"", time:m.time||"", note:m.note||"", ref:crewOf(m).ref, refs:crewOf(m).refs, tv:m.tv||"", status:m.status||"", pst:+m.pst||0, add1:(m.add1??""), add2:(m.add2??""), et:!!m.et, add3:(m.add3??""), add4:(m.add4??""), abs:(m.abs||[]).map(x=>({c:x.c, p:x.p})), pres:(m.pres||[]).map(x=>({c:x.c, p:x.p})), pso:{h:(m.pso&&m.pso.h!=null?m.pso.h:""), a:(m.pso&&m.pso.a!=null?m.pso.a:"")}, psk:pskOf(m).map(k=>({t:k.t, p:k.p||"", ok:!!k.ok})), rec:m.rec||""},
+    match:{round:m.round, comp:compOf(m), stage:m.stage||"", home:m.home, away:m.away, venue:m.venue||"", date:m.date||"", time:m.time||"", note:m.note||"", ref:crewOf(m).ref, refs:crewOf(m).refs, tv:m.tv||"", status:m.status||"", manH:m.manH??"", manA:m.manA??"", pst:+m.pst||0, add1:(m.add1??""), add2:(m.add2??""), et:!!m.et, add3:(m.add3??""), add4:(m.add4??""), abs:(m.abs||[]).map(x=>({c:x.c, p:x.p})), pres:(m.pres||[]).map(x=>({c:x.c, p:x.p})), pso:{h:(m.pso&&m.pso.h!=null?m.pso.h:""), a:(m.pso&&m.pso.a!=null?m.pso.a:"")}, psk:pskOf(m).map(k=>({t:k.t, p:k.p||"", ok:!!k.ok})), rec:m.rec||""},
     mev:(ALL.mev||[]).filter(x=>x.r===m.round && compOf(x)===compOf(m) && x.home===m.home && x.away===m.away).map(x=>({k:x.k, club:x.club||"", p:x.p||"", m:x.m||"", x:x.x||0, note:x.note||"", lid:x.lid||""})),
     lineup:lus.map(x=>({club:x.club, p:x.p})),
     subs:sbs.map(x=>({club:x.club, out:x.out||"", in:x.in||"", h:x.h||1, m:x.m||"", x:x.x||0, lid:x.lid||""})),
@@ -6279,6 +6279,7 @@ function matchFormHTML(){
       ${fld("الجولة","match.round","number",null,m.round)}
       ${fld("المسابقة","match.comp","select",COMPS,m.comp)}
       ${isCupComp(m.comp)?fld("الدور (للكؤوس)","match.stage","select",CUP_STAGES,m.stage):""}
+      ${isCupComp(m.comp)?fld("نتيجة بلا هدافين · المضيف","match.manH","number",null,m.manH)+fld("نتيجة بلا هدافين · الضيف","match.manA","number",null,m.manA):""}
       ${fld("الملعب","match.venue","text",null,m.venue)}
       ${fld("الفريق المضيف","match.home","select",editClubs(m),m.home)}
       ${fld("الفريق الضيف","match.away","select",editClubs(m),m.away)}
@@ -6463,7 +6464,8 @@ function applyEdit(E){
                     ...((m.et || ["e1","e2"].includes(m.status)) ? {et:true, add3:+m.add3||0, add4:+m.add4||0} : {}),
                     ...(pskOf(m).length ? {psk:pskOf(m).map(k=>({t:k.t, p:String(k.p||""), ok:!!k.ok})), pso:psoOf({psk:m.psk})}
                         : m.pso && m.pso.h!=="" && m.pso.a!=="" && m.pso.h!=null && m.pso.a!=null ? {pso:{h:+m.pso.h, a:+m.pso.a}} : {}),
-                    ...(absList(m).length ? {abs:absList(m)} : {}), ...(plList(m, m.pres).length ? {pres:plList(m, m.pres)} : {}), hg:0, ag:0});   /* abs = الغائبون عن قائمة المباراة */   /* ref = حكم الساحة، refs = بقية الطاقم */
+                    ...(absList(m).length ? {abs:absList(m)} : {}), ...(plList(m, m.pres).length ? {pres:plList(m, m.pres)} : {}),
+                    ...(m.manH!==""&&m.manH!=null&&m.manA!==""&&m.manA!=null ? {manH:+m.manH, manA:+m.manA} : {}), hg:0, ag:0});   /* abs = الغائبون عن قائمة المباراة */   /* ref = حكم الساحة، refs = بقية الطاقم */
   E.goals.forEach(g=>ALL.goals.push({r:round, comp:m.comp, sc:g.sc, cd:other(g.sc), p:g.p, a:g.a||"",
       m:+g.m, x:+g.x||0, cat:catOf(g.det), det:g.det, bp:g.bp||"", zone:g.zone||"",
       og: g.bp==="هدف عكسي" ? (g.og||"") : "", ...(isDefErr(g) && g.err ? {err:g.err} : {}), ...(g.lid?{lid:g.lid}:{})}));
@@ -6486,10 +6488,12 @@ function applyEdit(E){
     if(!s || (!s.f && !Object.keys(s.pos||{}).length)) continue;   /* بلا تعديل: لا نحفظ صفاً */
     ALL.shapes.push({r:round, comp:m.comp, club:cl, f:s.f||"", pos:s.pos||{}});
   }
-  /* النتيجة تُشتق من الأهداف */
+  /* النتيجة تُشتق من الأهداف — إلا مباراة كأس بلا هدافين معروفين: manH/manA (منصور 2026-10-20 «مانعرف منو الهدافين بس حط النتيجه») */
   ALL.matches.forEach(mm=>{
-    mm.hg = ALL.goals.filter(g=>g.r===mm.round && compOf(g)===compOf(mm) && g.sc===mm.home && g.cd===mm.away).length;
-    mm.ag = ALL.goals.filter(g=>g.r===mm.round && compOf(g)===compOf(mm) && g.sc===mm.away && g.cd===mm.home).length;
+    const gh = ALL.goals.filter(g=>g.r===mm.round && compOf(g)===compOf(mm) && g.sc===mm.home && g.cd===mm.away).length;
+    const ga = ALL.goals.filter(g=>g.r===mm.round && compOf(g)===compOf(mm) && g.sc===mm.away && g.cd===mm.home).length;
+    if(!(gh+ga) && mm.manH!=null && mm.manA!=null){ mm.hg=+mm.manH; mm.ag=+mm.manA; }
+    else { mm.hg=gh; mm.ag=ga; }
   });
   ALL.matches.sort((a,b)=>(a.round-b.round)||String(a.date).localeCompare(String(b.date)));
   ALL.matches.forEach((mm,i)=>mm.n=i+1);
