@@ -3,6 +3,9 @@
    والقواعد تسمح للمالك وحده بكتابته. هنا نفس معادلة scoreRound في index.html بحساب الخدمة:
    المباريات المنتهية فقط من جولات الدوري (الجولة الحالية + آخر جولة محتسبة)، نتيجة مطابقة 5،
    اتجاه صحيح 2، هداف الجولة 3 — وإعادة الاحتساب لا تضاعف النقاط (نطرح القديم ونضيف الجديد).
+   هداف الجولة (منصور 2026-10-20: «المفروض يكون اكثر واحد مسجل اهداف… احتسب كل الجولات»): صاحب أكثر الأهداف
+   في الجولة وحده — يتساوى أكثر من لاعب فيُحسب للجميع، والأهداف العكسية لا تُحسب. RULE يُكتب في جدول الجمهور،
+   وإن غاب أُعيد احتساب كل الجولات مرة واحدة بالقاعدة الجديدة.
    POST {idToken}  ← محرّر/مالك بعد حفظ مباراة (index.html يستدعيها تلقائياً).
    الدالة preds-score-cron تستدعي run() كل 10 دقائق احتياطاً. */
 'use strict';
@@ -13,6 +16,7 @@ const SEASON = '2026-2027';
 const OWNER = 'iiTgVfDryXNLb9IrOyLkkNMHDxq2';
 const DOCS = `https://firestore.googleapis.com/v1/projects/${PROJECT}/databases/(default)/documents`;
 const PT_EXACT = 5, PT_RIGHT = 2, PT_SCORER = 3;
+const RULE = 'top-scorer';
 const LIVE = ['h1','ht','h2','e1','e2','pso'];
 const H = { 'Content-Type':'application/json; charset=utf-8', 'Access-Control-Allow-Origin':'https://mfsoccer.com',
   'Access-Control-Allow-Headers':'Content-Type', 'Access-Control-Allow-Methods':'POST, OPTIONS', 'Cache-Control':'no-store' };
@@ -45,6 +49,13 @@ const compOf = x => x.comp || 'الدوري';
 /* اسم الهداف للمقارنة — توقعات قديمة محفوظة برقم القميص «33-فيتور دا سيلفا» (نفس scKey في index.html) */
 const scKey = n => String(n || '').replace(/^\s*\d+\s*[-–]\s*/, '').replace(/[\u064B-\u0652\u0640]/g, '')
   .replace(/[أإآ]/g, 'ا').replace(/ى/g, 'ي').replace(/\s+/g, ' ').trim();
+/* هداف الجولة = صاحب أكثر الأهداف (بلا العكسية)؛ التعادل يُحسب للجميع */
+function topScorers(goals){
+  const n = {};
+  goals.forEach(g => { if(g.og || !g.p) return; const k = scKey(g.p); n[k] = (n[k] || 0) + 1; });
+  const mx = Math.max(0, ...Object.values(n));
+  return new Set(mx ? Object.keys(n).filter(k => n[k] === mx) : []);
+}
 /* موعد المباراة بتوقيت الكويت (+03:00) */
 function kickoff(m){
   if(!m.date) return null;
@@ -93,22 +104,24 @@ async function run(){
   if(!season) throw new Error('season missing');
   const curR = cur && +cur.round || 0;
   const lastR = board && +board.lastRound || 0;
-  const rounds = [...new Set([lastR, curR].filter(Boolean))].sort((a, b) => a - b);
+  const all = !(board && board.rule === RULE);   /* قاعدة جديدة لم تُطبّق بعد: كل الجولات المحتسبة سابقاً مرة واحدة */
+  const done = all ? Object.values((board && board.rows) || {}).flatMap(x => Object.keys(x.r || {}).map(Number)) : [];
+  const rounds = [...new Set([...done, lastR, curR].filter(Boolean))].sort((a, b) => a - b);
   const rows = (board && board.rows) ? JSON.parse(JSON.stringify(board.rows)) : {};
-  let lastRound = lastR, lastMonth = board && board.lastMonth || '', scored = [], changed = false;
+  let lastRound = lastR, lastMonth = board && board.lastMonth || '', scored = [], changed = all;
   const picksDocs = {};
 
   for(const r of rounds){
-    const all = (season.matches || []).filter(m => compOf(m) === 'الدوري' && (+m.round || 0) === r);
-    const ms = all.filter(m => finished(m, season));
-    if(!ms.length && !all.some(started)) continue;   /* لا نتيجة بعد لكن الجولة انطلقت: ننشر التوقعات وحدها بلا احتساب */
+    const rms = (season.matches || []).filter(m => compOf(m) === 'الدوري' && (+m.round || 0) === r);
+    const ms = rms.filter(m => finished(m, season));
+    if(!ms.length && !rms.some(started)) continue;   /* لا نتيجة بعد لكن الجولة انطلقت: ننشر التوقعات وحدها بلا احتساب */
     const scoreIt = ms.length > 0;
     const keys = new Set(ms.map(m => m.home + '|' + m.away));
     const actual = {}; ms.forEach(m => actual[m.home + '|' + m.away] = [+m.hg || 0, +m.ag || 0]);
-    /* هداف الجولة: من المباريات المنتهية فقط */
-    const scorers = new Set((season.goals || []).filter(g => compOf(g) === 'الدوري' && +g.r === r
-      && (keys.has(g.sc + '|' + g.cd) || keys.has(g.cd + '|' + g.sc))).map(g => scKey(g.p)));
-    const month = String((ms[0] || all[0]).date || '').slice(0, 7);
+    /* هداف الجولة: صاحب أكثر الأهداف في المباريات المنتهية فقط */
+    const scorers = topScorers((season.goals || []).filter(g => compOf(g) === 'الدوري' && +g.r === r
+      && (keys.has(g.sc + '|' + g.cd) || keys.has(g.cd + '|' + g.sc))));
+    const month = String((ms[0] || rms[0]).date || '').slice(0, 7);
     const preds = await predsOf(`${SEASON}_${r}`, auth);
     const pub = {};   /* توقعات كل مشترك — تظهر في بروفايله (boards/{season}_p{round})؛ الجولة مقفلة فلا ضرر من نشرها */
     preds.forEach(p => {
@@ -151,7 +164,7 @@ async function run(){
   }
   if(!scored.length) return { ok:true, scored, written:false, opened, published:Object.keys(picksDocs) };
   if(!changed && lastRound === lastR) return { ok:true, scored, written:false, opened };
-  const body = { rows, lastRound, lastMonth, updated:new Date().toISOString() };
+  const body = { rows, lastRound, lastMonth, rule:RULE, updated:new Date().toISOString() };
   const w = await fetch(`${DOCS}/boards/${SEASON}`, { method:'PATCH', headers:{ ...auth, 'Content-Type':'application/json' },
     body: JSON.stringify({ fields:enc(body).mapValue.fields }) });
   if(!w.ok) throw new Error('write board ' + w.status + ' ' + (await w.text()).slice(0, 200));

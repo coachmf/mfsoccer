@@ -10178,13 +10178,20 @@ async function publishRound(round, lockMs, open){
 
 /* اسم الهداف للمقارنة: توقعات قديمة محفوظة برقم القميص «33-فيتور دا سيلفا» (منصور 2026-10-11: إعادة الاحتساب كانت تُسقط الهداف الصحيح) */
 const scKey = n => String(n||"").replace(/^\s*\d+\s*[-–]\s*/,"").replace(/[ً-ْـ]/g,"").replace(/[أإآ]/g,"ا").replace(/ى/g,"ي").replace(/\s+/g," ").trim();
+/* هداف الجولة = صاحب أكثر الأهداف (منصور 2026-10-20) — بلا العكسية، والتعادل يُحسب للجميع (نفس preds-score.js) */
+function topScorers(goals){
+  const n = {};
+  goals.forEach(g=>{ if(g.og || !g.p) return; const k = scKey(g.p); n[k] = (n[k]||0) + 1; });
+  const mx = Math.max(0, ...Object.values(n));
+  return new Set(mx ? Object.keys(n).filter(k=>n[k]===mx) : []);
+}
 /* احتساب جولة — يشغّله المالك بعد إدخال النتائج */
 async function scoreRound(r){
   if(!(isOwner || canPreds()) || !fbDb) return {ok:false, msg:"غير مصرّح"};
   /* مباريات وأهداف الدوري فقط — لا الكؤوس بنفس رقم الجولة */
   const {ms, scorers} = (ALL ? (f=>withComp("الدوري", f)) : (f=>f()))(()=>({
     ms: MATCHES.filter(m=>(+m.round||0)===+r && !isUpcoming(m)),
-    scorers: new Set(GOALS.filter(g=>(+g.r||0)===+r).map(g=>scKey(g.p))) }));
+    scorers: topScorers(GOALS.filter(g=>(+g.r||0)===+r)) }));
   if(!ms.length) return {ok:false, msg:"لا توجد نتائج مسجّلة لهذه الجولة"};
   const key = m => m.home+"|"+m.away;
   const actual = {}; ms.forEach(m=>actual[key(m)] = [+m.hg||0, +m.ag||0]);
@@ -10218,7 +10225,7 @@ async function scoreRound(r){
     rows[p.uid] = row; n++;
   });
 
-  const body = {rows, lastRound:+r, lastMonth:month, updated:new Date().toISOString()};
+  const body = {rows, lastRound:+r, lastMonth:month, rule:"top-scorer", updated:new Date().toISOString()};
   try{ await fbDb.collection("boards").doc(seasonId()).set(body); }
   catch(e){ return {ok:false, msg:"تعذّر حفظ جدول الترتيب"}; }
   BOARD = body;
@@ -10281,7 +10288,7 @@ function renderPredict(){
     ${!o ? `<div class="card pad" style="color:var(--slate);text-align:center">لا توجد جولة مفتوحة للتوقع حالياً.</div>` : `
       <p class="hint">${locked
         ? "أُقفلت هذه الجولة ببداية أول مباراة. هذي توقعاتك المسجّلة."
-        : `نتيجة مطابقة ${PT_EXACT} نقاط · اتجاه صحيح نقطتان · هداف الجولة ${PT_SCORER} نقاط. تُقفل التوقعات مع صافرة أول مباراة.`}</p>
+        : `نتيجة مطابقة ${PT_EXACT} نقاط · اتجاه صحيح نقطتان · هداف الجولة (صاحب أكثر الأهداف) ${PT_SCORER} نقاط. تُقفل التوقعات مع صافرة أول مباراة.`}</p>
       ${o.lockAt && !locked ? `<div class="lockbar">تُقفل ${esc(stampLabel(o.lockAt))}${
         o.lockMatch?` — مع انطلاق ${esc(o.lockMatch.home)} ضد ${esc(o.lockMatch.away)}`:""}</div>` : ""}
 
@@ -10356,7 +10363,7 @@ function authCard(){
   const mail = AUTHTAB==="mail", up = AUTHMODE==="up";
   return `
     <h2 class="sec">تحدي التوقعات</h2>
-    <p class="hint">توقّع نتائج الجولة قبل انطلاقها ونافس بقية الجمهور. نتيجة مطابقة ${PT_EXACT} نقاط، اتجاه صحيح نقطتان، وهداف الجولة ${PT_SCORER} نقاط.</p>
+    <p class="hint">توقّع نتائج الجولة قبل انطلاقها ونافس بقية الجمهور. نتيجة مطابقة ${PT_EXACT} نقاط، اتجاه صحيح نقطتان، وهداف الجولة (صاحب أكثر الأهداف) ${PT_SCORER} نقاط.</p>
     <div class="card pad">
       <div class="bchips" style="margin-bottom:12px">
         <button class="chip ${mail?"":"on"}" data-at="name">بالاسم فقط</button>
