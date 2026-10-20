@@ -6569,7 +6569,8 @@ setInterval(()=>{
   /* ساعة الوقت الفعلي مفتوحة على هذا الجهاز: لا حفظ للمباراة منه أبداً (منصور 2026-10-19: «خلهم منفصلين») */
   if(window.EFFTIME && EFFTIME.isOpen && EFFTIME.isOpen()){ MX_ASIG=""; return; }
   if(SAVING_MATCH){ mxAutoPaint("busy","جارٍ الحفظ…"); return; }
-  const {base, ...cur} = EDIT; const s = JSON.stringify(cur);
+  /* ext = علامة سياق المباريات الخارجية وليست تعديلاً — كانت تجعل النموذج «معدّلاً» دائماً فيعيد الحفظ كل ثانيتين بلا توقف (فيديو سعد 2026-10-20) */
+  const {base, ext, ...cur} = EDIT; const s = JSON.stringify(cur);
   if(s === JSON.stringify(base)){
     MX_ASIG="";
     /* محرّر آخر حفظ وما عندنا تعديل معلّق: نعرض ما أدخله فوراً (منصور 2026-10-19: اثنين يحررون مع بعض) */
