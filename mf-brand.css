@@ -1096,6 +1096,7 @@ html.mf[data-theme="light"] .mf-hub-sheet{background:radial-gradient(120% 60% at
   color:var(--mf-tx);font-weight:600;font-size:.86rem;text-align:start;transition:border-color var(--mf-fast),background var(--mf-fast)}
 .mf-nt button:hover{border-color:var(--mf-gold-mid);background:rgba(231,208,147,.05)}
 .mf-nt img{width:36px;height:36px;object-fit:contain}
+.mf-nt img.mf-nt-sq{border-radius:8px;background:#fff;padding:2px}   /* شعار بخلفية بيضاء (الناشئين) */
 .mf-nt svg{width:24px;height:24px;color:var(--mf-gold);margin:6px}
 /* البطولات الخارجية (2026-10-11): صف لكل بطولة — شعارها، اسمها، وأنديتنا المشاركة */
 .mf-ext{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:var(--mf-s2)}
