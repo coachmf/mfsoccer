@@ -3,7 +3,7 @@
 'use strict';
 
 /* الأطقم الحقيقية 2026/27 (منصور 2026-09-15): صور منتج شفافة مبنية من صور التصوير الرسمي، بلا رقم ولا اسم. */
-const KIT_V = 7;   // 7: طقم الشباب بشعار luanvi على اليسار مثل العربي (منصور 2026-10-08)
+const KIT_V = 8;   // 8: طقم الصليبخات 2026/27 (Wolves): أحمر بجوانب بيضاء + حارس أسود (منصور 2026-10-20)
 const KIT_IMG = Object.fromEntries(
   ['KUW','QAD','ARB','KAZ','SAL','NSR','JAH','SAH','FAH','TDM','SHB','SLB'].map(c =>
     [c, {out:`${c}.webp?v=${KIT_V}`, gk:`${c}_gk.webp?v=${KIT_V}`}])
@@ -18,8 +18,8 @@ const KIT_STYLE = {
         gk:{ body:'#8b1a2b', collar:'#ffffff', cuff:'#ffffff', crest:'#ffffff' } },  // حارس القادسية عنابي (منصور 2026-09-15)
   ARB:{ body:'#0f8a4b', neck:'v', collar:'#ffffff', collar2:'#0b4a2a', cuff:'#ffffff', cuff2:'#0b4a2a', crest:'#ffffff',
         gk:{ body:'#182a63', collar:'#ffffff', collar2:'#0b1a44', cuff:'#ffffff', cuff2:'#0b1a44' } },
-  SLB:{ body:'#e3262b', neck:'v', collar:'#ffffff', shoulder:'#ffffff', cuff:'#ffffff', cuff2:'#e3262b', crest:'#ffffff',
-        gk:{ body:'#1c1c1e', neck:'v', collar:'#ffffff', cuff:'#ffffff', crest:'#ffffff' } },   // حارس الصليبخات أسود (صور 2026-09-15)
+  SLB:{ body:'#e8302f', neck:'v', collar:'#ffffff', shoulder:'#ffffff', cuff:'#ffffff', cuff2:'#e8302f', panel:'#ffffff', crest:'#ffffff',
+        gk:{ body:'#1c1c1e', neck:'v', collar:'#e8302f', shoulder:'#e8302f', cuff:'#e8302f', panel:'#e8302f', crest:'#ffffff' } },   // طقم 2026/27: أحمر بجوانب بيضاء، الحارس أسود بجوانب حمراء (منصور 2026-10-20)
   FAH:{ body:'#d81f26', neck:'round', collar:'#d81f26', sleeve:'#e9e9f0', cuff:'#e9e9f0', crest:'#ffffff',
         gk:{ body:'#1c1c1e', collar:'#ffffff', cuff:'#ffffff', crest:'#ffffff' } },   // حارس الفحيحيل أسود (علي فاضل)
   JAH:{ body:'#ffffff', neck:'round', collar:'#ffffff', cuff:'#1a5fb4', panel:'#1a5fb4', crest:'#1a5fb4',
