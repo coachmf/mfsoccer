@@ -1039,6 +1039,7 @@ table.lb tr.me{background:rgba(95,178,232,.09)}
 html:not([data-theme="dark"]) .mystat b{color:#000}
 html:not([data-theme="dark"]) .mystat small{color:#3A4556}
 table.lb th.ex,table.lb td.ex{text-align:center;font-variant-numeric:tabular-nums;padding-inline:4px}
+table.lb th.ex{line-height:1.35;white-space:normal;font-size:.64rem}
 table.lb td.ex{color:#4CAF7A;font-weight:700}
 table.lb tr.gap td{text-align:center;color:var(--slate);padding:4px}
 table.lb tr.pr{cursor:pointer}
@@ -10463,14 +10464,14 @@ function boardBlock(){
     </div>
     <div class="card">
       <table class="lb">
-        <thead><tr><th style="width:44px">#</th><th>المشترك</th><th class="ex" style="width:50px" title="توقعات النتيجة الدقيقة">دقيقة</th><th style="width:56px">النقاط</th></tr></thead>
+        <thead><tr><th style="width:44px">#</th><th>المشترك</th><th class="ex" style="width:58px" title="توقعات النتيجة الدقيقة">توقعات دقيقة <bdi dir="ltr">100%</bdi></th><th style="width:48px">النقاط</th></tr></thead>
         <tbody>${rows.length?rows.map((r,i)=>rowHTML(r, i+1)).join("")
           + (meExtra ? `<tr class="gap"><td colspan="4">⋯</td></tr>` + rowHTML(meExtra, meIdx+1) : "")
           :`<tr><td colspan="4" style="color:var(--slate);text-align:center">لا نقاط في هذه الفترة.</td></tr>`}</tbody>
       </table>
     </div>
     ${allRows.length > 50 ? `<button class="btn ghost lb-more" id="lbMore">${BOARDALL ? "عرض أول 50" : "عرض الكل (" + allRows.length + ")"}</button>` : ""}
-    <p class="hint" style="margin-top:8px">«دقيقة» = عدد المباريات التي توقّع نتيجتها بالضبط. اضغط على أي اسم تشوف بروفايله وتوقعاته في كل جولة.</p>`;
+    <p class="hint" style="margin-top:8px">«توقعات دقيقة 100%» = عدد المباريات التي توقّع نتيجتها بالضبط. اضغط على أي اسم تشوف بروفايله وتوقعاته في كل جولة.</p>`;
 }
 const AR_MONTHS_LB = {"01":"يناير","02":"فبراير","03":"مارس","04":"أبريل","05":"مايو","06":"يونيو",
   "07":"يوليو","08":"أغسطس","09":"سبتمبر","10":"أكتوبر","11":"نوفمبر","12":"ديسمبر"};
