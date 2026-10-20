@@ -261,6 +261,26 @@ const store = {
     if(typeof fbDb==="undefined" || !fbDb) throw new Error("السحابة غير متاحة");
     await fbDb.collection("seasons").doc(DOC_ID).set(obj); return obj;
   },
+  /* حفظ كمعاملة واحدة (منصور 2026-10-20: «خلل بالتثبيت والحفظ… مو قاعد ينرصد عدل»، سعد في العربي × استقلول):
+     كانت fresh() ثم set() خطوتين — حفظ آخر بينهما ينمسح، وعلى اتصال بطيء تبقى set() معلّقة في الجهاز وتُرسل
+     لاحقاً فوق الأحدث. الآن runTransaction: يقرأ نسخة الخادم، mutate(d) يطبّق فرقنا عليها، ويكتب؛ وإن تغيّرت
+     الوثيقة قبل الكتابة يعيد المحاولة على الأحدث. المعاملة لا تُحفظ بلا اتصال، فلا كتابة قديمة تُرسل لاحقاً. */
+  async tx(mutate){
+    if(TEST){ const cur = await store.fresh(); const d0 = normalize(cur ? clone(cur) : clone(DATA)); return store.save(mutate(d0) || d0); }
+    if(typeof fbDb==="undefined" || !fbDb) throw new Error("السحابة غير متاحة");
+    const ref = fbDb.collection("seasons").doc(DOC_ID);
+    let out = null;
+    const p = fbDb.runTransaction(async t=>{
+      const snap = await t.get(ref);
+      const d0 = normalize(snap.exists ? clone(snap.data()) : clone(DATA));
+      const obj = clone(mutate(d0) || d0);
+      obj.updated = new Date().toISOString(); obj.updatedBy = (typeof FBUSER!=="undefined" && FBUSER && FBUSER.email) || "";
+      t.set(ref, obj); out = obj;
+    });
+    const r = await Promise.race([p.then(()=>"ok"), new Promise(res=>setTimeout(()=>res("timeout"), 25000))]);
+    if(r!=="ok" || !out) throw Object.assign(new Error("الاتصال بطيء — لم يُحفظ بعد، تعديلاتك باقية وتنحفظ تلقائياً"), {code:"timeout"});
+    return out;
+  },
   /* أحدث نسخة من الخادم نفسه — عند تعذّرها null */
   async fresh(){
     if(TEST){ try{ const s=localStorage.getItem(TEST_K); return s?JSON.parse(s):(DATA?clone(DATA):null); }catch(e){ return null; } }
@@ -431,28 +451,47 @@ function hookEditor(){
       if(!cOfName(EDIT.match.comp)) EDIT.match.comp = cName(CX[0].id);
       FORMERR = withExt(()=>validateEdit());
       if(FORMERR){ if(quiet){ FORMERR = ""; return; } renderMatchAdmin(); return; }
+      if(quiet && window.MX && MX.sheet) return;      /* نافذة إدخال مفتوحة: أرقام الصفوف فيها تخص هذه النسخة */
       SAVING_MATCH = true;
-      const E0 = EDIT, key = {round:+EDIT.match.round, comp:EDIT.match.comp, home:EDIT.match.home, away:EDIT.match.away};
+      const E0 = clone(EDIT), sig0 = JSON.stringify(EDIT), add0 = clone(ADDED), keep = DATA;
+      const key = {round:+EDIT.match.round, comp:EDIT.match.comp, home:EDIT.match.home, away:EDIT.match.away};
+      const same = z => +z.round===key.round && z.comp===key.comp && z.home===key.home && z.away===key.away;
       try{
         if(!quiet) toast("جارٍ حفظ المباراة الخارجية…","busy",true);
-        /* الحفظ على أحدث نسخة من الخادم (مثل كأس الخليج): ما غيّره هذا المحرّر فقط فوقها */
-        const base = (await store.fresh()) || PENDING;
-        if(base) DATA = normalize(clone(base));
-        PENDING = null;
-        if(quiet && (!EDIT || EDIT!==E0 || (window.MX && MX.sheet))) return;
-        const EG = withExt(()=>mergeEdit(EDIT)); EG.ext = true;
-        withExt(()=>applyEdit(EG));
-        DATA = normalize(DATA);
-        const x = DATA.matches.find(z=>+z.round===key.round && z.comp===key.comp && z.home===key.home && z.away===key.away);
-        if(x){ x.ed = 1;                                /* عدّلها محرّر: لا تتبع الجدول الثابت بعد الآن */
-          rememberNames(DATA, x); }
-        if(EG.orig && EG.orig!==`${key.round}|${key.comp}|${key.home}|${key.away}`){ const [r0,c0,h0,a0] = EG.orig.split("|"); DATA.removed.push(fxKey(c0, +r0, h0, a0)); }
-        const w = await store.save(DATA);
-        if(w && w.updated){ DATA.updated = w.updated; DATA.updatedBy = w.updatedBy; }
-        if(quiet){ EDIT = x ? withExt(()=>loadEdit(x)) : null; if(EDIT) EDIT.ext = true; if(window.MX) MX._edit = EDIT; try{ MX_ASAVED = Date.now(); MX_ACLOUD = true; }catch(e){} }
+        /* فرق هذا المحرّر (mergeEdit مقابل base) فوق أحدث نسخة من الخادم — داخل المعاملة، فيُعاد مع كل محاولة */
+        const w = await store.tx(d=>{
+          DATA = d; ADDED = clone(add0);
+          const EG = withExt(()=>mergeEdit(clone(E0))); EG.ext = true;
+          withExt(()=>applyEdit(EG));
+          DATA = normalize(DATA);
+          const x = DATA.matches.find(same);
+          if(x){ x.ed = 1;                                /* عدّلها محرّر: لا تتبع الجدول الثابت بعد الآن */
+            rememberNames(DATA, x); }
+          if(EG.orig && EG.orig!==`${key.round}|${key.comp}|${key.home}|${key.away}`){ const [r0,c0,h0,a0] = EG.orig.split("|"); DATA.removed.push(fxKey(c0, +r0, h0, a0)); }
+          return DATA;
+        });
+        DATA = normalize(clone(w)); PENDING = null;
+        const x = DATA.matches.find(same);
+        if(quiet){
+          /* ما كتبه أثناء الحفظ = الفرق بين النموذج الآن وما أُرسل؛ نبقيه فوق النسخة المحفوظة ويُحفظ في الدورة الجاية
+             (كان النموذج يُعاد تحميله فيضيع ما أُدخل خلال ثانيتي الحفظ) */
+          const typedMore = !!EDIT && JSON.stringify(EDIT)!==sig0;
+          const sameOpen = !!EDIT && EDIT.match && EDIT.match.home===key.home && EDIT.match.away===key.away && +EDIT.match.round===key.round;
+          if(sameOpen && x){
+            if(typedMore){ const tmp = clone(EDIT), sent = clone(E0); delete sent.base; tmp.base = sent;
+              const nx = withExt(()=>mergeEdit(tmp)); nx.base = withExt(()=>loadEdit(x)).base; nx.ext = true; EDIT = nx; }
+            else { EDIT = withExt(()=>loadEdit(x)); EDIT.ext = true; }
+          }
+          if(window.MX) MX._edit = EDIT; try{ MX_ASAVED = Date.now(); MX_ACLOUD = true; }catch(e){}
+        }
         else { EDIT = null; toast(`حُفظت: ${key.home} ضد ${key.away} ✅`,"ok"); }
         FORMERR = "";
-      }catch(e){ toast("تعذّر الحفظ: "+(e.code||e.message),"err"); EDIT = E0; try{ MX_ACLOUD = false; }catch(_){} }
+      }catch(e){
+        /* لا شيء انكتب: نرجع للنسخة السابقة، والنموذج باقٍ كما هو (بما كُتب أثناء المحاولة) ويعيد الحفظ التلقائي المحاولة */
+        DATA = keep; ADDED = add0;
+        if(!quiet) toast("تعذّر الحفظ: "+(e.code==="timeout" ? e.message : (e.code||e.message)),"err");
+        try{ MX_ACLOUD = false; }catch(_){}
+      }
       finally{ SAVING_MATCH = false; }
       repaint();
       const typing = (()=>{ const a = document.activeElement; return !!(a && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)); })();
