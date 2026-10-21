@@ -1018,6 +1018,7 @@ const VIEWS = {
         <button class="btn sm" onclick="VIEWS.leagueCreateModal()">+ إنشاء دوري</button>
         <button class="btn sm sec" onclick="VIEWS.leagueJoinModal()">الانضمام برمز</button>
       </div></div>
+    ${st.registered? `<div class="lgx-reg"><b class="num">${(+st.registered).toLocaleString('en')}</b><span>مسجّل في الفانتسي</span></div>` : ''}
     <div class="card lgx">
       <h3 class="lgx-h">الدوريات العامة</h3>
       ${tbl(pub, '')}

@@ -748,10 +748,10 @@ const CLOUD = {
     if(!this.admin) return {ok:false, err:'تحديث التملّك للمدير فقط'};
     const c = await this.computeOwnership();
     if(!c.ok) return c;
-    st.own = c.own; st.managerCount = c.count; st.ownUpdated = new Date().toISOString(); st.board = c.board;
+    st.own = c.own; st.managerCount = c.count; st.registered = c.total; st.ownUpdated = new Date().toISOString(); st.board = c.board;
     // يُكتب في meta/own لا في مستند اللعبة: تغيير «updated» في مستند اللعبة يجعل كل جهاز مفتوح يعيد تحميلها كاملة (~25 قراءة)
     const r = await this.race(this.ownDoc().set({
-      own: c.own, managerCount: c.count, ownUpdated: st.ownUpdated, board: c.board,
+      own: c.own, managerCount: c.count, registered: c.total, ownUpdated: st.ownUpdated, board: c.board,
       updatedBy: (this.user && this.user.email) || ''
     }));
     if(!r.ok) return {ok:false, err: r.timeout ? 'الاتصال بطيء — لم يكتمل النشر' : this.errAr(r.err)};
@@ -803,7 +803,7 @@ const CLOUD = {
     if(!o || !o.ownUpdated) return false;
     if(st.ownUpdated && o.ownUpdated <= st.ownUpdated) return false;
     if(o.own) st.own=o.own; if(Array.isArray(o.board)) st.board=o.board;
-    if(o.managerCount!=null) st.managerCount=+o.managerCount; st.ownUpdated=o.ownUpdated;
+    if(o.managerCount!=null) st.managerCount=+o.managerCount; if(o.registered!=null) st.registered=+o.registered; st.ownUpdated=o.ownUpdated;
     return true;
   },
 

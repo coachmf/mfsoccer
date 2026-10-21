@@ -1451,6 +1451,9 @@ html.lang-en .pp-actions{justify-content:flex-start;}
 .lgx-m{width:56px; text-align:end}
 .lgx-dash{display:inline-block; width:14px; height:3px; border-radius:2px; background:var(--text3)}
 .lgx-empty{padding:10px 2px}
+.lgx-reg{display:flex; align-items:baseline; gap:8px; margin:0 0 12px; padding:14px 16px; border-radius:14px; background:linear-gradient(135deg,#1878be,#0d4f92); color:#fff}
+.lgx-reg b{font-size:1.7rem; font-weight:800; line-height:1}
+.lgx-reg span{font-size:.95rem; font-weight:600; opacity:.9}
 .fav-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:8px}
 .fav-c{display:flex; flex-direction:column; align-items:center; gap:6px; padding:10px 4px; border-radius:12px; border:1.5px solid var(--line); background:var(--surface2); color:var(--text); font:inherit; font-size:.8rem; font-weight:700; cursor:pointer}
 .fav-c.on{border-color:var(--accent); background:color-mix(in srgb,var(--accent) 14%,transparent)}
