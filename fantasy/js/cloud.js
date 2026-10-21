@@ -967,6 +967,7 @@ const CLOUD = {
       transfers:[], gwPicks:{}, pendingHits:0 }, t||{});
 
     const rows=[], writes=[]; const own={}, transfers={}; let count=0; const board=[];
+    const donePts=[];                                            // محتسبون في تشغيل سابق انقطع — يدخلون المتوسط والأعلى
     snap.forEach(d=>{
       const v=d.data();
       // لاعب غير معروف في القائمة = خلل بيانات على هذا الجهاز، لا في فريق المشترك: لا نحذفه من فريقه — نتخطاه ونبلّغ
@@ -989,7 +990,7 @@ const CLOUD = {
       const joined = v.joinedGW || team.joinedGW || 1;
       if(joined > gw){ board.push(this.boardRow(d.id, v)); return; }                                    // اشترك بعد هذه الجولة
       const prev=(v.history||[]).find(h=>h.gw===gw);
-      if(prev && (team.rolledGW||0)>=gw && !opts.recompute){ this._alreadyDone=(this._alreadyDone||0)+1; board.push(this.boardRow(d.id, v)); return; }   // محتسبة ومرحَّلة مسبقاً
+      if(prev && (team.rolledGW||0)>=gw && !opts.recompute){ this._alreadyDone=(this._alreadyDone||0)+1; donePts.push(+prev.pts||0); board.push(this.boardRow(d.id, v)); return; }   // محتسبة ومرحَّلة مسبقاً
       team.gwPicks = team.gwPicks||{};
       /* لقطة تشكيلة غير صالحة (عُدّلت من المتصفح: 15 لاعباً في التشكيلة، كابتن من خارجها، كرت غير معروف…)
          لا تُعتمد — تُبنى من الفريق المقفل على الخادم عند الموعد (منصور 2026-09-30) */
@@ -1038,7 +1039,9 @@ const CLOUD = {
       if(!w.ok) return {ok:false, err:`تعذّر حفظ نتائج المشتركين (${done} من ${writes.length})`, done};
       done += chunk.length;
     }
-    const pts=rows.map(r=>r.res.total);
+    /* المتوسط والأعلى على كل من احتُسب في الجولة، لا على من احتُسب في هذا التشغيل وحده —
+       2026-10-21: الجولة 5 نُشرت 36 / 51 والحقيقي 48 / 98 لأن احتساباً سابقاً انقطع فتخطّى هذا التشغيل من رُحّلت فرقهم */
+    const pts=rows.map(r=>r.res.total).concat(donePts);
     board.sort((a,b)=>b.total-a.total || a.name.localeCompare(b.name,'ar'));
     return { ok:true, count, ranked:rows.length, own, transfers, board, skipped, alreadyDone:this._alreadyDone||0,
       avg: pts.length? Math.round(pts.reduce((a,b)=>a+b,0)/pts.length) : null,
