@@ -750,10 +750,11 @@ const CLOUD = {
     if(!c.ok) return c;
     st.own = c.own; st.managerCount = c.count; st.registered = c.total; st.ownUpdated = new Date().toISOString(); st.board = c.board;
     // يُكتب في meta/own لا في مستند اللعبة: تغيير «updated» في مستند اللعبة يجعل كل جهاز مفتوح يعيد تحميلها كاملة (~25 قراءة)
+    /* المستند يكبر مع عدد المشتركين (لقطة الترتيب): الكتابة تأخذ ~30 ث فكانت تُبلَّغ «لم يكتمل النشر» وهي تُكتب — مهلة دقيقة ونصف */
     const r = await this.race(this.ownDoc().set({
       own: c.own, managerCount: c.count, registered: c.total, ownUpdated: st.ownUpdated, board: c.board,
       updatedBy: (this.user && this.user.email) || ''
-    }));
+    }), 90000);
     if(!r.ok) return {ok:false, err: r.timeout ? 'الاتصال بطيء — لم يكتمل النشر' : this.errAr(r.err)};
     try{ await this.publishPics(c.pics); if(typeof PICS!=='undefined') PICS.at=0; }catch(e){ console.warn('pics publish failed', e); }
     return {ok:true, count:c.count, total:c.total};

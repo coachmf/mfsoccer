@@ -142,7 +142,8 @@ const APP = {
           if(unAt && lt && (lt.squad||[]).length && doc.team && (doc.team.squad||[]).length
              && !GWADMIN.deadlinePassed(DB.state.currentGW)
              && +(doc.team.rolledGW||0)===+(lt.rolledGW||0) && !(doc.team.repairedAt && doc.team.repairedAt!==(lt.repairedAt||null))
-             && !(doc.updated && Date.parse(doc.updated) >= unAt)){
+             && !(doc.updated && Date.parse(doc.updated) >= unAt)
+             && DB.teamSig(lt)!==DB.teamSig(doc.team)){                 // نفس تشكيلة الخادم: لا شيء لنرجعه ولا تنبيه
             doc = {...doc, team: lt}; DB.pendingPush = true;
             setTimeout(()=>UI.toast('رجّعنا تعديلات فريقك اللي ما انحفظت — جارٍ حفظها على الخادم'), 1200);
           } else if(unAt) DB.clearUnsaved(u.uid);

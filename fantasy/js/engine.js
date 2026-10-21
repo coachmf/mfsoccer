@@ -48,8 +48,14 @@ const DB = {
     this.dirtyAt=Date.now();
     /* تعديلات لم تصل للخادم (منصور 2026-10-18، «احمد ١٦»: تشكيلة الجولة تنمسح وكل شوي يطلب دخول Apple):
        علامة دائمة على الجهاز لكل حساب، تُمسح فقط بعد حفظ ناجح للتشكيلة أو اعتماد نسخة الخادم — فلا يطمسها الدخول من جديد */
-    try{ const me=this.state.session; if(me && me!=='u1local' && !this.muted){ (this.state.unsaved ??= {})[me]=Date.now(); } }catch(e){}
     try{ const me=this.state.session; if(me && this.state.teams[me] && typeof TEAM!=='undefined') TEAM.normalize(this.state.teams[me], this.state); }catch(e){}
+    /* 2026-10-21: العلامة كانت تُوضع مع كل حفظ (تحديث الجولة، التملّك…) لا مع تغيير التشكيلة — فيظهر «رجّعنا تعديلات فريقك»
+       عند كل فتح ويُرفع فريق الجهاز فوق نسخة الخادم. الآن: فقط إن اختلفت التشكيلة عن آخر نسخة حُفظت أو اعتُمدت من الخادم */
+    try{ const me=this.state.session; if(me && me!=='u1local' && !this.muted){
+      const t=this.state.teams[me], syn=(this.state.syncedSig||{})[me];
+      if(t && syn!==undefined && this.teamSig(t)===syn){ if(this.state.unsaved) delete this.state.unsaved[me]; }
+      else (this.state.unsaved ??= {})[me]=Date.now();
+    } }catch(e){}
     try{ localStorage.setItem(this.KEY, JSON.stringify(this.state)); }
     catch(e){ console.warn('storage write failed', e); }
     this.pushTeam();
@@ -154,6 +160,7 @@ const DB = {
     // يُرحَّل للحساب ويُرفع بدل أن يُطمس بفريق فارغ.
     const prevLocal = st.teams[uid] || st.teams['u1local'];
     const cloudEmpty = !doc.team || !(doc.team.squad||[]).length;
+    (st.syncedSig ??= {})[uid] = cloudEmpty ? '' : this.teamSig(doc.team);   // نسخة الخادم = المرجع لـ«لم يُحفظ»
     let t;
     if(cloudEmpty && prevLocal && (prevLocal.squad||[]).length===st.rules.squadSize && !(prevLocal.history||[]).length){
       t = Object.assign(blank, JSON.parse(JSON.stringify(prevLocal)));
@@ -194,6 +201,11 @@ const DB = {
     if(this.muted){ this.pendingPush=true; return; }     // يُرفع بعد انتهاء المزامنة
     clearTimeout(this._pushT);
     this._pushT = setTimeout(()=>this.pushWithRetry(), 900);
+  },
+  /* بصمة التشكيلة (ما يغيّره المشترك فقط) — للمقارنة بين نسخة الجهاز ونسخة الخادم */
+  teamSig(t){
+    if(!t) return '';
+    return JSON.stringify([t.squad||[], t.xi||[], t.bench||[], t.cap??null, t.vice??null, t.coach??null, t.activeChip??null, +t.bank||0, (t.transfers||[]).length]);
   },
   clearUnsaved(uid){ const u=this.state.unsaved; if(u && u[uid]){ delete u[uid]; try{ localStorage.setItem(this.KEY, JSON.stringify(this.state)); }catch(e){} } },
   /* الحفظ كان يفشل بصمت (قراءة الخادم متعذّرة، جلسة منتهية…) فتبقى التعديلات على الجهاز وحده ثم يطمسها الدخول التالي.
@@ -258,7 +270,7 @@ const DB = {
     if(!(t.squad||[]).length && remote && remote.team && (remote.team.squad||[]).length) return await CLOUD.saveMyTeam(profile, undefined);
     const {history, ...team} = t;                 // السجل لا يُرفع: المدير يكتبه
     const okT = await CLOUD.saveMyTeam(profile, team);
-    if(okT===true) this.clearUnsaved(uid);
+    if(okT===true){ (this.state.syncedSig ??= {})[uid]=this.teamSig(t); this.clearUnsaved(uid); }
     return okT;
   },
   reset(){ try{ localStorage.removeItem(this.KEY);}catch(e){} this.state = buildSeedState(); this.save(); },
