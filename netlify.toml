@@ -42,6 +42,13 @@
 [functions."preds-score-cron"]
   schedule = "*/10 * * * *"
 
+# ——— صور الأخبار من CDN (netlify/functions/newsimg.js) ———
+[[redirects]]
+  from = "/api/newsimg/*"
+  to = "/.netlify/functions/newsimg/:splat"
+  status = 200
+  force = true
+
 # ——— صفحة الروابط (للبايو) ———
 [[redirects]]
   from = "/links"

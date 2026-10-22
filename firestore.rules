@@ -144,6 +144,32 @@ service cloud.firestore {
       allow delete: if isOwner() || isEditor();
     }
 
+    // ───────────────────────── الأخبار ─────────────────────────
+    // المالك أو «مدير» فعّال. المحرر بصلاحية المباريات فقط (perm "matches")
+    // لا يكتب الأخبار. الزائر يقرأ المقال المنشور فقط؛ المسودات وغير المنشور
+    // للطاقم وحده. فهرس المنشور في seasons/news (قاعدة seasons أعلاه).
+    function isNewsStaff() {
+      return isOwner()
+          || (isEditor() && staffMembers()[request.auth.uid].get('perm', 'full') != 'matches');
+    }
+    match /news/{id} {
+      allow read:  if isNewsStaff() || resource.data.status == 'published';
+      allow create, update: if isNewsStaff()
+                    && request.resource.data.status in ['draft', 'published', 'unpublished']
+                    && request.resource.data.title is string
+                    && request.resource.data.title.size() <= 200;
+      allow delete: if isNewsStaff();
+    }
+    // صور الأخبار: dataURL مضغوطة، عامة القراءة (تُخدم عبر /api/newsimg)
+    match /newsimg/{id} {
+      allow read:  if true;
+      allow create, update: if isNewsStaff()
+                    && request.resource.data.d is string
+                    && request.resource.data.d.matches('^data:image/(webp|jpeg|png);base64,.*')
+                    && request.resource.data.d.size() < 1040000;
+      allow delete: if isNewsStaff();
+    }
+
     // ───────────────────────── Fantasy ─────────────────────────
     // Same staff model as the rest of the site: owner or active editor
     // publishes the game and writes the points. Managers own their squad

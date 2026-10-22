@@ -1033,8 +1033,8 @@ html.mf .mf-tools .hero-admin:not(.show){display:none}
 /* ---------- 4ب) الشريط السفلي (الهاتف) ---------- */
 .mf-bar{position:fixed;inset-inline:0;bottom:0;z-index:60;background:var(--mf-bg);border-top:1px solid var(--mf-ln);
   padding-bottom:env(safe-area-inset-bottom);transform:translateZ(0)}
-.mf-bar-in{height:var(--mf-bar-h);display:grid;grid-template-columns:repeat(5,minmax(0,1fr));align-items:end;max-width:560px;margin:0 auto}
-html.mf-nofan .mf-bar-in{grid-template-columns:repeat(4,minmax(0,1fr))}
+.mf-bar-in{height:var(--mf-bar-h);display:grid;grid-template-columns:repeat(6,minmax(0,1fr));align-items:end;max-width:560px;margin:0 auto}
+html.mf-nofan .mf-bar-in{grid-template-columns:repeat(5,minmax(0,1fr))}
 .mf-bar button{height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;color:var(--mf-tx3);
   font-size:.68rem;font-weight:600;transition:color var(--mf-fast) var(--mf-ease)}
 .mf-bar button svg{width:23px;height:23px;transition:transform var(--mf-fast) var(--mf-ease)}
