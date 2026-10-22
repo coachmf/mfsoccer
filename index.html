@@ -2268,7 +2268,7 @@ main{padding-bottom:48px}
 <script src="tstats-data.js?v=1" defer></script>
 <script src="analysis.js?v=31" defer></script>
 <!-- هوية MF SOCCER الذهبية + هيكل التطبيق (منصور 2026-10-05) -->
-<link rel="stylesheet" href="mf-brand.css?v=14">
+<link rel="stylesheet" href="mf-brand.css?v=15">
 <script>document.documentElement.classList.add("mf")</script>
 <script src="mf-shell.js?v=29" defer></script>
 <style>
@@ -10651,19 +10651,21 @@ window.addEventListener("hashchange", ()=>{
   if(location.hash==="#admin"){ ADMIN_REVEAL=true; paintAdminBtn(); go("admin"); }
 });
 if(location.hash==="#admin"){ ADMIN_REVEAL=true; paintAdminBtn(); }   /* ومع goStart يفتح الرابط شاشة الدخول مباشرة */
-/* المدخل السرّي (ب): ضغطة مطوّلة (~0.8ث) على شعار الدوري أعلى الصفحة */
+/* المدخل السرّي (ب): ضغطة مطوّلة (~0.8ث) على شعار MF SOCCER أعلى الصفحة (أو شعار الدوري القديم)
+   — مفوَّضة على المستند لأن ترويسة mf-shell تُبنى لاحقاً، والضغطة التي تفتح الدخول لا تُكمل إلى «الرئيسية» */
 (function(){
-  const brand=document.querySelector(".hero-brand"); if(!brand) return;
-  let timer=0, sx=0, sy=0;
-  const fire=()=>{ ADMIN_REVEAL=true; paintAdminBtn();
+  const SEL=".mf-logo,.hero-brand";
+  let timer=0, sx=0, sy=0, firedAt=0;
+  const fire=()=>{ firedAt=Date.now(); ADMIN_REVEAL=true; paintAdminBtn();
     const b=document.getElementById("adminBtn"); if(b) b.focus(); go("admin"); };
-  brand.addEventListener("pointerdown", e=>{ sx=e.clientX; sy=e.clientY;
-    clearTimeout(timer); timer=setTimeout(fire, 800); });
-  brand.addEventListener("pointermove", e=>{
+  document.addEventListener("pointerdown", e=>{ if(!e.target.closest(SEL)) return;
+    sx=e.clientX; sy=e.clientY; clearTimeout(timer); timer=setTimeout(fire, 800); });
+  document.addEventListener("pointermove", e=>{
     if(Math.abs(e.clientX-sx)>10 || Math.abs(e.clientY-sy)>10) clearTimeout(timer); });
-  ["pointerup","pointercancel","pointerleave"].forEach(ev=>
-    brand.addEventListener(ev, ()=>clearTimeout(timer)));
-  brand.addEventListener("contextmenu", e=>{ if(ADMIN_REVEAL) e.preventDefault(); });
+  ["pointerup","pointercancel"].forEach(ev=>document.addEventListener(ev, ()=>clearTimeout(timer)));
+  document.addEventListener("click", e=>{
+    if(Date.now()-firedAt<1500 && e.target.closest(SEL)){ e.preventDefault(); e.stopImmediatePropagation(); } }, true);
+  document.addEventListener("contextmenu", e=>{ if(e.target.closest(SEL)) e.preventDefault(); });
 })();
 
 /* شريط الدقائق في الترويسة */

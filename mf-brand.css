@@ -1007,6 +1007,8 @@ html.mf-lock,html.mf-lock body{overflow:hidden}
 .mf-top-in{max-width:1120px;margin:0 auto;height:var(--mf-top-h);display:flex;align-items:center;gap:var(--mf-s3);padding:0 var(--mf-s4)}
 .mf-logo{display:flex;align-items:center;gap:10px;padding:6px 0;border-radius:10px;flex:none}
 .mf-logo img{height:26px;width:auto}
+.mf-logo,.mf-logo *{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;-webkit-user-drag:none}
+.mf-logo img{pointer-events:none}
 .mf-word{display:flex;flex-direction:column;line-height:1.1;text-align:start}
 .mf-word b{font-family:'Rubik',sans-serif;font-weight:800;font-size:.86rem;letter-spacing:.06em;color:var(--mf-tx);direction:ltr;text-align:start}
 .mf-word small{font-size:.66rem;color:var(--mf-tx3);font-weight:500}
