@@ -51,6 +51,7 @@
     chev:sv('<path d="m14 6-6 6 6 6"/>'),
     all:sv('<rect x="4" y="4" width="6.5" height="6.5" rx="1.5"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.5"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.5"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.5"/>'),
     local:sv('<path d="M4 10.5 12 4l8 6.5V20h-5.5v-5.5h-5V20H4z"/>'),
+    nt:sv('<path d="M12 3.5 19 6v5.6c0 4.3-2.9 7.6-7 8.9-4.1-1.3-7-4.6-7-8.9V6z"/><path d="m12 8.2 1.2 2.4 2.6.4-1.9 1.8.5 2.6-2.4-1.2-2.4 1.2.5-2.6-1.9-1.8 2.6-.4z"/>'),
     world:sv('<path d="M10.5 13.5 4 11l1.4-1.4 7.2 1.1 3.9-3.9a1.9 1.9 0 0 1 2.7 2.7l-3.9 3.9 1.1 7.2-1.4 1.4-2.5-6.5-3 3v2.6l-1.2 1.2-1.3-3.1-3.1-1.3 1.2-1.2h2.6z"/>')
   };
 
@@ -134,7 +135,7 @@
       const d1=e.target.closest("[data-hub-div1]"); if(d1){ closeHub(true); setTimeout(()=>nav("div1"),0); }
       /* البطولات الخارجية: صفحة المباريات على البطولة نفسها (جدول المجموعة ثم المباريات) */
       const ex=e.target.closest("[data-hub-ext]"); if(ex){ const id=ex.dataset.hubExt; closeHub(true);
-        setTimeout(()=>{ nav("matches"); setTimeout(()=>safe(()=>{ MXC=id; SELDAY=null; renderMatches(); }),60); },0); }
+        setTimeout(()=>{ nav("matches"); setTimeout(()=>safe(()=>{ mxGroup=null; mxDiv1=false; MXC=id; SELDAY=null; renderMatches(); }),60); },0); }
     });
     D.addEventListener("keydown", e=>{
       if(hub.hidden) return;
@@ -476,7 +477,8 @@
     const label=total?"الإجمالي":x.key==="c:الدوري"?"الدوري الممتاز":x.label;   /* منصور 2026-10-08 */
     return `<button type="button" class="mf-circ sm comp" data-mx-opt="${i}" aria-pressed="${!!x.sel}" title="${esc(x.label)}"><i>${inner}</i><span>${esc(label)}</span><em>${mw2(x.n)}</em></button>`;
   }
-  let mxGroup=null;   /* المجموعة المفتوحة: all | local | ext */
+  let mxGroup=null;   /* المجموعة المفتوحة: all | local | nt | ext */
+  const MX_NT=["e:u17gulf","e:u15wc","e:gulf27","e:asiad"];   /* بطولات المنتخبات: دائرة «المنتخب» مستقلة (منصور 2026-10-22) */
   let mxDiv1=false;   /* دائرة «دوري الدرجة الأولى» مختارة: قائمة مبارياتها من div1.js بدل قائمة الموقع (منصور 2026-10-08) */
   function mxDiv1Paint(v){
     v.querySelectorAll(".mf-d1-list").forEach(x=>x.remove());
@@ -488,16 +490,17 @@
   function mxCircles(){
     const v=D.getElementById("v-matches"), dd=v && v.querySelector(".mx-comp"); if(!dd) return;
     const opts=[...dd.querySelectorAll(".rs-menu > *")];
-    let grp="all"; const G={all:[],local:[],ext:[]};
+    let grp="all"; const G={all:[],local:[],ext:[],nt:[]};
     opts.forEach(o=>{ if(o.classList.contains("rs-grp")){ grp = /خارج/.test(o.textContent) ? "ext" : "local"; return; }
       const em=o.querySelector("em"), n=em?+em.textContent||0:0, label=(o.firstChild&&o.firstChild.nodeType===3?o.firstChild.textContent:o.textContent).trim();
       G[grp].push({o, n, label, sel:o.getAttribute("aria-selected")==="true", key:o.dataset.comp?"c:"+o.dataset.comp:"e:"+o.dataset.ext}); });
+    G.nt=[]; G.ext = G.ext.filter(x=>{ if(MX_NT.includes(x.key)){ G.nt.push(x); return false; } return true; });
     if(window.DIV1 && DIV1.count){ const i=G.local.findIndex(x=>x.key==="c:الدوري"); G.local.splice(i+1, 0, {o:null, n:DIV1.count(), label:"دوري الدرجة الأولى", sel:false, key:"d:div1"}); }   /* بعد الممتاز مباشرة */
     if(mxDiv1){ G.all.concat(G.local,G.ext).forEach(x=>x.sel = x.key==="d:div1"); mxGroup="local"; }
-    const curGrp = G.all.some(x=>x.sel) ? "all" : G.ext.some(x=>x.sel) ? "ext" : "local";
+    const curGrp = G.all.some(x=>x.sel) ? "all" : G.nt.some(x=>x.sel) ? "nt" : G.ext.some(x=>x.sel) ? "ext" : "local";
     const open = mxGroup || curGrp;
     const show = x => x.n>0 || x.sel;
-    const lvl1=[["all","جميع المباريات",IC.all],["local","المحلية",IC.local],["ext","الخارجية",IC.world]]
+    const lvl1=[["all","جميع المباريات",IC.all],["local","المحلية",IC.local],["nt","المنتخب",IC.nt],["ext","الخارجية",IC.world]]
       .filter(([k])=>k==="all" || G[k].some(show));
     const sub = open==="all" ? [] : G[open].filter(show);
     const box=D.createElement("div"); box.className="mf-circles";
