@@ -15631,6 +15631,17 @@ html[data-theme="dark"] .mx select option{color:#E6EEF8;background:#0F1E35}   /*
 .mx-zone-h b.on{color:#F5E2A8;font-weight:800}
 .mx-inl{display:grid;grid-template-columns:auto minmax(0,1fr);align-items:center;gap:10px}
 .mx-inl .mx-lbl{margin:0 2px!important}
+.mx-detbtn{height:38px;padding:0 14px;border-radius:12px;border:1px solid var(--mx-ln)!important;background:var(--mx-soft)!important;color:var(--slate);font-weight:700;font-size:.82rem;text-align:start;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mx-detbtn.on{color:var(--head,#fff);border-color:rgba(231,208,147,.7)!important}
+.mx-detpick{position:fixed;inset:0;z-index:1002;display:flex;flex-direction:column;background:var(--mx-card,#0b1a30);animation:mxFade .15s ease}
+.mx-detpick .hd{display:flex;align-items:center;gap:10px;padding:calc(10px + env(safe-area-inset-top)) 14px 10px;border-bottom:1px solid var(--mx-ln)}
+.mx-detpick .hd h3{margin:0;flex:1;font-family:var(--display);font-weight:800;font-size:1.02rem}
+.mx-detpick .hd button{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:var(--mx-soft)!important}
+.mx-detpick .hd svg{width:16px;height:16px}
+.mx-detpick .bd{flex:1;overflow:auto;padding:12px 14px calc(16px + env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:8px}
+.mx-detgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:6px}
+.mx-detopt{min-height:52px;padding:8px 10px;border-radius:12px;border:1px solid var(--mx-ln)!important;background:var(--mx-soft)!important;color:var(--head,#fff);font-weight:700;font-size:.84rem;line-height:1.35}
+.mx-detopt.on{background:#E7D093!important;border-color:#E7D093!important;color:#0B1F3A}
 /* ورقة الهدف كلها في شاشة واحدة عند الفتح (منصور 2026-10-22) */
 .mx-sheet.goal .hd{padding:9px 14px}
 .mx-sheet.goal .hd button{width:32px;height:32px}
@@ -16168,7 +16179,7 @@ html.mx-editing #waFab{display:none!important}   /* زر واتساب كان ي�
              <p class="mx-hint">الهدف العكسي يُحتسب لـ${esc(club||"الفريق المختار")} بلا مسجّل ولا صانع من لاعبيه، ويُنسب للاعب الخصم الذي سجّل في مرماه.</p>`
           : `<div><span class="mx-lbl">المسجّل</span>${pickGrid(club,"p",d.p,{strip:true})}</div>
              <div><span class="mx-lbl">صانع الهدف</span>${pickGrid(club,"a",d.a,{none:"بدون صناعة",exclude:d.p,strip:true})}</div>`}
-        <div class="mx-inl"><span class="mx-lbl">تفصيل الهجمة</span><select data-msf="det">${opt(LIST.det,d.det,"اختر")}</select></div>
+        <div class="mx-inl"><span class="mx-lbl">تفصيل الهجمة</span><button type="button" class="mx-detbtn${d.det?" on":""}" data-mdetopen="1">${d.det?esc(d.det):"اختر"}</button></div>
         ${zoneMap(d.zone)}
         ${isDefErr(d)?`<div><span class="mx-lbl">اللاعب المخطئ (لاعب ${esc(opp||"الخصم")})</span>${pickGrid(opp,"err",d.err,{none:"غير محدد"})}</div>`:""}`;
     }
@@ -16195,7 +16206,11 @@ html.mx-editing #waFab{display:none!important}   /* زر واتساب كان ي�
         <div><span class="mx-lbl">خرج</span>${pickGrid(club,"out",d.out,{only:"xi"})}</div>
         <div><span class="mx-lbl">دخل</span>${pickGrid(club,"in",d.in,{only:"bench",exclude:d.out})}</div>`;
     }
-    return `<div class="mx-sheet${k==="goal"?" goal":""}" data-mclose="bg"><div class="box" role="dialog" aria-modal="true">
+    /* تفصيل الهجمة بشاشة كاملة بدل القائمة المنسدلة (منصور 2026-10-22) — نفس قيم LIST.det */
+    const detPick=k==="goal"&&S.detOpen ? (()=>{ const L=LIST.det, cut=L.indexOf("ركنية"), grp=(t,a)=>`<span class="mx-lbl">${t}</span><div class="mx-detgrid">${a.map(v=>`<button type="button" class="mx-detopt${d.det===v?" on":""}" data-mdet="${esc(v)}">${esc(v)}</button>`).join("")}</div>`;
+      return `<div class="mx-detpick" role="dialog" aria-modal="true"><div class="hd"><h3>تفصيل الهجمة</h3><button type="button" data-mdetclose="1" aria-label="إغلاق">${SV.x}</button></div>
+        <div class="bd">${grp("لعب مفتوح",L.slice(0,cut))}${grp("كرات ثابتة",L.slice(cut))}</div></div>`; })() : "";
+    return `${detPick}<div class="mx-sheet${k==="goal"?" goal":""}" data-mclose="bg"><div class="box" role="dialog" aria-modal="true">
       <div class="hd"><h3>${i>=0?"تعديل":"إضافة"} ${TITLE[k]}</h3><button data-mclose="x" aria-label="إغلاق">${SV.x}</button></div>
       <div class="bd">${S.err?`<div class="mx-err">${SV.warn}${esc(S.err)}</div>`:""}${body}</div>
       <div class="ft">${i>=0?`<button class="mx-del" data-mdel="${k}.${i}">${SV.trash}حذف</button>`:""}<span class="sp"></span>
@@ -16408,6 +16423,9 @@ html.mx-editing #waFab{display:none!important}   /* زر واتساب كان ي�
       q("[data-msf]",el=>{ el.oninput=()=>{ d[el.dataset.msf]=el.value; }; el.onchange=()=>{ d[el.dataset.msf]=el.value;
         if(el.dataset.msf==="det"){ if(!isDefErr(d)) d.err=""; rerender(); } }; });   /* إظهار/إخفاء «اللاعب المخطئ» */
       q("[data-mzone]",z=>z.onclick=()=>{ d.zone=z.dataset.mzone; rerender(); });
+      q("[data-mdetopen]",b=>b.onclick=()=>{ MX.sheet.detOpen=true; rerender(); });
+      q("[data-mdetclose]",b=>b.onclick=()=>{ MX.sheet.detOpen=false; rerender(); });
+      q("[data-mdet]",b=>b.onclick=()=>{ d.det=b.dataset.mdet; MX.sheet.detOpen=false; rerender(); });
       q(".mx-strip .picked",b=>{ try{ b.scrollIntoView({block:"nearest",inline:"center"}); }catch(e){} });
       q("[data-mstep]",b=>b.onclick=()=>{ const key=b.dataset.mstep; d[key]=String(Math.max(0,(+d[key]||0)+(+b.dataset.mby))); rerender(); });
       q("[data-mcommit]",b=>b.onclick=commitEv);
