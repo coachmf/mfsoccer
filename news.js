@@ -191,15 +191,24 @@ function imgSrcNow(id){
 function hydrateImgs(root){
   (root||document).querySelectorAll("img[data-nimg]:not([data-nok])").forEach(img=>{
     const id = img.dataset.nimg; img.dataset.nok = "1";
-    const s = imgSrcNow(id); if(s){ img.src = s; return; }
+    const s = imgSrcNow(id);
+    /* الصورة الكاملة على الموقع: المصغّرة أولاً (غالباً في ذاكرة المتصفح من البطاقة) ثم الكاملة حين تكتمل */
+    if(s && s.startsWith("/api/") && !id.endsWith("_t")){
+      img.addEventListener("load", ()=>{ const full = new Image(); full.onload = ()=>{ img.src = s; }; full.src = s; }, {once:true});   /* يحترم التحميل الكسول: الكاملة تبدأ بعد ظهور المصغّرة */
+      img.src = imgSrcNow(id+"_t"); return;
+    }
+    if(s){ img.src = s; return; }
     store.getImage(id).then(d=>{ if(!d && id.endsWith("_t")) return store.getImage(id.slice(0,-2)); return d; })
       .then(d=>{ if(d){ IMG_CACHE[id] = d; img.src = d; } else img.closest(".nw-ph")?.classList.add("nw-noimg"); }).catch(()=>{});
   });
 }
-const imgTag = (id, alt, cls, w, h, thumb) => {
+/* thumb: النسخة المصغّرة (760px، ~70KB) تكفي كل البطاقات على الهاتف؛ الكاملة (حتى 1920px) للمقال والخبر الرئيسي على الشاشات العريضة فقط.
+   eager: صور أعلى الصفحة تُطلب فوراً بأولوية بدل انتظار التحميل الكسول */
+const WIDE = () => matchMedia("(min-width:960px)").matches;
+const imgTag = (id, alt, cls, w, h, thumb, eager) => {
   if(!id) return "";
   const key = thumb ? id+"_t" : id;
-  return `<img class="${cls||""}" data-nimg="${H(key)}" alt="${H(alt||"")}"${w&&h?` width="${w}" height="${h}"`:""} loading="lazy" decoding="async" onerror="this.closest('.nw-ph')&&this.closest('.nw-ph').classList.add('nw-noimg')">`;
+  return `<img class="${cls||""}" data-nimg="${H(key)}" alt="${H(alt||"")}"${w&&h?` width="${w}" height="${h}"`:""} ${eager ? 'loading="eager" fetchpriority="high"' : 'loading="lazy"'} decoding="async" onerror="this.closest('.nw-ph')&&this.closest('.nw-ph').classList.add('nw-noimg')">`;
 };
 
 /* ───────────── الفهرس والترتيب ───────────── */
@@ -293,7 +302,7 @@ function matchLine(it){
 function card(it, v, opt){
   opt = opt || {};
   const c = it.cover, ar = it.cat==="squads" ? " nw-fit" : "";
-  const ph = `<div class="nw-ph${ar}${c?"":" nw-noimg"}">${c ? imgTag(c.id, c.alt || it.title, "", c.w, c.h, v!=="lead") : ""}${badge(it)}</div>`;
+  const ph = `<div class="nw-ph${ar}${c?"":" nw-noimg"}">${c ? imgTag(c.id, c.alt || it.title, "", c.w, c.h, !(v==="lead" && WIDE()), v==="lead") : ""}${badge(it)}</div>`;
   return `<article class="nw-c nw-c-${v}">
     <a class="nw-a" href="#news/a/${H(it.id)}" data-nw-art="${H(it.id)}">
       ${ph}
@@ -335,7 +344,7 @@ function homeHTML(){
   const panel = s => {
     const lead = leadOf(s), n = ofSec(s).length;
     return `<a class="nw-panel nw-p-${s}" href="#news/${s}" data-nw-sec="${s}">
-      <div class="nw-ph${lead && lead.cover ? "" : " nw-noimg"}">${lead && lead.cover ? imgTag(lead.cover.id, "", "", lead.cover.w, lead.cover.h) : ""}</div>
+      <div class="nw-ph${lead && lead.cover ? "" : " nw-noimg"}">${lead && lead.cover ? imgTag(lead.cover.id, "", "", lead.cover.w, lead.cover.h, true, true) : ""}</div>
       <div class="nw-p-tx">
         <span class="nw-p-mark">${s==="nt" && kfaLogo() ? `<img src="${H(kfaLogo())}" alt="" width="28" height="28">` : `<img src="assets/brand/mf-mark.webp" alt="" width="34" height="16">`}</span>
         <h2>${SECS[s].t}</h2>
@@ -428,7 +437,7 @@ function articleHTML(a, opt){
           ${upd ? `<span>آخر تحديث ${H(dLong(a.updated))}، ${H(dTime(a.updated))}</span>` : ""}</div>
         ${a.cat==="transfers" ? `${badge(a)}${transferLine(a)}` : a.cat==="matches" ? matchLine(a) : ""}
       </header>
-      ${c ? `<figure class="nw-fig nw-cover"><div class="nw-ph nw-nat" style="--ar:${c.w&&c.h?c.w/c.h:1.6}">${imgTag(c.id, c.alt || a.title, "", c.w, c.h)}</div>${a.coverCap?`<figcaption>${H(a.coverCap)}</figcaption>`:""}</figure>` : ""}
+      ${c ? `<figure class="nw-fig nw-cover"><div class="nw-ph nw-nat" style="--ar:${c.w&&c.h?c.w/c.h:1.6}">${imgTag(c.id, c.alt || a.title, "", c.w, c.h, false, true)}</div>${a.coverCap?`<figcaption>${H(a.coverCap)}</figcaption>`:""}</figure>` : ""}
       <div class="nw-body">${bodyHTML(a.body)}</div>
       ${(a.tags||[]).length ? `<ul class="nw-tags" aria-label="وسوم">${a.tags.map(t=>`<li>${H(t)}</li>`).join("")}</ul>` : ""}
     </article>
