@@ -39,6 +39,8 @@ const MAP = [
   ["بيانات الموسم","data"], ["النسخ الاحتياطية","data"], ["المزامنة السحابية","data"], ["حالة الحفظ","data"],
   ["فريق العمل","account"], ["الزيارات","account"], ["إعدادات الموسم","account"]
 ];
+/* ما يراه «المحرر»: المباريات والمباريات الخارجية */
+const EDITOR_TABS = ["matches", "ext"];
 const tabOfTitle = t => { t = String(t||"").trim(); const hit = MAP.find(([p])=>t.startsWith(p)); return hit ? hit[1] : "other"; };
 let CUR = (()=>{ try{ return localStorage.getItem("mf-admtab") || "matches"; }catch(e){ return "matches"; } })();
 const save = v => { try{ localStorage.setItem("mf-admtab", v); }catch(e){} };
@@ -59,18 +61,17 @@ function organize(){
     if(!cur){ head.push(el); return; }
     (groups[t || cur] ||= []).push(el);
   });
-  /* صلاحية «محرر» (منصور 2026-10-19): تحرير المباريات فقط — أي قسم آخر تضيفه الوحدات (الخليج، الدرجة الأولى، الخارجية…) يُحذف */
+  /* صلاحية «محرر» (منصور 2026-10-19): تحرير المباريات فقط — والمباريات الخارجية (2026-10-22)؛ أي قسم آخر تضيفه الوحدات (الخليج، الدرجة الأولى…) يُحذف */
   if(typeof window.MF_MATCHES_ONLY==="function" && window.MF_MATCHES_ONLY()){
-    Object.keys(groups).forEach(k=>{ if(k!=="matches") groups[k].forEach(el=>el.remove()); });
+    Object.keys(groups).forEach(k=>{ if(!EDITOR_TABS.includes(k)){ groups[k].forEach(el=>el.remove()); delete groups[k]; } });
     /* أقسام تضيفها الوحدات بعد الرسم (الخليج، الخارجية…) تُحذف لحظة إضافتها */
     if(!v._mo){
       const headOf = el => el.matches("h2.sec") ? el : el.querySelector(":scope > h2.sec");
       const tabOfEl = el => { for(let x=el; x; x=x.previousElementSibling){ if(x.id==="lvAdminCard" || x.querySelector && x.querySelector("#matchAdmin")) return "matches"; const h=headOf(x); if(h) return tabOfTitle(h.textContent); } return null; };   /* قبل أول عنوان = رأس اللوحة */
       v._mo = new MutationObserver(ms=>{ if(!(window.MF_MATCHES_ONLY && window.MF_MATCHES_ONLY())) return;
         const add=[]; ms.forEach(m=>m.addedNodes.forEach(el=>{ if(el.nodeType===1 && el.isConnected) add.push(el); }));
-        add.map(el=>[el, tabOfEl(el)]).forEach(([el,t])=>{ if(t && t!=="matches") el.remove(); }); });   /* التحديد قبل الحذف: بطاقة بلا عنوان تتبع عنوانها */
+        add.filter(el=>!el.matches(".adm-tabs,.adm-panel")).map(el=>[el, tabOfEl(el)]).forEach(([el,t])=>{ if(t && !EDITOR_TABS.includes(t)) el.remove(); }); });   /* التحديد قبل الحذف: بطاقة بلا عنوان تتبع عنوانها */
       v._mo.observe(v, {childList:true}); }
-    return;
   }
   const present = TABS.filter(([k])=>groups[k] && groups[k].length);
   if(present.length < 2) return;
