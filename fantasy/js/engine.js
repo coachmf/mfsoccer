@@ -195,6 +195,31 @@ const DB = {
     return true;
   },
 
+  /* إعادة تعديلات الجهاز فوق نسخة الخادم بعد تصحيح المدير — تعيد true إن تغيّر شيء */
+  reapplyLocal(uid, loc, srv){
+    const st=this.state, R=st.rules, gw=st.currentGW, nt=st.teams[uid]; if(!nt) return false;
+    const key=x=>x.gw+'|'+x.out+'|'+x.in, had=new Set((srv.transfers||[]).map(key));
+    const extra=(loc.transfers||[]).filter(x=>+x.gw===+gw && !had.has(key(x)));
+    let changed=false; const free=nt.activeChip==='wildcard'||nt.activeChip==='freehit'||!!R.freeChanges;
+    for(const x of extra){
+      const o=this.player(x.out), i=this.player(x.in); if(!o||!i) continue;
+      if(!nt.squad.includes(x.out) || nt.squad.includes(x.in) || o.pos!==i.pos) continue;
+      const sq=nt.squad.map(p=>p===x.out?x.in:p), bank=Math.round(((+nt.bank||0)+o.price-i.price)*10)/10;
+      if(bank< -1e-9 || sq.filter(p=>(this.player(p)||{}).club===i.club).length>R.maxPerClub) continue;
+      nt.squad=sq; nt.xi=(nt.xi||[]).map(p=>p===x.out?x.in:p); nt.bench=(nt.bench||[]).map(p=>p===x.out?x.in:p);
+      if(nt.cap===x.out) nt.cap=x.in; if(nt.vice===x.out) nt.vice=x.in;
+      nt.bank=bank; (nt.transfers ??= []).push(x);
+      if(!free){ if(+nt.ft>0) nt.ft--; else nt.pendingHits=(+nt.pendingHits||0)+R.transferCost; }
+      changed=true;
+    }
+    /* ترتيب التشكيلة والكابتن: إن صارت القائمة نفسها التي على الجهاز */
+    const same=a=>JSON.stringify([...(a||[])].sort());
+    if(same(nt.squad)===same(loc.squad) && JSON.stringify([nt.xi,nt.bench,nt.cap,nt.vice])!==JSON.stringify([loc.xi,loc.bench,loc.cap,loc.vice])){
+      const trial={...nt, xi:loc.xi, bench:loc.bench}; if(TEAM.validateXI(loc.xi, st).ok){ nt.xi=[...loc.xi]; nt.bench=[...loc.bench]; nt.cap=loc.cap; nt.vice=loc.vice; changed=true; }
+    }
+    if(changed){ (st.unsaved ??= {})[uid]=Date.now(); try{ localStorage.setItem(this.KEY, JSON.stringify(st)); }catch(e){} }
+    return changed;
+  },
   /* رفع فريق المشترك — مؤجَّل حتى لا نكتب مع كل ضغطة */
   pushTeam(){
     if(typeof CLOUD==='undefined' || !CLOUD.user) return;
@@ -243,7 +268,11 @@ const DB = {
     }
     // المدير أصلح الفريق أو أرجع الكروت على الخادم بعد آخر تحميل: نعتمد نسخته بدل طمسها
     if(remote && remote.team && remote.team.repairedAt && remote.team.repairedAt!==(t.repairedAt||null)){
+      /* تصحيح المدير كان يطمس تعديلات المشترك التي لم تُحفظ بعد (منصور 2026-10-24): نعتمد نسخة الخادم ثم نعيد عليها
+         صفقات الجولة الجارية الجديدة من الجهاز (إن بقيت صالحة)، وترتيب التشكيلة إن كانت القائمة نفسها — ثم نرفع */
+      const keep = (this.state.unsaved||{})[uid] && !GWADMIN.deadlinePassed(this.state.currentGW) ? JSON.parse(JSON.stringify(t)) : null;
       await this.adoptManager(uid, remote); this.clearUnsaved(uid);
+      if(keep && this.reapplyLocal(uid, keep, remote.team)){ this.pendingPush=true; setTimeout(()=>this.pushTeam(), 0); }
       if(typeof UI!=='undefined') UI.toast('حُدّث فريقك من الخادم');
       if(typeof APP!=='undefined') APP.render();
       return false;
