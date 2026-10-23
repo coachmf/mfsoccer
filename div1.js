@@ -34,9 +34,27 @@ const FIXTURES = [
   [2,"2026-10-14","17:45","الجزيرة","الشامية","استاد الشباب"],
   [3,"2026-10-24","17:35","خيطان","اتحاد الشرطة","استاد ناصر العصيمي"],
   [3,"2026-10-24","17:35","الشامية","اليرموك","استاد الساحل"],
-  [3,"2026-10-24","17:35","سبورتي","الجزيرة","استاد عبدالله الخليفة الصباح"]
+  [3,"2026-10-24","17:35","سبورتي","الجزيرة","استاد عبدالله الخليفة الصباح"],
+  [4,"2026-11-04","17:30","برقان","الشامية","استاد الساحل"],
+  [4,"2026-11-04","17:30","الجزيرة","خيطان","استاد الشباب"],
+  [4,"2026-11-04","17:30","اليرموك","سبورتي","استاد عبدالله الخليفة الصباح"]
 ];
-const seed = () => ({matches:FIXTURES.map(([round,date,time,home,away,venue],i)=>({id:"f"+(i+1), round, date, time, venue, home, away, hg:null, ag:null}))});
+/* قوائم اللاعبين (منصور 2026-10-23: «حط لاعبين خيطان بالموقع») — من ملصق النادي الرسمي 2026/27.
+   الصور: assets/players/div1/<slug>/<رقم>.webp (800×1000 للملف) و _m (520×650 للبطاقات) */
+const LINES = [["g","حراس المرمى"],["d","الدفاع"],["m","الوسط"],["f","الهجوم"]];
+const LINE_OF = {"حارس مرمى":"g","قلب دفاع":"d","ظهير أيمن":"d","ظهير أيسر":"d","مدافع":"d","وسط مدافع":"m","وسط محور":"m","جناح أيمن":"m","جناح أيسر":"m","مهاجم":"f"};
+const SQUADS = {
+  "خيطان": {color:"215,25,32", cap:8, photos:true, players:[
+    [47,"عبدالرضا شهاب","حارس مرمى"],[66,"محمد هادي","حارس مرمى"],
+    [3,"ناصر سالم","قلب دفاع"],[4,"خالد العتيبي","قلب دفاع"],[11,"شيما","قلب دفاع"],[5,"فواز المطيري","مدافع"],
+    [2,"فهد جمال","ظهير أيمن"],[29,"مشاري الكندري","ظهير أيمن"],[18,"يوسف النمش","ظهير أيمن"],[20,"تركي الشمري","ظهير أيسر"],[12,"محمد الموسوي","ظهير أيسر"],
+    [23,"سان بير","وسط مدافع"],[19,"وليد التورة","وسط مدافع"],[8,"طلال الأنصاري","وسط محور"],[24,"عبدالله ماوي","وسط محور"],[6,"مبارك المطيري","وسط محور"],[21,"أحمد نزال","وسط محور"],
+    [33,"كريستنان","جناح أيمن"],[17,"ضاحي الشمري","جناح أيمن"],[10,"محمد عبيد","جناح أيمن"],[99,"إبراهيم جاي","جناح أيسر"],[88,"راضي جمال","جناح أيسر"],
+    [9,"إيمانويل ماهوب","مهاجم"],[7,"محمد الحسن","مهاجم"]]}
+};
+const PH_V = 1;
+const photo = (c, n, sfx) => `assets/players/div1/${TEAMS[c]}/${n}${sfx||""}.webp?v=${PH_V}`;
+const seed = () =>({matches:FIXTURES.map(([round,date,time,home,away,venue],i)=>({id:"f"+(i+1), round, date, time, venue, home, away, hg:null, ag:null}))});
 const num = v => (v===null || v===undefined || v==="") ? null : (Number.isFinite(+v) ? +v : null);
 const played = m => num(m.hg)!==null && num(m.ag)!==null;
 function normalize(d){
@@ -97,7 +115,7 @@ function tableHTML(){
     <table class="d1-tbl">
       <thead><tr><th>#</th><th class="cl">النادي</th><th title="لعب">ل</th><th title="فوز">ف</th><th title="تعادل">ت</th><th title="خسارة">خ</th><th class="gl" title="له وعليه">له:عليه</th><th title="الفارق">+/-</th><th class="pt" title="النقاط">ن</th></tr></thead>
       <tbody>${rows.map((r,i)=>{ const gd = r.gf-r.ga;
-        return `<tr><td class="rk">${i+1}</td><td class="cl"><span class="d1-tm">${crest(r.c)}<b>${H(r.c)}</b></span></td><td>${r.p}</td><td>${r.w}</td><td>${r.d}</td><td>${r.l}</td><td class="gl"><bdi dir="ltr">${r.gf}:${r.ga}</bdi></td><td><bdi dir="ltr">${gd>0?"+":""}${gd}</bdi></td><td class="pt">${r.pts}</td></tr>`; }).join("")}</tbody>
+        return `<tr><td class="rk">${i+1}</td><td class="cl"><span class="d1-tm"${SQUADS[r.c]?` role="button" tabindex="0" data-d1club="${H(r.c)}"`:""}>${crest(r.c)}<b>${H(r.c)}</b></span></td><td>${r.p}</td><td>${r.w}</td><td>${r.d}</td><td>${r.l}</td><td class="gl"><bdi dir="ltr">${r.gf}:${r.ga}</bdi></td><td><bdi dir="ltr">${gd>0?"+":""}${gd}</bdi></td><td class="pt">${r.pts}</td></tr>`; }).join("")}</tbody>
     </table>
     ${any ? "" : `<p class="d1-empty">لم تُلعب أي مباراة بعد — يبدأ الدوري ${dLbl(FIXTURES[0][1])}.</p>`}
   </div>`;
@@ -124,15 +142,46 @@ function matchesHTML(){
     </section>`;
   }).join("") || `<p class="d1-empty">لا مباريات بعد.</p>`;
 }
+/* ───────────── الأندية واللاعبين ───────────── */
+function clubsHTML(){
+  return `<div class="d1-clubs">${Object.keys(TEAMS).map(c=>{ const s = SQUADS[c];
+    return `<button type="button" class="d1-club" data-d1club="${H(c)}"${s?"":" disabled"}>${crest(c)}<b>${H(c)}</b><small>${s ? `${s.players.length} لاعباً` : "القائمة قريباً"}</small></button>`; }).join("")}</div>`;
+}
+function squadHTML(c){
+  const s = SQUADS[c]; if(!s) return clubsHTML();
+  const card = p => { const [n, nm, pos] = p;
+    return `<button type="button" class="d1-pc" data-d1pl="${n}">
+      <span class="ph">${s.photos ? `<img src="${photo(c,n,"_m")}" alt="" loading="lazy" width="520" height="650">` : ""}</span>
+      <span class="no">${n}</span>${n===s.cap?`<span class="cap" title="القائد">C</span>`:""}
+      <b class="nm">${H(nm)}</b><small class="ps">${H(pos)}</small></button>`; };
+  return `<div class="d1-sq" style="--d1c:${s.color}">
+    <div class="d1-sqh"><button type="button" class="d1-back" data-d1back aria-label="رجوع"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button>${crest(c,"lg")}<div><h3>${H(c)}</h3><span>${s.players.length} لاعباً · ${SEASON_L}</span></div></div>
+    ${LINES.map(([k,t])=>{ const ps = s.players.filter(p=>LINE_OF[p[2]]===k); return ps.length ? `<section class="d1-ln"><h4>${t}</h4><div class="d1-pg">${ps.map(card).join("")}</div></section>` : ""; }).join("")}
+  </div>`;
+}
+function playerSheet(c, n){
+  const s = SQUADS[c], p = s && s.players.find(x=>x[0]===+n); if(!p) return;
+  closeSheet();
+  const w = document.createElement("div"); w.className = "d1-ov"; w.id = "d1Sheet";
+  w.innerHTML = `<div class="d1-sh" role="dialog" aria-modal="true" aria-label="${H(p[1])}" style="--d1c:${s.color}">
+    <button type="button" class="d1-x" data-d1close aria-label="إغلاق">×</button>
+    <div class="d1-shp">${s.photos ? `<img src="${photo(c,p[0])}" alt="${H(p[1])}" width="800" height="1000">` : ""}<span class="no">${p[0]}</span></div>
+    <div class="d1-shi">${crest(c)}<div><h3>${H(p[1])}${p[0]===s.cap?` <span class="cap">C</span>`:""}</h3><span>${H(p[2])} · ${H(c)}</span></div></div>
+  </div>`;
+  document.body.appendChild(w); document.body.classList.add("d1-lock");
+  requestAnimationFrame(()=>w.classList.add("on"));
+}
+function closeSheet(){ const w = document.getElementById("d1Sheet"); if(w) w.remove(); document.body.classList.remove("d1-lock"); }
 function render(){
   const v = document.getElementById("v-div1"); if(!v) return;
   if(!DATA) DATA = normalize(null);
   if(!VIEW.tab) VIEW.tab = DATA.matches.some(played) ? "table" : "matches";
-  const tabs = [["table","الترتيب"],["matches","المباريات"]];
+  const tabs = [["table","الترتيب"],["matches","المباريات"],["clubs","الأندية"]];
+  const body = VIEW.tab==="table" ? tableHTML() : VIEW.tab==="matches" ? matchesHTML() : (VIEW.club ? squadHTML(VIEW.club) : clubsHTML());
   v.innerHTML = `<div class="d1">
     <header class="d1-hero"><h2>${NAME}</h2><p>الموسم ${SEASON_L} · القسم الأول</p></header>
     <nav class="d1-tabs" role="tablist">${tabs.map(([k,t])=>`<button type="button" role="tab" data-d1tab="${k}" aria-selected="${VIEW.tab===k}">${t}</button>`).join("")}</nav>
-    <div class="d1-body">${VIEW.tab==="table" ? tableHTML() : matchesHTML()}</div>
+    <div class="d1-body">${body}</div>
     <p class="d1-note">النتائج والترتيب فقط، ومنفصل عن إحصاءات الدوري الممتاز.</p>
   </div>`;
 }
@@ -142,9 +191,21 @@ D1.matchesHTML = () => { if(!DATA) DATA = normalize(null); return matchesHTML();
 D1.tableHTML = () => { if(!DATA) DATA = normalize(null); return tableHTML(); };
 D1.count = () => { if(!DATA) DATA = normalize(null); return DATA.matches.length; };
 function repaint(){ if(document.querySelector("#v-div1.on")) render(); paintAdmin(); }
+D1.openClub = c => { VIEW.tab = "clubs"; VIEW.club = SQUADS[c] ? c : null; if(document.querySelector("#v-div1.on")) render(); else if(typeof go==="function") go("div1"); };
 document.addEventListener("click", e=>{
-  const t = e.target.closest && e.target.closest("[data-d1tab]"); if(!t) return;
-  VIEW.tab = t.dataset.d1tab; render();
+  const el = e.target.closest ? e.target : null; if(!el) return;
+  if(el.closest("[data-d1close]") || el.classList.contains("d1-ov")){ closeSheet(); return; }
+  const t = el.closest("[data-d1tab]");
+  if(t){ VIEW.tab = t.dataset.d1tab; VIEW.club = null; render(); return; }
+  const c = el.closest("#v-div1 [data-d1club]");
+  if(c){ D1.openClub(c.dataset.d1club); const v = document.getElementById("v-div1"); if(v) v.scrollIntoView({block:"start"}); return; }
+  if(el.closest("#v-div1 [data-d1back]")){ VIEW.club = null; render(); return; }
+  const p = el.closest("#v-div1 [data-d1pl]");
+  if(p && VIEW.club) playerSheet(VIEW.club, p.dataset.d1pl);
+});
+document.addEventListener("keydown", e=>{
+  if(e.key==="Escape") closeSheet();
+  if((e.key==="Enter" || e.key===" ") && e.target.matches && e.target.matches("#v-div1 span[data-d1club]")){ e.preventDefault(); D1.openClub(e.target.dataset.d1club); }
 });
 
 /* ───────────── الإدارة ───────────── */

@@ -65,3 +65,47 @@
 .d1a-save{display:flex;align-items:center;gap:12px;margin-top:14px}
 .d1a-save span{font-size:.78rem;color:var(--mf-tx3,#8C93A8)}
 .d1a-save button:disabled{opacity:.5}
+
+/* الأندية واللاعبين (2026-10-23) */
+.d1-tabs{grid-template-columns:repeat(3,1fr)}
+.d1-tm[data-d1club]{cursor:pointer}
+.d1-tm[data-d1club] b{text-decoration:underline;text-decoration-color:var(--mf-ln2,rgba(231,208,147,.3));text-underline-offset:4px}
+.d1-clubs{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px}
+.d1-club{display:flex;flex-direction:column;align-items:center;gap:6px;padding:16px 8px;border-radius:16px;border:1px solid var(--mf-ln,rgba(231,208,147,.1));background:var(--mf-c1,#07112B);color:var(--mf-tx,#F6F3EA);font:inherit;cursor:pointer}
+.d1-club .d1-cr{width:52px;height:52px}
+.d1-club b{font-weight:800;font-size:.95rem}
+.d1-club small{font-size:.72rem;color:var(--mf-tx3,#8C93A8)}
+.d1-club:disabled{cursor:default;opacity:.55}
+.d1-club:not(:disabled):hover{border-color:var(--mf-gold,#E7D093)}
+.d1-sq{display:flex;flex-direction:column;gap:16px}
+.d1-sqh{display:flex;align-items:center;gap:12px;padding:14px;border-radius:16px;background:linear-gradient(135deg,rgba(var(--d1c),.55),rgba(var(--d1c),.12) 70%),var(--mf-c1,#07112B);border:1px solid rgba(var(--d1c),.5)}
+.d1-sqh h3{margin:0;font-family:var(--mf-fh,inherit);font-size:1.3rem;font-weight:800;color:#fff}
+.d1-sqh span{font-size:.78rem;color:rgba(255,255,255,.75)}
+.d1-sqh .d1-cr.lg{width:56px;height:56px}
+.d1-back{display:grid;place-items:center;width:40px;height:40px;flex:none;border-radius:50%;border:0;background:rgba(0,0,0,.28);color:#fff;cursor:pointer}
+.d1-ln h4{margin:0 2px 8px;font-size:.85rem;font-weight:800;color:var(--mf-tx3,#8C93A8)}
+.d1-pg{display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:8px}
+.d1-pc{position:relative;display:flex;flex-direction:column;align-items:stretch;padding:0 0 10px;border-radius:14px;overflow:hidden;border:1px solid rgba(var(--d1c),.45);background:linear-gradient(180deg,rgba(var(--d1c),.30),var(--mf-c1,#07112B) 70%);color:inherit;font:inherit;cursor:pointer;text-align:center}
+.d1-pc .ph{position:relative;display:block;height:clamp(104px,30vw,150px);overflow:hidden}
+.d1-pc .ph img{display:block;width:150%;max-width:none;height:auto;margin:3% -25% 0;-webkit-mask-image:linear-gradient(180deg,#000 62%,transparent 96%);mask-image:linear-gradient(180deg,#000 62%,transparent 96%)}
+.d1-pc .no{position:absolute;top:8px;right:8px;min-width:26px;height:26px;padding:0 6px;border-radius:8px;display:grid;place-items:center;background:rgba(0,0,0,.55);color:#fff;font-weight:800;font-size:.8rem;font-variant-numeric:tabular-nums}
+.d1-pc .cap,.d1-sh .cap{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:50%;background:var(--mf-gold,#E7D093);color:var(--mf-gold-ink,#1A1306);font-weight:900;font-size:.7rem}
+.d1-pc .cap{position:absolute;top:10px;left:8px}
+.d1-pc .nm{padding:8px 6px 0;font-weight:700;font-size:.85rem;color:var(--mf-tx,#F6F3EA);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.d1-pc .ps{font-size:.68rem;color:var(--mf-tx3,#8C93A8);margin-top:2px}
+.d1-pc:focus-visible,.d1-club:focus-visible{outline:2px solid var(--mf-gold,#E7D093);outline-offset:2px}
+/* ملف اللاعب */
+body.d1-lock{overflow:hidden}
+.d1-ov{position:fixed;inset:0;z-index:9000;display:flex;align-items:flex-end;justify-content:center;background:rgba(0,0,0,.6);opacity:0;transition:opacity .2s}
+.d1-ov.on{opacity:1}
+.d1-sh{position:relative;width:min(480px,100%);max-height:92vh;overflow:auto;border-radius:20px 20px 0 0;background:var(--mf-c1,#07112B);transform:translateY(24px);transition:transform .25s}
+.d1-ov.on .d1-sh{transform:none}
+.d1-shp{position:relative;display:flex;justify-content:center;background:radial-gradient(70% 80% at 50% 100%,rgba(var(--d1c),.75),rgba(var(--d1c),.15) 70%,transparent),linear-gradient(180deg,rgba(var(--d1c),.25),var(--mf-c1,#07112B))}
+.d1-shp img{display:block;width:min(340px,80%);height:auto;-webkit-mask-image:linear-gradient(180deg,#000 80%,transparent);mask-image:linear-gradient(180deg,#000 80%,transparent)}
+.d1-shp .no{position:absolute;top:14px;right:16px;font-family:var(--mf-fh,inherit);font-size:2.6rem;font-weight:900;color:rgba(255,255,255,.9);line-height:1}
+.d1-shi{display:flex;align-items:center;gap:12px;padding:14px 16px 22px}
+.d1-shi .d1-cr{width:40px;height:40px}
+.d1-shi h3{margin:0;font-family:var(--mf-fh,inherit);font-size:1.25rem;font-weight:800;color:var(--mf-tx,#F6F3EA)}
+.d1-shi span{font-size:.8rem;color:var(--mf-tx3,#8C93A8)}
+.d1-x{position:absolute;top:10px;left:10px;z-index:2;width:40px;height:40px;border-radius:50%;border:0;background:rgba(0,0,0,.45);color:#fff;font-size:1.5rem;line-height:1;cursor:pointer}
+[data-theme="light"] .d1-sqh h3{color:#fff}
