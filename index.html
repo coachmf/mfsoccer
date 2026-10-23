@@ -15633,6 +15633,10 @@ html[data-theme="dark"] .mx select option{color:#E6EEF8;background:#0F1E35}   /*
 .mx-inl .mx-lbl{margin:0 2px!important}
 .mx-detbtn{height:38px;padding:0 14px;border-radius:12px;border:1px solid var(--mx-ln)!important;background:var(--mx-soft)!important;color:var(--slate);font-weight:700;font-size:.82rem;text-align:start;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .mx-detbtn.on{color:var(--head,#fff);border-color:rgba(231,208,147,.7)!important}
+.mx-plbtn{height:44px;display:flex;align-items:center;gap:8px;min-width:0}
+.mx-plbtn .mx-face{width:30px;height:30px;flex:none}
+.mx-plbtn span:last-child{overflow:hidden;text-overflow:ellipsis}
+.mx-plpick .bd{gap:0}
 .mx-detpick{position:fixed;inset:0;z-index:1002;display:flex;flex-direction:column;background:var(--mx-card,#0b1a30);animation:mxFade .15s ease}
 .mx-detpick .hd{display:flex;align-items:center;gap:10px;padding:calc(10px + env(safe-area-inset-top)) 14px 10px;border-bottom:1px solid var(--mx-ln)}
 .mx-detpick .hd h3{margin:0;flex:1;font-family:var(--display);font-weight:800;font-size:1.02rem}
@@ -16159,6 +16163,7 @@ html.mx-editing #waFab{display:none!important}   /* زر واتساب كان ي�
     return ""; };
   const stepper=(key,val,label,max)=>`<div><span class="mx-lbl">${label}</span><div class="mx-step"><button data-mstep="${key}" data-mby="-1" aria-label="أنقص">−</button>
     <input type="number" min="0" max="${max||130}" inputmode="numeric" data-msf="${key}" value="${esc(val)}"><button data-mstep="${key}" data-mby="1" aria-label="زد">+</button></div></div>`;
+  const plBtn=(club,key,label,cur,empty)=>`<div class="mx-inl"><span class="mx-lbl">${label}</span><button type="button" class="mx-detbtn mx-plbtn${cur?" on":""}" data-mplopen="${key}">${cur?`${face(cur,club)}<span>${esc(cur)}</span>`:`<span>${esc(empty)}</span>`}</button></div>`;
   function sheetHTML(){
     const S=MX.sheet; if(!S) return "";
     if(S.kind==="club"){
@@ -16177,8 +16182,7 @@ html.mx-editing #waFab{display:none!important}   /* زر واتساب كان ي�
         ${d.bp==="هدف عكسي"
           ? `<div><span class="mx-lbl">سجّل في مرماه (لاعب ${esc(opp||"الخصم")})</span>${pickGrid(opp,"og",d.og)}</div>
              <p class="mx-hint">الهدف العكسي يُحتسب لـ${esc(club||"الفريق المختار")} بلا مسجّل ولا صانع من لاعبيه، ويُنسب للاعب الخصم الذي سجّل في مرماه.</p>`
-          : `<div><span class="mx-lbl">المسجّل</span>${pickGrid(club,"p",d.p,{strip:true})}</div>
-             <div><span class="mx-lbl">صانع الهدف</span>${pickGrid(club,"a",d.a,{none:"بدون صناعة",exclude:d.p,strip:true})}</div>`}
+          : `${plBtn(club,"p","المسجّل",d.p,"اختر")}${plBtn(club,"a","صانع الهدف",d.a,"بدون صناعة")}`}
         <div class="mx-inl"><span class="mx-lbl">تفصيل الهجمة</span><button type="button" class="mx-detbtn${d.det?" on":""}" data-mdetopen="1">${d.det?esc(d.det):"اختر"}</button></div>
         ${zoneMap(d.zone)}
         ${isDefErr(d)?`<div><span class="mx-lbl">اللاعب المخطئ (لاعب ${esc(opp||"الخصم")})</span>${pickGrid(opp,"err",d.err,{none:"غير محدد"})}</div>`:""}`;
@@ -16206,11 +16210,17 @@ html.mx-editing #waFab{display:none!important}   /* زر واتساب كان ي�
         <div><span class="mx-lbl">خرج</span>${pickGrid(club,"out",d.out,{only:"xi"})}</div>
         <div><span class="mx-lbl">دخل</span>${pickGrid(club,"in",d.in,{only:"bench",exclude:d.out})}</div>`;
     }
+    /* المسجّل وصانع الهدف بشاشة كاملة (منصور 2026-10-23: «ما يبينون اللاعبين كلهم… مقسمين حارس دفاع وسط هجوم») —
+       كل اللاعبين بخطوطهم من الرسم، والاحتياط ومن خرج ظاهرون مباشرة */
+    const plPick=k==="goal"&&S.plOpen ? (()=>{ const key=S.plOpen; S.bench=Object.assign({},S.bench,{[key]:true});
+      const g=key==="a"?pickGrid(club,"a",d.a,{none:"بدون صناعة",exclude:d.p}):pickGrid(club,"p",d.p);
+      return `<div class="mx-detpick mx-plpick" role="dialog" aria-modal="true"><div class="hd"><h3>${key==="a"?"صانع الهدف":"المسجّل"}</h3><button type="button" data-mplclose="1" aria-label="إغلاق">${SV.x}</button></div>
+        <div class="bd">${g}</div></div>`; })() : "";
     /* تفصيل الهجمة بشاشة كاملة بدل القائمة المنسدلة (منصور 2026-10-22) — نفس قيم LIST.det */
     const detPick=k==="goal"&&S.detOpen ? (()=>{ const L=LIST.det, cut=L.indexOf("ركنية"), grp=(t,a)=>`<span class="mx-lbl">${t}</span><div class="mx-detgrid">${a.map(v=>`<button type="button" class="mx-detopt${d.det===v?" on":""}" data-mdet="${esc(v)}">${esc(v)}</button>`).join("")}</div>`;
       return `<div class="mx-detpick" role="dialog" aria-modal="true"><div class="hd"><h3>تفصيل الهجمة</h3><button type="button" data-mdetclose="1" aria-label="إغلاق">${SV.x}</button></div>
         <div class="bd">${grp("لعب مفتوح",L.slice(0,cut))}${grp("كرات ثابتة",L.slice(cut))}</div></div>`; })() : "";
-    return `${detPick}<div class="mx-sheet${k==="goal"?" goal":""}" data-mclose="bg"><div class="box" role="dialog" aria-modal="true">
+    return `${detPick}${plPick}<div class="mx-sheet${k==="goal"?" goal":""}" data-mclose="bg"><div class="box" role="dialog" aria-modal="true">
       <div class="hd"><h3>${i>=0?"تعديل":"إضافة"} ${TITLE[k]}</h3><button data-mclose="x" aria-label="إغلاق">${SV.x}</button></div>
       <div class="bd">${S.err?`<div class="mx-err">${SV.warn}${esc(S.err)}</div>`:""}${body}</div>
       <div class="ft">${i>=0?`<button class="mx-del" data-mdel="${k}.${i}">${SV.trash}حذف</button>`:""}<span class="sp"></span>
@@ -16419,7 +16429,9 @@ html.mx-editing #waFab{display:none!important}   /* زر واتساب كان ي�
         if(!(MX.sheet.k==="sub" && +v<=2) && ((m && (m<row[2] || m>row[3])) || (!m && +v>=3))) d.m=String(row[2]);
         if(+v>=3 && etAllowed(EDIT.match)) EDIT.match.et=true; rerender(); });
       q("[data-mbench]",b=>b.onclick=()=>{ const S=MX.sheet; S.bench=S.bench||{}; S.bench[b.dataset.mbench]=true; rerender(); });
-      q("[data-mpick]",b=>b.onclick=()=>{ const key=b.dataset.mpick, v=b.dataset.mname; d[key]=(d[key]===v&&key==="a")?"":v; rerender(); });
+      q("[data-mpick]",b=>b.onclick=()=>{ const key=b.dataset.mpick, v=b.dataset.mname; d[key]=(d[key]===v&&key==="a")?"":v; if(MX.sheet.plOpen) MX.sheet.plOpen=""; rerender(); });
+      q("[data-mplopen]",b=>b.onclick=()=>{ MX.sheet.plOpen=b.dataset.mplopen; rerender(); });
+      q("[data-mplclose]",b=>b.onclick=()=>{ MX.sheet.plOpen=""; rerender(); });
       q("[data-msf]",el=>{ el.oninput=()=>{ d[el.dataset.msf]=el.value; }; el.onchange=()=>{ d[el.dataset.msf]=el.value;
         if(el.dataset.msf==="det"){ if(!isDefErr(d)) d.err=""; rerender(); } }; });   /* إظهار/إخفاء «اللاعب المخطئ» */
       q("[data-mzone]",z=>z.onclick=()=>{ d.zone=z.dataset.mzone; rerender(); });
