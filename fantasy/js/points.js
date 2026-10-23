@@ -249,8 +249,11 @@ Object.assign(VIEWS, {
     const r=DB.pgw(pid,gw);
     const played = !!(r && r.min>0);
     const done = !!fx && fx.status==='F';
-    const ex = explainPoints(st, p, r);
-    const total = r ? (r.pts||0) : 0;
+    /* مركز خاص بهذا المشترك في هذه الجولة (TEAM.posFor — كنول الجولة 6) */
+    const vt = (this.ui && this.ui.managerDoc && this.ui.managerDoc.team) || (DB.myTeam && DB.myTeam()) || null;
+    const ovPos = vt ? TEAM.posFor(vt, pid, gw, st) : p.pos;
+    const ex = explainPoints(st, ovPos && ovPos!==p.pos ? Object.assign({}, p, {pos:ovPos}) : p, r);
+    const total = r ? (r.pts||0) + (ovPos && ovPos!==p.pos ? TEAM.posDelta(st, r, p.pos, ovPos) : 0) : 0;
     if(played && ex.total!==total) console.warn('points breakdown mismatch', pid, gw, ex.total, total);
     const side=id=>`<span class="tm ${id===p.club?'me':''}">${UI.crest(id)}<b>${DB.club(id).short}</b></span>`;
     const match = !fx

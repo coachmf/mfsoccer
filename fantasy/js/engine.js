@@ -790,12 +790,30 @@ const TEAM = {
   },
 
   /* نقاط فريق في جولة منتهية — تبديل تلقائي + كابتن + كروت */
+  /* مركز لاعب لمشترك بعينه في جولة بعينها (منصور 2026-10-23): كنول p92 صار مهاجماً في نسخ قديمة على الأجهزة خلال
+     الجولة 6 فاشتراه مشتركان مكان مهاجم — نقاطه لهما في الجولة 6 فقط تُحسب كمهاجم، ولغيرهما كلاعب وسط، وبعدها وسط للجميع.
+     يُستنتج من سجل الصفقات (دخل p92 في الجولة 6 وخرج مهاجم) فلا يُكتب شيء في بيانات المشتركين. */
+  POS_OV:{6:{p92:'F'}},
+  posFor(team, pid, gw, st){
+    st=st||DB.state; const p=st.players.find(x=>x.id===pid); if(!p) return null;
+    const ov=(this.POS_OV[gw]||{})[pid]; if(!ov || ov===p.pos || !team) return p.pos;
+    const pos=id=>(st.players.find(x=>x.id===id)||{}).pos;
+    const bought=(team.transfers||[]).some(x=>+x.gw===+gw && x.in===pid && pos(x.out)===ov);
+    return bought ? ov : p.pos;
+  },
+  /* فرق النقاط إذا حُسب لاعب بمركز آخر (نفس معادلة scoreFixture: الأهداف والشباك النظيفة والأهداف المستقبلة) */
+  posDelta(st, r, from, to){
+    if(!r || !(r.min>0) || from===to) return 0;
+    const S=k=>st.scoring[k]?st.scoring[k].val:0, cs=q=>q==='G'?S('csG'):q==='D'?S('csD'):q==='M'?S('csM'):0, gc=q=>(q==='G'||q==='D')?Math.floor((r.gc||0)/2)*S('concededPer2'):0;
+    return (r.g||0)*(S('goal'+to)-S('goal'+from)) + (r.cs?cs(to)-cs(from):0) + gc(to)-gc(from);
+  },
   gwPoints(team, gw, st, opts){
     st=st||DB.state; opts=opts||{};
     const picks = team.gwPicks[gw];
     if(!picks) return { total:0, rows:[], benchPts:0, chip:null, capName:'', hits:picks?0:0, coach:null };
     const S=k=>st.scoring[k].val;
-    const pts = pid => { const r=DB.pgw(pid,gw); return r? r.pts : 0; };
+    const pts = pid => { const r=DB.pgw(pid,gw); if(!r) return 0; const ov=this.POS_OV[gw]&&this.POS_OV[gw][pid] ? this.posFor(team,pid,gw,st) : null;
+      return ov ? r.pts + this.posDelta(st, r, (DB.player(pid)||{}).pos, ov) : r.pts; };
     const played = pid => { const r=DB.pgw(pid,gw); return r && r.min>0; };
     // مباشر: لاعب لم تُلعب مباراة ناديه بعد يبقى في التشكيلة (لا تبديل تلقائي ولا نقل شارة الكابتن)
     const fxOf = clubId => st.fixtures.find(f=>f.gw===gw && (f.h===clubId||f.a===clubId));

@@ -172,6 +172,19 @@ Object.assign(VIEWS, {
     return {tOut,tIn,restore:j>=0};
   },
   tSquadOf(tOut,tIn){ return DB.myTeam().squad.filter(x=>!tOut.includes(x)).concat(tIn.filter(Boolean)); },
+  /* تكوين القائمة المختل (منصور 2026-10-23، كنول): من صار فريقه 6 وسط/2 هجوم أو 4/4 بعد تغيير مركز لاعب
+     يُسمح له بصفقة من مركز آخر فقط إن قرّبت القائمة من التكوين الصحيح (2/5/5/3) — غير ذلك نفس المركز كالعادة */
+  posDist(sq){ const R=DB.state.rules, c={G:0,D:0,M:0,F:0}; sq.forEach(x=>{ const q=DB.player(x); if(q) c[q.pos]++; });
+    return Object.keys(R.posCount).reduce((s,k)=>s+Math.abs((c[k]||0)-R.posCount[k]),0); },
+  posOK(pid, outPid){
+    const p=DB.player(pid), o=DB.player(outPid); if(!p||!o||pid===outPid||p.pos===o.pos) return true;
+    const d=this.tDraftWith(pid,outPid), base=this.tSquadOf(d.tOut,d.tIn).filter(x=>x!==pid);
+    return this.posDist(base.concat(pid)) < this.posDist(base.concat(outPid));
+  },
+  /* المراكز الناقصة في الفريق الحالي (فارغة إن كان التكوين صحيحاً) */
+  posShort(){ const R=DB.state.rules, c={G:0,D:0,M:0,F:0}; (DB.myTeam().squad||[]).forEach(x=>{ const q=DB.player(x); if(q) c[q.pos]++; });
+    const over=Object.keys(R.posCount).filter(k=>c[k]>R.posCount[k]), under=Object.keys(R.posCount).filter(k=>c[k]<R.posCount[k]);
+    return {over, under}; },
   tBankOf(tOut,tIn){
     let b=DB.myTeam().bank;
     tOut.forEach((o,i)=>{ b+=DB.player(o).price; if(tIn[i]) b-=DB.player(tIn[i]).price; });
@@ -179,7 +192,7 @@ Object.assign(VIEWS, {
   },
   tPickIn(pid, outPid){
     const p=DB.player(pid);
-    if(pid!==outPid && DB.player(outPid).pos!==p.pos){ UI.toast('البديل يجب أن يكون بنفس المركز',true); return false; }
+    if(!this.posOK(pid,outPid)){ UI.toast('البديل يجب أن يكون بنفس المركز',true); return false; }
     const d=this.tDraftWith(pid,outPid);
     const sq=this.tSquadOf(d.tOut,d.tIn);
     if(sq.filter(x=>x===pid).length>1){ UI.toast('اللاعب موجود في فريقك',true); return false; }
@@ -192,7 +205,9 @@ Object.assign(VIEWS, {
   /* ======================= شاشة «إضافة لاعب» ======================= */
   openAddPlayer(o){
     const outP=o.outPid? DB.player(o.outPid):null;
-    this.ui.addp={ ctx:o.ctx, outPid:o.outPid||null, pos: outP? outP.pos : (o.pos||''), posLocked: !!outP,
+    /* فريق تكوينه مختل وهذا اللاعب من المركز الزائد → القائمة تفتح على المركز الناقص، والمراكز غير مقفلة */
+    const fix=o.ctx==='transfer' && outP ? this.posShort() : null, fixPos=fix && fix.over.includes(outP.pos) && fix.under.length ? fix.under[0] : '';
+    this.ui.addp={ ctx:o.ctx, outPid:o.outPid||null, pos: fixPos || (outP? outP.pos : (o.pos||'')), posLocked: !!outP && !fixPos,
       search:'', club:'', sort:'total', dir:-1 };
     document.body.classList.add('addp-open');
     let back=document.getElementById('addpBack');
@@ -220,7 +235,7 @@ Object.assign(VIEWS, {
     const a=this.ui.addp; const R=DB.state.rules; const team=DB.myTeam();
     if(a.ctx==='transfer'){
       /* لاعب أُخرج في هذه المسودة يمكن إرجاعه (لخانته أو لخانة أخرى بنفس المركز) */
-      if(p.id!==a.outPid && p.pos!==DB.player(a.outPid).pos) return 'مركز مختلف';
+      if(!this.posOK(p.id,a.outPid)) return 'مركز مختلف';
       const d=this.tDraftWith(p.id,a.outPid);
       const sq=this.tSquadOf(d.tOut,d.tIn);
       if(sq.filter(x=>x===p.id).length>1) return 'في فريقك';
