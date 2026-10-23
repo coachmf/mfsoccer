@@ -44,7 +44,9 @@ const LIVEGW = {
   /* منصور 2026-10-09 (لاحقاً): «خل الترتيب لايف» — أُلغي التجميد اليومي؛ المتوسط والترتيب والدوريات مباشرة كل 3 دقائق */
   LIVE_ALWAYS: true,
   frozenNow(){ if(this.LIVE_ALWAYS) return false; const ks=this.todayKicks(); if(!ks.length) return false; const now=Date.now(); return now >= Math.min(...ks) && now < this.unlockAt(); },
-  loadFrozen(gw){ try{ const v=JSON.parse(localStorage.getItem(this.FROZEN_KEY)||'null'); return (v && v.gw===gw && Array.isArray(v.rows)) ? v : null; }catch(e){ return null; } },
+  /* لقطة كلها أصفار بعد مباراة لُعبت = حُسبت قبل وصول الإحصاءات (منصور 2026-10-24: «انا الاول… مباشر صفر») — لا تُحفظ ولا تُعتمد */
+  zeroRows(rows){ return Array.isArray(rows) && rows.length>1 && this.matches().played>0 && rows.every(r=>!(+r.live)); },
+  loadFrozen(gw){ try{ const v=JSON.parse(localStorage.getItem(this.FROZEN_KEY)||'null'); return (v && v.gw===gw && Array.isArray(v.rows) && !this.zeroRows(v.rows)) ? v : null; }catch(e){ return null; } },
   saveFrozen(gw, rows, at){ try{ localStorage.setItem(this.FROZEN_KEY, JSON.stringify({gw, at, rows})); }catch(e){} },
   async refresh(force){
     if(!this.active()) return null;
@@ -69,8 +71,8 @@ const LIVEGW = {
         const pv=this.beforeLast(T.rows, gw); if(pv) rows.forEach(r=>{ if(pv[r.id]!=null) r.prev=pv[r.id]; });
         rows.sort((a,b)=>b.live-a.live);
         let prev=null, rank=0; rows.forEach((r,i)=>{ if(prev===null || r.live<prev){ rank=i+1; prev=r.live; } r.liveRank=rank; });
-        this.snapAt = new Date().toISOString();
-        this.saveFrozen(gw, rows, this.snapAt);
+        if(this.zeroRows(rows)){ rows=null; }   /* حساب سابق لأوانه — نعيد المحاولة بعد دقيقتين */
+        else { this.snapAt = new Date().toISOString(); this.saveFrozen(gw, rows, this.snapAt); }
       } else {
         const fz=this.loadFrozen(gw); if(fz){ rows=fz.rows; this.snapAt=fz.at; }
       }
