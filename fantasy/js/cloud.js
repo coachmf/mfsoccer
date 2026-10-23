@@ -509,6 +509,23 @@ const CLOUD = {
 
   /* ملف المشترك عبر الخادم (netlify/functions/fantasy-me.js) — HTTPS عادي لا قناة Firestore: يقرأ الملف، وإن لم يوجد
      ينشئه بالشكل الصحيح (التشكيلة قبل الإغلاق فقط). لمن تعذّر عليه Firestore من جهازه — 2026-10-09. يعيد المستند أو null */
+  /* حفظ الملف الشخصي/التشكيلة عبر /api/fantasy-save (حساب الخدمة) — احتياط لما تفشل الكتابة من الجهاز */
+  async serverSave(patch){
+    if(!this.user || typeof fetch==='undefined') return false;
+    try{
+      const idToken = await this.race(this.user.getIdToken(), 15000);
+      if(!idToken.ok) return false;
+      const body = { idToken: idToken.v };
+      ['username','teamName','avatar','team'].forEach(k=>{ if(patch[k] !== undefined) body[k] = patch[k]; });
+      const ctl = typeof AbortController!=='undefined' ? new AbortController() : null;
+      const t = setTimeout(()=>{ try{ ctl && ctl.abort(); }catch(e){} }, 20000);
+      const r = await fetch('/api/fantasy-save', { method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify(body), ...(ctl ? {signal:ctl.signal} : {}) });
+      clearTimeout(t);
+      const j = await r.json().catch(()=>null);
+      return !!(j && j.ok);
+    }catch(e){ return false; }
+  },
   async serverMe(extra){
     if(!this.user || typeof fetch==='undefined') return null;
     try{
@@ -546,6 +563,12 @@ const CLOUD = {
     }
     const r = await this.race(this.managers().doc(this.user.uid).set(patch, {merge:true}));
     if(r.ok === true) return true;
+    /* قناة Firestore معلّقة/محجوبة على الجهاز (تطبيق iOS — محمد القلاف ووالده 2026-10-23: لم يُحفظ لهما شيء منذ 9 أكتوبر):
+       نحفظ عبر خادمنا بنفس شروط القواعد بالضبط بدل الفشل الصامت. «لا صلاحية» (جولة مقفلة/ملف ناقص) يبقى كما هو أدناه */
+    if(!(r.err && r.err.code === 'permission-denied')){
+      const sv = await this.serverSave(patch);
+      if(sv === true) return true;
+    }
     // الخادم يرفض تعديل التشكيلة بعد الإغلاق — نوضّح السبب بدل فشل صامت
     const code = r.err && r.err.code;
     /* مستند المشترك غير موجود على الخادم (سُجّل على شبكة بطيئة ولم تكتمل كتابة ملفه): set+merge يصير «إنشاء»

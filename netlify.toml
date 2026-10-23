@@ -17,6 +17,13 @@
   status = 200
   force = true
 
+# ——— حفظ تشكيلة المشترك عبر الخادم عند تعذّر Firestore (netlify/functions/fantasy-save.js) ———
+[[redirects]]
+  from = "/api/fantasy-save"
+  to = "/.netlify/functions/fantasy-save"
+  status = 200
+  force = true
+
 # ——— تشكيلات المشتركين للترتيب الحي (netlify/functions/fantasy-teams.js) ———
 [[redirects]]
   from = "/api/fantasy-teams/*"

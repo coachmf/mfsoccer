@@ -227,7 +227,8 @@ const DB = {
     if(!t) return false;
     if(!this.state.fromCloud){ this.pendingPush=true; return false; }   // قائمة اللاعبين ليست المنشورة: قد تكون معرّفات ناقصة — لا نرفع
     // احتسب المدير جولة بعد آخر تحميل؟ مستند الخادم (انتقالات، كروت، سجل) أحدث من نسخة الجهاز — نعتمده بدل طمسه
-    const remote = await CLOUD.getManager(uid);
+    let remote = await CLOUD.getManager(uid);
+    if(remote===undefined && CLOUD.serverMe){ const sm = await CLOUD.serverMe(); if(sm) remote = sm; }   /* قراءة Firestore معلّقة: نقرأ عبر الخادم (2026-10-23) */
     if(remote===undefined){ this.pendingPush=true; return false; }    // تعذّرت قراءة الخادم: لا نرفع على العمياني
     if(this.noPush){                                                    // كان الإقلاع بلا قراءة ناجحة: أول قراءة ناجحة تُعتمد أولاً
       this.noPush=false;
