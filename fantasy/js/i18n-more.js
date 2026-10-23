@@ -51,7 +51,7 @@ const NAMES_EN = {
   'عبدالوهاب الشلال':'Abdulwahab Al-Shallal',
   'محمد إبراهيم':'Mohammad Ibrahim',
   'فراس الخطيب':'Firas Al-Khatib',
-  'غوران سابليتش':'Goran Sablic', 'محمد عبدالنبي':'Mohammed Abdulnabi',
+  'غوران سابليتش':'Goran Sablic', 'محمد عبدالنبي':'Mohammed Abdulnabi', 'داركو نيستروفيتش':'Darko Nestorovic',
   'دراغان تاديتش':'Dragan Tadic',
   'علي عاشور':'Ali Ashour',
   'ظاهر العدواني':'Dhaher Al-Adwani',
