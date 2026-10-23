@@ -10100,7 +10100,7 @@ function pickListHTML(d, res){
     const [h,a]=k.split("|"), act=(res||{})[k]; let cls="no";
     if(act){ if(+v[0]===act[0] && +v[1]===act[1]) cls="ex"; else if(Math.sign(v[0]-v[1])===Math.sign(act[0]-act[1])) cls="ok"; else cls="bad"; }
     return `<div class="r"><span>${crest(h)} ${esc(h)} – ${esc(a)} ${crest(a)}</span><span><i class="${cls}" dir="ltr">${+v[0]} - ${+v[1]}</i>${act?` <em dir="ltr">(${act[0]} - ${act[1]})</em>`:""}</span></div>`;
-  }).join("")}${d.sc?`<div class="r"><span>هداف الجولة</span><span><i class="${d.scOk?"ex":"bad"}">${esc(d.sc)}</i></span></div>`:""}</div>`;
+  }).join("")}${d.sc?`<div class="r"><span>هداف الجولة</span><span><i class="${d.scOk?"ex":(res&&Object.keys(res).length?"bad":"no")}">${esc(d.sc)}</i></span></div>`:""}</div>`;
 }
 function fanProfileHTML(){
   const uid = FANP && FANP.uid, row = BOARD && BOARD.rows && BOARD.rows[uid];
@@ -10108,6 +10108,12 @@ function fanProfileHTML(){
   const season = boardRows("season"), pos = season.findIndex(x=>x.uid===uid) + 1;
   const name = (season.find(x=>x.uid===uid)||{}).name || row.n || "مشترك";
   const rounds = Object.keys(row.r||{}).map(Number).sort((a,b)=>a-b);
+  /* الجولة الجارية (منصور 2026-10-23: «بعد كل مباره تنحط هني») — توقعاته تظهر من أول صافرة ونقاطها تُضاف مع كل مباراة تنتهي */
+  const liveR = BOARD && BOARD.lastRound ? +BOARD.lastRound + 1 : 0;
+  if(liveR && !rounds.includes(liveR)){
+    if(PICKS[liveR]===undefined){ PICKS[liveR]=null; loadPicks(liveR).then(()=>{ if(!FANP) return; const d=PICKS[liveR]; if(!FANP.picked && d && d.rows && d.rows[FANP.uid]) FANP.round=liveR; paintFanProfile(); }); }
+    const lp = PICKS[liveR]; if(lp && lp.rows && lp.rows[uid]) rounds.push(liveR);
+  }
   const r = FANP.round && rounds.includes(FANP.round) ? FANP.round : rounds[rounds.length-1];
   FANP.round = r;
   if(r && PICKS[r]===undefined){ PICKS[r]=null; loadPicks(r).then(()=>{ if(FANP && FANP.round===r) paintFanProfile(); }); }
@@ -10118,7 +10124,7 @@ function fanProfileHTML(){
     <div class="mystat">
       <div><b>${pos||"—"}</b><small>المركز</small></div>
       <div><b>${row.t||0}</b><small>نقاط الموسم</small></div>
-      <div><b>${r?((row.r||{})[r]||0):0}</b><small>${r?"نقاط الجولة "+r:"الجولة"}</small></div>
+      <div><b>${r?((row.r||{})[r]!=null?row.r[r]:(((PICKS[r]||{}).rows||{})[uid]||{}).pts||0):0}</b><small>${r?"نقاط الجولة "+r:"الجولة"}</small></div>
     </div>
     <div class="bchips" style="margin:12px 0 10px">${rounds.map(x=>`<button class="chip ${x===r?"on":""}" data-fpr="${x}">الجولة ${x}</button>`).join("")}</div>
     ${!r ? `<p class="hint" style="margin:0">لا توجد جولات محتسبة لهذا المشترك.</p>`
@@ -10134,10 +10140,19 @@ function paintFanProfile(){
     ov.addEventListener("click", e=>{ if(e.target===ov) closeFanProfile(); }); }
   ov.innerHTML = fanProfileHTML();
   document.documentElement.classList.add("pp-open");
-  ov.querySelectorAll("[data-fpr]").forEach(b=>b.onclick=()=>{ FANP.round=+b.dataset.fpr; paintFanProfile(); });
+  ov.querySelectorAll("[data-fpr]").forEach(b=>b.onclick=()=>{ FANP.round=+b.dataset.fpr; FANP.picked=true; paintFanProfile(); });
   const x = ov.querySelector("[data-fpx]"); if(x) x.onclick = closeFanProfile;
   const rt = ov.querySelector("[data-fpretry]"); if(rt) rt.onclick = ()=>{ delete PICKS[+rt.dataset.fpretry]; paintFanProfile(); };
 }
+/* تحديث اللوحة أولاً بأول: كل دقيقتين ما دامت الصفحة ظاهرة — بعد كل مباراة تنتهي تُحتسب على الخادم فتظهر هنا بلا إعادة تحميل */
+setInterval(async()=>{
+  if(document.hidden || typeof loadBoard!=="function") return;
+  const prev = BOARD && BOARD.updated; await loadBoard(); if(!BOARD) return;
+  const L = +BOARD.lastRound || 0; delete PICKS[L+1]; if(BOARD.updated===prev && !FANP) return;
+  delete PICKS[L];
+  if(document.querySelector("#v-predict.on")) renderPredict();
+  if(FANP) paintFanProfile();
+}, 120000);
 function openFanProfile(uid){ FANP = {uid, round: BOARDTAB==="round" && BOARD ? BOARD.lastRound : null}; paintFanProfile(); }
 function closeFanProfile(){ FANP = null; paintFanProfile(); }
 document.addEventListener("keydown", e=>{ if(e.key==="Escape" && FANP) closeFanProfile(); });
