@@ -1221,6 +1221,9 @@ html.mf[data-theme="light"] .mf-dl-k{color:var(--mf-acc-tx)}
 .hm-td-list{display:flex;flex-direction:column}
 .hm-td-row{display:grid;grid-template-columns:minmax(0,1fr) 104px minmax(0,1fr);align-items:center;gap:8px;background:none;border:0;border-top:1px solid var(--mf-ln);padding:12px 2px;color:inherit;font-family:inherit;cursor:pointer;text-align:inherit}
 .hm-td-row:first-child{border-top:0}
+.hm-td-sub{font-size:.75rem;font-weight:700;color:var(--mf-tx3);padding:12px 2px 4px;border-top:1px solid var(--mf-ln)}
+.hm-td-sub:first-child{border-top:0;padding-top:0}
+.hm-td-sub+.hm-td-row{border-top:0}
 .hm-td-team{display:flex;align-items:center;gap:8px;min-width:0}
 .hm-td-team.a{justify-content:flex-end}
 .hm-td-team b{font-weight:700;font-size:var(--mf-t3);color:var(--mf-tx);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}

@@ -33,11 +33,14 @@ const FIXTURES = [
   [2,"2026-10-14","17:45","اتحاد الشرطة","سبورتي","استاد ناصر العصيمي"],
   [2,"2026-10-14","17:45","الجزيرة","الشامية","استاد الشباب"],
   [3,"2026-10-24","17:35","خيطان","اتحاد الشرطة","استاد ناصر العصيمي"],
-  [3,"2026-10-24","17:35","الشامية","اليرموك","استاد الساحل"],
+  [3,"2026-10-24","17:35","الشامية","اليرموك","استاد الشباب"],
   [3,"2026-10-24","17:35","سبورتي","الجزيرة","استاد عبدالله الخليفة الصباح"],
   [4,"2026-11-04","17:30","برقان","الشامية","استاد الساحل"],
   [4,"2026-11-04","17:30","الجزيرة","خيطان","استاد الشباب"],
-  [4,"2026-11-04","17:30","اليرموك","سبورتي","استاد عبدالله الخليفة الصباح"]
+  [4,"2026-11-04","17:30","اليرموك","سبورتي","استاد عبدالله الخليفة الصباح"],
+  [5,"2026-11-19","17:20","اتحاد الشرطة","الجزيرة","استاد عبدالله الخليفة الصباح"],
+  [5,"2026-11-19","17:20","برقان","سبورتي","استاد الساحل"],
+  [5,"2026-11-19","17:20","خيطان","اليرموك","استاد الشباب"]
 ];
 /* قوائم اللاعبين (منصور 2026-10-23: «حط لاعبين خيطان بالموقع») — من ملصق النادي الرسمي 2026/27.
    الصور: assets/players/div1/<slug>/<رقم>.webp (800×1000 للملف) و _m (520×650 للبطاقات) */
@@ -189,11 +192,22 @@ D1.render = render;
 /* لصفحة المباريات (دائرة «دوري الدرجة الأولى» — منصور 2026-10-08) */
 D1.matchesHTML = () => { if(!DATA) DATA = normalize(null); return matchesHTML(); };
 D1.tableHTML = () => { if(!DATA) DATA = normalize(null); return tableHTML(); };
+/* بطاقة «مباريات اليوم» في الرئيسية (منصور 2026-10-24: مباريات الدرجة الأولى ما تظهر فيها) */
+D1.todayRows = iso => { if(!DATA) DATA = normalize(null);
+  return DATA.matches.filter(m=>m.date===iso).sort((a,b)=>String(a.time).localeCompare(String(b.time))).map(m=>{
+    const cr = c => { const s = crestSrc(c); return s ? `<img class="crest" src="${s}" alt="" width="30" height="30" loading="lazy">` : ""; };
+    const mid = played(m) ? `<b class="hm-td-sc" dir="ltr">${m.ag} - ${m.hg}</b><span class="hm-td-st">انتهت</span>` : `<b class="hm-td-time" dir="ltr">${m.time?H(m.time):"—"}</b>`;
+    return `<button type="button" class="hm-td-row" data-d1today="1">
+      <span class="hm-td-team h">${cr(m.home)}<b>${H(m.home)}</b></span>
+      <span class="hm-td-mid">${mid}</span>
+      <span class="hm-td-team a"><b>${H(m.away)}</b>${cr(m.away)}</span></button>`; }).join(""); };
 D1.count = () => { if(!DATA) DATA = normalize(null); return DATA.matches.length; };
-function repaint(){ if(document.querySelector("#v-div1.on")) render(); paintAdmin(); }
+function repaint(){ if(document.querySelector("#v-div1.on")) render(); paintAdmin();
+  if(document.querySelector("#v-home.on") && typeof window.renderHome==="function") try{ window.renderHome(); }catch(e){} }
 D1.openClub = c => { VIEW.tab = "clubs"; VIEW.club = SQUADS[c] ? c : null; if(document.querySelector("#v-div1.on")) render(); else if(typeof go==="function") go("div1"); };
 document.addEventListener("click", e=>{
   const el = e.target.closest ? e.target : null; if(!el) return;
+  if(el.closest("[data-d1today]")){ VIEW.tab = "matches"; VIEW.club = null; if(typeof go==="function") go("div1"); return; }
   if(el.closest("[data-d1close]") || el.classList.contains("d1-ov")){ closeSheet(); return; }
   const t = el.closest("[data-d1tab]");
   if(t){ VIEW.tab = t.dataset.d1tab; VIEW.club = null; render(); return; }

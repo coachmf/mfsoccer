@@ -2258,7 +2258,7 @@ main{padding-bottom:48px}
 <link rel="stylesheet" href="efftime.css?v=3">
 <script src="efftime.js?v=6" defer></script>
 <link rel="stylesheet" href="div1.css?v=4">
-<script src="div1.js?v=4" defer></script>
+<script src="div1.js?v=6" defer></script>
 <link rel="stylesheet" href="news.css?v=3">
 <script src="news.js?v=8" defer></script>   <!-- الأخبار: news/{id} + فهرس seasons/news + صور newsimg/{id} -->   <!-- دوري الدرجة الأولى: الترتيب والمباريات فقط (seasons/div1) -->
 <link rel="stylesheet" href="ext.css?v=3">
@@ -2268,7 +2268,7 @@ main{padding-bottom:48px}
 <script src="tstats-data.js?v=1" defer></script>
 <script src="analysis.js?v=31" defer></script>
 <!-- هوية MF SOCCER الذهبية + هيكل التطبيق (منصور 2026-10-05) -->
-<link rel="stylesheet" href="mf-brand.css?v=15">
+<link rel="stylesheet" href="mf-brand.css?v=16">
 <script>document.documentElement.classList.add("mf")</script>
 <script src="mf-shell.js?v=29" defer></script>
 <style>
@@ -13960,8 +13960,10 @@ function hmNextMatchHTML(){
 function todayISO(){ const d=new Date(), p=n=>String(n).padStart(2,"0"); return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}`; }
 function todayMatches(){ const t=todayISO(); return MATCHES.filter(m=>m.date===t).sort((a,b)=>(kickoffTS(a)||0)-(kickoffTS(b)||0)); }
 function hmTodayHTML(){
-  const list=todayMatches(); if(!list.length) return "";
-  const HM_CTA=hmCTA(list);
+  const list=todayMatches();
+  const d1=(COMP==="الكل"||COMP==="الدوري") && window.DIV1 && DIV1.todayRows ? DIV1.todayRows(todayISO()) : "";   /* دوري الدرجة الأولى (منصور 2026-10-24) */
+  if(!list.length && !d1) return "";
+  const HM_CTA=list.length ? hmCTA(list) : "";
   const row=m=>{
     const live=LIVE_PHASES.includes(m.status) && !staleLive(m), over=!live && matchOver(m), sc=`<b class="hm-td-sc" dir="ltr">${+m.ag} - ${+m.hg}</b>`;
     const mid = live ? `${sc}${m.status==="ht" ? '<span class="hm-td-st ht">بين الشوطين</span>' : `<span class="hm-td-st live" dir="ltr">${mclkHTML(m)||esc(LIVE_PH_AR[m.status]||"")}</span>`}`
@@ -13973,8 +13975,8 @@ function hmTodayHTML(){
       <span class="hm-td-team a"><b>${esc(m.away)}</b>${crest(m.away)}</span></button>`;
   };
   return `<section class="hm-nm hm-today">
-    <div class="hm-nm-hd"><span class="hm-tag"><i></i>مباريات اليوم</span><span class="hm-muted">${dayLabel(list[0].date)} · ${esc(rndLabel(list[0]))}</span></div>
-    <div class="hm-td-list">${list.map(row).join("")}</div>
+    <div class="hm-nm-hd"><span class="hm-tag"><i></i>مباريات اليوم</span><span class="hm-muted">${list.length ? `${dayLabel(list[0].date)} · ${esc(rndLabel(list[0]))}` : dayLabel(todayISO())}</span></div>
+    <div class="hm-td-list">${list.map(row).join("")}${d1 ? `<div class="hm-td-sub">دوري الدرجة الأولى</div>${d1}` : ""}</div>
     ${HM_CTA}
   </section>`;
 }
