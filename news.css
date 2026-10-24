@@ -15,7 +15,7 @@ html.mf[data-theme="light"] .nw-s-nt{--nw-acc:#0B63B6;--nw-acc-tx:#0B63B6}
 
 /* لوحتا القسمين */
 .nw-panels{display:grid;grid-template-columns:1fr;gap:14px}
-@media (min-width:760px){ .nw-panels{grid-template-columns:1fr 1fr} }
+@media (min-width:760px){ .nw-panels{grid-template-columns:repeat(3,1fr)} }
 .nw-panel{position:relative;display:block;min-height:250px;border-radius:var(--nw-r);overflow:hidden;isolation:isolate;background:var(--mf-c2,#0B1736)}
 .nw-panel .nw-ph{position:absolute;inset:0;border-radius:0;aspect-ratio:auto}
 .nw-panel .nw-ph img{transition:transform 600ms var(--mf-ease,ease)}

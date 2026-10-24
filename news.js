@@ -32,14 +32,16 @@ const safe = f => { try{ return f(); }catch(e){ return undefined; } };
 /* ───────────── الأقسام والتصنيفات ───────────── */
 const SECS = {
   local: {t:"أخبار محلية", cats:["awards","injuries","transfers"]},
-  nt:    {t:"أخبار المنتخب", cats:["matches","squads"]}
+  nt:    {t:"أخبار المنتخب", cats:["matches","squads"]},
+  rank:  {t:"التصنيف", cats:["afc"]}   /* منصور 2026-10-24: «سو جزء يديد بالاخبار سمه التصنيف» */
 };
 const CATS = {
   awards:    {t:"تكريم MF Soccer", sec:"local"},
   injuries:  {t:"الإصابات", sec:"local"},
   transfers: {t:"الانتقالات", sec:"local"},
   matches:   {t:"المباريات", sec:"nt"},
-  squads:    {t:"القوائم", sec:"nt"}
+  squads:    {t:"القوائم", sec:"nt"},
+  afc:       {t:"الاتحاد الآسيوي", sec:"rank"}
 };
 /* حالة الانتقال تُختار يدوياً فقط — بلا اختيار لا تظهر أي شارة */
 const TRANSFER_ST = {official:"رسمي", talks:"مفاوضات", loan:"إعارة"};
@@ -356,7 +358,7 @@ function homeHTML(){
   const latest = items().sort((a,b)=>String(b.pub).localeCompare(String(a.pub))).slice(0, 6);
   return `<div class="nw nw-home">
     ${masthead()}
-    <div class="nw-panels">${panel("local")}${panel("nt")}</div>
+    <div class="nw-panels">${Object.keys(SECS).map(panel).join("")}</div>
     <section class="nw-blk">${secHead("آخر الأخبار")}
       ${latest.length ? `<div class="nw-list">${latest.map(it=>card(it, "row", {cat:true})).join("")}</div>` : empty("لا توجد أخبار منشورة بعد", "تظهر هنا الأخبار فور نشرها من لوحة الإدارة.")}
     </section>
@@ -905,6 +907,6 @@ function boot(){
   if(/^#news/.test(location.hash) && !isOn() && typeof go==="function") setTimeout(()=>{ if(/^#news/.test(location.hash) && !isOn()) go("news"); }, 0);
   store.watchIndex(d=>{ IDX = d || {items:[]}; if(isOn() && NV.r!=="art") render(); });
 }
-NW._t = {store, NV, AD, open, compress, cleanHTML, parse, get IDX(){ return IDX; }, TEST};
+NW._t = {store, NV, AD, open, compress, cleanHTML, parse, persist, blank, get IDX(){ return IDX; }, TEST};
 if(document.readyState==="loading") document.addEventListener("DOMContentLoaded", ()=>setTimeout(boot, 40)); else setTimeout(boot, 40);
 })();
