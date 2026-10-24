@@ -35,6 +35,14 @@ window.LIVEPUSH = {
     this._set(this.SENT, a.slice(-400));          /* سقف حتى لا ينتفخ التخزين */
   },
 
+  /* النتيجة من قائمة الأهداف نفسها: الالتقاط يحدث قبل applyEdit فقيم
+     m.hg/m.ag لا تزال قيم ما قبل هذه الحفظة. */
+  _scoreNow(m, goals){
+    let h=0,a=0;
+    (goals||[]).forEach(g=>{ if(g.sc===m.home) h++; else if(g.sc===m.away) a++; });
+    return h + ' - ' + a;
+  },
+
   /* النتيجة لحظة الهدف — لا النتيجة النهائية */
   _scoreAt(m, goals, g){
     const at = (typeof goalAbs === 'function') ? goalAbs(m, g) : (+g.m||0) + (+g.x||0);
@@ -78,7 +86,7 @@ window.LIVEPUSH = {
       const sig = this._sig('c', Object.assign({r:m.round, comp:m.comp}, c));
       if(this._seen(sig)) return;
       out.push({ sig, title: '🟥 طرد — ' + c.club,
-                 body: c.p + ' ' + (+c.m||0) + '′ · ' + m.home + ' ' + (m.hg??0) + ' - ' + (m.ag??0) + ' ' + m.away });
+                 body: c.p + ' ' + (+c.m||0) + '′ · ' + m.home + ' ' + this._scoreNow(m, cur.goals) + ' ' + m.away });
     });
 
     /* صافرة النهاية مرة واحدة */
@@ -86,16 +94,22 @@ window.LIVEPUSH = {
       const sig = this._sig('ft', {r:m.round, comp:m.comp, club:m.home, p:m.away});
       if(!this._seen(sig))
         out.push({ sig, title: 'صافرة النهاية',
-                   body: m.home + '  ' + (m.hg??0) + ' - ' + (m.ag??0) + '  ' + m.away });
+                   body: m.home + '  ' + this._scoreNow(m, cur.goals) + '  ' + m.away });
     }
     return out.slice(0, this.MAX);
   },
 
   async send(list){
     if(!list || !list.length) return;
+    /* FBUSER مُعرَّف بـlet في index.html، وlet على مستوى السكربت لا يُضاف
+       إلى window — فـwindow.FBUSER كان undefined دائماً والإرسال يخرج هنا
+       بلا أن يرسل شيئاً. (منصور 2026-10-24) */
     let tok = '';
-    try{ tok = await (window.FBUSER && FBUSER.getIdToken()); }catch(e){}
-    if(!tok) return;
+    try{
+      const u = (typeof FBUSER !== 'undefined') ? FBUSER : null;
+      if(u && u.getIdToken) tok = await u.getIdToken();
+    }catch(e){}
+    if(!tok){ if(typeof toast === 'function') toast('البثّ يحتاج تسجيل دخول المحرّر','err'); return; }
     const sent = [];
     for(const n of list){
       try{
