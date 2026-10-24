@@ -526,6 +526,22 @@ const CLOUD = {
       return !!(j && j.ok);
     }catch(e){ return false; }
   },
+  /* نشر قائمة اللاعبين عبر /api/fantasy-players (حساب الخدمة) — HTTPS عادي بدل قناة Firestore التي تنتهي مهلتها
+     على الجوال البطيء مع مستند ~320KB (منصور 2026-10-24). يعيد {ok} */
+  async serverPlayers(list, priceVer, updated){
+    if(!this.user || !this.admin || typeof fetch==='undefined') return {ok:false};
+    try{
+      const idToken = await this.race(this.user.getIdToken(), 15000);
+      if(!idToken.ok) return {ok:false};
+      const ctl = typeof AbortController!=='undefined' ? new AbortController() : null;
+      const t = setTimeout(()=>{ try{ ctl && ctl.abort(); }catch(e){} }, 90000);
+      const r = await fetch('/api/fantasy-players', { method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ idToken: idToken.v, list, priceVer, updated }), ...(ctl ? {signal:ctl.signal} : {}) });
+      clearTimeout(t);
+      const j = await r.json().catch(()=>null);
+      return {ok: !!(j && j.ok)};
+    }catch(e){ return {ok:false}; }
+  },
   async serverMe(extra){
     if(!this.user || typeof fetch==='undefined') return null;
     try{
@@ -882,7 +898,9 @@ const CLOUD = {
       changed.push({id:p.id, name:p.name, from:+p.price, to:+m.price}); list[i]={...p, price:+m.price}; });
     if(restored){ try{ DB.save(); }catch(e){} }
     if(!changed.length){ if(st.playersPending){ st.playersPending=null; try{ DB.save(); }catch(e){} } return {ok:true, n:0}; }
-    let r; for(let t=0; t<3; t++){ r=await this.race(this.playersDoc().update({list, updated:new Date().toISOString()}), 20000+t*15000); if(r.ok) break; }
+    const upd=new Date().toISOString();
+    let r=await this.race(this.playersDoc().update({list, updated:upd}), 20000);
+    if(!r.ok) r=await this.serverPlayers(list, undefined, upd);   /* الجوال البطيء: عبر الخادم */
     if(!r.ok) return {ok:false, skip:'write-failed', n:changed.length};
     st.playersPending=null; try{ DB.save(); }catch(e){}
     return {ok:true, n:changed.length, changed};
@@ -922,7 +940,9 @@ const CLOUD = {
     const lk0 = await this.publishLock(st); if(!lk0.ok) return {ok:false, err:lk0.err};
 
     /* قائمة اللاعبين كبيرة: تُعاد حتى 3 مرات بمهلة أطول — 2026-10-19 تعذّر نشرها بعد احتساب الجولة 5 فبقيت الأسعار الجديدة على جهاز المدير وحده */
-    for(let t=0; t<3; t++){ r = await this.race(this.playersDoc().set({list: st.players, priceVer: (typeof SEED_PRICE_VER!=='undefined'? SEED_PRICE_VER : 1), updated: meta.updated}), 20000+t*15000); if(r.ok) break; }
+    const pv = (typeof SEED_PRICE_VER!=='undefined'? SEED_PRICE_VER : 1);
+    r = await this.race(this.playersDoc().set({list: st.players, priceVer: pv, updated: meta.updated}), 20000);
+    if(!r.ok) r = await this.serverPlayers(st.players, pv, meta.updated);   /* الجوال البطيء (2026-10-24): عبر الخادم بدل 3 محاولات من القناة */
     if(!r.ok){ st.playersPending = meta.updated; try{ DB.save(); }catch(e){} return {ok:false, err:'نُشرت الإعدادات لكن تعذّر نشر اللاعبين — ستُعاد تلقائياً عند فتح اللعبة'}; }
     st.playersPending = null;
 

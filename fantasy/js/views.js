@@ -184,8 +184,8 @@ const VIEWS = {
 
     const fromGW = st.rules.scoringFromGW||1;
     const liveGW = typeof LIVEGW!=='undefined' && LIVEGW.active();
-    // أثناء جولة جارية تكفي كتلة المباشر (المتوسط/نقاطك/الترتيب) — لا نكرر تنبيه «الاحتساب يبدأ»
-    const gwBlock = (lastFin && lastFin.n < fromGW) ? (liveGW ? '' : `
+    // أثناء جولة جارية تكفي كتلة المباشر (المتوسط/نقاطك/الترتيب) — لا تُعرض الجولة السابقة ولا بطلها (منصور 2026-10-24)
+    const gwBlock = liveGW ? '' : (lastFin && lastFin.n < fromGW) ? (liveGW ? '' : `
       <div class="hh-gwtitle">الاحتساب يبدأ من الجولة ${fromGW}</div>
       <div class="tiny" style="color:rgba(255,255,255,.8);text-align:center">الجولات السابقة لا تُحتسب لأحد — أول نقاط بعد الجولة ${fromGW}.</div>`) : lastFin? `
       <div class="hh-gwtitle">الجولة ${lastFin.n}</div>

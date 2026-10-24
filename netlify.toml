@@ -24,6 +24,13 @@
   status = 200
   force = true
 
+# ——— نشر قائمة لاعبي الفانتسي عبر الخادم عند بطء الجوال (netlify/functions/fantasy-players.js) ———
+[[redirects]]
+  from = "/api/fantasy-players"
+  to = "/.netlify/functions/fantasy-players"
+  status = 200
+  force = true
+
 # ——— تشكيلات المشتركين للترتيب الحي (netlify/functions/fantasy-teams.js) ———
 [[redirects]]
   from = "/api/fantasy-teams/*"
