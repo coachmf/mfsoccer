@@ -2270,7 +2270,7 @@ main{padding-bottom:48px}
 <!-- هوية MF SOCCER الذهبية + هيكل التطبيق (منصور 2026-10-05) -->
 <link rel="stylesheet" href="mf-brand.css?v=16">
 <script>document.documentElement.classList.add("mf")</script>
-<script src="mf-shell.js?v=30" defer></script>
+<script src="mf-shell.js?v=31" defer></script>
 <style>
 /* تبويب التحليل — التصميم الجديد (منصور 2026-09-17) */
 .an{--an-card:#0F1E35;--an-line:#213653;--an-txt:#EDF3FA;--an-mut:#8FA6C4;--an-track:rgba(143,166,196,.16);--an-acc:#2EB0F0;--an-acc2:#1878BE}
@@ -8468,8 +8468,12 @@ const ST_TABS = [
 ];
 const ST_SHOW = 20;
 function stClubs(){
-  /* أندية الدوري الممتاز فقط (منصور 2026-10-24): كانت تُجمع من كل المباريات فظهرت أندية الدرجة الأولى و«الفائز من المباراة N» من الكؤوس */
-  return [...CLUBS].sort((x,y)=>x.localeCompare(y,"ar"));
+  /* أندية البطولة المختارة فقط (منصور 2026-10-24: «الانديه الي تطلع تحت تتغير حسب البطوله») — من مباريات المسابقة الحالية،
+     بلا «الفائز من المباراة N»؛ الدوري = أندية الممتاز الـ12 */
+  const keep = l => { if(ST_CLUB && !l.includes(ST_CLUB)) ST_CLUB = ""; return l; };   /* نادٍ ليس في البطولة الجديدة = كل الفرق */
+  if(COMP==="الدوري") return keep([...CLUBS].sort((x,y)=>x.localeCompare(y,"ar")));
+  const set = new Set(); (MATCHES||[]).forEach(m=>[m.home, m.away].forEach(c=>{ if(c && !CUP_TBD.includes(c)) set.add(c); }));
+  return keep([...set].sort((x,y)=>x.localeCompare(y,"ar")));
 }
 function stData(){
   const PP = {}; playerPlay().forEach(p=>{ PP[p.n+"|"+p.c] = p; });

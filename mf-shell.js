@@ -155,7 +155,7 @@
         <span class="mf-ext-tx"><b>${t}</b><span class="mf-ext-cl"><small>الترتيب والمباريات</small></span></span></button>`;
     return `<div class="mf-hub-sec"><h3>الدوريات المحلية</h3><div class="mf-ext">
       ${row("data-hub-kpl","assets/hero/kpl-mark.webp","الدوري الكويتي الممتاز")}
-      ${shown("div1")?row("data-hub-div1","assets/hero/kpl-mark.webp","دوري الدرجة الأولى"):""}
+      ${shown("div1")?row("data-hub-div1","assets/comps/div1.webp?v=1","دوري الدرجة الأولى"):""}
     </div></div>`;
   }
   /* البطولات الخارجية التي تشارك فيها الأندية الكويتية (منصور 2026-10-11): شعار البطولة + شعارات أنديتنا فيها.
@@ -466,7 +466,7 @@
   const circ=(attrs,inner,label,on,cls)=>`<button type="button" class="mf-circ${cls?" "+cls:""}" ${attrs} aria-pressed="${!!on}"><i>${inner}</i><span>${esc(label)}</span></button>`;
   /* داخل الدائرة: شعار البطولة إن وُجد في الموقع وإلا أيقونة؛ تحت الاسم عدد المباريات بكلمة واضحة */
   /* رموز البطولات (الكأس/الشعار بلا الكتابة): الدولية مقصوصة من شعاراتها الرسمية في ويكيبيديا (2026-10-05) */
-  const COMP_LOGO={"c:الدوري":"assets/hero/kpl-mark.webp","d:div1":"assets/hero/kpl-mark.webp","e:gulf27":"assets/comps/gulf27.webp","e:gcl":"assets/comps/gcl.webp",
+  const COMP_LOGO={"c:الدوري":"assets/hero/kpl-mark.webp","d:div1":"assets/comps/div1.webp?v=1","e:gulf27":"assets/comps/gulf27.webp","e:gcl":"assets/comps/gcl.webp",
     "e:acl2":"assets/comps/acl2.webp","e:acc":"assets/comps/acc.webp","e:asiad":"assets/comps/asiad.webp","e:u17gulf":"assets/comps/u17gulf.webp","e:u15wc":"assets/comps/u15wc.webp",
     "c:كأس سمو ولي العهد":"assets/comps/cpcup.webp?v=2",
     "c:كأس الأمير":"assets/comps/amircup.webp?v=1","c:كأس الأمير 2025/2026":"assets/comps/amircup.webp?v=1"};   /* شعار كأس الأمير من ملصق الاتحاد (منصور 2026-10-24) */
@@ -528,13 +528,16 @@
       mxDiv1=false; mxGroup=null; x.o.click(); }
   });
 
+  /* دوري الدرجة الأولى (منصور 2026-10-24): الدوري ينفصل ممتاز / درجة أولى بشعاريهما — الدرجة الأولى نتائج وترتيب فقط، فالدائرة تفتح صفحتها */
+  const d1Circ=(attr,cls)=>shown("div1")&&window.DIV1?`<button type="button" class="mf-circ${cls?" "+cls:""}" ${attr} aria-pressed="false"><i><img src="${COMP_LOGO["d:div1"]}" alt="" width="32" height="32"></i><span>دوري الدرجة الأولى</span></button>`:"";
+  D.addEventListener("click", e=>{ if(e.target.closest("[data-pl-d1],[data-mf-d1]")){ e.stopPropagation(); nav("div1"); } }, true);
   function plCircles(){
     const v=D.getElementById("v-players"), cs=v && v.querySelector("#stComp"), cl=v && v.querySelector("#stClub"); if(!cs) return;
     const have=new Set(safe(()=>compsPresent())||[]);
     const comps=[...cs.options].filter(o=>o.value==="الكل" ? have.size>1 : (have.has(o.value) || o.selected));
     const clubs=cl?[...cl.options]:[];
     const box=D.createElement("div"); box.className="mf-circles";
-    box.innerHTML=`${comps.length>1?`<div class="mf-crow l1" role="group" aria-label="المسابقة">${comps.map(o=>circ(`data-pl-comp="${esc(o.value)}"`, o.value==="الكل"?IC.all:(o.value==="الدوري"?IC.table:(COMP_LOGO["c:"+o.value]?`<img src="${COMP_LOGO["c:"+o.value]}" alt="" width="32" height="32">`:IC.cups)), o.value==="الكل"?"الإجمالي":o.textContent.trim(), o.selected)).join("")}</div>`:""}
+    box.innerHTML=`${comps.length>1?`<div class="mf-crow l1" role="group" aria-label="المسابقة">${comps.map(o=>circ(`data-pl-comp="${esc(o.value)}"`, o.value==="الكل"?IC.all:(COMP_LOGO["c:"+o.value]?`<img src="${COMP_LOGO["c:"+o.value]}" alt="" width="32" height="32">`:IC.cups), o.value==="الكل"?"الإجمالي":o.value==="الدوري"?"الدوري الممتاز":o.textContent.trim(), o.selected)+(o.value==="الدوري"?d1Circ("data-pl-d1"):"")).join("")}</div>`:""}
       ${clubs.length?`<div class="mf-crow l2 crests" role="group" aria-label="الفريق">${clubs.map(o=>{ const c=o.value, s=c?crestSrc(c):"";
         return circ(`data-pl-club="${esc(c)}"`, c?(s?`<img src="${s}" alt="" width="30" height="30">`:esc(c.slice(0,2))):IC.all, c?c:"كل الفرق", o.selected, "sm"); }).join("")}</div>`:""}`;
     const old=v.querySelector(".mf-circles"); if(old) old.remove();
@@ -562,7 +565,7 @@
     const box=D.createElement("div"); box.className="mf-circles mf-ax";
     box.innerHTML=`<h2 class="mf-ptitle">الإحصائيات</h2><div class="mf-crow l1" role="group" aria-label="أقسام الإحصائيات">${tabs.map(b=>circ(`data-mf-at="${b.dataset.at}"`, AX_IC[b.dataset.at]||IC.stats, b.textContent.trim(), b.dataset.at===cur)).join("")}</div>
       ${comps.length>1?`<div class="mf-crow l2" role="group" aria-label="المسابقة">${comps.map(b=>{ const c=b.dataset.comp, logo=COMP_LOGO["c:"+c];
-        return `<button type="button" class="mf-circ sm comp" data-mf-axc="${esc(c)}" aria-pressed="${b.getAttribute("aria-pressed")==="true"}"><i>${logo?`<img src="${logo}" alt="" width="32" height="32">`:c==="الكل"?IC.all:IC.cups}</i><span>${esc(c==="الكل"?"الإجمالي":c==="الدوري"?"الدوري الممتاز":c)}</span></button>`; }).join("")}</div>`:""}`;
+        return `<button type="button" class="mf-circ sm comp" data-mf-axc="${esc(c)}" aria-pressed="${b.getAttribute("aria-pressed")==="true"}"><i>${logo?`<img src="${logo}" alt="" width="32" height="32">`:c==="الكل"?IC.all:IC.cups}</i><span>${esc(c==="الكل"?"الإجمالي":c==="الدوري"?"الدوري الممتاز":c)}</span></button>`+(c==="الدوري"?d1Circ("data-mf-d1","sm comp"):""); }).join("")}</div>`:""}`;
     const old=v.querySelector(".mf-ax"); if(old) old.remove();
     w.prepend(box);
   }
