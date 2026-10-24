@@ -2694,11 +2694,14 @@ html[data-theme="light"] .rf-kpis .y b{color:#B98A00}
 <script>
 /* ================= البيانات — مستخرجة من ملف الاستوديو التحليلي ================= */
 let SEASON = "2026/2027";
-const COMPS = ["الدوري","كأس الأمير","كأس سمو ولي العهد","كأس السوبر"];
+const COMPS = ["الدوري","كأس الأمير","كأس سمو ولي العهد","كأس السوبر","كأس الأمير 2025/2026"];
+/* بطولات الموسم الماضي المؤجّلة (منصور 2026-10-24: كأس الأمير 2025-2026 تُستكمل في نوفمبر/ديسمبر 2026):
+   مسابقة مستقلة بشريحتها، لا تدخل «كأس الأمير» 2026/2027 ولا «إجمالي البطولات المحلية» لهذا الموسم */
+const PREV_COMPS = ["كأس الأمير 2025/2026"];
 /* الكؤوس (منصور 2026-10-19): أندية الدرجة الأولى تشارك فيها — تظهر في محرّر مباريات الكؤوس فقط، لا في CLUBS ولا الدوري ولا الفانتسي.
    «الفائز من المباراة N» مكان مؤقت حتى يُعرف الطرف، ثم يُستبدل بالنادي من المحرّر. الدور (stage) يظهر بدل «الجولة N» في الكؤوس. */
 const CUP_CLUBS = ["سبورتي","خيطان","برقان","الجزيرة","الشامية","اتحاد الشرطة","اليرموك"];
-const CUP_TBD = ["الفائز من المباراة 1","الفائز من المباراة 2","الفائز من المباراة 3"];
+const CUP_TBD = ["الفائز من المباراة 1","الفائز من المباراة 2","الفائز من المباراة 3","الفائز من المباراة 10","الفائز من المباراة 11","الفائز من المباراة 12","الفائز من المباراة 13","الفائز من المباراة 14"];
 const CUP_STAGES = ["الملحق","دور الـ16","ربع النهائي","نصف النهائي","النهائي"];
 /* أندية الدرجة الأولى: لون القميص من شعار النادي، والمقلّم بلونيه كالقميص الحقيقي (منصور 2026-10-19) */
 const CUP_KIT_COLORS = {"سبورتي":["#5B3FA8","#FFFFFF"],"برقان":["#1D2A5C","#FFFFFF"],"الجزيرة":["#CFC9B2","#2A2F3A"],
@@ -2728,7 +2731,16 @@ const CUP_SEED = [
   {date:"2026-10-20", time:"17:40", home:"سبورتي", away:"اتحاد الشرطة", venue:"استاد ناصر العصيمي"},
   {date:"2026-10-20", time:"20:40", home:"برقان", away:"الشامية", venue:"استاد عبدالله الخليفة الصباح"},
   {date:"2026-10-29", time:"17:30", home:"خيطان", away:"الفائز من المباراة 1", venue:"استاد عبدالله الخليفة الصباح"}
-].map(x=>Object.assign({comp:"كأس سمو ولي العهد", stage:"الملحق", round:1, note:"", ref:"", refs:{}, tv:"", status:"", add1:0, add2:0, hg:0, ag:0}, x));
+].map(x=>Object.assign({comp:"كأس سمو ولي العهد", stage:"الملحق", round:1, note:"", ref:"", refs:{}, tv:"", status:"", add1:0, add2:0, hg:0, ag:0}, x))
+/* استكمال كأس الأمير 2025-2026 من ملصق الاتحاد (منصور 2026-10-24) — المضيف يمين الملصق، الوقت «يحدد لاحقاً» = فارغ، والنهائي بلا تاريخ */
+.concat([
+  {date:"2026-11-25", home:"السالمية", away:"التضامن", stage:"ربع النهائي", round:1, note:"المباراة 12"},
+  {date:"2026-11-26", home:"القادسية", away:"الفحيحيل", stage:"ربع النهائي", round:1, note:"المباراة 10"},
+  {date:"2026-11-26", home:"العربي", away:"خيطان", stage:"ربع النهائي", round:1, note:"المباراة 11"},
+  {date:"2026-12-04", home:"الكويت", away:"الفائز من المباراة 10", stage:"نصف النهائي", round:2, note:"المباراة 13"},
+  {date:"2026-12-05", home:"الفائز من المباراة 11", away:"الفائز من المباراة 12", stage:"نصف النهائي", round:2, note:"المباراة 14"},
+  {date:"", home:"الفائز من المباراة 13", away:"الفائز من المباراة 14", stage:"النهائي", round:3, note:"المباراة 15"}
+].map(x=>Object.assign({comp:"كأس الأمير 2025/2026", time:"", venue:"", ref:"", refs:{}, tv:"", status:"", add1:0, add2:0, hg:0, ag:0}, x)));
 function seedCupMatches(A){
   if(!A || !Array.isArray(A.matches)) return;
   CUP_SEED.forEach(s=>{ if(A.matches.some(m=>compOf(m)===s.comp && m.home===s.home && String(m.stage||"")===s.stage)) return;
@@ -2991,7 +3003,7 @@ function stampComp(d){
   return d;
 }
 function applyComp(){
-  const keep = x => COMP==="الكل" || compOf(x)===COMP;
+  const keep = x => COMP==="الكل" ? !PREV_COMPS.includes(compOf(x)) : compOf(x)===COMP;
   MATCHES = ALL.matches.filter(keep);
   GOALS   = ALL.goals.filter(keep);
   PENS    = (ALL.pens||[]).filter(keep);
@@ -7484,7 +7496,7 @@ function calendarBar(){
     counts[m.date]=(counts[m.date]||0)+1;
     const c=compOf(m); (dayComps[m.date]??={})[c]=((dayComps[m.date]||{})[c]||0)+1;
     if(isUpcoming(m)) soonDays[m.date]=(soonDays[m.date]||0)+1; } });
-  const COMP_SHORT={"كأس الأمير":"الأمير","كأس سمو ولي العهد":"ولي العهد","كأس السوبر":"السوبر"};
+  const COMP_SHORT={"كأس الأمير":"الأمير","كأس سمو ولي العهد":"ولي العهد","كأس السوبر":"السوبر","كأس الأمير 2025/2026":"الأمير 25/26"};
   const dayMarks=iso=>Object.entries(dayComps[iso]||{}).map(([c,k])=> c==="الدوري"
       ? `<i class="dk" title="الدوري"><img src="assets/hero/kpl-mark.webp" alt="" decoding="async">${k>1?`<em>${k}</em>`:""}</i>`
       : `<i class="dk cup" title="${esc(c)}">${esc(COMP_SHORT[c]||c)}${k>1?`<em>${k}</em>`:""}</i>`).join("");
