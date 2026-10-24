@@ -326,7 +326,6 @@
       ${compChips()}
       ${live}
       <div class="mf-row mf-row-a">${next}${resultsHTML()}</div>
-      ${COMP==="الدوري"?"":`<div class="note mf-note"><b>تنبيه:</b> جدول الترتيب يُحتسب بنظام الدوري. في مسابقات الكؤوس اعتبره ترتيباً بالنقاط لا جدولاً رسمياً.</div>`}
       <div class="mf-row mf-row-b">
         <div class="mf-col">${standingsHTML(T)}
           </div>
@@ -469,7 +468,8 @@
   /* رموز البطولات (الكأس/الشعار بلا الكتابة): الدولية مقصوصة من شعاراتها الرسمية في ويكيبيديا (2026-10-05) */
   const COMP_LOGO={"c:الدوري":"assets/hero/kpl-mark.webp","d:div1":"assets/hero/kpl-mark.webp","e:gulf27":"assets/comps/gulf27.webp","e:gcl":"assets/comps/gcl.webp",
     "e:acl2":"assets/comps/acl2.webp","e:acc":"assets/comps/acc.webp","e:asiad":"assets/comps/asiad.webp","e:u17gulf":"assets/comps/u17gulf.webp","e:u15wc":"assets/comps/u15wc.webp",
-    "c:كأس سمو ولي العهد":"assets/comps/cpcup.webp?v=2"};
+    "c:كأس سمو ولي العهد":"assets/comps/cpcup.webp?v=2",
+    "c:كأس الأمير":"assets/comps/amircup.webp?v=1","c:كأس الأمير 2025/2026":"assets/comps/amircup.webp?v=1"};   /* شعار كأس الأمير من ملصق الاتحاد (منصور 2026-10-24) */
   const mw2=n=>n===1?"مباراة واحدة":n===2?"مباراتان":(n>=3&&n<=10)?n+" مباريات":n+" مباراة";
   function compCirc(x,i){
     const logo=COMP_LOGO[x.key], total=x.key==="c:الكل";
@@ -534,7 +534,7 @@
     const comps=[...cs.options].filter(o=>o.value==="الكل" ? have.size>1 : (have.has(o.value) || o.selected));
     const clubs=cl?[...cl.options]:[];
     const box=D.createElement("div"); box.className="mf-circles";
-    box.innerHTML=`${comps.length>1?`<div class="mf-crow l1" role="group" aria-label="المسابقة">${comps.map(o=>circ(`data-pl-comp="${esc(o.value)}"`, o.value==="الكل"?IC.all:(o.value==="الدوري"?IC.table:IC.cups), o.value==="الكل"?"الإجمالي":o.textContent.trim(), o.selected)).join("")}</div>`:""}
+    box.innerHTML=`${comps.length>1?`<div class="mf-crow l1" role="group" aria-label="المسابقة">${comps.map(o=>circ(`data-pl-comp="${esc(o.value)}"`, o.value==="الكل"?IC.all:(o.value==="الدوري"?IC.table:(COMP_LOGO["c:"+o.value]?`<img src="${COMP_LOGO["c:"+o.value]}" alt="" width="32" height="32">`:IC.cups)), o.value==="الكل"?"الإجمالي":o.textContent.trim(), o.selected)).join("")}</div>`:""}
       ${clubs.length?`<div class="mf-crow l2 crests" role="group" aria-label="الفريق">${clubs.map(o=>{ const c=o.value, s=c?crestSrc(c):"";
         return circ(`data-pl-club="${esc(c)}"`, c?(s?`<img src="${s}" alt="" width="30" height="30">`:esc(c.slice(0,2))):IC.all, c?c:"كل الفرق", o.selected, "sm"); }).join("")}</div>`:""}`;
     const old=v.querySelector(".mf-circles"); if(old) old.remove();

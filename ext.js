@@ -215,7 +215,9 @@ function withAll(fn){
   depth++;
   if(typeof PASS_MEMO==="object" && PASS_MEMO) PASS_MEMO.m = null;
   try{
-    const L0 = saved.ALL || {}, cat = k => [...(L0[k]||[]), ...(DATA[k]||[])];
+    const L0 = saved.ALL || {};
+    /* كأس الأمير 2025/2026 المؤجّلة (PREV_COMPS) ليست من إجمالي هذا الموسم (منصور 2026-10-24) */
+    const cur = x => !(typeof PREV_COMPS!=="undefined" && PREV_COMPS.includes(x && x.comp)), cat = k => [...(L0[k]||[]).filter(cur), ...(DATA[k]||[])];
     const A = Object.assign({}, L0, {updated:"all|"+(L0.updated||"")+"|"+(DATA.updated||""),
       matches:cat("matches"), goals:cat("goals"), cards:cat("cards"), pens:cat("pens"), lineups:cat("lineups"), subs:cat("subs"), shapes:cat("shapes"), mev:cat("mev")});
     const league = new Set(saved.CLUBS||[]), opp = opponents().filter(c=>!league.has(c));

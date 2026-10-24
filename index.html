@@ -2262,7 +2262,7 @@ main{padding-bottom:48px}
 <link rel="stylesheet" href="news.css?v=4">
 <script src="news.js?v=9" defer></script>   <!-- الأخبار: news/{id} + فهرس seasons/news + صور newsimg/{id} -->   <!-- دوري الدرجة الأولى: الترتيب والمباريات فقط (seasons/div1) -->
 <link rel="stylesheet" href="ext.css?v=3">
-<script src="ext.js?v=7" defer></script>   <!-- المشاركات الخارجية لأنديتنا: تحرير كامل مثل الدوري في وثيقة مستقلة (seasons/ext2627) -->
+<script src="ext.js?v=8" defer></script>   <!-- المشاركات الخارجية لأنديتنا: تحرير كامل مثل الدوري في وثيقة مستقلة (seasons/ext2627) -->
 <!-- التحليل الموسّع + تقييم اللاعبين 0–100 + البحث العام (منصور 2026-09-29) -->
 <link rel="stylesheet" href="analysis.css?v=11">
 <script src="tstats-data.js?v=1" defer></script>
@@ -2270,7 +2270,7 @@ main{padding-bottom:48px}
 <!-- هوية MF SOCCER الذهبية + هيكل التطبيق (منصور 2026-10-05) -->
 <link rel="stylesheet" href="mf-brand.css?v=16">
 <script>document.documentElement.classList.add("mf")</script>
-<script src="mf-shell.js?v=29" defer></script>
+<script src="mf-shell.js?v=30" defer></script>
 <style>
 /* تبويب التحليل — التصميم الجديد (منصور 2026-09-17) */
 .an{--an-card:#0F1E35;--an-line:#213653;--an-txt:#EDF3FA;--an-mut:#8FA6C4;--an-track:rgba(143,166,196,.16);--an-acc:#2EB0F0;--an-acc2:#1878BE}
@@ -2720,7 +2720,7 @@ function jerseySVG(club, num, gk){
 ${cs?`<circle cx="63.5" cy="25" r="8" fill="#fff"/><image href="${cs}" x="57" y="18.5" width="13" height="13" preserveAspectRatio="xMidYMid meet"/>`:""}
 ${num?`<text x="50" y="69" text-anchor="middle" font-size="27" font-weight="800" font-family="system-ui,sans-serif" fill="${nfg}"${st?` stroke="${st[3]}" stroke-width="3.2" stroke-linejoin="round" paint-order="stroke"`:""}>${num}</text>`:""}</svg>`;
 }
-const COMP_LOGO = {"كأس سمو ولي العهد":"assets/comps/cpcup.webp?v=2"};
+const COMP_LOGO = {"كأس سمو ولي العهد":"assets/comps/cpcup.webp?v=2","كأس الأمير":"assets/comps/amircup.webp?v=1","كأس الأمير 2025/2026":"assets/comps/amircup.webp?v=1"};
 const isCupComp = c => !!c && c!=="الدوري" && c!=="الكل";
 const editClubs = m => isCupComp(m && m.comp) ? CLUBS.concat(CUP_CLUBS, CUP_TBD) : CLUBS;
 const rndLabel = m => isCupComp(m && m.comp) && m.stage ? String(m.stage) : `الجولة ${m.round}`;
@@ -7678,7 +7678,6 @@ function renderHomeLegacy(){
   ${exportBar("league",null,"ملخص "+(COMP==="الكل"?"المسابقات":COMP))}
   <div class="hm">${hmKpiHTML()}</div>
 
-  ${COMP==="الدوري"?"":`<div class="note" style="margin-bottom:14px"><b>تنبيه:</b> جدول الترتيب يُحتسب بنظام الدوري. في مسابقات الكؤوس اعتبره ترتيباً بالنقاط لا جدولاً رسمياً.</div>`}
   ${topPlayersHTML()}
   <div class="hm">${hmStandingsHTML(T)}</div>
   <p class="hint">${mw(played)} أُقيمت${soon?` · ${soon} لم تبدأ بعد ولا تُحتسب في الجدول`:""} · الترتيب بالنقاط ثم فارق الأهداف ثم الأهداف المسجلة.</p>
@@ -8469,8 +8468,8 @@ const ST_TABS = [
 ];
 const ST_SHOW = 20;
 function stClubs(){
-  const set = new Set(); ((ALL&&ALL.matches)||MATCHES||[]).forEach(m=>{ if(m.home) set.add(m.home); if(m.away) set.add(m.away); });
-  return [...set].sort((x,y)=>x.localeCompare(y,"ar"));
+  /* أندية الدوري الممتاز فقط (منصور 2026-10-24): كانت تُجمع من كل المباريات فظهرت أندية الدرجة الأولى و«الفائز من المباراة N» من الكؤوس */
+  return [...CLUBS].sort((x,y)=>x.localeCompare(y,"ar"));
 }
 function stData(){
   const PP = {}; playerPlay().forEach(p=>{ PP[p.n+"|"+p.c] = p; });
@@ -14096,7 +14095,6 @@ function renderHomeV2(){
     ${hmNextMatchHTML()}
     ${hmKpiHTML()}
     ${exportBar("league",null,"ملخص "+(COMP==="الكل"?"المسابقات":COMP))}
-    ${COMP==="الدوري"?"":`<div class="note" style="margin-bottom:14px"><b>تنبيه:</b> جدول الترتيب يُحتسب بنظام الدوري.</div>`}
     ${hmStandingsHTML(T)}
     ${hmTopScorersHTML()}
     ${typeof topPlayersHTML==="function"?topPlayersHTML():""}
