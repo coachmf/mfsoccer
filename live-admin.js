@@ -320,7 +320,7 @@ function penFields(d){
   const def = d.k==="pensave" ? "تصدى لها الحارس" : d.k==="penmiss" ? "خارج المرمى" : "";
   if(d.res==null && def) d.res = def;
   return `<div class="lvc-f"><span>نتيجة الركلة${d.k==="pen"?" (اتركها فارغة إن لم تُنفَّذ بعد)":""}</span>${chipRow("res", res, d.res||"")}</div>
-    <div class="lvc-f"><span>مكان التسديد</span>${chipRow("place", places, d.place||"")}</div>`;
+    <div class="lvc-f"><span>مكان التسديد</span>${typeof penPickSVG==="function" ? penPickSVG(d.place||"", z=>`data-chip="place" data-val="${H(z)}"`) : chipRow("place", places, d.place||"")}</div>`;   /* الضغط على المرمى (منصور 2026-10-24) */
 }
 function readForm(){
   const d = S.draft, r = S.root, v = id => { const el=r.querySelector("#"+id); return el ? el.value : undefined; };

@@ -2430,6 +2430,21 @@ html[data-theme="light"] .an-goal .gnet line{stroke:rgba(11,31,58,.07)}
 html[data-theme="light"] .an-goal .ggrid line{stroke:rgba(11,31,58,.18)}
 .an-goal .gpost{fill:none;stroke:#fff;stroke-width:2.4;stroke-linejoin:round;filter:drop-shadow(0 0 3px rgba(255,255,255,.35))}
 html[data-theme="light"] .an-goal .gpost{stroke:#0B1F3A;filter:none}
+.pen-pick{--an-cell0:rgba(143,166,196,.10);--an-mut:#8C93A8;max-width:380px;margin:6px auto 2px}
+.pen-pick .pp-z{cursor:pointer;outline:none}
+.pen-pick .pp-z rect{fill:var(--an-cell0);transition:fill .12s}
+.pen-pick .pp-z:hover rect{fill:rgba(231,208,147,.22)}
+.pen-pick .pp-z.on rect{fill:#E7D093}
+.pen-pick .gband.pp-z{fill:var(--an-cell0);transition:fill .12s}
+.pen-pick .gband.pp-z:hover{fill:rgba(239,68,68,.16)}
+.pen-pick .gband.pp-z.on{fill:rgba(239,68,68,.5)}
+.pen-pick .pp-t{font-family:var(--body,inherit);font-size:5.4px;font-weight:700;fill:#C5CAD8;text-anchor:middle;dominant-baseline:central;pointer-events:none}
+.pen-pick .pp-z.on .pp-t{fill:#00061A}
+.pen-pick .pp-out.on{fill:#fff}
+html[data-theme="light"] .pen-pick .pp-t{fill:#334155}
+.pp-wrap .fld select{display:none}
+.pp-wrap{grid-column:1/-1}
+.pp-wrap .pen-pick{max-width:420px;width:100%}
 .an-goal .gline{stroke:var(--an-mut);stroke-width:.8;opacity:.6}
 .an-goal .gn{font-family:var(--body);font-weight:800;font-size:9px;fill:#fff;text-anchor:middle;dominant-baseline:central;paint-order:stroke;stroke:rgba(6,21,41,.55);stroke-width:1.6}
 .an-goal .gn.sm{font-size:6px}
@@ -2448,6 +2463,13 @@ html[data-theme="light"] .an-goal .gn{fill:#0B1F3A;stroke:rgba(255,255,255,.7)}
 .an-lg i{width:12px;height:12px;border-radius:4px}
 .an-lg b{font-weight:800;font-variant-numeric:tabular-nums}
 .an-lg em{font-style:normal;font-size:.72rem;color:var(--an-mut);text-align:left;font-variant-numeric:tabular-nums}
+.an-lg.fg-k{width:100%;background:none;border:0;border-radius:10px;font-family:inherit;text-align:inherit;cursor:pointer;padding:7px 6px;margin:0 -6px;transition:background .12s}
+.an-lg.fg-k:hover:not(:disabled),.an-lg.fg-k.sel{background:rgba(231,208,147,.08)}
+.an-lg.fg-k.sel span{font-weight:800}
+.an-lg.fg-k:disabled{cursor:default;opacity:.6}
+.an-fg .fg-box{grid-column:1/-1}
+.fg-row{cursor:pointer}
+.fg-row .p b bdi{font-variant-numeric:tabular-nums}
 @media(min-width:900px){.an-body .an-legend{max-width:460px}.an-body{gap:40px}}
 .an :is(#heatLeague,#heatClub) .ztab{background:transparent;border:1px solid var(--an-line)}
 .an :is(#heatLeague,#heatClub) .ztab-hd{background:var(--an-track);color:var(--an-txt);font-weight:700}
@@ -6391,7 +6413,7 @@ function matchFormHTML(){
       ${pfld("اللاعب المنفّذ","pens."+i+".p",x.by,sides,x.p)}
       ${fld("الدقيقة","pens."+i+".m","number",null,x.m)}
       ${fld("النتيجة","pens."+i+".res","select",LIST.penres,x.res)}
-      ${fld("مكان التسديد","pens."+i+".place","select",PZONES,x.place)}
+      <div class="pp-wrap">${fld("مكان التسديد","pens."+i+".place","select",PZONES,x.place)}${penPickSVG(x.place, z=>`data-ppk="pens.${i}.place" data-ppv="${esc(z)}"`)}</div>
     </div></div>`).join("")}
   <button class="addbtn" data-add="pens">+ إضافة ركلة جزاء</button>
 
@@ -8722,6 +8744,33 @@ function anGoalSVG(list, u){
     <text class="glab" x="71" y="${(O.y+Y0)/2}">خارج إطار المرمى${out?` · ${out}`:""}</text>
   </svg></div>`;
 }
+/* اختيار مكان ركلة الجزاء في المحرّرات بالضغط على المرمى نفسه (منصور 2026-10-24: «يطلع لي هذا القول… اضغط عليه و يتسجل المكان على طول»).
+   نفس رسم خريطة المرمى؛ attr(z) يعطي كل منطقة سمات المحرّر (data-mset / data-chip / data-ppk) فيحفظها معالجه المعتاد */
+function penPickSVG(cur, attr){
+  const X0=26, Y0=20, CW=30, CH=26, GY=Y0+2*CH, sel=penPlaceOf(cur||"")||"";
+  const cells=[["يسار أعلى",0,0],["وسط أعلى",1,0],["يمين أعلى",2,0],["يسار أسفل",0,1],["وسط أسفل",1,1],["يمين أسفل",2,1]];
+  const net=[]; for(let x=X0+5;x<X0+3*CW;x+=5) net.push(`<line x1="${x}" y1="${Y0}" x2="${x}" y2="${GY}"/>`); for(let y=Y0+5;y<GY;y+=5) net.push(`<line x1="${X0}" y1="${y}" x2="${X0+3*CW}" y2="${y}"/>`);
+  const O={x:6,y:4,w:130,h:GY-4}, out=sel==="خارج المرمى";
+  return `<div class="an-goal pen-pick"><svg viewBox="0 0 142 ${GY+6}" xmlns="http://www.w3.org/2000/svg" role="group" aria-label="مكان التسديد">
+    <path class="gband pp-z${out?" on":""}" d="M${O.x} ${GY} V${O.y} H${O.x+O.w} V${GY} Z M${X0} ${GY} V${Y0} H${X0+3*CW} V${GY} Z" fill-rule="evenodd" ${attr("خارج المرمى")} role="button" aria-pressed="${out}"><title>خارج المرمى</title></path>
+    <g class="gnet">${net.join("")}</g>
+    ${cells.map(([z,i,j])=>{ const x=X0+i*CW, y=Y0+j*CH, on=sel===z;
+      return `<g class="pp-z${on?" on":""}" ${attr(z)} role="button" aria-pressed="${on}"><rect x="${x}" y="${y}" width="${CW}" height="${CH}"><title>${z}</title></rect><text class="pp-t" x="${x+CW/2}" y="${y+CH/2}">${z}</text></g>`; }).join("")}
+    <g class="ggrid"><line x1="${X0+CW}" y1="${Y0}" x2="${X0+CW}" y2="${GY}"/><line x1="${X0+2*CW}" y1="${Y0}" x2="${X0+2*CW}" y2="${GY}"/><line x1="${X0}" y1="${Y0+CH}" x2="${X0+3*CW}" y2="${Y0+CH}"/></g>
+    <path class="gpost" d="M${X0} ${GY} V${Y0} H${X0+3*CW} V${GY}"/>
+    <line class="gline" x1="0" y1="${GY}" x2="142" y2="${GY}"/>
+    <text class="pp-t pp-out${out?" on":""}" x="71" y="${(O.y+Y0)/2}">خارج المرمى</text>
+  </svg></div>`;
+}
+/* المحرّر الكلاسيكي: القائمة المخفية تبقى مصدر الحفظ — الضغط يضبطها ويطلق change */
+document.addEventListener("click", e=>{
+  const z=e.target.closest && e.target.closest("[data-ppk]"); if(!z) return;
+  const wrap=z.closest(".pp-wrap"), s=wrap && wrap.querySelector(`select[data-k="${CSS.escape(z.dataset.ppk)}"]`); if(!s) return;
+  const v=s.value===z.dataset.ppv ? "" : z.dataset.ppv;
+  s.value=v; s.dispatchEvent(new Event("change",{bubbles:true}));
+  wrap.querySelectorAll(".pp-z").forEach(g=>{ const on=g.dataset.ppv===v; g.classList.toggle("on",on); g.setAttribute("aria-pressed",on); });
+  const t=wrap.querySelector(".pp-out"); if(t) t.classList.toggle("on", v==="خارج المرمى");
+});
 function pzListHTML(k, list){
   const ps=list.filter(x=>penPlaceOf((x.place||"").trim())===k)
     .sort((a,b)=>((+a.r||0)-(+b.r||0))||((+a.m||0)-(+b.m||0)));
@@ -8760,14 +8809,37 @@ function anPens(list){
       <div class="txt"><b>${esc(common)}</b><span>الأكثر تكراراً</span></div>
     </div></div>`;
 }
+/* الضغط على أي نتيجة يعرض مبارياتها: الجولة، النتيجة، وصاحب الهدف الأول ودقيقته — والضغط على مباراة يفتحها (منصور 2026-10-24) */
+let AN_FG_UID = 0;
 function anFirstGoal(){
   const fg=firstGoals().filter(x=>x.first);
-  const w=fg.filter(x=>x.res==="فوز").length, d=fg.filter(x=>x.res==="تعادل").length, l=fg.filter(x=>x.res==="خسارة").length;
-  const parts=[{l:"فاز صاحب الهدف الأول",n:w,col:"#22C55E"},{l:"تعادل",n:d,col:"#94A3B8"},{l:"قُلبت النتيجة عليه",n:l,col:"#EF4444"}];
+  const by={"فوز":[],"تعادل":[],"خسارة":[]}; fg.forEach(x=>by[x.res]&&by[x.res].push(x));
+  const parts=[{k:"فوز",l:"فاز صاحب الهدف الأول",n:by["فوز"].length,col:"#22C55E"},{k:"تعادل",l:"تعادل",n:by["تعادل"].length,col:"#94A3B8"},{k:"خسارة",l:"قُلبت النتيجة عليه",n:by["خسارة"].length,col:"#EF4444"}];
+  const u="fg"+(++AN_FG_UID);
+  (window.FG_LISTS=window.FG_LISTS||{})[u]={by, parts};
   return `<div class="an-card an-fg">${anDonut(parts, fg.length, "مباراة")}
     <div class="an-legend"><div class="an-lg-hd"><span>مباريات شهدت أهدافاً</span><b>${fg.length}</b></div>
-    ${parts.map(p=>`<div class="an-lg"><i style="background:${p.col}"></i><span>${p.l}</span><b>${p.n}</b><em>${pct(p.n,fg.length)}%</em></div>`).join("")}</div></div>`;
+    ${parts.map(p=>`<button type="button" class="an-lg fg-k" data-fgu="${u}" data-fgk="${p.k}"${p.n?"":" disabled"} aria-expanded="false"><i style="background:${p.col}"></i><span>${p.l}</span><b>${p.n}</b><em>${pct(p.n,fg.length)}%</em></button>`).join("")}</div>
+    <div class="ah-goals fg-box" data-fgbox="${u}" hidden></div></div>`;
 }
+function fgListHTML(p, list){
+  const n=list.length, cnt=n===1?"مباراة واحدة":n===2?"مباراتان":n<=10?n+" مباريات":n+" مباراة";
+  const rows=list.slice().sort((a,b)=>(+b.m.round||0)-(+a.m.round||0)||String(b.m.date||"").localeCompare(String(a.m.date||""))).map(x=>{
+    const m=x.m, g=matchGoals(m)[0]||{};
+    return `<li class="fg-row" data-mopen="${esc(matchKey(m))}"><span class="m">${esc(isCupComp(m.comp)&&m.stage?m.stage:"ج"+m.round)}</span><span class="p"><b>${esc(m.home)} <bdi dir="ltr">${+m.ag}-${+m.hg}</bdi> ${esc(m.away)}</b><small>الهدف الأول: ${esc(g.p||(g.og?g.og+" (عكسي)":"")||x.first)}${g.m?` <bdi dir="ltr">${esc(g.m)}′</bdi>`:""} · ${esc(x.first)}</small></span></li>`; }).join("");
+  return `<div class="ah-gh"><b>${esc(p.l)}</b><span>${cnt}</span><button type="button" class="ah-gx" data-fgclose aria-label="إغلاق">×</button></div><ol class="ah-gl">${rows}</ol>`;
+}
+document.addEventListener("click", e=>{
+  const x=e.target.closest("[data-fgclose]");
+  if(x){ const box=x.closest(".fg-box"); if(box){ box.hidden=true; box.innerHTML=""; box.dataset.k=""; document.querySelectorAll(`.fg-k[data-fgu="${box.dataset.fgbox}"]`).forEach(b=>{ b.classList.remove("sel"); b.setAttribute("aria-expanded","false"); }); } return; }
+  const b=e.target.closest(".fg-k[data-fgk]"); if(!b) return;
+  const u=b.dataset.fgu, k=b.dataset.fgk, box=document.querySelector(`.fg-box[data-fgbox="${u}"]`), D=(window.FG_LISTS||{})[u];
+  if(!box || !D) return;
+  document.querySelectorAll(`.fg-k[data-fgu="${u}"]`).forEach(o=>{ o.classList.remove("sel"); o.setAttribute("aria-expanded","false"); });
+  if(!box.hidden && box.dataset.k===k){ box.hidden=true; box.innerHTML=""; box.dataset.k=""; return; }
+  box.innerHTML=fgListHTML(D.parts.find(p=>p.k===k), D.by[k]||[]); box.dataset.k=k; box.hidden=false; b.classList.add("sel"); b.setAttribute("aria-expanded","true");
+  box.scrollIntoView({block:"nearest", behavior:"smooth"});
+});
 function anBody(){
   const cols={"القدم اليمنى":"#2EB0F0","القدم اليسرى":"#1878BE","الرأس":"#A9E4FF","هدف عكسي":"#EF4444"};
   const bp=[...new Set(GOALS.map(g=>g.bp))].map(b=>({l:b,n:GOALS.filter(g=>g.bp===b).length})).sort((a,b)=>b.n-a.n);
@@ -16234,7 +16306,7 @@ html.mx-editing #waFab{display:none!important}   /* زر واتساب كان ي�
       body+=`${perChips(k,d)}<div class="mx-grid">${stepper("m",d.m,"الدقيقة",130)}</div>
         <div><span class="mx-lbl">المنفّذ</span>${pickGrid(club,"p",d.p)}</div>
         <div><span class="mx-lbl">النتيجة</span>${chips("res",LIST.penres,d.res,v=>v==="سجلت"?"ok":"")}</div>
-        <div><span class="mx-lbl">مكان التسديد</span>${chips("place",PZONES,d.place)}</div>
+        <div><span class="mx-lbl">مكان التسديد</span>${penPickSVG(d.place, z=>`data-mset="place" data-mval="${esc(z)}"`)}</div>
         <p class="mx-hint">ركلة الجزاء المسجّلة تُضاف أيضاً كهدف من تبويب الأحداث (هدف ← تفصيل «ركلة جزاء»).</p>`;
     }
     if(MEV[k]){
