@@ -7985,9 +7985,9 @@ function renderClubBody(c){
   $("#clubBody").innerHTML=`
   ${exportBar("club",c,"بطاقة "+c)}
   <div class="clubwrap" style="${accentVars(c)}">
-  <div class="ctabs" role="tablist" aria-label="أقسام النادي" style="--n:4">
+  <div class="ctabs fit" role="tablist" aria-label="أقسام النادي" style="--n:4">
     <span class="ctab-ind" aria-hidden="true"></span>
-    <button type="button" role="tab" data-ct="about">نبذة</button>
+    <button type="button" role="tab" data-ct="about">نبذة عن الفريق</button>
     <button type="button" role="tab" data-ct="matches">المباريات</button>
     <button type="button" role="tab" data-ct="stats">الإحصائيات</button>
     <button type="button" role="tab" data-ct="squad">قائمة الفريق</button>
@@ -11470,6 +11470,9 @@ html .squadbox .sqrow .sqno::placeholder{color:var(--cct,#fff);opacity:.6}
   font-size:clamp(.72rem,3.3vw,.86rem);color:var(--slate);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border-radius:10px;
   cursor:pointer;transition:color .22s;min-width:0}
 .ctabs button[aria-selected="true"]{color:var(--ctab-fg);font-weight:700}
+/* صفحة النادي بأربعة تبويبات: كل تبويب بعرض نصه كاملاً («نبذة عن الفريق» لا يُقص في الجوال) والمؤشر يأخذ عرض التبويب */
+.ctabs.fit{grid-template-columns:repeat(var(--n,3),auto)}
+.ctabs.fit button{padding:11px 6px;overflow:visible;text-overflow:clip;font-size:clamp(.7rem,3.15vw,.86rem)}
 .ctabs .ctab-ind{position:absolute;top:4px;bottom:4px;inset-inline-start:4px;width:calc((100% - 8px)/var(--n,3));border-radius:10px;
   background:linear-gradient(135deg,var(--ca),var(--cb));box-shadow:0 4px 14px rgba(var(--ca-rgb),.35);
   transition:transform .32s cubic-bezier(.2,.8,.2,1)}
@@ -12768,9 +12771,14 @@ function wireClubTabs(){
     bs.forEach(b=>{ b.setAttribute("aria-selected", b.dataset.ct===k); b.tabIndex = b.dataset.ct===k ? 0 : -1; });
     w.querySelectorAll(".ctab-panel").forEach(p=>p.classList.toggle("on", p.dataset.cp===k));
     const rtl=getComputedStyle(w).direction!=="ltr";
-    ind.style.transform=`translateX(${(rtl?-100:100)*i}%)`;
+    if(ind.parentElement.classList.contains("fit")){   /* عرض التبويبات غير متساوٍ: المؤشر بموضع التبويب وعرضه */
+      const b=bs[i], W=ind.parentElement.clientWidth;
+      ind.style.width=b.offsetWidth+"px";
+      ind.style.transform=`translateX(${rtl ? -(W-b.offsetLeft-b.offsetWidth-4) : b.offsetLeft-4}px)`;
+    } else ind.style.transform=`translateX(${(rtl?-100:100)*i}%)`;
   };
   bs.forEach(b=>b.onclick=()=>set(b.dataset.ct));
+  if(ind.parentElement.classList.contains("fit")) window.onresize=()=>{ if(w.isConnected) set(CLUB_TAB); };
   ind.style.transition="none"; set(CLUB_TAB);
   requestAnimationFrame(()=>requestAnimationFrame(()=>{ ind.style.transition=""; }));
 }
