@@ -185,6 +185,7 @@
       </div>
       ${kfa?`<div class="mf-hub-sec"><h3>المنتخب الوطني</h3><div class="mf-nt">
         <button type="button" data-hub-club="${esc(kfa)}">${kfaImg?`<img src="${kfaImg}" alt="" width="40" height="40">`:""}<span>الاتحاد الكويتي</span></button>
+        <button type="button" data-hub-ext="vetgulf"><img class="mf-nt-sq" src="assets/comps/vetgulf.webp" alt="" width="40" height="40"><span>كأس الخليج لقدامى اللاعبين</span></button>
         <button type="button" data-hub-ext="u17gulf"><img class="mf-nt-sq" src="assets/comps/u17gulf.webp" alt="" width="40" height="40"><span>كأس الخليج للناشئين</span></button>
         <button type="button" data-hub-ext="u15wc"><img class="mf-nt-sq" src="assets/comps/u15wc.webp" alt="" width="40" height="40"><span>كأس العالم تحت 15</span></button>
       </div></div>`:""}
@@ -467,7 +468,7 @@
   /* داخل الدائرة: شعار البطولة إن وُجد في الموقع وإلا أيقونة؛ تحت الاسم عدد المباريات بكلمة واضحة */
   /* رموز البطولات (الكأس/الشعار بلا الكتابة): الدولية مقصوصة من شعاراتها الرسمية في ويكيبيديا (2026-10-05) */
   const COMP_LOGO={"c:الدوري":"assets/hero/kpl-mark.webp","d:div1":"assets/comps/div1.webp?v=1","e:gulf27":"assets/comps/gulf27.webp","e:gcl":"assets/comps/gcl.webp",
-    "e:acl2":"assets/comps/acl2.webp","e:acc":"assets/comps/acc.webp","e:asiad":"assets/comps/asiad.webp","e:u17gulf":"assets/comps/u17gulf.webp","e:u15wc":"assets/comps/u15wc.webp",
+    "e:acl2":"assets/comps/acl2.webp","e:acc":"assets/comps/acc.webp","e:asiad":"assets/comps/asiad.webp","e:vetgulf":"assets/comps/vetgulf.webp","e:u17gulf":"assets/comps/u17gulf.webp","e:u15wc":"assets/comps/u15wc.webp",
     "c:كأس سمو ولي العهد":"assets/comps/cpcup.webp?v=2",
     "c:كأس الأمير":"assets/comps/amircup.webp?v=1","c:كأس الأمير 2025/2026":"assets/comps/amircup.webp?v=1"};   /* شعار كأس الأمير من ملصق الاتحاد (منصور 2026-10-24) */
   const mw2=n=>n===1?"مباراة واحدة":n===2?"مباراتان":(n>=3&&n<=10)?n+" مباريات":n+" مباراة";
@@ -478,7 +479,7 @@
     return `<button type="button" class="mf-circ sm comp" data-mx-opt="${i}" aria-pressed="${!!x.sel}" title="${esc(x.label)}"><i>${inner}</i><span>${esc(label)}</span><em>${mw2(x.n)}</em></button>`;
   }
   let mxGroup=null;   /* المجموعة المفتوحة: all | local | nt | ext */
-  const MX_NT=["e:u17gulf","e:u15wc","e:gulf27","e:asiad"];   /* بطولات المنتخبات: دائرة «المنتخب» مستقلة (منصور 2026-10-22) */
+  const MX_NT=["e:vetgulf","e:u17gulf","e:u15wc","e:gulf27","e:asiad"];   /* بطولات المنتخبات: دائرة «المنتخب» مستقلة (منصور 2026-10-22) */
   let mxDiv1=false;   /* دائرة «دوري الدرجة الأولى» مختارة: قائمة مبارياتها من div1.js بدل قائمة الموقع (منصور 2026-10-08) */
   function mxDiv1Paint(v){
     v.querySelectorAll(".mf-d1-list").forEach(x=>x.remove());
