@@ -7985,13 +7985,15 @@ function renderClubBody(c){
   $("#clubBody").innerHTML=`
   ${exportBar("club",c,"بطاقة "+c)}
   <div class="clubwrap" style="${accentVars(c)}">
-  <div class="ctabs" role="tablist" aria-label="أقسام النادي">
+  <div class="ctabs" role="tablist" aria-label="أقسام النادي" style="--n:4">
     <span class="ctab-ind" aria-hidden="true"></span>
-    <button type="button" role="tab" data-ct="about">نبذة عن الفريق</button>
+    <button type="button" role="tab" data-ct="about">نبذة</button>
+    <button type="button" role="tab" data-ct="matches">المباريات</button>
     <button type="button" role="tab" data-ct="stats">الإحصائيات</button>
     <button type="button" role="tab" data-ct="squad">قائمة الفريق</button>
   </div>
   <div class="ctab-panel" data-cp="about">${clubAboutHTML(c, r, played)}</div>
+  <div class="ctab-panel" data-cp="matches" data-club="${esc(c)}">${clubMatchesHTML(c)}</div>
   <div class="ctab-panel" data-cp="stats">
   <div class="card pad" style="display:flex;align-items:center;gap:14px">
     ${crest(c,true)}
@@ -8068,6 +8070,63 @@ function renderClubBody(c){
   wireClubTabs();
 }
 
+/* تبويب «المباريات» في صفحة النادي (منصور 2026-10-26، اقتراح من مشجع): كل مباريات الفريق في صفحة واحدة —
+   الدوري والكؤوس (ALL.matches بلا كأس الموسم الماضي) ومشاركاته الخارجية (extEvents)، النتائج الأحدث أولاً ثم القادمة؛
+   الضغط على المباراة يفتح صفحتها. */
+let CLUB_MF = "all";
+function clubMatchItems(c){
+  const out=[];
+  (ALL?.matches||[]).forEach(m=>{
+    if((m.home!==c && m.away!==c) || PREV_COMPS.includes(compOf(m))) return;
+    const h=m.home===c, comp=compOf(m), live=LIVE_PHASES.includes(m.status), up=!live && isUpcoming(m);
+    out.push({cat:comp==="الدوري"?"lg":"cup", comp, rd:rndLabel(m), d:m.date||"", ts:kickoffTS(m)||0, time:normTime(m.time)||"",
+      h, opp:{t:"club", n:h?m.away:m.home}, gf:h?+m.hg:+m.ag, ga:h?+m.ag:+m.hg, up, live, k:matchKey(m)});
+  });
+  EXT_COMPS.filter(x=>x.kind==="بطولة خارجية").forEach(x=>extEvents(x.id).forEach(e=>{
+    if(e.to && e.to!==e.d) return;
+    const p=evParts(e); if(p.length<2 || /نصف|نهائي|ربع|مباريات/.test(p[0])) return;
+    const a=evTeam(p[0],e.k), b=evTeam(p[1],e.k); if(!a || !b) return;
+    const h=a.t==="club" && a.n===c; if(!h && !(b.t==="club" && b.n===c)) return;
+    const gx=extGx(x.id, e, a.n, b.n);
+    let eh=e.hg, ea=e.ag, played=eh!=null && ea!=null, live=played && !!e.live;
+    if(gx && gx.st){ played=gx.st!=="soon"; live=gx.st==="live"; eh=gx.hg; ea=gx.ag; }
+    out.push({cat:"ext", comp:x.name, rd:e.n||"", d:e.d||"", ts:e.d?new Date(e.d+"T"+(normTime(e.time)||"23:59")+":00").getTime():0,
+      time:normTime(e.time)||"", h, opp:h?b:a, gf:h?+eh:+ea, ga:h?+ea:+eh, up:!played, live, k:gx&&gx.k||""});
+  }));
+  return out;
+}
+function clubMatchesHTML(c){
+  const all=clubMatchItems(c);
+  if(!all.length) return `<div class="card pad"><p class="hint" style="margin:0">لا توجد مباريات لهذا النادي بعد.</p></div>`;
+  const cats=[["all","الكل"],["lg","الدوري"],["cup","الكؤوس"],["ext","الخارجية"]].filter(([k])=>k==="all" || all.some(x=>x.cat===k));
+  if(!cats.some(([k])=>k===CLUB_MF)) CLUB_MF="all";
+  const newest=(a,b)=>(b.ts-a.ts) || String(b.d).localeCompare(String(a.d));
+  const res=x=>x.gf>x.ga?"w":x.gf<x.ga?"l":"d";
+  const form=all.filter(x=>!x.up && !x.live).sort(newest).slice(0,5).reverse().map(res);
+  const L=all.filter(x=>CLUB_MF==="all" || x.cat===CLUB_MF);
+  const done=L.filter(x=>!x.up).sort(newest);
+  const next=L.filter(x=>x.up).sort((a,b)=>(!a.d)-(!b.d) || String(a.d).localeCompare(String(b.d)) || (a.ts-b.ts));
+  const day=iso=>{ if(!iso) return "يُحدَّد لاحقاً"; const d=new Date(iso+"T12:00:00"); return isNaN(d)?esc(iso):`${d.getDate()} ${AR_MON[d.getMonth()]}`; };
+  const row=x=>{ const r=x.up?"":x.live?"live":res(x);
+    return `<li class="cm-row${r?" r-"+r:""}"${x.k?` data-mopen="${esc(x.k)}"`:""}>
+      <span class="cm-when"><b>${day(x.d)}</b><small>${esc(x.rd)}</small></span>
+      <span class="cm-opp">${extTeamCell(x.opp)}<small>${x.h?"على أرضه":"خارج أرضه"} · ${esc(x.comp)}</small></span>
+      ${x.up?`<span class="cm-sc up" dir="ltr">${x.time?esc(x.time):"—"}</span>`
+            :`<span class="cm-sc" dir="ltr">${x.gf} - ${x.ga}</span>${x.live?`<i class="cm-live">مباشر</i>`:""}`}
+    </li>`; };
+  const sec=(t,n,list)=>list.length?`<h3 class="cm-h">${t}<span>${n}</span></h3><ol class="cm-list">${list.map(row).join("")}</ol>`:"";
+  return `<div class="card pad cm-card">
+    ${form.length?`<div class="cm-form"><span>آخر ${form.length===1?"مباراة":form.length+" مباريات"}</span>${formPills(form)}</div>`:""}
+    ${cats.length>2?`<div class="cm-chips" role="group" aria-label="البطولة">${cats.map(([k,t])=>`<button type="button" data-cmf="${k}" aria-pressed="${k===CLUB_MF}">${t}</button>`).join("")}</div>`:""}
+    ${sec("النتائج", done.length, done)}${sec("المباريات القادمة", next.length, next.slice(0,5))}
+    ${!done.length && !next.length?`<p class="hint" style="margin:8px 0 0">لا توجد مباريات في هذه البطولة.</p>`:""}
+  </div>`;
+}
+document.addEventListener("click", e=>{
+  const b=e.target.closest("[data-cmf]"); if(!b) return;
+  const p=b.closest('.ctab-panel[data-cp="matches"]'); if(!p) return;
+  CLUB_MF=b.dataset.cmf; p.innerHTML=clubMatchesHTML(p.dataset.club);
+});
 /* تشكيلة النادي في جولة يختارها القارئ — تُصدَّر مع بطاقة النادي في التقرير */
 function clubXIRounds(c){
   const out=[];
@@ -10975,7 +11034,7 @@ const domParsed = () => new Promise(r => document.readyState!=="loading" ? r() :
   function openClub(c){
     go("clubs");
     const sel=document.querySelector("#clubSel");
-    if(!/^#c\/[^/]+\/(stats|squad)$/.test(location.hash)) CLUB_TAB="about";   /* النبذة أولاً إلا برابط عميق يطلب تبويباً آخر */
+    if(!/^#c\/[^/]+\/(matches|stats|squad)$/.test(location.hash)) CLUB_TAB="about";   /* النبذة أولاً إلا برابط عميق يطلب تبويباً آخر */
     if(sel){ sel.value=c; if(typeof renderClubBody==="function") renderClubBody(c); }
     window.scrollTo({top:0,behavior:"instant"});
   }
@@ -11405,18 +11464,44 @@ html .squadbox .sqrow .sqno::placeholder{color:var(--cct,#fff);opacity:.6}
 </script>
 <style>/* ===== صفحة النادي: تبويبات + نبذة + قائمة الفريق، وملف اللاعب العام (2026-09-15) ===== */
 .clubwrap{--ca:#1878BE;--cb:#0B1F3A;--ca-rgb:24,120,190;--ctab-fg:#fff}
-.ctabs{position:relative;display:grid;grid-template-columns:repeat(3,1fr);margin:14px 0;padding:4px;border-radius:14px;
+.ctabs{position:relative;display:grid;grid-template-columns:repeat(var(--n,3),1fr);margin:14px 0;padding:4px;border-radius:14px;
   background:rgba(143,166,196,.10);border:1px solid rgba(143,166,196,.18);overflow:hidden;isolation:isolate}
 .ctabs button{position:relative;z-index:1;background:none;border:0;padding:11px 4px;font-family:var(--display);font-weight:600;
   font-size:clamp(.72rem,3.3vw,.86rem);color:var(--slate);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border-radius:10px;
   cursor:pointer;transition:color .22s;min-width:0}
 .ctabs button[aria-selected="true"]{color:var(--ctab-fg);font-weight:700}
-.ctabs .ctab-ind{position:absolute;top:4px;bottom:4px;inset-inline-start:4px;width:calc((100% - 8px)/3);border-radius:10px;
+.ctabs .ctab-ind{position:absolute;top:4px;bottom:4px;inset-inline-start:4px;width:calc((100% - 8px)/var(--n,3));border-radius:10px;
   background:linear-gradient(135deg,var(--ca),var(--cb));box-shadow:0 4px 14px rgba(var(--ca-rgb),.35);
   transition:transform .32s cubic-bezier(.2,.8,.2,1)}
 .ctab-panel{display:none;animation:fade .22s ease}
 .ctab-panel.on{display:block}
 @media print{.ctab-panel{display:block!important}.ctabs{display:none}}
+/* تبويب «المباريات» في صفحة النادي */
+.cm-form{display:flex;align-items:center;justify-content:space-between;gap:10px;padding-bottom:12px;margin-bottom:12px;border-bottom:1px solid var(--border-card,rgba(148,163,184,.14));font-size:.8rem;color:var(--slate)}
+.cm-chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px}
+.cm-chips button{border:1px solid var(--border-card,rgba(148,163,184,.2));background:transparent;color:var(--slate);font:600 .8rem/1 var(--display);padding:8px 14px;border-radius:999px;cursor:pointer}
+.cm-chips button[aria-pressed="true"]{background:var(--acc,#E7D093);border-color:transparent;color:#07112B}
+.cm-h{display:flex;align-items:center;gap:8px;margin:14px 0 4px;font:700 .95rem/1.4 var(--display);color:var(--head)}
+.cm-h span{font:600 .72rem/1 var(--display);color:var(--slate);padding:3px 8px;border-radius:999px;background:rgba(148,163,184,.12)}
+.cm-list{list-style:none;margin:0;padding:0}
+.cm-row{display:grid;grid-template-columns:62px 1fr auto;align-items:center;gap:10px;padding:10px 4px;border-top:1px solid rgba(148,163,184,.12);position:relative}
+.cm-row[data-mopen]{cursor:pointer}
+.cm-row[data-mopen]:hover{background:rgba(148,163,184,.06)}
+.cm-when{display:flex;flex-direction:column;line-height:1.35}
+.cm-when b{font:700 .8rem/1.4 var(--display);color:var(--head);white-space:nowrap}
+.cm-when small{font-size:.68rem;color:var(--slate);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cm-opp{display:grid;grid-template-columns:auto 1fr;grid-template-rows:auto auto;column-gap:8px;align-items:center;min-width:0}
+.cm-opp>.crest,.cm-opp>img{grid-row:1 / span 2;width:30px;height:30px}
+.cm-opp>img.mc-flag{width:33px;height:22px}
+.cm-opp>b{font:700 .9rem/1.4 var(--display);color:var(--head);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cm-opp>small{font-size:.68rem;color:var(--slate);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cm-sc{min-width:58px;text-align:center;font:800 1rem/1 var(--f-head,var(--display));padding:7px 8px;border-radius:9px;background:rgba(148,163,184,.14);color:var(--head);font-variant-numeric:tabular-nums}
+.cm-row.r-w .cm-sc{background:#16A34A;color:#fff}
+.cm-row.r-l .cm-sc{background:#DC2626;color:#fff}
+.cm-row.r-d .cm-sc{background:#64748B;color:#fff}
+.cm-row.r-live .cm-sc{background:transparent;box-shadow:inset 0 0 0 1.5px #EF4444;color:#EF4444}
+.cm-sc.up{background:transparent;box-shadow:inset 0 0 0 1px rgba(148,163,184,.35);font-weight:700;font-size:.85rem}
+.cm-live{position:absolute;inset-inline-end:4px;bottom:2px;font-style:normal;font-size:.6rem;color:#EF4444;font-weight:700}
 /* --- نبذة عن الفريق --- */
 .cabout{position:relative;overflow:hidden;border-radius:18px;border:1px solid rgba(var(--ca-rgb),.45);
   background:linear-gradient(165deg,rgba(var(--ca-rgb),.30) 0%,var(--navy-900) 46%,var(--navy-900) 100%);box-shadow:0 10px 30px rgba(0,0,0,.18)}
@@ -14307,6 +14392,7 @@ const I18N_EXTRA = {
   'معلومات المباراة':'Match info',
   'المواجهات المباشرة':'Head to head',
   'آخر المباريات':'Recent matches',
+  'الكؤوس':'Cups', 'النتائج':'Results', 'مباشر':'Live', 'يُحدَّد لاحقاً':'TBC', 'لا توجد مباريات في هذه البطولة.':'No matches in this competition.', 'لا توجد مباريات لهذا النادي بعد.':'No matches for this club yet.',
   'الملعب':'Stadium',
   'القناة الناقلة':'TV channel',
   'الحكم':'Referee',
@@ -14619,7 +14705,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
 });
 /* رابط عميق #c/النادي/التبويب: يفتح صفحة النادي على التبويب المطلوب (about | stats | squad) */
 (function(){
-  const m=/^#c\/([^/]+)\/?(about|stats|squad)?$/.exec(location.hash); if(!m) return;
+  const m=/^#c\/([^/]+)\/?(about|matches|stats|squad)?$/.exec(location.hash); if(!m) return;
   let tries=0; const tick=()=>{
     if(Array.isArray(CLUBS) && CLUBS.length && Object.keys(SQUADS||{}).length && typeof openClub==="function"){
       USER_NAV=true; CLUB_TAB=m[2]||"about";
