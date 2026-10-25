@@ -8073,7 +8073,7 @@ function renderClubBody(c){
 /* تبويب «المباريات» في صفحة النادي (منصور 2026-10-26، اقتراح من مشجع): كل مباريات الفريق في صفحة واحدة —
    الدوري والكؤوس (ALL.matches بلا كأس الموسم الماضي) ومشاركاته الخارجية (extEvents)، النتائج الأحدث أولاً ثم القادمة؛
    الضغط على المباراة يفتح صفحتها. */
-let CLUB_MF = "all";
+let CLUB_MF = "all", CLUB_MOPEN = {done:false, next:false};
 function clubMatchItems(c){
   const out=[];
   (ALL?.matches||[]).forEach(m=>{
@@ -8098,12 +8098,13 @@ function clubMatchItems(c){
 function clubMatchesHTML(c){
   const all=clubMatchItems(c);
   if(!all.length) return `<div class="card pad"><p class="hint" style="margin:0">لا توجد مباريات لهذا النادي بعد.</p></div>`;
-  const cats=[["all","الكل"],["lg","الدوري"],["cup","الكؤوس"],["ext","الخارجية"]].filter(([k])=>k==="all" || all.some(x=>x.cat===k));
-  if(!cats.some(([k])=>k===CLUB_MF)) CLUB_MF="all";
+  /* البطولات: كل بطولات الموسم المحلية دائماً (الكؤوس تظهر قبل أن تبدأ) + البطولات الخارجية التي يشارك فيها الفريق */
+  const comps=[...COMPS.filter(x=>!PREV_COMPS.includes(x)), ...[...new Set(all.filter(x=>x.cat==="ext").map(x=>x.comp))]];
+  if(CLUB_MF!=="all" && !comps.includes(CLUB_MF)) CLUB_MF="all";
   const newest=(a,b)=>(b.ts-a.ts) || String(b.d).localeCompare(String(a.d));
   const res=x=>x.gf>x.ga?"w":x.gf<x.ga?"l":"d";
   const form=all.filter(x=>!x.up && !x.live).sort(newest).slice(0,5).reverse().map(res);
-  const L=all.filter(x=>CLUB_MF==="all" || x.cat===CLUB_MF);
+  const L=all.filter(x=>CLUB_MF==="all" || x.comp===CLUB_MF);
   const done=L.filter(x=>!x.up).sort(newest);
   const next=L.filter(x=>x.up).sort((a,b)=>(!a.d)-(!b.d) || String(a.d).localeCompare(String(b.d)) || (a.ts-b.ts));
   const day=iso=>{ if(!iso) return "يُحدَّد لاحقاً"; const d=new Date(iso+"T12:00:00"); return isNaN(d)?esc(iso):`${d.getDate()} ${AR_MON[d.getMonth()]}`; };
@@ -8113,19 +8114,30 @@ function clubMatchesHTML(c){
       <span class="cm-opp">${extTeamCell(x.opp)}<small>${x.h?"على أرضه":"خارج أرضه"} · ${esc(x.comp)}</small></span>
       ${x.up?`<span class="cm-sc up" dir="ltr">${x.time?esc(x.time):"—"}</span>`
             :`<span class="cm-sc" dir="ltr">${x.gf} - ${x.ga}</span>${x.live?`<i class="cm-live">مباشر</i>`:""}`}
+      ${x.k?`<span class="cm-go" aria-hidden="true"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg></span>`:"<span></span>"}
     </li>`; };
-  const sec=(t,n,list)=>list.length?`<h3 class="cm-h">${t}<span>${n}</span></h3><ol class="cm-list">${list.map(row).join("")}</ol>`:"";
+  const SHOW=5;
+  const sec=(k,t,list)=>{ if(!list.length) return ""; const open=CLUB_MOPEN[k], more=list.length>SHOW;
+    return `<h3 class="cm-h">${t}<span>${list.length}</span></h3><ol class="cm-list">${(open?list:list.slice(0,SHOW)).map(row).join("")}</ol>
+      ${more?`<button type="button" class="cm-more" data-cmmore="${k}" aria-expanded="${open}">${open?"عرض أقل":`عرض الكل (${list.length})`}<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>`:""}`; };
   return `<div class="card pad cm-card">
     ${form.length?`<div class="cm-form"><span>آخر ${form.length===1?"مباراة":form.length+" مباريات"}</span>${formPills(form)}</div>`:""}
-    ${cats.length>2?`<div class="cm-chips" role="group" aria-label="البطولة">${cats.map(([k,t])=>`<button type="button" data-cmf="${k}" aria-pressed="${k===CLUB_MF}">${t}</button>`).join("")}</div>`:""}
-    ${sec("النتائج", done.length, done)}${sec("المباريات القادمة", next.length, next.slice(0,5))}
+    <div class="cm-pick"><label class="lb" for="cmComp">البطولة</label>
+      <select id="cmComp" data-cmf>${[["all","كل البطولات"],...comps.map(x=>[x,x])].map(([k,t])=>`<option value="${esc(k)}"${k===CLUB_MF?" selected":""}>${esc(t)}</option>`).join("")}</select></div>
+    ${sec("done","النتائج", done)}${sec("next","المباريات القادمة", next)}
     ${!done.length && !next.length?`<p class="hint" style="margin:8px 0 0">لا توجد مباريات في هذه البطولة.</p>`:""}
   </div>`;
 }
+document.addEventListener("change", e=>{
+  const sel=e.target.closest("select[data-cmf]"); if(!sel) return;
+  const p=sel.closest('.ctab-panel[data-cp="matches"]'); if(!p) return;
+  CLUB_MF=sel.value; CLUB_MOPEN={done:false, next:false}; p.innerHTML=clubMatchesHTML(p.dataset.club);
+});
 document.addEventListener("click", e=>{
-  const b=e.target.closest("[data-cmf]"); if(!b) return;
+  const b=e.target.closest("[data-cmmore]"); if(!b) return;
   const p=b.closest('.ctab-panel[data-cp="matches"]'); if(!p) return;
-  CLUB_MF=b.dataset.cmf; p.innerHTML=clubMatchesHTML(p.dataset.club);
+  const k=b.dataset.cmmore; CLUB_MOPEN[k]=!CLUB_MOPEN[k]; p.innerHTML=clubMatchesHTML(p.dataset.club);
+  if(!CLUB_MOPEN[k]){ const h=p.querySelector(`[data-cmmore="${k}"]`); if(h) h.scrollIntoView({block:"nearest"}); }
 });
 /* تشكيلة النادي في جولة يختارها القارئ — تُصدَّر مع بطاقة النادي في التقرير */
 function clubXIRounds(c){
@@ -11481,15 +11493,20 @@ html .squadbox .sqrow .sqno::placeholder{color:var(--cct,#fff);opacity:.6}
 @media print{.ctab-panel{display:block!important}.ctabs{display:none}}
 /* تبويب «المباريات» في صفحة النادي */
 .cm-form{display:flex;align-items:center;justify-content:space-between;gap:10px;padding-bottom:12px;margin-bottom:12px;border-bottom:1px solid var(--border-card,rgba(148,163,184,.14));font-size:.8rem;color:var(--slate)}
-.cm-chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px}
-.cm-chips button{border:1px solid var(--border-card,rgba(148,163,184,.2));background:transparent;color:var(--slate);font:600 .8rem/1 var(--display);padding:8px 14px;border-radius:999px;cursor:pointer}
-.cm-chips button[aria-pressed="true"]{background:var(--acc,#E7D093);border-color:transparent;color:#07112B}
+.cm-pick{display:flex;align-items:center;gap:10px;margin-bottom:4px}
+.cm-pick select{flex:1;min-width:0}
+.cm-more{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;margin-top:6px;padding:10px;border-radius:10px;border:1px solid rgba(148,163,184,.2);background:rgba(148,163,184,.06);color:var(--head);font:600 .82rem/1 var(--display);cursor:pointer}
+.cm-more[aria-expanded="true"] svg{transform:rotate(180deg)}
 .cm-h{display:flex;align-items:center;gap:8px;margin:14px 0 4px;font:700 .95rem/1.4 var(--display);color:var(--head)}
 .cm-h span{font:600 .72rem/1 var(--display);color:var(--slate);padding:3px 8px;border-radius:999px;background:rgba(148,163,184,.12)}
 .cm-list{list-style:none;margin:0;padding:0}
-.cm-row{display:grid;grid-template-columns:62px 1fr auto;align-items:center;gap:10px;padding:10px 4px;border-top:1px solid rgba(148,163,184,.12);position:relative}
+.cm-row{display:grid;grid-template-columns:62px 1fr auto 22px;align-items:center;gap:10px;padding:10px 4px;border-top:1px solid rgba(148,163,184,.12);position:relative}
 .cm-row[data-mopen]{cursor:pointer}
 .cm-row[data-mopen]:hover{background:rgba(148,163,184,.06)}
+/* سهم «التفاصيل» يشير إلى أن المباراة قابلة للضغط (نفس سهم بطاقات المباريات) */
+.cm-go{display:flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:999px;color:var(--sky,#5FB2E8);background:rgba(95,178,232,.14);transition:transform .15s}
+.cm-row[data-mopen]:hover .cm-go{transform:translateX(-3px)}
+html[dir="ltr"] .cm-go svg{transform:scaleX(-1)}
 .cm-when{display:flex;flex-direction:column;line-height:1.35}
 .cm-when b{font:700 .8rem/1.4 var(--display);color:var(--head);white-space:nowrap}
 .cm-when small{font-size:.68rem;color:var(--slate);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -14400,7 +14417,7 @@ const I18N_EXTRA = {
   'معلومات المباراة':'Match info',
   'المواجهات المباشرة':'Head to head',
   'آخر المباريات':'Recent matches',
-  'الكؤوس':'Cups', 'النتائج':'Results', 'مباشر':'Live', 'يُحدَّد لاحقاً':'TBC', 'لا توجد مباريات في هذه البطولة.':'No matches in this competition.', 'لا توجد مباريات لهذا النادي بعد.':'No matches for this club yet.',
+  'الكؤوس':'Cups', 'كل البطولات':'All competitions', 'عرض أقل':'Show less', 'النتائج':'Results', 'مباشر':'Live', 'يُحدَّد لاحقاً':'TBC', 'لا توجد مباريات في هذه البطولة.':'No matches in this competition.', 'لا توجد مباريات لهذا النادي بعد.':'No matches for this club yet.',
   'الملعب':'Stadium',
   'القناة الناقلة':'TV channel',
   'الحكم':'Referee',

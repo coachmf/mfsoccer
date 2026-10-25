@@ -9,7 +9,7 @@
 
    عند كل نشر: ارفع رقم VER فتُبنى ذاكرة جديدة وتُحذف القديمة.
    ========================================================= */
-const VER   = 'mf-2026-10-26-578-club-tabs-fit';
+const VER   = 'mf-2026-10-26-579-club-matches-v2';
 const SHELL = 'shell-' + VER;
 const RUN   = 'run-'   + VER;
 
