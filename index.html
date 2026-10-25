@@ -11977,6 +11977,7 @@ html[data-theme="light"] .hm{--bg-card:#FFFFFF;--border-card:#E2E8F0;--text-prim
 .hm-tbl td.club .crest{width:26px;height:26px;border-radius:7px;flex:none}
 .hm-tbl td.c{color:var(--text-muted);font-size:12px;font-family:var(--f-body)}
 .hm-tbl td.pts{font-weight:800;font-size:15px}
+.hm-tbl td.gfa{color:var(--text-muted);white-space:nowrap}   /* له:عليه في جدول الرئيسية (منصور 2026-10-25) */
 .hm-tbl tr{cursor:pointer}
 .hm-tbl tr.champ td{background:var(--champ)}
 .hm-tbl tr.rel td{background:var(--relc)}
@@ -14143,11 +14144,11 @@ function hmStandingsHTML(T){
   return `<section class="hm-std">
     <h2 class="sec">جدول الترتيب<span class="sq-n">${esc(COMP||"الدوري")} · ${esc(SEASON)}</span></h2>
     <div class="hm-card hm-tblwrap"><table class="hm-tbl">
-      <thead><tr><th class="c">#</th><th class="club">النادي</th><th>ل</th><th>ف</th><th>ت</th><th>خ</th><th>+/-</th><th class="pts">ن</th><th class="frm">الفورمة</th></tr></thead>
+      <thead><tr><th class="c">#</th><th class="club">النادي</th><th>ل</th><th>ف</th><th>ت</th><th>خ</th><th class="gfa">له:عليه</th><th>+/-</th><th class="pts">ن</th><th class="frm">الفورمة</th></tr></thead>
       <tbody>${T.map((r,i)=>`<tr class="${i<4?"champ":""}${i>=n-2?" rel":""}" data-club-open="${esc(r.c)}">
         <td class="c">${i+1}</td>
         <td class="club"><span>${crest(r.c)}<b>${esc(r.c)}</b></span></td>
-        <td>${r.P}</td><td>${r.W}</td><td>${r.D}</td><td>${r.L}</td><td dir="ltr">${r.GD>0?"+":""}${r.GD}</td>
+        <td>${r.P}</td><td>${r.W}</td><td>${r.D}</td><td>${r.L}</td><td class="gfa" dir="ltr">${r.GF}:${r.GA}</td><td dir="ltr">${r.GD>0?"+":""}${r.GD}</td>
         <td class="pts">${r.Pts}</td><td class="frm">${formPills(r.form)}</td></tr>`).join("")}</tbody>
     </table></div>
     <div class="hm-legend"><span><i class="champ"></i>المراكز 1–4</span><span><i class="rel"></i>الهبوط (المركزان الأخيران)</span></div>
@@ -14285,6 +14286,7 @@ const I18N_EXTRA = {
   'الترتيب':'Table',
   'أحداث المباراة':'Match events',
   'الجدول كاملاً':'Full table',
+  'له:عليه':'GF:GA',
   'رجوع':'Back',
   'طاقم التحكيم':'Match officials',
   'حكم الساحة':'Referee',
