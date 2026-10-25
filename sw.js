@@ -9,7 +9,7 @@
 
    عند كل نشر: ارفع رقم VER فتُبنى ذاكرة جديدة وتُحذف القديمة.
    ========================================================= */
-const VER   = 'mf-2026-10-24-570-players-server';
+const VER   = 'mf-2026-10-25-571-bp-goals';
 const SHELL = 'shell-' + VER;
 const RUN   = 'run-'   + VER;
 

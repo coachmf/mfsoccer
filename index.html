@@ -8845,9 +8845,37 @@ function anBody(){
   const bp=[...new Set(GOALS.map(g=>g.bp))].map(b=>({l:b,n:GOALS.filter(g=>g.bp===b).length})).sort((a,b)=>b.n-a.n);
   const tot=GOALS.length, fallback=["#64748B","#475569","#334155"]; let fi=0;
   const parts=bp.map(x=>({...x, col:cols[x.l]||fallback[(fi++)%3]}));
+  const u="bp"+(++AN_BP_UID);
+  (window.BP_LISTS=window.BP_LISTS||{})[u]=parts;
   return `<div class="an-card an-fg an-body">${anDonut(parts, tot, "هدفاً")}
-    <div class="an-legend">${parts.map((p,k)=>`<div class="an-lg"><i style="background:${p.col}"></i><span>${esc(p.l||"غير محدد")}</span><b>${p.n}</b><em>${pct(p.n,tot)}%</em></div>`).join("")}</div></div>`;
+    <div class="an-legend">${parts.map((p,k)=>`<button type="button" class="an-lg fg-k bp-k" data-bpu="${u}" data-bpk="${k}"${p.n?"":" disabled"} aria-expanded="false"><i style="background:${p.col}"></i><span>${esc(p.l||"غير محدد")}</span><b>${p.n}</b><em>${pct(p.n,tot)}%</em></button>`).join("")}</div>
+    <div class="ah-goals fg-box bp-box" data-bpbox="${u}" hidden></div></div>`;
 }
+/* الضغط على أي طريقة تسجيل (القدم اليمنى، الرأس…) يعرض من سجّل بها وفي أي مباراة — والضغط على الهدف يفتح المباراة (منصور 2026-10-25) */
+let AN_BP_UID = 0;
+function bpListHTML(p){
+  const gs=GOALS.filter(g=>g.bp===p.l).sort((a,b)=>(+b.r||0)-(+a.r||0)||(parseInt(a.m)||0)-(parseInt(b.m)||0));
+  const played=playedMatches();
+  const n=gs.length, cnt=n===1?"هدف واحد":n===2?"هدفان":n<=10?n+" أهداف":n+" هدفاً";
+  const rows=gs.map(g=>{
+    const m=played.find(x=>+x.round===+g.r && compOf(x)===compOf(g) && ((x.home===g.sc&&x.away===g.cd)||(x.away===g.sc&&x.home===g.cd)));
+    const og=isOG(g), who=og?(g.og||g.p||"—"):(g.p||"—");
+    const rd=m&&isCupComp(m.comp)&&m.stage?m.stage:"الجولة "+g.r;
+    const sc=m?` <bdi dir="ltr">${+m.ag}-${+m.hg}</bdi>`:"";
+    return `<li${m?` class="fg-row" data-mopen="${esc(matchKey(m))}"`:""}><span class="m">${g.m?esc(minLabel(g)):"—"}</span><span class="p"><b>${esc(who)}</b><small>${og?`لصالح ${esc(g.sc||"")}`:esc(g.sc||"")}${g.cd?` ضد ${esc(g.cd)}`:""}${sc} · ${esc(rd)}</small></span></li>`; }).join("");
+  return `<div class="ah-gh"><b>${esc(p.l||"غير محدد")}</b><span>${cnt}</span><button type="button" class="ah-gx" data-bpclose aria-label="إغلاق">×</button></div><ol class="ah-gl">${rows}</ol>`;
+}
+document.addEventListener("click", e=>{
+  const x=e.target.closest("[data-bpclose]");
+  if(x){ const box=x.closest(".bp-box"); if(box){ box.hidden=true; box.innerHTML=""; box.dataset.k=""; document.querySelectorAll(`.bp-k[data-bpu="${box.dataset.bpbox}"]`).forEach(b=>{ b.classList.remove("sel"); b.setAttribute("aria-expanded","false"); }); } return; }
+  const b=e.target.closest(".bp-k[data-bpk]"); if(!b) return;
+  const u=b.dataset.bpu, k=b.dataset.bpk, box=document.querySelector(`.bp-box[data-bpbox="${u}"]`), P=(window.BP_LISTS||{})[u];
+  if(!box || !P || !P[k]) return;
+  document.querySelectorAll(`.bp-k[data-bpu="${u}"]`).forEach(o=>{ o.classList.remove("sel"); o.setAttribute("aria-expanded","false"); });
+  if(!box.hidden && box.dataset.k===k){ box.hidden=true; box.innerHTML=""; box.dataset.k=""; return; }
+  box.innerHTML=bpListHTML(P[k]); box.dataset.k=k; box.hidden=false; b.classList.add("sel"); b.setAttribute("aria-expanded","true");
+  box.scrollIntoView({block:"nearest", behavior:"smooth"});
+});
 /* ===== صفحة التحليل (منصور 2026-09-29) =====
    الهيكل والتبويبات (نظرة عامة · الفرق · اللاعبون · الحكام) في analysis.js، وهو يستبدل RENDER.analysis.
    هنا «نظرة عامة» = أقسام الأهداف الأصلية بلا تغيير، وrenderAnalysis احتياطي لو لم يُحمَّل analysis.js. */
