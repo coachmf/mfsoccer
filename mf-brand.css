@@ -1037,6 +1037,10 @@ html.mf .mf-tools .hero-admin:not(.show){display:none}
   padding-bottom:env(safe-area-inset-bottom);transform:translateZ(0)}
 .mf-bar-in{height:var(--mf-bar-h);display:grid;grid-template-columns:repeat(6,minmax(0,1fr));align-items:end;max-width:560px;margin:0 auto}
 html.mf-nofan .mf-bar-in{grid-template-columns:repeat(5,minmax(0,1fr))}
+/* الدائرة في نص الشاشة (سعد المنصور 2026-10-26؛ منصور: الأخبار تبقى تحت): كل نصف = (العرض − الدائرة) ÷ 2 —
+   اليمين زران أعرض (الرئيسية، المباريات) واليسار ثلاثة (الإحصائيات، الأخبار، الفانتسي) */
+.mf-bar-in{--orb:76px; grid-template-columns:repeat(2,calc((100% - var(--orb)) / 4)) var(--orb) repeat(3,calc((100% - var(--orb)) / 6))}
+html.mf-nofan .mf-bar-in{grid-template-columns:repeat(2,calc((100% - var(--orb)) / 4)) var(--orb) repeat(2,calc((100% - var(--orb)) / 4))}
 .mf-bar button{height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;color:var(--mf-tx3);
   font-size:.68rem;font-weight:600;transition:color var(--mf-fast) var(--mf-ease)}
 .mf-bar button svg{width:23px;height:23px;transition:transform var(--mf-fast) var(--mf-ease)}
