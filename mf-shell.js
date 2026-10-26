@@ -479,7 +479,7 @@
     return `<button type="button" class="mf-circ sm comp" data-mx-opt="${i}" aria-pressed="${!!x.sel}" title="${esc(x.label)}"><i>${inner}</i><span>${esc(label)}</span><em>${mw2(x.n)}</em></button>`;
   }
   let mxGroup=null;   /* المجموعة المفتوحة: all | local | nt | ext */
-  const MX_NT=["e:vetgulf","e:u17gulf","e:u15wc","e:gulf27","e:asiad"];   /* بطولات المنتخبات: دائرة «المنتخب» مستقلة (منصور 2026-10-22) */
+  const MX_NT=["e:ntfr","e:vetgulf","e:u17gulf","e:u15wc","e:gulf27","e:asiad"];   /* بطولات المنتخبات: دائرة «المنتخب» مستقلة (منصور 2026-10-22) */
   let mxDiv1=false;   /* دائرة «دوري الدرجة الأولى» مختارة: قائمة مبارياتها من div1.js بدل قائمة الموقع (منصور 2026-10-08) */
   function mxDiv1Paint(v){
     v.querySelectorAll(".mf-d1-list").forEach(x=>x.remove());
