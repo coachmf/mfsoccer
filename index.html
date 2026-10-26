@@ -10302,7 +10302,7 @@ function pickListHTML(d, res){
   return `<div class="pkl">${Object.entries(d.pk||{}).map(([k,v])=>{
     const [h,a]=k.split("|"), act=(res||{})[k]; let cls="no";
     if(act){ if(+v[0]===act[0] && +v[1]===act[1]) cls="ex"; else if(Math.sign(v[0]-v[1])===Math.sign(act[0]-act[1])) cls="ok"; else cls="bad"; }
-    return `<div class="r"><span>${crest(h)} ${esc(h)} – ${esc(a)} ${crest(a)}</span><span><i class="${cls}" dir="ltr">${+v[0]} - ${+v[1]}</i>${act?` <em dir="ltr">(${act[0]} - ${act[1]})</em>`:""}</span></div>`;
+    return `<div class="r"><span>${crest(h)} ${esc(h)} – ${esc(a)} ${crest(a)}</span><span><i class="${cls}" dir="ltr">${+v[1]} - ${+v[0]}</i>${act?` <em dir="ltr">(${act[1]} - ${act[0]})</em>`:""}</span></div>`;
   }).join("")}${d.sc?`<div class="r"><span>هداف الجولة</span><span><i class="${d.scOk?"ex":(res&&Object.keys(res).length?"bad":"no")}">${esc(d.sc)}</i></span></div>`:""}</div>`;
 }
 function fanProfileHTML(){
