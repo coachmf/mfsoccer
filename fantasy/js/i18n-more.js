@@ -58,7 +58,7 @@ const NAMES_EN = {
   'أحمد عبدالكريم':'Ahmad Abdulkarim',
   'علي عبدالرضا':'Ali Abdulridha',
   'مارتن سيفيلا':'Martin Sevela',
-  'إيغور ريميتش':'Igor Remic',
+  'إيغور ريميتش':'Igor Remic', 'عادل مرزوق':'Adel Marzouq',
   'واغنر أندرادي':'Wagner Andrade',
   'أنطونيو ميراندا':'Antonio Miranda',
   'الشيخ مشعل طلال الفهد':'Sheikh Mishal Talal Al-Fahad',

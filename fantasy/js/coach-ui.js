@@ -17,7 +17,7 @@ const COACH_NAMES_EN = {
   'فراس الخطيب':'Firas Al-Khatib', 'غوران سابليتش':'Goran Sablić', 'محمد عبدالنبي':'Mohammed Abdulnabi', 'داركو نيستروفيتش':'Darko Nestorović', 'محمد إبراهيم':'Mohammed Ibrahim',
   'علي عاشور':'Ali Ashour', 'دراغان تاديتش':'Dragan Tadić', 'ظاهر العدواني':'Dhaher Al-Adwani',
   'مارتن سيفيلا':'Martin Ševela', 'أحمد عبدالكريم':'Ahmad Abdulkarim', 'أنطونيو ميراندا':'António Miranda',
-  'واغنر أندرادي':'Wagner Andrade', 'إيغور ريميتش':'Igor Remetić', 'علي عبدالرضا':'Ali Abdulredha',
+  'واغنر أندرادي':'Wagner Andrade', 'إيغور ريميتش':'Igor Remetić', 'عادل مرزوق':'Adel Marzouq', 'علي عبدالرضا':'Ali Abdulredha',
 };
 const COACH_NAT_EN = { 'الكويت':'Kuwait', 'سوريا':'Syria', 'كرواتيا':'Croatia', 'البحرين':'Bahrain', 'سلوفاكيا':'Slovakia',
   'البرتغال':'Portugal', 'البرازيل':'Brazil', 'البوسنة':'Bosnia' };
