@@ -467,27 +467,27 @@ function cardHTML(d, live){
   </div>`;
 }
 EFF.cardHTML = cardHTML;
+/* تبويب «اللعب الفعلي» في صفحة المباراة: يظهر إذا كانت المباراة مرصودة (زمن مسجّل أو شوط جارٍ) */
+EFF.has = m => { const s = m && IDX.m[keyOf(m)]; return !!(s && (s.dur>0 || s.live)); };
 function mpInject(){
   const box = document.getElementById("mpage");
   const m = (typeof MP!=="undefined" && MP) ? MP.m : null;
   if(!box || box.hidden || !m){ mpStop(); return; }
-  const key = keyOf(m);
-  const tab = box.querySelector('[data-mp-tab][aria-pressed="true"]');
-  const onDetails = !tab || tab.dataset.mpTab==="details";
-  if(!IDX.m[key]){ mpStop(); return; }
+  const key = keyOf(m), has = EFF.has(m);
+  /* ظهر التبويب أو اختفى بعد تحميل الفهرس: نعيد رسم الصفحة */
+  if(has !== !!box.querySelector('[data-mp-tab="eff"]') && typeof renderMatchPage==="function"){ const sh = box.querySelector(".mp-sheet"), y = sh ? sh.scrollTop : 0; renderMatchPage(); const s2 = box.querySelector(".mp-sheet"); if(s2) s2.scrollTop = y; return; }
+  if(!has){ mpStop(); return; }
   if(!MPW || MPW.key!==key){ mpStop(); MPW = {key, doc:null};
     MPW.unsub = store.watch(idOf(key), d=>{ if(!MPW || MPW.key!==key) return; MPW.doc = d; mpPaint(); }); }
-  if(onDetails) mpPaint();
+  mpPaint();
 }
 function mpPaint(){
   const box = document.getElementById("mpage"); if(!box || !MPW || !MPW.doc) return;
-  const tab = box.querySelector('[data-mp-tab][aria-pressed="true"]');
-  if(tab && tab.dataset.mpTab!=="details") return;
-  const body = box.querySelector(".mp-body"); if(!body) return;
-  const html = cardHTML(MPW.doc); const old = body.querySelector("[data-effp]");
-  if(!html){ if(old) old.remove(); return; }
+  const slot = box.querySelector("[data-effslot]"); if(!slot) return;
+  const html = cardHTML(MPW.doc); const old = slot.querySelector("[data-effp]");
+  if(!html){ slot.innerHTML = ""; return; }
   const t = document.createElement("div"); t.innerHTML = html; const el = t.firstElementChild;
-  if(old) old.replaceWith(el); else body.appendChild(el);
+  if(old) old.replaceWith(el); else slot.appendChild(el);
 }
 function mpStop(){ if(MPW && MPW.unsub) MPW.unsub(); MPW = null; }
 /* تحديث الساعة في البطاقة أثناء شوط جارٍ */

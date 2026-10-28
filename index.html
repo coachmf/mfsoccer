@@ -2256,7 +2256,7 @@ main{padding-bottom:48px}
 <script src="fantasy/js/push.js?v=286" defer></script>
 <script src="notify.js?v=2" defer></script>
 <link rel="stylesheet" href="efftime.css?v=4">
-<script src="efftime.js?v=8" defer></script>
+<script src="efftime.js?v=9" defer></script>
 <link rel="stylesheet" href="div1.css?v=4">
 <script src="div1.js?v=6" defer></script>
 <link rel="stylesheet" href="news.css?v=4">
@@ -15143,6 +15143,9 @@ function mpHeader(m){
     ${(hs||as)?`<div class="mp-scorers"><div class="h">${hs}</div><span class="ball">${MP_BALL}</span><div class="a">${as}</div></div>`:""}`;
 }
 const MP_TABS=[["details","التفاصيل"],["lineups","التشكيلة"],["squad","القائمة"],["table","الترتيب"],["matches","المباريات"]];
+/* تبويب «اللعب الفعلي» بعد التفاصيل، يظهر فقط إذا رُصدت المباراة في أداة الوقت الفعلي (منصور 2026-10-28) */
+const mpHasEff=m=>!!(window.EFFTIME && EFFTIME.has && EFFTIME.has(m));
+const mpTabs=m=>mpHasEff(m) ? [MP_TABS[0],["eff","اللعب الفعلي"],...MP_TABS.slice(1)] : MP_TABS;
 function mpInfoRows(m){
   const rows=[];
   rows.push(["المسابقة", `${esc(compOf(m))} · ${esc(SEASON)}`]);
@@ -15441,12 +15444,13 @@ function renderMatchPage(){
 }
 function renderMatchPageRaw(){
   const box=$("#mpage"), m=MP.m; if(!box||!m) return;
-  const body = MP.tab==="lineups" ? mpLineups(m) : MP.tab==="squad" ? mpSquad(m) : MP.tab==="table" ? mpTable(m) : MP.tab==="matches" ? mpMatches(m) : mpDetails(m);
+  if(MP.tab==="eff" && !mpHasEff(m)) MP.tab="details";
+  const body = MP.tab==="eff" ? `<div data-effslot></div>` : MP.tab==="lineups" ? mpLineups(m) : MP.tab==="squad" ? mpSquad(m) : MP.tab==="table" ? mpTable(m) : MP.tab==="matches" ? mpMatches(m) : mpDetails(m);
   /* توهج رأس صفحة المباراة بلون القميص الأساسي: الأبيض يبقى أبيض (الإمارات/العراق كانا يظهران بالأحمر/الأخضر — منصور 2026-10-03) */
   const glowOf=c=>{ const cc=(window.CLUB_COLORS||{})[c]; return cc && lumOf(cc[0])>.85 ? "#FFFFFF" : clubAccent(c).a; };
   box.innerHTML=`<div class="mp-sheet" style="--hc:${glowOf(m.home)};--ac:${glowOf(m.away)}">
     <header class="mp-head">${mpHeader(m)}</header>
-    <nav class="mp-tabs">${MP_TABS.map(([k,l])=>`<button type="button" data-mp-tab="${k}" aria-pressed="${MP.tab===k}">${l}</button>`).join("")}</nav>
+    <nav class="mp-tabs">${mpTabs(m).map(([k,l])=>`<button type="button" data-mp-tab="${k}" aria-pressed="${MP.tab===k}">${l}</button>`).join("")}</nav>
     <div class="mp-body">${body}</div></div>`;
 }
 function openMatch(m, opts){
