@@ -51,12 +51,19 @@ const STATUS = {draft:"مسودة", published:"منشور", unpublished:"غير 
 const AR_MON = ["يناير","فبراير","مارس","أبريل","مايو","يونيو","يوليو","أغسطس","سبتمبر","أكتوبر","نوفمبر","ديسمبر"];
 const AR_DOW = ["الأحد","الإثنين","الثلاثاء","الأربعاء","الخميس","الجمعة","السبت"];
 const dObj = s => { const d = new Date(s); return isNaN(d) ? null : d; };
-const dLong = s => { const d = dObj(s); return d ? `${d.getDate()} ${AR_MON[d.getMonth()]} ${d.getFullYear()}` : ""; };
-const dTime = s => { const d = dObj(s); if(!d) return ""; let h = d.getHours(); const m = String(d.getMinutes()).padStart(2,"0"); const pm = h>=12; h = h%12 || 12; return `${h}:${m} ${pm?"م":"ص"}`; };
+/* اللغات الأخرى (منصور 2026-10-28 «ابيها تترجم بكل اللغات»): اللغة الحالية أو "" للعربية، والتواريخ بصيغة اللغة */
+const LG = () => (typeof I18N!=="undefined" && I18N.isEn && I18N.isEn() && I18N.lang) ? I18N.lang() : "";
+const LOC = () => { const l = LG(); return l ? (I18N.locale ? I18N.locale() : l) : ""; };
+const SEP = () => LG() ? ", " : "، ";
+const dLong = s => { const d = dObj(s); if(d && LOC()) return d.toLocaleDateString(LOC(), {day:"numeric", month:"long", year:"numeric"}); return d ? `${d.getDate()} ${AR_MON[d.getMonth()]} ${d.getFullYear()}` : ""; };
+const dTime = s => { const d = dObj(s); if(!d) return ""; if(LOC()) return d.toLocaleTimeString(LOC(), {hour:"numeric", minute:"2-digit"}); let h = d.getHours(); const m = String(d.getMinutes()).padStart(2,"0"); const pm = h>=12; h = h%12 || 12; return `${h}:${m} ${pm?"م":"ص"}`; };
 const dShort = s => { const d = dObj(s); if(!d) return ""; const diff = (Date.now()-d)/36e5;
+  if(LOC()){ const rt = new Intl.RelativeTimeFormat(LOC(), {numeric:"auto"});
+    if(diff>=0 && diff<1) return rt.format(-Math.max(1, Math.round(diff*60)), "minute"); if(diff>=0 && diff<24) return rt.format(-Math.max(1, Math.round(diff)), "hour");
+    return d.toLocaleDateString(LOC(), d.getFullYear()!==new Date().getFullYear() ? {day:"numeric", month:"long", year:"numeric"} : {day:"numeric", month:"long"}); }
   if(diff>=0 && diff<1) return "قبل دقائق"; if(diff>=0 && diff<24) return `قبل ${Math.max(1,Math.round(diff))} ${Math.round(diff)<=10&&Math.round(diff)>2?"ساعات":"ساعة"}`;
   return `${d.getDate()} ${AR_MON[d.getMonth()]}${d.getFullYear()!==new Date().getFullYear()?" "+d.getFullYear():""}`; };
-const todayLine = () => { const d = new Date(); return `${AR_DOW[d.getDay()]} ${d.getDate()} ${AR_MON[d.getMonth()]} ${d.getFullYear()}`; };
+const todayLine = () => { const d = new Date(); if(LOC()) return d.toLocaleDateString(LOC(), {weekday:"long", day:"numeric", month:"long", year:"numeric"}); return `${AR_DOW[d.getDay()]} ${d.getDate()} ${AR_MON[d.getMonth()]} ${d.getFullYear()}`; };
 const localInput = s => { const d = dObj(s) || new Date(); const p = n => String(n).padStart(2,"0"); return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`; };
 
 /* ───────────── تنظيف النص المنسّق ───────────── */
@@ -226,10 +233,21 @@ function leadOf(sec){
   const L = ofSec(sec); if(!L.length) return null;
   return L.find(x=>x.featured) || L.slice().sort((a,b)=>String(b.pub).localeCompare(String(a.pub)))[0];
 }
+/* ترجمة الخبر للغة الحالية: a.tr[lang] = {title, sub, coverCap, alt, tags, body:[حقول كل كتلة بنفس الترتيب]} — بلا ترجمة يبقى بالعربية */
+function loc(a){
+  const l = LG(), t = l && a && a.tr && a.tr[l]; if(!t) return a;
+  const body = (a.body||[]).map((x, i)=>{ const y = (t.body||[])[i]; if(!y) return x; const o = Object.assign({}, x);
+    for(const k in y) if(y[k]!=null && y[k]!=="" && !(Array.isArray(y[k]) && !y[k].length)) o[k] = y[k]; return o; });
+  return Object.assign({}, a, {title:t.title||a.title, sub:t.sub!=null&&t.sub!==""?t.sub:a.sub, coverCap:t.coverCap||a.coverCap,
+    tags:(t.tags&&t.tags.length)?t.tags:a.tags, body, cover:a.cover&&t.alt?Object.assign({}, a.cover, {alt:t.alt}):a.cover, _tr:l});
+}
+const trS = s => { if(!s || !LG()) return s; const t = I18N.tr(s); return t && !/[؀-ۿ]/.test(t) ? t : s; };
+const hasTr = a => !!(LG() && a && a.tr && a.tr[LG()]);
 function summary(a){
   return {id:a.id, title:a.title, sub:a.sub||"", sec:a.sec, cat:a.cat, cover:a.cover||null, author:a.author||"",
     pub:a.pub, upd:a.updated||"", featured:!!a.featured, pinned:!!a.pinned, prio:a.prio||0, tags:a.tags||[],
-    transfer:a.cat==="transfers" ? (a.transfer||null) : null, match:a.cat==="matches" ? (a.match||null) : null};
+    transfer:a.cat==="transfers" ? (a.transfer||null) : null, match:a.cat==="matches" ? (a.match||null) : null,
+    tr:a.tr ? Object.fromEntries(Object.entries(a.tr).map(([k,v])=>[k, {title:(v&&v.title)||"", sub:(v&&v.sub)||""}])) : null};
 }
 
 /* ───────────── التنقل داخل الأخبار (روابط #news/…) ───────────── */
@@ -275,7 +293,7 @@ window.addEventListener("popstate", ()=>{
 /* ───────────── مكوّنات العرض ───────────── */
 const crestOf = c => safe(()=> (typeof LOCAL_CRESTS!=="undefined" && LOCAL_CRESTS[c]) || (typeof LOGOS!=="undefined" && LOGOS[c]) || "") || "";
 const kfaLogo = () => safe(()=>KFA_INFO.img.logo) || "";
-const catLabel = c => (CATS[c] && CATS[c].t) || "";
+const catLabel = c => { const s = (CATS[c] && CATS[c].t) || ""; if(!s || !LG()) return s; const t = I18N.tr(s); return t && !/[؀-ۿ]/.test(t) ? t : s; };
 function meta(it, opt){
   const parts = [];
   if(opt && opt.cat) parts.push(`<span class="nw-k">${H(catLabel(it.cat))}</span>`);
@@ -302,7 +320,7 @@ function matchLine(it){
 }
 /* بطاقة موحّدة لكل التصنيفات؛ v = lead | big | std | row */
 function card(it, v, opt){
-  opt = opt || {};
+  opt = opt || {}; it = loc(it);
   const c = it.cover, ar = it.cat==="squads" ? " nw-fit" : "";
   const ph = `<div class="nw-ph${ar}${c?"":" nw-noimg"}">${c ? imgTag(c.id, c.alt || it.title, "", c.w, c.h, !(v==="lead" && WIDE()), v==="lead") : ""}${badge(it)}</div>`;
   return `<article class="nw-c nw-c-${v}">
@@ -350,7 +368,7 @@ function homeHTML(){
       <div class="nw-p-tx">
         <span class="nw-p-mark">${s==="nt" && kfaLogo() ? `<img src="${H(kfaLogo())}" alt="" width="28" height="28">` : `<img src="assets/brand/mf-mark.webp" alt="" width="34" height="16">`}</span>
         <h2>${SECS[s].t}</h2>
-        <p data-i18n="off">${lead ? H(lead.title) : SECS[s].cats.map(catLabel).join("، ")}</p>
+        <p data-i18n="off">${lead ? H(loc(lead).title) : SECS[s].cats.map(catLabel).join("، ")}</p>
         <span class="nw-p-n">${n ? `${n} ${n===1?"خبر":n===2?"خبران":n<=10?"أخبار":"خبراً"}` : "لا أخبار بعد"}</span>
       </div>
     </a>`;
@@ -421,7 +439,7 @@ function bodyHTML(blocks){
   }).join("");
 }
 function articleHTML(a, opt){
-  opt = opt || {};
+  opt = opt || {}; const tr = hasTr(a); a = loc(a);
   const sec = SECS[a.sec] ? a.sec : "local";
   const rel = opt.preview ? [] : ofCat(a.cat).filter(x=>x.id!==a.id).slice(0, 3);
   const upd = a.updated && a.pub && a.updated.slice(0,16) > a.pub.slice(0,16) && (new Date(a.updated)-new Date(a.pub)) > 36e5;
@@ -429,21 +447,21 @@ function articleHTML(a, opt){
   return `<div class="nw nw-art nw-s-${sec}">
     ${opt.preview ? "" : `<div class="nw-art-bar"><button type="button" class="nw-back" data-nw-back><span aria-hidden="true">›</span>${H(catLabel(a.cat)) || "الأخبار"}</button>
       <button type="button" class="nw-share" data-nw-share>مشاركة</button></div>`}
-    <article class="nw-doc" data-i18n="off">
+    <article class="nw-doc"${tr ? "" : ' data-i18n="off"'}>
       <header class="nw-doc-hd">
         <a class="nw-k" href="#news/${sec}/${H(a.cat)}" data-nw-cat="${sec}/${H(a.cat)}">${H(catLabel(a.cat))}</a>
         <h1>${H(a.title || "بلا عنوان")}</h1>
         ${a.sub ? `<p class="nw-dek">${H(a.sub)}</p>` : ""}
         <div class="nw-byline">${a.author ? `<b>${H(a.author)}</b>` : ""}
-          ${a.pub ? `<time datetime="${H(a.pub)}">${H(dLong(a.pub))}، ${H(dTime(a.pub))}</time>` : ""}
-          ${upd ? `<span>آخر تحديث ${H(dLong(a.updated))}، ${H(dTime(a.updated))}</span>` : ""}</div>
+          ${a.pub ? `<time datetime="${H(a.pub)}">${H(dLong(a.pub))}${SEP()}${H(dTime(a.pub))}</time>` : ""}
+          ${upd ? `<span>آخر تحديث ${H(dLong(a.updated))}${SEP()}${H(dTime(a.updated))}</span>` : ""}</div>
         ${a.cat==="transfers" ? `${badge(a)}${transferLine(a)}` : a.cat==="matches" ? matchLine(a) : ""}
       </header>
       ${c ? `<figure class="nw-fig nw-cover"><div class="nw-ph nw-nat" style="--ar:${c.w&&c.h?c.w/c.h:1.6}">${imgTag(c.id, c.alt || a.title, "", c.w, c.h, false, true)}</div>${a.coverCap?`<figcaption>${H(a.coverCap)}</figcaption>`:""}</figure>` : ""}
       <div class="nw-body">${bodyHTML(a.body)}</div>
       ${(a.tags||[]).length ? `<ul class="nw-tags" aria-label="وسوم">${a.tags.map(t=>`<li>${H(t)}</li>`).join("")}</ul>` : ""}
     </article>
-    ${rel.length ? `<section class="nw-blk nw-rel">${secHead("من "+catLabel(a.cat), allLink(sec, a.cat, 1))}<div class="nw-grid nw-g-rel">${rel.map(it=>card(it, "std")).join("")}</div></section>` : ""}
+    ${rel.length ? `<section class="nw-blk nw-rel">${secHead(LG() ? catLabel(a.cat) : "من "+catLabel(a.cat), allLink(sec, a.cat, 1))}<div class="nw-grid nw-g-rel">${rel.map(it=>card(it, "std")).join("")}</div></section>` : ""}
   </div>`;
 }
 function artHTML(){
@@ -461,10 +479,12 @@ function render(){
   if(TEST) v.insertAdjacentHTML("afterbegin", `<p class="nwa-test" style="text-align:center;margin:8px 0">وضع الاختبار المحلي: المحتوى محفوظ في هذا المتصفح فقط · <button type="button" class="nwa-b" onclick="NEWS.openAdmin()">لوحة الأخبار</button></p>`);
   hydrateImgs(v);
   const a = NV.r==="art" && ART[NV.id];
-  document.title = a ? `${a.title} | MF Soccer` : (NV.r==="home" ? "الأخبار | MF Soccer" : `${NV.r==="cat"?catLabel(NV.cat):SECS[NV.sec].t} | MF Soccer`);
+  document.title = a ? `${loc(a).title} | MF Soccer` : (NV.r==="home" ? `${trS("الأخبار")} | MF Soccer` : `${NV.r==="cat"?catLabel(NV.cat):trS(SECS[NV.sec].t)} | MF Soccer`);
 }
 function repaint(){ if(isOn()) render(); paintAdmin(); }
 NW.render = render;
+if(typeof I18N!=="undefined" && I18N.setLang && !I18N._nwWrap){ const o = I18N.setLang; I18N._nwWrap = 1;
+  I18N.setLang = function(){ const r = o.apply(this, arguments); try{ if(isOn()) render(); }catch(e){} return r; }; }
 
 /* نقرات الواجهة العامة */
 document.addEventListener("click", e=>{
