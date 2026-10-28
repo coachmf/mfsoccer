@@ -230,9 +230,13 @@ const ADMIN = {
     if(played.some(f=>f.status!=='F' || f.over===false)) return {ok:false, why:'matches left'};
     const last=Math.max(...played.map(f=>Date.parse(f.date)).filter(n=>!isNaN(n)));
     const now=Date.now();
-    if(!isFinite(last) || now < last + 3*3600e3) return {ok:false, why:'too soon'};
+    if(!isFinite(last)) return {ok:false, why:'too soon'};
+    /* البونص مُدخل لكل المباريات = النتائج راجعها المدير: الاحتساب فوراً (منصور 2026-10-28: الجولة بقيت مغلقة ساعات بعد آخر مباراة).
+       بلا بونص: ننتظر 3 ساعات بعد آخر انطلاقة ثم حتى 18 ساعة للبونص كما كان */
     const bonus=played.every(f=>(f.bonus||[]).length>=3);
-    if(!bonus && now < last + 18*3600e3) return {ok:false, why:'waiting bonus'};
+    if(bonus) return {ok:true, gw};
+    if(now < last + 3*3600e3) return {ok:false, why:'too soon'};
+    if(now < last + 18*3600e3) return {ok:false, why:'waiting bonus'};
     return {ok:true, gw};
   },
   async autoFinalize(){
@@ -242,6 +246,8 @@ const ADMIN = {
     try{ const l=+localStorage.getItem(this.AUTO_FIN_KEY)||0; if(Date.now()-l < 15*60e3) return; localStorage.setItem(this.AUTO_FIN_KEY, String(Date.now())); }catch(e){}
     this._autoFinBusy=true;
     try{ await this.doFinalize(true); } finally{ this._autoFinBusy=false; }
+    /* نشر القفل قد يتعثّر على اتصال بطيء فتبقى الانتقالات مغلقة — إعادة محاولة بعد دقيقة (والخادم يصلحه كل 10 دقائق: fantasy-lock-cron) */
+    setTimeout(()=>{ try{ CLOUD.syncLock(DB.state).catch(()=>{}); }catch(e){} }, 60000);
   },
   async doFinalize(auto){
     const st=DB.state, gw=st.currentGW;
@@ -502,6 +508,8 @@ const ADMIN = {
     GWADMIN.refreshDeadlines(st);
     DB.save(); VIEWS.ui.editFx=null;
     UI.toast('حُفظت النتيجة وأُعيد الاحتساب '); APP.render();
+    /* آخر بونص في الجولة = احتسابها وفتح التالية فوراً، لا انتظار مؤقّت الـ10 دقائق (منصور 2026-10-28) */
+    if(g.status!=='finished') setTimeout(()=>this.autoFinalize(), 8000);
   },
 
   /* ---------- نظام النقاط ---------- */

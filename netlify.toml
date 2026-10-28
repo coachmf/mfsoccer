@@ -56,6 +56,10 @@
 [functions."preds-score-cron"]
   schedule = "*/10 * * * *"
 
+# حارس قفل الانتقالات: إن انتقلت اللعبة لجولة جديدة وبقي meta/lock على المنتهية — يُصلحه (fantasy-lock-cron.js)
+[functions."fantasy-lock-cron"]
+  schedule = "*/10 * * * *"
+
 # ——— صور الأخبار من CDN (netlify/functions/newsimg.js) ———
 [[redirects]]
   from = "/api/newsimg/*"
