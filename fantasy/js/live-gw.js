@@ -123,11 +123,22 @@ const LIVEGW = {
     }
     return out;
   },
+  /* «ترتيبك الآن» في الرئيسية = الترتيب العام المباشر (المجموع الرسمي + نقاط الجولة الجارية) — نفس صف «الترتيب العام» في الدوريات
+     (منصور 2026-10-28: الرئيسية كانت ترتّب بنقاط الجولة وحدها 672 / 1,379 والدوريات بالمجموع 139 / 1,402) */
+  overall(){
+    try{
+      if(typeof VIEWS==='undefined' || !VIEWS.globalTable || !this.cache.rows || typeof LEAGUES==='undefined' || !LEAGUES.online()) return null;
+      if(!LEAGUES.cloud.board){ LEAGUES.refresh(); return null; }   /* قبل وصول لوحة الترتيب: «—» لا «1 / 1» */
+      const me=DB.me(); if(!me) return null;
+      const rows=VIEWS.liveApply(VIEWS.globalTable()); const i=rows.findIndex(r=>r.id===me.id);
+      return i>=0 ? { rank: rows[i].rank||i+1, of: rows.length } : null;
+    }catch(e){ return null; }
+  },
   /* كتلة الرئيسية */
   heroBlock(){
     if(!this.active()) return '';
     this.refresh();
-    const st=DB.state, m=this.matches(), my=this.mine(), s=this.summary();
+    const st=DB.state, m=this.matches(), my=this.mine(), s=this.summary(), ov=this.overall();
     const done = m.total && m.played===m.total;
     return `
       <div class="hh-gwtitle">الجولة ${st.currentGW} · <span class="pill red">مباشر</span>
@@ -135,7 +146,7 @@ const LIVEGW = {
       <div class="hh-stats">
         <div><b>${s? s.avg : '—'}</b><span>المتوسط الآن</span></div>
         <div class="big" onclick="APP.go('points')"><b>${my? my.total : 0}</b><span>نقاطك الآن ${UI.icon('chev',13)}</span></div>
-        <div><b>${s && s.rank? s.rank.toLocaleString('ar') : '—'}<small style="font-size:.55em;opacity:.8">${s&&s.rank? ' / '+s.of.toLocaleString('ar') : ''}</small></b><span>ترتيبك الآن</span></div>
+        <div><b>${ov? ov.rank.toLocaleString('ar') : '—'}<small style="font-size:.55em;opacity:.8">${ov? ' / '+ov.of.toLocaleString('ar') : ''}</small></b><span>ترتيبك الآن</span></div>
       </div>`;
   },
 };
