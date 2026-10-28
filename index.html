@@ -14209,7 +14209,7 @@ function todayMatches(){ const t=todayISO(); return MATCHES.filter(m=>m.date===t
 function hmTodayHTML(){
   const list=todayMatches();
   const d1=(COMP==="الكل"||COMP==="الدوري") && window.DIV1 && DIV1.todayRows ? DIV1.todayRows(todayISO()) : "";   /* دوري الدرجة الأولى (منصور 2026-10-24) */
-  const xs=(COMP==="الكل"||COMP==="الدوري") && window.EXT && EXT.today ? EXT.today(todayISO()) : [];   /* المشاركات الخارجية (منصور 2026-10-28: «يظهر جميع مباريات اليوم») */
+  const xs=COMP==="الكل" && window.EXT && EXT.today ? EXT.today(todayISO()) : [];   /* المشاركات الخارجية (منصور 2026-10-28: «يظهر جميع مباريات اليوم») */
   if(!list.length && !d1 && !xs.length) return "";
   const HM_CTA=list.length ? hmCTA(list) : "";
   const row=m=>{
