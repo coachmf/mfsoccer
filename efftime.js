@@ -133,11 +133,16 @@ if(TEST) window.addEventListener("storage", e=>{ if(e.key && e.key.startsWith("m
 EFF.store = store;
 
 /* الفهرس: من سُجّل له وقت فعلي (يقرأ وثيقة واحدة لكل الموقع) */
-let IDX = {m:{}}, idxOn = false;
+let IDX = {m:{}}, idxOn = false, idxLive = false, idxSnap = false;
 const idxCbs = new Set();
+const idxFire = () => idxCbs.forEach(f=>{ try{ f(IDX); }catch(e){} });
+/* منصور 2026-10-28 (الكويت × ناساف «مو طالع اللعب الفعلي»): على جوال بطيء كانت مكتبة Firestore تتأخر أكثر من 30 ثانية فيتوقف
+   الانتظار ولا يُحمَّل الفهرس أبداً — الآن لقطة CDN (/api/doc/effidx) أولاً، والانتظار لا يتوقف حتى تجهز المكتبة */
 function startIdx(){
+  if(!TEST && !idxSnap && typeof SNAP!=="undefined" && SNAP && SNAP.get){ idxSnap = true;
+    SNAP.get("effidx").then(d=>{ if(!idxLive && d && d.m){ IDX = d; idxFire(); } }).catch(()=>{}); }
   if(idxOn || !store.ready()) return; idxOn = true;
-  store.idxWatch(d=>{ IDX = d && d.m ? d : {m:{}}; idxCbs.forEach(f=>{ try{ f(IDX); }catch(e){} }); });
+  store.idxWatch(d=>{ idxLive = true; IDX = d && d.m ? d : {m:{}}; idxFire(); });
 }
 EFF.idx = () => IDX;
 EFF.onIdx = f => { idxCbs.add(f); return ()=>idxCbs.delete(f); };
@@ -473,12 +478,14 @@ function mpInject(){
   const box = document.getElementById("mpage");
   const m = (typeof MP!=="undefined" && MP) ? MP.m : null;
   if(!box || box.hidden || !m){ mpStop(); return; }
+  startIdx();
   const key = keyOf(m), has = EFF.has(m);
   /* ظهر التبويب أو اختفى بعد تحميل الفهرس: نعيد رسم الصفحة */
   if(has !== !!box.querySelector('[data-mp-tab="eff"]') && typeof renderMatchPage==="function"){ const sh = box.querySelector(".mp-sheet"), y = sh ? sh.scrollTop : 0; renderMatchPage(); const s2 = box.querySelector(".mp-sheet"); if(s2) s2.scrollTop = y; return; }
   if(!has){ mpStop(); return; }
   if(!MPW || MPW.key!==key){ mpStop(); MPW = {key, doc:null};
-    MPW.unsub = store.watch(idOf(key), d=>{ if(!MPW || MPW.key!==key) return; MPW.doc = d; mpPaint(); }); }
+    if(!TEST && typeof SNAP!=="undefined" && SNAP && SNAP.get) SNAP.get(idOf(key), true).then(d=>{ if(MPW && MPW.key===key && !MPW.doc && d){ MPW.doc = d; mpPaint(); } }).catch(()=>{}); }
+  if(!MPW.unsub && store.ready()) MPW.unsub = store.watch(idOf(key), d=>{ if(!MPW || MPW.key!==key) return; MPW.doc = d; mpPaint(); });
   mpPaint();
 }
 function mpPaint(){
@@ -510,5 +517,5 @@ function boot(){
     const w = ()=>{ if(k==="tool" && canEdit() && store.ready()) EFF.openTool(); else if(k!=="tool" && canEdit() && findMatch(k) && store.ready()) EFF.open(k); else if(++n < 80) setTimeout(w, 250); }; setTimeout(w, 400); }
 }
 if(document.readyState==="loading") document.addEventListener("DOMContentLoaded", ()=>setTimeout(boot, 0)); else setTimeout(boot, 0);
-if(!TEST){ let n = 0; const w = ()=>{ if(store.ready()) startIdx(); else if(++n < 120) setTimeout(w, 250); }; setTimeout(w, 300); }
+if(!TEST){ let n = 0; const w = ()=>{ startIdx(); if(!idxOn) setTimeout(w, ++n < 120 ? 250 : 2000); }; setTimeout(w, 300); }
 })();
