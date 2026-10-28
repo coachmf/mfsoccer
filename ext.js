@@ -560,7 +560,7 @@ function admRowHTML(m){
   const st = stateOf(m), k = H(withExt(()=>matchKey(m)));
   const badge = st==="live" ? `<span class="gadm-st live"><i></i>جارية${PH_AR[m.status]?` · ${PH_AR[m.status]}`:""}</span>`
               : st==="done" ? `<span class="gadm-st done">انتهت</span>` : `<span class="gadm-st soon">لم تبدأ</span>`;
-  const score = st==="soon" ? (m.time ? `<bdi dir="ltr">${H(m.time)}</bdi>` : "—") : `<bdi dir="ltr">${m.ag} - ${m.hg}</bdi>`;
+  const score = st==="soon" ? (m.time ? `<bdi dir="ltr">${H(m.time)}</bdi>` : "—") : `<bdi dir="ltr">${scp(m.hg,m.ag)}</bdi>`;
   return `<div class="gadm-row xadm-row ${st}">
       <span class="t">${crestOf(m.home)}<b>${H(m.home)}</b></span>
       <span class="s">${score}</span>

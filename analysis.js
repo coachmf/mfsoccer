@@ -470,7 +470,7 @@ function stadDetail(s){
 function matchRow(m, extra){
   return `<button type="button" class="rf-mrow ax-mrow" data-mopen="${H(matchKey(m))}">
     <span class="rf-mr">ج${H(m.round)}${m.date?`<small>${H(mpDateLabel(m))}</small>`:""}</span>
-    <span class="rf-mt"><span class="h">${H(m.home)}</span>${crest(m.home)}<b class="sc" dir="ltr">${+m.ag} - ${+m.hg}</b>${crest(m.away)}<span class="a">${H(m.away)}</span></span>
+    <span class="rf-mt"><span class="h">${H(m.home)}</span>${crest(m.home)}<b class="sc" dir="ltr">${scp(+m.hg,+m.ag)}</b>${crest(m.away)}<span class="a">${H(m.away)}</span></span>
     ${extra||""}</button>`;
 }
 

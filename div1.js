@@ -127,7 +127,7 @@ function matchHTML(m){
   const p = played(m), hw = p && m.hg>m.ag, aw = p && m.ag>m.hg;
   return `<div class="d1-m${p?" done":""}">
     <div class="d1-mt h${hw?" win":""}">${crest(m.home)}<b>${H(m.home)}</b></div>
-    <div class="d1-ms">${p ? `<bdi dir="ltr" class="sc">${m.ag} - ${m.hg}</bdi><small>انتهت</small>` : `<span class="tm">${tLbl(m.time)||"—"}</span><small>لم تبدأ</small>`}</div>
+    <div class="d1-ms">${p ? `<bdi dir="ltr" class="sc">${scp(m.hg,m.ag)}</bdi><small>انتهت</small>` : `<span class="tm">${tLbl(m.time)||"—"}</span><small>لم تبدأ</small>`}</div>
     <div class="d1-mt a${aw?" win":""}"><b>${H(m.away)}</b>${crest(m.away)}</div>
     ${m.venue ? `<div class="d1-mv">${H(m.venue)}</div>` : ""}
   </div>`;
@@ -196,7 +196,7 @@ D1.tableHTML = () => { if(!DATA) DATA = normalize(null); return tableHTML(); };
 D1.todayRows = iso => { if(!DATA) DATA = normalize(null);
   return DATA.matches.filter(m=>m.date===iso).sort((a,b)=>String(a.time).localeCompare(String(b.time))).map(m=>{
     const cr = c => { const s = crestSrc(c); return s ? `<img class="crest" src="${s}" alt="" width="30" height="30" loading="lazy">` : ""; };
-    const mid = played(m) ? `<b class="hm-td-sc" dir="ltr">${m.ag} - ${m.hg}</b><span class="hm-td-st">انتهت</span>` : `<b class="hm-td-time" dir="ltr">${m.time?H(m.time):"—"}</b>`;
+    const mid = played(m) ? `<b class="hm-td-sc" dir="ltr">${scp(m.hg,m.ag)}</b><span class="hm-td-st">انتهت</span>` : `<b class="hm-td-time" dir="ltr">${m.time?H(m.time):"—"}</b>`;
     return `<button type="button" class="hm-td-row" data-d1today="1">
       <span class="hm-td-team h">${cr(m.home)}<b>${H(m.home)}</b></span>
       <span class="hm-td-mid">${mid}</span>

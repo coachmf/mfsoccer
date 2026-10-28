@@ -617,7 +617,7 @@ function admRowHTML(m){
   const st = admState(m), k = H(matchKey(m));
   const badge = st==="live" ? `<span class="gadm-st live"><i></i>جارية${PH_AR[m.status]?` · ${PH_AR[m.status]}`:""}</span>`
               : st==="done" ? `<span class="gadm-st done">انتهت</span>` : `<span class="gadm-st soon">لم تبدأ</span>`;
-  const score = st==="soon" ? (m.time ? `<bdi dir="ltr">${H(m.time)}</bdi>` : "—") : `<bdi dir="ltr">${m.ag} - ${m.hg}</bdi>`;   /* LTR: الضيف يساراً والمضيف يميناً تحت اسمه */
+  const score = st==="soon" ? (m.time ? `<bdi dir="ltr">${H(m.time)}</bdi>` : "—") : `<bdi dir="ltr">${scp(m.hg,m.ag)}</bdi>`;   /* LTR: الضيف يساراً والمضيف يميناً تحت اسمه */
   return `<div class="gadm-row ${st}">
         <span class="t">${flagImg(m.home,"sm")}<b>${H(m.home)}</b></span>
         <span class="s">${score}</span>

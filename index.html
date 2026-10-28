@@ -1973,6 +1973,9 @@ main{padding-bottom:48px}
 .tl-ev.a{flex-direction:row-reverse}
 .tl-card{display:flex;flex-direction:column;gap:2px;min-width:0}
 .tl-ev.a .tl-card{text-align:left;align-items:flex-start}
+/* اللغات LTR: المستضيف يساراً كما في رأس المباراة — الخط الزمني يتبع اتجاه الصفحة (منصور 2026-10-28) */
+html[dir="ltr"] .tl:has(> .tl-head){direction:ltr}
+html[dir="ltr"] .tl-ev.a .tl-card{text-align:right;align-items:flex-end}
 .tl-name{font-family:var(--display);font-weight:800;font-size:.92rem;color:var(--head);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;gap:6px}
 .tl-og{font-style:normal;font-size:.66rem;font-weight:700;color:#B42318;background:#FEE4E2;border-radius:4px;padding:1px 6px;white-space:nowrap;flex-shrink:0}
 /* اسم المسجّل + «هدف عكسي» لا يتسعان سطراً واحداً في الجوال: الشارة تنزل لسطر ثانٍ بدل أن تُقصّ وتدفع خط الدقائق (منصور 2026-09-24) */
@@ -2242,7 +2245,7 @@ main{padding-bottom:48px}
 <link rel="stylesheet" href="site-theme.css?v=7">
 <script src="fantasy/js/i18n-more.js?v=14" defer></script>
 <script src="site-i18n.js?v=29" defer></script>
-<script src="i18n-data.js?v=12" defer></script>   <!-- إضافات الإنجليزية + البرتغالية (البرازيل/البرتغال) + الإسبانية + الصربية/الكرواتية -->
+<script src="i18n-data.js?v=13" defer></script>   <!-- إضافات الإنجليزية + البرتغالية (البرازيل/البرتغال) + الإسبانية + الصربية/الكرواتية -->
 <script src="i18n-langs.js?v=8" defer></script>   <!-- قائمة اللغات بالأعلام + البرتغالية والإسبانية والصربية/الكرواتية فوق محرك الإنجليزية -->
 <!-- غرفة التحكم (live.js / live-admin.js / live.css) مخفية منذ 2026-10-10 بطلب منصور — الملفات باقية؛ للإرجاع أعد السطرين:
      <link rel="stylesheet" href="live.css?v=9"> و <script src="live.js?v=21" defer></script> -->
@@ -2251,22 +2254,22 @@ main{padding-bottom:48px}
 <script src="admin-tabs.js?v=9" defer></script>
 <!-- كأس الخليج 27: قسم مستقل ببيانات منفصلة (seasons/gulf27) -->
 <link rel="stylesheet" href="gulf.css?v=18">
-<script src="gulf.js?v=47" defer></script>
+<script src="gulf.js?v=48" defer></script>
 <script src="livepush.js?v=2" defer></script>
 <script src="fantasy/js/push.js?v=286" defer></script>
 <script src="notify.js?v=2" defer></script>
 <link rel="stylesheet" href="efftime.css?v=4">
 <script src="efftime.js?v=11" defer></script>
 <link rel="stylesheet" href="div1.css?v=4">
-<script src="div1.js?v=6" defer></script>
+<script src="div1.js?v=7" defer></script>
 <link rel="stylesheet" href="news.css?v=4">
 <script src="news.js?v=9" defer></script>   <!-- الأخبار: news/{id} + فهرس seasons/news + صور newsimg/{id} -->   <!-- دوري الدرجة الأولى: الترتيب والمباريات فقط (seasons/div1) -->
 <link rel="stylesheet" href="ext.css?v=3">
-<script src="ext.js?v=10" defer></script>   <!-- المشاركات الخارجية لأنديتنا: تحرير كامل مثل الدوري في وثيقة مستقلة (seasons/ext2627) -->
+<script src="ext.js?v=11" defer></script>   <!-- المشاركات الخارجية لأنديتنا: تحرير كامل مثل الدوري في وثيقة مستقلة (seasons/ext2627) -->
 <!-- التحليل الموسّع + تقييم اللاعبين 0–100 + البحث العام (منصور 2026-09-29) -->
 <link rel="stylesheet" href="analysis.css?v=11">
 <script src="tstats-data.js?v=1" defer></script>
-<script src="analysis.js?v=31" defer></script>
+<script src="analysis.js?v=32" defer></script>
 <!-- هوية MF SOCCER الذهبية + هيكل التطبيق (منصور 2026-10-05) -->
 <link rel="stylesheet" href="mf-brand.css?v=17">
 <script>document.documentElement.classList.add("mf")</script>
@@ -2946,6 +2949,8 @@ let FANTASY_OPEN = true;
 /* ================= أدوات ================= */
 const $ = s => document.querySelector(s);
 const esc = s => String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+/* النتيجة: رقم المستضيف بجانب اسمه في الاتجاهين — inline-flex يتبع اتجاه الصفحة (العربية RTL، اللغات الأخرى LTR) — منصور 2026-10-28 */
+const scp = (h,a,t) => `<span class="scp${t?" t":""}"><span>${h}</span><span>-</span><span>${a}</span></span>`;
 const abs = g => g.m + (g.x||0);
 const period = g => { const t=abs(g);
   if(g.m<=15) return "0-15"; if(g.m<=30) return "16-30";
@@ -3169,7 +3174,7 @@ function extCardsHTML(evs, compName){
     if(up) soon++; else done++;
     /* live:true = مباراة جارية تُحدَّث نتيجتها أثناء اللعب (المتابعة المباشرة من SofaScore) — تُزال عند صافرة النهاية */
     const st=liveNow?liveStHTML(gx&&gx.ph):up?'<span class="mc-st soon">لم تبدأ</span>':'<span class="mc-st done">انتهت</span>';
-    const mid = played ? `<span class="mc-score" dir="ltr">${+ea} - ${+eh}</span>` : `<span class="mc-time" dir="ltr">${e.time?esc(e.time):"—"}</span>`;
+    const mid = played ? `<span class="mc-score" dir="ltr">${scp(+eh,+ea)}</span>` : `<span class="mc-time" dir="ltr">${e.time?esc(e.time):"—"}</span>`;
     return `${dayHead}<article class="mc${up?" soon":liveNow?" live":" done"}"${gx&&gx.k?` data-mopen="${esc(gx.k)}"`:""}>
       <div class="mc-row">
         <div class="mc-team h">${extTeamCell(a)}</div>
@@ -7912,7 +7917,7 @@ function renderMatches(){
       <div class="mc-row">
         <div class="mc-team h">${crest(m.home)}<b>${esc(m.home)}</b></div>
         <div class="mc-mid">
-          ${soon ? `<span class="mc-time" dir="ltr">${m.time?esc(m.time):"—"}</span>` : `<span class="mc-score" dir="ltr">${m.ag} - ${m.hg}</span>`   /* الصف RTL: المستضيف يميناً، فرقمه يمين العلامة (منصور 2026-09-16) */}
+          ${soon ? `<span class="mc-time" dir="ltr">${m.time?esc(m.time):"—"}</span>` : `<span class="mc-score" dir="ltr">${scp(m.hg,m.ag)}</span>`   /* الصف RTL: المستضيف يميناً، فرقمه يمين العلامة (منصور 2026-09-16) */}
           ${!soon && psoOf(m) ? `<span class="mc-pso">ركلات الترجيح <span dir="ltr">${psoOf(m).a} - ${psoOf(m).h}</span></span>` : !soon && hasET(m) && matchOver(m) ? `<span class="mc-pso">بعد الأشواط الإضافية</span>` : ""}
           ${st}
           ${(()=>{ const tv=tvOf(m); return tv?`<span class="mc-tv${tv==="غير منقولة"?" off":""}">${TV_ICO}<span>${esc(tv)}</span></span>`:""; })()}
@@ -8916,7 +8921,7 @@ function fgListHTML(p, list){
   const n=list.length, cnt=n===1?"مباراة واحدة":n===2?"مباراتان":n<=10?n+" مباريات":n+" مباراة";
   const rows=list.slice().sort((a,b)=>(+b.m.round||0)-(+a.m.round||0)||String(b.m.date||"").localeCompare(String(a.m.date||""))).map(x=>{
     const m=x.m, g=matchGoals(m)[0]||{};
-    return `<li class="fg-row" data-mopen="${esc(matchKey(m))}"><span class="m">${esc(isCupComp(m.comp)&&m.stage?m.stage:"ج"+m.round)}</span><span class="p"><b>${esc(m.home)} <bdi dir="ltr">${+m.ag}-${+m.hg}</bdi> ${esc(m.away)}</b><small>الهدف الأول: ${esc(g.p||(g.og?g.og+" (عكسي)":"")||x.first)}${g.m?` <bdi dir="ltr">${esc(g.m)}′</bdi>`:""} · ${esc(x.first)}</small></span></li>`; }).join("");
+    return `<li class="fg-row" data-mopen="${esc(matchKey(m))}"><span class="m">${esc(isCupComp(m.comp)&&m.stage?m.stage:"ج"+m.round)}</span><span class="p"><b>${esc(m.home)} <bdi dir="ltr">${scp(+m.hg,+m.ag,1)}</bdi> ${esc(m.away)}</b><small>الهدف الأول: ${esc(g.p||(g.og?g.og+" (عكسي)":"")||x.first)}${g.m?` <bdi dir="ltr">${esc(g.m)}′</bdi>`:""} · ${esc(x.first)}</small></span></li>`; }).join("");
   return `<div class="ah-gh"><b>${esc(p.l)}</b><span>${cnt}</span><button type="button" class="ah-gx" data-fgclose aria-label="إغلاق">×</button></div><ol class="ah-gl">${rows}</ol>`;
 }
 document.addEventListener("click", e=>{
@@ -9118,7 +9123,7 @@ function rfDetailHTML(name, rows){
     <div class="an-card rf-log">${mine.map(x=>{ const m=x.m;
       return `<button type="button" class="rf-mrow" data-mopen="${esc(matchKey(m))}">
         <span class="rf-mr">ج${esc(String(m.round))}${m.date?`<small>${esc(mpDateLabel(m))}</small>`:""}</span>
-        <span class="rf-mt"><span class="h">${esc(m.home)}</span>${crest(m.home)}<b class="sc" dir="ltr">${+m.ag} - ${+m.hg}</b>${crest(m.away)}<span class="a">${esc(m.away)}</span></span>
+        <span class="rf-mt"><span class="h">${esc(m.home)}</span>${crest(m.home)}<b class="sc" dir="ltr">${scp(+m.hg,+m.ag)}</b>${crest(m.away)}<span class="a">${esc(m.away)}</span></span>
         <span class="rf-mc">${rfCard("y")}<b>${x.y}</b>${rfCard("r")}<b>${x.r}</b><em>جزاء <b>${x.p}</b></em></span>
       </button>`; }).join("")}</div>
     <h2 class="sec">الفرق التي أدار مبارياتها</h2>
@@ -11709,6 +11714,8 @@ html[data-theme="dark"] .mc{background:#0F1E35;border-color:#213653;box-shadow:n
 .mc-team b{font-family:var(--display);font-weight:700;font-size:.88rem;color:var(--head,#fff);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
 .mc-mid{display:flex;flex-direction:column;align-items:center;gap:4px;min-width:74px}
 .mc-pso{font-size:.66rem;font-weight:700;color:var(--slate);white-space:nowrap}.mc-pso span{font-family:var(--display);font-weight:800}
+.scp{display:inline-flex;align-items:baseline;gap:.3em;direction:rtl;unicode-bidi:isolate}.scp.t{gap:.1em}
+html[dir="ltr"] .scp{direction:ltr}
 .mc-score{font-family:var(--display);font-weight:800;font-size:1.05rem;letter-spacing:.02em;color:var(--head,#fff);font-variant-numeric:tabular-nums;
   padding:3px 12px;border-radius:9px;background:rgba(143,166,196,.12)}
 html[data-theme="dark"] .mc-score{background:#182C48}
@@ -14213,7 +14220,7 @@ function hmTodayHTML(){
   if(!list.length && !d1 && !xs.length) return "";
   const HM_CTA=list.length ? hmCTA(list) : "";
   const row=m=>{
-    const live=LIVE_PHASES.includes(m.status) && !staleLive(m), over=!live && matchOver(m), sc=`<b class="hm-td-sc" dir="ltr">${+m.ag} - ${+m.hg}</b>`;
+    const live=LIVE_PHASES.includes(m.status) && !staleLive(m), over=!live && matchOver(m), sc=`<b class="hm-td-sc" dir="ltr">${scp(+m.hg,+m.ag)}</b>`;
     const mid = live ? `${sc}${m.status==="ht" ? '<span class="hm-td-st ht">بين الشوطين</span>' : `<span class="hm-td-st live" dir="ltr">${mclkHTML(m)||esc(LIVE_PH_AR[m.status]||"")}</span>`}`
               : over ? `${sc}<span class="hm-td-st">انتهت</span>`
               : `<b class="hm-td-time" dir="ltr">${m.time?esc(m.time):"—"}</b>`;
