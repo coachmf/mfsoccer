@@ -1270,7 +1270,7 @@ const VIEWS = {
         </div>
         ${this.ptsGrid({gw:showGw, pts:gridPts, live:gObj.status==='live'||liveV, other:true, avg:liveV? (lsV.avg??null) : gObj.avg, high:liveV? (lsV.high??null) : gObj.high, rank:(hG&&hG.rank)||lrV||this.gwRankOf(showGw, uid), hits:(hG&&hG.hits)||(res&&res.hits)||0, chip})}
       </div>
-      ${typeof this.chipsStrip==='function' ? this.chipsStrip(hist, (()=>{ const pk=(team.gwPicks||{})[gw]; return locked && pk && pk.chip ? {key:pk.chip, gw} : null; })()) : ''}
+      ${typeof this.chipsStrip==='function' ? this.chipsStrip(hist, (()=>{ const pk=(team.gwPicks||{})[gw]; return locked && pk && pk.chip ? {key:pk.chip, gw} : null; })(), showGw) : ''}
       <div class="pitch-frame">
         ${this.pitchHTML(dv, opt)}
         ${this.coachBarHTML(dv, info ? {coachPts:res.coach||null, gw:showGw} : {view:true})}

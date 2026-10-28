@@ -22,13 +22,20 @@ Object.assign(VIEWS, {
   gwRankOf(gw, uid){ const rows=this.gwBoard(gw); const i=rows.findIndex(r=>r.id===uid); if(i<0) return null; const p=rows[i].p; return rows.findIndex(r=>r.p===p)+1; },
   /* شريط الخواص (منصور 2026-10-12): كل كرت وجولة استعماله من السجل، والمفعّل للجولة الجارية، والباقي «متاح».
      pend = {key, gw} كرت الجولة الجارية قبل احتسابها — للآخرين بعد الإغلاق فقط (لا نكشف كرته قبل الموعد) */
-  chipsStrip(hist, pend){
+  /* view = الجولة المعروضة (منصور 2026-10-28 «المفروض بس يطلع لي شنو استعمل خاصيه هالجوله فقط»): يُبرز كرت هذه الجولة وحده،
+     والباقي محايد بحالته (متاح / استُنفد) — كانت كل الكروت المستعملة في أي جولة تظهر مضيئة فبدا كأنه فعّل خاصيتين */
+  chipsStrip(hist, pend, view){
     const chips=DB.state.rules.chips; const IC={wildcard:'swap', benchboost:'stats', triplecap:'trophy', freehit:'spark'};
     const used={}; (hist||[]).forEach(h=>{ if(h && h.chip) (used[h.chip]=used[h.chip]||[]).push(+h.gw); });
     const tiles=Object.keys(chips).filter(k=>chips[k].enabled).map(k=>{
       const c=chips[k], u=(used[k]||[]).sort((a,b)=>a-b);
       const on=pend && pend.key===k && !u.includes(+pend.gw);
       const left=c.uses-u.length-(on?1:0);
+      if(view!=null){
+        const here=u.includes(+view), onHere=on && +pend.gw===+view;
+        const txt = onHere ? 'مفعّل · الجولة '+view : here ? 'الجولة '+view : left>0 ? 'متاح' : 'استُنفد';
+        return `<div class="cs-t ${onHere?'on':here?'used':'free'}"><i>${UI.icon(IC[k]||'spark',16)}</i><b>${esc(c.label)}</b><span>${txt}</span></div>`;
+      }
       const st=[...u.map(g=>'الجولة '+g), ...(on? ['مفعّل · الجولة '+pend.gw] : [])];
       if(!st.length || (left>0 && c.uses>1)) st.push(left>0? 'متاح' : '');
       return `<div class="cs-t ${on?'on':u.length?'used':'free'}"><i>${UI.icon(IC[k]||'spark',16)}</i><b>${esc(c.label)}</b><span>${st.filter(Boolean).join(' · ')}</span></div>`;
@@ -229,7 +236,7 @@ Object.assign(VIEWS, {
         ${this.ptsGrid({gw, pts:h.pts, live:isLive, avg:d.avg, high:d.high, rank:isLive? (h.rank||null) : myRank, hits:h.hits, chip:chipLabel})}
         <div class="pts-note">${notes.filter(n=>!/^ترتيب الجولة|^خصم انتقالات/.test(n)).map(n=>`<span>${n}</span>`).join(' · ')}</div>
       </div>
-      ${this.chipsStrip(team.history, (()=>{ const cg=st.currentGW, pk=(team.gwPicks||{})[cg]; const k=GWADMIN.deadlinePassed(cg)? (pk&&pk.chip) : team.activeChip; return k? {key:k, gw:cg} : null; })())}
+      ${this.chipsStrip(team.history, (()=>{ const cg=st.currentGW, pk=(team.gwPicks||{})[cg]; const k=GWADMIN.deadlinePassed(cg)? (pk&&pk.chip) : team.activeChip; return k? {key:k, gw:cg} : null; })(), gw)}
       <div class="pt-toggle">
         <button class="${view==='pitch'?'active':''}" onclick="VIEWS.ui.pointsView='pitch';APP.render()">الملعب</button>
         <button class="${view==='list'?'active':''}" onclick="VIEWS.ui.pointsView='list';APP.render()">قائمة</button>
