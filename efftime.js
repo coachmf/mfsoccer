@@ -455,18 +455,15 @@ document.addEventListener("keydown", e=>{
 let MPW = null;   /* {key, unsub, doc} */
 function cardHTML(d, live){
   const c = calc(d); if(!c.started) return "";
-  const rs = Object.entries(c.reasons).sort((a,b)=>b[1].t-a[1].t), mx = rs.length ? rs[0][1].t : 1;
   const halves = PHS.filter(([p])=>c.ph[p]).map(([p,t])=>{ const x = c.ph[p];
     return `<div class="effp-h"><span>${t}${x.live ? `<i class="effp-live">جارٍ</i>` : ""}</span><b dir="ltr">${fmt(x.eff)}</b>${x.dur ? `<small>من <bdi dir="ltr">${fmt(x.dur)}</bdi> · <bdi dir="ltr">${pct(x.eff, x.dur)}%</bdi></small>` : ""}</div>`; }).join("");
   const P = c.pct!=null ? c.pct : pct(c.eff, c.dur);
+  /* التوقفات وأسبابها لأداة الرصد فقط، لا تظهر للجمهور (منصور 2026-10-28) */
   return `<div class="mp-card effp" data-effp="1">
     <div class="mp-hd"><h3>الوقت الفعلي للعب</h3><span class="mp-sub">${c.live ? "يُحدَّث مباشرة" : "زمن الكرة في اللعب"}</span></div>
     <div class="effp-top"><b dir="ltr" data-effpc="eff">${fmt(c.eff)}</b>${c.dur ? `<span>من زمن المباراة <span dir="ltr" data-effpc="dur">${fmt(c.dur)}</span></span>` : ""}
       ${c.dur || c.pct!=null ? `<div class="effp-bar"><i style="width:${Math.min(100, P)}%"></i></div><em data-effpc="pct">${P}%</em>` : ""}</div>
     <div class="effp-hs">${halves}</div>
-    ${rs.length ? `<div class="effp-rh">التوقفات <span>${c.n} توقفاً · <bdi dir="ltr">${fmt(c.stop)}</bdi></span></div>
-    <ul class="effp-rs">${rs.map(([k,v])=>`<li><span class="n">${H(RN[k]||k)}</span><span class="c">${v.n}</span><span class="b"><i style="width:${Math.max(4, Math.round(v.t/mx*100))}%"></i></span><span class="t" dir="ltr">${fmt(v.t)}</span></li>`).join("")}</ul>` : ""}
-    ${c.longest ? `<p class="effp-note">أطول توقف: ${H(RN[c.longest.r]||c.longest.r)} — <span dir="ltr">${fmt(c.longest.t)}</span> (${PHN[c.longest.ph]})</p>` : ""}
   </div>`;
 }
 EFF.cardHTML = cardHTML;
