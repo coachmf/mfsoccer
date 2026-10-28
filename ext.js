@@ -721,10 +721,13 @@ function paintAdmin(){
 }
 function repaint(){
   paintAdmin();
+  try{ if(document.querySelector("#v-home.on") && typeof window.renderHome==="function") window.renderHome(); }catch(e){}
   try{ if(document.querySelector("#v-matches.on") && typeof renderMatches==="function" && (MXC==="upcoming" || cOf(MXC))) renderMatches(); }catch(e){}
   try{ if(typeof MP==="object" && MP && MP.m && MP.m.__ext){ const k = matchKey(MP.m), n = findExt(k); if(n){ MP.m = n; renderMatchPage(); } } }catch(e){}
 }
 X.repaint = repaint;
+/* مباريات اليوم في الرئيسية (منصور 2026-10-28) */
+X.today = iso => DATA ? DATA.matches.filter(m=>m.date===iso).sort((a,b)=>String(a.time||"").localeCompare(String(b.time||""))) : [];
 const canEdit = () => TEST || (typeof isAdmin!=="undefined" && !!isAdmin);
 function injectAdmin(){
   const v = document.getElementById("v-admin"); if(!v || document.getElementById("extAdmin") || !canEdit()) return;

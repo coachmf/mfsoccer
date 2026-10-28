@@ -2262,7 +2262,7 @@ main{padding-bottom:48px}
 <link rel="stylesheet" href="news.css?v=4">
 <script src="news.js?v=9" defer></script>   <!-- الأخبار: news/{id} + فهرس seasons/news + صور newsimg/{id} -->   <!-- دوري الدرجة الأولى: الترتيب والمباريات فقط (seasons/div1) -->
 <link rel="stylesheet" href="ext.css?v=3">
-<script src="ext.js?v=8" defer></script>   <!-- المشاركات الخارجية لأنديتنا: تحرير كامل مثل الدوري في وثيقة مستقلة (seasons/ext2627) -->
+<script src="ext.js?v=9" defer></script>   <!-- المشاركات الخارجية لأنديتنا: تحرير كامل مثل الدوري في وثيقة مستقلة (seasons/ext2627) -->
 <!-- التحليل الموسّع + تقييم اللاعبين 0–100 + البحث العام (منصور 2026-09-29) -->
 <link rel="stylesheet" href="analysis.css?v=11">
 <script src="tstats-data.js?v=1" defer></script>
@@ -14209,7 +14209,8 @@ function todayMatches(){ const t=todayISO(); return MATCHES.filter(m=>m.date===t
 function hmTodayHTML(){
   const list=todayMatches();
   const d1=(COMP==="الكل"||COMP==="الدوري") && window.DIV1 && DIV1.todayRows ? DIV1.todayRows(todayISO()) : "";   /* دوري الدرجة الأولى (منصور 2026-10-24) */
-  if(!list.length && !d1) return "";
+  const xs=(COMP==="الكل"||COMP==="الدوري") && window.EXT && EXT.today ? EXT.today(todayISO()) : [];   /* المشاركات الخارجية (منصور 2026-10-28: «يظهر جميع مباريات اليوم») */
+  if(!list.length && !d1 && !xs.length) return "";
   const HM_CTA=list.length ? hmCTA(list) : "";
   const row=m=>{
     const live=LIVE_PHASES.includes(m.status) && !staleLive(m), over=!live && matchOver(m), sc=`<b class="hm-td-sc" dir="ltr">${+m.ag} - ${+m.hg}</b>`;
@@ -14223,7 +14224,7 @@ function hmTodayHTML(){
   };
   return `<section class="hm-nm hm-today">
     <div class="hm-nm-hd"><span class="hm-tag"><i></i>مباريات اليوم</span><span class="hm-muted">${list.length ? `${dayLabel(list[0].date)} · ${esc(rndLabel(list[0]))}` : dayLabel(todayISO())}</span></div>
-    <div class="hm-td-list">${list.map(row).join("")}${d1 ? `<div class="hm-td-sub">دوري الدرجة الأولى</div>${d1}` : ""}</div>
+    <div class="hm-td-list">${list.map(row).join("")}${xs.length ? [...new Set(xs.map(m=>m.comp))].map(c=>`<div class="hm-td-sub">${esc(c)}</div>${EXT.withExt(()=>xs.filter(m=>m.comp===c).map(row).join(""), c)}`).join("") : ""}${d1 ? `<div class="hm-td-sub">دوري الدرجة الأولى</div>${d1}` : ""}</div>
     ${HM_CTA}
   </section>`;
 }
