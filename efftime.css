@@ -15,6 +15,10 @@ html.eff-open{overflow:hidden}
 .eff-seg button{min-height:44px;border:0;border-radius:9px;background:transparent;color:#8ea3bf;font-weight:700;font-size:.76rem;line-height:1.2;font-family:inherit;cursor:pointer;padding:4px 2px}
 .eff-seg button small{display:block;font-size:.62rem;font-weight:400;opacity:.85}
 .eff-seg button[aria-pressed="true"]{background:#1d3a5f;color:#fff}
+.eff-spd{display:flex;align-items:center;gap:4px;background:#0b1424;border:1px solid #1f3350;border-radius:12px;padding:4px 4px 4px 8px;margin:-4px 0 12px}
+.eff-spd span{flex:none;color:#8ea3bf;font-size:.7rem;font-weight:700;padding:0 4px}
+.eff-spd button{flex:1;min-width:0;min-height:36px;border:0;border-radius:9px;background:transparent;color:#8ea3bf;font-weight:700;font-size:.78rem;font-family:inherit;cursor:pointer;padding:0}
+.eff-spd button[aria-pressed="true"]{background:#2b7a4b;color:#fff}
 .eff-clocks{display:grid;grid-template-columns:1fr 1.35fr 1fr;gap:8px;align-items:stretch}
 .eff-clocks>div{background:#0f1b2e;border:1px solid #1f3350;border-radius:14px;padding:10px 6px;text-align:center;display:flex;flex-direction:column;justify-content:center;gap:2px}
 .eff-clocks span{font-size:.7rem;color:#8ea3bf}

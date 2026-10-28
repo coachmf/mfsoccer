@@ -47,10 +47,15 @@ const pad = n => String(Math.floor(n)).padStart(2,"0");
 const fmt = ms => { const t = Math.max(0, Math.round((ms||0)/1000)); return `${pad(t/60)}:${pad(t%60)}`; };   /* دقائق:ثوانٍ حتى بعد الساعة (99:00) كساعة الملعب */
 const pct = (a,b) => b>0 ? Math.round(a/b*100) : 0;
 EFF.fmt = fmt;
+/* سرعة الفيديو (منصور 2026-10-28): من يرصد إعادة المباراة على 1.5x مثلاً يختار السرعة نفسها، فتجري الساعة بزمن المباراة لا بزمن الجهاز.
+   d.vc = {w: زمن الجهاز عند آخر تغيير, v: زمن المباراة عنده, x: السرعة} — كل الطوابع (s/e) بزمن المباراة؛ بلا vc = 1x كما كانت */
+const SPEEDS = [1, 1.25, 1.5, 1.75, 2];
+const vnow = d => { const c = d && d.vc; return c && c.x > 0 ? c.v + (Date.now() - c.w) * c.x : Date.now(); };
+const spd = d => (d && d.vc && +d.vc.x) || 1;
 
 /* ───────────── الحساب ───────────── */
 function calc(d, now){
-  now = now==null ? Date.now() : now;
+  now = now==null ? vnow(d) : now;
   const out = {ph:{}, dur:0, stop:0, eff:0, n:0, reasons:{}, longest:null, cur:null, open:null, live:false, started:false};
   if(!d) return out;
   /* رصد يدوي من مصدر خارجي (منصور 2026-10-11): مجاميع الشوطين فقط بلا سجل توقفات —
@@ -303,8 +308,9 @@ async function save(d){
 }
 function act(a, arg){
   if(!S || !S.doc) return;
-  const now = Date.now(), p = S.ph, hs = S.doc.halves || {}, h = hs[p];
+  const now = vnow(S.doc), p = S.ph, hs = S.doc.halves || {}, h = hs[p];
   const open = (S.doc.stops||[]).find(x=>x.ph===p && !x.e);
+  if(a==="speed"){ const x = +arg; if(!SPEEDS.includes(x) || x===spd(S.doc)) return; commit(d=>{ d.vc = {w:Date.now(), v:vnow(d), x}; }); return; }
   if(a==="start"){ if(h && h.s) return; commit(d=>{ (d.halves ||= {})[p] = {s:now}; }); return; }
   if(a==="stop"){
     if(!h || !h.s || h.e) return;
@@ -395,12 +401,13 @@ function paint(){
     </header>
     ${S.tool && c.started ? `<div class="eff-row"><button type="button" class="eff-save" data-eff="pick">حفظ على مباراة</button></div>` : ""}
     <nav class="eff-seg">${seg}</nav>
+    <div class="eff-spd"><span>سرعة الفيديو</span>${SPEEDS.map(x=>`<button type="button" data-eff="speed" data-v="${x}" aria-pressed="${x===spd(d)}" dir="ltr">${x}x</button>`).join("")}</div>
     <section class="eff-clocks st-${state}">
       <div><span>زمن ${PHN[p]}</span><b data-effc="dur" dir="ltr">${fmt(ph ? ph.dur : 0)}</b></div>
       <div class="eff-main"><span>اللعب الفعلي</span><b data-effc="eff" dir="ltr">${fmt(ph ? ph.eff : 0)}</b><i data-effc="pct">${ph ? pct(ph.eff, ph.dur) : 0}%</i></div>
       <div><span>التوقفات</span><b data-effc="stop" dir="ltr">${fmt(ph ? ph.stop : 0)}</b></div>
     </section>
-    <div class="eff-status st-${state}">${state==="pre" ? "لم يبدأ" : state==="done" ? "انتهى" : state==="stop" ? `متوقف — ${H(RN[open.r]||open.r)} <span dir="ltr" data-effc="open">${fmt(Date.now()-open.s)}</span>` : "الكرة في اللعب"}</div>
+    <div class="eff-status st-${state}">${state==="pre" ? "لم يبدأ" : state==="done" ? "انتهى" : state==="stop" ? `متوقف — ${H(RN[open.r]||open.r)} <span dir="ltr" data-effc="open">${fmt(vnow(S.doc)-open.s)}</span>` : "الكرة في اللعب"}</div>
     <section class="eff-act">${main}</section>
     ${state==="play" || state==="stop" ? `<div class="eff-row"><button type="button" class="eff-end" data-eff="end">نهاية ${PHN[p]}</button></div>` : ""}
     ${list.length ? `<section class="eff-card"><h4>توقفات ${PHN[p]} (${list.length})</h4><ul class="eff-list">${rows}</ul></section>` : ""}
@@ -417,7 +424,7 @@ function paintClock(){
   const set = (k, v) => { const el = S.root.querySelector(`[data-effc="${k}"]`); if(el) el.textContent = v; };
   set("dur", fmt(ph.dur)); set("eff", fmt(ph.eff)); set("stop", fmt(ph.stop)); set("pct", pct(ph.eff, ph.dur)+"%");
   set("teff", fmt(c.eff)); set("tdur", fmt(c.dur)); set("tpct", pct(c.eff, c.dur)+"%");
-  const open = (S.doc.stops||[]).find(x=>x.ph===S.ph && !x.e); if(open) set("open", fmt(Date.now()-open.s));
+  const open = (S.doc.stops||[]).find(x=>x.ph===S.ph && !x.e); if(open) set("open", fmt(vnow(S.doc)-open.s));
 }
 document.addEventListener("click", e=>{
   const o = e.target.closest && e.target.closest("[data-eff-open]");
