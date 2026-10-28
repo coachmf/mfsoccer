@@ -2245,7 +2245,7 @@ html[dir="ltr"] .tl-ev.a .tl-card{text-align:right;align-items:flex-end}
 <link rel="stylesheet" href="site-theme.css?v=7">
 <script src="fantasy/js/i18n-more.js?v=14" defer></script>
 <script src="site-i18n.js?v=29" defer></script>
-<script src="i18n-data.js?v=13" defer></script>   <!-- إضافات الإنجليزية + البرتغالية (البرازيل/البرتغال) + الإسبانية + الصربية/الكرواتية -->
+<script src="i18n-data.js?v=14" defer></script>   <!-- إضافات الإنجليزية + البرتغالية (البرازيل/البرتغال) + الإسبانية + الصربية/الكرواتية -->
 <script src="i18n-langs.js?v=8" defer></script>   <!-- قائمة اللغات بالأعلام + البرتغالية والإسبانية والصربية/الكرواتية فوق محرك الإنجليزية -->
 <!-- غرفة التحكم (live.js / live-admin.js / live.css) مخفية منذ 2026-10-10 بطلب منصور — الملفات باقية؛ للإرجاع أعد السطرين:
      <link rel="stylesheet" href="live.css?v=9"> و <script src="live.js?v=21" defer></script> -->
@@ -2254,7 +2254,7 @@ html[dir="ltr"] .tl-ev.a .tl-card{text-align:right;align-items:flex-end}
 <script src="admin-tabs.js?v=9" defer></script>
 <!-- كأس الخليج 27: قسم مستقل ببيانات منفصلة (seasons/gulf27) -->
 <link rel="stylesheet" href="gulf.css?v=18">
-<script src="gulf.js?v=48" defer></script>
+<script src="gulf.js?v=49" defer></script>
 <script src="livepush.js?v=2" defer></script>
 <script src="fantasy/js/push.js?v=286" defer></script>
 <script src="notify.js?v=2" defer></script>
@@ -2951,6 +2951,8 @@ const $ = s => document.querySelector(s);
 const esc = s => String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 /* النتيجة: رقم المستضيف بجانب اسمه في الاتجاهين — inline-flex يتبع اتجاه الصفحة (العربية RTL، اللغات الأخرى LTR) — منصور 2026-10-28 */
 const scp = (h,a,t) => `<span class="scp${t?" t":""}"><span>${h}</span><span>-</span><span>${a}</span></span>`;
+/* الحروف الأولى للاسم (بلا صورة): في اللغات الأخرى من الاسم المترجم — كانت «ما/عا» عربية */
+const iniOf = n => { let s=String(n||"").trim(); if(typeof I18N!=="undefined" && I18N.isEn && I18N.isEn()){ const t=I18N.tr(s); if(t && !/[؀-ۿ]/.test(t)) s=String(t).trim(); } return s.split(/\s+/).slice(0,2).map(w=>w[0]||"").join("").toUpperCase(); };
 const abs = g => g.m + (g.x||0);
 const period = g => { const t=abs(g);
   if(g.m<=15) return "0-15"; if(g.m<=30) return "16-30";
@@ -7203,7 +7205,7 @@ function pav(name, size, placeholder, club){
   /* بلا صورة: لا يظهر شيء — شعار النادي وحده بجانب الاسم.
      الحروف الأولى تُعرض في لوحة المدير فقط لتمييز من ينقصه صورة. */
   if(!placeholder) return "";
-  const ini=(name||"").trim().split(/\s+/).slice(0,2).map(w=>w[0]||"").join("");
+  const ini=iniOf(name);
   return `<span class="pavph" style="width:${S}px;height:${S}px;font-size:${Math.round(S*0.34)}px">${esc(ini||"؟")}</span>`;
 }
 
@@ -9163,7 +9165,7 @@ function squadRowsHTML(club){
     const p=sqPos(x), s=sqNum(x);
     const cut=(typeof photoCut==="function" && sqName(x)) ? photoCut(sqName(x), club) : null;
     return `<div class="sqrow ${p?"":"nopos"} pg-${posMain(x)||"x"}" data-i="${i}">
-      <span class="sqface">${cut?`<img src="${cut}_f.webp?v=39" alt="" loading="lazy" decoding="async">`:esc(String(sqName(x)||"").trim().split(/\s+/).slice(0,2).map(w=>w[0]||"").join(""))}</span>
+      <span class="sqface">${cut?`<img src="${cut}_f.webp?v=39" alt="" loading="lazy" decoding="async">`:esc(iniOf(sqName(x)))}</span>
       <input type="text" class="sqno ${dup.has(s)?"dup":""}" inputmode="numeric" maxlength="3"
         value="${s||""}" placeholder="#" title="رقم القميص">
       <input type="text" class="sqn" value="${esc(sqName(x))}" spellcheck="false" placeholder="اسم اللاعب">
@@ -14137,7 +14139,7 @@ function topPlayersHTML(){
       <div class="tp-hd"><span class="tp-t">${t}</span><span class="tp-sub">${sub}</span></div>
       <div class="tp-body">
         <div class="tp-id">
-          <div class="tp-ph">${cut?`<img src="${cut}_f.webp?v=39" alt="" loading="lazy" decoding="async">`:`<span class="pavph">${esc((p.n||"").split(/\s+/).slice(0,2).map(w=>w[0]||"").join(""))}</span>`}</div>
+          <div class="tp-ph">${cut?`<img src="${cut}_f.webp?v=39" alt="" loading="lazy" decoding="async">`:`<span class="pavph">${esc(iniOf(p.n))}</span>`}</div>
           <b>${esc(p.n)}</b>
           <span class="tp-club">${crest(p.c)}${esc(p.c)}${num?` · ${num}`:""}</span>
           ${pos?`<span class="tp-pos">${esc(pos)}</span>`:""}
@@ -14290,7 +14292,7 @@ function hmTopScorersHTML(){
   return `<section class="hm-ts">
     <div class="hm-sec-hd"><h2>الهدافون</h2><button type="button" class="hm-link" data-go-view="players">الكل</button></div>
     <div class="hm-ts-row">${L.map(p=>{ const cut=photoCut(p.n,p.c); return `<button type="button" class="hm-tsc" data-player="${esc(p.n)}" data-club="${esc(p.c)}" style="${accentVars(p.c)}">
-      <span class="ph">${cut?`<img src="${cut}_f.webp?v=39" alt="" loading="lazy" decoding="async">`:`<i>${esc((p.n||"").split(/\s+/).slice(0,2).map(w=>w[0]||"").join(""))}</i>`}${crest(p.c)}</span>
+      <span class="ph">${cut?`<img src="${cut}_f.webp?v=39" alt="" loading="lazy" decoding="async">`:`<i>${esc(iniOf(p.n))}</i>`}${crest(p.c)}</span>
       <b>${p.g}</b><span class="nm">${esc(p.n)}</span></button>`; }).join("")}</div>
   </section>`;
 }
@@ -14888,7 +14890,7 @@ function ratingRowHTML(x, i){
   const cut=photoCut(x.n, x.c);
   return `<div class="rt-row" data-player="${esc(x.n)}" data-club="${esc(x.c)}">
     ${i!=null?`<span class="rt-i">${i+1}</span>`:""}
-    <span class="rt-ph">${cut?`<img src="${cut}_f.webp?v=39" alt="" loading="lazy" decoding="async">`:`<i>${esc((x.n||"").split(/\s+/).slice(0,2).map(w=>w[0]||"").join(""))}</i>`}${crest(x.c)}</span>
+    <span class="rt-ph">${cut?`<img src="${cut}_f.webp?v=39" alt="" loading="lazy" decoding="async">`:`<i>${esc(iniOf(x.n))}</i>`}${crest(x.c)}</span>
     <span class="rt-nm"><b>${esc(x.n)}</b><small>${esc(x.c)}${x.apps?` · ${mw(x.apps)}`:""}</small></span>
     ${ratingBadge(x.v!=null?x.v:x.avg)}
   </div>`;
