@@ -15143,9 +15143,9 @@ function mpHeader(m){
     ${(hs||as)?`<div class="mp-scorers"><div class="h">${hs}</div><span class="ball">${MP_BALL}</span><div class="a">${as}</div></div>`:""}`;
 }
 const MP_TABS=[["details","التفاصيل"],["lineups","التشكيلة"],["squad","القائمة"],["table","الترتيب"],["matches","المباريات"]];
-/* تبويب «اللعب الفعلي» بعد التفاصيل، يظهر فقط إذا رُصدت المباراة في أداة الوقت الفعلي (منصور 2026-10-28) */
+/* تبويب «اللعب الفعلي» بعد التشكيلة، يظهر فقط إذا رُصدت المباراة في أداة الوقت الفعلي (منصور 2026-10-28) */
 const mpHasEff=m=>!!(window.EFFTIME && EFFTIME.has && EFFTIME.has(m));
-const mpTabs=m=>mpHasEff(m) ? [MP_TABS[0],["eff","اللعب الفعلي"],...MP_TABS.slice(1)] : MP_TABS;
+const mpTabs=m=>mpHasEff(m) ? [...MP_TABS.slice(0,2),["eff","اللعب الفعلي"],...MP_TABS.slice(2)] : MP_TABS;
 function mpInfoRows(m){
   const rows=[];
   rows.push(["المسابقة", `${esc(compOf(m))} · ${esc(SEASON)}`]);
