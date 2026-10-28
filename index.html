@@ -2245,7 +2245,7 @@ html[dir="ltr"] .tl-ev.a .tl-card{text-align:right;align-items:flex-end}
 <link rel="stylesheet" href="site-theme.css?v=7">
 <script src="fantasy/js/i18n-more.js?v=14" defer></script>
 <script src="site-i18n.js?v=29" defer></script>
-<script src="i18n-data.js?v=15" defer></script>   <!-- إضافات الإنجليزية + البرتغالية (البرازيل/البرتغال) + الإسبانية + الصربية/الكرواتية -->
+<script src="i18n-data.js?v=16" defer></script>   <!-- إضافات الإنجليزية + البرتغالية (البرازيل/البرتغال) + الإسبانية + الصربية/الكرواتية -->
 <script src="i18n-langs.js?v=8" defer></script>   <!-- قائمة اللغات بالأعلام + البرتغالية والإسبانية والصربية/الكرواتية فوق محرك الإنجليزية -->
 <!-- غرفة التحكم (live.js / live-admin.js / live.css) مخفية منذ 2026-10-10 بطلب منصور — الملفات باقية؛ للإرجاع أعد السطرين:
      <link rel="stylesheet" href="live.css?v=9"> و <script src="live.js?v=21" defer></script> -->
@@ -3044,7 +3044,7 @@ function compsPresent(){
 }
 /* «الكل» = إجمالي البطولات المحلية: الدوري + كأس الأمير + كأس سمو ولي العهد + كأس السوبر (ALL لا يحوي البطولات الخارجية؛ تلك في EXT_FIXTURES).
    لا يُخزَّن أي مجموع: applyComp يرشّح المصفوفات الأصلية، وكل إحصاء يُحسب منها لحظة العرض. */
-const COMP_TOTAL_LABEL = "إجمالي البطولات المحلية";
+const COMP_TOTAL_LABEL = "إجمالي البطولات";   /* منصور 2026-10-28: «اجمالي البطولات و خلاص» (كانت «… المحلية») */
 const compLabel = c => c==="الكل" ? COMP_TOTAL_LABEL : c;
 /* يشغّل fn على مسابقة أخرى مؤقتاً (نفس الدوال والمصفوفات المرشّحة) ثم يعيد الحالة كما كانت — لملف اللاعب */
 function withComp(comp, fn){
