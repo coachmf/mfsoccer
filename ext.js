@@ -90,7 +90,7 @@ function fixtures(){
     const pr = String(e.t||"").split(/\s*[-–—]\s*/).map(s=>s.trim()).filter(Boolean); if(pr.length<2) return;
     const r = (out.find(f=>f.id===id && f.date===e.d)||{}).round; if(!r) return;
     out.push({id, comp:cName(id), round:r, date:e.d||"", time:e.time||"", venue:e.venue||"", home:teamName(pr[0],id), away:teamName(pr[1],id),
-              hg:(e.hg!=null?+e.hg:null), ag:(e.ag!=null?+e.ag:null), scorers:[], live:false});
+              hg:(e.hg!=null?+e.hg:null), ag:(e.ag!=null?+e.ag:null), scorers:Array.isArray(e.scorers)?e.scorers:[], live:false});
   });
   return out;
 }
@@ -116,9 +116,11 @@ function normalize(d){
   if(!d.squads || typeof d.squads!=="object") d.squads = {};
   opponents().forEach(c=>{ if(!Array.isArray(d.squads[c])) d.squads[c] = []; });
   const removed = new Set(d.removed);
+  const FX = new Map();   /* النتيجة الثابتة لكل مباراة (لنتائج المجموعة بلا هدافين) */
   /* المباريات الثابتة: تُضاف الناقصة، وغير المعدّلة تتبع الجدول الثابت (التاريخ/الوقت/الملعب/النتيجة من مزامنة SofaScore) */
   fixtures().forEach(f=>{
     if(removed.has(fxKey(f.comp, f.round, f.home, f.away))) return;
+    FX.set(fxKey(f.comp, f.round, f.home, f.away), f);
     let m = d.matches.find(x=>x.comp===f.comp && +x.round===f.round && pairEq(x.home,x.away,f.home,f.away));
     if(!m){ m = {n:d.matches.length+1, round:f.round, comp:f.comp, date:f.date, time:f.time, venue:f.venue, home:f.home, away:f.away, note:"", ref:"", refs:{}, tv:"", status:"", add1:0, add2:0, hg:0, ag:0};
       d.matches.push(m); }
@@ -138,6 +140,10 @@ function normalize(d){
     /* النتيجة من الأهداف — نفس قاعدة applyEdit */
     m.hg = d.goals.filter(g=>+g.r===+m.round && g.comp===m.comp && g.sc===m.home && g.cd===m.away).length;
     m.ag = d.goals.filter(g=>+g.r===+m.round && g.comp===m.comp && g.sc===m.away && g.cd===m.home).length;
+    /* منصور 2026-10-28 (ناساف 1-2 الوحدة كانت تظهر 0-0): مباراة ثابتة غير معدّلة بلا صفوف أهداف تأخذ نتيجتها من الجدول الثابت */
+    const f = !m.ed && FX.get(fxKey(m.comp, m.round, m.home, m.away));
+    if(f && f.hg!=null && f.ag!=null && !f.live && !m.hg && !m.ag){ const same = teamEq(m.home, f.home);
+      m.hg = same ? f.hg : f.ag; m.ag = same ? f.ag : f.hg; if(!m.status) m.status = "ft"; }
   });
   d.matches.sort((a,b)=>String(a.date).localeCompare(String(b.date)) || String(a.time||"").localeCompare(String(b.time||"")) || a.round-b.round);
   d.matches.forEach((m,i)=>m.n = i+1);
