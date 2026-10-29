@@ -2,7 +2,7 @@
 'use strict';
 
 const VIEWS = {
-  ui: { sel:null, subMode:false, tOut:[], tIn:[], filters:{pos:'',club:'',sort:'total',sortAsc:false,search:'',fdr:false},
+  ui: { sel:null, subMode:false, tOut:[], tIn:[], filters:{pos:'',club:'',st:'',sort:'total',sortAsc:false,search:'',fdr:false},
         pickerSquad:[], authTab:'login', fxGw:null, statsTab:'transfers', playerOpen:null, leagueOpen:null,
         adminSec:'gws', adminGw:null, editFx:null, pointsGw:null, cmp:[], legacyAdmin:false },
 
@@ -690,6 +690,8 @@ const VIEWS = {
         <option value="">كل الأسعار</option>${[...new Set(st.players.filter(p=>p.status!=='u').map(p=>p.price))].sort((x,y)=>x-y).map(v=>`<option value="${v}" ${+f.price===v?'selected':''}>${fmtM(v)}</option>`).join('')}</select>
       <select style="width:auto" onchange="VIEWS.ui.filters.club=this.value;APP.render()">
         <option value="">كل الأندية</option>${st.clubs.map(c=>`<option value="${c.id}" ${f.club===c.id?'selected':''}>${c.name}</option>`).join('')}</select>
+      <select style="width:auto" onchange="VIEWS.ui.filters.st=this.value;APP.render()">${/* حالة اللاعب (منصور 2026-10-29: «أقدر أبحث عن اللاعبين المصابين») */''}
+        ${[['','كل الحالات'],['x','المصابون والغائبون'],['i','مصاب'],['s','موقوف'],['n','غير متوفر']].map(([v,l])=>`<option value="${v}" ${(f.st||'')===v?'selected':''}>${l}</option>`).join('')}</select>
       <input style="width:130px" placeholder="بحث بالاسم" value="${esc(f.search)}" oninput="VIEWS.ui.filters.search=this.value" onchange="APP.render()">
     </div>`;
   },
@@ -821,6 +823,7 @@ const VIEWS = {
     if(f.price) list=list.filter(p=>Math.abs(p.price-(+f.price))<0.01);
     if(f.pos) list=list.filter(p=>p.pos===f.pos);
     if(f.club) list=list.filter(p=>p.club===f.club);
+    if(f.st) list=list.filter(p=>{ const x=p.status||'a'; return f.st==='x' ? x!=='a' : f.st==='n' ? (x==='n'||x==='d') : x===f.st; });
     if(f.search) list=list.filter(p=>p.name.includes(f.search));
     const col=this.PL_COLS[f.sort]||this.PL_COLS.total, dir=f.sortAsc?1:-1;
     list.sort((a,b)=>dir*(col.val(a)-col.val(b)) || DB.playerTotal(b.id)-DB.playerTotal(a.id));

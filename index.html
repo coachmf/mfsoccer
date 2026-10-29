@@ -2245,7 +2245,7 @@ html[dir="ltr"] .tl-ev.a .tl-card{text-align:right;align-items:flex-end}
 <link rel="stylesheet" href="site-theme.css?v=7">
 <script src="fantasy/js/i18n-more.js?v=14" defer></script>
 <script src="site-i18n.js?v=29" defer></script>
-<script src="i18n-data.js?v=17" defer></script>   <!-- إضافات الإنجليزية + البرتغالية (البرازيل/البرتغال) + الإسبانية + الصربية/الكرواتية -->
+<script src="i18n-data.js?v=18" defer></script>   <!-- إضافات الإنجليزية + البرتغالية (البرازيل/البرتغال) + الإسبانية + الصربية/الكرواتية -->
 <script src="i18n-langs.js?v=8" defer></script>   <!-- قائمة اللغات بالأعلام + البرتغالية والإسبانية والصربية/الكرواتية فوق محرك الإنجليزية -->
 <!-- غرفة التحكم (live.js / live-admin.js / live.css) مخفية منذ 2026-10-10 بطلب منصور — الملفات باقية؛ للإرجاع أعد السطرين:
      <link rel="stylesheet" href="live.css?v=9"> و <script src="live.js?v=21" defer></script> -->
@@ -2273,7 +2273,7 @@ html[dir="ltr"] .tl-ev.a .tl-card{text-align:right;align-items:flex-end}
 <!-- هوية MF SOCCER الذهبية + هيكل التطبيق (منصور 2026-10-05) -->
 <link rel="stylesheet" href="mf-brand.css?v=17">
 <script>document.documentElement.classList.add("mf")</script>
-<script src="mf-shell.js?v=33" defer></script>
+<script src="mf-shell.js?v=34" defer></script>
 <style>
 /* تبويب التحليل — التصميم الجديد (منصور 2026-09-17) */
 .an{--an-card:#0F1E35;--an-line:#213653;--an-txt:#EDF3FA;--an-mut:#8FA6C4;--an-track:rgba(143,166,196,.16);--an-acc:#2EB0F0;--an-acc2:#1878BE}
@@ -3206,15 +3206,43 @@ function upcomingItems(){
   }));
   return [...loc,...ext].sort((a,b)=>String(a.d).localeCompare(String(b.d))||((a.ts||0)-(b.ts||0)));
 }
+/* «الأيام السابقة» في صفحة المباريات القادمة (منصور 2026-10-29: «أبي خيار أرجع للأيام اللي قبل»): كل ضغطة تضيف 7 أيام،
+   مباريات انتهت من كل المسابقات فوق القادمة بالترتيب الزمني */
+let MX_BACK=0;
+function pastItems(){
+  if(!MX_BACK) return [];
+  const iso=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+  const t=new Date(), todayIso=iso(t), from=iso(new Date(t.getFullYear(), t.getMonth(), t.getDate()-MX_BACK));
+  const up=new Set(upcomingItems().map(it=>it.m||it.e));
+  const loc=(ALL?.matches||[]).filter(m=>m.date && m.date>=from && m.date<=todayIso && !up.has(m) && kickoffTS(m)!==null && kickoffTS(m)<=Date.now())
+    .map(m=>({d:m.date, ts:kickoffTS(m), m, past:true}));
+  const ext=[];
+  EXT_COMPS.forEach(c=>extEvents(c.id).forEach(e=>{
+    if(e.to && e.to!==e.d) return;
+    if(!e.d || e.d<from || e.d>todayIso || up.has(e)) return;
+    const parts=evParts(e); if(parts.length<2 || /نصف|نهائي|ربع|مباريات/.test(parts[0])) return;
+    const gx=extGx(c.id, e, parts[0], parts[1]); if(!(e.hg!=null || (gx && gx.st==="done"))) return;
+    ext.push({d:e.d, ts:new Date(e.d+"T"+(normTime(e.time)||"23:59")+":00").getTime(), e, c});
+  }));
+  return [...loc,...ext].sort((a,b)=>String(a.d).localeCompare(String(b.d))||((a.ts||0)-(b.ts||0)));
+}
 function matchGoalsAll(m){ return (ALL?.goals||[]).some(g=>compOf(g)===compOf(m) && +g.r===+m.round && (g.sc===m.home||g.sc===m.away)); }
 function renderUpcomingMatches(){
-  const items=upcomingItems();
+  const items=[...pastItems(), ...upcomingItems()], tIso=todayISO();
   const dayLabel=iso=>{ if(!iso) return "مؤجلة — يُحدَّد موعدها لاحقاً"; const d=new Date(iso+"T00:00:00"); if(isNaN(d)) return esc(iso); return `${AR_DOW[d.getDay()]} ${d.getDate()} ${AR_MON[d.getMonth()]}`; };
   let lastDay=null;
   const html=items.map(it=>{
-    const dayHead=it.d!==lastDay?`<div class="mc-day"><span>${dayLabel(it.d)}</span></div>`:""; lastDay=it.d;
+    const dayHead=it.d!==lastDay?`<div class="mc-day${it.d && it.d<tIso?" past":""}"><span>${dayLabel(it.d)}</span></div>`:""; lastDay=it.d;   /* past: لا يدخل في «أول 4 أيام» (mf-shell) */
     if(it.e) return dayHead+extCardsHTML([it.e], it.c.name).html.replace(/^<div class="mc-day">[\s\S]*?<\/div>/,"");
     const m=it.m, live=!(kickoffTS(m)>Date.now()), key=matchByKey(matchKey(m))?matchKey(m):"";
+    if(it.past) return `${dayHead}<article class="mc done"${key?` data-mopen="${key}"`:""}>
+      <div class="mc-row">
+        <div class="mc-team h">${crest(m.home)}<b>${esc(m.home)}</b></div>
+        <div class="mc-mid"><span class="mc-score" dir="ltr">${scp(m.hg,m.ag)}</span>${psoOf(m) ? `<span class="mc-pso">ركلات الترجيح <span dir="ltr">${psoOf(m).a} - ${psoOf(m).h}</span></span>` : hasET(m) ? `<span class="mc-pso">بعد الأشواط الإضافية</span>` : ""}<span class="mc-st done">انتهت</span></div>
+        <div class="mc-team a">${crest(m.away)}<b>${esc(m.away)}</b></div>
+      </div>
+      <div class="mc-foot"><span class="mc-comp">${compLogo(compOf(m))}${esc(compOf(m))}</span><span>${esc(rndLabel(m))}</span>${m.venue?`<span>${esc(m.venue)}</span>`:""}</div>
+    </article>`;
     return `${dayHead}<article class="mc${live?" live":" soon"}"${key?` data-mopen="${key}"`:""}>
       <div class="mc-row">
         <div class="mc-team h">${crest(m.home)}<b>${esc(m.home)}</b></div>
@@ -3230,8 +3258,11 @@ function renderUpcomingMatches(){
   $("#v-matches").innerHTML=`
     <div class="mx-head"><h2 class="mx-title">المباريات</h2>${compSelect()}</div>
     <h2 class="sec xt-mx">المباريات القادمة<span class="sq-n">كل المسابقات</span></h2>
+    <div class="mx-back"><button type="button" class="mx-back-btn" data-mxback="more"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M18 15l-6-6-6 6"/></svg>${MX_BACK?"أيام أقدم":"الأيام السابقة"}</button>${MX_BACK?`<button type="button" class="mx-back-btn ghost" data-mxback="hide">القادمة فقط</button>`:""}</div>
     <div class="mx-list">${html||'<div class="mx-empty">لا توجد مباريات قادمة.</div>'}</div>`;
   const V=$("#v-matches"); wireComp(V); wireDropdowns(V);
+  V.querySelectorAll("[data-mxback]").forEach(b=>b.onclick=()=>{ const more=b.dataset.mxback==="more"; MX_BACK = more ? MX_BACK+7 : 0;
+    renderUpcomingMatches(); if(!more) return; const L=$("#v-matches .mx-list"); if(L) L.scrollIntoView({block:"start", behavior:"smooth"}); });
 }
 function renderExtMatches(){
   const c=EXT_COMPS.find(x=>x.id===MXC); if(!c){ MXC=null; renderMatches(); return; }
@@ -11942,6 +11973,9 @@ html[data-theme="dark"] .msum span{background:#0F1E35;border-color:#213653}
 .mc-day{display:flex;align-items:center;gap:10px;margin:14px 2px 8px;font-size:.72rem;font-weight:700;color:var(--slate)}
 .mc-day::after{content:"";flex:1;height:1px;background:var(--line,rgba(143,166,196,.16))}
 .mx-list>.mc-day:first-child{margin-top:2px}
+.mx-back{display:flex;justify-content:center;gap:8px;margin:2px 0 12px}
+.mx-back-btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:999px;border:1px solid var(--gold,#c9a45c);background:transparent;color:var(--gold,#c9a45c);font:inherit;font-size:13px;font-weight:700;cursor:pointer}
+.mx-back-btn.ghost{border-color:var(--line,rgba(255,255,255,.18));color:inherit;opacity:.8}
 .mx-empty{padding:28px 14px;text-align:center;color:var(--slate);font-size:.85rem;border:1px dashed var(--line,rgba(143,166,196,.25));border-radius:14px}
 @media(prefers-reduced-motion:reduce){.mc-st.live i{animation:none}.rp,.dp,.mc{transition:none}}
 /* --- الرئيسية: أبرز اللاعبين (رادار) + حالة الفرق --- */
@@ -16358,7 +16392,8 @@ html.mx-editing #waFab{display:none!important}   /* زر واتساب كان ي�
   const PHASE_NOTE={h1:[1,"بداية المباراة"],ht:[45,"نهاية الشوط الأول"],h2:[46,"بداية الشوط الثاني"],e1:[91,"بداية الشوط الإضافي الأول"],e2:[106,"بداية الشوط الإضافي الثاني"],pso:[120,"ركلات الترجيح"],ft:[90,"نهاية المباراة"]};
   const PHASES=[["pre","قبل البداية"],["h1","الشوط الأول"],["ht","بين الشوطين"],["h2","الشوط الثاني"],["ft","انتهت"]];
   /* مباريات خروج المغلوب فقط (نصف نهائي ونهائي الخليج، والكؤوس): أشواط إضافية وركلات ترجيح (منصور 2026-10-03) */
-  const isKO=m=>EDIT && EDIT.gulf ? +m.round>=4 : EDIT && EDIT.ext && window.EXT ? EXT.isKO(m) : String(m.comp||"")!=="الدوري";
+  /* دور المجموعات في المشاركات الخارجية ليس خروج مغلوب حتى خارج تبويبها (منصور 2026-10-29: دقيقة 93 في ناساف × الكويت فعّلت الإضافي) */
+  const isKO=m=>EDIT && EDIT.gulf ? +m.round>=4 : window.EXT && EXT.isGroup && EXT.isGroup(m) ? false : EDIT && EDIT.ext && window.EXT ? EXT.isKO(m) : String(m.comp||"")!=="الدوري";
   const PHASES_KO=[["e1","الشوط الإضافي الأول"],["e2","الشوط الإضافي الثاني"],["pso","ركلات الترجيح"]];
   const TV_LIST=["كويت سبورت","كويت سبورت بلس","الكويت الأولى","غير منقولة"];
   const stadiums=()=>{ const set=new Set(); if(typeof CLUB_INFO!=="undefined") Object.values(CLUB_INFO).forEach(i=>i&&i.st&&set.add(i.st)); (ALL.matches||[]).forEach(x=>x.venue&&set.add(String(x.venue).trim())); return [...set].filter(Boolean).slice(0,16); };

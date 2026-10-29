@@ -380,7 +380,7 @@
     const L=D.querySelector("#v-matches .mx-list"); if(!L || L.dataset.mfFold) return;
     L.dataset.mfFold="1";
     let day=0, hidden=0;
-    [...L.children].forEach(el=>{ if(el.classList.contains("mc-day")) day++; if(day>UP_DAYS){ el.classList.add("mf-fold"); if(el.matches("article")) hidden++; } });
+    [...L.children].forEach(el=>{ if(el.classList.contains("mc-day") && !el.classList.contains("past")) day++;   /* الأيام السابقة لا تُعدّ */ if(day>UP_DAYS){ el.classList.add("mf-fold"); if(el.matches("article")) hidden++; } });
     hidden += L.querySelectorAll(".mf-fold .mc, .mf-fold.ext-card").length;
     if(day>UP_DAYS){
       const b=D.createElement("button"); b.type="button"; b.className="mf-more"; b.dataset.mfUnfold="";

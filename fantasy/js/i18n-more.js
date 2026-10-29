@@ -157,6 +157,7 @@ const NAMES_EN = {
 };
 
 const DICT_MORE = {
+    'كل الحالات':'All statuses', 'المصابون والغائبون':'Injured & unavailable',
   'مؤجلة':'Postponed', 'مؤجلة — لا يلعب هذه الجولة':'Postponed — no match this gameweek',
   // إدارة الدوريات + النادي المفضل (2026-10-08)
   'إدارة الدوريات':'Leagues', 'مسجّل في الفانتسي':'registered in the fantasy', 'الدوريات الخاصة':'Private leagues', 'الدوريات العامة':'Public leagues', 'الدوري':'League',
