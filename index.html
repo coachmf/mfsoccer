@@ -6528,8 +6528,16 @@ function removeMatchByKey(key){
 let SQ_PENDING = {};
 function applyEdit(E){
   Object.keys(SQ_PENDING).forEach(c=>{ SQUADS[c]=JSON.parse(JSON.stringify(SQ_PENDING[c])); }); SQ_PENDING={};
-  const m=E.match, round=+m.round;
+  const m=E.match; let round=+m.round;
   if(E.orig) removeMatchByKey(E.orig);
+  /* الكؤوس: التشكيلة والبطاقات والتبديلات تُربط بالجولة+البطولة+النادي، فناديان يلعبان مباراتين بنفس رقم الجولة
+     تختلط تشكيلتاهما (خيطان × اتحاد الشرطة أظهرت تشكيلة الشرطة من مباراة سبورتي — منصور 2026-10-29).
+     إن كان رقم الجولة مأخوذاً لمباراة أخرى لأحد الناديين في نفس البطولة، تأخذ المباراة أول رقم شاغر. */
+  if(isCupComp(m.comp)){
+    const clash=r=>(ALL.matches||[]).some(x=>x.comp===m.comp && +x.round===r && [x.home,x.away].some(c=>c===m.home||c===m.away));
+    while(clash(round)) round++;
+    m.round=round;
+  }
   const other = t => t===m.home ? m.away : m.home;
   ALL.matches.push({n:ALL.matches.length+1, round, comp:m.comp, date:m.date, time:m.time,
                     venue:m.venue, home:m.home, away:m.away, note:(m.note||"").trim(), ref:(m.ref||"").trim(), refs:REF_ROLES.reduce((o,[k])=>{ const v=String((m.refs||{})[k]||"").trim(); if(v) o[k]=v; return o; },{}), tv:(m.tv||"").trim(), status:m.status||"", ...(PH_CLOCK[m.status]&&+m.pst?{pst:+m.pst}:{}), ...(m.rec?{rec:m.rec}:{}), ...(isCupComp(m.comp)&&m.stage?{stage:String(m.stage)}:{}), add1:+m.add1||0, add2:+m.add2||0,
@@ -15210,7 +15218,9 @@ function mpHeader(m){
 const MP_TABS=[["details","التفاصيل"],["lineups","التشكيلة"],["squad","القائمة"],["table","الترتيب"],["matches","المباريات"]];
 /* تبويب «اللعب الفعلي» بعد التشكيلة، يظهر فقط إذا رُصدت المباراة في أداة الوقت الفعلي (منصور 2026-10-28) */
 const mpHasEff=m=>!!(window.EFFTIME && EFFTIME.has && EFFTIME.has(m));
-const mpTabs=m=>mpHasEff(m) ? [...MP_TABS.slice(0,2),["eff","اللعب الفعلي"],...MP_TABS.slice(2)] : MP_TABS;
+/* مباراة كأس أو مشاركة خارجية: لا تبويب «الترتيب» — جدول الدوري لا يخصّها (منصور 2026-10-29) */
+const mpTabs=m=>{ const T=compOf(m)==="الدوري" ? MP_TABS : MP_TABS.filter(([k])=>k!=="table");
+  return mpHasEff(m) ? [...T.slice(0,2),["eff","اللعب الفعلي"],...T.slice(2)] : T; };
 function mpInfoRows(m){
   const rows=[];
   rows.push(["المسابقة", `${esc(compOf(m))} · ${esc(SEASON)}`]);
@@ -15510,6 +15520,7 @@ function renderMatchPage(){
 function renderMatchPageRaw(){
   const box=$("#mpage"), m=MP.m; if(!box||!m) return;
   if(MP.tab==="eff" && !mpHasEff(m)) MP.tab="details";
+  if(MP.tab==="table" && compOf(m)!=="الدوري") MP.tab="details";
   const body = MP.tab==="eff" ? `<div data-effslot></div>` : MP.tab==="lineups" ? mpLineups(m) : MP.tab==="squad" ? mpSquad(m) : MP.tab==="table" ? mpTable(m) : MP.tab==="matches" ? mpMatches(m) : mpDetails(m);
   /* توهج رأس صفحة المباراة بلون القميص الأساسي: الأبيض يبقى أبيض (الإمارات/العراق كانا يظهران بالأحمر/الأخضر — منصور 2026-10-03) */
   const glowOf=c=>{ const cc=(window.CLUB_COLORS||{})[c]; return cc && lumOf(cc[0])>.85 ? "#FFFFFF" : clubAccent(c).a; };
