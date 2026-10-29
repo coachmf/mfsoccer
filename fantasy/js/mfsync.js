@@ -69,6 +69,7 @@ const MFSYNC = {
     st=st||DB.state; const r=+m.round, total=(st.rules&&st.rules.totalGWs)||22;
     const fin=n=>((st.gws||[]).find(g=>g.n===n)||{}).status==='finished';
     if(!m.date || !win) return r;
+    if(this.notedPP(m)) return r;   /* «مؤجلة» على الموقع بموعد مؤقت: تبقى في جولتها مؤجلة حتى يُكتب موعدها الفعلي */
     const t=kwDate(m.date+'T'+(m.time||'18:00')).getTime(); const w=win[r];
     if(isNaN(t) || !w || Math.abs(t-w.med)<=4*86400e3) return r;          // في موعد جولته
     let g=r; for(let n=1;n<=total;n++){ if(win[n] && win[n].start<=t) g=n; }   // آخر جولة بدأت قبل موعدها الجديد
@@ -76,8 +77,12 @@ const MFSYNC = {
     while(g<=total && fin(g)) g++;
     return Math.min(total, Math.max(1, g));
   },
+  /* ملاحظة «مؤجلة» على الموقع (منصور 2026-10-29: الكويت × كاظمة ج7 كُتب لها 18/12 موعداً مؤقتاً فنُقلت لجولة ديسمبر
+     وظهر «الكويت ضد الساحل» في الجولة 7). تُرفع الملاحظة من الموقع حين يُحدَّد الموعد الفعلي. */
+  notedPP(m){ return /مؤج/.test(m.note||'') && !(m.status==='ft'); },
   postponed(m, win, data){
     if(this.isPlayed(m, data)) return false;
+    if(this.notedPP(m)) return true;
     if(!m.date){
       /* بلا تاريخ وباقي مباريات جولتها لها مواعيد = مؤجلة رسمياً (جدول الاتحاد 2026-10-02: «يحدد لاحقا») */
       const ms=(data&&data.matches)||[];
