@@ -2245,7 +2245,7 @@ html[dir="ltr"] .tl-ev.a .tl-card{text-align:right;align-items:flex-end}
 <link rel="stylesheet" href="site-theme.css?v=7">
 <script src="fantasy/js/i18n-more.js?v=14" defer></script>
 <script src="site-i18n.js?v=29" defer></script>
-<script src="i18n-data.js?v=18" defer></script>   <!-- إضافات الإنجليزية + البرتغالية (البرازيل/البرتغال) + الإسبانية + الصربية/الكرواتية -->
+<script src="i18n-data.js?v=19" defer></script>   <!-- إضافات الإنجليزية + البرتغالية (البرازيل/البرتغال) + الإسبانية + الصربية/الكرواتية -->
 <script src="i18n-langs.js?v=8" defer></script>   <!-- قائمة اللغات بالأعلام + البرتغالية والإسبانية والصربية/الكرواتية فوق محرك الإنجليزية -->
 <!-- غرفة التحكم (live.js / live-admin.js / live.css) مخفية منذ 2026-10-10 بطلب منصور — الملفات باقية؛ للإرجاع أعد السطرين:
      <link rel="stylesheet" href="live.css?v=9"> و <script src="live.js?v=21" defer></script> -->
@@ -3206,29 +3206,26 @@ function upcomingItems(){
   }));
   return [...loc,...ext].sort((a,b)=>String(a.d).localeCompare(String(b.d))||((a.ts||0)-(b.ts||0)));
 }
-/* «الأيام السابقة» في صفحة المباريات القادمة (منصور 2026-10-29: «أبي خيار أرجع للأيام اللي قبل»): كل ضغطة تضيف 7 أيام،
-   مباريات انتهت من كل المسابقات فوق القادمة بالترتيب الزمني */
-let MX_BACK=0;
-function pastItems(){
-  if(!MX_BACK) return [];
-  const iso=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
-  const t=new Date(), todayIso=iso(t), from=iso(new Date(t.getFullYear(), t.getMonth(), t.getDate()-MX_BACK));
-  const up=new Set(upcomingItems().map(it=>it.m||it.e));
-  const loc=(ALL?.matches||[]).filter(m=>m.date && m.date>=from && m.date<=todayIso && !up.has(m) && kickoffTS(m)!==null && kickoffTS(m)<=Date.now())
-    .map(m=>({d:m.date, ts:kickoffTS(m), m, past:true}));
+/* «اليوم السابق» في صفحة المباريات القادمة (منصور 2026-10-29: «زر يرجعني يوم فقط ويظهر مباريات هاليوم وجذي»):
+   MX_DAY=0 القائمة القادمة كما هي؛ -1 أمس، -2 قبله… كل ضغطة يوم واحد، والصفحة تعرض مباريات ذاك اليوم وحده من كل المسابقات */
+let MX_DAY=0;
+const mxIso=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+function mxDayIso(){ const t=new Date(); return mxIso(new Date(t.getFullYear(), t.getMonth(), t.getDate()+MX_DAY)); }
+function dayItems(iso){
+  const loc=(ALL?.matches||[]).filter(m=>m.date===iso)
+    .map(m=>({d:m.date, ts:kickoffTS(m), m, past:kickoffTS(m)!==null && kickoffTS(m)<=Date.now()}));
   const ext=[];
   EXT_COMPS.forEach(c=>extEvents(c.id).forEach(e=>{
     if(e.to && e.to!==e.d) return;
-    if(!e.d || e.d<from || e.d>todayIso || up.has(e)) return;
+    if(e.d!==iso) return;
     const parts=evParts(e); if(parts.length<2 || /نصف|نهائي|ربع|مباريات/.test(parts[0])) return;
-    const gx=extGx(c.id, e, parts[0], parts[1]); if(!(e.hg!=null || (gx && gx.st==="done"))) return;
     ext.push({d:e.d, ts:new Date(e.d+"T"+(normTime(e.time)||"23:59")+":00").getTime(), e, c});
   }));
-  return [...loc,...ext].sort((a,b)=>String(a.d).localeCompare(String(b.d))||((a.ts||0)-(b.ts||0)));
+  return [...loc,...ext].sort((a,b)=>(a.ts||0)-(b.ts||0));
 }
 function matchGoalsAll(m){ return (ALL?.goals||[]).some(g=>compOf(g)===compOf(m) && +g.r===+m.round && (g.sc===m.home||g.sc===m.away)); }
 function renderUpcomingMatches(){
-  const items=[...pastItems(), ...upcomingItems()], tIso=todayISO();
+  const items=MX_DAY<0 ? dayItems(mxDayIso()) : upcomingItems(), tIso=todayISO();
   const dayLabel=iso=>{ if(!iso) return "مؤجلة — يُحدَّد موعدها لاحقاً"; const d=new Date(iso+"T00:00:00"); if(isNaN(d)) return esc(iso); return `${AR_DOW[d.getDay()]} ${d.getDate()} ${AR_MON[d.getMonth()]}`; };
   let lastDay=null;
   const html=items.map(it=>{
@@ -3257,12 +3254,12 @@ function renderUpcomingMatches(){
   }).join("");
   $("#v-matches").innerHTML=`
     <div class="mx-head"><h2 class="mx-title">المباريات</h2>${compSelect()}</div>
-    <h2 class="sec xt-mx">المباريات القادمة<span class="sq-n">كل المسابقات</span></h2>
-    <div class="mx-back"><button type="button" class="mx-back-btn" data-mxback="more"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M18 15l-6-6-6 6"/></svg>${MX_BACK?"أيام أقدم":"الأيام السابقة"}</button>${MX_BACK?`<button type="button" class="mx-back-btn ghost" data-mxback="hide">القادمة فقط</button>`:""}</div>
-    <div class="mx-list">${html||'<div class="mx-empty">لا توجد مباريات قادمة.</div>'}</div>`;
+    <h2 class="sec xt-mx">${MX_DAY<0?(MX_DAY===-1?"مباريات أمس":"المباريات"):"المباريات القادمة"}<span class="sq-n">${MX_DAY<0?dayLabel(mxDayIso()):"كل المسابقات"}</span></h2>
+    <div class="mx-back"><button type="button" class="mx-back-btn" data-mxday="-1"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>اليوم السابق</button>${MX_DAY<0?`<button type="button" class="mx-back-btn ghost" data-mxday="1">اليوم التالي<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg></button>`:""}</div>
+    <div class="mx-list">${html||`<div class="mx-empty">${MX_DAY<0?"لا توجد مباريات في هذا اليوم.":"لا توجد مباريات قادمة."}</div>`}</div>`;
   const V=$("#v-matches"); wireComp(V); wireDropdowns(V);
-  V.querySelectorAll("[data-mxback]").forEach(b=>b.onclick=()=>{ const more=b.dataset.mxback==="more"; MX_BACK = more ? MX_BACK+7 : 0;
-    renderUpcomingMatches(); if(!more) return; const L=$("#v-matches .mx-list"); if(L) L.scrollIntoView({block:"start", behavior:"smooth"}); });
+  V.querySelectorAll("[data-mxday]").forEach(b=>b.onclick=()=>{ MX_DAY=Math.min(0, MX_DAY + +b.dataset.mxday);
+    renderUpcomingMatches(); const H=$("#v-matches .xt-mx"); if(H) H.scrollIntoView({block:"start", behavior:"smooth"}); });
 }
 function renderExtMatches(){
   const c=EXT_COMPS.find(x=>x.id===MXC); if(!c){ MXC=null; renderMatches(); return; }
