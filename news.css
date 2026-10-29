@@ -98,6 +98,8 @@ html.mf[data-theme="light"] .nw-ph.nw-noimg{background-color:#00061A}
 /* شارة الانتقال وسطر الأندية */
 .nw-badge{position:absolute;top:10px;inset-inline-start:10px;z-index:1;padding:4px 10px;border-radius:999px;font-size:.72rem;font-weight:800;line-height:1.4;background:#F6F3EA;color:#00061A}
 .nw-b-official{background:#34C38F;color:#03210F}
+/* الشارة في سطر التصنيف لا على الصورة (منصور 2026-10-29: «رسمي قاعد يغطي على راسه») */
+.nw-meta .nw-badge{position:static;padding:1px 8px;font-size:.68rem}
 .nw-b-talks{background:#E7D093;color:#1A1306}
 .nw-b-loan{background:#9CCBF6;color:#05223D}
 .nw-doc-hd .nw-badge{position:static;align-self:flex-start}

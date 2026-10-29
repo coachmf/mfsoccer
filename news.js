@@ -297,6 +297,7 @@ const catLabel = c => { const s = (CATS[c] && CATS[c].t) || ""; if(!s || !LG()) 
 function meta(it, opt){
   const parts = [];
   if(opt && opt.cat) parts.push(`<span class="nw-k">${H(catLabel(it.cat))}</span>`);
+  if(opt && opt.cat) parts.push(badge(it));   /* «رسمي» بجانب التصنيف لا فوق الصورة (منصور 2026-10-29: «يغطي على راسه») */
   if(it.pub) parts.push(`<time datetime="${H(it.pub)}">${H(dShort(it.pub))}</time>`);
   return `<div class="nw-meta">${parts.join("")}</div>`;
 }
@@ -322,7 +323,7 @@ function matchLine(it){
 function card(it, v, opt){
   opt = opt || {}; it = loc(it);
   const c = it.cover, ar = it.cat==="squads" ? " nw-fit" : "";
-  const ph = `<div class="nw-ph${ar}${c?"":" nw-noimg"}">${c ? imgTag(c.id, c.alt || it.title, "", c.w, c.h, !(v==="lead" && WIDE()), v==="lead") : ""}${badge(it)}</div>`;
+  const ph = `<div class="nw-ph${ar}${c?"":" nw-noimg"}">${c ? imgTag(c.id, c.alt || it.title, "", c.w, c.h, !(v==="lead" && WIDE()), v==="lead") : ""}</div>`;
   return `<article class="nw-c nw-c-${v}">
     <a class="nw-a" href="#news/a/${H(it.id)}" data-nw-art="${H(it.id)}">
       ${ph}
