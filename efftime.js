@@ -378,7 +378,10 @@ function act(a, arg){
   if(a==="start"){ if(h && h.s) return; commit(d=>{ (d.halves ||= {})[p] = {s:now}; }); return; }
   if(a==="stop"){
     if(!h || !h.s || h.e) return;
-    if(open){ if(open.r===arg) return; commit(d=>{ const x = d.stops.find(y=>y.id===open.id); if(x) x.r = arg; }); return; }   /* تصحيح سبب التوقف الجاري */
+    if(open){ if(open.r===arg) return;
+      /* ضغطة خطأ (أول 4 ثوانٍ) = تصحيح السبب؛ بعدها = توقف ثانٍ متصل بلا لعب بينهما (منصور 2026-10-29: رمية تماس ثم شرب ماء) */
+      if(now - open.s < 4000){ commit(d=>{ const x = d.stops.find(y=>y.id===open.id); if(x) x.r = arg; }); return; }
+      commit(d=>{ const x = d.stops.find(y=>y.id===open.id); if(x) x.e = now; d.stops.push({id:uid(), ph:p, r:arg, s:now}); }); return; }
     commit(d=>{ (d.stops ||= []).push({id:uid(), ph:p, r:arg, s:now}); }); return;
   }
   if(a==="go"){ if(!open) return; commit(d=>{ const x = d.stops.find(y=>y.id===open.id); if(x) x.e = now; }); return; }
@@ -447,7 +450,7 @@ function paint(){
                       ${p==="h1" ? `<button type="button" class="eff-big go" data-eff="ph" data-v="h2">إلى الشوط الثاني</button>` : ""}` :
     state==="stop" ? `<button type="button" class="eff-big go" data-eff="go">استئناف اللعب</button>
                       <div class="eff-rgrid stopping">${reasons}</div>
-                      <p class="eff-hint">سبب خاطئ؟ اضغط السبب الصحيح ليُصحَّح التوقف الجاري.</p>` :
+                      <p class="eff-hint">سبب خاطئ؟ اضغط الصحيح خلال 4 ثوانٍ ليُصحَّح. بعدها أي سبب جديد (مثل شرب ماء بعد رمية تماس) يُسجَّل توقفاً ثانياً متصلاً.</p>` :
                      `<div class="eff-rgrid">${reasons}</div>
                       <p class="eff-hint">توقف اللعب؟ اضغط سببه — الساعة الفعلية تتوقف فوراً.</p>`;
   const list = (d.stops||[]).filter(x=>x.ph===p).sort((a,b)=>b.s-a.s);
