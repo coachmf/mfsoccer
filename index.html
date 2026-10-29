@@ -2772,7 +2772,7 @@ function seedCupMatches(A){
     A.matches.push(Object.assign({}, s, {refs:{}, n:A.matches.length+1})); });
 }
 const compLogo = (c, sz) => COMP_LOGO[c] ? `<img class="comp-logo" src="${COMP_LOGO[c]}" alt="" width="${sz||16}" height="${sz||16}" decoding="async">` : "";
-let COMP = "الدوري";
+let COMP = "الكل";   /* يفتح الموقع على «إجمالي البطولات» (منصور 2026-10-29) */
 let MXC = "upcoming";   /* صفحة المباريات: "upcoming" = المباريات القادمة من كل المسابقات (الافتراضي، منصور 2026-09-16)، أو بطولة خارجية (معرّف من EXT_COMPS)، أو null = المسابقة المحلية COMP */
 let CARDS = [];
 let ALL = null;
@@ -3259,7 +3259,7 @@ function renderUpcomingMatches(){
     <div class="mx-list">${html||`<div class="mx-empty">${MX_DAY<0?"لا توجد مباريات في هذا اليوم.":"لا توجد مباريات قادمة."}</div>`}</div>`;
   const V=$("#v-matches"); wireComp(V); wireDropdowns(V);
   V.querySelectorAll("[data-mxday]").forEach(b=>b.onclick=()=>{ MX_DAY=Math.min(0, MX_DAY + +b.dataset.mxday);
-    renderUpcomingMatches(); const H=$("#v-matches .xt-mx"); if(H) H.scrollIntoView({block:"start", behavior:"smooth"}); });
+    renderMatches(); const H=$("#v-matches .xt-mx");   /* renderMatches لا renderUpcomingMatches: دوائر «جميع المباريات…» تُبنى على renderMatches (mf-shell) */ if(H) H.scrollIntoView({block:"start", behavior:"smooth"}); });
 }
 function renderExtMatches(){
   const c=EXT_COMPS.find(x=>x.id===MXC); if(!c){ MXC=null; renderMatches(); return; }
