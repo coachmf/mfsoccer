@@ -311,8 +311,67 @@ async function save(d){
   catch(e){ console.error(e); say("تعذّر الحفظ: "+(e.code||e.message), "err"); }
   finally{ if(S && S.id===id) S.saving--; }
 }
+/* تنزيل PDF (منصور 2026-10-29): تقرير صفحة A4 من الوثيقة — الملخص، الأشواط، أسباب التوقف، وكل توقف بوقته.
+   الصفحة تُرسم HTML (العربية سليمة) ثم html2canvas → jsPDF، تُحمَّلان من cdnjs عند أول ضغطة فقط */
+const loadJs = src => new Promise((ok, no)=>{ if(document.querySelector(`script[src="${src}"]`)) return ok(); const x = document.createElement("script"); x.src = src; x.onload = ok; x.onerror = no; document.head.appendChild(x); });
+function reportHTML(d){
+  const c = calc(d), rs = Object.entries(c.reasons).sort((a,b)=>b[1].t-a[1].t);
+  const title = S.tool && !d.home ? "أداة الوقت الفعلي" : `${H(d.home)} × ${H(d.away)}`;
+  const sub = [d.comp, d.home ? rndLbl(d) : "", d.date].filter(Boolean).map(H).join(" · ");
+  const card = (k,v,big) => `<div style="flex:1;border:1px solid #E3E6EE;border-radius:12px;padding:12px 10px;text-align:center${big?";background:#0B1530;color:#fff;border-color:#0B1530":""}"><div style="font-size:12px;opacity:.75">${k}</div><div dir="ltr" style="font-size:${big?30:24}px;font-weight:800;margin-top:4px">${v}</div></div>`;
+  const th = t => `<th style="padding:7px 8px;border-bottom:2px solid #0B1530;text-align:right;font-size:12px">${t}</th>`;
+  const td = (t, ltr) => `<td${ltr?' dir="ltr"':""} style="padding:6px 8px;border-bottom:1px solid #EEF0F5;font-size:12.5px;text-align:right">${t}</td>`;
+  const phRows = PHS.filter(([k])=>c.ph[k]).map(([k,t])=>{ const x = c.ph[k]; return `<tr>${td(t)}${td(fmt(x.dur),1)}${td(fmt(x.eff),1)}${td(fmt(x.stop),1)}${td(pct(x.eff,x.dur)+"%",1)}${td(x.n)}</tr>`; }).join("");
+  const stopRows = PHS.map(([k,t])=>{ const h = (d.halves||{})[k]; if(!h || !h.s) return "";
+    const L = (d.stops||[]).filter(x=>x.ph===k).sort((a,b)=>a.s-b.s); if(!L.length) return "";
+    return `<tr><td colspan="4" style="padding:9px 8px 5px;font-weight:800;font-size:13px;color:#0B1530">${t} (${L.length})</td></tr>` +
+      L.map((x,i)=>`<tr>${td(i+1)}${td(H(RN[x.r]||x.r))}${td(fmt(x.s-h.s)+" – "+(x.e?fmt(x.e-h.s):"…"),1)}${td(x.e?fmt(x.e-x.s):"جارٍ",1)}</tr>`).join(""); }).join("");
+  return `<div dir="rtl" style="width:794px;padding:34px 36px;background:#fff;color:#0B1530;font-family:'Tajawal','Cairo',system-ui,sans-serif;box-sizing:border-box">
+    <div style="display:flex;align-items:center;justify-content:space-between;border-bottom:3px solid #C9A45C;padding-bottom:12px">
+      <div><div style="font-size:24px;font-weight:800">${title}</div><div style="font-size:13px;color:#5B6478;margin-top:4px">الوقت الفعلي للعب${sub?" · "+sub:""}</div></div>
+      <div style="font-weight:900;letter-spacing:1px;font-size:18px;color:#C9A45C" dir="ltr">MF SOCCER</div>
+    </div>
+    <div style="display:flex;gap:10px;margin:18px 0">${card("اللعب الفعلي", fmt(c.eff), 1)}${card("الزمن الكلي", fmt(c.dur))}${card("النسبة", (c.pct||pct(c.eff,c.dur))+"%")}${card("التوقفات", c.manual ? "—" : c.n)}</div>
+    ${c.longest ? `<div style="font-size:12.5px;color:#5B6478;margin-bottom:14px">أطول توقف: <b style="color:#0B1530">${H(RN[c.longest.r]||c.longest.r)}</b> · <bdi dir="ltr">${fmt(c.longest.t)}</bdi> · ${PHN[c.longest.ph]}</div>` : ""}
+    <table style="width:100%;border-collapse:collapse;margin-bottom:18px"><tr>${th("الشوط")}${th("الزمن")}${th("اللعب الفعلي")}${th("التوقفات")}${th("النسبة")}${th("عدد التوقفات")}</tr>${phRows}</table>
+    ${rs.length ? `<table style="width:100%;border-collapse:collapse;margin-bottom:18px"><tr>${th("سبب التوقف")}${th("المرات")}${th("المجموع")}${th("من التوقفات")}</tr>${rs.map(([k,v])=>`<tr>${td(H(RN[k]||k))}${td(v.n)}${td(fmt(v.t),1)}${td(pct(v.t,c.stop)+"%",1)}</tr>`).join("")}</table>` : ""}
+    ${stopRows ? `<table style="width:100%;border-collapse:collapse"><tr>${th("#")}${th("السبب")}${th("من – إلى (دقيقة الشوط)")}${th("المدة")}</tr>${stopRows}</table>` : ""}
+    <div style="margin-top:20px;font-size:11px;color:#8A93A6;display:flex;justify-content:space-between"><span>mfsoccer.com</span><span dir="ltr">${new Date().toLocaleString("en-GB")}</span></div>
+  </div>`;
+}
+async function downloadPdf(){
+  const d = S && S.doc; if(!d) return;
+  if(typeof toast==="function") toast("تجهيز ملف PDF…");
+  try{
+    await loadJs("https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js");
+    await loadJs("https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js");
+    const host = document.createElement("div"); host.style.cssText = "position:fixed;left:-10000px;top:0;z-index:-1";
+    host.innerHTML = reportHTML(d); document.body.appendChild(host);
+    if(document.fonts && document.fonts.ready) await document.fonts.ready;
+    const root = host.firstElementChild, cv = await html2canvas(root, {scale:2, backgroundColor:"#ffffff"});
+    const pdf = new jspdf.jsPDF({unit:"pt", format:"a4"}), W = pdf.internal.pageSize.getWidth(), Hp = pdf.internal.pageSize.getHeight();
+    /* تقرير طويل يُكمل في صفحات تالية — القطع بين صفوف الجدول لا في منتصف صف */
+    const k = W / root.offsetWidth, top0 = root.getBoundingClientRect().top, total = root.offsetHeight, pad = 28 / k;
+    const ends = [...root.querySelectorAll("tr")].map(r=>r.getBoundingClientRect().bottom - top0);
+    host.remove();
+    const cuts = []; let y = 0;
+    while(total - y > (Hp / k) - (y ? pad : 0)){ const lim = y + Hp / k - (y ? pad : 0); const ok = ends.filter(e=>e > y + 40 && e <= lim);
+      const cut = ok.length ? Math.max(...ok) : lim; cuts.push([y, cut]); y = cut; }
+    cuts.push([y, total]);
+    const sc = cv.width / root.offsetWidth;
+    cuts.forEach(([a, z], i)=>{ const sh = Math.round((z - a) * sc), part = document.createElement("canvas"); part.width = cv.width; part.height = sh;
+      const g = part.getContext("2d"); g.fillStyle = "#fff"; g.fillRect(0, 0, part.width, sh); g.drawImage(cv, 0, Math.round(a * sc), cv.width, sh, 0, 0, cv.width, sh);
+      if(i) pdf.addPage(); pdf.addImage(part.toDataURL("image/jpeg", .92), "JPEG", 0, i ? 28 : 0, W, (z - a) * k); });
+    const name = `اللعب-الفعلي-${[d.home, d.away].filter(Boolean).join("-") || "الأداة"}${d.date ? "-"+d.date : ""}.pdf`.replace(/\s+/g, "-");
+    const blob = pdf.output("blob"), file = new File([blob], name, {type:"application/pdf"});
+    if(navigator.canShare && navigator.canShare({files:[file]}) && /iPhone|iPad|Android/i.test(navigator.userAgent)){ await navigator.share({files:[file], title:name}).catch(()=>{}); return; }   /* التطبيق والجوال: مشاركة/حفظ في الملفات */
+    const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href), 4000);
+  }catch(e){ if(typeof toast==="function") toast("تعذّر تجهيز الملف — حاول مرة ثانية"); }
+}
+EFF.pdf = downloadPdf;
 function act(a, arg){
   if(!S || !S.doc) return;
+  if(a==="pdf"){ downloadPdf(); return; }
   const now = vnow(S.doc), p = S.ph, hs = S.doc.halves || {}, h = hs[p];
   const open = (S.doc.stops||[]).find(x=>x.ph===p && !x.e);
   if(a==="speed"){ const x = +arg; if(!SPEEDS.includes(x) || x===spd(S.doc)) return; commit(d=>{ d.vc = {w:Date.now(), v:vnow(d), x}; }); return; }
@@ -419,7 +478,7 @@ function paint(){
     ${c.started ? `<section class="eff-card"><h4>المباراة كلها</h4>
       <div class="eff-sum"><div><span>اللعب الفعلي</span><b dir="ltr" data-effc="teff">${fmt(c.eff)}</b></div><div><span>الزمن الكلي</span><b dir="ltr" data-effc="tdur">${fmt(c.dur)}</b></div><div><span>النسبة</span><b data-effc="tpct">${pct(c.eff, c.dur)}%</b></div><div><span>عدد التوقفات</span><b>${c.n}</b></div></div>
       ${rs.length ? `<ul class="eff-rs">${rs.map(([k,v])=>`<li><b>${H(RN[k]||k)}</b><span>${v.n} مرة</span><em dir="ltr">${fmt(v.t)}</em></li>`).join("")}</ul>` : ""}</section>` : ""}
-    <div class="eff-row tools">${h ? (h.e ? `<button type="button" class="eff-ghost" data-eff="reopen">إعادة فتح ${PHN[p]}</button>` : "") + `<button type="button" class="eff-ghost danger" data-eff="reset">مسح ${PHN[p]}</button>` : ""}${S.tool && c.started ? `<button type="button" class="eff-ghost danger" data-eff="newsess">تسجيل جديد</button>` : ""}</div>
+    <div class="eff-row tools">${h ? (h.e ? `<button type="button" class="eff-ghost" data-eff="reopen">إعادة فتح ${PHN[p]}</button>` : "") + `<button type="button" class="eff-ghost danger" data-eff="reset">مسح ${PHN[p]}</button>` : ""}${c.started ? `<button type="button" class="eff-ghost" data-eff="pdf">تنزيل PDF</button>` : ""}${S.tool && c.started ? `<button type="button" class="eff-ghost danger" data-eff="newsess">تسجيل جديد</button>` : ""}</div>
     <p class="eff-foot">مستقلة عن أحداث المباراة: لا تُسجَّل هنا أهداف ولا بطاقات، ولا تدخل في الإحصاءات أو الترتيب أو الفانتسي.</p>
   </div>`;
 }
