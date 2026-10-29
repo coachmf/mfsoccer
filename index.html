@@ -2261,7 +2261,7 @@ html[dir="ltr"] .tl-ev.a .tl-card{text-align:right;align-items:flex-end}
 <link rel="stylesheet" href="efftime.css?v=4">
 <script src="efftime.js?v=13" defer></script>
 <link rel="stylesheet" href="div1.css?v=4">
-<script src="div1.js?v=7" defer></script>
+<script src="div1.js?v=8" defer></script>
 <link rel="stylesheet" href="news.css?v=5">
 <script src="news.js?v=11" defer></script>   <!-- الأخبار: news/{id} + فهرس seasons/news + صور newsimg/{id} -->   <!-- دوري الدرجة الأولى: الترتيب والمباريات فقط (seasons/div1) -->
 <link rel="stylesheet" href="ext.css?v=3">
@@ -5864,6 +5864,8 @@ function squadEntriesOf(club, sides){
   cs.forEach(c=>(SQUADS[c]||[]).forEach(x=>{
     const n=sqName(x); if(n) out.push({n, s:sqNum(x), p:sqPos(x), club:c});
   }));
+  /* نادي الدرجة الأولى بلا كشف في الموسم: كشفه من div1.js (مباريات الكأس) */
+  cs.forEach(c=>{ if(!(SQUADS[c]||[]).length && window.DIV1 && DIV1.squad) DIV1.squad(c).forEach(x=>out.push({...x, club:c})); });
   return out.sort((a,b)=>(a.s||999)-(b.s||999) || String(a.n).localeCompare(String(b.n),"ar"));
 }
 function editSides(){ return [EDIT?.match?.home, EDIT?.match?.away].filter(Boolean); }
@@ -13761,8 +13763,9 @@ function clubHonoursHTML(c){
 /* ---------- قائمة الفريق ---------- */
 function playerCardHTML(p, c){
   const cut = (PHOTOSON && typeof LOCAL_PHOTOS!=="undefined") ? photoCut(p.n, c) : null;
+  const d1 = !cut && window.DIV1 && DIV1.photoOf ? DIV1.photoOf(c, p.n) : null;   /* صورة لاعب الدرجة الأولى */
   return `<div class="pcard" data-player="${esc(p.n)}" data-club="${esc(c)}" role="button" tabindex="0" aria-label="${esc(p.n)}">
-    <div class="ph">${cut?`<img src="${cut}_s.webp?v=39" alt="" loading="lazy" decoding="async" draggable="false">`
+    <div class="ph">${cut?`<img src="${cut}_s.webp?v=39" alt="" loading="lazy" decoding="async" draggable="false">`:d1?`<img src="${d1}" alt="" loading="lazy" decoding="async" draggable="false">`
                          :`<span class="pc-jer">${jerseySVG(c, p.s, /^(GK|G)$/i.test(p.p||""))}</span>`}</div>
     ${p.s&&cut?`<span class="no">${p.s}</span>`:""}${natFlag(p.n, c)}
     <div class="nm">${esc(p.n)}</div>

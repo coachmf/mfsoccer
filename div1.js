@@ -204,6 +204,10 @@ D1.todayRows = iso => { if(!DATA) DATA = normalize(null);
 D1.count = () => { if(!DATA) DATA = normalize(null); return DATA.matches.length; };
 function repaint(){ if(document.querySelector("#v-div1.on")) render(); paintAdmin();
   if(document.querySelector("#v-home.on") && typeof window.renderHome==="function") try{ window.renderHome(); }catch(e){} }
+/* كشف نادي الدرجة الأولى لصفحة المباراة («القائمة») ومحرّر التشكيلة في الموقع — مباريات الكأس (منصور 2026-10-29: خيطان × اتحاد الشرطة «لم يُرفع كشف») */
+const POS_CODE = {"حارس مرمى":"GK","قلب دفاع":"CB","ظهير أيمن":"RB","ظهير أيسر":"LB","مدافع":"D","وسط مدافع":"CDM","وسط محور":"CM","جناح أيمن":"RW","جناح أيسر":"LW","مهاجم":"ST"};
+D1.squad = c => { const s = SQUADS[c]; return s ? s.players.map(([n,nm,pos])=>({n:nm, s:n, p:POS_CODE[pos]||""})) : []; };
+D1.photoOf = (c, name) => { const s = SQUADS[c]; if(!s || !s.photos) return null; const p = s.players.find(x=>x[1]===name); return p ? photo(c, p[0], "_m") : null; };
 D1.openClub = c => { VIEW.tab = "clubs"; VIEW.club = SQUADS[c] ? c : null; if(document.querySelector("#v-div1.on")) render(); else if(typeof go==="function") go("div1"); };
 document.addEventListener("click", e=>{
   const el = e.target.closest ? e.target : null; if(!el) return;
