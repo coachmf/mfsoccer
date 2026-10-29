@@ -14326,9 +14326,11 @@ function hmKpiHTML(){
   </section>`;
 }
 function hmStandingsHTML(T){
+  /* جدول الترتيب للدوري وحده (منصور 2026-10-29: «ليش حاطين جدول» تحت كأس الأمير) — الكؤوس خروج المغلوب بلا جدول نقاط، و«الإجمالي» يخلط الكؤوس بالنقاط */
+  if(COMP!=="الدوري") T=withComp("الدوري", standings);
   const n=T.length;
   return `<section class="hm-std">
-    <h2 class="sec">جدول الترتيب<span class="sq-n">${esc(COMP||"الدوري")} · ${esc(SEASON)}</span></h2>
+    <h2 class="sec">جدول الترتيب<span class="sq-n">الدوري · ${esc(SEASON)}</span></h2>
     <div class="hm-card hm-tblwrap"><table class="hm-tbl">
       <thead><tr><th class="c">#</th><th class="club">النادي</th><th>ل</th><th>ف</th><th>ت</th><th>خ</th><th class="gfa">له:عليه</th><th>+/-</th><th class="pts">ن</th><th class="frm">الفورمة</th></tr></thead>
       <tbody>${T.map((r,i)=>`<tr class="${i<4?"champ":""}${i>=n-2?" rel":""}" data-club-open="${esc(r.c)}">
