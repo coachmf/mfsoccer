@@ -247,6 +247,7 @@ function withAll(fn){
 X.withAll = withAll;
 X.inCtx = () => depth > 0;
 X.isKO = m => { const c = cOfName(m && m.comp); return !!(c && +m.round > c.g); };
+X.isGroup = m => { const c = cOfName(m && m.comp); return !!(c && +m.round >= 1 && +m.round <= c.g); };   /* دور المجموعات بلا أشواط إضافية (منصور 2026-10-29: ناساف × الكويت) */
 
 /* ───────────── التخزين (وثيقة مستقلة) ───────────── */
 const store = {

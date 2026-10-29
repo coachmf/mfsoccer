@@ -2265,7 +2265,7 @@ html[dir="ltr"] .tl-ev.a .tl-card{text-align:right;align-items:flex-end}
 <link rel="stylesheet" href="news.css?v=4">
 <script src="news.js?v=10" defer></script>   <!-- الأخبار: news/{id} + فهرس seasons/news + صور newsimg/{id} -->   <!-- دوري الدرجة الأولى: الترتيب والمباريات فقط (seasons/div1) -->
 <link rel="stylesheet" href="ext.css?v=3">
-<script src="ext.js?v=11" defer></script>   <!-- المشاركات الخارجية لأنديتنا: تحرير كامل مثل الدوري في وثيقة مستقلة (seasons/ext2627) -->
+<script src="ext.js?v=12" defer></script>   <!-- المشاركات الخارجية لأنديتنا: تحرير كامل مثل الدوري في وثيقة مستقلة (seasons/ext2627) -->
 <!-- التحليل الموسّع + تقييم اللاعبين 0–100 + البحث العام (منصور 2026-09-29) -->
 <link rel="stylesheet" href="analysis.css?v=11">
 <script src="tstats-data.js?v=1" defer></script>
@@ -5515,7 +5515,8 @@ const ET_PH = ["e1","e2","pso"];
 const add3Of = m => Math.max(0, Math.min(30, +((m||{}).add3) || 0));
 const add4Of = m => Math.max(0, Math.min(30, +((m||{}).add4) || 0));
 /* مباريات الدوري بلا أشواط إضافية أصلاً (منصور 2026-10-11): علامة et خاطئة من المحرّر لا تُظهر «بعد الأشواط الإضافية» */
-const etAllowed = m => !(compOf(m)==="الدوري" && !(typeof isGulfMatch==="function" && isGulfMatch(m)));
+/* ودور المجموعات في المشاركات الخارجية كذلك (منصور 2026-10-29: ناساف × الكويت ظهرت «بعد الأشواط الإضافية») */
+const etAllowed = m => !(compOf(m)==="الدوري" && !(typeof isGulfMatch==="function" && isGulfMatch(m))) && !(window.EXT && EXT.isGroup && EXT.isGroup(m));
 const hasET = m => !!(m && etAllowed(m) && (m.et || m.status==="e1" || m.status==="e2"));
 const etAbs = (m, mm, x) => 90 + add1Of(m) + add2Of(m) + (mm - 90) + (mm > 105 ? add3Of(m) : 0) + (+x || 0);
 /* ركلات الترجيح للعرض فقط (منصور 2026-10-03): m.psk = [{t:"h"|"a", p:اسم, ok:سجّل؟}] بالترتيب — لا تدخل أهدافاً ولا ركلات جزاء
@@ -14219,7 +14220,10 @@ function hmTodayHTML(){
   const list=todayMatches();
   const d1=(COMP==="الكل"||COMP==="الدوري") && window.DIV1 && DIV1.todayRows ? DIV1.todayRows(todayISO()) : "";   /* دوري الدرجة الأولى (منصور 2026-10-24) */
   const xs=COMP==="الكل" && window.EXT && EXT.today ? EXT.today(todayISO()) : [];   /* المشاركات الخارجية (منصور 2026-10-28: «يظهر جميع مباريات اليوم») */
-  if(!list.length && !d1 && !xs.length) return "";
+  /* مباريات المنتخبات اليوم (منصور 2026-10-29: «ليش مباراة المنتخب ما تطلع هني») — من المناسبات «منتخب» (EXT_FIXTURES/الإدارة)، العلم بجانب الاسم */
+  const nts=COMP==="الكل" ? allEvents().filter(e=>e.k==="منتخب" && e.d===todayISO() && evParts(e).length>=2)
+    .sort((a,b)=>String(a.time||"").localeCompare(String(b.time||""))) : [];
+  if(!list.length && !d1 && !xs.length && !nts.length) return "";
   const HM_CTA=list.length ? hmCTA(list) : "";
   const row=m=>{
     const live=LIVE_PHASES.includes(m.status) && !staleLive(m), over=!live && matchOver(m), sc=`<b class="hm-td-sc" dir="ltr">${scp(+m.hg,+m.ag)}</b>`;
@@ -14233,9 +14237,21 @@ function hmTodayHTML(){
   };
   return `<section class="hm-nm hm-today">
     <div class="hm-nm-hd"><span class="hm-tag"><i></i>مباريات اليوم</span><span class="hm-muted">${list.length ? `${dayLabel(list[0].date)} · ${esc(rndLabel(list[0]))}` : dayLabel(todayISO())}</span></div>
-    <div class="hm-td-list">${list.map(row).join("")}${xs.length ? [...new Set(xs.map(m=>m.comp))].map(c=>`<div class="hm-td-sub">${esc(c)}</div>${EXT.withExt(()=>xs.filter(m=>m.comp===c).map(row).join(""), c)}`).join("") : ""}${d1 ? `<div class="hm-td-sub">دوري الدرجة الأولى</div>${d1}` : ""}</div>
+    <div class="hm-td-list">${list.map(row).join("")}${xs.length ? [...new Set(xs.map(m=>m.comp))].map(c=>`<div class="hm-td-sub">${esc(c)}</div>${EXT.withExt(()=>xs.filter(m=>m.comp===c).map(row).join(""), c)}`).join("") : ""}${d1 ? `<div class="hm-td-sub">دوري الدرجة الأولى</div>${d1}` : ""}${hmNtRows(nts)}</div>
     ${HM_CTA}
   </section>`;
+}
+function hmNtRows(nts){
+  if(!nts.length) return "";
+  const logo=x=>x.t==="flag" ? `<img class="ev-flag" src="https://flagcdn.com/w40/${x.c}.png" srcset="https://flagcdn.com/w80/${x.c}.png 2x" alt="" decoding="async">` : x.t==="club" ? crest(x.n) : "";
+  const row=e=>{ const P=evParts(e), h=evTeam(P[0],e.k), a=evTeam(P[1],e.k), done=e.hg!=null && e.ag!=null && e.hg!=="" && e.ag!=="";
+    const mid = done ? `<b class="hm-td-sc" dir="ltr">${scp(+e.hg,+e.ag)}</b><span class="hm-td-st">انتهت</span>` : `<b class="hm-td-time" dir="ltr">${e.time?esc(e.time):"—"}</b>`;
+    return `<div class="hm-td-row">
+      <span class="hm-td-team h">${logo(h)}<b>${esc(h.n)}</b></span>
+      <span class="hm-td-mid">${mid}</span>
+      <span class="hm-td-team a"><b>${esc(a.n)}</b>${logo(a)}</span></div>`; };
+  const cOf=e=>evParts(e)[2]||"المنتخب";
+  return [...new Set(nts.map(cOf))].map(c=>`<div class="hm-td-sub">${esc(c)}</div>${nts.filter(e=>cOf(e)===c).map(row).join("")}`).join("");
 }
 function hmTickCountdown(){
   const box=$("#v-home .hm-nm"); if(!box){ if(HM_CD_TIMER){ clearInterval(HM_CD_TIMER); HM_CD_TIMER=null; } return; }
