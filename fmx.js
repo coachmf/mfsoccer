@@ -133,17 +133,6 @@ function previewCard(m){
     <div class="fmx-xipanes"><div data-fmx-xp="h">${xiHTML(A)||'<p class="fmx-none">—</p>'}</div><div data-fmx-xp="a" hidden>${xiHTML(B)||'<p class="fmx-none">—</p>'}</div></div>` : "";
   return card("قبل المباراة", tbl + says + xi, "fmx-pre");
 }
-/* إيقافات تراكم الإنذارات: كل ycBan إنذارات في نفس البطولة — إنذار المباراة التي طُرد فيها اللاعب لا يُحسب (الإنذار الثاني) */
-function ycBans(club, comp){
-  const n = FMX_RULES.ycBan; if(!(n>0)) return [];
-  const all = (ALL.cards||[]).filter(x=>x.club===club && (!comp || compOf(x)===comp));
-  const red = new Set(all.filter(x=>isRed(x.type)).map(x=>x.p+"|"+compOf(x)+"|"+x.r));
-  const per = {};
-  all.filter(x=>isYellow(x.type) && !red.has(x.p+"|"+compOf(x)+"|"+x.r)).forEach(x=>{ const k=x.p+"|"+compOf(x); (per[k] ??= []).push(x); });
-  const out = [];
-  Object.values(per).forEach(L=>{ L.sort((a,b)=>a.r-b.r); L.forEach((x,i)=>{ if((i+1)%n===0) out.push({p:x.p, club, comp:compOf(x), r:x.r, k:i+1}); }); });
-  return out;
-}
 /* الغيابات: موقوف بطرد في مباراته السابقة بنفس البطولة + من سجّله المحرّر غائباً أو حالته في الفانتسي */
 function absencesCard(m){
   const comp = compOf(m);
@@ -153,17 +142,14 @@ function absencesCard(m){
     const G = withComp(comp, ()=>MATCHES.filter(x=>x.home===c||x.away===c)).sort((x,y)=>ts(x)-ts(y));
     const pm = G[G.findIndex(x=>x===m || keyOf(x)===keyOf(m)) - 1];
     const prev = pm && !withComp(comp, ()=>isUpcoming(pm)) ? clubGames(c, comp).find(g=>g.m===pm || keyOf(g.m)===keyOf(pm)) : null;
-    if(prev){
-      (ALL.cards||[]).filter(x=>x.club===c && isRed(x.type) && x.r===prev.m.round && compOf(x)===compOf(prev.m)).forEach(x=>{
-        if(seen.has(x.p)) return; seen.add(x.p); out.push({n:x.p, why:"موقوف", sub:`طرد أمام ${prev.opp}`}); });
-      ycBans(c, comp).filter(b=>b.r===prev.m.round).forEach(b=>{
-        if(seen.has(b.p)) return; seen.add(b.p); out.push({n:b.p, why:"موقوف", sub:`تراكم ${b.k} إنذارات`}); });
-    }
+    /* الموقوفون من suspensions() في index.html — لائحة المسابقات 2026-2027: الطرد المباشر مباراتان (منصور 2026-10-30) */
+    const SU = fnOK("suspensions") ? suspensions().filter(s=>s.c===c && s.comp===comp) : [];
+    SU.filter(s=>s.miss.some(x=>keyOf(x)===keyOf(m))).forEach(s=>{
+      if(seen.has(s.n)) return; seen.add(s.n); out.push({n:s.n, why:"موقوف", sub:s.why}); });
     (SQUADS[c]||[]).forEach(e=>{ const n=sqName(e); if(seen.has(n)) return;
       const w = fnOK("absentWhy") ? absentWhy(m, c, n) : ""; if(w && w!=="غير متوفر"){ seen.add(n); out.push({n, why:w}); } });   /* «غير متوفر» = غالباً محترف شُطب من القائمة — لا يُعرض (منصور 2026-10-30) */
-    if(FMX_RULES.ycBan>0 && prev){   /* «مهدد» للمباراة القادمة فقط */
-      const q={}; (ALL.cards||[]).filter(x=>x.club===c && compOf(x)===comp && isYellow(x.type)).forEach(x=>q[x.p]=(q[x.p]||0)+1);
-      Object.entries(q).filter(([n,k])=>k%FMX_RULES.ycBan===FMX_RULES.ycBan-1 && !seen.has(n)).forEach(([n,k])=>out.push({n, why:"مهدد بالإيقاف", sub:`${k} إنذارات`}));
+    if(prev){   /* «مهدد» للمباراة القادمة فقط */
+      SU.filter(s=>s.risk && !seen.has(s.n)).forEach(s=>out.push({n:s.n, why:"مهدد بالإيقاف", sub:`${s.y} إنذارات`}));
     }
     return out;
   };
@@ -472,24 +458,12 @@ function roundupHTML(){
 
 /* ═════════════ التحليل — نظرة عامة ═════════════ */
 function suspendedHTML(){
-  const rows = [];
-  (ALL.cards||[]).filter(x=>isRed(x.type)).forEach(x=>{
-    const comp = compOf(x);
-    const G = withComp(comp, ()=>MATCHES.filter(m=>m.home===x.club||m.away===x.club)).sort((a,b)=>ts(a)-ts(b));
-    const i = G.findIndex(m=>m.round===x.r); if(i<0) return;
-    const next = G.slice(i+1).find(()=>true); if(!next) return;
-    if(!withComp(comp, ()=>isUpcoming(next))) return;
-    rows.push({x, next, opp: next.home===x.club?next.away:next.home, from: G[i]});
-  });
-  CLUBS.forEach(c=>ycBans(c).forEach(b=>{
-    const G = withComp(b.comp, ()=>MATCHES.filter(m=>m.home===c||m.away===c)).sort((a,b)=>ts(a)-ts(b));
-    const i = G.findIndex(m=>m.round===b.r); if(i<0) return;
-    const next = G[i+1]; if(!next || !withComp(b.comp, ()=>isUpcoming(next))) return;
-    rows.push({x:{p:b.p, club:c}, next, opp: next.home===c?next.away:next.home, from: G[i], yc: b.k});
-  }));
+  /* من suspensions() في index.html (لائحة المسابقات 2026-2027 — منصور 2026-10-30) */
+  if(!fnOK("suspensions")) return "";
+  const rows = suspensions().filter(s=>s.next).map(s=>({x:{p:s.n, club:s.c}, next:s.next, opp: s.next.home===s.c?s.next.away:s.next.home, why:s.why, more:s.miss.length-1}));
   if(!rows.length) return "";
   return `<h2 class="sec">الموقوفون للمباراة القادمة</h2><div class="an-card fmx-susp">${rows.map(r=>`<div class="fmx-susp-r">
-    ${crest(r.x.club)}${plBtn(r.x.p, r.x.club, `<b>${H(r.x.p)}</b>`)}<small>${r.yc ? `تراكم ${r.yc} إنذارات` : `طرد أمام ${H(r.from.home===r.x.club?r.from.away:r.from.home)}`}</small>
+    ${crest(r.x.club)}${plBtn(r.x.p, r.x.club, `<b>${H(r.x.p)}</b>`)}<small>${H(r.why)}${r.more>0?` · <span>${r.more===1?"مباراتان":(r.more+1)+" مباريات"}</span>`:""}</small>
     <span class="fmx-tag r" data-mopen="${keyOf(r.next)}">يغيب أمام ${H(r.opp)}</span></div>`).join("")}</div>`;
 }
 function seasonRecordsHTML(){
@@ -556,7 +530,8 @@ const EN = {
   "⟨x⟩ من دقائق الفريق":"⟨x⟩ of team minutes","المشاركة رقم ⟨x⟩":"Appearance no. ⟨x⟩","الهدف رقم ⟨x⟩":"Goal no. ⟨x⟩","الصناعة رقم ⟨x⟩":"Assist no. ⟨x⟩",
   "أكبر فوز: ⟨x⟩":"Biggest win: ⟨x⟩","أكثر مباراة أهدافاً: ⟨x⟩":"Highest-scoring: ⟨x⟩","⟨x⟩ تعادلات في الجولة":"⟨x⟩ draws this round",
   "⟨x⟩ فرق حافظت على نظافة شباكها":"⟨x⟩ teams kept clean sheets","⟨x⟩ في الصدارة بعد الجولة برصيد ⟨x⟩ نقطة":"⟨x⟩ top the table after this round on ⟨x⟩ points",
-  "ضد ⟨x⟩":"v ⟨x⟩","أمام ⟨x⟩":"v ⟨x⟩","⟨x⟩ (عكسي)":"⟨x⟩ (OG)","تراكم ⟨x⟩ إنذارات":"⟨x⟩ yellow cards","⟨x⟩ إنذارات":"⟨x⟩ yellow cards"
+  "ضد ⟨x⟩":"v ⟨x⟩","أمام ⟨x⟩":"v ⟨x⟩","⟨x⟩ (عكسي)":"⟨x⟩ (OG)","تراكم ⟨x⟩ إنذارات":"⟨x⟩ yellow cards","⟨x⟩ إنذارات":"⟨x⟩ yellow cards",
+  "طرد مباشر أمام ⟨x⟩":"Straight red v ⟨x⟩","مباراتان":"2 matches"
 };
 function addDict(){
   const I = (typeof I18N !== "undefined") ? I18N : window.I18N; if(!I || !I.DICT) return false;   /* I18N معرّف بـ const فلا يظهر على window */

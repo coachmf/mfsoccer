@@ -2245,7 +2245,7 @@ html[dir="ltr"] .tl-ev.a .tl-card{text-align:right;align-items:flex-end}
 <link rel="stylesheet" href="site-theme.css?v=7">
 <script src="fantasy/js/i18n-more.js?v=14" defer></script>
 <script src="site-i18n.js?v=29" defer></script>
-<script src="i18n-data.js?v=21" defer></script>   <!-- إضافات الإنجليزية + البرتغالية (البرازيل/البرتغال) + الإسبانية + الصربية/الكرواتية -->
+<script src="i18n-data.js?v=22" defer></script>   <!-- إضافات الإنجليزية + البرتغالية (البرازيل/البرتغال) + الإسبانية + الصربية/الكرواتية -->
 <script src="i18n-langs.js?v=8" defer></script>   <!-- قائمة اللغات بالأعلام + البرتغالية والإسبانية والصربية/الكرواتية فوق محرك الإنجليزية -->
 <!-- غرفة التحكم (live.js / live-admin.js / live.css) مخفية منذ 2026-10-10 بطلب منصور — الملفات باقية؛ للإرجاع أعد السطرين:
      <link rel="stylesheet" href="live.css?v=9"> و <script src="live.js?v=21" defer></script> -->
@@ -2275,7 +2275,7 @@ html[dir="ltr"] .tl-ev.a .tl-card{text-align:right;align-items:flex-end}
 <script>document.documentElement.classList.add("mf")</script>
 <script src="mf-shell.js?v=34" defer></script>
 <link rel="stylesheet" href="fmx.css?v=1">
-<script src="fmx.js?v=4" defer></script>   <!-- أفكار FM27: fmx.js يلفّ صفحات المباراة والنادي واللاعب والمباريات والتحليل -->
+<script src="fmx.js?v=5" defer></script>   <!-- أفكار FM27: fmx.js يلفّ صفحات المباراة والنادي واللاعب والمباريات والتحليل -->
 <style>
 /* تبويب التحليل — التصميم الجديد (منصور 2026-09-17) */
 .an{--an-card:#0F1E35;--an-line:#213653;--an-txt:#EDF3FA;--an-mut:#8FA6C4;--an-track:rgba(143,166,196,.16);--an-acc:#2EB0F0;--an-acc2:#1878BE}
@@ -3396,8 +3396,57 @@ function standings(){
     else if(m.hg<m.ag){A.W++;H.L++;A.Pts+=3;A.aPts+=3;A.form.push("w");H.form.push("l");}
     else {H.D++;A.D++;H.Pts++;A.Pts++;H.hPts++;A.aPts++;H.form.push("d");A.form.push("d");}
   });
-  return Object.values(t).map(x=>({...x,GD:x.GF-x.GA}))
-    .sort((a,b)=>b.Pts-a.Pts||b.GD-a.GD||b.GF-a.GF||a.c.localeCompare(b.c,"ar"));
+  /* معايير التساوي حسب لائحة المسابقات 2026-2027 (مادة 8 — منصور 2026-10-30):
+     النقاط ← نقاط المواجهات المباشرة بين المتساوين فقط ← فارق أهدافها ← فارق الأهداف العام ← الأهداف المسجّلة
+     ← عدد الانتصارات ← اللعب النظيف (إنذار 1، طرد 3 — الأقل أفضل). المباراة الفاصلة/القرعة خارج الموقع. */
+  const ms=playedMatches().filter(m=>COMP!=="الكل" || compOf(m)==="الدوري");
+  const fp={}; CARDS.filter(x=>COMP!=="الكل" || compOf(x)==="الدوري").forEach(x=>{ fp[x.club]=(fp[x.club]||0)+(isRed(x.type)?3:isYellow(x.type)?1:0); });
+  const rows=Object.values(t).map(x=>({...x,GD:x.GF-x.GA,fp:fp[x.c]||0,h2hPts:0,h2hGD:0}));
+  const byPts={}; rows.forEach(r=>(byPts[r.Pts]??=[]).push(r));
+  Object.values(byPts).filter(g=>g.length>1).forEach(g=>{
+    const set=new Set(g.map(r=>r.c)), R=Object.fromEntries(g.map(r=>[r.c,r]));
+    ms.filter(m=>set.has(m.home)&&set.has(m.away)).forEach(m=>{
+      const H=R[m.home], A=R[m.away];
+      H.h2hGD+=m.hg-m.ag; A.h2hGD+=m.ag-m.hg;
+      if(m.hg>m.ag) H.h2hPts+=3; else if(m.hg<m.ag) A.h2hPts+=3; else {H.h2hPts++;A.h2hPts++;}
+    });
+  });
+  return rows.sort((a,b)=>b.Pts-a.Pts||b.h2hPts-a.h2hPts||b.h2hGD-a.h2hGD||b.GD-a.GD||b.GF-a.GF||b.W-a.W||a.fp-b.fp||a.c.localeCompare(b.c,"ar"));
+}
+/* الإيقافات التلقائية حسب لائحة المسابقات 2026-2027 (مواد 84-89 — منصور 2026-10-30):
+   كل 3 إنذارات = مباراة، طرد بإنذار ثانٍ = مباراة، طرد مباشر = مباراتان. تُحسب داخل كل مسابقة وتُنفَّذ في مبارياتها التالية للنادي
+   بالترتيب الزمني (المؤجلة في موعدها الجديد). إنذار الطرد المباشر في نفس المباراة يبقى محسوباً (مادة 89)، أما الإنذار الأول
+   لمن طُرد بإنذار ثانٍ فلا يدخل التراكم. عقوبات لجنة الانضباط خارج البيانات.
+   يرجع لكل لاعب موقوف أو مهدد: {n,c,comp,y (إنذاراته في المسابقة), miss (مبارياته القادمة التي سيغيب عنها), next (أولها),
+   why («تراكم 3 إنذارات» / «طرد أمام X» / «طرد مباشر أمام X»), from (مباراة العقوبة), risk (إنذار واحد عن الإيقاف وغير موقوف)}.
+   تستخدمه «الموقوفون للمباراة القادمة» و«الغيابات» في fmx.js. */
+function suspensions(){
+  const MS=(ALL&&ALL.matches)||MATCHES, CS=(ALL&&ALL.cards)||CARDS;
+  const ts=m=>{ const k=kickoffTS(m); return k!==null?k:Date.parse(m.date||"")||0; };
+  const up={}; const isUp=(comp,m)=>(up[comp]??=new Set(withComp(comp,()=>MATCHES.filter(isUpcoming).map(matchKey)))).has(matchKey(m));
+  const clubMs={}; const ofClub=(comp,c)=>clubMs[comp+"|"+c]??=MS.filter(m=>compOf(m)===comp&&(m.home===c||m.away===c)).sort((a,b)=>ts(a)-ts(b)||(+a.round||0)-(+b.round||0));
+  const opp=(m,c)=>m.home===c?m.away:m.home;
+  const by={}; CS.forEach(x=>{ (by[compOf(x)+"|"+x.club+"|"+x.p]??=[]).push(x); });
+  const out=[];
+  Object.entries(by).forEach(([key,cards])=>{
+    const [comp,c,n]=key.split("|"), ms=ofClub(comp,c);
+    const at=x=>ms.findIndex(m=>+m.round===+x.r);
+    const bans=[]; let y=0;
+    [...new Set(cards.map(at))].filter(i=>i>=0).sort((a,b)=>a-b).forEach(i=>{
+      const here=cards.filter(x=>at(x)===i), y2=here.some(x=>/إنذار\s*ثان/.test(x.type||"")), dr=here.some(x=>isRed(x.type)&&!y2);
+      if(!y2) here.filter(x=>isYellow(x.type)).forEach(()=>{ y++; if(y%3===0) bans.push([i,1,`تراكم ${y} إنذارات`]); });
+      if(y2) bans.push([i,1,`طرد أمام ${opp(ms[i],c)}`]);
+      if(dr) bans.push([i,2,`طرد مباشر أمام ${opp(ms[i],c)}`]);
+    });
+    let used=-1; const miss=[]; let why="", from=null;
+    bans.forEach(([i,k,w])=>{ let j=Math.max(i,used);
+      for(let t=0;t<k&&j+1<ms.length;t++){ j++; if(isUp(comp,ms[j])){ if(!miss.length){ why=w; from=ms[i]; } miss.push(ms[j]); } }
+      used=j; });
+    const risk=!miss.length && y%3===2;
+    if(!miss.length && !risk) return;
+    out.push({n,c,comp,y,miss,next:miss[0]||null,why,from,risk});
+  });
+  return out.sort((a,b)=>(!!b.next)-(!!a.next)||(a.next&&b.next?ts(a.next)-ts(b.next):0)||a.c.localeCompare(b.c,"ar"));
 }
 function scorers(){
   const p={};
