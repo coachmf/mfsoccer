@@ -1,0 +1,157 @@
+/* أفكار FM27 (fmx.js) — ألوان الموقع نفسها (--mf-*) للوضعين الفاتح والداكن */
+.fmx-card{display:block}
+.fmx-sub{font-size:.72rem;font-weight:700;color:var(--mf-tx3,var(--slate));margin:12px 0 8px}
+.fmx-none{margin:4px 0;color:var(--mf-tx3,var(--slate));font-size:.78rem}
+.fmx-pl{cursor:pointer}
+.fmx-pl:hover b,.fmx-pl:hover{color:var(--mf-acc-tx,var(--sky))}
+
+/* جمل الملخص */
+.fmx-says{list-style:none;margin:0;padding:0;display:grid;gap:7px}
+.fmx-says li{position:relative;padding-inline-start:14px;font-size:.84rem;line-height:1.7;color:var(--mf-tx,var(--head))}
+.fmx-says li::before{content:"";position:absolute;inset-inline-start:0;top:.72em;width:6px;height:6px;border-radius:2px;background:var(--mf-gold,var(--sky));transform:rotate(45deg)}
+.fmx-pre .fmx-says{margin-top:12px;padding-top:12px;border-top:1px solid var(--mf-ln,var(--line))}
+
+/* قبل المباراة: جدول مقارنة */
+.fmx-vs{display:grid;font-size:.8rem}
+.fmx-vs-r{display:grid;grid-template-columns:minmax(0,1fr) 74px minmax(0,1fr);align-items:center;gap:6px;padding:8px 0;border-top:1px solid var(--mf-ln,var(--line))}
+.fmx-vs-r.hd{border-top:0;padding-top:0}
+.fmx-vs-r .c{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;min-width:0;text-align:center;color:var(--mf-tx,var(--head));line-height:1.55}
+.fmx-vs-r.hd .c{font-weight:700;font-size:.78rem}
+.fmx-vs-r.hd .crest{width:32px;height:32px}
+.fmx-vs-r .t{font-size:.66rem;font-weight:600;color:var(--mf-tx3,var(--slate));text-align:center;line-height:1.5}
+.fmx-vs .pillrow{justify-content:center;flex-wrap:nowrap;gap:3px}
+.fmx-vs .pl{width:17px;height:17px;font-size:.58rem}
+.fmx-vs em{font-style:normal;font-weight:800;color:var(--mf-acc-tx,var(--sky));margin-inline-start:3px}
+.fmx-vs .fmx-pl{display:inline-flex;align-items:center;gap:4px;max-width:100%}
+.fmx-vs .rtg{flex:0 0 auto}
+.fmx-rkb{display:inline-grid;place-items:center;min-width:28px;height:28px;border-radius:8px;background:var(--mf-c2,var(--navy-800));font-family:var(--mf-fh,var(--display));font-size:.95rem}
+.fmx-co{display:grid;gap:2px}
+.fmx-co b{font-size:.76rem;font-weight:700}
+.fmx-co small{font-size:.68rem;color:var(--mf-tx3,var(--slate))}
+
+/* التشكيلة الأكثر استخداماً */
+.fmx-xiseg{display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:4px;margin-bottom:10px;border-radius:12px;background:var(--mf-c2,var(--navy-800))}
+.fmx-xiseg button{display:flex;align-items:center;justify-content:center;gap:6px;min-height:40px;padding:6px 8px;border:0;border-radius:9px;background:none;font:inherit;font-size:.78rem;font-weight:700;color:var(--mf-tx3,var(--slate));cursor:pointer}
+.fmx-xiseg button .crest{width:22px;height:22px}
+.fmx-xiseg button[aria-pressed="true"]{background:var(--mf-c1,var(--navy-900));color:var(--mf-tx,var(--head));box-shadow:var(--mf-sh,none)}
+.fmx-xi{display:grid;gap:8px;padding:12px 8px;border-radius:12px;background:linear-gradient(180deg,#1E5B3A,#17492F);box-shadow:inset 0 0 0 1px rgba(255,255,255,.08)}
+.fmx-xi-l{display:flex;justify-content:center;flex-wrap:nowrap;gap:5px}
+.fmx-xi .fmx-pl{flex:0 1 66px;min-width:0;display:grid;justify-items:center;gap:1px;padding:5px 3px;border-radius:9px;background:rgba(0,0,0,.28)}
+.fmx-xi .fmx-pl b{max-width:100%;overflow:hidden;text-overflow:ellipsis;font-size:.68rem;font-weight:700;color:#fff;line-height:1.5;white-space:nowrap}
+.fmx-xi .fmx-pl small{font-size:.6rem;color:rgba(255,255,255,.7)}
+
+/* الغيابات */
+.fmx-abs{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.fmx-abs-c{min-width:0}
+.fmx-abs-h{display:flex;align-items:center;gap:6px;margin-bottom:8px;font-size:.78rem;color:var(--mf-tx,var(--head))}
+.fmx-abs-h .crest{width:20px;height:20px}
+.fmx-abs-r{display:flex;flex-wrap:wrap;align-items:center;gap:4px 6px;padding:7px 0;border-top:1px solid var(--mf-ln,var(--line));font-size:.78rem;color:var(--mf-tx,var(--head))}
+.fmx-abs-r small{flex-basis:100%;font-size:.66rem;color:var(--mf-tx3,var(--slate))}
+.fmx-tag{display:inline-block;padding:1px 7px;border-radius:999px;font-size:.62rem;font-weight:700;background:var(--mf-c2,var(--navy-800));color:var(--mf-tx2,var(--mist));line-height:1.6}
+.fmx-tag.r{background:color-mix(in srgb,var(--mf-loss,#F0605A) 18%,transparent);color:var(--mf-loss,#F0605A)}
+
+/* لو انتهت الآن */
+.fmx-mv{display:inline-flex;align-items:center;gap:3px;font-weight:800}
+.fmx-mv i{font-style:normal;font-size:.62rem;font-weight:700}
+.fmx-mv.up i{color:var(--mf-win,#34C38F)} .fmx-mv.up i::before{content:"";display:inline-block;border:4px solid transparent;border-bottom:6px solid currentColor;border-top:0;margin-inline-end:2px;vertical-align:1px}
+.fmx-mv.dn i{color:var(--mf-loss,#F0605A)} .fmx-mv.dn i::before{content:"";display:inline-block;border:4px solid transparent;border-top:6px solid currentColor;border-bottom:0;margin-inline-end:2px;vertical-align:1px}
+.fmx-lrow{display:grid;grid-template-columns:1fr auto 1fr auto;align-items:center;gap:8px;padding:8px 0;border-top:1px solid var(--mf-ln,var(--line));font-size:.78rem;color:var(--mf-tx,var(--head));cursor:pointer}
+.fmx-lrow .t{display:flex;align-items:center;gap:6px;min-width:0}
+.fmx-lrow .t.h{justify-content:flex-end}
+.fmx-lrow .crest{width:20px;height:20px}
+.fmx-lrow b{font-family:var(--mf-fh,var(--display));font-size:.95rem}
+.fmx-lrow small{color:var(--mf-live,#FF4545);font-weight:700;font-size:.68rem}
+
+/* التشكيلة: التغييرات */
+.fmx-chgs{display:grid;gap:8px;margin:2px 0 10px}
+.fmx-chgs>div{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+.fmx-chgs small{min-width:30px;font-size:.68rem;font-weight:700;color:var(--mf-tx3,var(--slate))}
+.fmx-chg{padding:3px 9px;border-radius:999px;font-size:.72rem;font-weight:600;cursor:pointer;line-height:1.6}
+.fmx-chg.in{background:color-mix(in srgb,var(--mf-win,#34C38F) 16%,transparent);color:var(--mf-win,#34C38F)}
+.fmx-chg.out{background:color-mix(in srgb,var(--mf-loss,#F0605A) 14%,transparent);color:var(--mf-loss,#F0605A)}
+
+/* النادي: مسار الترتيب */
+.fmx-pos svg{width:100%;height:auto;display:block}
+.fmx-pos .g{stroke:var(--mf-ln2,var(--line2));stroke-dasharray:3 4}
+.fmx-pos .ax{fill:var(--mf-tx3,var(--slate));font-size:9px;text-anchor:middle;font-family:var(--mf-f,var(--body))}
+.fmx-pos .ln{fill:none;stroke:var(--mf-gold,var(--sky));stroke-width:2.4;stroke-linejoin:round;stroke-linecap:round}
+.fmx-pos circle{fill:var(--mf-c1,var(--navy-900));stroke:var(--mf-gold,var(--sky));stroke-width:2}
+.fmx-pos .v{fill:var(--mf-tx,var(--head));font-size:9.5px;font-weight:800;text-anchor:middle;font-family:var(--mf-fh,var(--display))}
+
+.fmx-rec .v small,.fmx-srec .v small{font-size:.68rem;color:var(--mf-tx3,var(--slate));font-weight:500;margin-inline-start:4px}
+.fmx-rec .stat .v,.fmx-srec .stat .v{display:inline-flex;align-items:center;flex-wrap:wrap;justify-content:flex-end;gap:2px 6px;text-align:end}
+
+/* الأهداف حسب المركز */
+.fmx-bl .fmx-sub:first-child{margin-top:0}
+.fmx-lines{display:grid;grid-template-columns:repeat(auto-fit,minmax(64px,1fr));gap:8px}
+.fmx-line{position:relative;overflow:hidden;display:grid;justify-items:center;gap:2px;padding:10px 4px 12px;border-radius:12px;background:var(--mf-c2,var(--navy-800))}
+.fmx-line b{font-family:var(--mf-fh,var(--display));font-size:1.25rem;color:var(--mf-tx,var(--head));line-height:1.2}
+.fmx-line small{font-size:.68rem;color:var(--mf-tx3,var(--slate))}
+.fmx-line i{position:absolute;inset-inline-start:0;bottom:0;height:3px;width:var(--w);background:var(--mf-gold,var(--sky))}
+.fmx-line.og b{color:var(--mf-tx3,var(--slate))}
+
+/* عمق التشكيلة */
+.fmx-depth{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.fmx-dep{padding:10px;border-radius:12px;background:var(--mf-c2,var(--navy-800));min-width:0}
+.fmx-dep h4{margin:0 0 6px;font-size:.74rem;color:var(--mf-acc-tx,var(--sky));font-weight:700}
+.fmx-dep-r{display:grid;grid-template-columns:18px 1fr auto;align-items:center;gap:6px;padding:5px 0;font-size:.76rem;color:var(--mf-tx,var(--head));cursor:pointer;line-height:1.5}
+.fmx-dep-r i{font-style:normal;font-size:.62rem;font-weight:800;color:var(--mf-tx3,var(--slate))}
+.fmx-dep-r span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fmx-dep-r small{font-size:.66rem;color:var(--mf-tx3,var(--slate));font-variant-numeric:tabular-nums}
+
+/* ملف اللاعب */
+.fmx-pp{margin:16px 16px 0}
+.fmx-pp .stat{padding-inline:2px}
+.fmx-pp h4{margin:0 0 8px;font-family:var(--mf-fh,var(--display));font-size:.86rem;color:var(--mf-tx,var(--head))}
+.fmx-fbars{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;padding:10px 8px;border-radius:14px;background:var(--mf-c2,var(--navy-800))}
+.fmx-fb{display:grid;justify-items:center;gap:5px;cursor:pointer;min-width:0}
+.fmx-fb-t{position:relative;width:100%;height:92px;display:flex;align-items:flex-end;justify-content:center}
+.fmx-fb-t i{position:relative;display:block;width:70%;max-width:34px;border-radius:7px 7px 3px 3px;background:var(--mf-draw,#9AA2B4)}
+.fmx-fb-t i.r8{background:#1F9D6B}.fmx-fb-t i.r7{background:#34C38F}.fmx-fb-t i.r65{background:#B5C33A}.fmx-fb-t i.r6{background:#E8A93B}.fmx-fb-t i.r5{background:#F0605A}
+.fmx-fb-t i.na{height:14%;background:var(--mf-ln2,var(--line2))}
+.fmx-fb-t b{position:absolute;inset-inline:0;top:-17px;text-align:center;font-size:.66rem;font-weight:800;color:var(--mf-tx,var(--head))}
+.fmx-fb .crest{width:20px;height:20px}
+.fmx-fb small{font-size:.6rem;color:var(--mf-tx3,var(--slate));white-space:nowrap}
+.fmx-pp .fmx-use{padding-inline:0;margin-inline:0}
+.fmx-use .pstat b{font-size:1rem;white-space:nowrap}
+.fmx-role{font-size:.82rem}
+.fmx-pp .stat .v{display:inline-flex;gap:10px}
+.fmx-cp{display:inline-flex;align-items:center;gap:4px;font-variant-numeric:tabular-nums}
+.fmx-cp small{font-size:.66rem;color:var(--mf-tx3,var(--slate))}
+.fmx-ms{list-style:none;margin:0;padding:0 14px 0 0;border-inline-start:2px solid var(--mf-ln2,var(--line2));display:grid;gap:12px}
+.fmx-ms li{position:relative;display:grid;grid-template-columns:1fr auto;gap:1px 10px;cursor:pointer;padding-inline-start:4px}
+.fmx-ms li::before{content:"";position:absolute;inset-inline-start:-21px;top:6px;width:10px;height:10px;border-radius:50%;background:var(--mf-gold,var(--sky));box-shadow:0 0 0 3px var(--mf-c1,var(--navy-900))}
+.fmx-ms b{font-size:.8rem;color:var(--mf-tx,var(--head));line-height:1.6}
+.fmx-ms small{grid-column:1;font-size:.68rem;color:var(--mf-tx3,var(--slate));line-height:1.6}
+.fmx-ms time{grid-column:2;grid-row:1 / span 2;align-self:center;font-size:.66rem;color:var(--mf-tx3,var(--slate));white-space:nowrap}
+
+/* صفحة المباريات */
+.mc-team .crest{position:relative}
+.fmx-rk{position:absolute;bottom:-5px;inset-inline-end:-8px;display:grid;place-items:center;min-width:18px;height:16px;padding:0 3px;border-radius:5px;font-size:.58rem;font-weight:800;line-height:1;color:var(--mf-tx2,var(--mist));background:var(--mf-c3,var(--navy-600));box-shadow:0 0 0 2px var(--mf-c1,var(--navy-900));font-variant-numeric:tabular-nums;transform:none!important}
+.fmx-det{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:8px 2px 2px;margin-top:8px;border-top:1px dashed var(--mf-ln2,var(--line2))}
+.fmx-det>div{display:flex;flex-direction:column;gap:3px;min-width:0}
+.fmx-det .h{align-items:flex-start}
+.fmx-det .a{align-items:flex-end}
+.fmx-sc{font-size:.7rem;color:var(--mf-tx2,var(--mist));line-height:1.55;cursor:pointer;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fmx-sc small{color:var(--mf-tx3,var(--slate));font-size:.64rem}
+.fmx-sc.red{display:inline-flex;align-items:center;gap:4px}
+.fmx-sc .cardpill{width:8px;height:11px}
+.fmx-roundup{margin:10px 0 12px;padding:12px 14px;border-radius:var(--mf-rc,14px);background:var(--mf-c1,var(--navy-900));border:1px solid var(--mf-ln,var(--line))}
+.fmx-roundup h3{margin:0 0 8px;font-family:var(--mf-fh,var(--display));font-size:.92rem;color:var(--mf-tx,var(--head))}
+
+/* التحليل */
+.fmx-susp{display:grid;gap:0;padding:4px 12px}
+.fmx-susp-r{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;padding:9px 0;border-top:1px solid var(--mf-ln,var(--line));font-size:.8rem;color:var(--mf-tx,var(--head))}
+.fmx-susp-r:first-child{border-top:0}
+.fmx-susp-r .crest{width:22px;height:22px}
+.fmx-susp-r small{color:var(--mf-tx3,var(--slate));font-size:.68rem}
+.fmx-susp-r .fmx-tag{margin-inline-start:auto;cursor:pointer}
+.fmx-srec{padding:4px 12px}
+.fmx-cl{display:inline-flex;align-items:center;gap:5px;cursor:pointer;font-weight:600}
+.fmx-cl .crest{width:20px;height:20px}
+
+@media (max-width:420px){
+  .fmx-vs{font-size:.74rem}
+  .fmx-vs thead th:nth-child(2){width:26%}
+  .fmx-depth{grid-template-columns:1fr 1fr}
+}
