@@ -261,7 +261,7 @@ function positionChart(c){
 }
 function recordsHTML(c){
   const G = clubGames(c, COMP); if(!G.length) return "";
-  const rng = r => r.n ? `<small>${r.from===r.to ? `ج${r.from.m.round}` : `ج${r.from.m.round} – ج${r.to.m.round}`}</small>` : "";
+  const rng = r => r.n ? `<small>${r.from===r.to ? `<span>ج${r.from.m.round}</span>` : `<span>ج${r.from.m.round}</span> – <span>ج${r.to.m.round}</span>`}</small>` : "";
   const runs = [
     ["أطول سلسلة انتصارات", longestRun(G, g=>g.k==="w")],
     ["أطول سلسلة بلا خسارة", longestRun(G, g=>g.k!=="l")],
@@ -372,7 +372,8 @@ function milestonesHTML(D){
   const all = ok(()=>withComp("الكل", ()=>playerProfileData(D.name, D.club))); if(!all || !all.log.length) return "";
   const log = all.log.slice().sort((a,b)=>ts(a.m)-ts(b.m));
   const ev = []; let apps=0, g=0, a=0, firstG=false, firstA=false;
-  const at = l => `${compOf(l.m)===LG?"":compOf(l.m)+" · "}ج${l.m.round} · ${l.home?"ضد":"أمام"} ${l.opp}`;
+  /* كل جزء في span مستقل حتى يُترجم بالمطابقة التامة («ج⟨x⟩» و«ضد ⟨x⟩») */
+  const at = l => `${compOf(l.m)===LG?"":`<span>${H(compOf(l.m))}</span> · `}<span>ج${l.m.round}</span> · <span>${l.home?"ضد":"أمام"} ${H(l.opp)}</span>`;
   log.forEach(l=>{
     apps++;
     if(apps===1) ev.push({t:"أول مشاركة", l});
@@ -383,7 +384,7 @@ function milestonesHTML(D){
     if(l.r) ev.push({t:"طرد", l});
   });
   if(!ev.length) return "";
-  return `<div class="fmx-pp"><h4>المحطات</h4><ol class="fmx-ms">${ev.reverse().map(e=>`<li data-mopen="${keyOf(e.l.m)}"><b>${H(e.t)}</b><small>${H(at(e.l))}</small><time>${H(dayLabel(e.l.m.date))}</time></li>`).join("")}</ol></div>`;
+  return `<div class="fmx-pp"><h4>المحطات</h4><ol class="fmx-ms">${ev.reverse().map(e=>`<li data-mopen="${keyOf(e.l.m)}"><b>${H(e.t)}</b><small>${at(e.l)}</small><time>${H(dayLabel(e.l.m.date))}</time></li>`).join("")}</ol></div>`;
 }
 if(fnOK("playerProfileHTML")){
   const _pph = playerProfileHTML;
@@ -399,10 +400,13 @@ if(fnOK("playerProfileHTML")){
 }
 
 /* ═════════════ صفحة المباريات ═════════════ */
+/* اختصار ركلة الجزاء والهدف العكسي بلغة الواجهة (النص داخل <small> لا يمرّ على القاموس) */
+const ABBR = {ar:{pen:"ج",og:"ع"}, en:{pen:"P",og:"OG"}, "pt-BR":{pen:"P",og:"GC"}, "pt-PT":{pen:"GP",og:"AG"}, es:{pen:"P",og:"PP"}, fr:{pen:"P",og:"CSC"}, sh:{pen:"P",og:"AG"}};
+const abbr = () => { const l = (typeof I18N!=="undefined" && I18N.lang) ? I18N.lang() : "ar"; return ABBR[l] || ABBR.en; };
 function scorerLines(m, club){
   const gs = withComp(compOf(m), ()=>matchGoals(m)).filter(g=>g.sc===club).sort((a,b)=>goalAbs(m,a)-goalAbs(m,b));
   const reds = (ALL.cards||[]).filter(x=>x.r===m.round && compOf(x)===compOf(m) && x.club===club && isRed(x.type));
-  const by = []; gs.forEach(g=>{ const n = isOG(g) ? (g.og||g.p) : g.p, tag = isOG(g) ? " (ع)" : /جزاء/.test(g.det||"") ? " (ج)" : "";
+  const by = []; gs.forEach(g=>{ const n = isOG(g) ? (g.og||g.p) : g.p, tag = isOG(g) ? " ("+abbr().og+")" : /جزاء/.test(g.det||"") ? " ("+abbr().pen+")" : "";
     const e = by.find(x=>x.n===n && x.og===isOG(g)); const t = minLabel(g)+tag; if(e) e.t.push(t); else by.push({n, og:isOG(g), c: isOG(g)?g.cd:club, t:[t]}); });
   return by.map(x=>`<span class="fmx-sc" data-player="${H(x.n)}" data-club="${H(x.c)}">${H(shortName(x.n))} <small dir="ltr">${x.t.join(", ")}</small></span>`).join("")
     + reds.map(x=>`<span class="fmx-sc red" data-player="${H(x.p)}" data-club="${H(club)}"><i class="cardpill r"></i>${H(shortName(x.p))}${x.m?` <small dir="ltr">${x.m}${x.x?"+"+x.x:""}'</small>`:""}</span>`).join("");
@@ -479,7 +483,7 @@ function seasonRecordsHTML(){
   if(cur && cur.n>=3) rows.push(["بلا خسارة حالياً", `<b>${nMatches(cur.n)}</b>`, cur.c]);
   const by = {}; GOALS.filter(g=>!isOG(g)).forEach(g=>{ const k=[g.p,g.sc,g.r,compOf(g),g.cd].join("|"); by[k]=(by[k]||0)+1; });
   const top = Object.entries(by).sort((a,b)=>b[1]-a[1])[0];
-  if(top && top[1]>=2){ const [p,c,r,,cd]=top[0].split("|"); rows.push(["أكثر أهداف للاعب في مباراة", `<b>${nGoals(top[1])}</b> <small>${H(p)} ضد ${H(cd)} · ج${H(r)}</small>`, c]); }
+  if(top && top[1]>=2){ const [p,c,r,,cd]=top[0].split("|"); rows.push(["أكثر أهداف للاعب في مباراة", `<b>${nGoals(top[1])}</b> <small><span>${H(p)} ضد ${H(cd)}</span> · <span>ج${H(r)}</span></small>`, c]); }
   const ht = Object.values(by).filter(n=>n>=3).length; if(ht) rows.push(["الثلاثيات (هاتريك)", `<b>${ht}</b>`, ""]);
   const done = MATCHES.filter(doneIn); const dr = done.filter(m=>m.hg===m.ag).length;
   if(done.length){ const hw = done.filter(m=>m.hg>m.ag).length, aw = done.filter(m=>m.ag>m.hg).length;
@@ -533,7 +537,7 @@ const EN = {
   "ضد ⟨x⟩":"v ⟨x⟩","أمام ⟨x⟩":"v ⟨x⟩","⟨x⟩ (عكسي)":"⟨x⟩ (OG)"
 };
 function addDict(){
-  const I = window.I18N; if(!I || !I.DICT) return false;
+  const I = (typeof I18N !== "undefined") ? I18N : window.I18N; if(!I || !I.DICT) return false;   /* I18N معرّف بـ const فلا يظهر على window */
   for(const k in EN) if(I.DICT[k]==null) I.DICT[k] = EN[k];
   I._cmp = null; I._keysSorted = null;
   return true;
