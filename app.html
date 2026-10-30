@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>MF Soccer | التطبيق</title>
+<meta name="description" content="حمّل تطبيق MF Soccer من App Store أو Google Play.">
+<meta name="theme-color" content="#00061A">
+<meta name="robots" content="noindex">
+<meta property="og:title" content="MF Soccer | التطبيق">
+<meta property="og:image" content="https://mfsoccer.com/og.png">
+<meta property="og:url" content="https://mfsoccer.com/app">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<script>
+/* رابط الباركود في الملعب (منصور 2026-10-30): الآيفون/الآيباد → App Store، الأندرويد → Google Play، غيرهما يرى الزرين */
+(function(){
+  var ua = navigator.userAgent || "", IOS = "https://apps.apple.com/kw/app/id6810213944",
+      AND = "https://play.google.com/store/apps/details?id=com.mfsoccer.twa";
+  var ios = /iPhone|iPad|iPod/i.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
+  if(ios) location.replace(IOS); else if(/Android/i.test(ua)) location.replace(AND);
+})();
+</script>
+<style>
+  html{background:#00061A;color-scheme:dark}
+  body{margin:0;min-height:100svh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;
+       padding:24px 16px;box-sizing:border-box;font-family:system-ui,sans-serif;color:#F6F3EA;text-align:center}
+  img.logo{width:120px;height:auto}
+  h1{margin:0;font-size:1.15rem;font-weight:700}
+  .st{display:flex;flex-wrap:wrap;gap:12px;justify-content:center}
+  .st img{height:52px;width:auto;display:block}
+  a.site{color:#E7D093;font-size:.9rem}
+</style>
+</head>
+<body>
+  <img class="logo" src="/assets/brand/mf-emblem.webp" alt="MF Soccer" onerror="this.remove()">
+  <h1>حمّل تطبيق MF Soccer</h1>
+  <div class="st">
+    <a href="https://apps.apple.com/kw/app/id6810213944"><img src="/assets/brand/badge-appstore.svg" alt="Download on the App Store" onerror="this.replaceWith('App Store')"></a>
+    <a href="https://play.google.com/store/apps/details?id=com.mfsoccer.twa"><img src="/assets/brand/badge-googleplay.svg" alt="Get it on Google Play" onerror="this.replaceWith('Google Play')"></a>
+  </div>
+  <a class="site" href="/">mfsoccer.com</a>
+</body>
+</html>
