@@ -160,7 +160,7 @@ function absencesCard(m){
         if(seen.has(b.p)) return; seen.add(b.p); out.push({n:b.p, why:"موقوف", sub:`تراكم ${b.k} إنذارات`}); });
     }
     (SQUADS[c]||[]).forEach(e=>{ const n=sqName(e); if(seen.has(n)) return;
-      const w = fnOK("absentWhy") ? absentWhy(m, c, n) : ""; if(w){ seen.add(n); out.push({n, why:w}); } });
+      const w = fnOK("absentWhy") ? absentWhy(m, c, n) : ""; if(w && w!=="غير متوفر"){ seen.add(n); out.push({n, why:w}); } });   /* «غير متوفر» = غالباً محترف شُطب من القائمة — لا يُعرض (منصور 2026-10-30) */
     if(FMX_RULES.ycBan>0 && prev){   /* «مهدد» للمباراة القادمة فقط */
       const q={}; (ALL.cards||[]).filter(x=>x.club===c && compOf(x)===comp && isYellow(x.type)).forEach(x=>q[x.p]=(q[x.p]||0)+1);
       Object.entries(q).filter(([n,k])=>k%FMX_RULES.ycBan===FMX_RULES.ycBan-1 && !seen.has(n)).forEach(([n,k])=>out.push({n, why:"مهدد بالإيقاف", sub:`${k} إنذارات`}));
