@@ -4,7 +4,9 @@
    «ضيف دوري الهواة مع شعاراتهم و اسامي الانديه و التحرير فقط نتيجة بدون
    تفاصيل و يظهر ترتيب الدوري» — 14 فريقاً، النتائج والترتيب فقط: لا أهداف
    ولا بطاقات ولا لاعبين. منفصل تماماً عن باقي الموقع: وثيقة مستقلة
-   seasons/amateur {matches:[{id, round, date, home, away, hg, ag}], updated, updatedBy}
+   seasons/amateur {matches:[{id, round, date, time, home, away, hg, ag}], updated, updatedBy}
+   2026-10-31: جدول الأسابيع 2–9 من ملف الاتحاد — المباراة بلا نتيجة (hg/ag = null) مباراة قادمة بوقتها،
+   وتُكتب نتيجتها لاحقاً من الإدارة على الصف نفسه.
    الجدول يُحسب من النتائج لحظة العرض. الإدخال: تبويب «الهواة» في الإدارة.
    نفس بناء div1.js ونفس أصنافه (d1-*) في التنسيق.
    وضع الاختبار: ‏?livetest=1 على localhost — تخزين محلي فقط.
@@ -51,7 +53,7 @@ const num = v => (v===null || v===undefined || v==="") ? null : (Number.isFinite
 const played = m => num(m.hg)!==null && num(m.ag)!==null;
 function normalize(d){
   const out = d && Array.isArray(d.matches) ? clone(d) : {matches:[]};
-  out.matches = out.matches.filter(m=>m && m.home && m.away).map(m=>Object.assign({id:uid(), date:""}, m, {round:+m.round||1, hg:num(m.hg), ag:num(m.ag)}));
+  out.matches = out.matches.filter(m=>m && m.home && m.away).map(m=>Object.assign({id:uid(), date:"", time:""}, m, {round:+m.round||1, hg:num(m.hg), ag:num(m.ag)}));
   return out;
 }
 let DATA = null;
@@ -96,7 +98,8 @@ function table(){
 const AR_DOW = ["الأحد","الإثنين","الثلاثاء","الأربعاء","الخميس","الجمعة","السبت"];
 const AR_MON = ["يناير","فبراير","مارس","أبريل","مايو","يونيو","يوليو","أغسطس","سبتمبر","أكتوبر","نوفمبر","ديسمبر"];
 const dLbl = s => { if(!s) return ""; const d = new Date(s+"T00:00:00"); return isNaN(d) ? H(s) : `${AR_DOW[d.getDay()]} ${d.getDate()} ${AR_MON[d.getMonth()]}`; };
-const rounds = () => [...new Set((DATA.matches||[]).map(m=>m.round))].sort((a,b)=>b-a);   /* الأحدث أولاً */
+const rounds = () => [...new Set((DATA.matches||[]).map(m=>m.round))].sort((a,b)=>a-b);
+const tLbl = t => { const m = /^(\d{1,2}):(\d{2})$/.exec(String(t||"")); if(!m) return H(t||""); let h = +m[1]; const pm = h>=12; h = h%12 || 12; return `${h}:${m[2]} ${pm?"م":"ص"}`; };
 const scp = (h, a) => `${h} - ${a}`;
 
 /* ───────────── العرض ───────────── */
@@ -113,39 +116,45 @@ function tableHTML(){
   </div>`;
 }
 function matchHTML(m){
-  const hw = m.hg>m.ag, aw = m.ag>m.hg;
-  return `<div class="d1-m done">
+  const p = played(m), hw = p && m.hg>m.ag, aw = p && m.ag>m.hg;
+  return `<div class="d1-m${p?" done":""}">
     <div class="d1-mt h${hw?" win":""}">${crest(m.home)}<b>${H(m.home)}</b></div>
-    <div class="d1-ms"><bdi dir="ltr" class="sc">${scp(m.hg,m.ag)}</bdi><small>انتهت</small></div>
+    <div class="d1-ms">${p ? `<bdi dir="ltr" class="sc">${scp(m.hg,m.ag)}</bdi><small>انتهت</small>` : `<span class="tm">${tLbl(m.time)||"—"}</span><small>لم تبدأ</small>`}</div>
     <div class="d1-mt a${aw?" win":""}"><b>${H(m.away)}</b>${crest(m.away)}</div>
   </div>`;
 }
 function matchesHTML(){
   return rounds().map(r=>{
-    const ms = DATA.matches.filter(m=>m.round===r && played(m)); if(!ms.length) return "";
+    const ms = DATA.matches.filter(m=>m.round===r).sort((a,b)=>String(a.date+a.time).localeCompare(String(b.date+b.time))); if(!ms.length) return "";
     const dates = [...new Set(ms.map(m=>m.date).filter(Boolean))];
-    return `<section class="d1-rnd">
+    return `<section class="d1-rnd" data-amr="${r}">
       <div class="d1-rh"><h3>الجولة ${r}</h3><span>${dates.map(dLbl).join(" · ")}</span></div>
-      <div class="d1-card d1-ml">${ms.map(matchHTML).join("")}</div>
+      ${dates.length>1 ? dates.map(d=>`<div class="am-day">${dLbl(d)}</div><div class="d1-card d1-ml">${ms.filter(m=>m.date===d).map(matchHTML).join("")}</div>`).join("")
+        : `<div class="d1-card d1-ml">${ms.map(matchHTML).join("")}</div>`}
+      ${(()=>{ const inR = new Set(ms.flatMap(m=>[m.home, m.away])), rest = Object.keys(TEAMS).filter(c=>!inR.has(c)); return rest.length ? `<p class="d1-bye">راحة: ${rest.map(H).join("، ")}</p>` : ""; })()}
     </section>`;
-  }).join("") || `<p class="d1-empty">لا نتائج بعد.</p>`;
+  }).join("") || `<p class="d1-empty">لا مباريات بعد.</p>`;
 }
 function render(){
   const v = document.getElementById("v-amateur"); if(!v) return;
   if(!DATA) DATA = normalize(null);
-  const tabs = [["table","الترتيب"],["matches","النتائج"]];
+  const tabs = [["table","الترتيب"],["matches","المباريات"]];
   v.innerHTML = `<div class="d1 am">
     <header class="d1-hero"><h2>${NAME}</h2><p>${SEASON_AR}</p></header>
     <nav class="d1-tabs" role="tablist">${tabs.map(([k,t])=>`<button type="button" role="tab" data-amtab="${k}" aria-selected="${VIEW.tab===k}">${t}</button>`).join("")}</nav>
     <div class="d1-body">${VIEW.tab==="table" ? tableHTML() : matchesHTML()}</div>
   </div>`;
+  /* المباريات: يفتح على أول جولة لم تكتمل */
+  if(VIEW.tab==="matches" && !VIEW.scrolled){ VIEW.scrolled = true;
+    const r = rounds().find(r=>DATA.matches.some(m=>m.round===r && !played(m)));
+    const el = r!=null && v.querySelector(`[data-amr="${r}"]`); if(el && r!==rounds()[0]) setTimeout(()=>el.scrollIntoView({block:"start"}), 0); }
 }
 AM.render = render;
 AM.count = () => { if(!DATA) DATA = normalize(null); return DATA.matches.length; };
 function repaint(){ if(document.querySelector("#v-amateur.on")) render(); paintAdmin(); }
 document.addEventListener("click", e=>{
   const t = e.target.closest && e.target.closest("[data-amtab]");
-  if(t){ VIEW.tab = t.dataset.amtab; render(); }
+  if(t){ VIEW.tab = t.dataset.amtab; VIEW.scrolled = false; render(); }
 });
 
 /* ───────────── الإدارة: النتيجة فقط ───────────── */
@@ -161,16 +170,17 @@ function adminHTML(){
       <span class="x">-</span>
       <input class="sc" type="number" inputmode="numeric" min="0" max="40" data-amf="ag" value="${m.ag==null?"":m.ag}" aria-label="أهداف ${H(m.away)}">
       <span class="t a">${H(m.away)}</span>
-      <div class="meta"><button type="button" class="dl" data-ama="rm">حذف</button></div>
+      <div class="meta">${m.date?`<span>${dLbl(m.date)}${m.time?` · ${tLbl(m.time)}`:""}</span>`:""}<button type="button" class="dl" data-ama="rm">حذف</button></div>
     </div>`;
   const last = rs[rs.length-1] || 1;
   return `<div id="amAdmin"><h2 class="sec">دوري الهواة</h2>
-    <p class="hint">النتيجة فقط: اختر الجولة والفريقين واكتب النتيجة ثم «إضافة» و«حفظ». الترتيب يُحسب تلقائياً.</p>
+    <p class="hint">اكتب نتيجة المباراة في صفها ثم «حفظ». مباراة جديدة: الجولة والفريقان (والنتيجة إن لُعبت) ثم «إضافة». الترتيب يُحسب تلقائياً.</p>
     <div class="card pad d1a">
       <div class="d1a-add am-add"><h4>إضافة نتيجة</h4>
         <div class="d1a-addf">
           <label>الجولة<input type="number" min="1" max="40" id="amR" value="${last}"></label>
           <label>التاريخ<input type="date" id="amD"></label>
+          <label>الوقت<input type="time" id="amT"></label>
           <label>المضيف<select id="amH">${teamOpts("")}</select></label>
           <label>الضيف<select id="amA">${teamOpts("")}</select></label>
           <label>أهداف المضيف<input type="number" inputmode="numeric" min="0" max="40" id="amHG"></label>
@@ -205,12 +215,12 @@ document.addEventListener("click", async e=>{
     const g = id => document.getElementById(id);
     const home = g("amH").value, away = g("amA").value, round = +g("amR").value || 1, hg = num(g("amHG").value), ag = num(g("amAG").value);
     if(!home || !away || home===away){ say("اختر فريقين مختلفين", "err"); return; }
-    if(hg===null || ag===null){ say("اكتب النتيجة (الخانتين)", "err"); return; }
+    if((hg===null) !== (ag===null)){ say("اكتب النتيجة في الخانتين أو اتركهما فارغتين لمباراة قادمة", "err"); return; }
     if(ED.matches.some(x=>x.round===round && [x.home,x.away].some(t=>t===home || t===away))){ say("أحد الفريقين له مباراة في نفس الجولة", "err"); return; }
-    ED.matches.push({id:uid(), round, date:g("amD").value, home, away, hg, ag});
+    ED.matches.push({id:uid(), round, date:g("amD").value, time:g("amT").value, home, away, hg, ag});
     ED.dirty = true; paintAdminKeep(); return; }
   if(a==="save"){
-    const bad = ED.matches.find(m=>!played(m));
+    const bad = ED.matches.find(m=>(num(m.hg)===null) !== (num(m.ag)===null));   /* خانة واحدة فقط = نتيجة ناقصة؛ الفارغتان = مباراة قادمة */
     if(bad){ say(`أكمل نتيجة ${bad.home} × ${bad.away}`, "err"); return; }
     b.disabled = true;
     try{ const next = normalize({matches:ED.matches}); await store.save(next); DATA = next; ED = null; say("حُفظ دوري الهواة", "ok"); }

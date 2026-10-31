@@ -109,3 +109,6 @@ body.d1-lock{overflow:hidden}
 .d1-shi span{font-size:.8rem;color:var(--mf-tx3,#8C93A8)}
 .d1-x{position:absolute;top:10px;left:10px;z-index:2;width:40px;height:40px;border-radius:50%;border:0;background:rgba(0,0,0,.45);color:#fff;font-size:1.5rem;line-height:1;cursor:pointer}
 [data-theme="light"] .d1-sqh h3{color:#fff}
+/* دوري الهواة: الجولة على يومين — عنوان صغير لكل يوم (2026-10-31) */
+.am [data-amr]{scroll-margin-top:96px}
+.am-day{margin:10px 2px 6px;font-size:.78rem;font-weight:700;color:var(--mf-tx2,#B8BDCC)}
