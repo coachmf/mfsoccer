@@ -5714,12 +5714,12 @@ function loadEditRaw(m){
     .forEach(x=>{ shp[x.club]={f:x.f||"", pos:JSON.parse(JSON.stringify(x.pos||{}))}; });
   return {orig:mkey(m), shapes:shp,
     match:{round:m.round, comp:compOf(m), stage:m.stage||"", home:m.home, away:m.away, venue:m.venue||"", date:m.date||"", time:m.time||"", note:m.note||"", ref:crewOf(m).ref, refs:crewOf(m).refs, tv:m.tv||"", status:m.status||"", manH:m.manH??"", manA:m.manA??"", pst:+m.pst||0, add1:(m.add1??""), add2:(m.add2??""), et:!!m.et, add3:(m.add3??""), add4:(m.add4??""), abs:(m.abs||[]).map(x=>({c:x.c, p:x.p})), pres:(m.pres||[]).map(x=>({c:x.c, p:x.p})), pso:{h:(m.pso&&m.pso.h!=null?m.pso.h:""), a:(m.pso&&m.pso.a!=null?m.pso.a:"")}, psk:pskOf(m).map(k=>({t:k.t, p:k.p||"", ok:!!k.ok})), rec:m.rec||""},
-    mev:(ALL.mev||[]).filter(x=>x.r===m.round && compOf(x)===compOf(m) && x.home===m.home && x.away===m.away).map(x=>({k:x.k, club:x.club||"", p:x.p||"", m:x.m||"", x:x.x||0, note:x.note||"", lid:x.lid||""})),
+    mev:(ALL.mev||[]).filter(x=>x.r===m.round && compOf(x)===compOf(m) && x.home===m.home && x.away===m.away).map(x=>({k:x.k, club:x.club||"", p:x.p||"", m:x.m||"", x:x.x||0, note:x.note||"", lid:x.lid||"", uid:x.uid||""})),
     lineup:lus.map(x=>({club:x.club, p:x.p})),
-    subs:sbs.map(x=>({club:x.club, out:x.out||"", in:x.in||"", h:x.h||1, m:x.m||"", x:x.x||0, lid:x.lid||""})),
-    goals:gs.map(g=>({sc:g.sc,p:g.p,a:g.a||"",m:g.m,x:g.x||0,det:g.det||"",bp:g.bp||"",zone:g.zone||"",og:g.og||"",err:g.err||"",lid:g.lid||""})),   /* og كان يضيع عند إعادة التحرير */
-    cards:cs.map(x=>({club:x.club,p:x.p,m:x.m,x:+x.x||0,type:x.type,lid:x.lid||""})),
-    pens:ps.map(x=>({by:x.by,p:x.p,m:x.m,res:x.res,place:x.place||"",lid:x.lid||""}))};
+    subs:sbs.map(x=>({club:x.club, out:x.out||"", in:x.in||"", h:x.h||1, m:x.m||"", x:x.x||0, lid:x.lid||"", uid:x.uid||""})),
+    goals:gs.map(g=>({sc:g.sc,p:g.p,a:g.a||"",m:g.m,x:g.x||0,det:g.det||"",bp:g.bp||"",zone:g.zone||"",og:g.og||"",err:g.err||"",lid:g.lid||"",uid:g.uid||""})),   /* og كان يضيع عند إعادة التحرير */
+    cards:cs.map(x=>({club:x.club,p:x.p,m:x.m,x:+x.x||0,type:x.type,lid:x.lid||"",uid:x.uid||""})),
+    pens:ps.map(x=>({by:x.by,p:x.p,m:x.m,res:x.res,place:x.place||"",lid:x.lid||"",uid:x.uid||""}))};
   /* lid = معرّف الحدث في اللعب الفعلي: يربط صف السجل بحدثه فيُعدَّل الحدث نفسه من أي واجهة بلا تكرار */
 }
 function loadEdit(m){ const E=loadEditRaw(m); try{ E.base=JSON.parse(JSON.stringify(E)); }catch(e){} return E; }
@@ -5741,13 +5741,20 @@ function mergeEdit(E){
     const left=[...base]; const added=[];
     (E[kind]||[]).forEach((r,i)=>{ const j=left.indexOf(cur[i]); if(j>=0) left.splice(j,1); else added.push(r); });
     const rows=[...(F[kind]||[])];
-    left.forEach(sig=>{ const j=rows.findIndex(r=>rowSig(r)===sig); if(j>=0) rows.splice(j,1); });   /* حذفه هذا المحرّر */
-    added.forEach(r=>{ if(!rows.some(x=>rowSig(x)===rowSig(r))) rows.push(r); });                      /* أضافه أو عدّله */
+    /* uid = معرّف ثابت لكل حدث من المحرّر (2026-10-31: «اذا عدلت الهدف يتسجل اثنين»): حفظ يظهر للجوال «بطيء — لم يُحفظ»
+       لكنه وصل فعلاً، فتبقى base قديمة؛ تعديل الهدف بعدها لا يجد نسخته القديمة بالتوقيع فيُضاف هدف ثانٍ. بالمعرّف نستبدل نفس الحدث */
+    const curU=new Set((E[kind]||[]).map(r=>r&&r.uid).filter(Boolean)), baseRows=B[kind]||[];
+    left.forEach(sig=>{ let j=rows.findIndex(r=>rowSig(r)===sig);
+      if(j<0){ const br=baseRows.find(r=>rowSig(r)===sig); if(br&&br.uid&&!curU.has(br.uid)) j=rows.findIndex(r=>r.uid===br.uid); }
+      if(j>=0) rows.splice(j,1); });   /* حذفه هذا المحرّر */
+    ((E._sentU||{})[kind]||[]).forEach(u=>{ if(!curU.has(u)) for(let j=rows.length-1;j>=0;j--) if(rows[j].uid===u) rows.splice(j,1); });   /* أُرسل في حفظ «لم يُحفظ» ثم حذفه */
+    added.forEach(r=>{ if(r.uid){ for(let j=rows.length-1;j>=0;j--) if(rows[j].uid===r.uid) rows.splice(j,1); }
+      if(!rows.some(x=>rowSig(x)===rowSig(r))) rows.push(r); });                      /* أضافه أو عدّله */
     F[kind]=rows;
   });
   Object.keys(E.shapes||{}).concat(Object.keys(B.shapes||{})).forEach(c=>{
     if(JSON.stringify((E.shapes||{})[c])!==JSON.stringify((B.shapes||{})[c])){ if((E.shapes||{})[c]) F.shapes[c]=E.shapes[c]; else delete F.shapes[c]; } });
-  Object.keys(E).forEach(k=>{ if(!(k in F) && k!=="base") F[k]=E[k]; });   /* علامات مثل gulf */
+  Object.keys(E).forEach(k=>{ if(!(k in F) && k!=="base" && k!=="_sentU") F[k]=E[k]; });   /* علامات مثل gulf */
   return F;
 }
 
@@ -6602,20 +6609,20 @@ function applyEdit(E){
                     ...(m.manH!==""&&m.manH!=null&&m.manA!==""&&m.manA!=null ? {manH:+m.manH, manA:+m.manA} : {}), hg:0, ag:0});   /* abs = الغائبون عن قائمة المباراة */   /* ref = حكم الساحة، refs = بقية الطاقم */
   E.goals.forEach(g=>ALL.goals.push({r:round, comp:m.comp, sc:g.sc, cd:other(g.sc), p:g.p, a:g.a||"",
       m:+g.m, x:+g.x||0, cat:catOf(g.det), det:g.det, bp:g.bp||"", zone:g.zone||"",
-      og: g.bp==="هدف عكسي" ? (g.og||"") : "", ...(isDefErr(g) && g.err ? {err:g.err} : {}), ...(g.lid?{lid:g.lid}:{})}));
+      og: g.bp==="هدف عكسي" ? (g.og||"") : "", ...(isDefErr(g) && g.err ? {err:g.err} : {}), ...(g.lid?{lid:g.lid}:{}), ...(g.uid?{uid:g.uid}:{})}));
   upgradeSecondYellows(E.cards).forEach(x=>ALL.cards.push(
-      {r:round, comp:m.comp, club:x.club, p:x.p, m:+x.m||0, ...(+x.x?{x:+x.x}:{}), type:x.type, ...(x.lid?{lid:x.lid}:{})}));   /* x = وقت بدل ضائع (45+1) */
+      {r:round, comp:m.comp, club:x.club, p:x.p, m:+x.m||0, ...(+x.x?{x:+x.x}:{}), type:x.type, ...(x.lid?{lid:x.lid}:{}), ...(x.uid?{uid:x.uid}:{})}));   /* x = وقت بدل ضائع (45+1) */
   E.pens.forEach(x=>ALL.pens.push({r:round, comp:m.comp, by:x.by, vs:other(x.by), p:x.p,
-      m:+x.m||0, res:x.res, place:x.place||"", ...(x.lid?{lid:x.lid}:{})}));
+      m:+x.m||0, res:x.res, place:x.place||"", ...(x.lid?{lid:x.lid}:{}), ...(x.uid?{uid:x.uid}:{})}));
   ALL.mev = ALL.mev || [];
   (E.mev||[]).forEach(x=>ALL.mev.push({r:round, comp:m.comp, home:m.home, away:m.away, k:x.k, club:x.club||"", p:x.p||"",
-      m:+x.m||0, x:+x.x||0, note:(x.note||"").trim(), ...(x.lid?{lid:x.lid}:{})}));
+      m:+x.m||0, x:+x.x||0, note:(x.note||"").trim(), ...(x.lid?{lid:x.lid}:{}), ...(x.uid?{uid:x.uid}:{})}));
   ALL.lineups = ALL.lineups || []; ALL.subs = ALL.subs || [];
   (E.lineup||[]).filter(x=>x.club && x.p).forEach(x=>
       ALL.lineups.push({r:round, comp:m.comp, club:x.club, p:x.p}));
   (E.subs||[]).filter(x=>x.club && (x.out||x.in)).forEach(x=>
       ALL.subs.push({r:round, comp:m.comp, club:x.club, out:x.out||"", in:x.in||"",
-                     h:+x.h||1, m:+x.m||0, x:+x.x||0, ...(x.lid?{lid:x.lid}:{})}));
+                     h:+x.h||1, m:+x.m||0, x:+x.x||0, ...(x.lid?{lid:x.lid}:{}), ...(x.uid?{uid:x.uid}:{})}));
   ALL.shapes = ALL.shapes || [];
   for(const cl in (E.shapes||{})){
     const s=E.shapes[cl];
@@ -6664,7 +6671,9 @@ async function saveMatch(opt){
   const sig0 = JSON.stringify(EDIT);
   const tx = await txSaveMatch(E0);
   if(tx.r!=="ok"){
-    /* لا شيء انكتب: النموذج باقٍ كما هو، والحفظ التلقائي يعيد المحاولة */
+    /* لا شيء انكتب: النموذج باقٍ كما هو، والحفظ التلقائي يعيد المحاولة.
+       «بطيء» قد يكون وصل فعلاً: نتذكر معرّفات ما أرسلناه فإن حُذف قبل الحفظ التالي يُحذف من السحابة أيضاً */
+    if(EDIT){ const su=EDIT._sentU||{}; ROW_KINDS.forEach(k=>(E0[k]||[]).forEach(r=>{ if(r&&r.uid){ su[k]=su[k]||[]; if(!su[k].includes(r.uid)) su[k].push(r.uid); } })); EDIT._sentU=su; }
     if(quiet){ MX_ACLOUD=false; return; }
     toast(tx.r==="timeout" ? "الاتصال بطيء — لم يُحفظ بعد. تعديلاتك باقية وتنحفظ تلقائياً" : `تعذّر الحفظ (${tx.msg}) — تعديلاتك باقية`, "err");
     setTimeout(()=>renderMatchAdmin(),0); return;
@@ -16487,7 +16496,7 @@ html.mx-editing #waFab{display:none!important}   /* زر واتساب كان ي�
     EDIT.mev=EDIT.mev||[];
     const d=i>=0?JSON.parse(JSON.stringify(EDIT[ARR[k]][i])):Object.assign(BLANK[k](),preset||{});
     if(!d[CLUBKEY[k]]) d[CLUBKEY[k]]=sideClub(MX.tab==="lineup"?MX.side:"home")||"";
-    MX.sheet={kind:"ev",k,i,d,err:""}; renderMatchAdmin();
+    MX.sheet={kind:"ev",k,i,d,err:"",sig0:i>=0?rowSig(EDIT[ARR[k]][i]):""}; renderMatchAdmin();
   }
   /* من في الملعب الآن مرتّباً حسب الرسم التكتيكي (المحررون 2026-09-30: «رتّب اللاعبين حسب الرسم»):
      موضع كل أساسي من الملعب في تبويب التشكيلة، والبديل يأخذ موضع من خرج مكانه، ومن خرج يُنقل إلى الاحتياط */
@@ -16650,7 +16659,10 @@ html.mx-editing #waFab{display:none!important}   /* زر واتساب كان ي�
       if(per==="4" && mm>=1 && mm<=15) d.m=String(105+mm);
       if(+per>=3 && etAllowed(EDIT.match)) EDIT.match.et=true; delete d._per; }
     const arr=EDIT[ARR[k]];
-    if(S.i>=0) arr[S.i]=d; else arr.push(d);
+    if(!d.uid) d.uid=Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+    /* النموذج قد يُعاد تحميله بعد حفظ تلقائي والنافذة مفتوحة فيتغير ترتيب الصفوف: نبحث عن الصف نفسه لا عن رقمه */
+    let at=S.i; if(S.i>=0 && S.sig0){ const j=arr.findIndex(r=>rowSig(r)===S.sig0); if(j>=0) at=j; else if(arr[S.i] && rowSig(arr[S.i])!==S.sig0) at=-1; }
+    if(at>=0) arr[at]=d; else arr.push(d);
     MX.sheet=null; FORMERR=""; renderMatchAdmin();
   }
 
