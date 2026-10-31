@@ -372,10 +372,11 @@ const I18N = {
     return null;
   },
   _keysSorted: null,
+  EXACT: null,   /* مفاتيح تُترجم كنص كامل فقط، لا كلمةً داخل جملة — «كان» اسم فريق في دوري الهواة وفعل شائع (2026-10-31) */
   keys(){
     if(!this._keysSorted){
       const esc = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      this._keysSorted = Object.keys(this.DICT).filter(k => k.length > 2 && !k.includes('⟨x⟩'))   /* سبت/أحد/ج14 */.sort((a, b) => b.length - a.length)
+      this._keysSorted = Object.keys(this.DICT).filter(k => k.length > 2 && !k.includes('⟨x⟩') && !(this.EXACT && this.EXACT[k]))   /* سبت/أحد/ج14 */.sort((a, b) => b.length - a.length)
         .map(k => [k, new RegExp('(?<![\\u0621-\\u064A\\u0671-\\u06D3])' + esc(k) + '(?![\\u0621-\\u064A\\u0671-\\u06D3])', 'g'), this.DICT[k]]);
     }
     return this._keysSorted;

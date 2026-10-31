@@ -10,7 +10,7 @@ const { accessToken } = require('./lib/google');
 
 const PROJECT = 'mfsoccer-c7ee4';
 const API_KEY = 'AIzaSyD_ZzAE4HEKPIuAKCmta8tzN5KOa8IUfuo';   /* نفس المفتاح العام في index.html */
-const ALLOWED = /^(\d{4}-\d{4}|assets|gulf27|div1|ext2627|news|effidx|eff_[0-9a-z]{1,8}|boards~\d{4}-\d{4}(_p\d{1,2})?)$/;   /* gulf27 = كأس الخليج 27، div1 = دوري الدرجة الأولى، news = فهرس الأخبار المنشورة، boards~… = ترتيب التوقعات وتوقعات الجولات (عامة) */
+const ALLOWED = /^(\d{4}-\d{4}|assets|gulf27|div1|amateur|ext2627|news|effidx|eff_[0-9a-z]{1,8}|boards~\d{4}-\d{4}(_p\d{1,2})?)$/;   /* gulf27 = كأس الخليج 27، div1 = دوري الدرجة الأولى، news = فهرس الأخبار المنشورة، boards~… = ترتيب التوقعات وتوقعات الجولات (عامة) */
 
 /* قيمة Firestore المُنمَّطة ← قيمة JSON عادية كما يعيدها SDK للصفحة */
 function val(v){

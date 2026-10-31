@@ -133,6 +133,7 @@
       /* الدوري الممتاز: جدول الترتيب الكامل (نفس عقدة «الترتيب») */
       const kp=e.target.closest("[data-hub-kpl]"); if(kp){ closeHub(true); setTimeout(()=>{ const it=hubItems().find(x=>x.k==="table"); if(it) it.go(); },0); return; }
       const d1=e.target.closest("[data-hub-div1]"); if(d1){ closeHub(true); setTimeout(()=>nav("div1"),0); }
+      const am=e.target.closest("[data-hub-amateur]"); if(am){ closeHub(true); setTimeout(()=>nav("amateur"),0); }
       /* البطولات الخارجية: صفحة المباريات على البطولة نفسها (جدول المجموعة ثم المباريات) */
       const ex=e.target.closest("[data-hub-ext]"); if(ex){ const id=ex.dataset.hubExt; closeHub(true);
         setTimeout(()=>{ nav("matches"); setTimeout(()=>safe(()=>{ mxGroup=null; mxDiv1=false; MXC=id; SELDAY=null; renderMatches(); }),60); },0); }
@@ -156,6 +157,7 @@
     return `<div class="mf-hub-sec"><h3>الدوريات المحلية</h3><div class="mf-ext">
       ${row("data-hub-kpl","assets/hero/kpl-mark.webp","الدوري الكويتي الممتاز")}
       ${shown("div1")?row("data-hub-div1","assets/comps/div1.webp?v=1","دوري الدرجة الأولى"):""}
+      ${shown("amateur")?row("data-hub-amateur","assets/comps/amateur.webp?v=1","دوري الهواة الكويتي"):""}
     </div></div>`;
   }
   /* البطولات الخارجية التي تشارك فيها الأندية الكويتية (منصور 2026-10-11): شعار البطولة + شعارات أنديتنا فيها.
@@ -232,7 +234,7 @@
   /* ---------- الحالة النشطة ---------- */
   function paintActive(){
     const v=curView(), hubOpen=hub && !hub.hidden;
-    const hubViews=["clubs","predict","fans","gulf","div1"];
+    const hubViews=["clubs","predict","fans","gulf","div1","amateur"];
     D.querySelectorAll(".mf-bar [data-mf], .mf-dnav [data-mf]").forEach(b=>{
       const k=b.dataset.mf;
       const kv = k==="stats" ? (v==="players" ? "players" : "analysis") : k;
