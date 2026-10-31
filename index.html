@@ -6663,6 +6663,7 @@ async function saveMatch(opt){
   if(!quiet) toast("جارٍ حفظ المباراة…","busy",true);
   FORMERR = validateEdit();
   if(FORMERR){ if(quiet){ FORMERR=""; return; } renderMatchAdmin(); return; }
+  if(quiet && fbDb && edLockKey() && !(EDLOCK.key===edLockKey() && (EDLOCK.ok||EDLOCK.tried))) return;   /* الحفظ التلقائي بعد أول ردّ على قفل المباراة */
   SAVING_MATCH = true; if(!quiet) document.documentElement.classList.add("mx-saving");
   try{
   /* فُتحت نافذة إدخال: أرقام الصفوف فيها تخص هذه النسخة — نؤجل الحفظ التلقائي */
@@ -6701,6 +6702,58 @@ async function saveMatch(opt){
   return true;
   } finally { SAVING_MATCH = false; document.documentElement.classList.remove("mx-saving"); }
 }
+/* محرّر واحد لكل مباراة (منصور 2026-10-31: «بس محرر واحد يقدر يحرر بكل مباراه محد يقدر يدش غيره»):
+   قفل في seasons/editlocks = {locks:{"<المباراة>": {uid,email,name,at}}} — من يفتح المباراة أولاً يأخذها ويجدّد القفل كل 20 ث،
+   ومن يفتحها بعده يُغلق محرّره برسالة باسم من يحرّرها. القفل الذي لم يتجدد 60 ث (أغلق الصفحة أو انقطع) يسقط تلقائياً.
+   بلا اتصال لا نمنع (لا نعرف) ونعيد المحاولة. */
+const EDLOCK={key:"", ok:false, tried:false, busy:false, at:0}, EDLOCK_TTL=60000, EDLOCK_BEAT=20000;
+const edLockKey=()=>(!EDIT||!EDIT.orig||EDIT.gulf) ? "" : (EDIT.ext?"ext|":"")+EDIT.orig;
+const edLockRef=()=>fbDb.collection("seasons").doc("editlocks");
+const edMe=()=>{ const u=FBUSER||{}, st=STAFF[u.uid]||{}; return {uid:u.uid||"", email:u.email||"", name:st.name||u.displayName||""}; };
+async function edLockTake(key){
+  const me=edMe(); let res={ok:true};
+  const r=await withTimeout(fbDb.runTransaction(async tx=>{
+    const sn=await tx.get(edLockRef()); const L=(sn.exists&&sn.data().locks)||{}, cur=L[key], now=Date.now();
+    if(cur && cur.uid && cur.uid!==me.uid && now-(+cur.at||0)<EDLOCK_TTL){ res={ok:false, by:cur}; return; }
+    const upd={}; Object.keys(L).forEach(k=>{ if(k!==key && now-(+L[k].at||0)>EDLOCK_TTL*10) upd[k]=firebase.firestore.FieldValue.delete(); });
+    upd[key]=Object.assign({}, me, {at:now});
+    tx.set(edLockRef(), {locks:upd}, {merge:true});
+  }), 12000);
+  return r==="ok" ? res : {ok:null};
+}
+function edLockDrop(key){
+  if(!fbDb || !key) return; const me=edMe();
+  withTimeout(fbDb.runTransaction(async tx=>{
+    const sn=await tx.get(edLockRef()); const cur=sn.exists && (sn.data().locks||{})[key];
+    if(cur && cur.uid===me.uid) tx.set(edLockRef(), {locks:{[key]:firebase.firestore.FieldValue.delete()}}, {merge:true});
+  }), 8000);
+}
+function edLockDenied(key, by){
+  if(edLockKey()!==key) return;
+  const who=(by && (by.name || String(by.email||"").split("@")[0])) || "محرّر آخر";
+  if(window.MX){ MX.sheet=null; MX.sel=null; }
+  document.documentElement.classList.remove("mx-open","mx-editing");
+  EDIT=null; FORMERR=""; EDLOCK.key=""; EDLOCK.ok=false;
+  renderMatchAdmin(); flushRemote();
+  alert(`هذه المباراة يحرّرها الآن ${who}.
+لا يحرّر المباراة الواحدة إلا محرّر واحد في الوقت نفسه.`);
+}
+setInterval(async()=>{
+  if(!fbDb || !isAdmin || EDLOCK.busy) return;
+  const key=edLockKey();
+  if(key!==EDLOCK.key){ if(EDLOCK.key && EDLOCK.ok) edLockDrop(EDLOCK.key); EDLOCK.key=key; EDLOCK.ok=false; EDLOCK.tried=false; EDLOCK.at=0; }
+  if(!key || (EDLOCK.ok && Date.now()-EDLOCK.at<EDLOCK_BEAT)) return;
+  EDLOCK.busy=true;
+  try{
+    const r=await edLockTake(key);
+    if(EDLOCK.key!==key) return;
+    EDLOCK.tried=true;
+    if(r.ok===false) edLockDenied(key, r.by);
+    else if(r.ok===true){ EDLOCK.ok=true; EDLOCK.at=Date.now(); }
+  } finally { EDLOCK.busy=false; }
+}, 1500);
+window.addEventListener("pagehide", ()=>{ if(EDLOCK.key && EDLOCK.ok) edLockDrop(EDLOCK.key); });
+
 /* الحفظ التلقائي في المحرّر: أي تعديل على مباراة محفوظة سابقاً يُحفظ بعد ثانيتين من آخر تغيير، ما دامت لا نافذة إدخال
    مفتوحة ولا حقل قيد الكتابة. مباراة جديدة تُحفظ أول مرة بالزر. */
 let MX_ASAVED = 0, MX_ASIG = "", MX_AT = 0, MX_ACLOUD = true;
