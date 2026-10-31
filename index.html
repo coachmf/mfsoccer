@@ -16706,14 +16706,16 @@ html.mx-editing #waFab{display:none!important}   /* زر واتساب كان ي�
   function commitEv(){
     const S=MX.sheet, d=S.d, k=S.k;
     const need=(c,msg)=>{ if(!c){ S.err=msg; renderMatchAdmin(); return false; } return true; };
-    if(k==="goal"){ if(!need(d.sc,"اختر الفريق المسجّل")||!need(d.p,"اختر اللاعب المسجّل")||!need(+d.m>=1,"أدخل دقيقة الهدف")||!need(d.det,"اختر تفصيل الهجمة (مطلوب لإحصاءات الأهداف)")) return; }
+    /* الهدف العكسي: لا مسجّل ولا صانع من الفريق المستفيد، المطلوب من سجّل في مرماه (og) — كان يطلب المسجّل المخفي فلا يُحفظ (المحررون 2026-10-31) */
+    if(k==="goal"){ const og=d.bp==="هدف عكسي"; if(og){ d.p=""; d.a=""; } else d.og="";
+      if(!need(d.sc,"اختر الفريق المسجّل")||!need(og?d.og:d.p,og?"اختر اللاعب الذي سجّل في مرماه":"اختر اللاعب المسجّل")||!need(+d.m>=1,"أدخل دقيقة الهدف")||!need(d.det,"اختر تفصيل الهجمة (مطلوب لإحصاءات الأهداف)")) return; }
     if(k==="card"){ if(!need(d.club,"اختر الفريق")||!need(d.p,"اختر اللاعب")||!need(d.type,"اختر نوع البطاقة")) return; }
     if(k==="pen"){ if(!need(d.by,"اختر الفريق المنفّذ")||!need(d.res,"اختر نتيجة الركلة")) return; }
     if(k==="sub"){ if(!need(d.club,"اختر الفريق")||!need(d.out,"اختر اللاعب الخارج")||!need(d.in,"اختر اللاعب الداخل")) return; }
     if(k==="chance"){ if(!need(d.club,"اختر الفريق")||!need(d.p,"اختر اللاعب")||!need(+d.m>=1,"أدخل الدقيقة")) return; }
     if(k==="var"){ if(!need(+d.m>=1,"أدخل الدقيقة")) return; }
     if(k==="note"){ if(!need((d.note||"").trim(),"اكتب نص التعليق")) return; }
-    if(k==="goal" && d.a===d.p) d.a="";
+    if(k==="goal" && d.p && d.a===d.p) d.a="";
     { const per=perOf(k,d), mm=+d.m||0;      /* «الإضافي الأول، الدقيقة 5» = 95 */
       if(per==="3" && mm>=1 && mm<=15) d.m=String(90+mm);
       if(per==="4" && mm>=1 && mm<=15) d.m=String(105+mm);
