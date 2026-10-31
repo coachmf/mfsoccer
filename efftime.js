@@ -535,7 +535,7 @@ function cardHTML(d, live){
 }
 EFF.cardHTML = cardHTML;
 /* تبويب «اللعب الفعلي» في صفحة المباراة: يظهر إذا كانت المباراة مرصودة (زمن مسجّل أو شوط جارٍ) */
-EFF.has = m => { const s = m && IDX.m[keyOf(m)]; return !!(s && (s.dur>0 || s.live)); };
+EFF.has = m => { const s = m && IDX.m[keyOf(m)]; return !!(s && (s.dur>0 || s.eff>0 || s.live)); };   /* الإدخال اليدوي بلا مدة (dur 0) له eff فقط — كان التبويب يختفي (النصر×الكويت ج4، الفحيحيل×الشباب ج5) */
 function mpInject(){
   const box = document.getElementById("mpage");
   const m = (typeof MP!=="undefined" && MP) ? MP.m : null;
