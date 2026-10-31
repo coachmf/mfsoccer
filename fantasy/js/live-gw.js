@@ -45,7 +45,9 @@ const LIVEGW = {
   LIVE_ALWAYS: true,
   frozenNow(){ if(this.LIVE_ALWAYS) return false; const ks=this.todayKicks(); if(!ks.length) return false; const now=Date.now(); return now >= Math.min(...ks) && now < this.unlockAt(); },
   /* لقطة كلها أصفار بعد مباراة لُعبت = حُسبت قبل وصول الإحصاءات (منصور 2026-10-24: «انا الاول… مباشر صفر») — لا تُحفظ ولا تُعتمد */
-  zeroRows(rows){ return Array.isArray(rows) && rows.length>1 && this.matches().played>0 && rows.every(r=>!(+r.live)); },
+  /* 2026-10-31 («ليش المتوسط جذي» — متوسط -1 وأعلى 0 ونقاطه 7): خصم الانتقالات يجعل اللقطة المبكرة سالبة لا صفراً فكانت تمرّ —
+     لا أحد فوق الصفر بعد مباراة لُعبت = حساب قبل وصول الإحصاءات */
+  zeroRows(rows){ return Array.isArray(rows) && rows.length>1 && this.matches().played>0 && rows.every(r=>(+r.live||0)<=0); },
   loadFrozen(gw){ try{ const v=JSON.parse(localStorage.getItem(this.FROZEN_KEY)||'null'); return (v && v.gw===gw && Array.isArray(v.rows) && !this.zeroRows(v.rows)) ? v : null; }catch(e){ return null; } },
   saveFrozen(gw, rows, at){ try{ localStorage.setItem(this.FROZEN_KEY, JSON.stringify({gw, at, rows})); }catch(e){} },
   async refresh(force){
