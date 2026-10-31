@@ -4299,7 +4299,7 @@ function totReviewHTML(round, comp){
 }
 async function saveTotRow(round, comp, patch){
   const reb=await rebaseOnCloud();
-  if(reb.changed) toast(`وصل تحديث من ${reb.by||"محرّر آخر"} — دُمج قبل الحفظ`,"busy");
+  if(reb.changed && fromOther(reb.by)) toast(`وصل تحديث من ${reb.by} — دُمج قبل الحفظ`,"busy");
   ALL.tots = ALL.tots || [];
   let row=ALL.tots.find(t=>t.r===round && (t.comp||"الدوري")===comp);
   if(!row){ row={r:round, comp, open:false, done:false}; ALL.tots.push(row); }
@@ -4371,7 +4371,7 @@ function wireRefs(){
   $("#refsSave").onclick=async()=>{
     const btn=$("#refsSave"); busy(btn,true,"جارٍ الحفظ…");
     const reb=await rebaseOnCloud();
-    if(reb.changed) toast(`وصل تحديث من ${reb.by||"محرّر آخر"} — دُمج قبل الحفظ`,"busy");
+    if(reb.changed && fromOther(reb.by)) toast(`وصل تحديث من ${reb.by} — دُمج قبل الحفظ`,"busy");
     /* المحذوف يُحفظ بلا فئات حتى لا يرجع من الطواقم المسجّلة */
     const removed=(REFDRAFT.removed||[]).filter(n=>!REFDRAFT.some(r=>r.name===n));
     ALL.refpool=[...REFDRAFT.map(r=>({name:r.name, roles:[...r.roles]})), ...removed.map(n=>({name:n, roles:[]}))];
@@ -4418,7 +4418,7 @@ function wireRefCrews(){
     const key=b.dataset.crewsave, vals={};
     root.querySelectorAll("[data-crew]").forEach(i=>{ if(i.dataset.crew===key) vals[i.dataset.crk]=i.value.trim(); });
     busy(b,true,"جارٍ الحفظ…");
-    const reb=await rebaseOnCloud(); if(reb.changed) toast(`وصل تحديث من ${reb.by||"محرّر آخر"} — دُمج قبل الحفظ`,"busy");
+    const reb=await rebaseOnCloud(); if(reb.changed && fromOther(reb.by)) toast(`وصل تحديث من ${reb.by} — دُمج قبل الحفظ`,"busy");
     const m=(ALL.matches||[]).find(x=>mkey(x)===key);
     if(!m){ busy(b,false); toast("لم تُعثر على المباراة","err"); return; }
     const E=loadEdit(m); E.match.ref=vals.ref||""; E.match.refs={}; REF_ROLES.forEach(([k])=>{ if(vals[k]) E.match.refs[k]=vals[k]; });
@@ -4552,7 +4552,7 @@ function wireTotReview(round, comp){
 
 async function saveKits(){
   const reb=await rebaseOnCloud();
-  if(reb.changed) toast(`وصل تحديث من ${reb.by||"محرّر آخر"} — دُمج قبل الحفظ`,"busy");
+  if(reb.changed && fromOther(reb.by)) toast(`وصل تحديث من ${reb.by} — دُمج قبل الحفظ`,"busy");
   ALL.kits = kitDraft();
   return await persistData();
 }
@@ -4564,7 +4564,7 @@ async function addEvent(){
   if(!d){ toast("اختر تاريخ البداية","err"); return false; }
   if(to && to<d){ toast("تاريخ النهاية قبل البداية","err"); return false; }
   const reb=await rebaseOnCloud();
-  if(reb.changed) toast(`وصل تحديث من ${reb.by||"محرّر آخر"} — دُمج قبل الحفظ`,"busy");
+  if(reb.changed && fromOther(reb.by)) toast(`وصل تحديث من ${reb.by} — دُمج قبل الحفظ`,"busy");
   ALL.events = ALL.events || [];
   ALL.events.push({d, to: to||"", t, k, n});
   ALL.events.sort((a,b)=>String(a.d).localeCompare(String(b.d)));
@@ -4572,7 +4572,7 @@ async function addEvent(){
 }
 async function delEvent(i){
   const reb=await rebaseOnCloud();
-  if(reb.changed) toast(`وصل تحديث من ${reb.by||"محرّر آخر"} — دُمج قبل الحذف`,"busy");
+  if(reb.changed && fromOther(reb.by)) toast(`وصل تحديث من ${reb.by} — دُمج قبل الحذف`,"busy");
   const evs=[...allEvents()].sort((a,b)=>String(a.d).localeCompare(String(b.d)));
   const target=evs[i]; if(!target) return false;
   ALL.events=(ALL.events||[]).filter(e=>e!==target);
@@ -4913,6 +4913,9 @@ function fbInit(){
 const seasonId = () => String(SEASON||"2026-2027").replace(/\//g,"-");
 /* Firestore يطبّق الكتابة محلياً فوراً، لكن الوعد لا يُحسم إلا بتأكيد الخادم.
    بلا اتصال يبقى معلّقاً بلا نهاية — فنسابقه بمهلة. */
+/* «وصل تحديث من…» لتحديث محرّر آخر فقط: حفظنا السابق الذي وصل متأخراً (الشبكة البطيئة) أو من جهاز آخر بحسابنا
+   كان يُظهر الرسالة باسمنا وراء بعض والمحرّر لا يفعل شيئاً (2026-10-31) */
+const fromOther=by=>!!by && by!==((FBUSER&&FBUSER.email)||"");
 function withTimeout(p, ms){
   return Promise.race([ p.then(()=>"ok").catch(e=>({err:e})),
                         new Promise(r=>setTimeout(()=>r("timeout"), ms)) ]);
@@ -6679,7 +6682,7 @@ async function saveMatch(opt){
     toast(tx.r==="timeout" ? "الاتصال بطيء — لم يُحفظ بعد. تعديلاتك باقية وتنحفظ تلقائياً" : `تعذّر الحفظ (${tx.msg}) — تعديلاتك باقية`, "err");
     setTimeout(()=>renderMatchAdmin(),0); return;
   }
-  if(tx.changed) toast(`وصل تحديث من ${tx.by||"محرّر آخر"} — دُمج مع تعديلك`,"busy");
+  if(tx.changed && fromOther(tx.by)) toast(`وصل تحديث من ${tx.by} — دُمج مع تعديلك`,"busy");
   const m = tx.E.match;
   const typedMore = !!EDIT && JSON.stringify(EDIT)!==sig0;   /* عدّل أثناء الحفظ: نبقي ما كتبه فوق النسخة المحفوظة */
   if(quiet){
@@ -6709,12 +6712,15 @@ async function saveMatch(opt){
 const EDLOCK={key:"", ok:false, tried:false, busy:false, at:0}, EDLOCK_TTL=60000, EDLOCK_BEAT=20000;
 const edLockKey=()=>(!EDIT||!EDIT.orig||EDIT.gulf) ? "" : (EDIT.ext?"ext|":"")+EDIT.orig;
 const edLockRef=()=>fbDb.collection("seasons").doc("editlocks");
-const edMe=()=>{ const u=FBUSER||{}, st=STAFF[u.uid]||{}; return {uid:u.uid||"", email:u.email||"", name:st.name||u.displayName||""}; };
+/* هذه النافذة: نفس الحساب على جهازين = محرّران؛ يبقى مع إعادة التحميل في النافذة نفسها فلا يقفل المحرّر على نفسه */
+const ED_DEV=(()=>{ let v=""; try{ v=sessionStorage.getItem("mf_ed_dev")||""; }catch(e){}
+  if(!v){ v=Date.now().toString(36)+Math.random().toString(36).slice(2,8); try{ sessionStorage.setItem("mf_ed_dev",v); }catch(e){} } return v; })();
+const edMe=()=>{ const u=FBUSER||{}, st=STAFF[u.uid]||{}; return {uid:u.uid||"", dev:ED_DEV, email:u.email||"", name:st.name||u.displayName||""}; };
 async function edLockTake(key){
   const me=edMe(); let res={ok:true};
   const r=await withTimeout(fbDb.runTransaction(async tx=>{
     const sn=await tx.get(edLockRef()); const L=(sn.exists&&sn.data().locks)||{}, cur=L[key], now=Date.now();
-    if(cur && cur.uid && cur.uid!==me.uid && now-(+cur.at||0)<EDLOCK_TTL){ res={ok:false, by:cur}; return; }
+    if(cur && cur.uid && (cur.uid!==me.uid || (cur.dev||"")!==me.dev) && now-(+cur.at||0)<EDLOCK_TTL){ res={ok:false, by:cur}; return; }
     const upd={}; Object.keys(L).forEach(k=>{ if(k!==key && now-(+L[k].at||0)>EDLOCK_TTL*10) upd[k]=firebase.firestore.FieldValue.delete(); });
     upd[key]=Object.assign({}, me, {at:now});
     tx.set(edLockRef(), {locks:upd}, {merge:true});
@@ -6725,12 +6731,13 @@ function edLockDrop(key){
   if(!fbDb || !key) return; const me=edMe();
   withTimeout(fbDb.runTransaction(async tx=>{
     const sn=await tx.get(edLockRef()); const cur=sn.exists && (sn.data().locks||{})[key];
-    if(cur && cur.uid===me.uid) tx.set(edLockRef(), {locks:{[key]:firebase.firestore.FieldValue.delete()}}, {merge:true});
+    if(cur && cur.uid===me.uid && (cur.dev||"")===me.dev) tx.set(edLockRef(), {locks:{[key]:firebase.firestore.FieldValue.delete()}}, {merge:true});
   }), 8000);
 }
 function edLockDenied(key, by){
   if(edLockKey()!==key) return;
-  const who=(by && (by.name || String(by.email||"").split("@")[0])) || "محرّر آخر";
+  const self=by && FBUSER && by.uid===FBUSER.uid;
+  const who=self ? "حسابك نفسه من جهاز أو نافذة أخرى" : (by && (by.name || String(by.email||"").split("@")[0])) || "محرّر آخر";
   if(window.MX){ MX.sheet=null; MX.sel=null; }
   document.documentElement.classList.remove("mx-open","mx-editing");
   EDIT=null; FORMERR=""; EDLOCK.key=""; EDLOCK.ok=false;
@@ -9492,7 +9499,7 @@ function wireSquads(){
     busy(sqb,true,"جارٍ الحفظ…");
     /* نأخذ أحدث بيانات الموسم ثم نُعيد كشوفاتي فوقها، فلا يُمحى عمل غيري ولا عملي */
     const reb = await rebaseOnCloud(()=>{ const mine=SQUADS; return ()=>{ SQUADS=mine; SQNUMS_FOUND=squadsExtractNums(); }; });   /* v27 */
-    if(reb.changed) toast(`وصل تحديث من ${reb.by||"محرّر آخر"} — دُمج قبل الحفظ`,"busy");
+    if(reb.changed && fromOther(reb.by)) toast(`وصل تحديث من ${reb.by} — دُمج قبل الحفظ`,"busy");
     const ok=await persistData();
     busy(sqb,false);
     if(ok===true){ LASTSYNC=new Date();
