@@ -12287,8 +12287,12 @@ html[data-theme="light"] .hm{--bg-card:#FFFFFF;--border-card:#E2E8F0;--text-prim
 .hm-legend span{display:inline-flex;align-items:center;gap:6px}
 .hm-legend i{width:12px;height:12px;border-radius:3px;display:inline-block}
 .hm-legend i.champ{background:rgba(251,191,36,.45)} .hm-legend i.rel{background:rgba(248,113,113,.5)}
-@media(max-width:600px){.hm-tbl th:nth-child(3),.hm-tbl td:nth-child(3),.hm-tbl th:nth-child(4),.hm-tbl td:nth-child(4),.hm-tbl th:nth-child(5),.hm-tbl td:nth-child(5),.hm-tbl th:nth-child(6),.hm-tbl td:nth-child(6){display:none}
+/* «لعب» يبقى ظاهراً في الهاتف (منصور 2026-10-31: «حط جم مباراة لعب») — المخفي الفوز والتعادل والخسارة فقط */
+@media(max-width:600px){.hm-tbl th:nth-child(4),.hm-tbl td:nth-child(4),.hm-tbl th:nth-child(5),.hm-tbl td:nth-child(5),.hm-tbl th:nth-child(6),.hm-tbl td:nth-child(6){display:none}
   .hm-tbl th,.hm-tbl td{padding:8px 4px}.hm-tbl td.club .crest{width:24px;height:24px}.hm-tbl .pl{width:18px;height:18px;font-size:10px}.hm-tbl td.club span{max-width:150px}.hm-tbl{table-layout:auto}}
+/* عمود «ل» أضاف ~30px: جدول الرئيسية يضيّق الحشو والفورمة كي لا يُمرَّر أفقياً (390px يتسع، 360px بشعارات وفورمة أصغر) */
+@media(max-width:600px){.hm-std .hm-tbl th,.hm-std .hm-tbl td{padding:8px 3px}.hm-std .hm-tbl .pillrow{gap:2px}.hm-std .hm-tbl .pl{width:17px;height:17px;font-size:9.5px}}
+@media(max-width:380px){.hm-std .hm-tbl td.club span{max-width:110px;gap:5px}.hm-std .hm-tbl td.club .crest{width:20px;height:20px}.hm-std .hm-tbl .pl{width:15px;height:15px;font-size:8.5px}.hm-std .hm-tbl .pillrow{gap:1px}}
 /* الهدافون (دائري) */
 .hm-ts-row{display:flex;gap:10px;overflow-x:auto;padding:2px 2px 6px;scroll-snap-type:x proximity;scrollbar-width:none}
 .hm-ts-row::-webkit-scrollbar{display:none}
