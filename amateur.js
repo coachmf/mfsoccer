@@ -100,7 +100,7 @@ const AR_MON = ["يناير","فبراير","مارس","أبريل","مايو","
 const dLbl = s => { if(!s) return ""; const d = new Date(s+"T00:00:00"); return isNaN(d) ? H(s) : `${AR_DOW[d.getDay()]} ${d.getDate()} ${AR_MON[d.getMonth()]}`; };
 const rounds = () => [...new Set((DATA.matches||[]).map(m=>m.round))].sort((a,b)=>a-b);
 const tLbl = t => { const m = /^(\d{1,2}):(\d{2})$/.exec(String(t||"")); if(!m) return H(t||""); let h = +m[1]; const pm = h>=12; h = h%12 || 12; return `${h}:${m[2]} ${pm?"م":"ص"}`; };
-const scp = (h, a) => `${h} - ${a}`;
+/* النتيجة: scp العام من index.html (كل رقم بجانب فريقه كما في div1.js) — النص «h - a» داخل bdi ltr كان يضع هدف المضيف بجانب الضيف (منصور 2026-11-01: «العكس القادسية فايز») */
 
 /* ───────────── العرض ───────────── */
 const VIEW = {tab:"table"};
