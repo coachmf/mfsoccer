@@ -151,7 +151,11 @@ function render(){
 }
 AM.render = render;
 AM.count = () => { if(!DATA) DATA = normalize(null); return DATA.matches.length; };
-function repaint(){ if(document.querySelector("#v-amateur.on")) render(); paintAdmin(); }
+AM.crestSrc = crestSrc;
+AM.openMatches = () => { VIEW.tab = "matches"; VIEW.scrolled = false; if(document.querySelector("#v-amateur.on")) render(); else if(typeof go==="function") go("amateur"); };
+AM.matchesHTML = () => { if(!DATA) DATA = normalize(null); return matchesHTML(); };   /* دائرة «دوري الهواة» في صفحة المباريات (mf-shell) */
+function repaint(){ if(document.querySelector("#v-amateur.on")) render(); paintAdmin();
+  if(document.querySelector("#v-matches.on") && typeof renderMatches==="function") try{ renderMatches(); }catch(e){} }   /* «جميع المباريات» ودائرة الهواة تُبنى من بياناته */
 document.addEventListener("click", e=>{
   const t = e.target.closest && e.target.closest("[data-amtab]");
   if(t){ VIEW.tab = t.dataset.amtab; VIEW.scrolled = false; render(); }

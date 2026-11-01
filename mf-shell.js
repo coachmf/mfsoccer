@@ -467,7 +467,7 @@
   const circ=(attrs,inner,label,on,cls)=>`<button type="button" class="mf-circ${cls?" "+cls:""}" ${attrs} aria-pressed="${!!on}"><i>${inner}</i><span>${esc(label)}</span></button>`;
   /* داخل الدائرة: شعار البطولة إن وُجد في الموقع وإلا أيقونة؛ تحت الاسم عدد المباريات بكلمة واضحة */
   /* رموز البطولات (الكأس/الشعار بلا الكتابة): الدولية مقصوصة من شعاراتها الرسمية في ويكيبيديا (2026-10-05) */
-  const COMP_LOGO={"c:الدوري":"assets/hero/kpl-mark.webp","d:div1":"assets/comps/div1.webp?v=1","e:gulf27":"assets/comps/gulf27.webp","e:gcl":"assets/comps/gcl.webp",
+  const COMP_LOGO={"c:الدوري":"assets/hero/kpl-mark.webp","d:div1":"assets/comps/div1.webp?v=1","d:amateur":"assets/comps/amateur.webp","e:gulf27":"assets/comps/gulf27.webp","e:gcl":"assets/comps/gcl.webp",
     "e:acl2":"assets/comps/acl2.webp","e:acc":"assets/comps/acc.webp","e:asiad":"assets/comps/asiad.webp","e:vetgulf":"assets/comps/vetgulf.webp",
     "c:كأس سمو ولي العهد":"assets/comps/cpcup.webp?v=2",
     "c:كأس الأمير":"assets/comps/amircup.webp?v=1","c:كأس الأمير 2025/2026":"assets/comps/amircup.webp?v=1"};   /* شعار كأس الأمير من ملصق الاتحاد (منصور 2026-10-24) */
@@ -480,12 +480,15 @@
   }
   let mxGroup=null;   /* المجموعة المفتوحة: all | local | nt | ext */
   const MX_NT=["e:ntfr","e:vetgulf","e:gulf27","e:asiad"];   /* بطولات المنتخبات: دائرة «المنتخب» مستقلة (منصور 2026-10-22) */
-  let mxDiv1=false;   /* دائرة «دوري الدرجة الأولى» مختارة: قائمة مبارياتها من div1.js بدل قائمة الموقع (منصور 2026-10-08) */
+  let mxDiv1=false;   /* دائرة «دوري الدرجة الأولى» أو «دوري الهواة» مختارة: قائمة مبارياتها من div1.js / amateur.js بدل قائمة الموقع (منصور 2026-10-08) */
+  let mxSide="div1";  /* أيّهما: div1 | amateur (منصور 2026-11-01: «بجميع المباريات مو قاعد يطلع دوري الهواه») */
+  const SIDE_MOD=k=>k==="amateur"?window.AMATEUR:window.DIV1;
   function mxDiv1Paint(v){
     v.querySelectorAll(".mf-d1-list").forEach(x=>x.remove());
     v.classList.toggle("mf-d1-on", mxDiv1);
-    if(!mxDiv1 || !window.DIV1 || !DIV1.matchesHTML) return;
-    const w=D.createElement("div"); w.className="mf-d1-list d1"; w.innerHTML=DIV1.matchesHTML();
+    const M=SIDE_MOD(mxSide);
+    if(!mxDiv1 || !M || !M.matchesHTML) return;
+    const w=D.createElement("div"); w.className="mf-d1-list d1"+(mxSide==="amateur"?" am":""); w.innerHTML=M.matchesHTML();
     v.querySelector(".mf-circles").after(w);
   }
   function mxCircles(){
@@ -497,7 +500,8 @@
       G[grp].push({o, n, label, sel:o.getAttribute("aria-selected")==="true", key:o.dataset.comp?"c:"+o.dataset.comp:"e:"+o.dataset.ext}); });
     G.nt=[]; G.ext = G.ext.filter(x=>{ if(MX_NT.includes(x.key)){ G.nt.push(x); return false; } return true; });
     if(window.DIV1 && DIV1.count){ const i=G.local.findIndex(x=>x.key==="c:الدوري"); G.local.splice(i+1, 0, {o:null, n:DIV1.count(), label:"دوري الدرجة الأولى", sel:false, key:"d:div1"}); }   /* بعد الممتاز مباشرة */
-    if(mxDiv1){ G.all.concat(G.local,G.ext).forEach(x=>x.sel = x.key==="d:div1"); mxGroup="local"; }
+    if(window.AMATEUR && AMATEUR.count){ const i=G.local.findIndex(x=>x.key==="d:div1"); G.local.splice(i>=0?i+1:G.local.length, 0, {o:null, n:AMATEUR.count(), label:"دوري الهواة", sel:false, key:"d:amateur"}); }   /* بعد الدرجة الأولى */
+    if(mxDiv1){ G.all.concat(G.local,G.ext).forEach(x=>x.sel = x.key==="d:"+mxSide); mxGroup="local"; }
     const curGrp = G.all.some(x=>x.sel) ? "all" : G.nt.some(x=>x.sel) ? "nt" : G.ext.some(x=>x.sel) ? "ext" : "local";
     const open = mxGroup || curGrp;
     const show = x => x.n>0 || x.sel;
@@ -525,7 +529,7 @@
       return; }
     const o=e.target.closest("[data-mx-opt]");
     if(o){ const x=box._sub[+o.dataset.mxOpt]; if(!x) return;
-      if(x.key==="d:div1"){ mxDiv1=true; mxGroup="local"; mxCircles(); return; }
+      if(x.key==="d:div1"||x.key==="d:amateur"){ mxDiv1=true; mxSide=x.key.slice(2); mxGroup="local"; mxCircles(); return; }
       mxDiv1=false; mxGroup=null; x.o.click(); }
   });
 
