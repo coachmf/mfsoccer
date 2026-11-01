@@ -2275,8 +2275,8 @@ html[dir="ltr"] .tl-ev.a .tl-card{text-align:right;align-items:flex-end}
 <link rel="stylesheet" href="mf-brand.css?v=17">
 <script>document.documentElement.classList.add("mf")</script>
 <script src="mf-shell.js?v=36" defer></script>
-<link rel="stylesheet" href="fmx.css?v=1">
-<script src="fmx.js?v=5" defer></script>   <!-- أفكار FM27: fmx.js يلفّ صفحات المباراة والنادي واللاعب والمباريات والتحليل -->
+<link rel="stylesheet" href="fmx.css?v=2">
+<script src="fmx.js?v=6" defer></script>   <!-- أفكار FM27: fmx.js يلفّ صفحات المباراة والنادي واللاعب والمباريات والتحليل -->
 <style>
 /* تبويب التحليل — التصميم الجديد (منصور 2026-09-17) */
 .an{--an-card:#0F1E35;--an-line:#213653;--an-txt:#EDF3FA;--an-mut:#8FA6C4;--an-track:rgba(143,166,196,.16);--an-acc:#2EB0F0;--an-acc2:#1878BE}
@@ -12392,6 +12392,10 @@ html[data-theme="light"] .hm{--bg-card:#FFFFFF;--border-card:#E2E8F0;--text-prim
 .mpx-card .rtg.mpx-r{left:-8px;right:auto;bottom:-6px;transform:none;min-width:clamp(19px,6cqw,24px);height:clamp(12px,3.6cqw,14px);
   font-size:clamp(7.5px,2.3cqw,9px);border-radius:4px;padding:0 3px;border:1px solid rgba(255,255,255,.85)}
 .mpx-nm{margin-top:clamp(7px,2.2cqw,9px)}
+/* الاسم الأول والثاني في التشكيلة والاحتياط (منصور 2026-11-01: «الاسمين الاول و الثاني… جذي»): سطر واحد بعرض الاسم كاملاً بدل آخر كلمة */
+.mpx-nm{max-width:none;overflow:visible;font-size:clamp(9px,2.75cqw,12.5px);letter-spacing:-.1px}
+.mpx-nm em{margin-inline-end:3px}
+.mpt-b>span{white-space:normal;text-align:center;line-height:1.4}   /* الاحتياط: الاسم كاملاً على سطرين بدل القص */
 .mpx-card .pp-b{box-shadow:0 1px 4px rgba(0,0,0,.55)}
 .mpx-card .pp-b.goal,.mpx-card .pp-b.assist{width:clamp(13px,4cqw,17px);height:clamp(13px,4cqw,17px);padding:0;border-radius:50%;
   background:#fff;border:1px solid rgba(11,31,58,.18)}
@@ -15464,7 +15468,7 @@ function mpTeamXI(m, club){
         ${spotBadges(playerMatchEvents(m, club, p.n))}${natFlag(p.n, club)}
         ${v!=null?`<span class="rtg mpx-r ${ratingCls(v)}">${v.toFixed(1)}</span>`:""}
       </span>
-      <span class="mpx-nm">${p.s?`<em>${p.s}</em>`:""}${esc(shortName(p.n))}${gkTag(p.p||p.role||(p.line==="G"?"GK":""))}</span>
+      <span class="mpx-nm">${p.s?`<em>${p.s}</em>`:""}${esc(p.n)}${gkTag(p.p||p.role||(p.line==="G"?"GK":""))}</span>
     </div>`;
   }).join("")).join("");
   const lineCol="var(--pitch-line,rgba(127,196,255,.24))";
@@ -15501,7 +15505,7 @@ function mpBothXI(m){
         ${spotBadges(playerMatchEvents(m, club, p.n))}${natFlag(p.n, club)}
         ${v!=null?`<span class="rtg mpx-r ${ratingCls(v)}">${v.toFixed(1)}</span>`:""}
       </span>
-      <span class="mpx-nm">${p.s?`<em>${p.s}</em>`:""}${esc(shortName(p.n))}${gkTag(p.p||p.role||(p.line==="G"?"GK":""))}</span>
+      <span class="mpx-nm">${p.s?`<em>${p.s}</em>`:""}${esc(p.n)}${gkTag(p.p||p.role||(p.line==="G"?"GK":""))}</span>
     </div>`;
     }).join("")).join("");
   };
@@ -15548,7 +15552,7 @@ function mpTeamSection(m){
   const played=new Set([...xiNames(m.round, comp, club), ...subs.flatMap(x=>[x.in, x.out]).filter(Boolean)]);   /* الخارج أيضاً: حتى لو سُجّل خطأً خارج التشكيلة */
   const bench=sq.filter(x=>!played.has(x.n) && !absentWhy(m, club, x.n));   /* المصاب والغائب ليسوا في قائمة المباراة (منصور 2026-10-18) */
   const benchBlock = bench.length ? `<div class="mpt-hd">الاحتياط<span class="sq-n">${bench.length}</span></div><div class="mpt-bench">${bench.map(x=>`<div class="mpt-b" data-player="${esc(x.n)}" data-club="${esc(club)}">
-      ${mpFacePh(x.n, club)}<span>${x.s?`<em>${x.s}</em>`:""}${esc(shortName(x.n))}${gkTag(x.p)}</span></div>`).join("")}</div>` : "";
+      ${mpFacePh(x.n, club)}<span>${x.s?`<em>${x.s}</em>`:""}${esc(x.n)}${gkTag(x.p)}</span></div>`).join("")}</div>` : "";
   return `<div class="mp-card mpt" style="${accentVars(club)}">${seg}${coachHTML}${subsBlock}${benchBlock}</div>`;
 }
 function mpLineups(m){

@@ -37,7 +37,7 @@
 .fmx-xi{display:grid;gap:8px;padding:12px 8px;border-radius:12px;background:linear-gradient(180deg,#1E5B3A,#17492F);box-shadow:inset 0 0 0 1px rgba(255,255,255,.08)}
 .fmx-xi-l{display:flex;justify-content:center;flex-wrap:nowrap;gap:5px}
 .fmx-xi .fmx-pl{flex:0 1 66px;min-width:0;display:grid;justify-items:center;gap:1px;padding:5px 3px;border-radius:9px;background:rgba(0,0,0,.28)}
-.fmx-xi .fmx-pl b{max-width:100%;overflow:hidden;text-overflow:ellipsis;font-size:.68rem;font-weight:700;color:#fff;line-height:1.5;white-space:nowrap}
+.fmx-xi .fmx-pl b{max-width:100%;font-size:.66rem;font-weight:700;color:#fff;line-height:1.4;text-align:center}   /* الاسم كاملاً (منصور 2026-11-01) — يلتف لسطرين */
 .fmx-xi .fmx-pl small{font-size:.6rem;color:rgba(255,255,255,.7)}
 
 /* الغيابات */

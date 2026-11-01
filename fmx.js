@@ -86,7 +86,7 @@ function teamSnap(c, m){
   /* التشكيلة الأكثر استخداماً: عدد مرات البداية في كل البطولات المحلية */
   const cnt = {}; let withXI = 0;
   before.forEach(g=>{ const xi = xiNames(g.m.round, compOf(g.m), c); if(xi.length){ withXI++; xi.forEach(n=>cnt[n]=(cnt[n]||0)+1); } });
-  const xi = Object.entries(cnt).sort((a,b)=>b[1]-a[1]).slice(0,11).map(([n,k])=>({n,k,l:lineOf(c,n)||"M"}));
+  const xi = Object.entries(cnt).sort((a,b)=>b[1]-a[1]).slice(0,11).map(([n,k])=>({n,k,l:lineOf(c,n)||"M", ...avgSpot(c, n)}));
   return {c, before, form: before.map(g=>g.k), pos, row, coach, topG, topA, topR, xi, withXI};
 }
 function snapSentences(A, B, m){
@@ -108,10 +108,22 @@ function snapSentences(A, B, m){
   if(h2h) out.push(`آخر مواجهة: ${h2h.home} ${h2h.hg}-${h2h.ag} ${h2h.away}`);
   return out;
 }
+/* موضع اللاعب المعتاد = متوسط مواضعه في الخطط المحفوظة لناديه (x من يمين الفريق، y العمق: الحارس ≈90 والمهاجم ≈10).
+   منصور 2026-11-01: «ليش مو بالترتيب و نفس الرسم… الفارسي ظهير ليش محطوط قلب دفاع» — كان الترتيب بخط الكشف فقط.
+   من لا موضع محفوظاً له يأخذ عمق خطه في الكشف ووسط العرض */
+const LINE_Y = {G:90, D:64, M:40, F:12};
+function avgSpot(club, name){
+  let sx=0, sy=0, k=0;
+  ((typeof ALL!=="undefined" && ALL && ALL.shapes) || []).forEach(sh=>{ const p = sh.club===club && sh.pos && sh.pos[name];
+    if(p && isFinite(p.x) && isFinite(p.y)){ sx+=+p.x; sy+=+p.y; k++; } });
+  return k ? {x:sx/k, y:sy/k} : {x:50, y:LINE_Y[lineOf(club, name)||"M"]};
+}
 function xiHTML(S){
   if(!S.xi.length) return "";
-  return `<div class="fmx-xi">${LINES.map(L=>{ const P=S.xi.filter(x=>x.l===L); if(!P.length) return "";
-    return `<div class="fmx-xi-l">${P.map(x=>plBtn(x.n, S.c, `<b>${H(shortName(x.n))}</b><small>${x.k}/${S.withXI}</small>`)).join("")}</div>`; }).join("")}</div>`;
+  /* صفوف بالعمق (الهجوم فوق): من يقع عمقه ضمن 9 وحدات من أول الصف ينضم إليه، وداخل الصف بالترتيب من يمين الفريق */
+  const P = [...S.xi].sort((a,b)=>a.y-b.y), rows = [];
+  P.forEach(x=>{ const r = rows[rows.length-1]; if(r && x.y - r.y0 <= 9) r.p.push(x); else rows.push({y0:x.y, p:[x]}); });
+  return `<div class="fmx-xi">${rows.map(r=>`<div class="fmx-xi-l">${r.p.sort((a,b)=>a.x-b.x).map(x=>plBtn(x.n, S.c, `<b>${H(x.n)}</b><small>${x.k}/${S.withXI}</small>`)).join("")}</div>`).join("")}</div>`;
 }
 function previewCard(m){
   const A = teamSnap(m.home, m), B = teamSnap(m.away, m);
