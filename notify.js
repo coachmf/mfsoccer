@@ -53,7 +53,24 @@ window.NOTIFY = {
   },
   /* التذييل يُرسم قبل تحميل هذا الملف، فالزرّ لا يوجد بعد: نحقنه في كل
      شريط روابط ثم نحدّثه عند كل تبديل. */
+  /* جرس في الشريط العلوي بجانب البحث: ضغطة تفعّل الإشعارات أو توقفها (منصور 2026-11-02) */
+  bell(){
+    const tools = document.querySelector('.mf-top .mf-tools'); if(!tools) return;
+    let b = tools.querySelector('[data-ntbell]');
+    if(this.iosShell() || !this.ready()){ if(b) b.remove(); return; }
+    const on = this.on(), t = on ? 'الإشعارات مفعّلة — اضغط للإيقاف' : 'فعّل الإشعارات';
+    if(!b){
+      b = document.createElement('button'); b.type = 'button'; b.className = 'mf-ib mf-bell'; b.setAttribute('data-ntbell','');
+      b.addEventListener('click', ()=>this.toggle(!this.on()));
+      const s = tools.querySelector('[data-mf="search"]'); s ? s.after(b) : tools.prepend(b);
+    }
+    if(b.dataset.on === String(on)) return;
+    b.dataset.on = String(on); b.classList.toggle('on', on);
+    b.title = t; b.setAttribute('aria-label', t); b.setAttribute('aria-pressed', String(on));
+    b.innerHTML = on ? this.ICON_ON : this.ICON_OFF;
+  },
   paint(){
+    this.bell();
     const html = this.chip(); if(!html) return;
     document.querySelectorAll('[data-ntchip]').forEach(el=>{
       const w = document.createElement('div'); w.innerHTML = html;
