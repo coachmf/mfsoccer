@@ -227,7 +227,7 @@ const SEED_COACHES = [
   ['SLB','أنطونيو ميراندا','البرتغال','sulaibikhat',5.5],
   ['SHB','واغنر أندرادي','البرازيل','shabab',5.0],
   ['TDM','عادل مرزوق','الكويت','tadamon-marzouq',5.0],
-  ['SAH','علي عبدالرضا','الكويت','sahel',5.0],
+  ['SAH','سعود ضميد الشمري','الكويت','sahel-shammari',5.0],
 ];
 
 const SEED_RULES = {

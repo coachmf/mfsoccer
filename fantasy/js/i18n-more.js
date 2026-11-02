@@ -56,7 +56,7 @@ const NAMES_EN = {
   'علي عاشور':'Ali Ashour',
   'ظاهر العدواني':'Dhaher Al-Adwani',
   'أحمد عبدالكريم':'Ahmad Abdulkarim',
-  'علي عبدالرضا':'Ali Abdulridha',
+  'علي عبدالرضا':'Ali Abdulridha', 'سعود ضميد الشمري':'Saud Dhumaid Al-Shammari',
   'مارتن سيفيلا':'Martin Sevela',
   'إيغور ريميتش':'Igor Remic', 'عادل مرزوق':'Adel Marzouq',
   'واغنر أندرادي':'Wagner Andrade',
