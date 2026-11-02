@@ -14297,7 +14297,9 @@ function teamCleanSheets(){
   });
   return out;
 }
-function topPlayersHTML(){
+/* أبرز اللاعبين = الدوري دائماً، لا «إجمالي البطولات» (منصور 2026-11-02: «هني الدوري مو اجمالي البطولات») */
+function topPlayersHTML(){ return withComp("الدوري", topPlayersLeagueHTML); }
+function topPlayersLeagueHTML(){
   const all=seasonPlayerStats().filter(p=>p.apps>0 || p.g>0 || p.a>0);
   if(!all.length) return "";
   const mx={g:Math.max(1,...all.map(p=>p.g)), a:Math.max(1,...all.map(p=>p.a)), ga:Math.max(1,...all.map(p=>p.g+p.a)),
