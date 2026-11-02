@@ -7349,6 +7349,12 @@ async function exportImage(mode, club, arg){
 }
 
 function exportPDF(title){
+  /* داخل تطبيق الآيفون (App Store) لا توجد طباعة: window.print لا يفعل شيئاً فيبقى «تجهيز التقرير…» بلا نهاية
+     (منصور 2026-11-02) — نوضّح الطريق بدل الانتظار */
+  if(typeof PUSH!=="undefined" && PUSH.iosApp && PUSH.iosApp()){   /* PUSH مُعرَّف بـconst فلا يظهر على window */
+    if(typeof toast==="function") toast("تقرير PDF غير متاح داخل التطبيق — افتح mfsoccer.com في Safari واضغط «تقرير PDF»","err");
+    return;
+  }
   /* الوضع الفاتح يتكفل به خطّاف beforeprint أعلى الملف — يغطي Ctrl+P وقائمة المتصفح أيضاً */
   $("#printHead").innerHTML =
     `<img src="${BRAND}" alt="${esc(OWNER)}">
