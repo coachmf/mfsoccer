@@ -2255,7 +2255,7 @@ html[dir="ltr"] .tl-ev.a .tl-card{text-align:right;align-items:flex-end}
 <!-- كأس الخليج 27: قسم مستقل ببيانات منفصلة (seasons/gulf27) -->
 <link rel="stylesheet" href="gulf.css?v=18">
 <script src="gulf.js?v=49" defer></script>
-<script src="livepush.js?v=2" defer></script>
+<script src="livepush.js?v=3" defer></script>
 <script src="fantasy/js/push.js?v=286" defer></script>
 <script src="notify.js?v=4" defer></script>
 <link rel="stylesheet" href="efftime.css?v=4">
@@ -16359,9 +16359,9 @@ html.mx-editing #waFab{display:none!important}   /* زر واتساب كان ي�
         <label class="mx-lp${EDIT.orig?"":" off"}"><input type="checkbox" id="lpOn" ${EDIT.orig?"":"disabled"}
           ${(EDIT.orig && window.LIVEPUSH && LIVEPUSH.isOn(matchKey(m)))?"checked":""}
           onchange="LIVEPUSH.toggle(matchKey(EDIT.match)); toast(this.checked?'بثّ الأحداث مُفعّل لهذه المباراة':'أُوقف البثّ', this.checked?'ok':'busy')">
-          <span>أرسل إشعاراً عند كل هدف وطرد وعند صافرة النهاية</span></label>
+          <span>أرسل إشعاراً عند كل هدف وإنذار وطرد وتبديل وعند صافرة النهاية</span></label>
         <p class="mx-hint">${EDIT.orig?`مطفأ افتراضياً. فعّله قبل انطلاق المباراة وأنت ترصد مباشرة —
-          كل حدث تُدخله يصل للمشتركين خلال ثوانٍ. ثلاثة إشعارات كحد أقصى في الحفظة الواحدة،
+          كل حدث تُدخله يصل للمشتركين خلال ثوانٍ. خمسة إشعارات كحد أقصى في الحفظة الواحدة،
           ولا يُعاد إرسال حدث أُرسل. لا يمكن سحب إشعار بعد إرساله.`
           :`احفظ المباراة أولاً، ثم يصير البثّ متاحاً.`}</p></div>
       ${isKO(m)?`<div class="mx-card"><h3>الأشواط الإضافية وركلات الترجيح<small>لمباريات خروج المغلوب</small></h3>

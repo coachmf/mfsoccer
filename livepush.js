@@ -3,18 +3,18 @@
    ---------------------------------------------------------
    المحرّر يحفظ تلقائياً بعد ثانيتين من كل تعديل. فعند تفعيل
    «بثّ الأحداث» لمباراة، نقارن ما حُفظ بما كان قبله، ونرسل
-   إشعاراً لكل هدف أو طرد جديد، وإشعاراً واحداً عند النهاية.
+   إشعاراً لكل هدف أو طرد أو إنذار أو تبديل جديد، وإشعاراً واحداً عند النهاية.
 
    قيود مقصودة:
    · مطفأ افتراضياً لكل مباراة — يُفعَّل يدوياً قبل الانطلاق.
-   · ٣ إشعارات كحد أقصى في الحفظة الواحدة؛ من يُدخل مباراة
+   · ٥ إشعارات كحد أقصى في الحفظة الواحدة؛ من يُدخل مباراة
      كاملة دفعة واحدة لا يُفجّر عشرة إشعارات.
    · بصمة كل حدث تُحفظ، فإعادة الحفظ لا تُعيد الإرسال.
    · الإرسال يحتاج حساب المالك أو محرّراً — تتحقق منه الدالة.
    ========================================================= */
 'use strict';
 window.LIVEPUSH = {
-  ON:'mf_lp_on', SENT:'mf_lp_sent', MAX:3,
+  ON:'mf_lp_on', SENT:'mf_lp_sent', MAX:5,
 
   _get(k, d){ try{ return JSON.parse(localStorage.getItem(k)) || d; }catch(e){ return d; } },
   _set(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} },
@@ -89,6 +89,25 @@ window.LIVEPUSH = {
                  body: c.p + ' ' + (+c.m||0) + '′ · ' + m.home + ' ' + this._scoreNow(m, cur.goals) + ' ' + m.away });
     });
 
+    /* الإنذارات والتبديلات (منصور 2026-11-02) — بعد الأهداف والطرد في الأولوية، فلا يُزاحمها سقف الحفظة */
+    const low = [];
+    ncard.forEach(c => {
+      if(hadc.has(ck(c))) return;
+      if(typeof isRed === 'function' ? isRed(c.type) : /طرد/.test(c.type||'')) return;
+      const sig = this._sig('y', Object.assign({r:m.round, comp:m.comp}, c));
+      if(this._seen(sig)) return;
+      low.push({ sig, title: '🟨 إنذار — ' + c.club,
+                 body: c.p + ' ' + (+c.m||0) + '′ · ' + m.home + ' ' + this._scoreNow(m, cur.goals) + ' ' + m.away });
+    });
+    const sk = x => [x.club, x.out, x.in, x.m, x.x||0].join('|');
+    const hads = new Set((base.subs||[]).map(sk));
+    (cur.subs||[]).forEach(x => {
+      if(!x.in || !x.out || hads.has(sk(x))) return;
+      const sig = this._sig('s', {r:m.round, comp:m.comp, club:x.club, p:x.in + '>' + x.out, m:x.m, x:x.x});
+      if(this._seen(sig)) return;
+      low.push({ sig, title: '🔁 تبديل — ' + x.club,
+                 body: 'دخول ' + x.in + ' بدلاً من ' + x.out + (x.m ? ' ' + (+x.m||0) + (+x.x ? '+' + (+x.x) : '') + '′' : '') });
+    });
     /* صافرة النهاية مرة واحدة */
     if(cur.match && cur.match.status === 'ft' && (!base.match || base.match.status !== 'ft')){
       const sig = this._sig('ft', {r:m.round, comp:m.comp, club:m.home, p:m.away});
@@ -96,7 +115,7 @@ window.LIVEPUSH = {
         out.push({ sig, title: 'صافرة النهاية',
                    body: m.home + '  ' + this._scoreNow(m, cur.goals) + '  ' + m.away });
     }
-    return out.slice(0, this.MAX);
+    return out.concat(low).slice(0, this.MAX);
   },
 
   async send(list){
