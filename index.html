@@ -2246,8 +2246,8 @@ html[dir="ltr"] .tl-ev.a .tl-card{text-align:right;align-items:flex-end}
 <!-- اللغة الإنجليزية والوضع الداكن -->
 <link rel="stylesheet" href="site-theme.css?v=7">
 <script src="fantasy/js/i18n-more.js?v=14" defer></script>
-<script src="site-i18n.js?v=31" defer></script>
-<script src="i18n-data.js?v=22" defer></script>   <!-- إضافات الإنجليزية + البرتغالية (البرازيل/البرتغال) + الإسبانية + الصربية/الكرواتية -->
+<script src="site-i18n.js?v=32" defer></script>
+<script src="i18n-data.js?v=23" defer></script>   <!-- إضافات الإنجليزية + البرتغالية (البرازيل/البرتغال) + الإسبانية + الصربية/الكرواتية -->
 <script src="i18n-langs.js?v=8" defer></script>   <!-- قائمة اللغات بالأعلام + البرتغالية والإسبانية والصربية/الكرواتية فوق محرك الإنجليزية -->
 <!-- غرفة التحكم (live.js / live-admin.js / live.css) مخفية منذ 2026-10-10 بطلب منصور — الملفات باقية؛ للإرجاع أعد السطرين:
      <link rel="stylesheet" href="live.css?v=9"> و <script src="live.js?v=21" defer></script> -->
@@ -15471,7 +15471,7 @@ function mpFansPicksHTML(m){
     <div class="mpk-top">${top.map(([k,c])=>`<span class="${act && k===act[0]+"-"+act[1]?"hit":""}"><b dir="ltr">${k}</b>${c}</span>`).join("")}</div>
     ${act?`<p class="mpk-res">${ex?`${ex} ${ex===1?"مشجع توقّع":"مشجعين توقعوا"} النتيجة بالضبط`:"لا أحد توقّع النتيجة بالضبط"}</p>`:""}
     <details class="mpk-all"><summary>كل التوقعات (${N})</summary>
-      <div class="pkl">${rows.map(x=>`<div class="r"><span>${esc(x.n)}</span><span><i class="${cls(x)}" dir="ltr">${+x.v[0]} - ${+x.v[1]}</i></span></div>`).join("")}</div></details>
+      <div class="pkl">${rows.map(x=>`<div class="r"><span data-raw>${esc(x.n)}</span><span><i class="${cls(x)}" dir="ltr">${+x.v[0]} - ${+x.v[1]}</i></span></div>`).join("")}</div></details>
   </div>`;
 }
 /* ملعب صفحة المباراة: توزيع مرتّب حسب خطة كل فريق — الخطوط تُستنتج من ترتيب اللاعبين عمقاً (y) وعدد كل خط

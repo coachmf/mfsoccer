@@ -407,6 +407,9 @@ const I18N = {
     }
     en = String(en).replace(/،/g, ',').replace(/؛/g, ';');   /* الفاصلة العربية داخل نص مترجم */
     if(en === key) return;
+    /* لا خليط: إن بقي حرف عربي بعد الترجمة (كلمة غير معروفة في اسم أو ملاحظة حرّة مثل «Cancel ضربة Pens»)
+       يبقى النص العربي كاملاً كما كُتب بدل نصف مترجم (منصور 2026-11-02) */
+    if(/[ء-ي]/.test(en)) return;
     if(node._i18nAr == null) node._i18nAr = t;
     /* خيارات القوائم المنسدلة: الموقع يقرأ قيمة الخيار من نصه، فنثبّت القيمة العربية قبل الترجمة */
     const p = node.parentNode;
@@ -435,7 +438,7 @@ const I18N = {
         const raw = v.trim().replace(/\s+/g, ' ');
         let en = this.tr(raw);
         if(en == null){ const part = this.trIn(raw); en = (part !== raw) ? part : null; }
-        if(en == null) continue;
+        if(en == null || /[ء-ي]/.test(en)) continue;   /* لا خليط في السمات أيضاً */
         el._i18nAttr = el._i18nAttr || {}; if(el._i18nAttr[a] == null) el._i18nAttr[a] = v; el.setAttribute(a, en);
       }
     });

@@ -178,11 +178,11 @@ const I18N = {
     for(const node of nodes){
       const t=node.nodeValue, key=t.trim(); if(!key) continue;
       const en=this.tr(key);
-      if(en!=null){ if(en!==key){ if(node._i18nAr==null) node._i18nAr=t; node.nodeValue=t.replace(key, en); } continue; }
+      if(en!=null){ if(en!==key && !/[ء-ي]/.test(en)){ if(node._i18nAr==null) node._i18nAr=t; node.nodeValue=t.replace(key, en); } continue; }   // لا خليط عربي/لاتيني (منصور 2026-11-02)
       // نص طويل يحوي عدة جمل: ترجمة كل جملة معروفة
       let changed=false, out=t;
       for(const [k,rx,en] of this.keys()){ if(out.includes(k)){ const o2=out.replace(rx,en); if(o2!==out){ out=o2; changed=true; } } }
-      if(changed){ if(node._i18nAr==null) node._i18nAr=t; node.nodeValue=out; }
+      if(changed && !/[ء-ي]/.test(out)){ if(node._i18nAr==null) node._i18nAr=t; node.nodeValue=out; }   // كلمة مجهولة بقيت عربية: النص كله يبقى كما كُتب
     }
     const els=root.querySelectorAll ? root.querySelectorAll('[placeholder],[title],[aria-label]') : [];
     els.forEach(el=>{
