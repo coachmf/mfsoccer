@@ -2275,8 +2275,8 @@ html[dir="ltr"] .tl-ev.a .tl-card{text-align:right;align-items:flex-end}
 <link rel="stylesheet" href="mf-brand.css?v=17">
 <script>document.documentElement.classList.add("mf")</script>
 <script src="mf-shell.js?v=37" defer></script>
-<link rel="stylesheet" href="fmx.css?v=2">
-<script src="fmx.js?v=6" defer></script>   <!-- أفكار FM27: fmx.js يلفّ صفحات المباراة والنادي واللاعب والمباريات والتحليل -->
+<link rel="stylesheet" href="fmx.css?v=3">
+<script src="fmx.js?v=7" defer></script>   <!-- أفكار FM27: fmx.js يلفّ صفحات المباراة والنادي واللاعب والمباريات والتحليل -->
 <style>
 /* تبويب التحليل — التصميم الجديد (منصور 2026-09-17) */
 .an{--an-card:#0F1E35;--an-line:#213653;--an-txt:#EDF3FA;--an-mut:#8FA6C4;--an-track:rgba(143,166,196,.16);--an-acc:#2EB0F0;--an-acc2:#1878BE}
@@ -12586,9 +12586,8 @@ html.mp-open{overflow:hidden}
 .mp-back{width:40px;height:40px;display:grid;place-items:center;color:#fff;background:none;border:0}
 .mp-when-tv{display:block;white-space:nowrap;font-size:clamp(.56rem,2.9vw,.74rem);font-weight:600;opacity:.85;margin-top:2px}
 .mp-when{width:max-content;max-width:94%;text-align:center;margin:4px auto 0;padding:6px 14px;border-radius:99px;background:rgba(255,255,255,.1);font-size:.8rem;font-weight:600;color:rgba(255,255,255,.9)}
-.mp-add{display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:4px 12px;max-width:94%;margin:6px auto 0;font-size:.74rem;font-weight:600;color:rgba(255,255,255,.75)}
+.mp-add{display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:6px;max-width:94%;margin:6px auto 0;font-size:.74rem;font-weight:600;color:rgba(255,255,255,.75)}
 .mp-add small{font-size:inherit;opacity:.8}
-.mp-add>span{display:inline-flex;gap:5px;align-items:baseline}
 .mp-add b{font-weight:800;color:#fff;font-variant-numeric:tabular-nums}
 .mp-score{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:8px;padding:16px 14px 6px}
 .mp-team{display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center;cursor:pointer;min-width:0}
@@ -15316,9 +15315,9 @@ function mpHeader(m){
   const st = m.status ? MS[m.status]||"" : soon ? "لم تبدأ" : live ? "جارية الآن" : "انتهت";
   /* القنوات في سطر مستقل تحت الموعد، كلها في صف واحد (منصور 2026-09-23) */
   const tvH=tvOf(m), when=[mpDateLabel(m), m.time?`<span dir="ltr">${esc(m.time)}</span>`:""].filter(Boolean).join(" · ") + (tvH?`<span class="mp-when-tv">${esc(tvH)}</span>`:"");
-  /* الوقت بدل الضائع المعلن لكل شوط تحت الموعد — في المباراة المنتهية والجارية (منصور 2026-11-02) */
-  const adds=[["add1","الشوط الأول"],["add2","الشوط الثاني"],["add3","الشوط الإضافي الأول"],["add4","الشوط الإضافي الثاني"]].filter(([k])=>+m[k]>0);
-  const addH=soon||!adds.length?"":`<div class="mp-add"><small>الوقت بدل الضائع</small>${adds.map(([k,t])=>`<span><span>${t}</span><b dir="ltr">+${+m[k]}</b></span>`).join("")}</div>`;
+  /* مجموع الوقت بدل الضائع المعلن تحت الموعد — في المباراة المنتهية والجارية (منصور 2026-11-02) */
+  const addT=["add1","add2","add3","add4"].reduce((t,k)=>t+(+m[k]>0?+m[k]:0),0);   /* المجموع فقط (منصور 2026-11-02: «بس حط التوتل») */
+  const addH=soon||!addT?"":`<div class="mp-add"><small>الوقت بدل الضائع</small><b dir="ltr">+${addT}</b></div>`;
   const team=c=>`<div class="mp-team" data-club-open="${esc(c)}">${crest(c,true)}<b>${esc(c)}</b></div>`;
   const hs=soon?"":mpScorers(m,m.home), as=soon?"":mpScorers(m,m.away);
   return `<div class="mp-top">

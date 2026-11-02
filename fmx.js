@@ -120,10 +120,19 @@ function avgSpot(club, name){
 }
 function xiHTML(S){
   if(!S.xi.length) return "";
-  /* صفوف بالعمق (الهجوم فوق): من يقع عمقه ضمن 9 وحدات من أول الصف ينضم إليه، وداخل الصف بالترتيب من يمين الفريق */
-  const P = [...S.xi].sort((a,b)=>a.y-b.y), rows = [];
-  P.forEach(x=>{ const r = rows[rows.length-1]; if(r && x.y - r.y0 <= 9) r.p.push(x); else rows.push({y0:x.y, p:[x]}); });
-  return `<div class="fmx-xi">${rows.map(r=>`<div class="fmx-xi-l">${r.p.sort((a,b)=>a.x-b.x).map(x=>plBtn(x.n, S.c, `<b>${H(x.n)}</b><small>${x.k}/${S.withXI}</small>`)).join("")}</div>`).join("")}</div>`;
+  /* كل لاعب في موضعه المتوسط على الملعب (x من يمين الفريق، y العمق والهجوم فوق) — الصفوف المتوسّطة كانت تكدّسهم في الوسط (منصور 2026-11-02) */
+  const cl = (v,lo,hi) => Math.max(lo, Math.min(hi, v));
+  /* لاعبان يتبادلان الجهة يقع متوسطهما في نقطة واحدة — نباعد كل متداخلين أفقياً حتى لا تغطي بطاقة الأخرى */
+  const P = S.xi.map(x=>({...x, x:cl(x.x,10,90), y:cl(x.y,8,92)})), DX=20, DY=15;
+  const near=(a,b)=>Math.abs(b.x-a.x)<DX && Math.abs(b.y-a.y)<DY;
+  for(let it=0; it<16; it++) for(let i=0;i<P.length;i++) for(let j=i+1;j<P.length;j++){
+    const a=P[i], b=P[j]; if(!near(a,b)) continue; const dx=b.x-a.x, sg=dx>=0?1:-1, push=(DX-Math.abs(dx))/2;
+    a.x=cl(a.x-sg*push,10,90); b.x=cl(b.x+sg*push,10,90); }
+  /* صفّ أعرض من الملعب (خمسة مدافعين): ما بقي متداخلاً يتباعد عمودياً */
+  for(let it=0; it<8; it++) for(let i=0;i<P.length;i++) for(let j=i+1;j<P.length;j++){
+    const a=P[i], b=P[j]; if(!near(a,b)) continue; const dy=b.y-a.y, sg=dy>=0?1:-1, push=(DY-Math.abs(dy))/2;
+    a.y=cl(a.y-sg*push,8,92); b.y=cl(b.y+sg*push,8,92); }
+  return `<div class="fmx-xi">${P.map(x=>`<div class="fmx-xi-s" style="right:${x.x.toFixed(1)}%;top:${x.y.toFixed(1)}%">${plBtn(x.n, S.c, `<b>${H(x.n)}</b><small>${x.k}/${S.withXI}</small>`)}</div>`).join("")}</div>`;
 }
 function previewCard(m){
   const A = teamSnap(m.home, m), B = teamSnap(m.away, m);
