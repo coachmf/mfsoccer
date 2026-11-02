@@ -606,6 +606,8 @@ details.squadbox summary label.lb{margin:0;cursor:pointer}
 .rsum .n{font-family:var(--display);font-weight:700;font-size:1.2rem;color:#fff;font-variant-numeric:tabular-nums}
 .rsum .l{font-size:.6rem;color:var(--slate)}
 /* البطاقات */
+.pkdot{display:inline-grid;place-items:center;width:16px;height:16px;border-radius:50%;font:800 9px/1 Arial,sans-serif;font-style:normal;margin-inline-end:6px;vertical-align:-2px;background:#fff;color:#0B1F3A}
+.pkdot.no{background:#5b6375;color:#fff}
 .cardpill{display:inline-block;width:9px;height:13px;border-radius:2px;vertical-align:-2px;margin-inline-start:3px}
 .cardpill.y{background:#E9B949}.cardpill.r{background:#E0644F}
 .ctag{font-size:.62rem;color:var(--slate);display:inline-flex;align-items:center;gap:2px}
@@ -3198,6 +3200,9 @@ function extCardsHTML(evs, compName){
 function upcomingItems(){
   const now=Date.now(), t=new Date(), todayIso=`${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,"0")}-${String(t.getDate()).padStart(2,"0")}`;
   const loc=(ALL?.matches||[]).filter(m=>{ const k=kickoffTS(m); if(k===null) return false;
+      /* الجارية تبقى حتى صافرة النهاية — كانت تختفي مع أول هدف (منصور 2026-11-02: «وين المباره الحاليه ماتطلع هني») */
+      if(m.status==="ft") return false;
+      if(["h1","ht","h2","e1","e2","pso"].includes(m.status)) return true;
       return (k>now) || (m.time && now>=k && now<k+2*3600e3 && !matchGoalsAll(m)); })
     .map(m=>({d:m.date, time:normTime(m.time)||"", ts:kickoffTS(m), m}));
   const ext=[];
@@ -3268,7 +3273,7 @@ function renderUpcomingMatches(){
       <div class="mc-row">
         <div class="mc-team h">${crest(m.home)}<b>${esc(m.home)}</b></div>
         <div class="mc-mid">${(LIVE_PHASES.includes(m.status) && !staleLive(m))   /* أثناء اللعب الدقيقة مكان وقت الانطلاق (منصور 2026-10-09) */
-          ? (m.status==="ht" ? '<span class="mc-time mc-now ht">بين الشوطين</span>' : `<span class="mc-time mc-now" dir="ltr">${mclkHTML(m)||esc(LIVE_PH_AR[m.status]||"")}</span>`)
+          ? `<span class="mc-score" dir="ltr">${scp(+m.hg||0,+m.ag||0)}</span>` + (m.status==="ht" ? '<span class="mc-time mc-now ht">بين الشوطين</span>' : `<span class="mc-time mc-now" dir="ltr">${mclkHTML(m)||esc(LIVE_PH_AR[m.status]||"")}</span>`)   /* النتيجة الجارية فوق الدقيقة (منصور 2026-11-02) */
           : `<span class="mc-time" dir="ltr">${m.time?esc(m.time):"—"}</span><span class="mc-st soon">لم تبدأ</span>`}${(()=>{ const tv=tvOf(m); return tv?`<span class="mc-tv${tv==="غير منقولة"?" off":""}">${TV_ICO}<span>${esc(tv)}</span></span>`:""; })()}${(()=>{ const r=String(crewOf(m).ref||"").trim(); return r && r!=="لا يوجد" ? `<span class="mc-tv mc-refl">${refRoleIco("ref","sm")}<span>${esc(r)}</span></span>` : ""; })()}   <!-- حكم الساحة تحت القناة (منصور 2026-10-09) --></div>
         <div class="mc-team a">${crest(m.away)}<b>${esc(m.away)}</b></div>
       </div>
@@ -7910,8 +7915,10 @@ function goalsTimeline(m,gs,mc){
   mc = mc || [];
   const subs=(typeof matchSubs==="function")?matchSubs(m):[];
   const xe=(typeof matchMev==="function")?matchMev(m):[];
-  if(!gs.length && !subs.length && !mc.length && !xe.length && !(typeof psoOf==="function" && psoOf(m))) return "";   /* 0-0 حُسمت بالترجيح تُعرض ركلاتها */
-  const ORD={g:0,c:1,s:2,e:3}, ET=hasET(m);
+  /* ركلات الجزاء في الشريط الزمني: المسجّلة بجانب هدفها والضائعة أيضاً، مع مكانها (منصور 2026-11-02: «بالأحداث فيه اثنين و هناك مافي») */
+  const pk=((typeof ALL!=="undefined" && ALL && ALL.pens) || (typeof PENS!=="undefined"?PENS:[])).filter(x=>+x.r===+m.round && compOf(x)===compOf(m) && ((x.by===m.home&&x.vs===m.away)||(x.by===m.away&&x.vs===m.home)));
+  if(!gs.length && !subs.length && !mc.length && !xe.length && !pk.length && !(typeof psoOf==="function" && psoOf(m))) return "";   /* 0-0 حُسمت بالترجيح تُعرض ركلاتها */
+  const ORD={p:-0.5,g:0,c:1,s:2,e:3}, ET=hasET(m);
   /* تعليقات المراحل في نفس الدقيقة (منصور 2026-09-23): «بداية …» قبل أحداثها، و«نهاية …» بعدها */
   /* ترتيب زمني حقيقي (منصور 2026-09-24): 90+4 بعد بطاقة مسجّلة 93، و«نهاية المباراة» آخر شيء دائماً.
      بدل الشوط الأول (45+x) يبقى قبل 46 */
@@ -7926,15 +7933,16 @@ function goalsTimeline(m,gs,mc){
   const ev=[...gs.map(g=>({t:"g",m:+g.m||0,x:+g.x||0,g})),
             ...subs.map(sb=>({t:"s",m:absMinute(sb.h,sb.m),x:0,sb,half:+sb.h||1,raw:+sb.m||0})),
             ...mc.map(c=>({t:"c",m:+c.m||0,x:+c.x||0,c})),
-            ...xe.map(v=>({t:"e",m:+v.m||0,x:+v.x||0,v}))]
+            ...xe.map(v=>({t:"e",m:+v.m||0,x:+v.x||0,v})),
+            ...pk.map(p=>({t:"p",m:+p.m||0,x:+p.x||0,p}))]
     .sort((a,b)=>(tlKey(a)-tlKey(b))||(tlRank(a)-tlRank(b)));
   let h=0,a=0; const rows=[]; let htDone=false, etDone=false;
   ev.forEach(e=>{
     if(ET && !etDone && tlKey(e)>=1000 && tlKey(e)<1e6){ etDone=true; rows.push(`<div class="tl-mark"><span>الوقت الأصلي <b dir="ltr">${h} - ${a}</b></span></div>`); }
-    const club = e.t==="g" ? e.g.sc : e.t==="c" ? e.c.club : e.t==="e" ? e.v.club : e.sb.club;
+    const club = e.t==="g" ? e.g.sc : e.t==="c" ? e.c.club : e.t==="e" ? e.v.club : e.t==="p" ? e.p.by : e.sb.club;
     const isH = club===m.home;
     const afterHT = e.t==="g" ? (e.m>45 && !(e.m===45 && e.x))
-                  : (e.t==="c"||e.t==="e") ? (e.m>45)
+                  : (e.t==="c"||e.t==="e"||e.t==="p") ? (e.m>45)
                   : (e.half>=2);
     if(!htDone && afterHT){ htDone=true; rows.push(`<div class="tl-mark"><span>الشوط الأول <b dir="ltr">${h} - ${a}</b></span></div>`); }
     if(e.t==="s"){
@@ -7968,6 +7976,20 @@ function goalsTimeline(m,gs,mc){
         <div class="tl-side r">${isH?body:""}</div>
         <div class="tl-min xev"><span>${mn}</span></div>
         <div class="tl-side l">${isH?"":body}</div></div>`);
+      return;
+    }
+    if(e.t==="p"){
+      const p=e.p, ok=p.res==="سجلت";
+      const pbody=`<div class="tl-ev pk${isH?" h":" a"}">
+        <div class="tl-card">
+          <div class="tl-name" data-player="${esc(p.p)}" data-club="${esc(p.by)}"><i class="pkdot${ok?" ok":" no"}">P</i>${esc(p.p)}</div>
+          <div class="tl-sub">ركلة جزاء · ${esc(p.res||"")}${p.place?` · ${esc(p.place)}`:""}</div>
+        </div></div>`;
+      rows.push(`<div class="tl-row pk${isH?" home":" away"}">
+        <div class="tl-side r">${isH?pbody:""}</div>
+        <div class="tl-min card"><span>${e.m}${e.x?"+"+e.x:""}'</span></div>
+        <div class="tl-side l">${isH?"":pbody}</div>
+      </div>`);
       return;
     }
     if(e.t==="c"){
@@ -11824,6 +11846,9 @@ html.pp-open,html.pp-open body{overflow:hidden}
 .pstat.rt .rtg.big{min-width:48px;height:30px;font-size:1.05rem}
 .pstat.hi{background:linear-gradient(160deg,rgba(var(--ca-rgb),.22),rgba(255,255,255,.03))}
 .pprof-log{padding:8px 16px 22px}
+.pprof-pens{margin-top:14px}
+.pprof-pens h4{margin:10px 0 8px;font-family:var(--display);font-weight:700;font-size:.9rem;color:var(--head,#fff);display:flex;align-items:center;gap:8px}
+.pprof-pens h4::before{content:"";width:3px;height:14px;border-radius:9px;background:var(--ca)}
 .pprof-log h4{margin:10px 0 8px;font-family:var(--display);font-weight:700;font-size:.9rem;color:var(--head,#fff);display:flex;align-items:center;gap:8px}
 .pprof-log h4::before{content:"";width:3px;height:14px;border-radius:9px;background:var(--ca)}
 .plog{display:flex;flex-direction:column;gap:6px}
@@ -13965,6 +13990,7 @@ function playerProfileData(name, club){
   const rd= sum(c=>CARDS.filter(x=>x.p===name && x.club===c && isRed(x.type)).length);
   const pens = sum(c=>PENS.filter(x=>x.p===name && x.by===c).length);
   const pensS = sum(c=>PENS.filter(x=>x.p===name && x.by===c && x.res==="سجلت").length);
+  const penList = PENS.filter(x=>x.p===name && clubs.includes(x.by));   /* خريطة ركلاته في الملف (منصور 2026-11-02: «ابي ب بروفايل الاعب الي شات يبين وين شات») */
   const pp=clubs.reduce((t,c)=>{ const e=PP.find(x=>x.n===name && x.c===c); return e?{apps:t.apps+e.apps, mins:t.mins+e.mins, cs:t.cs+e.cs}:t; }, {apps:0,mins:0,cs:0});
   const log=[]; let conceded=0;
   clubs.forEach(cl=>{
@@ -13984,7 +14010,7 @@ function playerProfileData(name, club){
   /* في الإجمالي تختلط جولات المسابقات (ج1 كأس بعد ج3 دوري)، فالترتيب بالتاريخ؛ داخل مسابقة واحدة كما كان */
   log.sort((a,b)=>(COMP==="الكل" && a.m.date && b.m.date && a.m.date!==b.m.date) ? String(b.m.date).localeCompare(String(a.m.date))
     : (b.m.round-a.m.round)||String(b.m.date).localeCompare(String(a.m.date)));
-  return {name, club, former, pos, num, gk, goals, assists, ownG, y, rd, pens, pensS, apps:pp.apps, mins:pp.mins, cs:pp.cs, conceded, log};
+  return {name, club, former, pos, num, gk, goals, assists, ownG, y, rd, pens, pensS, penList, apps:pp.apps, mins:pp.mins, cs:pp.cs, conceded, log};
 }
 /* دقيقة مطلقة (بعد إضافة بدل الشوط الأول) ← كما تظهر في أحداث المباراة: 45+3′، 67′، 90+4′ */
 function clockLabel(m, t){ const a1=add1Of(m); if(t<=45) return t+"′"; if(t<=45+a1) return "45+"+(t-45)+"′"; const c=t-a1; return c>90 ? "90+"+(c-90)+"′" : c+"′"; }
@@ -14030,6 +14056,7 @@ function playerProfileHTML(D){
     <div class="pprof-comp">${esc(SEASON)}</div>   <!-- اسم المسابقة ظاهر في الشريحة المختارة فوقه (منصور 2026-09-16) -->
     ${D.former&&D.former.length?`<p class="pprof-prev">شارك هذا الموسم أيضاً مع ${D.former.map(c=>esc(c)).join(" و")}</p>`:""}
     ${played ? `<div class="pprof-stats">${cards.filter(Boolean).join("")}</div>` : `<p class="pprof-empty">لم تُرصد مشاركة لهذا اللاعب في ${esc(PK==="*" ? "أي بطولة" : ((XO.find(o=>o.key===PK)||{}).label || compLabel(PK||"الدوري")))} بعد.</p>`}
+    ${(D.penList&&D.penList.length&&typeof anPens==="function")?`<div class="pprof-pens an"><h4>ركلات الجزاء</h4>${anPens(D.penList)}</div>`:""}
     ${logHTML}
   </div>`;
 }
