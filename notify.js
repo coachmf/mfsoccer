@@ -70,16 +70,21 @@ window.NOTIFY = {
   ICON_OFF:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>',
   ICON_ON :'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/><path d="M19.5 4.5 21 3M4.5 4.5 3 3"/></svg>',
 
-  /* تظهر من الزيارة الثانية، ولا تعود بعد رفضها أو تفعيلها */
+  /* الدعوة: في التطبيق من أول فتحة، وفي المتصفح من الزيارة الثانية. إن لم تُفعَّل تعود بعد 3 أيام،
+     ثلاث مرات كحد أقصى، ولا تعود أبداً بعد التفعيل (منصور 2026-11-02: «خله عملي اكثر مره ثانيه اسال») */
+  ASKN:'mf_nt_askn', ASKT:'mf_nt_askt', ASK_MAX:3, ASK_GAP:3*864e5,
   maybeAsk(){
     if(this.iosShell() || !this.ready()) return;
-    if(this.on() || this._n(this.HIDE)) return;
-    if(!(typeof PUSH!=="undefined" && PUSH.iosApp && PUSH.iosApp()) && ('Notification' in window) && Notification.permission === 'denied') return;
-    const v = this._n(this.VISITS) + 1; this._s(this.VISITS, v);
-    /* داخل تطبيق iOS: الدعوة من أول فتحة ومرة واحدة فقط، تُفعَّل أو تُتجاهل فلا تعود (منصور 2026-11-02) */
+    if(this.on()) return;
     const app = typeof PUSH!=="undefined" && PUSH.iosApp && PUSH.iosApp();
+    if(!app && ('Notification' in window) && Notification.permission === 'denied') return;   /* المتصفح لا يعيد السؤال بعد الرفض */
+    const v = this._n(this.VISITS) + 1; this._s(this.VISITS, v);
     if(v < (app ? 1 : 2)) return;
-    if(app) this._s(this.HIDE, 1);
+    /* من رفض بالنسخة السابقة (مفتاح HIDE) تُحسب له مرة واحدة الآن */
+    if(this._n(this.HIDE) && !this._n(this.ASKT)){ this._s(this.ASKN, 1); this._s(this.ASKT, Date.now()); }
+    const n = this._n(this.ASKN), t = this._n(this.ASKT);
+    if(n >= this.ASK_MAX || (t && Date.now() - t < this.ASK_GAP)) return;
+    this._s(this.ASKN, n + 1); this._s(this.ASKT, Date.now());
     const box = document.getElementById('ntAsk'); if(!box) return;
     box.innerHTML = `<div class="nt-in">
         <div class="nt-ic">${this.ICON_OFF}</div>
@@ -91,7 +96,7 @@ window.NOTIFY = {
     box.hidden = false; requestAnimationFrame(()=>box.classList.add('on'));
   },
   hideAsk(){ const b=document.getElementById('ntAsk'); if(b){ b.classList.remove('on'); b.hidden=true; b.innerHTML=''; } },
-  dismiss(){ this._s(this.HIDE,1); this.hideAsk(); },
+  dismiss(){ this.hideAsk(); },   /* العدّ والتوقيت سُجّلا عند الظهور */
 
   boot(){
     if(!this.ready()) return;
