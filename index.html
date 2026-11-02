@@ -6119,7 +6119,12 @@ function totRow(round, comp){
 /* الجولة صالحة للتصويت متى لُعبت كل مبارياتها المجدولة — المؤجلة بلا موعد لا تمنع فتحها (منصور 2026-10-20: الجولة 5 فيها مباراتان مؤجلتان فلم يُفتح تصويتها) */
 function roundPlayed(round, comp){
   const ms=MATCHES.filter(m=>m.round===round && compOf(m)===comp && (m.date || !isUpcoming(m)));
-  return ms.length>0 && ms.every(m=>!isUpcoming(m));
+  if(!ms.length) return false;
+  /* مباراة مؤجلة (موعدها بعد آخر مباراة لُعبت في الجولة بأكثر من 7 أيام) لا تؤخّر الجولة — الكويت×كاظمة ج7 أُجّلت لديسمبر
+     فلم يُفتح تصويت الجمهور (منصور 2026-11-02) */
+  const done=ms.filter(m=>!isUpcoming(m)); if(!done.length) return false;
+  const last=Math.max(...done.map(m=>kickoffTS(m)||0));
+  return ms.every(m=>!isUpcoming(m) || ((kickoffTS(m)||0) - last > 7*864e5));
 }
 function voteRounds(){
   const out=[];
