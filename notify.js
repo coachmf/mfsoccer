@@ -74,9 +74,12 @@ window.NOTIFY = {
   maybeAsk(){
     if(this.iosShell() || !this.ready()) return;
     if(this.on() || this._n(this.HIDE)) return;
-    if(('Notification' in window) && Notification.permission === 'denied') return;
+    if(!(typeof PUSH!=="undefined" && PUSH.iosApp && PUSH.iosApp()) && ('Notification' in window) && Notification.permission === 'denied') return;
     const v = this._n(this.VISITS) + 1; this._s(this.VISITS, v);
-    if(v < 2) return;
+    /* داخل تطبيق iOS: الدعوة من أول فتحة ومرة واحدة فقط، تُفعَّل أو تُتجاهل فلا تعود (منصور 2026-11-02) */
+    const app = typeof PUSH!=="undefined" && PUSH.iosApp && PUSH.iosApp();
+    if(v < (app ? 1 : 2)) return;
+    if(app) this._s(this.HIDE, 1);
     const box = document.getElementById('ntAsk'); if(!box) return;
     box.innerHTML = `<div class="nt-in">
         <div class="nt-ic">${this.ICON_OFF}</div>
