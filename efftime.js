@@ -523,7 +523,7 @@ let MPW = null;   /* {key, unsub, doc} */
 function cardHTML(d, live){
   const c = calc(d); if(!c.started) return "";
   const halves = PHS.filter(([p])=>c.ph[p]).map(([p,t])=>{ const x = c.ph[p];
-    return `<div class="effp-h"><span>${t}${x.live ? `<i class="effp-live">جارٍ</i>` : ""}</span><b dir="ltr">${fmt(x.eff)}</b>${x.dur ? `<small>من <bdi dir="ltr">${fmt(x.dur)}</bdi> · <bdi dir="ltr">${pct(x.eff, x.dur)}%</bdi></small>` : ""}</div>`; }).join("");
+    return `<div class="effp-h"><span>${t}${x.live ? `<i class="effp-live">جارٍ</i>` : ""}</span><b dir="ltr">${fmt(x.eff)}</b>${x.dur ? `<small>من أصل <bdi dir="ltr">${fmt(x.dur)}</bdi> · <bdi dir="ltr">${pct(x.eff, x.dur)}%</bdi></small>` : ""}</div>`; }).join("");
   const P = c.pct!=null ? c.pct : pct(c.eff, c.dur);
   /* التوقفات وأسبابها لأداة الرصد فقط، لا تظهر للجمهور (منصور 2026-10-28) */
   return `<div class="mp-card effp" data-effp="1">
