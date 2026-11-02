@@ -7989,13 +7989,18 @@ function goalsTimeline(m,gs,mc){
       const pbody=`<div class="tl-ev pk${isH?" h":" a"}">
         <div class="tl-card">
           <div class="tl-name" data-player="${esc(p.p)}" data-club="${esc(p.by)}"><i class="pkdot${ok?" ok":" no"}">P</i>${esc(p.p)}</div>
-          <div class="tl-sub">ركلة جزاء · ${esc(p.res||"")}${p.place?` · ${esc(p.place)}`:""}</div>
+          <div class="tl-sub">ركلة جزاء</div>
         </div></div>`;
       rows.push(`<div class="tl-row pk${isH?" home":" away"}">
         <div class="tl-side r">${isH?pbody:""}</div>
         <div class="tl-min card"><span>${e.m}${e.x?"+"+e.x:""}'</span></div>
         <div class="tl-side l">${isH?"":pbody}</div>
       </div>`);
+      /* الصف الأول «ركلة جزاء» فقط، والثاني نتيجتها: الهدف صفّه المعتاد بعدها، والضائعة صفّ «لم تُسجَّل» (منصور 2026-11-02) */
+      if(!ok){
+        const mb=`<div class="tl-ev pk${isH?" h":" a"}"><div class="tl-card"><div class="tl-name"><i class="pkdot no">P</i>لم تُسجَّل</div><div class="tl-sub">${esc(p.res||"")}</div></div></div>`;
+        rows.push(`<div class="tl-row pk${isH?" home":" away"}"><div class="tl-side r">${isH?mb:""}</div><div class="tl-min card"><span>${e.m}${e.x?"+"+e.x:""}'</span></div><div class="tl-side l">${isH?"":mb}</div></div>`);
+      }
       return;
     }
     if(e.t==="c"){
@@ -8019,7 +8024,7 @@ function goalsTimeline(m,gs,mc){
         <div class="tl-card">
           <div class="tl-name" data-player="${esc(goalWho(g))}" data-club="${esc(og?(g.cd||""):g.sc)}">${ICO_BALL}${esc(goalWho(g))}${og?`<i class="tl-og">هدف عكسي</i>`:""}</div>
           ${!og && g.a?`<div class="tl-assist" data-player="${esc(g.a)}" data-club="${esc(g.sc)}">${ICO_BOOT}${esc(g.a)}</div>`:""}
-          ${g.det?`<div class="tl-det">${esc(goalDetTxt(g))}</div>`:""}
+          ${g.det?`<div class="tl-det">${g.det==="ركلة جزاء"&&!og?"هدف":esc(goalDetTxt(g))}</div>`:""}   <!-- ركلة الجزاء صفّها قبله، فالهدف يُكتب «هدف» -->
         </div>
         <div class="tl-score" dir="ltr">${isH?`<b>${h}</b> - ${a}`:`${h} - <b>${a}</b>`}</div>
       </div>`;
