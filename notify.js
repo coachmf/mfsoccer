@@ -16,10 +16,11 @@ window.NOTIFY = {
   _n(k){ try{ return +localStorage.getItem(k) || 0; }catch(e){ return 0; } },
   _s(k,v){ try{ localStorage.setItem(k, v); }catch(e){} },
 
-  /* غلاف iOS: الإشعارات فيه أصلية لا تمرّ بالمتصفح، وإعداده غير مكتمل
-     بعد — فلا نعرض مفتاحاً يَعِد بما لا يصل. */
+  /* غلاف iOS القديم (قبل 1.0.4) بلا جسر الإشعارات الأصلي — فلا نعرض مفتاحاً يَعِد بما لا يصل.
+     من 1.0.4 (15 أكتوبر) الجسر موجود فيظهر المفتاح في الصفحة الرئيسية أيضاً، لا في «حسابي» بالفانتسي وحدها (منصور 2026-11-02) */
   iosShell(){
     try{
+      if(typeof PUSH!=="undefined" && PUSH.iosBridge && PUSH.iosBridge()) return false;
       if(/(^|;\s*)app-platform=iOS%20App%20Store|(^|;\s*)app-platform=iOS App Store/.test(document.cookie||'')) return true;
       return /PWAShell/.test(navigator.userAgent||'');
     }catch(e){ return false; }
