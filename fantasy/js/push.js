@@ -159,11 +159,16 @@ const PUSH = {
     }
     try{
       const perm = await this._ios.ask();
-      if(perm !== 'granted'){
+      try{ localStorage.setItem('mf_push_dbg', JSON.stringify({perm, at:Date.now()})); }catch(e){}
+      /* الطبقة الأصلية قد تردّ granted أو true أو authorized بحسب النسخة */
+      const ok = perm === 'granted' || perm === true || perm === 'true' || perm === 'authorized' || perm === 'provisional' || perm === 'ephemeral';
+      if(!ok){
+        if(perm == null){ this._say('لم يصل ردّ الإذن من التطبيق — أغلق التطبيق كلياً وافتحه ثم أعد المحاولة', true); this._re(); return; }
         this._say('لم يُسمح بالإشعارات — فعّلها من إعدادات الجهاز لتطبيق mfsoccer', true);
         this._re(); return;
       }
       const t = await this._ios.token();
+      try{ localStorage.setItem('mf_push_dbg', JSON.stringify({perm, tok: t ? String(t).slice(0,12) : t, at:Date.now()})); }catch(e){}
       if(!t || t === 'ERROR GET TOKEN'){
         this._say('تعذّر تسجيل الجهاز — أعد المحاولة', true); this._re(); return;
       }

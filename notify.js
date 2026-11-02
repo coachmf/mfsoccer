@@ -34,6 +34,8 @@ window.NOTIFY = {
     try{
       await PUSH.toggle(want);
       this.paint();
+      /* فشل التفعيل: PUSH قال السبب في رسالته — لا نغطيه بـ«أُوقفت» (منصور 2026-11-02: الجرس يقول أوقفت وهو ما فعّل) */
+      if(want && !this.on()) return;
       if(typeof toast === 'function')
         toast(this.on() ? 'مفعّلة — يوصلك كل هدف لحظة تسجيله' : 'أُوقفت الإشعارات', this.on() ? 'ok' : 'busy');
     }catch(e){
