@@ -2244,7 +2244,7 @@ html[dir="ltr"] .tl-ev.a .tl-card{text-align:right;align-items:flex-end}
 <!-- اللغة الإنجليزية والوضع الداكن -->
 <link rel="stylesheet" href="site-theme.css?v=7">
 <script src="fantasy/js/i18n-more.js?v=14" defer></script>
-<script src="site-i18n.js?v=30" defer></script>
+<script src="site-i18n.js?v=31" defer></script>
 <script src="i18n-data.js?v=22" defer></script>   <!-- إضافات الإنجليزية + البرتغالية (البرازيل/البرتغال) + الإسبانية + الصربية/الكرواتية -->
 <script src="i18n-langs.js?v=8" defer></script>   <!-- قائمة اللغات بالأعلام + البرتغالية والإسبانية والصربية/الكرواتية فوق محرك الإنجليزية -->
 <!-- غرفة التحكم (live.js / live-admin.js / live.css) مخفية منذ 2026-10-10 بطلب منصور — الملفات باقية؛ للإرجاع أعد السطرين:
@@ -12586,6 +12586,10 @@ html.mp-open{overflow:hidden}
 .mp-back{width:40px;height:40px;display:grid;place-items:center;color:#fff;background:none;border:0}
 .mp-when-tv{display:block;white-space:nowrap;font-size:clamp(.56rem,2.9vw,.74rem);font-weight:600;opacity:.85;margin-top:2px}
 .mp-when{width:max-content;max-width:94%;text-align:center;margin:4px auto 0;padding:6px 14px;border-radius:99px;background:rgba(255,255,255,.1);font-size:.8rem;font-weight:600;color:rgba(255,255,255,.9)}
+.mp-add{display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:4px 12px;max-width:94%;margin:6px auto 0;font-size:.74rem;font-weight:600;color:rgba(255,255,255,.75)}
+.mp-add small{font-size:inherit;opacity:.8}
+.mp-add>span{display:inline-flex;gap:5px;align-items:baseline}
+.mp-add b{font-weight:800;color:#fff;font-variant-numeric:tabular-nums}
 .mp-score{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:8px;padding:16px 14px 6px}
 .mp-team{display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center;cursor:pointer;min-width:0}
 .mp-team .crest{width:62px;height:62px}
@@ -15312,6 +15316,9 @@ function mpHeader(m){
   const st = m.status ? MS[m.status]||"" : soon ? "لم تبدأ" : live ? "جارية الآن" : "انتهت";
   /* القنوات في سطر مستقل تحت الموعد، كلها في صف واحد (منصور 2026-09-23) */
   const tvH=tvOf(m), when=[mpDateLabel(m), m.time?`<span dir="ltr">${esc(m.time)}</span>`:""].filter(Boolean).join(" · ") + (tvH?`<span class="mp-when-tv">${esc(tvH)}</span>`:"");
+  /* الوقت بدل الضائع المعلن لكل شوط تحت الموعد — في المباراة المنتهية والجارية (منصور 2026-11-02) */
+  const adds=[["add1","الشوط الأول"],["add2","الشوط الثاني"],["add3","الشوط الإضافي الأول"],["add4","الشوط الإضافي الثاني"]].filter(([k])=>+m[k]>0);
+  const addH=soon||!adds.length?"":`<div class="mp-add"><small>الوقت بدل الضائع</small>${adds.map(([k,t])=>`<span><span>${t}</span><b dir="ltr">+${+m[k]}</b></span>`).join("")}</div>`;
   const team=c=>`<div class="mp-team" data-club-open="${esc(c)}">${crest(c,true)}<b>${esc(c)}</b></div>`;
   const hs=soon?"":mpScorers(m,m.home), as=soon?"":mpScorers(m,m.away);
   return `<div class="mp-top">
@@ -15319,6 +15326,7 @@ function mpHeader(m){
       <button type="button" class="mp-share" data-share-match="${esc(matchKey(m))}" aria-label="مشاركة بطاقة المباراة" title="مشاركة"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="2.6"/><circle cx="6" cy="12" r="2.6"/><circle cx="18" cy="19" r="2.6"/><path d="M8.6 13.4l6.9 4.1M15.5 6.5l-6.9 4.1"/></svg></button>
     </div>
     ${when?`<div class="mp-when">${when}</div>`:""}
+    ${addH}
     <div class="mp-score">
       ${team(m.home)}
       <div class="mp-mid">
