@@ -86,7 +86,10 @@ function teamSnap(c, m){
   /* التشكيلة الأكثر استخداماً: عدد مرات البداية في كل البطولات المحلية */
   const cnt = {}; let withXI = 0;
   before.forEach(g=>{ const xi = xiNames(g.m.round, compOf(g.m), c); if(xi.length){ withXI++; xi.forEach(n=>cnt[n]=(cnt[n]||0)+1); } });
-  const xi = Object.entries(cnt).sort((a,b)=>b[1]-a[1]).slice(0,11).map(([n,k])=>({n,k,l:lineOf(c,n)||"M", ...avgSpot(c, n)}));
+  /* حارس واحد (الأكثر بداية) + أكثر عشرة لاعبين من الميدان — كان ترتيب العدد وحده يُخرج الحارس إذا تناوب حارسان (منصور 2026-11-02) */
+  const byCnt = Object.entries(cnt).sort((a,b)=>b[1]-a[1]), isGK = n => lineOf(c,n)==="G";
+  const gk = byCnt.find(([n])=>isGK(n)), field = byCnt.filter(([n])=>!isGK(n)).slice(0, gk?10:11);
+  const xi = [...(gk?[gk]:[]), ...field].map(([n,k])=>({n,k,l:lineOf(c,n)||"M", ...avgSpot(c, n)}));
   return {c, before, form: before.map(g=>g.k), pos, row, coach, topG, topA, topR, xi, withXI};
 }
 function snapSentences(A, B, m){
@@ -113,10 +116,16 @@ function snapSentences(A, B, m){
    من لا موضع محفوظاً له يأخذ عمق خطه في الكشف ووسط العرض */
 const LINE_Y = {G:90, D:64, M:40, F:12};
 function avgSpot(club, name){
-  let sx=0, sy=0, k=0;
+  /* الموضع الأكثر تكراراً لا المتوسط: من لعب يميناً مرة ويساراً مرة كان متوسطه في الوسط فيظهر الشكل غريباً.
+     نجمع مواضعه المحفوظة في خلايا 15×15 ونأخذ متوسط الخلية الأكثر تكراراً (الأحدث عند التساوي) */
+  const S = [];
   ((typeof ALL!=="undefined" && ALL && ALL.shapes) || []).forEach(sh=>{ const p = sh.club===club && sh.pos && sh.pos[name];
-    if(p && isFinite(p.x) && isFinite(p.y)){ sx+=+p.x; sy+=+p.y; k++; } });
-  return k ? {x:sx/k, y:sy/k} : {x:50, y:LINE_Y[lineOf(club, name)||"M"]};
+    if(p && isFinite(p.x) && isFinite(p.y)) S.push({x:+p.x, y:+p.y, r:+sh.r||0}); });
+  if(!S.length) return {x:50, y:LINE_Y[lineOf(club, name)||"M"]};
+  const G = {};
+  S.forEach(p=>{ const k = Math.round(p.x/15)+"_"+Math.round(p.y/15); (G[k]=G[k]||[]).push(p); });
+  const best = Object.values(G).sort((a,b)=>b.length-a.length || Math.max(...b.map(p=>p.r))-Math.max(...a.map(p=>p.r)))[0];
+  return {x: best.reduce((t,p)=>t+p.x,0)/best.length, y: best.reduce((t,p)=>t+p.y,0)/best.length};
 }
 function xiHTML(S){
   if(!S.xi.length) return "";
@@ -125,13 +134,14 @@ function xiHTML(S){
   /* لاعبان يتبادلان الجهة يقع متوسطهما في نقطة واحدة — نباعد كل متداخلين أفقياً حتى لا تغطي بطاقة الأخرى */
   const P = S.xi.map(x=>({...x, x:cl(x.x,10,90), y:cl(x.y,8,92)})), DX=20, DY=15;
   const near=(a,b)=>Math.abs(b.x-a.x)<DX && Math.abs(b.y-a.y)<DY;
+  for(let round=0; round<4; round++){
   for(let it=0; it<16; it++) for(let i=0;i<P.length;i++) for(let j=i+1;j<P.length;j++){
     const a=P[i], b=P[j]; if(!near(a,b)) continue; const dx=b.x-a.x, sg=dx>=0?1:-1, push=(DX-Math.abs(dx))/2;
     a.x=cl(a.x-sg*push,10,90); b.x=cl(b.x+sg*push,10,90); }
   /* صفّ أعرض من الملعب (خمسة مدافعين): ما بقي متداخلاً يتباعد عمودياً */
   for(let it=0; it<8; it++) for(let i=0;i<P.length;i++) for(let j=i+1;j<P.length;j++){
     const a=P[i], b=P[j]; if(!near(a,b)) continue; const dy=b.y-a.y, sg=dy>=0?1:-1, push=(DY-Math.abs(dy))/2;
-    a.y=cl(a.y-sg*push,8,92); b.y=cl(b.y+sg*push,8,92); }
+    a.y=cl(a.y-sg*push,8,92); b.y=cl(b.y+sg*push,8,92); } }
   return `<div class="fmx-xi">${P.map(x=>`<div class="fmx-xi-s" style="right:${x.x.toFixed(1)}%;top:${x.y.toFixed(1)}%">${plBtn(x.n, S.c, `<b>${H(x.n)}</b><small>${x.k}/${S.withXI}</small>`)}</div>`).join("")}</div>`;
 }
 function previewCard(m){
