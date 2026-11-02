@@ -20,7 +20,8 @@
     "أرقام لافتة":"Standout numbers", "تابعنا":"Follow us", "إغلاق":"Close", "بحث":"Search",
     "التنقل الرئيسي":"Main navigation", "كرة القدم":"Football", "جارية الآن":"Live now", "لا مباريات منتهية بعد":"No finished matches yet",
     "ستظهر النتائج هنا بعد أول صافرة نهاية.":"Results will appear here after the first full-time whistle.",
-    "إعداد وإشراف الإحصائيات":"Statistics by", "مشاركة وتقارير":"Share & reports", "الجولة":"Round"
+    "إعداد وإشراف الإحصائيات":"Statistics by", "مشاركة وتقارير":"Share & reports", "الجولة":"Round",
+    "الأقسام":"Sections", "البطولة":"Competition", "الفريق":"Team", "الدوري":"League", "الجمهور":"Fans", "تشكيلة الجمهور":"Fans XI", "ابحث عن لاعب":"Search players", "الموسم":"Season"
   };
   try{ if(typeof I18N!=="undefined" && I18N.DICT) for(const k in MF_DICT) if(I18N.DICT[k]==null) I18N.DICT[k]=MF_DICT[k]; }catch(e){}
 
@@ -46,6 +47,7 @@
     predict:sv('<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3.4"/>'),
     fans:sv('<circle cx="12" cy="9" r="3"/><path d="M6.5 20c0-3 2.5-5.4 5.5-5.4s5.5 2.4 5.5 5.4"/><path d="M4.6 12.4a2.3 2.3 0 1 1 1.6-4M19.4 12.4a2.3 2.3 0 1 0-1.6-4"/>'),
     fantasy:sv('<path d="M8.5 3.5 3 6.4l1.9 3.5 2.3-1.1v11.7h9.6V8.8l2.3 1.1L21 6.4l-5.5-2.9c-.9 1.4-2 2.1-3.5 2.1s-2.6-.7-3.5-2.1z"/>'),
+    tstat:sv('<path d="M12 3.5 19 6v5.6c0 4.3-2.9 7.6-7 8.9-4.1-1.3-7-4.6-7-8.9V6z"/><path d="M9.2 14.5v-2.2M12 14.5V9.5M14.8 14.5v-3.4"/>'),   /* إحصائيات الفرق: درع بأعمدة (تميّزها عن «الأندية») */
     search:sv('<circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/>'),
     close:sv('<path d="M6 6l12 12M18 6 6 18"/>'),
     chev:sv('<path d="m14 6-6 6 6 6"/>'),
@@ -61,7 +63,7 @@
   function nav(v){
     if(v==="stats"){ plMode="top"; v="players"; }
     const b=tab(v);
-    if(b && b.style.display!=="none"){ try{ window.USER_NAV=true; }catch(e){} b.click(); return; }
+    if(b && b.style.display!=="none"){ try{ window.USER_NAV=true; }catch(e){} pushView(v); b.click(); return; }
     if(v==="fantasy") location.href = window.FANTASY_URL || "/fantasy/";
   }
   const curView=()=>{ const b=D.querySelector('nav.tabs button[aria-selected="true"]'); return b ? b.dataset.v : "home"; };
@@ -70,24 +72,30 @@
   /* ---------- أقسام الدائرة: الموجود فعلاً فقط ---------- */
   function cupsPresent(){ return safe(()=>compsPresent().filter(c=>c!=="الدوري")) || []; }
   function setAX(t){ safe(()=>{ if(window.AX){ AX.tab=t; AX.sel=null; } }); }
+  /* مجموعات «الأقسام» بترتيب القراءة (تدقيق الاستخدام 2026-11-02): كل عناصر الدائرة السابقة باقية،
+     و«اللاعبون» يفتح لوحة الإحصائيات (كان «اللاعبون» و«الإحصائيات» يفتحان الصفحة نفسها)، وأضيف «الفرق» و«نظرة عامة» */
+  const HUB_GROUPS=[["league","الدوري"],["stats","الإحصائيات"],["fans","الجمهور"]];
   function hubItems(){
+    const ax=()=>shown("analysis") && !!window.AX;
     const L=[
-      {k:"matches", t:"المباريات", go:()=>nav("matches")},
-      {k:"table",   t:"الترتيب",   go:()=>{ nav("home"); toStandings(); }},
-      {k:"clubs",   t:"الأندية",   go:()=>nav("clubs")},
-      {k:"players", t:"اللاعبون",  go:()=>nav("players")},
-      {k:"stats",   t:"الإحصائيات", ok:()=>shown("analysis"), go:()=>nav("stats")},
-      {k:"refs",    t:"الحكام",    ok:()=>shown("analysis") && !!window.AX, go:()=>{ setAX("refs"); nav("analysis"); }},
-      {k:"cups",    t:"الكؤوس",    ok:()=>cupsPresent().length>0, go:()=>safe(()=>{
+      {g:"league", k:"table",   t:"الترتيب",   go:()=>{ nav("home"); toStandings(); }},
+      {g:"league", k:"matches", t:"المباريات", go:()=>nav("matches")},
+      {g:"league", k:"clubs",   t:"الأندية",   go:()=>nav("clubs")},
+      {g:"league", k:"cups",    t:"الكؤوس",    ok:()=>cupsPresent().length>0, go:()=>safe(()=>{
           MXC=null; COMP=cupsPresent()[0]; SELR=null; SELDAY=null; applyComp(); if(typeof paintRail==="function") paintRail(); nav("matches"); })},
-      {k:"predict", t:"التوقعات",  ok:()=>shown("predict"), go:()=>nav("predict")},
-      {k:"fans",    t:"الجمهور",   ok:()=>shown("fans"), go:()=>nav("fans")}
+      {g:"stats",  k:"players", t:"اللاعبون",  go:()=>nav("stats")},
+      {g:"stats",  k:"teams",   t:"الفرق",     ic:"tstat", ok:ax, go:()=>{ setAX("teams"); nav("analysis"); }},
+      {g:"stats",  k:"overview",t:"نظرة عامة", ic:"stats", ok:ax, go:()=>{ setAX("overview"); nav("analysis"); }},
+      {g:"stats",  k:"refs",    t:"الحكام",    ok:ax, go:()=>{ setAX("refs"); nav("analysis"); }},
+      {g:"fans",   k:"predict", t:"التوقعات",  ok:()=>shown("predict"), go:()=>nav("predict")},
+      {g:"fans",   k:"fans",    t:"تشكيلة الجمهور", ok:()=>shown("fans"), go:()=>nav("fans")}
     ];
-    return L.filter(x=>!x.ok || x.ok()).slice(0,9);
+    return L.filter(x=>!x.ok || x.ok());
   }
 
   /* ---------- الشريط العلوي ---------- */
-  const DNAV=[["home","الرئيسية"],["matches","المباريات"],["hub","كرة القدم الكويتية"],["stats","الإحصائيات"],["news","الأخبار"],["fantasy","الفانتسي"]];
+  /* الكمبيوتر: «الأندية» مباشرة في الشريط، والقائمة باسم واضح «الأقسام» (تدقيق الاستخدام 2026-11-02) */
+  const DNAV=[["home","الرئيسية"],["matches","المباريات"],["clubs","الأندية"],["stats","الإحصائيات"],["news","الأخبار"],["fantasy","الفانتسي"],["hub","الأقسام"]];
   function buildTop(){
     const top=D.createElement("header"); top.className="mf-top";
     top.innerHTML=`<div class="mf-top-in">
@@ -96,7 +104,7 @@
       </button>
       <nav class="mf-dnav" aria-label="التنقل الرئيسي">${DNAV.map(([v,t])=>`<button type="button" data-mf="${v}"${v==="hub"?' class="hubbtn" aria-haspopup="dialog"':""}>${t}</button>`).join("")}</nav>
       <div class="mf-tools">
-        <button type="button" class="mf-ib" data-mf="search" aria-label="بحث" title="بحث">${IC.search}</button>
+        <button type="button" class="mf-ib" data-mf="search" aria-label="ابحث عن لاعب" title="ابحث عن لاعب">${IC.search}</button>
       </div>
     </div>`;
     const tools=top.querySelector(".mf-tools");
@@ -110,7 +118,7 @@
     bar.innerHTML=`<div class="mf-bar-in">
       <button type="button" data-mf="home">${IC.home}<span>الرئيسية</span></button>
       <button type="button" data-mf="matches">${IC.matches}<span>المباريات</span></button>
-      <button type="button" data-mf="hub" class="mf-orb" aria-haspopup="dialog" aria-label="كرة القدم الكويتية"><i><img src="assets/brand/mf-mark.webp" alt="" width="34" height="16"></i></button>
+      <button type="button" data-mf="hub" class="mf-orb" aria-haspopup="dialog"><i><img src="assets/brand/mf-mark.webp" alt="" width="34" height="16"></i><span>الأقسام</span></button>
       <button type="button" data-mf="stats">${IC.stats}<span>الإحصائيات</span></button>
       <button type="button" data-mf="news">${IC.news}<span>الأخبار</span></button>
       <button type="button" data-mf="fantasy" class="mf-fan">${IC.fantasy}<span>الفانتسي</span></button>
@@ -123,7 +131,7 @@
   function crestSrc(c){ return safe(()=> (typeof LOCAL_CRESTS!=="undefined" && LOCAL_CRESTS[c]) || (typeof LOGOS!=="undefined" && LOGOS[c]) || "") || ""; }
   function buildHub(){
     hub=D.createElement("div"); hub.className="mf-hub"; hub.hidden=true;
-    hub.setAttribute("role","dialog"); hub.setAttribute("aria-modal","true"); hub.setAttribute("aria-label","كرة القدم الكويتية");
+    hub.setAttribute("role","dialog"); hub.setAttribute("aria-modal","true"); hub.setAttribute("aria-label","الأقسام");
     D.body.appendChild(hub);
     hub.addEventListener("click", e=>{
       if(e.target===hub || e.target.closest("[data-hub-close]")){ closeHub(); return; }
@@ -174,22 +182,22 @@
           return `<i>${s?`<img src="${s}" alt="" width="18" height="18" loading="lazy">`:""}<small>${esc(t)}</small></i>`; }).join("")}</span></span></button>`; }).join("")}</div></div>`;
   }
   function hubHTML(){
-    const items=hubItems(), n=items.length;
+    const items=hubItems();
     const season=safe(()=>SEASON)||"";
     const kfa=safe(()=>KFA_KEY), kfaImg=safe(()=>KFA_INFO.img.logo);
     const clubs=(safe(()=>CLUBS)||[]);
     const soc=safe(()=>[[IG_URL,"Instagram"],[X_URL,"X"],[TT_URL,"TikTok"]])||[];
+    /* مجموعات بعناوين بدل الدائرة: ترتيب قراءة واضح (تدقيق الاستخدام 2026-11-02) */
+    const groups=HUB_GROUPS.map(([g,t])=>{ const L=items.filter(x=>x.g===g); return L.length?`<div class="mf-hub-sec mf-hub-grp"><h3>${t}</h3>
+        <div class="mf-tiles">${L.map(x=>`<button type="button" class="mf-node mf-tile" data-hub="${x.k}">${IC[x.ic||x.k]||""}<span>${x.t}</span></button>`).join("")}</div></div>`:""; }).join("");
     return `<div class="mf-hub-sheet">
-      <div class="mf-hub-hd"><b>كرة القدم الكويتية</b><button type="button" class="mf-ib" data-hub-close aria-label="إغلاق">${IC.close}</button></div>
-      <div class="mf-orbit" style="--n:${n}">
-        <div class="mf-core" aria-hidden="true"><img src="assets/brand/mf-emblem.webp" alt="" width="188" height="130"><span>الموسم ${esc(season)}</span></div>
-        <ul class="mf-nodes" role="list">${items.map((x,i)=>`<li style="--i:${i}"><button type="button" class="mf-node" data-hub="${x.k}">${IC[x.k]||""}<span>${x.t}</span></button></li>`).join("")}</ul>
-      </div>
+      <div class="mf-hub-hd"><b>الأقسام</b>${season?`<span class="mf-hub-season">الموسم ${esc(season)}</span>`:""}<button type="button" class="mf-ib" data-hub-close aria-label="إغلاق">${IC.close}</button></div>
+      ${groups}
+      ${localHTML()}
       ${kfa?`<div class="mf-hub-sec"><h3>المنتخب الوطني</h3><div class="mf-nt">
         <button type="button" data-hub-club="${esc(kfa)}">${kfaImg?`<img src="${kfaImg}" alt="" width="40" height="40">`:""}<span>الاتحاد الكويتي</span></button>
         <button type="button" data-hub-ext="vetgulf"><img class="mf-nt-sq" src="assets/comps/vetgulf.webp" alt="" width="40" height="40"><span>كأس الخليج لقدامى اللاعبين</span></button>
       </div></div>`:""}
-      ${localHTML()}
       ${extHTML()}
       ${clubs.length?`<div class="mf-hub-sec"><h3>الأندية</h3><div class="mf-crests">${clubs.map(c=>{ const s=crestSrc(c);
         return `<button type="button" data-hub-club="${esc(c)}" aria-label="${esc(c)}" title="${esc(c)}">${s?`<img src="${s}" alt="" width="40" height="40" loading="lazy">`:`<span>${esc(c.slice(0,2))}</span>`}<small>${esc(c)}</small></button>`; }).join("")}</div></div>`:""}
@@ -229,6 +237,42 @@
     nav(v);
   });
 
+  /* ---------- زر الرجوع بين الأقسام (تدقيق الاستخدام 2026-11-02) ----------
+     كان الانتقال بين الأقسام لا يُسجَّل، فزر الرجوع في الهاتف (وسحب الرجوع في iPhone) يُخرج من الموقع.
+     كل انتقال من الشريط/القائمة يُسجَّل {mfv}، والرجوع يضغط زر القسم السابق. روابط #m/ #p/ #news وغيرها
+     لها مسجّلاتها الخاصة فلا نلمسها. */
+  let popping=false;
+  /* تُسجَّل الخطوة قبل الضغط: الأخبار تستبدل الخطوة الحالية برابط #news عند فتحها */
+  function pushView(v){
+    if(popping || v===curView()) return;
+    if(location.hash && !/^#news/.test(location.hash)) return;   /* مباراة/لاعب مفتوح: مسجّلاتها تتولى الرجوع */
+    try{ history.pushState({mfv:v}, "", location.pathname+location.search); }catch(e){}
+  }
+  try{ if(!history.state && !location.hash) history.replaceState({mfv:"home"}, "", location.href); }catch(e){}
+  window.addEventListener("popstate", e=>{
+    if(location.hash) return;
+    if(hub && !hub.hidden) closeHub(true);
+    const v=(e.state && e.state.mfv) || "home", b=tab(v);
+    if(curView()===v || !b || b.style.display==="none") return;
+    popping=true; try{ b.click(); }finally{ popping=false; }
+    scrollTo(0,0);
+  });
+
+  /* ---------- كل صف شرائح للتصفية يصير قائمة منسدلة بنفس الشكل (منصور 2026-11-02: «ابي دايما جذي بالصفحات») ----------
+     الصف الأصلي يبقى مخفياً بمستمعاته، والاختيار يضغط زرّه نفسه — نفس المسار ونفس الأرقام */
+  const SEL_ROWS=[["#v-home .compbar","البطولة"],["#v-home .mf-stdsw","الدوري"],["#pprof .pprof-cbar","البطولة"],["#v-players .mf-ax-pl .mf-chips","العرض"],["#v-analysis .ax-subnav","العرض"]];
+  function rowToSel(row, label){
+    const bs=[...row.querySelectorAll("button")]; if(bs.length<2) return;
+    const on=b=>b.getAttribute("aria-pressed")==="true" || b.getAttribute("aria-selected")==="true";
+    const w=D.createElement("label"); w.className="mf-sel mf-sel-auto";
+    w.innerHTML=`<span class="mf-lbl">${label}</span><select>${bs.map((b,i)=>`<option value="${i}"${on(b)?" selected":""}>${esc(b.textContent.trim())}</option>`).join("")}</select>`;
+    w.querySelector("select").addEventListener("change", e=>{ const b=bs[+e.target.value]; if(b) b.click(); });
+    row.classList.add("mf-sel-src"); row.dataset.mfSel="1"; row.after(w);
+  }
+  let selQ=0;
+  function paintSels(){ selQ=0; SEL_ROWS.forEach(([q,l])=>D.querySelectorAll(q).forEach(r=>{ if(r.dataset.mfSel) return; safe(()=>rowToSel(r,l)); })); }
+  new MutationObserver(()=>{ if(!selQ) selQ=requestAnimationFrame(paintSels); }).observe(D.documentElement,{childList:true,subtree:true});
+
   /* ---------- الحالة النشطة ---------- */
   function paintActive(){
     const v=curView(), hubOpen=hub && !hub.hidden;
@@ -236,7 +280,8 @@
     D.querySelectorAll(".mf-bar [data-mf], .mf-dnav [data-mf]").forEach(b=>{
       const k=b.dataset.mf;
       const kv = k==="stats" ? (v==="players" ? "players" : "analysis") : k;
-      const on = hubOpen ? k==="hub" : (kv===v || (k==="hub" && hubViews.includes(v) && !(k==="hub" && v==="players" && b.closest(".mf-dnav"))));
+      const inDnav=!!b.closest(".mf-dnav");   /* في الكمبيوتر «الأندية» زر مستقل فلا تُضاء «الأقسام» معها */
+      const on = hubOpen ? k==="hub" : (kv===v || (k==="hub" && hubViews.includes(v) && !(inDnav && v==="clubs")));
       b.classList.toggle("on", on);
       if(on) b.setAttribute("aria-current","page"); else b.removeAttribute("aria-current");
     });
@@ -341,11 +386,7 @@
       ${safe(()=>topPlayersHTML())||""}
       <div class="mf-foot">
         ${exportBar("league",null,"ملخص "+(COMP==="الكل"?"المسابقات":COMP))}
-        <div class="mf-credit"><img src="${BRAND}" alt="" width="40" height="40"><span><small>إعداد وإشراف الإحصائيات</small><b>${esc(OWNER)}</b></span>
-          <a class="hchip" href="${IG_URL}" target="_blank" rel="noopener" aria-label="Instagram">${IG_SVG}</a>
-          <a class="hchip" href="${X_URL}" target="_blank" rel="noopener" aria-label="X">${X_SVG}</a>
-          <a class="hchip" href="${TT_URL}" target="_blank" rel="noopener" aria-label="تيك توك">${TT_SVG}</a>
-          <a class="hchip wa" href="${WA_URL}" target="_blank" rel="noopener">${WA_SVG}اقتراحاتكم</a></div>
+        <div class="mf-credit"><img src="${BRAND}" alt="" width="40" height="40"><span><small>إعداد وإشراف الإحصائيات</small><b>${esc(OWNER)}</b></span></div>
       </div>
     </div>`;
     wireComp(v);
@@ -508,14 +549,25 @@
     const lvl1=[["all","جميع المباريات",IC.all],["local","المحلية",IC.local],["nt","المنتخب",IC.nt],["ext","الخارجية",IC.world]]
       .filter(([k])=>k==="all" || G[k].some(show));
     const sub = open==="all" ? [] : G[open].filter(show);
-    const box=D.createElement("div"); box.className="mf-circles";
-    box.innerHTML=`<div class="mf-crow l1" role="group" aria-label="نوع المباريات">${lvl1.map(([k,t,ic])=>circ(`data-mx-grp="${k}"`,ic,t,k===open)).join("")}</div>
-      ${sub.length?`<div class="mf-crow l2" role="group" aria-label="البطولة">${sub.map((x,i)=>compCirc(x,i)).join("")}</div>`:""}`;
+    /* قائمة منسدلة واحدة بمجموعات (منصور 2026-11-02: «ابي دايما جذي بالصفحات») بدل صفّي الدوائر — نفس الخيارات المخفية ونفس المسار */
+    const nm=x=>x.key==="c:الدوري"?"الدوري الممتاز":x.label, isSel=x=>mxDiv1 ? x.key==="d:"+mxSide : x.sel;
+    const allSel=!mxDiv1 && G.all.some(x=>x.sel);
+    const grpOpts=k=>{ const L=G[k].map((x,i)=>[x,i]).filter(([x])=>show(x)); return L.length?`<optgroup label="${({local:"المحلية",nt:"المنتخب",ext:"الخارجية"})[k]}">${L.map(([x,i])=>`<option value="${k}:${i}"${isSel(x)?" selected":""}>${esc(nm(x))}</option>`).join("")}</optgroup>`:""; };
+    const box=D.createElement("div"); box.className="mf-circles mf-sels";
+    box.innerHTML=`<label class="mf-sel"><span class="mf-lbl">البطولة</span><select data-mx-sel><option value="all"${allSel?" selected":""}>جميع المباريات</option>${grpOpts("local")}${grpOpts("nt")}${grpOpts("ext")}</select></label>`;
     box._sub=sub; box._all=G.all[0]; box._G=G;
     const old=v.querySelector(".mf-circles"); if(old) old.remove();
     (v.querySelector(".mx-head")||v.firstElementChild).after(box);
     mxDiv1Paint(v);
   }
+  D.addEventListener("change", e=>{
+    const sl=e.target.closest("#v-matches [data-mx-sel]"); if(!sl) return;
+    const box=sl.closest(".mf-circles"), G=box._G||{};
+    if(sl.value==="all"){ mxGroup=null; mxDiv1=false; if(box._all) box._all.o.click(); return; }
+    const [g,i]=sl.value.split(":"), x=(G[g]||[])[+i]; if(!x) return;
+    if(x.key==="d:div1"||x.key==="d:amateur"){ mxDiv1=true; mxSide=x.key.slice(2); mxGroup="local"; mxCircles(); return; }
+    mxDiv1=false; mxGroup=null; if(x.o) x.o.click();
+  });
   D.addEventListener("click", e=>{
     const box=e.target.closest("#v-matches .mf-circles"); if(!box) return;
     const g=e.target.closest("[data-mx-grp]");
@@ -541,16 +593,22 @@
     const have=new Set(safe(()=>compsPresent())||[]);
     const comps=[...cs.options].filter(o=>o.value==="الكل" ? have.size>1 : (have.has(o.value) || o.selected));
     const clubs=cl?[...cl.options]:[];
-    const box=D.createElement("div"); box.className="mf-circles";
-    box.innerHTML=`${comps.length>1?`<div class="mf-crow l1" role="group" aria-label="المسابقة">${comps.map(o=>circ(`data-pl-comp="${esc(o.value)}"`, o.value==="الكل"?IC.all:(COMP_LOGO["c:"+o.value]?`<img src="${COMP_LOGO["c:"+o.value]}" alt="" width="32" height="32">`:IC.cups), o.value==="الكل"?"الإجمالي":o.value==="الدوري"?"الدوري الممتاز":o.textContent.trim(), o.selected)+(o.value==="الدوري"?d1Circ("data-pl-d1"):"")).join("")}</div>`:""}
-      ${clubs.length?`<div class="mf-crow l2 crests" role="group" aria-label="الفريق">${clubs.map(o=>{ const c=o.value, s=c?crestSrc(c):"";
-        return circ(`data-pl-club="${esc(c)}"`, c?(s?`<img src="${s}" alt="" width="30" height="30">`:esc(c.slice(0,2))):IC.all, c?c:"كل الفرق", o.selected, "sm"); }).join("")}</div>`:""}`;
+    /* البطولة والفريق قائمتان منسدلتان بدل صفوف الدوائر (منصور 2026-11-02) — تغيّران الخيار الأصلي المخفي، فالأرقام نفسها */
+    const compName=o=>o.value==="الكل"?"الإجمالي":o.value==="الدوري"?"الدوري الممتاز":o.textContent.trim();
+    const d1=shown("div1")&&window.DIV1;
+    const box=D.createElement("div"); box.className="mf-circles mf-sels";
+    box.innerHTML=`${comps.length>1?`<label class="mf-sel"><span class="mf-lbl">البطولة</span><select data-pl-comp-sel>${comps.map(o=>`<option value="${esc(o.value)}"${o.selected?" selected":""}>${esc(compName(o))}</option>`+(o.value==="الدوري"&&d1?`<option value="__d1">دوري الدرجة الأولى</option>`:"")).join("")}</select></label>`:""}
+      ${clubs.length?`<label class="mf-sel"><span class="mf-lbl">الفريق</span><select data-pl-club-sel>${clubs.map(o=>`<option value="${esc(o.value)}"${o.selected?" selected":""}>${esc(o.value||"كل الفرق")}</option>`).join("")}</select></label>`:""}`;
     const old=v.querySelector(".mf-circles"); if(old) old.remove();
     const wrap=v.querySelector(".st-wrap"); if(wrap) wrap.before(box); else v.prepend(box);
-    const on=box.querySelector('.crests [aria-pressed="true"]'); if(on && on.previousElementSibling) on.scrollIntoView({block:"nearest", inline:"center"});
     plMount();
     v.querySelectorAll(".mf-ax-pl").forEach(x=>x.remove()); v.insertAdjacentHTML("afterbegin", statsHeadHTML());
   }
+  D.addEventListener("change", e=>{
+    const c=e.target.closest("#v-players [data-pl-comp-sel]"), k=e.target.closest("#v-players [data-pl-club-sel]");
+    if(c){ if(c.value==="__d1"){ nav("div1"); return; } const s=D.getElementById("stComp"); if(s && s.value!==c.value){ s.value=c.value; s.dispatchEvent(new Event("change")); } return; }
+    if(k){ const s=D.getElementById("stClub"); if(!s) return; s.value=k.value; s.dispatchEvent(new Event("change")); plMount(); }
+  });
   D.addEventListener("click", e=>{
     const box=e.target.closest("#v-players .mf-circles"); if(!box) return;
     const c=e.target.closest("[data-pl-comp]"), k=e.target.closest("[data-pl-club]");
@@ -569,8 +627,8 @@
     const cur=safe(()=>AX.tab);
     const box=D.createElement("div"); box.className="mf-circles mf-ax";
     box.innerHTML=`<h2 class="mf-ptitle">الإحصائيات</h2><div class="mf-crow l1" role="group" aria-label="أقسام الإحصائيات">${tabs.map(b=>circ(`data-mf-at="${b.dataset.at}"`, AX_IC[b.dataset.at]||IC.stats, b.textContent.trim(), b.dataset.at===cur)).join("")}</div>
-      ${comps.length>1?`<div class="mf-crow l2" role="group" aria-label="المسابقة">${comps.map(b=>{ const c=b.dataset.comp, logo=COMP_LOGO["c:"+c];
-        return `<button type="button" class="mf-circ sm comp" data-mf-axc="${esc(c)}" aria-pressed="${b.getAttribute("aria-pressed")==="true"}"><i>${logo?`<img src="${logo}" alt="" width="32" height="32">`:c==="الكل"?IC.all:IC.cups}</i><span>${esc(c==="الكل"?"الإجمالي":c==="الدوري"?"الدوري الممتاز":c)}</span></button>`+(c==="الدوري"?d1Circ("data-mf-d1","sm comp"):""); }).join("")}</div>`:""}`;
+      ${comps.length>1?`<label class="mf-sel"><span class="mf-lbl">البطولة</span><select data-mf-axc-sel>${comps.map(b=>{ const c=b.dataset.comp;
+        return `<option value="${esc(c)}"${b.getAttribute("aria-pressed")==="true"?" selected":""}>${esc(c==="الكل"?"الإجمالي":c==="الدوري"?"الدوري الممتاز":c)}</option>`+(c==="الدوري"&&shown("div1")&&window.DIV1?`<option value="__d1">دوري الدرجة الأولى</option>`:""); }).join("")}</select></label>`:""}`;
     const old=v.querySelector(".mf-ax"); if(old) old.remove();
     w.prepend(box);
   }
@@ -582,6 +640,11 @@
       box.querySelectorAll("[data-mf-at]").forEach(x=>x.setAttribute("aria-pressed", x===t)); return; }
     const c=e.target.closest("[data-mf-axc]");
     if(c){ const b=D.querySelector(`#v-analysis .compbar [data-comp="${CSS.escape(c.dataset.mfAxc)}"]`); if(b) b.click(); }
+  });
+  D.addEventListener("change", e=>{
+    const sl=e.target.closest("#v-analysis [data-mf-axc-sel]"); if(!sl) return;
+    if(sl.value==="__d1"){ nav("div1"); return; }
+    const b=D.querySelector(`#v-analysis .compbar [data-comp="${CSS.escape(sl.value)}"]`); if(b) b.click();
   });
   /* أي تبديل للقسم من داخل الصفحة (مثل الضغط على لاعب) يُحدّث الدوائر */
   D.addEventListener("click", e=>{ if(e.target.closest("#v-analysis .ax") && !e.target.closest(".mf-ax")) setTimeout(()=>{ const box=D.querySelector("#v-analysis .mf-ax"), cur=safe(()=>AX.tab);

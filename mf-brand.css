@@ -1501,3 +1501,68 @@ table.lb td.rk{white-space:nowrap}
 .lb-mv{display:inline-block;margin-inline-start:5px;font-size:.62rem;vertical-align:1px}
 .lb-mv.up{color:#12b76a}
 .lb-mv.down{color:#f04438}
+
+/* ===== تدقيق الاستخدام 2026-11-02: أسماء واضحة، «الأقسام» مجموعات، أزرار ثانوية ===== */
+/* الشعار في وسط الشريط يحمل اسمه */
+.mf-bar .mf-orb{gap:2px;padding-bottom:6px}
+.mf-bar .mf-orb i{margin-top:-30px}
+.mf-bar .mf-orb span{font-size:.68rem;font-weight:600;color:var(--mf-tx3)}
+.mf-bar .mf-orb.on span{color:var(--mf-tx)}
+/* نافذة الأقسام: عنوان + الموسم، ثم مجموعات بعناوين وبطاقات بترتيب القراءة */
+.mf-hub-hd{gap:var(--mf-s2)}
+.mf-hub-hd b{margin-inline-end:auto}
+.mf-hub-season{order:2;font-size:.74rem;font-weight:600;color:var(--mf-tx3);margin-inline-end:var(--mf-s2)}
+.mf-hub-hd .mf-ib{order:3}
+.mf-hub-hd b{order:1}
+.mf-hub-grp:first-of-type{margin-top:var(--mf-s3)}
+.mf-tiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:var(--mf-s2)}
+.mf-node.mf-tile{width:auto;min-height:84px;justify-content:center;gap:8px;padding:12px 4px;border-radius:var(--mf-rb);
+  background:rgba(255,255,255,.03);border:1px solid var(--mf-ln);transition:border-color var(--mf-fast),background var(--mf-fast)}
+.mf-node.mf-tile svg{padding:10px;width:22px;height:22px}
+.mf-node.mf-tile span{font-size:.76rem;white-space:normal;text-align:center}
+.mf-node.mf-tile:hover,.mf-node.mf-tile:focus-visible{border-color:var(--mf-gold-mid);background:rgba(231,208,147,.05)}
+@media (max-width:359px){ .mf-tiles{grid-template-columns:repeat(3,minmax(0,1fr))} }
+/* تسميات صغيرة للتصفية (البطولة / الفريق) */
+.mf-lbl{display:block;font-size:.74rem;font-weight:700;color:var(--mf-tx3);letter-spacing:0}
+.mf-compsel{display:flex;flex-direction:column;gap:6px}
+.mf-compsel .compbar{margin:0}
+#v-players .mf-circles>.mf-lbl{margin-bottom:-6px}
+#v-players .mf-circles>.mf-lbl+.mf-crow.l2{border-top:0;padding-top:0}
+#v-players .mf-circles>.mf-crow.l1+.mf-lbl{padding-top:var(--mf-s3);border-top:1px solid var(--mf-ln)}
+/* المشاركة والتقرير إجراءان ثانويان متساويان (الذهبي الممتلئ للإجراء الأساسي فقط) */
+html.mf .exportbar .btn{background:transparent;color:var(--mf-tx);border:1px solid var(--mf-ln2)}
+html.mf .exportbar .btn:hover{border-color:var(--mf-gold-mid)}
+html.mf .exportbar .btn svg{color:var(--mf-gold)}
+html.mf[data-theme="light"] .exportbar .btn svg{color:var(--mf-acc-tx)}
+
+/* البطولة والفريق: قائمتان منسدلتان جنباً إلى جنب (منصور 2026-11-02 بدل صفوف الدوائر) */
+.mf-sels{flex-direction:row;flex-wrap:wrap;gap:var(--mf-s2)}
+.mf-sel{display:flex;flex-direction:column;gap:6px;flex:1 1 150px;min-width:0}
+.mf-ax .mf-sel{flex:none;max-width:420px}
+html.mf .mf-sel select{appearance:none;-webkit-appearance:none;width:100%;min-height:46px;padding:0 14px;padding-inline-end:40px;border-radius:var(--mf-rb);
+  border:1px solid var(--mf-ln2);background-color:var(--mf-c1);color:var(--mf-tx);font-family:var(--mf-f);font-size:.9rem;font-weight:600;cursor:pointer;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23AD8F59' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-size:18px;background-position:left 14px center;transition:border-color var(--mf-fast)}
+html.mf[dir="ltr"] .mf-sel select{background-position:right 14px center}
+.mf-sel select:hover,.mf-sel select:focus-visible{border-color:var(--mf-gold-mid)}
+.mf-sel select option{background:var(--mf-c1);color:var(--mf-tx)}
+
+/* كل صفوف الشرائح للتصفية = قائمة منسدلة بنفس الشكل؛ الصف الأصلي مخفي (2026-11-02) */
+html.mf .mf-sel-src{display:none!important}
+.mf-sel.mf-sel-auto{flex:none;max-width:420px;margin:0 0 var(--mf-s3)}
+#pprof .mf-sel.mf-sel-auto{margin:var(--mf-s3) var(--mf-s4) var(--mf-s2)}
+#v-players .mf-ax-pl .mf-sel.mf-sel-auto{margin:var(--mf-s2) 0 0}
+@media (min-width:900px){ #v-matches .mf-sels .mf-sel{max-width:420px} }
+/* القوائم الموجودة أصلاً (الحكام، الأداء، الجمهور، النادي) بنفس الشكل */
+html.mf .rf-f select, html.mf #fansRound, html.mf #clubRound, html.mf #cmComp{appearance:none;-webkit-appearance:none;min-height:46px;padding:0 14px;padding-inline-end:40px;
+  border-radius:var(--mf-rb);border:1px solid var(--mf-ln2);background-color:var(--mf-c1);color:var(--mf-tx);font-family:var(--mf-f);font-size:.9rem;font-weight:600;cursor:pointer;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23AD8F59' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-size:18px;background-position:left 14px center}
+html.mf[dir="ltr"] .rf-f select, html.mf[dir="ltr"] #fansRound, html.mf[dir="ltr"] #clubRound, html.mf[dir="ltr"] #cmComp{background-position:right 14px center}
+html.mf .rf-f span{font-size:.74rem;font-weight:700;color:var(--mf-tx3)}
+
+@media (max-width:520px){
+  html.mf .rf-f select{min-height:44px;padding:0 10px;padding-inline-end:28px;font-size:.82rem;background-size:15px;background-position:left 9px center}
+  html.mf[dir="ltr"] .rf-f select{background-position:right 9px center}
+}
+#v-home .mf-std > .mf-sel.mf-sel-auto{display:flex;width:100%;max-width:420px;margin:0 auto var(--mf-s3);align-self:stretch}
