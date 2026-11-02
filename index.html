@@ -6741,6 +6741,8 @@ async function edLockTake(key){
   const me=edMe(); let res={ok:true};
   const r=await withTimeout(fbDb.runTransaction(async tx=>{
     const sn=await tx.get(edLockRef()); const L=(sn.exists&&sn.data().locks)||{}, cur=L[key], now=Date.now();
+    /* مباراة مفتوحة لعدة محرّرين (editlocks.free[key]) — يضعها المالك عند الحاجة (منصور 2026-11-02: «خل محررين يدشون بس حق مبارة الشباب») */
+    if(sn.exists && (sn.data().free||{})[key]) return;
     if(cur && cur.uid && (cur.uid!==me.uid || (cur.dev||"")!==me.dev) && now-(+cur.at||0)<EDLOCK_TTL){ res={ok:false, by:cur}; return; }
     const upd={}; Object.keys(L).forEach(k=>{ if(k!==key && now-(+L[k].at||0)>EDLOCK_TTL*10) upd[k]=firebase.firestore.FieldValue.delete(); });
     upd[key]=Object.assign({}, me, {at:now});
