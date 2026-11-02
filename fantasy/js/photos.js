@@ -38,7 +38,7 @@ const PLAYER_PHOTOS = {
   'SLB|فهد الهولي': '/assets/players/slb/6',
   'SLB|برونو دومنيغيس': '/assets/players/slb/55',
   'SLB|عبدالعزيز القطان': '/assets/players/slb/77',
-  'SLB|عبدالله العوضي': '/assets/players/slb/88',
+  'SLB|عبدالله العوضي': '/assets/players/slb/17',
   'SLB|علي علاء الدين': '/assets/players/slb/93',
   // الساحل (22)
   'SAH|علي جوهر': '/assets/players/sah/2',   // من ملصق النادي (الطقم الثاني)
