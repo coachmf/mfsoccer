@@ -16344,12 +16344,6 @@ html.mx-editing #waFab{display:none!important}   /* زر واتساب كان ي�
           <div><span class="mx-lbl">التاريخ</span><input type="date" data-mf="date" value="${esc(m.date)}"></div>
           <div><span class="mx-lbl">وقت الانطلاق</span><input type="time" data-mf="time" value="${esc(m.time)}"></div>
         </div></div>
-      <div class="mx-card"><h3>مرحلة المباراة<small>تظهر للجمهور كحالة المباراة</small></h3>
-        <div class="mx-phase">${PHASES.map(([k,t])=>`<button class="mx-ph${(m.status||"")===k?" on":""}" data-mstatus="${k}">${t}</button>`).join("")}</div>
-        ${isKO(m)?`<div class="mx-phase" style="margin-top:8px">${PHASES_KO.map(([k,t])=>`<button class="mx-ph${(m.status||"")===k?" on":""}" data-mstatus="${k}">${t}</button>`).join("")}</div>`:""}
-        ${PH_CLOCK[m.status]&&+m.pst?`<div class="mx-clk"><span class="mx-lbl">الدقيقة عند الجمهور</span>${mclkHTML(m)}
-          <span class="mx-clk-adj"><button type="button" class="mx-ghost" data-mclk="-1">− دقيقة</button><button type="button" class="mx-ghost" data-mclk="1">+ دقيقة</button></span></div>`:""}
-        <p class="mx-hint">اضغط «الشوط الأول» مع صافرة البداية فتبدأ الدقيقة عند الجمهور وتُحفظ المباراة فوراً. تقف الساعة عند 45 (و90) حتى تُدخل الوقت بدل الضائع فتكمل 45+1، 45+2… ثم اختر «بين الشوطين» و«الشوط الثاني» و«انتهت» في وقتها. «− / + دقيقة» لتصحيح الساعة إن تأخّرت الضغطة.</p></div>
       <div class="mx-card"><h3>البث</h3>
         <span class="mx-lbl">القناة الناقلة</span>
         <div class="mx-chips">${TV_LIST.map(t=>`<button class="mx-chip${m.tv===t?" on":""}" data-mtv="${esc(t)}">${esc(t)}</button>`).join("")}</div>
@@ -16363,22 +16357,6 @@ html.mx-editing #waFab{display:none!important}   /* زر واتساب كان ي�
           كل حدث تُدخله يصل للمشتركين خلال ثوانٍ. ثلاثة إشعارات كحد أقصى في الحفظة الواحدة،
           ولا يُعاد إرسال حدث أُرسل. لا يمكن سحب إشعار بعد إرساله.`
           :`احفظ المباراة أولاً، ثم يصير البثّ متاحاً.`}</p></div>
-      <div class="mx-card"><h3>الوقت بدل الضائع</h3>
-        <div class="mx-grid">
-          <div><span class="mx-lbl">الشوط الأول +</span>
-            <input data-mf="add1" type="number" min="0" max="30" inputmode="numeric"
-                   value="${esc(String(m.add1??""))}" placeholder="0"></div>
-          <div><span class="mx-lbl">الشوط الثاني +</span>
-            <input data-mf="add2" type="number" min="0" max="30" inputmode="numeric"
-                   value="${esc(String(m.add2??""))}" placeholder="0"></div>
-          ${hasET(m)?`<div><span class="mx-lbl">الإضافي الأول +</span>
-            <input data-mf="add3" type="number" min="0" max="30" inputmode="numeric" value="${esc(String(m.add3??""))}" placeholder="0"></div>
-          <div><span class="mx-lbl">الإضافي الثاني +</span>
-            <input data-mf="add4" type="number" min="0" max="30" inputmode="numeric" value="${esc(String(m.add4??""))}" placeholder="0"></div>`:""}
-        </div>
-        <p class="mx-hint">ما أعلنه الحكم لكل شوط. تُحتسب في دقائق اللعب:
-          مباراة بها ٧+٥ طولها ١٠٢ دقيقة، والبديل الذي دخل ٤٥+٣ تُحسب له دقائق الوقت المحتسب.
-          اتركها فارغة إن لم تُسجّل.</p></div>
       ${isKO(m)?`<div class="mx-card"><h3>الأشواط الإضافية وركلات الترجيح<small>لمباريات خروج المغلوب</small></h3>
         <label class="mx-et"><input type="checkbox" data-met ${hasET(m)?"checked":""}> امتدت المباراة للأشواط الإضافية (30 دقيقة)</label>
         <p class="mx-hint">بعد التفعيل تُسجَّل أحداث الأشواط الإضافية بدقيقتها الحقيقية: 91 إلى 120 (مثلاً هدف في الدقيقة 100). وبدل ضائع الإضافي على 105 أو 120.</p>
@@ -16496,9 +16474,36 @@ html.mx-editing #waFab{display:none!important}   /* زر واتساب كان ي�
       <div class="who">${face(who,club)}<div class="tx"><b>${esc(who||"بلا لاعب")}</b><small>${esc(sub)}</small></div></div>
       <div class="acts"><button data-medit="${k}.${i}" aria-label="تعديل">${SV.edit}</button><button class="del" data-mdel="${k}.${i}" aria-label="حذف">${SV.trash}</button></div></div>`;
   }
+  /* مرحلة المباراة والوقت بدل الضائع أعلى تبويب الأحداث (منصور 2026-11-02: «لسهولة الإدخال») */
+  function liveCards(){
+    const m=EDIT.match;
+    return `<div class="mx-card"><h3>مرحلة المباراة<small>تظهر للجمهور كحالة المباراة</small></h3>
+        <div class="mx-phase">${PHASES.map(([k,t])=>`<button class="mx-ph${(m.status||"")===k?" on":""}" data-mstatus="${k}">${t}</button>`).join("")}</div>
+        ${isKO(m)?`<div class="mx-phase" style="margin-top:8px">${PHASES_KO.map(([k,t])=>`<button class="mx-ph${(m.status||"")===k?" on":""}" data-mstatus="${k}">${t}</button>`).join("")}</div>`:""}
+        ${PH_CLOCK[m.status]&&+m.pst?`<div class="mx-clk"><span class="mx-lbl">الدقيقة عند الجمهور</span>${mclkHTML(m)}
+          <span class="mx-clk-adj"><button type="button" class="mx-ghost" data-mclk="-1">− دقيقة</button><button type="button" class="mx-ghost" data-mclk="1">+ دقيقة</button></span></div>`:""}
+        <p class="mx-hint">اضغط «الشوط الأول» مع صافرة البداية فتبدأ الدقيقة عند الجمهور وتُحفظ المباراة فوراً. تقف الساعة عند 45 (و90) حتى تُدخل الوقت بدل الضائع فتكمل 45+1، 45+2… ثم اختر «بين الشوطين» و«الشوط الثاني» و«انتهت» في وقتها. «− / + دقيقة» لتصحيح الساعة إن تأخّرت الضغطة.</p></div>
+      <div class="mx-card"><h3>الوقت بدل الضائع</h3>
+        <div class="mx-grid">
+          <div><span class="mx-lbl">الشوط الأول +</span>
+            <input data-mf="add1" type="number" min="0" max="30" inputmode="numeric"
+                   value="${esc(String(m.add1??""))}" placeholder="0"></div>
+          <div><span class="mx-lbl">الشوط الثاني +</span>
+            <input data-mf="add2" type="number" min="0" max="30" inputmode="numeric"
+                   value="${esc(String(m.add2??""))}" placeholder="0"></div>
+          ${hasET(m)?`<div><span class="mx-lbl">الإضافي الأول +</span>
+            <input data-mf="add3" type="number" min="0" max="30" inputmode="numeric" value="${esc(String(m.add3??""))}" placeholder="0"></div>
+          <div><span class="mx-lbl">الإضافي الثاني +</span>
+            <input data-mf="add4" type="number" min="0" max="30" inputmode="numeric" value="${esc(String(m.add4??""))}" placeholder="0"></div>`:""}
+        </div>
+        <p class="mx-hint">ما أعلنه الحكم لكل شوط. تُحتسب في دقائق اللعب:
+          مباراة بها ٧+٥ طولها ١٠٢ دقيقة، والبديل الذي دخل ٤٥+٣ تُحسب له دقائق الوقت المحتسب.
+          اتركها فارغة إن لم تُسجّل.</p></div>`;
+  }
   function tabEvents(){
     const items=evItems();
-    return `<div class="mx-card"><h3>إضافة حدث</h3>
+    return `${liveCards()}
+      <div class="mx-card"><h3>إضافة حدث</h3>
       <div class="mx-add">
         <button class="mx-addb" data-mnew="goal">${ICO_BALL}هدف</button>
         <button class="mx-addb" data-mnew="card" data-mtype="إنذار"><span class="ic-card y"></span>إنذار</button>
