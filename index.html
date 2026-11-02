@@ -15359,8 +15359,11 @@ function mpHeader(m){
   const st = m.status ? MS[m.status]||"" : soon ? "لم تبدأ" : live ? "جارية الآن" : "انتهت";
   /* القنوات في سطر مستقل تحت الموعد، كلها في صف واحد (منصور 2026-09-23) */
   const tvH=tvOf(m), when=[mpDateLabel(m), m.time?`<span dir="ltr">${esc(m.time)}</span>`:""].filter(Boolean).join(" · ") + (tvH?`<span class="mp-when-tv">${esc(tvH)}</span>`:"");
-  /* مجموع الوقت بدل الضائع المعلن تحت الموعد — في المباراة المنتهية والجارية (منصور 2026-11-02) */
-  const addT=["add1","add2","add3","add4"].reduce((t,k)=>t+(+m[k]>0?+m[k]:0),0);   /* المجموع فقط (منصور 2026-11-02: «بس حط التوتل») */
+  /* الوقت بدل الضائع حسب المرحلة (منصور 2026-11-02): أثناء الشوط يظهر بدله فور إدخاله، يختفي بين الشوطين وفي الترجيح،
+     وبعد صافرة النهاية يظهر المجموع */
+  const addSum=["add1","add2","add3","add4"].reduce((t,k)=>t+(+m[k]>0?+m[k]:0),0);
+  const addCur={h1:"add1",h2:"add2",e1:"add3",e2:"add4"}[m.status];
+  const addT = addCur ? (+m[addCur]>0 ? +m[addCur] : 0) : (matchOver(m) && !["ht","pso"].includes(m.status)) ? addSum : 0;
   const addH=soon||!addT?"":`<div class="mp-add"><small>الوقت بدل الضائع</small><b dir="ltr">+${addT}</b></div>`;
   const team=c=>`<div class="mp-team" data-club-open="${esc(c)}">${crest(c,true)}<b>${esc(c)}</b></div>`;
   const hs=soon?"":mpScorers(m,m.home), as=soon?"":mpScorers(m,m.away);
