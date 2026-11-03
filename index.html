@@ -14399,8 +14399,18 @@ const hmCTA=ms=>ms.some(m=>compOf(m)==="الدوري") ? `<div class="hm-cta">
       <button type="button" class="hm-btn" data-go-view="predict">التوقعات</button>
       <button type="button" class="hm-btn primary" data-go-view="fans">صوّت بتشكيلتك</button>
     </div>` : "";
+/* «إجمالي البطولات» (منصور 2026-11-03: «اجمالي البطولات مو هذي المباره اليايه»): الأقرب بين الدوري والكؤوس والمشاركات الخارجية،
+   ومباراة المشاركات تُرسم داخل withExt بشعارات خصومها واسم بطولتها */
 function hmNextMatchHTML(){
-  const m=nextMatch(); if(!m) return "";
+  const m=nextMatch();
+  if(COMP==="الكل" && window.EXT && EXT.withExt){
+    const x=EXT.withExt(()=>nextMatch());
+    if(x && (!m || kickoffTS(x)<kickoffTS(m))) return EXT.withExt(()=>hmNextMatchCard(x), x.comp);
+  }
+  return hmNextMatchCard(m);
+}
+function hmNextMatchCard(m){
+  if(!m) return "";
   const HM_CTA=hmCTA([m]);
   const I=(typeof CLUB_INFO!=="undefined" && CLUB_INFO[m.home])||{};
   const venue=m.venue || I.st || "";
