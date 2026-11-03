@@ -4282,8 +4282,8 @@ function totReviewHTML(round, comp){
     const row=totRow(round,comp);
     const built=buildFansXI(tal, round, comp);
     ADMDRAFT = (row && row.done)
-      ? {k:totKey(round,comp), f:row.f, xi:[...(row.xi||[])], best:row.best, gk:row.gk, goal:row.goal}
-      : {k:totKey(round,comp), f:built.f, xi:built.xi, best:tal.topBest, gk:tal.topGk,
+      ? {k:totKey(round,comp), f:row.f, xi:[...(row.xi||[])], best:row.best, gk:row.gk, goal:row.goal, coach:row.coach||null}
+      : {k:totKey(round,comp), f:built.f, xi:built.xi, best:tal.topBest, gk:tal.topGk, coach:tal.topCoach,
          goal:tal.topGoal?tal.topGoal.id:""};
   }
   const pool=roundPlayers(round,comp);
@@ -4304,7 +4304,7 @@ function totReviewHTML(round, comp){
   }).join("");
   const sel=(id,cur,list)=>`<label class="bl-f"><span>${id.t}</span>
     <select data-admpick="${id.k}"><option value="">— فارغة —</option>
-    ${list.map(p=>`<option value="${esc(p.n+"|"+p.club)}" ${cur&&cur.n===p.n&&cur.club===p.club?"selected":""}>${esc(p.n)} — ${esc(p.club)} (${(id.k==="gk"?tal.gks:tal.best)[p.n+"|"+p.club]||0})</option>`).join("")}
+    ${list.map(p=>`<option value="${esc(p.n+"|"+p.club)}" ${cur&&cur.n===p.n&&cur.club===p.club?"selected":""}>${esc(p.n)} — ${esc(p.club)} (${(id.k==="gk"?tal.gks:id.k==="coach"?tal.coaches:tal.best)[p.n+"|"+p.club]||0})</option>`).join("")}
     </select></label>`;
   return `<h4 class="bl-h">الفرز — ${nVotes(ballots.length)}</h4>
     <div class="xi-pick"><label class="lb">الرسم الفنّي</label>
@@ -4314,6 +4314,7 @@ function totReviewHTML(round, comp){
     <div class="bl-slots">${slots}</div>
     <div class="bl-extra">
       ${sel({k:"best",t:"أفضل لاعب"}, ADMDRAFT.best, pool)}
+      ${roundCoaches(round,comp).length ? sel({k:"coach",t:"أفضل مدرب"}, ADMDRAFT.coach, roundCoaches(round,comp)) : ""}
       ${sel({k:"gk",t:"أفضل حارس"},   ADMDRAFT.gk,   pool.filter(p=>p.line==="G"))}
       <label class="bl-f"><span>هدف الجولة</span>
         <select data-admpick="goal"><option value="">— فارغة —</option>
@@ -4567,7 +4568,8 @@ function wireTotReview(round, comp){
     busy(ap,true,"جارٍ الاعتماد…");
     const ok=await saveTotRow(round, comp, {
       done:true, open:false, f:ADMDRAFT.f, xi,
-      best:ADMDRAFT.best||null, gk:ADMDRAFT.gk||null, goal:ADMDRAFT.goal||"",
+      best:ADMDRAFT.best||null, gk:ADMDRAFT.gk||null, goal:ADMDRAFT.goal||"", coach:ADMDRAFT.coach||null,
+      coachV: ADMDRAFT.coach? (tal.coaches[ADMDRAFT.coach.n+"|"+ADMDRAFT.coach.club]||0):0,
       bestV: ADMDRAFT.best? (tal.best[ADMDRAFT.best.n+"|"+ADMDRAFT.best.club]||0):0,
       gkV:   ADMDRAFT.gk?   (tal.gks[ADMDRAFT.gk.n+"|"+ADMDRAFT.gk.club]||0):0,
       goalV: ADMDRAFT.goal? (tal.goals[ADMDRAFT.goal]||0):0,
@@ -6154,6 +6156,25 @@ function roundPlayers(round, comp){
   (ALL&&ALL.subs||[]).filter(x=>x.r===round && compOf(x)===comp).forEach(x=>add(x.in,x.club));
   return out.sort((a,b)=>String(a.n).localeCompare(String(b.n),"ar"));
 }
+/* أفضل مدرب في تصويت الجمهور من الجولة 8 في الدوري (منصور 2026-11-03: «ضيف افضل المدرب على تصويت الجمهور بداية من الجوله الثامنه») —
+   المرشحون مدربو الأندية التي لعبت في الجولة (من تشكيلاتها المسجّلة)، ومدرب كل نادٍ من تولّاه في تلك الجولة (CLUB_COACH.from) */
+const COACH_VOTE_FROM = 8;
+const coachVoteOn = (round, comp) => comp==="الدوري" && +round>=COACH_VOTE_FROM;
+function roundCoaches(round, comp){
+  if(!coachVoteOn(round, comp) || typeof CLUB_COACH==="undefined") return [];
+  const clubs=[...new Set((ALL&&ALL.lineups||[]).filter(x=>x.r===round && compOf(x)===comp).map(x=>x.club))];
+  return clubs.map(c=>{ const k=CLUB_COACH[c]; return k && (+k.from||0)<=round ? {n:k.n, club:c} : null; }).filter(Boolean)
+    .sort((a,b)=>String(a.n).localeCompare(String(b.n),"ar"));
+}
+/* بطاقة «أفضل مدرب» بصورة المدرب، والضغط يفتح ملفه (نفس [data-coach] في صفحة النادي) */
+function coachVoteCard(t, p, vtxt){
+  if(!p) return "";
+  const k=(typeof CLUB_COACH!=="undefined") && CLUB_COACH[p.club];
+  const img=k&&k.img ? `<img class="pcut" src="${k.img}_s.webp?v=32" alt="" loading="lazy" decoding="async" draggable="false">` : "";
+  return `<div class="fx-card"><div class="fx-t">${t}</div>
+      <div class="fx-p" data-coach="${esc(p.club)}" role="button" tabindex="0">${img}${crest(p.club)}<b>${esc(p.n)}</b></div>
+      <div class="fx-v">${esc(p.club)}${vtxt||""}</div></div>`;
+}
 function roundGoals(round, comp){
   return GOALS.filter(g=>g.r===round && compOf(g)===comp && g.bp!=="هدف عكسي")
     .map(g=>({id:goalId(g), p:g.p, club:g.sc, m:+g.m||0, x:+g.x||0, det:g.det||"", zone:g.zone||""}))
@@ -6166,18 +6187,20 @@ const goalId = g => [g.r, compOf(g), g.sc, g.p, (+g.m||0), (+g.x||0)].join("~");
    بالعدد الذي يفرضه الرسم. التعادل يُحسم بالأكثر ظهوراً ثم بالاسم،
    ويُعرض للمحرّر ليقرّر. */
 function tallyVotes(ballots){
-  const forms={}, players={}, best={}, gks={}, goals={};
+  const forms={}, players={}, best={}, gks={}, goals={}, coaches={};
   const bump=(o,k)=>{ if(k) o[k]=(o[k]||0)+1; };
   ballots.forEach(b=>{
     bump(forms, b.f);
     (b.xi||[]).forEach(p=>{ const k=p.n+"|"+p.club; players[k]=(players[k]||0)+1; });
     if(b.best) bump(best, b.best.n+"|"+b.best.club);
     if(b.gk)   bump(gks,  b.gk.n+"|"+b.gk.club);
+    if(b.coach) bump(coaches, b.coach.n+"|"+b.coach.club);
     bump(goals, b.goal);
   });
   const top=o=>Object.entries(o).sort((a,b)=>b[1]-a[1]||String(a[0]).localeCompare(String(b[0]),"ar"))[0];
   const split=k=>({n:k.split("|")[0], club:k.split("|")[1]});
-  return {forms, players, best, gks, goals,
+  return {forms, players, best, gks, goals, coaches,
+          topCoach: top(coaches)? {...split(top(coaches)[0]), v:top(coaches)[1]} : null,
           topForm: top(forms)? top(forms)[0] : "4-4-2",
           topBest: top(best)? {...split(top(best)[0]), v:top(best)[1]} : null,
           topGk:   top(gks)?  {...split(top(gks)[0]),  v:top(gks)[1]}  : null,
@@ -8464,6 +8487,7 @@ function officialXIHTML(row, round, comp, n){
     ${fansPitchHTML(row)}
     <div class="fx-grid">
       ${card("أفضل لاعب", row.best, row.bestV)}
+      ${coachVoteCard("أفضل مدرب", row.coach, row.coachV?` · ${nVotes(row.coachV)}`:"")}
       ${card("أفضل حارس", row.gk,   row.gkV)}
       ${g?`<div class="fx-card"><div class="fx-t">هدف الجولة</div>
         <div class="fx-p" data-player="${esc(g.p)}" data-club="${esc(g.club)}">${pav(g.p,0,false,g.club)}${crest(g.club)}<b>${esc(g.p)}</b></div>
@@ -8484,6 +8508,7 @@ function liveTallyHTML(ballots, round, comp){
     ${built.xi.length>=7 ? fansPitchHTML({f:built.f, xi:built.xi}, TOT_SHOWN()?tal:null) : `<p class="hint">لم تكتمل الأصوات لرسم التشكيلة بعد.</p>`}
     <div class="fx-grid">
       ${card("أفضل لاعب", tal.topBest)}
+      ${coachVoteOn(round,comp) ? coachVoteCard("أفضل مدرب", tal.topCoach, tal.topCoach&&TOT_SHOWN()?` · ${nVotes(tal.topCoach.v)}`:"") : ""}
       ${card("أفضل حارس", tal.topGk)}
       ${g?`<div class="fx-card"><div class="fx-t">هدف الجولة</div>
         <div class="fx-p" data-player="${esc(g.p)}" data-club="${esc(g.club)}">${pav(g.p,0,false,g.club)}${crest(g.club)}<b>${esc(g.p)}</b></div>
@@ -8512,8 +8537,8 @@ function fansPitchHTML(row, tal){
    ممن شاركوا في الجولة. الملعب فوقها يتغيّر مع كل اختيار. */
 function newBallot(round, comp){
   if(MYTOT) return {f:MYTOT.f, xi:[...(MYTOT.xi||[])], best:MYTOT.best||null,
-                    gk:MYTOT.gk||null, goal:MYTOT.goal||""};
-  return {f:"4-3-3", xi:[], best:null, gk:null, goal:""};
+                    gk:MYTOT.gk||null, goal:MYTOT.goal||"", coach:MYTOT.coach||null};
+  return {f:"4-3-3", xi:[], best:null, gk:null, goal:"", coach:null};
 }
 function lineNeeds(f){
   const rows=String(f).split("-").map(Number).filter(n=>n>0);
@@ -8612,6 +8637,8 @@ function ballotHTML(round, comp){
     <div class="bl-extra">
       <label class="bl-f"><span>أفضل لاعب</span>
         <select id="blBest"><option value="">— اختر —</option>${bestPool.map(p=>optR(p,BALLOT.best)).join("")}</select></label>
+      ${roundCoaches(round,comp).length ? `<label class="bl-f"><span>أفضل مدرب</span>
+        <select id="blCoach"><option value="">— اختر —</option>${roundCoaches(round,comp).map(p=>opt(p,BALLOT.coach)).join("")}</select></label>` : ""}
       <label class="bl-f"><span>أفضل حارس</span>
         <select id="blGk"><option value="">— اختر —</option>${topLine("G",3).map(p=>opt(p,BALLOT.gk)).join("")}</select></label>
       <label class="bl-f"><span>هدف الجولة</span>
@@ -8634,7 +8661,7 @@ function wireBallot(round, comp){
   });
   const pick=(id,key)=>{ const el=$(id); if(!el) return;
     el.onchange=()=>{ const v=el.value; BALLOT[key]= v? {n:v.split("|")[0], club:v.split("|")[1]} : null; }; };
-  pick("#blBest","best"); pick("#blGk","gk");
+  pick("#blBest","best"); pick("#blGk","gk"); pick("#blCoach","coach");
   const gl=$("#blGoal"); if(gl) gl.onchange=()=>{ BALLOT.goal=gl.value; };
   const sv=$("#blSave");
   if(sv) sv.onclick=async()=>{
@@ -8642,6 +8669,7 @@ function wireBallot(round, comp){
     if(xi.length!==11){ toast("اختر أحد عشر لاعباً","err"); return; }
     if(new Set(xi.map(p=>p.n+"|"+p.club)).size!==11){ toast("لا تكرّر لاعباً","err"); return; }
     if(!BALLOT.best){ toast("اختر أفضل لاعب","err"); return; }
+    if(!BALLOT.coach && roundCoaches(round,comp).length){ toast("اختر أفضل مدرب","err"); return; }
     if(!BALLOT.gk){ toast("اختر أفضل حارس","err"); return; }
     if(!BALLOT.goal && roundGoals(round,comp).length){ toast("اختر هدف الجولة","err"); return; }
     busy(sv,true,"جارٍ الإرسال…");
@@ -10468,7 +10496,7 @@ async function saveTotVote(round, comp, body){
   if(!row || !row.open){ toast("التصويت مغلق لهذه الجولة","err"); return false; }
   const k=totKey(round,comp), id=k+"_"+FAN.uid;
   const doc={uid:FAN.uid, name:FAN.name, rk:k, round, comp,
-             f:body.f, xi:body.xi, best:body.best||null, gk:body.gk||null,
+             f:body.f, xi:body.xi, best:body.best||null, gk:body.gk||null, coach:body.coach||null,
              goal:body.goal||"", ts:new Date().toISOString()};
   try{
     await fbDb.collection("tots").doc(id).set(doc);
