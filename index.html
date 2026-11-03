@@ -2280,7 +2280,7 @@ html[dir="ltr"] .tl-ev.a .tl-card{text-align:right;align-items:flex-end}
 <script>document.documentElement.classList.add("mf")</script>
 <script src="mf-shell.js?v=41" defer></script>
 <link rel="stylesheet" href="fmx.css?v=3">
-<script src="fmx.js?v=8" defer></script>   <!-- أفكار FM27: fmx.js يلفّ صفحات المباراة والنادي واللاعب والمباريات والتحليل -->
+<script src="fmx.js?v=9" defer></script>   <!-- أفكار FM27: fmx.js يلفّ صفحات المباراة والنادي واللاعب والمباريات والتحليل -->
 <style>
 /* تبويب التحليل — التصميم الجديد (منصور 2026-09-17) */
 .an{--an-card:#0F1E35;--an-line:#213653;--an-txt:#EDF3FA;--an-mut:#8FA6C4;--an-track:rgba(143,166,196,.16);--an-acc:#2EB0F0;--an-acc2:#1878BE}
@@ -3459,6 +3459,18 @@ function suspensions(){
   const out=[];
   Object.entries(by).forEach(([key,cards])=>{
     const [comp,c,n]=key.split("|"), ms=ofClub(comp,c);
+    const {slots,y}=banSlots(ms,cards,c);
+    const miss=[]; let why="", from=null;
+    slots.forEach(t=>{ if(isUp(comp,t.m)){ if(!miss.length){ why=t.why; from=t.from; } miss.push(t.m); } });
+    const risk=!miss.length && y%3===2;
+    if(!miss.length && !risk) return;
+    out.push({n,c,comp,y,miss,next:miss[0]||null,why,from,risk});
+  });
+  return out.sort((a,b)=>(!!b.next)-(!!a.next)||(a.next&&b.next?ts(a.next)-ts(b.next):0)||a.c.localeCompare(b.c,"ar"));
+}
+/* كل مباريات الإيقاف (الماضية والقادمة) لمجموعة كروت لاعب في مسابقة واحدة — ms مباريات ناديه فيها مرتبة زمنياً */
+function banSlots(ms, cards, c){
+    const opp=(m,c)=>m.home===c?m.away:m.home;
     const at=x=>ms.findIndex(m=>+m.round===+x.r);
     const bans=[]; let y=0;
     [...new Set(cards.map(at))].filter(i=>i>=0).sort((a,b)=>a-b).forEach(i=>{
@@ -3467,15 +3479,22 @@ function suspensions(){
       if(y2) bans.push([i,1,`طرد أمام ${opp(ms[i],c)}`]);
       if(dr) bans.push([i,2,`طرد مباشر أمام ${opp(ms[i],c)}`]);
     });
-    let used=-1; const miss=[]; let why="", from=null;
+    let used=-1; const slots=[];
     bans.forEach(([i,k,w])=>{ let j=Math.max(i,used);
-      for(let t=0;t<k&&j+1<ms.length;t++){ j++; if(isUp(comp,ms[j])){ if(!miss.length){ why=w; from=ms[i]; } miss.push(ms[j]); } }
+      for(let t=0;t<k&&j+1<ms.length;t++){ j++; slots.push({m:ms[j], why:w, from:ms[i]}); }
       used=j; });
-    const risk=!miss.length && y%3===2;
-    if(!miss.length && !risk) return;
-    out.push({n,c,comp,y,miss,next:miss[0]||null,why,from,risk});
+    return {slots, y};
+}
+/* مباريات إيقاف لاعب في كل المسابقات: matchKey ← السبب (لملف اللاعب) */
+function playerBanMap(name, club){
+  const MS=(ALL&&ALL.matches)||MATCHES, CS=((ALL&&ALL.cards)||CARDS).filter(x=>x.club===club && x.p===name);
+  const ts=m=>{ const k=kickoffTS(m); return k!==null?k:Date.parse(m.date||"")||0; };
+  const out={};
+  [...new Set(CS.map(compOf))].forEach(comp=>{
+    const ms=MS.filter(m=>compOf(m)===comp&&(m.home===club||m.away===club)).sort((a,b)=>ts(a)-ts(b)||(+a.round||0)-(+b.round||0));
+    banSlots(ms, CS.filter(x=>compOf(x)===comp), club).slots.forEach(t=>{ out[matchKey(t.m)]=t.why; });
   });
-  return out.sort((a,b)=>(!!b.next)-(!!a.next)||(a.next&&b.next?ts(a.next)-ts(b.next):0)||a.c.localeCompare(b.c,"ar"));
+  return out;
 }
 function scorers(){
   const p={};
@@ -11903,6 +11922,8 @@ html.pp-open,html.pp-open body{overflow:hidden}
 .plog-r{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:10px;padding:8px 10px;border-radius:12px;background:rgba(255,255,255,.035);border:1px solid rgba(143,166,196,.14);font-size:.78rem}
 [data-theme="light"] .plog-r{background:#fff;border-color:var(--line)}
 .plog-r .rd{font-size:.66rem;color:var(--slate);white-space:nowrap}
+.plog-r.miss{opacity:.72}
+.plog-r.miss .mn.why{white-space:nowrap;font-size:.7rem;font-weight:700;color:#F0A35A}
 .plog-r .op{display:flex;align-items:center;gap:6px;min-width:0;color:var(--head,#fff);font-weight:600}
 .plog-r .op .crest{width:22px;height:22px;border-radius:6px}
 .plog-r .op span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -14042,12 +14063,21 @@ function playerProfileData(name, club){
   const pp=clubs.reduce((t,c)=>{ const e=PP.find(x=>x.n===name && x.c===c); return e?{apps:t.apps+e.apps, mins:t.mins+e.mins, cs:t.cs+e.cs}:t; }, {apps:0,mins:0,cs:0});
   const log=[]; let conceded=0;
   /* الدقائق المتاحة: طول كل مباراة لعبها ناديه الحالي (شارك أو لا)، ومن الأندية السابقة ما شارك فيه فقط؛ الجولة تُحسب مرة (منصور 2026-11-04) */
-  const avail={};
+  const avail={}, missed=[], bans=playerBanMap(name, club);
+  const mts=m=>{ const k=kickoffTS(m); return k!==null?k:Date.parse(m.date||"")||0; };
   clubs.forEach(cl=>{
     MATCHES.filter(m=>!isUpcoming(m) && (m.home===cl||m.away===cl)).forEach(m=>{
       const w=playerWindow(m,cl,name);
       if(cl===club || (w && w.end>w.start)) avail[compOf(m)+"|"+m.round]=liveLen(m);
-      if(!w || w.end<=w.start) return;
+      if(!w || w.end<=w.start){
+        /* لم يلعبها (منصور 2026-11-04): موقوف حسب اللائحة، أو غائب/مصاب من المحرّر أو الفانتسي، أو تشكيلة مسجّلة بدونه */
+        if(cl!==club) return;
+        const home=m.home===cl, gf=home?+m.hg:+m.ag, ga=home?+m.ag:+m.hg;
+        const ban=bans[matchKey(m)], ab=ban?"":absentWhy(m, cl, name);
+        const why = ban ? "موقوف · "+ban : ab ? ab : xiNames(m.round, compOf(m), cl).length>=11 ? "لم يشارك" : "";
+        if(why) missed.push({m, opp:home?m.away:m.home, home, wc:cl, miss:why, soft:!ban&&!ab, res:`${gf} - ${ga}`, k: gf>ga?"w":gf<ga?"l":"d"});
+        return;
+      }
       const gs=matchGoals(m);
       const g=gs.filter(x=>x.sc===cl && x.p===name && x.bp!=="هدف عكسي").length;
       const a=gs.filter(x=>x.sc===cl && x.a===name && !isOG(x)).length;
@@ -14059,11 +14089,15 @@ function playerProfileData(name, club){
                 res:`${gf} - ${ga}`, k: gf>ga?"w":gf<ga?"l":"d", sub: w.start>0, off: w.end<liveLen(m)});
     });
   });
+  /* «لم يشارك» بلا سبب يُعرض فقط بعد أول ظهور له مع ناديه — قبله ربما لم يكن في الفريق بعد */
+  const first=Math.min(...log.filter(l=>l.wc===club).map(l=>mts(l.m)), Infinity);
+  const missLog=missed.filter(x=>!x.soft || mts(x.m)>first);   /* منفصلة عن log حتى لا تدخل عدّ المباريات في fmx.js */
   /* في الإجمالي تختلط جولات المسابقات (ج1 كأس بعد ج3 دوري)، فالترتيب بالتاريخ؛ داخل مسابقة واحدة كما كان */
-  log.sort((a,b)=>(COMP==="الكل" && a.m.date && b.m.date && a.m.date!==b.m.date) ? String(b.m.date).localeCompare(String(a.m.date))
-    : (b.m.round-a.m.round)||String(b.m.date).localeCompare(String(a.m.date)));
-  return {name, club, former, pos, num, gk, goals, assists, ownG, y, rd, pens, pensS, penList, apps:pp.apps, mins:pp.mins, minsOf:Object.values(avail).reduce((a,b)=>a+b,0), appsOf:Object.keys(avail).length, cs:pp.cs, conceded, log};
+  log.sort(logCmp);
+  return {name, club, former, pos, num, gk, goals, assists, ownG, y, rd, pens, pensS, penList, missLog, apps:pp.apps, mins:pp.mins, minsOf:Object.values(avail).reduce((a,b)=>a+b,0), appsOf:Object.keys(avail).length, cs:pp.cs, conceded, log};
 }
+const logCmp=(a,b)=>(COMP==="الكل" && a.m.date && b.m.date && a.m.date!==b.m.date) ? String(b.m.date).localeCompare(String(a.m.date))
+    : (b.m.round-a.m.round)||String(b.m.date).localeCompare(String(a.m.date));
 /* دقيقة مطلقة (بعد إضافة بدل الشوط الأول) ← كما تظهر في أحداث المباراة: 45+3′، 67′، 90+4′ */
 function clockLabel(m, t){ const a1=add1Of(m); if(t<=45) return t+"′"; if(t<=45+a1) return "45+"+(t-45)+"′"; const c=t-a1; return c>90 ? "90+"+(c-90)+"′" : c+"′"; }
 function playerProfileHTML(D){
@@ -14085,7 +14119,13 @@ function playerProfileHTML(D){
   const PK = (typeof PROF_COMP==="string" && PROF_COMP) || COMP;
   const XO = (()=>{ try{ const L = window.EXT && EXT.profileComps ? EXT.profileComps(D.name, D.club) : []; return L; }catch(e){ return []; } })();
   const badge=(n,cls,inner)=> n?`<span class="pp-b ${cls}">${inner}${n>1?`<em>${n}</em>`:""}</span>`:"";
-  const logHTML = D.log.length ? `<div class="pprof-log"><h4>مباراة بمباراة</h4><div class="plog">${D.log.map(l=>`
+  const LL=[...D.log, ...(D.missLog||[])].sort(logCmp);   /* ما لعبه + ما غاب عنه مع السبب */
+  const logHTML = LL.length ? `<div class="pprof-log"><h4>مباراة بمباراة</h4><div class="plog">${LL.map(l=>l.miss ? `
+    <div class="plog-r miss">
+      <span class="rd">ج${l.m.round}${compOf(l.m)!=="الدوري"?"<span> · </span><span>"+esc(compOf(l.m))+"</span>":""}</span>
+      <span class="op">${crest(l.opp)}<span>${esc(l.opp)}<i> · ${l.home?"أرضه":"خارج أرضه"}</i></span></span>
+      <span class="ev"><span class="mn why">${esc(l.miss)}</span><span class="rs ${l.k}">${l.res}</span></span>
+    </div>` : `
     <div class="plog-r">
       <span class="rd">ج${l.m.round}${compOf(l.m)!=="الدوري"?"<span> · </span><span>"+esc(compOf(l.m))+"</span>":""}</span>
       <span class="op">${crest(l.opp)}<span>${esc(l.opp)}<i> · ${l.home?"أرضه":"خارج أرضه"}</i>${l.wc&&l.wc!==D.club?`<i class="wth"> · مع ${esc(l.wc)}</i>`:""}</span></span>

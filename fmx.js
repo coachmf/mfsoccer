@@ -399,7 +399,7 @@ function cardsByComp(D){
   const L = (ALL.cards||[]).filter(x=>x.p===D.name && clubs.includes(x.club)); if(!L.length) return "";
   const by = {}; L.forEach(x=>{ const k=compOf(x); (by[k] ??= {y:0,r:0}); if(isRed(x.type)) by[k].r++; else if(isYellow(x.type)) by[k].y++; });
   return `<div class="fmx-pp"><h4>الإنذارات حسب البطولة</h4>${Object.entries(by).map(([k,v])=>`<div class="stat"><span>${H(k)}</span><span class="v">
-    <b class="fmx-cp"><i class="cardpill y"></i>${v.y}${FMX_RULES.ycBan?`<small dir="ltr">/${FMX_RULES.ycBan}</small>`:""}</b>${v.r?`<b class="fmx-cp"><i class="cardpill r"></i>${v.r}</b>`:""}</span></div>`).join("")}</div>`;
+    <b class="fmx-cp"><i class="cardpill y"></i>${v.y}</b>${v.r?`<b class="fmx-cp"><i class="cardpill r"></i>${v.r}</b>`:""}</span></div>`).join("")}</div>`;
 }
 function milestonesHTML(D){
   const all = ok(()=>withComp("الكل", ()=>playerProfileData(D.name, D.club))); if(!all || !all.log.length) return "";
