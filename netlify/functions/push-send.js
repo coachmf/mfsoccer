@@ -6,6 +6,7 @@
    ========================================================= */
 'use strict';
 const { serviceAccount, accessToken, verifyIdToken } = require('./lib/google');
+const { FAMS, condition } = require('./lib/topics');
 
 const OWNER_UID = 'iiTgVfDryXNLb9IrOyLkkNMHDxq2';
 
@@ -33,8 +34,8 @@ exports.handler = async (event) => {
   if(event.httpMethod === 'OPTIONS') return { statusCode:204, headers:CORS, body:'' };
   if(event.httpMethod !== 'POST') return reply(405, {ok:false, err:'POST فقط'});
 
-  let title, body, url, token;
-  try{ ({ title, body, url, token } = JSON.parse(event.body||'{}')); }
+  let title, body, url, token, ev, legacy;
+  try{ ({ title, body, url, token, ev, legacy } = JSON.parse(event.body||'{}')); }
   catch(e){ return reply(400, {ok:false, err:'جسم غير صالح'}); }
 
   title = String(title||'').trim();
@@ -67,20 +68,35 @@ exports.handler = async (event) => {
     if(token && (typeof token !== 'string' || token.length < 100 || uid !== OWNER_UID))
       return reply(400, {ok:false, err:'رمز غير مقبول'});
 
-    const res = await fetch(`https://fcm.googleapis.com/v1/projects/${projectId}/messages:send`, {
-      method:'POST',
-      headers:{ Authorization:'Bearer '+at, 'Content-Type':'application/json' },
-      /* الحمولة مطابقة لما تُرسله حملة Firebase المُثبَت وصولها:
-         notification وحدها + رابط الفتح. أي حقول webpush إضافية
-         تزيد احتمال الرفض الصامت بلا فائدة تُذكر. */
-      body: JSON.stringify({ message: Object.assign(
-        token ? { token } : { topic: 'all' },
-        { notification:{ title, body }, webpush:{ fcm_options:{ link } } }
-      )})
-    });
-    const out = await res.json();
-    if(!res.ok) return reply(502, {ok:false, err:'رفض FCM الإرسال', detail: JSON.stringify(out).slice(0,300)});
-    return reply(200, {ok:true, id: out.name || ''});
+    /* الهدف: حدث مباراة ← شرط مواضيع التفضيلات (+ «all» للأجهزة القديمة إن كان الحدث مما كان يصلها)،
+       وبلا حدث (إعلان المدير) ← الأجهزة القديمة ومن اختار «أخبار وإعلانات» (منصور 2026-11-03) */
+    let targets;
+    if(token) targets = [{ token }];
+    else if(ev && typeof ev === 'object'){
+      if(!FAMS.has(ev.d)) return reply(400, {ok:false, err:'حدث غير معروف'});
+      const e = { d:ev.d, comp:String(ev.comp||'').slice(0,60), home:String(ev.home||'').slice(0,60), away:String(ev.away||'').slice(0,60), side:String(ev.side||'').slice(0,60) };
+      targets = [{ condition: condition(e) }];
+      if(legacy) targets.push({ topic:'all' });
+    }
+    else targets = [{ condition: "'all' in topics || 'gen' in topics" }];
+    const data = { ev: (ev && ev.d) || 'gen', url: link };
+
+    const ids = [];
+    for(const t of targets){
+      const res = await fetch(`https://fcm.googleapis.com/v1/projects/${projectId}/messages:send`, {
+        method:'POST',
+        headers:{ Authorization:'Bearer '+at, 'Content-Type':'application/json' },
+        /* الحمولة كما ثبت وصولها: notification + رابط الفتح، ومعها data (نوع الحدث والرابط)
+           ليختار خادم الخدمة الصوت ويفتح صفحة المباراة */
+        body: JSON.stringify({ message: Object.assign(t,
+          { notification:{ title, body }, data, webpush:{ fcm_options:{ link } } }
+        )})
+      });
+      const out = await res.json();
+      if(!res.ok) return reply(502, {ok:false, err:'رفض FCM الإرسال', detail: JSON.stringify(out).slice(0,300)});
+      ids.push(out.name || '');
+    }
+    return reply(200, {ok:true, id: ids[0] || '', ids});
   }catch(e){
     const m = String(e.message||e);
     /* رسائل التحقّق مفهومة للمستخدم؛ ما عداها خطأ خادم */

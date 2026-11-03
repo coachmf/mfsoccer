@@ -27,6 +27,8 @@ window.NOTIFY = {
   },
 
   ready(){ return typeof PUSH !== 'undefined' && PUSH.supported && PUSH.supported(); },
+  /* الجرس وزرّ التذييل يفتحان لوحة التفضيلات (منصور 2026-11-03)؛ بدونها يبقى التبديل المباشر القديم */
+  openPrefs(){ if(typeof NPREF !== 'undefined' && NPREF.open) NPREF.open(); else this.toggle(!this.on()); },
   on(){ try{ return PUSH.enabled(); }catch(e){ return false; } },
 
   async toggle(want){
@@ -49,7 +51,7 @@ window.NOTIFY = {
     if(this.iosShell() || !this.ready()) return '';
     const on = this.on();
     return `<button type="button" class="hchip nt${on?' on':''}" data-ntchip
-      onclick="NOTIFY.toggle(${on?'false':'true'})"
+      onclick="NOTIFY.openPrefs()"
       aria-pressed="${on}" title="${on?'الإشعارات مفعّلة':'فعّل إشعارات الأهداف'}">
       ${on?this.ICON_ON:this.ICON_OFF}<span>${on?'الإشعارات مفعّلة':'إشعارات الأهداف'}</span></button>`;
   },
@@ -60,10 +62,10 @@ window.NOTIFY = {
     const tools = document.querySelector('.mf-top .mf-tools'); if(!tools) return;
     let b = tools.querySelector('[data-ntbell]');
     if(this.iosShell() || !this.ready()){ if(b) b.remove(); return; }
-    const on = this.on(), t = on ? 'الإشعارات مفعّلة — اضغط للإيقاف' : 'فعّل الإشعارات';
+    const on = this.on(), t = on ? 'الإشعارات مفعّلة — إعدادات الإشعارات' : 'إعدادات الإشعارات';
     if(!b){
       b = document.createElement('button'); b.type = 'button'; b.className = 'mf-ib mf-bell'; b.setAttribute('data-ntbell','');
-      b.addEventListener('click', ()=>this.toggle(!this.on()));
+      b.addEventListener('click', ()=>this.openPrefs());
       const s = tools.querySelector('[data-mf="search"]'); s ? s.after(b) : tools.prepend(b);
     }
     if(b.dataset.on === String(on)) return;

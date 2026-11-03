@@ -4,6 +4,7 @@
    والضرر الأقصى أن يشترك أحدهم بجهازه هو. */
 'use strict';
 const { accessToken } = require('./lib/google');
+const { applyTopics } = require('./lib/subs');
 
 const CORS = {
   'Access-Control-Allow-Origin': 'https://mfsoccer.com',
@@ -17,8 +18,8 @@ exports.handler = async (event) => {
   if(event.httpMethod !== 'POST')
     return { statusCode:405, headers:CORS, body: JSON.stringify({ok:false, err:'POST فقط'}) };
 
-  let token, unsubscribe, info;
-  try{ ({ token, unsubscribe, info } = JSON.parse(event.body||'{}')); }
+  let token, unsubscribe, info, add, remove;
+  try{ ({ token, unsubscribe, info, add, remove } = JSON.parse(event.body||'{}')); }
   catch(e){ return { statusCode:400, headers:CORS, body: JSON.stringify({ok:false, err:'جسم غير صالح'}) }; }
 
   /* رموز FCM طويلة ومحدودة الأحرف — نرفض ما لا يشبهها قبل أي نداء */
@@ -36,6 +37,12 @@ exports.handler = async (event) => {
       });
       const t = await r.text();
       return { statusCode: r.ok?200:502, headers:CORS, body: JSON.stringify({ok:r.ok, info:t.slice(0,1200)}) };
+    }
+
+    /* تفضيلات الإشعارات (notif-prefs.js): قائمة مواضيع تُضاف وتُزال لهذا الجهاز وحده */
+    if(Array.isArray(add) || Array.isArray(remove)){
+      const r = await applyTopics(at, [token], add||[], remove||[]);
+      return { statusCode: r.ok?200:400, headers:CORS, body: JSON.stringify(r) };
     }
 
     const res = await fetch(`https://iid.googleapis.com/iid/v1/${encodeURIComponent(token)}/rel/topics/all`, {

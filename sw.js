@@ -9,7 +9,7 @@
 
    عند كل نشر: ارفع رقم VER فتُبنى ذاكرة جديدة وتُحذف القديمة.
    ========================================================= */
-const VER   = 'mf-2026-11-03-665';
+const VER   = 'mf-2026-11-03-666';
 const SHELL = 'shell-' + VER;
 const RUN   = 'run-'   + VER;
 
@@ -29,7 +29,7 @@ const PRECACHE = [
   '/assets/hero/salmiya_9.webp', '/assets/hero/kazma_10.webp',
   '/assets/hero/stadium.jpg', '/assets/hero/stadium_dark.jpg',
   '/site-theme.css', '/site-i18n.js', '/i18n-data.js', '/i18n-langs.js', '/fantasy/js/i18n-more.js',
-  '/admin-tabs.css', '/admin-tabs.js', '/gulf.css', '/gulf.js', '/livepush.js', '/notify.js', '/fantasy/js/push.js', '/analysis.css', '/analysis.js', '/efftime.css', '/efftime.js', '/div1.css', '/div1.js', '/amateur.js', '/news.css', '/news.js', '/ext.css', '/ext.js', '/tstats-data.js', '/mf-brand.css', '/mf-shell.js', '/fmx.css', '/fmx.js', '/assets/brand/mf-mark.webp', '/assets/brand/mf-emblem.webp'
+  '/admin-tabs.css', '/admin-tabs.js', '/gulf.css', '/gulf.js', '/livepush.js', '/notify.js', '/notif-prefs.js', '/notif-prefs.css', '/fantasy/js/push.js', '/analysis.css', '/analysis.js', '/efftime.css', '/efftime.js', '/div1.css', '/div1.js', '/amateur.js', '/news.css', '/news.js', '/ext.css', '/ext.js', '/tstats-data.js', '/mf-brand.css', '/mf-shell.js', '/fmx.css', '/fmx.js', '/assets/brand/mf-mark.webp', '/assets/brand/mf-emblem.webp'
 ];
 
 /* نطاقات تُخزَّن عند أول استعمال: الخطوط ثابتة فلا داعي لإعادة جلبها */
@@ -46,7 +46,8 @@ self.addEventListener('install', e => {
 self.addEventListener('activate', e => {
   e.waitUntil((async () => {
     const keys = await caches.keys();
-    await Promise.all(keys.filter(k => k !== SHELL && k !== RUN).map(k => caches.delete(k)));
+    /* mf-np = تفضيلات الإشعارات (notif-prefs.js) — ليست ذاكرة ملفات فلا تُحذف مع كل نسخة */
+    await Promise.all(keys.filter(k => k !== SHELL && k !== RUN && k !== 'mf-np').map(k => caches.delete(k)));
     await self.clients.claim();
   })());
 });
@@ -171,6 +172,24 @@ self.addEventListener('fetch', e => {
    شكل الحمولة يختلف بين حملات Console وواجهة HTTP v1، فنقرأ
    الشكلين ونسقط بأمان إلى رسالة عامة بدل إشعار فارغ.
    ========================================================= */
+/* تفضيلات الجهاز (notif-prefs.js تكتبها في ذاكرة mf-np): كتم الكل، ساعات عدم الإزعاج، «بلا صوت» لنوع الحدث */
+async function npPrefs() {
+  try { const r = await (await caches.open('mf-np')).match('/__np'); return r ? await r.json() : null; } catch (err) { return null; }
+}
+const NP_SND = { r30:'remind', r15:'remind', r5:'remind', ko:'kickoff', h2:'kickoff', et:'kickoff', ft:'ft', ht:'ft',
+  g:'goal', gp:'goal', gog:'goal', gat:'goal', y:'yellow', r:'red', r2:'red', var:'var', pa:'pen', pm:'pen', pso:'pen',
+  sub:'sub', add:'remind', xi:'lineup', form:'lineup', gen:'remind' };
+function npQuiet(P, ev) {
+  if (!P) return false;
+  if (P.muteAll || P.soundOn === 0) return true;
+  if ((P.snd || {})[NP_SND[ev] || 'remind'] === 'mute') return true;
+  const d = P.dnd; if (!d || !d.on) return false;
+  const n = new Date(), m = n.getHours() * 60 + n.getMinutes();
+  const pm = s => { const a = String(s || '0:0').split(':'); return (+a[0] || 0) * 60 + (+a[1] || 0); };
+  const f = pm(d.from), t = pm(d.to);
+  return f <= t ? (m >= f && m < t) : (m >= f || m < t);
+}
+
 self.addEventListener('push', e => {
   let p = {};
   try { p = e.data ? e.data.json() : {}; } catch (err) { p = {}; }
@@ -178,16 +197,25 @@ self.addEventListener('push', e => {
   const title = n.title || 'الدوري الكويتي الممتاز';
   const body  = n.body  || n.message || '';
   const url   = (p.fcmOptions && p.fcmOptions.link) || (p.data && p.data.url) || n.click_action || '/';
-  e.waitUntil(self.registration.showNotification(title, {
-    body,
-    icon: '/icon-192.png',
-    badge: '/icon-192.png',
-    dir: 'rtl',
-    lang: 'ar',
-    tag: n.tag || 'mf',
-    renotify: true,
-    data: { url }
-  }));
+  const ev    = (p.data && p.data.ev) || '';
+  e.waitUntil((async () => {
+    const P = await npPrefs();
+    /* صفحة مفتوحة ظاهرة: هي تشغّل الصوت المختار للحدث، فالإشعار نفسه صامت حتى لا يتداخل الصوتان */
+    const cs = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+    const seen = cs.some(c => c.visibilityState === 'visible');
+    cs.forEach(c => { try { c.postMessage({ mfpush: { ev, title, body, url } }); } catch (err) {} });
+    await self.registration.showNotification(title, {
+      body,
+      icon: '/icon-192.png',
+      badge: '/icon-192.png',
+      dir: 'rtl',
+      lang: 'ar',
+      tag: n.tag || ('mf-' + (ev || 'x') + '-' + Date.now()),   /* كل حدث إشعار مستقل — لا يمحو الهدفُ الثاني الأول */
+      renotify: true,
+      silent: seen || npQuiet(P, ev),
+      data: { url }
+    });
+  })());
 });
 
 self.addEventListener('notificationclick', e => {

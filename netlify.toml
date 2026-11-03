@@ -60,6 +60,10 @@
 [functions."fantasy-lock-cron"]
   schedule = "*/10 * * * *"
 
+# تذكير الانطلاق (30/15/5 دقائق) لمن اختاره في تفضيلات الإشعارات (push-remind-cron.js)
+[functions."push-remind-cron"]
+  schedule = "*/5 * * * *"
+
 # ——— صور الأخبار من CDN (netlify/functions/newsimg.js) ———
 [[redirects]]
   from = "/api/newsimg/*"

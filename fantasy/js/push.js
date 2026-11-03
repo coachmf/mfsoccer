@@ -76,10 +76,12 @@ const PUSH = {
      الأجهزة النشطة معروفة لدى FCM ولا تُعدّ خاملة. */
   async refresh(){
     if(!this.enabled()) return;
-    if(this.iosApp()){ if(this.iosBridge()) this._ios.topic(true); return; }
+    /* جهاز على لوحة تفضيلات الإشعارات (notif-prefs.js): يُعاد ربط مواضيعه المختارة، لا موضوع «all» القديم */
+    const np = typeof NPREF !== 'undefined' && NPREF.v2 && NPREF.v2();
+    if(this.iosApp()){ if(!this.iosBridge()) return; if(np){ NPREF.sync().catch(()=>{}); return; } this._ios.topic(true); return; }
     if(!this.supported()) return;
     if(Notification.permission !== 'granted'){ this._off(); return; }
-    try{ const t = await this._token(); if(t) await this._topic(t, false); }
+    try{ const t = await this._token(); if(t){ if(np) await NPREF.sync(t); else await this._topic(t, false); } }
     catch(e){ /* صامت — لا نزعج المستخدم عند الإقلاع */ }
   },
 
@@ -122,7 +124,7 @@ const PUSH = {
     if(!on){
       this._off();
       /* نُلغي الاشتراك قبل حذف الرمز — بعد الحذف لا يبقى ما نُلغيه */
-      try{ const t = await this._token(); if(t) await this._topic(t, true); }catch(e){}
+      try{ const t = await this._token(); if(t){ await this._topic(t, true); if(typeof NPREF !== 'undefined') await NPREF.unsync(t); } }catch(e){}
       try{ await firebase.messaging().deleteToken(); }catch(e){}
       this._say('أُوقفت الإشعارات');
       this._re(); return;
@@ -136,9 +138,11 @@ const PUSH = {
       }
       const t = await this._token();
       if(!t){ this._say('تعذّر تسجيل الجهاز — أعد المحاولة', true); this._re(); return; }
-      await this._topic(t, false);
       try{ localStorage.setItem(this.KEY,'1'); }catch(e){}
-      this._say('تم التفعيل — يصلك إشعار بأهداف المباريات وإغلاق الجولة');
+      /* مع لوحة التفضيلات: الجهاز يشترك في مواضيع ما اختاره (الافتراضي = ما كان يصل الجميع) بدل «all» */
+      const np = typeof NPREF !== 'undefined' ? await NPREF.sync(t) : null;
+      if(!np || !np.ok) await this._topic(t, false);
+      this._say('تم التفعيل — اختر ما يصلك من «الإشعارات»');
     }catch(e){
       console.warn('push enable failed', e);
       this._say('تعذّر تفعيل الإشعارات — تأكد من أن المتصفح يسمح بها', true);
@@ -155,6 +159,7 @@ const PUSH = {
     if(!on){
       this._off();
       this._ios.topic(false);
+      if(typeof NPREF !== 'undefined') NPREF.unsync().catch(()=>{});
       this._say('أُوقفت الإشعارات'); this._re(); return;
     }
     try{
@@ -172,9 +177,11 @@ const PUSH = {
       if(!t || t === 'ERROR GET TOKEN'){
         this._say('تعذّر تسجيل الجهاز — أعد المحاولة', true); this._re(); return;
       }
-      this._ios.topic(true);
       try{ localStorage.setItem(this.KEY,'1'); }catch(e){}
-      this._say('تم التفعيل — يصلك إشعار بأهداف المباريات');
+      /* المواضيع المختارة عبر الخادم برمز الجهاز نفسه؛ إن تعذّر نعود للموضوع العام من الطبقة الأصلية */
+      const np = typeof NPREF !== 'undefined' ? await NPREF.sync(String(t)) : null;
+      if(!np || !np.ok) this._ios.topic(true);
+      this._say('تم التفعيل — اختر ما يصلك من «الإشعارات»');
     }catch(e){
       this._say('تعذّر تفعيل الإشعارات', true);
     }
