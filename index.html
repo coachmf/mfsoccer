@@ -11888,6 +11888,8 @@ html.pp-open,html.pp-open body{overflow:hidden}
 [data-theme="light"] .pstat{background:#fff;border-color:var(--line);border-top-color:var(--ca);box-shadow:var(--shadow)}
 .pstat b{display:block;font-family:var(--display);font-weight:800;font-size:1.45rem;line-height:1.1;color:var(--head,#fff);font-variant-numeric:tabular-nums}
 .pstat small{display:block;font-size:.66rem;color:var(--slate);margin-top:4px}
+.pstat b:has(.pof){white-space:nowrap}
+.pstat .pof{font-size:.72em;font-weight:600;color:var(--slate);white-space:nowrap}
 .pstat.rt b{display:flex;justify-content:center;align-items:center;height:1.6rem}
 .pstat.rt .rtg.big{min-width:48px;height:30px;font-size:1.05rem}
 .pstat.hi{background:linear-gradient(160deg,rgba(var(--ca-rgb),.22),rgba(255,255,255,.03))}
@@ -14039,9 +14041,13 @@ function playerProfileData(name, club){
   const penList = PENS.filter(x=>x.p===name && clubs.includes(x.by));   /* خريطة ركلاته في الملف (منصور 2026-11-02: «ابي ب بروفايل الاعب الي شات يبين وين شات») */
   const pp=clubs.reduce((t,c)=>{ const e=PP.find(x=>x.n===name && x.c===c); return e?{apps:t.apps+e.apps, mins:t.mins+e.mins, cs:t.cs+e.cs}:t; }, {apps:0,mins:0,cs:0});
   const log=[]; let conceded=0;
+  /* الدقائق المتاحة: طول كل مباراة لعبها ناديه الحالي (شارك أو لا)، ومن الأندية السابقة ما شارك فيه فقط؛ الجولة تُحسب مرة (منصور 2026-11-04) */
+  const avail={};
   clubs.forEach(cl=>{
     MATCHES.filter(m=>!isUpcoming(m) && (m.home===cl||m.away===cl)).forEach(m=>{
-      const w=playerWindow(m,cl,name); if(!w || w.end<=w.start) return;
+      const w=playerWindow(m,cl,name);
+      if(cl===club || (w && w.end>w.start)) avail[compOf(m)+"|"+m.round]=liveLen(m);
+      if(!w || w.end<=w.start) return;
       const gs=matchGoals(m);
       const g=gs.filter(x=>x.sc===cl && x.p===name && x.bp!=="هدف عكسي").length;
       const a=gs.filter(x=>x.sc===cl && x.a===name && !isOG(x)).length;
@@ -14056,17 +14062,19 @@ function playerProfileData(name, club){
   /* في الإجمالي تختلط جولات المسابقات (ج1 كأس بعد ج3 دوري)، فالترتيب بالتاريخ؛ داخل مسابقة واحدة كما كان */
   log.sort((a,b)=>(COMP==="الكل" && a.m.date && b.m.date && a.m.date!==b.m.date) ? String(b.m.date).localeCompare(String(a.m.date))
     : (b.m.round-a.m.round)||String(b.m.date).localeCompare(String(a.m.date)));
-  return {name, club, former, pos, num, gk, goals, assists, ownG, y, rd, pens, pensS, penList, apps:pp.apps, mins:pp.mins, cs:pp.cs, conceded, log};
+  return {name, club, former, pos, num, gk, goals, assists, ownG, y, rd, pens, pensS, penList, apps:pp.apps, mins:pp.mins, minsOf:Object.values(avail).reduce((a,b)=>a+b,0), appsOf:Object.keys(avail).length, cs:pp.cs, conceded, log};
 }
 /* دقيقة مطلقة (بعد إضافة بدل الشوط الأول) ← كما تظهر في أحداث المباراة: 45+3′، 67′، 90+4′ */
 function clockLabel(m, t){ const a1=add1Of(m); if(t<=45) return t+"′"; if(t<=45+a1) return "45+"+(t-45)+"′"; const c=t-a1; return c>90 ? "90+"+(c-90)+"′" : c+"′"; }
 function playerProfileHTML(D){
   const cut=(PHOTOSON && typeof LOCAL_PHOTOS!=="undefined") ? photoCut(D.name, D.club) : null;
   const st=(v,t,hi)=>`<div class="pstat${hi?" hi":""}"><b>${v}</b><small>${t}</small></div>`;
+  const minsV = D.mins+"′"+(D.minsOf>=D.mins && D.minsOf>0 ? `<span class="pof"> / ${D.minsOf}′</span>` : "");   /* لعب كم من إجمالي دقائق مباريات ناديه */
+  const appsV = D.apps+(D.appsOf>=D.apps && D.appsOf>0 ? `<span class="pof"> / ${D.appsOf}</span>` : "");   /* لعب كم من إجمالي مباريات ناديه */
   const cards = D.gk
-    ? [st(D.cs,"شباك نظيفة",true), st(D.conceded,"أهداف استقبلها"), st(D.apps,"مباريات"), st(D.mins+"′","دقائق اللعب"),
+    ? [st(D.cs,"شباك نظيفة",true), st(D.conceded,"أهداف استقبلها"), st(appsV,"مباريات"), st(minsV,"دقائق اللعب"),
        D.goals?st(D.goals,"أهداف"):"", D.assists?st(D.assists,"صناعة"):"", st(D.y,"إنذارات"), D.rd?st(D.rd,"طرد"):""]
-    : [st(D.goals,"أهداف",true), st(D.assists,"صناعة",true), st(D.apps,"مباريات"), st(D.mins+"′","دقائق اللعب"),
+    : [st(D.goals,"أهداف",true), st(D.assists,"صناعة",true), st(appsV,"مباريات"), st(minsV,"دقائق اللعب"),
        st(D.y,"إنذارات"), D.rd?st(D.rd,"طرد"):"", D.pens?st(`${D.pensS}/${D.pens}`,"ركلات جزاء (سجّل/نفّذ)"):"", D.ownG?st(D.ownG,"أهداف عكسية"):""];
   /* متوسط التقييم (منصور 2026-09-17) — بطاقة ضمن الأرقام، يتبع المسابقة المختارة */
   /* التقييم الموسمي 0–100 حسب المركز (analysis.js — منصور 2026-09-29) بدل متوسط تقييم المباريات */
