@@ -11,7 +11,9 @@
    تبديل، صافرة النهاية) تُرسل أيضاً لموضوع «all» القديم للأجهزة التي لم تفتح اللوحة.
 
    قيود مقصودة:
-   · مطفأ افتراضياً لكل مباراة — يُفعَّل يدوياً قبل الانطلاق.
+   · مُفعَّل افتراضياً لكل البطولات (منصور 2026-11-04) عدا دوري الدرجة الأولى ودوري الهواة،
+     في يوم المباراة فقط (من ٦ ساعات قبل الانطلاق إلى ٤ ساعات بعده) — إدخال أحداث مباراة قديمة
+     لاحقاً لا يرسل شيئاً إلا إذا فعّله المحرّر يدوياً. الإطفاء/التفعيل اليدوي يُحفظ ويتقدّم على الافتراضي.
    · ٦ إشعارات كحد أقصى في الحفظة الواحدة بالأولوية؛ من يُدخل مباراة
      كاملة دفعة واحدة لا يُفجّر عشرات الإشعارات.
    · بصمة كل حدث تُحفظ، فإعادة الحفظ لا تُعيد الإرسال، وتعديل حدث مسجَّل
@@ -25,10 +27,25 @@ window.LIVEPUSH = {
   _get(k, d){ try{ return JSON.parse(localStorage.getItem(k)) || d; }catch(e){ return d; } },
   _set(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} },
 
-  isOn(key){ return !!this._get(this.ON, {})[key]; },
-  toggle(key){
+  NO_AUTO: /الدرجة الأولى|الهواة/,
+  /* الافتراضي: بطولة غير مستثناة + يوم المباراة */
+  auto(key, m){
+    let comp = ''; try{ comp = decodeURIComponent(String(key||'').split('/')[0]); }catch(e){ comp = String(key||'').split('/')[0]; }
+    if(this.NO_AUTO.test(comp) || (m && this.NO_AUTO.test(String(m.comp||'')))) return false;
+    const ts = (m && typeof kickoffTS === 'function') ? kickoffTS(m) : null;
+    if(ts === null || ts === undefined || isNaN(ts)) return false;
+    const now = Date.now();
+    return now >= ts - 6*3600e3 && now <= ts + 4*3600e3;
+  },
+  isOn(key, m){
+    const v = this._get(this.ON, {})[key];
+    if(v === 0) return false;              /* أطفأه المحرّر */
+    if(v) return true;                     /* فعّله المحرّر */
+    return this.auto(key, m);
+  },
+  toggle(key, m){
     const o = this._get(this.ON, {});
-    if(o[key]) delete o[key]; else o[key] = 1;
+    o[key] = this.isOn(key, m) ? 0 : 1;
     this._set(this.ON, o);
     return !!o[key];
   },
@@ -160,14 +177,15 @@ window.LIVEPUSH = {
         'دخول ' + x.in + ' بدلاً من ' + x.out + (x.m ? ' ' + this._mm(x) : ''), E('sub'), true);
     });
 
-    /* ——— التشكيلة الأساسية والخطة: أول مرة تكتمل لكل نادٍ ——— */
-    [m.home, m.away].forEach(club => {
-      const n1 = (cur.lineup||[]).filter(x => x.club === club).length, n0 = (base.lineup||[]).filter(x => x.club === club).length;
-      if(n1 >= 11 && n0 < 11)
-        add(7, this._sig('xi', {r:m.round, comp, club, p:m.home + '×' + m.away}), 'التشكيلة الرسمية — ' + club, m.home + ' × ' + m.away, E('xi'));
-      const f1 = ((cur.shapes||{})[club]||{}).f || '', f0 = ((base.shapes||{})[club]||{}).f || '';
-      if(f1 && !f0) add(7, this._sig('form', {r:m.round, comp, club, p:f1}), 'خطة ' + club + ': ' + f1, m.home + ' × ' + m.away, E('form'));
-    });
+    /* ——— التشكيلتان: إشعار واحد حين تكتمل تشكيلة الفريقين معاً (منصور 2026-11-04: «لمن احط الفريقين يدزلي»)،
+       ومعه خطة كل فريق — بدل إشعار لكل نادٍ وإشعار لكل خطة ——— */
+    const xiN = (L, club) => (L||[]).filter(x => x.club === club).length;
+    const both = L => xiN(L, m.home) >= 11 && xiN(L, m.away) >= 11;
+    if(both(cur.lineup) && !both(base.lineup)){
+      const fOf = club => ((cur.shapes||{})[club]||{}).f || '';
+      const side = club => club + (fOf(club) ? ' (' + fOf(club) + ')' : '');
+      add(7, this._sig('xi2', {r:m.round, comp, p:m.home + '×' + m.away}), 'التشكيلتان الرسميتان', side(m.home) + ' × ' + side(m.away), E('xi'));
+    }
 
     /* السقف على الأحداث نفسها؛ الأنواع الفرعية ترافق حدثها الأب ولا تزاحم غيره (تصل من أطفأ الأب فقط) */
     const main = out.filter(n => !n.parent).sort((a, b) => a.pri - b.pri).slice(0, this.MAX);
@@ -211,7 +229,7 @@ window.LIVEPUSH = {
       if(!E || !E.orig || !E.base || E.gulf) return null;
       const m = E.match; if(!m) return null;
       const k = (typeof matchKey === 'function') ? matchKey(m) : [m.comp, m.round, m.home, m.away].join('/');
-      if(!this.isOn(k)) return null;
+      if(!this.isOn(k, m)) return null;
       const live = (ALL.matches||[]).find(z => +z.round === +m.round && compOf(z) === m.comp
                         && z.home === m.home && z.away === m.away) || m;
       const url = '/#m/' + k;

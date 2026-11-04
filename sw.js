@@ -9,7 +9,7 @@
 
    عند كل نشر: ارفع رقم VER فتُبنى ذاكرة جديدة وتُحذف القديمة.
    ========================================================= */
-const VER   = 'mf-2026-11-04-670';
+const VER   = 'mf-2026-11-04-671';
 const SHELL = 'shell-' + VER;
 const RUN   = 'run-'   + VER;
 
@@ -225,7 +225,13 @@ self.addEventListener('notificationclick', e => {
     const all = await clients.matchAll({ type: 'window', includeUncontrolled: true });
     /* تبويب مفتوح على الموقع: نركّز عليه بدل فتح نسخة ثانية */
     for (const c of all) {
-      if (c.url.indexOf(self.location.origin) === 0) { await c.focus(); return c.navigate ? c.navigate(url) : null; }
+      if (c.url.indexOf(self.location.origin) === 0) {
+        await c.focus();
+        /* Safari (iPhone) بلا WindowClient.navigate: الصفحة نفسها تنتقل لصفحة المباراة عند وصول الرسالة */
+        try { c.postMessage({ type: 'MF_OPEN', url }); } catch (er) {}
+        if (c.navigate) { try { return await c.navigate(url); } catch (er) {} }
+        return null;
+      }
     }
     return clients.openWindow(url);
   })());

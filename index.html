@@ -2257,7 +2257,7 @@ html[dir="ltr"] .tl-ev.a .tl-card{text-align:right;align-items:flex-end}
 <!-- كأس الخليج 27: قسم مستقل ببيانات منفصلة (seasons/gulf27) -->
 <link rel="stylesheet" href="gulf.css?v=18">
 <script src="gulf.js?v=50" defer></script>
-<script src="livepush.js?v=4" defer></script>
+<script src="livepush.js?v=5" defer></script>
 <script src="fantasy/js/push.js?v=288" defer></script>
 <script src="notify.js?v=8" defer></script>
 <script src="notif-prefs.js?v=1" defer></script>   <!-- لوحة تفضيلات الإشعارات والأصوات -->
@@ -11718,6 +11718,13 @@ html .squadbox .sqrow .sqno::placeholder{color:var(--cct,#fff);opacity:.6}
         if(reloaded) return; reloaded=true; location.reload();
       });
       /* الصفحة تُقدَّم من الذاكرة فوراً ويُجلب الجديد في الخلفية؛ إن اختلف عُرض زر التحديث */
+      /* الضغط على إشعار والموقع مفتوح: افتح الرابط (صفحة المباراة) — Safari لا يدعم التنقل من خادم الخدمة */
+      navigator.serviceWorker.addEventListener('message', function(e){
+        if(!e.data || e.data.type!=='MF_OPEN' || !e.data.url) return;
+        try{ var u=new URL(e.data.url, location.href); if(u.origin!==location.origin) return;
+          if(u.pathname===location.pathname && u.hash){ if(location.hash!==u.hash) location.hash=u.hash; else if(typeof openMatchFromHash==='function') openMatchFromHash(); }
+          else location.href=u.href; }catch(er){}
+      });
       navigator.serviceWorker.addEventListener('message', function(e){
         if(!e.data || e.data.type!=='HTML_UPDATED') return;
         if(typeof toast==='function') toast('صدرت نسخة جديدة — أعد التحميل لتظهر','busy',true);
@@ -16532,11 +16539,11 @@ html.mx-editing #waFab{display:none!important}   /* زر واتساب كان ي�
         <input data-mf="tv" value="${esc(m.tv||"")}" placeholder="أو اكتب اسم القناة" style="margin-top:10px"></div>
       <div class="mx-card"><h3>بثّ أحداث هذه المباراة<small>إشعار فوري لكل مشترك</small></h3>
         <label class="mx-lp${EDIT.orig?"":" off"}"><input type="checkbox" id="lpOn" ${EDIT.orig?"":"disabled"}
-          ${(EDIT.orig && window.LIVEPUSH && LIVEPUSH.isOn(matchKey(m)))?"checked":""}
-          onchange="LIVEPUSH.toggle(matchKey(EDIT.match)); toast(this.checked?'بثّ الأحداث مُفعّل لهذه المباراة':'أُوقف البثّ', this.checked?'ok':'busy')">
+          ${(EDIT.orig && window.LIVEPUSH && LIVEPUSH.isOn(matchKey(m), m))?"checked":""}
+          onchange="LIVEPUSH.toggle(matchKey(EDIT.match), EDIT.match); toast(this.checked?'بثّ الأحداث مُفعّل لهذه المباراة':'أُوقف البثّ', this.checked?'ok':'busy')">
           <span>أرسل إشعاراً عند كل هدف وإنذار وطرد وتبديل وعند صافرة النهاية</span></label>
-        <p class="mx-hint">${EDIT.orig?`مطفأ افتراضياً. فعّله قبل انطلاق المباراة وأنت ترصد مباشرة —
-          كل حدث تُدخله يصل للمشتركين خلال ثوانٍ. خمسة إشعارات كحد أقصى في الحفظة الواحدة،
+        <p class="mx-hint">${EDIT.orig?`مُفعّل تلقائياً في يوم المباراة لكل البطولات عدا الدرجة الأولى والهواة —
+          كل حدث تُدخله يصل للمشتركين خلال ثوانٍ. أطفئه إذا كنت تدخل أحداثاً لا تريد إرسالها. ستة إشعارات كحد أقصى في الحفظة الواحدة،
           ولا يُعاد إرسال حدث أُرسل. لا يمكن سحب إشعار بعد إرساله.`
           :`احفظ المباراة أولاً، ثم يصير البثّ متاحاً.`}</p></div>
       ${isKO(m)?`<div class="mx-card"><h3>الأشواط الإضافية وركلات الترجيح<small>لمباريات خروج المغلوب</small></h3>
