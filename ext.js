@@ -463,6 +463,8 @@ function hookEditor(){
       if(quiet && window.MX && MX.sheet) return;      /* نافذة إدخال مفتوحة: أرقام الصفوف فيها تخص هذه النسخة */
       SAVING_MATCH = true;
       const E0 = clone(EDIT), sig0 = JSON.stringify(EDIT), add0 = clone(ADDED), keep = DATA;
+      /* إشعارات أحداث المباراة الخارجية (منصور 2026-11-04: الكويت × ناساف ما وصل منها شيء — هذا المسار لم يكن يستدعي البثّ أبداً) */
+      try{ if(window.LIVEPUSH && LIVEPUSH.sendEarly && E0.base) withExt(()=>LIVEPUSH.sendEarly(E0), EDIT.match.comp); }catch(e){}
       const key = {round:+EDIT.match.round, comp:EDIT.match.comp, home:EDIT.match.home, away:EDIT.match.away};
       const same = z => +z.round===key.round && z.comp===key.comp && z.home===key.home && z.away===key.away;
       try{
