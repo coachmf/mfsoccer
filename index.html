@@ -2226,6 +2226,12 @@ html[dir="ltr"] .tl-ev.a .tl-card{text-align:right;align-items:flex-end}
 .tl-row.sub{min-height:44px}
 .tl-min.sub span{background:#fff;color:var(--head);border:1.5px solid #C9D6E6;box-shadow:0 0 0 4px #FAFCFE;font-weight:700}
 .tl-ev.sub .tl-card{gap:3px}
+.tl-ev.sub.multi .tl-card{gap:6px}
+.tl-sub-n{font-size:.68rem;font-weight:700;color:var(--slate,#8FA6C4)}
+.tl-sub-pair{display:flex;flex-direction:column;gap:2px;padding-top:6px;border-top:1px solid rgba(143,166,196,.16)}
+.tl-sub-n+.tl-sub-pair{border-top:0;padding-top:0}
+.mx-subhd{margin-top:14px;padding-top:12px;border-top:1px solid rgba(143,166,196,.18);font-weight:800;font-size:.9rem;color:var(--gold,#E7D093)}
+.mx-warn{font-style:normal;font-size:.72rem;color:#FF8A8D;margin-inline-start:6px}
 .tl-sub-in,.tl-sub-out{display:flex;align-items:center;gap:6px;font-size:.82rem;font-weight:600;color:var(--head)}
 .tl-sub-out{color:#8A1F1A;font-weight:600}
 .tl-sub-in i,.tl-sub-out i{width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;flex:none}
@@ -2260,7 +2266,7 @@ html[dir="ltr"] .tl-ev.a .tl-card{text-align:right;align-items:flex-end}
 <!-- كأس الخليج 27: قسم مستقل ببيانات منفصلة (seasons/gulf27) -->
 <link rel="stylesheet" href="gulf.css?v=18">
 <script src="gulf.js?v=50" defer></script>
-<script src="livepush.js?v=10" defer></script>
+<script src="livepush.js?v=11" defer></script>
 <script src="fantasy/js/push.js?v=288" defer></script>
 <script src="notify.js?v=8" defer></script>
 <script src="notif-prefs.js?v=2" defer></script>   <!-- لوحة تفضيلات الإشعارات والأصوات -->
@@ -5774,7 +5780,7 @@ function loadEditRaw(m){
     match:{round:m.round, comp:compOf(m), stage:m.stage||"", home:m.home, away:m.away, venue:m.venue||"", date:m.date||"", time:m.time||"", note:m.note||"", ref:crewOf(m).ref, refs:crewOf(m).refs, tv:m.tv||"", status:m.status||"", manH:m.manH??"", manA:m.manA??"", pst:+m.pst||0, add1:(m.add1??""), add2:(m.add2??""), et:!!m.et, add3:(m.add3??""), add4:(m.add4??""), abs:(m.abs||[]).map(x=>({c:x.c, p:x.p})), pres:(m.pres||[]).map(x=>({c:x.c, p:x.p})), pso:{h:(m.pso&&m.pso.h!=null?m.pso.h:""), a:(m.pso&&m.pso.a!=null?m.pso.a:"")}, psk:pskOf(m).map(k=>({t:k.t, p:k.p||"", ok:!!k.ok})), rec:m.rec||""},
     mev:(ALL.mev||[]).filter(x=>x.r===m.round && compOf(x)===compOf(m) && x.home===m.home && x.away===m.away).map(x=>({k:x.k, club:x.club||"", p:x.p||"", m:x.m||"", x:x.x||0, note:x.note||"", lid:x.lid||"", uid:x.uid||""})),
     lineup:lus.map(x=>({club:x.club, p:x.p})),
-    subs:sbs.map(x=>({club:x.club, out:x.out||"", in:x.in||"", h:x.h||1, m:x.m||"", x:x.x||0, lid:x.lid||"", uid:x.uid||""})),
+    subs:sbs.map(x=>({club:x.club, out:x.out||"", in:x.in||"", h:x.h||1, m:x.m||"", x:x.x||0, lid:x.lid||"", uid:x.uid||"", ...(x.b?{b:x.b}:{})})),
     goals:gs.map(g=>({sc:g.sc,p:g.p,a:g.a||"",m:g.m,x:g.x||0,det:g.det||"",bp:g.bp||"",zone:g.zone||"",og:g.og||"",err:g.err||"",lid:g.lid||"",uid:g.uid||""})),   /* og كان يضيع عند إعادة التحرير */
     cards:cs.map(x=>({club:x.club,p:x.p,m:x.m,x:+x.x||0,type:x.type,lid:x.lid||"",uid:x.uid||""})),
     pens:ps.map(x=>({by:x.by,p:x.p,m:x.m,res:x.res,place:x.place||"",lid:x.lid||"",uid:x.uid||"",...(x.rm?{rm:x.rm}:{})}))};
@@ -6706,7 +6712,7 @@ function applyEdit(E){
       ALL.lineups.push({r:round, comp:m.comp, club:x.club, p:x.p}));
   (E.subs||[]).filter(x=>x.club && (x.out||x.in)).forEach(x=>
       ALL.subs.push({r:round, comp:m.comp, club:x.club, out:x.out||"", in:x.in||"",
-                     h:+x.h||1, m:+x.m||0, x:+x.x||0, ...(x.lid?{lid:x.lid}:{}), ...(x.uid?{uid:x.uid}:{})}));
+                     h:+x.h||1, m:+x.m||0, x:+x.x||0, ...(x.lid?{lid:x.lid}:{}), ...(x.uid?{uid:x.uid}:{}), ...(x.b?{b:x.b}:{})}));
   ALL.shapes = ALL.shapes || [];
   for(const cl in (E.shapes||{})){
     const s=E.shapes[cl];
@@ -7994,7 +8000,8 @@ function goalsTimeline(m,gs,mc){
     return e.m===45 ? 45+(e.x||0)/100 : e.m+(e.x||0); };
   const tlRank=e=>{ if(e.t==="e" && !e.v.club){ const t=String(e.v.note||"").trim(); if(/^بداية/.test(t)) return -1; if(/^نهاية/.test(t)) return 9; } return ORD[e.t]; };
   const ev=[...gs.map(g=>({t:"g",m:+g.m||0,x:+g.x||0,g})),
-            ...subs.map(sb=>({t:"s",m:absMinute(sb.h,sb.m),x:0,sb,half:+sb.h||1,raw:+sb.m||0})),
+            ...(()=>{ const G=[], by={}; subs.forEach(sb=>{ const k=[sb.club,+sb.h||1,+sb.m||0,+sb.x||0].join("|");
+                if(by[k]) by[k].sbs.push(sb); else { by[k]={t:"s",m:absMinute(sb.h,sb.m),x:0,sb,sbs:[sb],half:+sb.h||1,raw:+sb.m||0}; G.push(by[k]); } }); return G; })(),
             ...mc.map(c=>({t:"c",m:+c.m||0,x:+c.x||0,c})),
             ...xe.map(v=>({t:"e",m:+v.m||0,x:+v.x||0,v})),
             ...pk.map(p=>({t:"p",m:+p.m||0,x:+p.x||0,p,part:"a"})),
@@ -8011,11 +8018,13 @@ function goalsTimeline(m,gs,mc){
                   : (e.half>=2);
     if(!htDone && afterHT){ htDone=true; rows.push(`<div class="tl-mark"><span>الشوط الأول <b dir="ltr">${h} - ${a}</b></span></div>`); }
     if(e.t==="s"){
-      const sb=e.sb;
-      const sbody=`<div class="tl-ev sub${isH?" h":" a"}">
-        <div class="tl-card">
-          ${sb.out?`<div class="tl-sub-out" data-player="${esc(sb.out)}" data-club="${esc(sb.club)}"><i></i>${esc(sb.out)}</div>`:""}
-          ${sb.in?`<div class="tl-sub-in" data-player="${esc(sb.in)}" data-club="${esc(sb.club)}"><i></i>${esc(sb.in)}</div>`:""}
+      /* تبديلات الدفعة الواحدة (نفس الفريق والدقيقة) في حدث واحد، وكل زوج خرج/دخل كما هو (منصور 2026-11-04) */
+      const one=sb=>`${sb.out?`<div class="tl-sub-out" data-player="${esc(sb.out)}" data-club="${esc(sb.club)}"><i></i>${esc(sb.out)}</div>`:""}
+          ${sb.in?`<div class="tl-sub-in" data-player="${esc(sb.in)}" data-club="${esc(sb.club)}"><i></i>${esc(sb.in)}</div>`:""}`;
+      const L=e.sbs||[e.sb];
+      const sbody=`<div class="tl-ev sub${isH?" h":" a"}${L.length>1?" multi":""}">
+        <div class="tl-card">${L.length>1?`<div class="tl-sub-n">${L.length===2?"تبديلان":L.length+" تبديلات"}</div>`:""}
+          ${L.map(sb=>L.length>1?`<div class="tl-sub-pair">${one(sb)}</div>`:one(sb)).join("")}
         </div>
       </div>`;
       rows.push(`<div class="tl-row sub${isH?" home":" away"}">
@@ -16900,9 +16909,17 @@ html.mx-editing #waFab{display:none!important}   /* زر واتساب كان ي�
         <div><span class="mx-lbl">${k==="note"?"نص التعليق":"وصف قصير (اختياري)"}</span><input data-msf="note" value="${esc(d.note||"")}" placeholder="${k==="var"?"مثال: مراجعة ركلة جزاء — أُلغيت":k==="chance"?"مثال: تسديدة من خارج المنطقة":"مثال: بداية الشوط الثاني"}"></div>`;
     }
     if(k==="sub"){
-      body+=`${perChips(k,d)}<div class="mx-grid">${stepper("m",d.m,"الدقيقة",130)}${stepper("x",d.x||0,"وقت بدل ضائع +",20)}</div>${isKO(EDIT.match)?minChips("m",perOf(k,d)):""}
-        <div><span class="mx-lbl">خرج</span>${pickGrid(club,"out",d.out,{only:"xi"})}</div>
-        <div><span class="mx-lbl">دخل</span>${pickGrid(club,"in",d.in,{only:"bench",exclude:d.out})}</div>`;
+      /* تبديلات متعددة في اللحظة نفسها (منصور 2026-11-04): عدد التبديلات أولاً، ثم زوج خرج/دخل لكل تبديل، وتأكيد واحد للدفعة */
+      const cnt = S.i<0 ? Math.max(1, Math.min(5, +d.cnt||1)) : 1;
+      const cntChips = S.i<0 ? `<div class="mx-span"><span class="mx-lbl">عدد التبديلات في هذه اللحظة</span><div class="mx-chips">${[1,2,3,4,5].map(n=>`<button class="mx-chip${cnt===n?" on":""}" data-mset="cnt" data-mval="${n}">${n===1?"تبديل واحد":n===2?"تبديلان":n+" تبديلات"}</button>`).join("")}</div></div>` : "";
+      const taken = (j, side) => { const L=[]; for(let q=0;q<cnt;q++){ if(q===j) continue; const o=d[q?("out"+q):"out"], n=d[q?("in"+q):"in"]; if(side==="out"&&o) L.push(o); if(side==="in"&&n) L.push(n); } return L; };
+      const pair = j => { const ko=j?("out"+j):"out", ki=j?("in"+j):"in";
+        const dupO = d[ko] && taken(j,"out").includes(d[ko]), dupI = d[ki] && taken(j,"in").includes(d[ki]);
+        return `${cnt>1?`<div class="mx-subhd">التبديل ${j+1}</div>`:""}
+        <div><span class="mx-lbl">خرج${dupO?` <em class="mx-warn">مختار في تبديل آخر</em>`:""}</span>${pickGrid(club,ko,d[ko],{only:"xi"})}</div>
+        <div><span class="mx-lbl">دخل${dupI?` <em class="mx-warn">مختار في تبديل آخر</em>`:""}</span>${pickGrid(club,ki,d[ki],{only:"bench",exclude:d[ko]})}</div>`; };
+      body+=`${cntChips}${perChips(k,d)}<div class="mx-grid">${stepper("m",d.m,"الدقيقة",130)}${stepper("x",d.x||0,"وقت بدل ضائع +",20)}</div>${isKO(EDIT.match)?minChips("m",perOf(k,d)):""}
+        ${Array.from({length:cnt},(_,j)=>pair(j)).join("")}`;
     }
     /* المسجّل وصانع الهدف بشاشة كاملة (منصور 2026-10-23: «ما يبينون اللاعبين كلهم… مقسمين حارس دفاع وسط هجوم») —
        كل اللاعبين بخطوطهم من الرسم، والاحتياط ومن خرج ظاهرون مباشرة */
@@ -16932,7 +16949,22 @@ html.mx-editing #waFab{display:none!important}   /* زر واتساب كان ي�
     if(k==="penr"){ if(!need(d.res && d.res!==PEN_PENDING,"اختر نتيجة الركلة")||!need(+d.rm>=1,"أدخل دقيقة النتيجة")) return;
       if(d.res==="سجلت" && !need(d.p,"اختر المنفّذ — الركلة المسجّلة تُضاف هدفاً")) return;
       if(d.res===PEN_VOID){ d.p=d.p||""; d.place=""; } }
-    if(k==="sub"){ if(!need(d.club,"اختر الفريق")||!need(d.out,"اختر اللاعب الخارج")||!need(d.in,"اختر اللاعب الداخل")) return; }
+    let subBatch = [];
+    if(k==="sub"){
+      const cnt = S.i<0 ? Math.max(1, Math.min(5, +d.cnt||1)) : 1;
+      if(!need(d.club,"اختر الفريق")) return;
+      const P = []; for(let j=0;j<cnt;j++) P.push({out:d[j?("out"+j):"out"]||"", in:d[j?("in"+j):"in"]||""});
+      for(let j=0;j<cnt;j++){ const t=cnt>1?` (التبديل ${j+1})`:""; if(!need(P[j].out,"اختر اللاعب الخارج"+t)||!need(P[j].in,"اختر اللاعب الداخل"+t)) return; }
+      const outs=P.map(x=>x.out), ins=P.map(x=>x.in);
+      if(!need(new Set(outs).size===outs.length,"لاعب خارج مكرر في الدفعة")||!need(new Set(ins).size===ins.length,"لاعب داخل مكرر في الدفعة")) return;
+      if(!need(!outs.some(o=>ins.includes(o)),"لاعب لا يمكن أن يخرج ويدخل في الدفعة نفسها")) return;
+      if(S.i<0){ const PG=onPitchGroups(d.club);
+        if(PG){ const offNow=outs.find(o=>!PG.onP.has(o)); if(!need(!offNow, `«${offNow}» ليس في الملعب الآن`)) return;
+                const bad=ins.find(n=>PG.onP.has(n)||PG.off.has(n)); if(!need(!bad, `«${bad}» لعب في المباراة — ليس من الاحتياط`)) return; } }
+      if(cnt>1){ const bid=Date.now().toString(36)+Math.random().toString(36).slice(2,6); d.b=bid;
+        subBatch = P.slice(1).map(x=>({club:d.club, out:x.out, in:x.in, h:d.h||"1", m:d.m, x:+d.x||0, b:bid})); }
+      delete d.cnt; Object.keys(d).forEach(f=>{ if(/^(out|in)\d+$/.test(f)) delete d[f]; });
+    }
     if(k==="chance"){ if(!need(d.club,"اختر الفريق")||!need(d.p,"اختر اللاعب")||!need(+d.m>=1,"أدخل الدقيقة")) return; }
     if(k==="var"){ if(!need(+d.m>=1,"أدخل الدقيقة")) return; }
     if(k==="note"){ if(!need((d.note||"").trim(),"اكتب نص التعليق")) return; }
@@ -16952,6 +16984,7 @@ html.mx-editing #waFab{display:none!important}   /* زر واتساب كان ي�
     const wasSaved = !!baseRow && !penNews;
     if(wasSaved && window.LIVEPUSH && LIVEPUSH.noPush) LIVEPUSH.noPush(d.uid);
     if(at>=0) arr[at]=d; else arr.push(d);
+    subBatch.forEach(r=>{ r.uid=Date.now().toString(36)+Math.random().toString(36).slice(2,7); arr.push(r); });   /* بقية الدفعة: نفس الدقيقة والشوط والمعرّف b */
     /* ركلة جزاء مسجّلة = هدف تلقائياً (منصور 2026-11-04: «حطيت البلنتي… النتيجة 0-0 المفروض 1-0»)، ما لم يوجد هدفها أصلاً */
     if((k==="pen"||k==="penr") && d.res==="سجلت" && d.p){
       const gm=+d.rm||+d.m||0;
@@ -17142,7 +17175,7 @@ html.mx-editing #waFab{display:none!important}   /* زر واتساب كان ي�
     if(MX.sheet && MX.sheet.kind==="ev"){
       const d=MX.sheet.d;
       q("[data-mset]",b=>b.onclick=()=>{ const key=b.dataset.mset, v=b.dataset.mval;
-        if(key===CLUBKEY[MX.sheet.k] && d[key]!==v){ ["p","a","og","err","out","in"].forEach(f=>{ if(f in d) d[f]=""; }); }
+        if(key===CLUBKEY[MX.sheet.k] && d[key]!==v){ ["p","a","og","err","out","in"].forEach(f=>{ if(f in d) d[f]=""; }); Object.keys(d).forEach(f=>{ if(/^(out|in)\d+$/.test(f)) d[f]=""; }); }
         d[key]=v; if(key==="bp"){ if(v!=="هدف عكسي") d.og=""; else { d.p=""; d.a=""; } } rerender(); });
       q("[data-mper]",b=>b.onclick=()=>{ const v=b.dataset.mper, row=PERS.find(r=>r[0]===v), m=+d.m||0;
         if(MX.sheet.k==="sub") d.h=v; else d._per=v;

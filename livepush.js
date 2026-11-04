@@ -188,13 +188,21 @@ window.LIVEPUSH = {
       if(a > 0 && !this._seen(sig)) this._armAdd(sig, k, a, t, m, comp, E('add'), cur.goals);
     });
 
-    /* ——— التبديلات ——— */
+    /* ——— التبديلات: الدفعة الواحدة (نفس الفريق والشوط والدقيقة) = إشعار واحد يجمعها (منصور 2026-11-04) ——— */
     const sk = x => x.uid || [x.club, x.out, x.in, x.m, x.x||0].join('|');
     const hadS = new Set((base.subs||[]).map(sk));
+    const grp = {}, order = [];
     (cur.subs||[]).forEach(x => {
       if(!x.in || !x.out || hadS.has(sk(x)) || this._np(x)) return;
-      add(6, this._sig('s', {r:m.round, comp, club:x.club, p:x.in + '>' + x.out, m:x.m, x:x.x, uid:x.uid}), '🔁 تبديل — ' + x.club,
-        'دخول ' + x.in + ' بدلاً من ' + x.out + (x.m ? ' ' + this._mm(x) : ''), E('sub'), true);
+      const k = [x.club, +x.h||1, +x.m||0, +x.x||0].join('|');
+      if(!grp[k]){ grp[k] = []; order.push(k); } grp[k].push(x);
+    });
+    order.forEach(k => {
+      const L = grp[k], x = L[0];
+      const sig = L.map(y => this._sig('s', {r:m.round, comp, club:y.club, p:y.in + '>' + y.out, m:y.m, x:y.x, uid:y.uid})).join('+');
+      if(L.length === 1) add(6, sig, '🔁 تبديل — ' + x.club, 'دخول ' + x.in + ' بدلاً من ' + x.out + (x.m ? ' ' + this._mm(x) : ''), E('sub'), true);
+      else add(6, sig, '🔁 ' + (L.length === 2 ? 'تبديلان' : L.length + ' تبديلات') + ' — ' + x.club + (x.m ? ' ' + this._mm(x) : ''),
+        L.map(y => 'خروج ' + y.out + ' | دخول ' + y.in).join('\n'), E('sub'), true);
     });
 
     /* ——— التشكيلتان: إشعار واحد حين تكتمل تشكيلة الفريقين معاً (منصور 2026-11-04: «لمن احط الفريقين يدزلي»)،
