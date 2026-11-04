@@ -157,7 +157,7 @@ window.LIVEPUSH = {
       if(x.res === 'أُلغيت بعد VAR' && (!o || o.res !== x.res))
         add(2, sig + '|void', 'إلغاء ركلة الجزاء — ' + x.by, 'بعد العودة إلى تقنية الفيديو VAR · ' + score(), E('var'));
       if(MISS.indexOf(x.res) >= 0 && (!o || o.res !== x.res))
-        add(2, sig + '|pm', 'ركلة جزاء ضائعة — ' + x.by, (x.p ? x.p + ' · ' : '') + x.res + ' · ' + score(), E('pm'));
+        add(2, sig + '|pm', 'ركلة جزاء ضائعة — ' + x.by, (x.p ? x.p + ' · ' : '') + x.res + ' · ' + this._mm({m:x.rm||x.m}) + ' · ' + score(), E('pm'));
     });
 
     /* ——— VAR: مراجعة جديدة من سجل الأحداث (نصّها كما كتبه المحرّر) ——— */

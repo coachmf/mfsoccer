@@ -2257,7 +2257,7 @@ html[dir="ltr"] .tl-ev.a .tl-card{text-align:right;align-items:flex-end}
 <!-- كأس الخليج 27: قسم مستقل ببيانات منفصلة (seasons/gulf27) -->
 <link rel="stylesheet" href="gulf.css?v=18">
 <script src="gulf.js?v=50" defer></script>
-<script src="livepush.js?v=8" defer></script>
+<script src="livepush.js?v=9" defer></script>
 <script src="fantasy/js/push.js?v=288" defer></script>
 <script src="notify.js?v=8" defer></script>
 <script src="notif-prefs.js?v=2" defer></script>   <!-- لوحة تفضيلات الإشعارات والأصوات -->
@@ -5774,7 +5774,7 @@ function loadEditRaw(m){
     subs:sbs.map(x=>({club:x.club, out:x.out||"", in:x.in||"", h:x.h||1, m:x.m||"", x:x.x||0, lid:x.lid||"", uid:x.uid||""})),
     goals:gs.map(g=>({sc:g.sc,p:g.p,a:g.a||"",m:g.m,x:g.x||0,det:g.det||"",bp:g.bp||"",zone:g.zone||"",og:g.og||"",err:g.err||"",lid:g.lid||"",uid:g.uid||""})),   /* og كان يضيع عند إعادة التحرير */
     cards:cs.map(x=>({club:x.club,p:x.p,m:x.m,x:+x.x||0,type:x.type,lid:x.lid||"",uid:x.uid||""})),
-    pens:ps.map(x=>({by:x.by,p:x.p,m:x.m,res:x.res,place:x.place||"",lid:x.lid||"",uid:x.uid||""}))};
+    pens:ps.map(x=>({by:x.by,p:x.p,m:x.m,res:x.res,place:x.place||"",lid:x.lid||"",uid:x.uid||"",...(x.rm?{rm:x.rm}:{})}))};
   /* lid = معرّف الحدث في اللعب الفعلي: يربط صف السجل بحدثه فيُعدَّل الحدث نفسه من أي واجهة بلا تكرار */
 }
 function loadEdit(m){ const E=loadEditRaw(m); try{ E.base=JSON.parse(JSON.stringify(E)); }catch(e){} return E; }
@@ -6694,7 +6694,7 @@ function applyEdit(E){
   upgradeSecondYellows(E.cards).forEach(x=>ALL.cards.push(
       {r:round, comp:m.comp, club:x.club, p:x.p, m:+x.m||0, ...(+x.x?{x:+x.x}:{}), type:x.type, ...(x.lid?{lid:x.lid}:{}), ...(x.uid?{uid:x.uid}:{})}));   /* x = وقت بدل ضائع (45+1) */
   E.pens.forEach(x=>ALL.pens.push({r:round, comp:m.comp, by:x.by, vs:other(x.by), p:x.p,
-      m:+x.m||0, res:x.res, place:x.place||"", ...(x.lid?{lid:x.lid}:{}), ...(x.uid?{uid:x.uid}:{})}));
+      m:+x.m||0, res:x.res, place:x.place||"", ...(x.lid?{lid:x.lid}:{}), ...(x.uid?{uid:x.uid}:{}), ...(+x.rm?{rm:+x.rm}:{})}));
   ALL.mev = ALL.mev || [];
   (E.mev||[]).forEach(x=>ALL.mev.push({r:round, comp:m.comp, home:m.home, away:m.away, k:x.k, club:x.club||"", p:x.p||"",
       m:+x.m||0, x:+x.x||0, note:(x.note||"").trim(), ...(x.lid?{lid:x.lid}:{}), ...(x.uid?{uid:x.uid}:{})}));
@@ -7993,7 +7993,9 @@ function goalsTimeline(m,gs,mc){
             ...subs.map(sb=>({t:"s",m:absMinute(sb.h,sb.m),x:0,sb,half:+sb.h||1,raw:+sb.m||0})),
             ...mc.map(c=>({t:"c",m:+c.m||0,x:+c.x||0,c})),
             ...xe.map(v=>({t:"e",m:+v.m||0,x:+v.x||0,v})),
-            ...pk.map(p=>({t:"p",m:+p.m||0,x:+p.x||0,p}))]
+            ...pk.map(p=>({t:"p",m:+p.m||0,x:+p.x||0,p,part:"a"})),
+            /* نتيجة الركلة حدث مستقل بدقيقتها (منصور 2026-11-04: «55 احتُسبت، 56 سجلت/ضاعت/أُلغيت») — المسجّلة صفّها هدفها */
+            ...pk.filter(p=>p.res && p.res!=="احتُسبت" && p.res!=="سجلت").map(p=>({t:"p",m:+p.rm||+p.m||0,x:0,p,part:"o"}))]
     .sort((a,b)=>(tlKey(a)-tlKey(b))||(tlRank(a)-tlRank(b)));
   let h=0,a=0; const rows=[]; let htDone=false, etDone=false;
   ev.forEach(e=>{
@@ -8039,6 +8041,13 @@ function goalsTimeline(m,gs,mc){
     }
     if(e.t==="p"){
       const p=e.p, ok=p.res==="سجلت", pend=p.res===PEN_PENDING, voided=p.res===PEN_VOID;
+      if(e.part==="o"){
+        const mb = voided
+          ? `<div class="tl-ev pk${isH?" h":" a"}"><div class="tl-card"><div class="tl-name"><i class="pkdot no">P</i>إلغاء ركلة الجزاء</div><div class="tl-sub">بعد العودة إلى تقنية الفيديو VAR</div></div></div>`
+          : `<div class="tl-ev pk${isH?" h":" a"}"><div class="tl-card"><div class="tl-name"${p.p?` data-player="${esc(p.p)}" data-club="${esc(p.by)}"`:""}><i class="pkdot no">P</i>${p.p?esc(p.p):"لم تُسجَّل"}</div><div class="tl-sub">ركلة جزاء ضائعة · ${esc(p.res||"")}</div></div></div>`;
+        rows.push(`<div class="tl-row pk${isH?" home":" away"}"><div class="tl-side r">${isH?mb:""}</div><div class="tl-min card"><span>${e.m}'</span></div><div class="tl-side l">${isH?"":mb}</div></div>`);
+        return;
+      }
       const pbody=`<div class="tl-ev pk${isH?" h":" a"}">
         <div class="tl-card">
           <div class="tl-name"${p.p?` data-player="${esc(p.p)}" data-club="${esc(p.by)}"`:""}><i class="pkdot${ok?" ok":(pend||voided)?"":" no"}">P</i>${esc(p.p||p.by)}</div>
@@ -8050,7 +8059,7 @@ function goalsTimeline(m,gs,mc){
         <div class="tl-side l">${isH?"":pbody}</div>
       </div>`);
       /* الصف الأول «ركلة جزاء» فقط، والثاني نتيجتها: الهدف صفّه المعتاد بعدها، والضائعة صفّ «لم تُسجَّل» (منصور 2026-11-02) */
-      if(!ok && !pend){   /* بانتظار التنفيذ: صف الاحتساب وحده؛ الإلغاء بعد VAR حدث ثانٍ مستقل */
+      if(false){   /* النتيجة صارت صفاً مستقلاً بدقيقتها (part "o") */
         const mb = voided
           ? `<div class="tl-ev pk${isH?" h":" a"}"><div class="tl-card"><div class="tl-name"><i class="pkdot no">P</i>إلغاء ركلة الجزاء</div><div class="tl-sub">بعد العودة إلى تقنية الفيديو VAR</div></div></div>`
           : `<div class="tl-ev pk${isH?" h":" a"}"><div class="tl-card"><div class="tl-name"><i class="pkdot no">P</i>لم تُسجَّل</div><div class="tl-sub">${esc(p.res||"")}</div></div></div>`;
@@ -16645,7 +16654,8 @@ html.mx-editing #waFab{display:none!important}   /* زر واتساب كان ي�
     const out=[];
     (EDIT.goals||[]).forEach((r,i)=>out.push({k:"goal",i,r,t:(+r.m||0)+(+r.x||0)/100}));
     (EDIT.cards||[]).forEach((r,i)=>out.push({k:"card",i,r,t:(+r.m||0)+(+r.x||0)/100}));
-    (EDIT.pens||[]).forEach((r,i)=>out.push({k:"pen",i,r,t:+r.m||0}));
+    (EDIT.pens||[]).forEach((r,i)=>{ out.push({k:"pen",i,r,t:+r.m||0});
+      if(r.res && r.res!==PEN_PENDING) out.push({k:"penr",i,r,t:(+r.rm||+r.m||0)+0.001}); });
     /* نفس مقياس بقية الأحداث (الدقيقة المكتوبة): absMinute مع بدل ضائع الشوط الأول كان يجعل تبديل 58' = 63 فيسبقه إنذار 63' (المحررون 2026-09-30) */
     (EDIT.subs||[]).forEach((r,i)=>out.push({k:"sub",i,r,t:(+r.h===2 && (+r.m||0)<=45) ? 45.999 : (+r.m||0)+(+r.x||0)/100}));
     (EDIT.mev||[]).forEach((r,i)=>out.push({k:r.k,i,r,t:(+r.m||0)+(+r.x||0)/100}));
@@ -16660,7 +16670,8 @@ html.mx-editing #waFab{display:none!important}   /* زر واتساب كان ي�
       sub=[r.bp==="هدف عكسي"?`هدف عكسي لصالح ${r.sc}`:"", r.a&&r.bp!=="هدف عكسي"?`صناعة: ${r.a}`:"", goalDetTxt(r)].filter(Boolean).join(" · "); }
     if(k==="card"){ club=r.club; who=r.p; mn=r.m?`${r.m}${+r.x?`+${r.x}`:""}'`:"—";
       const t=r.type||""; ic=`<span class="ic-card ${/ثان/.test(t)?"yr":isRed(t)?"r":"y"}"></span>`; sub=t; }
-    if(k==="pen"){ club=r.by; who=r.p; ic=SV.pen; mn=r.m?`${r.m}'`:"—"; sub=`ركلة جزاء · ${r.res||""}`; }
+    if(k==="pen"){ club=r.by; who=r.p||r.by; ic=SV.pen; mn=r.m?`${r.m}'`:"—"; sub="احتساب ركلة جزاء"; }
+    if(k==="penr"){ club=r.by; who=r.p||r.by; ic=SV.pen; const rmn=+r.rm||+r.m; mn=rmn?`${rmn}'`:"—"; sub=`نتيجة الركلة · ${r.res||""}`; }
     if(k==="sub"){ club=r.club; who=r.in||"—"; ic=SV.swap; mn=r.m?`${halfLabel(r.h,r.m,r.x)}'`:"—"; sub=`خرج: ${r.out||"—"}`; }
     if(MEV[k]){ club=r.club; who=r.p||TITLE[k]; ic=SV[k]; mn=r.m?`${r.m}${+r.x?`+${r.x}`:""}'`:"—"; sub=[r.p?TITLE[k]:"", r.note||""].filter(Boolean).join(" · "); }
     return `<div class="mx-ev" style="--srgb:${rgbOf(club)}">
@@ -16704,7 +16715,8 @@ html.mx-editing #waFab{display:none!important}   /* زر واتساب كان ي�
         <button class="mx-addb" data-mnew="card" data-mtype="إنذار"><span class="ic-card y"></span>إنذار</button>
         <button class="mx-addb" data-mnew="card" data-mtype="طرد مباشر"><span class="ic-card r"></span>طرد</button>
         <button class="mx-addb" data-mnew="sub">${SV.swap}تبديل</button>
-        <button class="mx-addb" data-mnew="pen">${SV.pen}ركلة جزاء</button>
+        <button class="mx-addb" data-mnew="pen">${SV.pen}احتساب ركلة جزاء</button>
+        <button class="mx-addb" data-mnew="penr">${SV.pen}نتيجة ركلة جزاء</button>
         <button class="mx-addb" data-mnew="chance">${SV.chance}فرصة خطيرة</button>
         <button class="mx-addb" data-mnew="var">${SV.var}مراجعة VAR</button>
         <button class="mx-addb" data-mnew="note">${SV.note}تعليق</button>
@@ -16719,9 +16731,9 @@ html.mx-editing #waFab{display:none!important}   /* زر واتساب كان ي�
                sub:()=>({club:"",out:"",in:"",h:"1",m:""}),
                chance:()=>({k:"chance",club:"",p:"",m:"",x:0,note:""}), var:()=>({k:"var",club:"",p:"",m:"",x:0,note:""}), note:()=>({k:"note",club:"",p:"",m:"",x:0,note:""})};
   const MEV={chance:1,var:1,note:1};
-  const ARR={goal:"goals",card:"cards",pen:"pens",sub:"subs",chance:"mev",var:"mev",note:"mev"};
-  const CLUBKEY={goal:"sc",card:"club",pen:"by",sub:"club",chance:"club",var:"club",note:"club"};
-  const TITLE={goal:"هدف",card:"بطاقة",pen:"ركلة جزاء",sub:"تبديل",chance:"فرصة خطيرة",var:"مراجعة VAR",note:"تعليق"};
+  const ARR={goal:"goals",card:"cards",pen:"pens",penr:"pens",sub:"subs",chance:"mev",var:"mev",note:"mev"};
+  const CLUBKEY={goal:"sc",card:"club",pen:"by",penr:"by",sub:"club",chance:"club",var:"club",note:"club"};
+  const TITLE={goal:"هدف",card:"بطاقة",pen:"احتساب ركلة جزاء",penr:"نتيجة ركلة الجزاء",sub:"تبديل",chance:"فرصة خطيرة",var:"مراجعة VAR",note:"تعليق"};
   const PHASE_NOTE={h1:[1,"بداية المباراة"],ht:[45,"نهاية الشوط الأول"],h2:[46,"بداية الشوط الثاني"],e1:[91,"بداية الشوط الإضافي الأول"],e2:[106,"بداية الشوط الإضافي الثاني"],pso:[120,"ركلات الترجيح"],ft:[90,"نهاية المباراة"]};
   const PHASES=[["pre","قبل البداية"],["h1","الشوط الأول"],["ht","بين الشوطين"],["h2","الشوط الثاني"],["ft","انتهت"]];
   /* مباريات خروج المغلوب فقط (نصف نهائي ونهائي الخليج، والكؤوس): أشواط إضافية وركلات ترجيح (منصور 2026-10-03) */
@@ -16746,6 +16758,12 @@ html.mx-editing #waFab{display:none!important}   /* زر واتساب كان ي�
     return `<div class="mx-chips" style="margin-top:8px">${L.map(v=>`<button class="mx-chip" data-mset="${key}" data-mval="${v}">${v}'</button>`).join("")}</div>`; };
   function openEv(k,i,preset){
     EDIT.mev=EDIT.mev||[];
+    if(k==="penr" && i<0){
+      for(let j=(EDIT.pens||[]).length-1;j>=0;j--) if(!EDIT.pens[j].res || EDIT.pens[j].res===PEN_PENDING){ i=j; break; }
+      if(i<0){ toast("أضف «احتساب ركلة جزاء» أولاً","busy"); return; }
+      const d=JSON.parse(JSON.stringify(EDIT.pens[i])); d.res=""; if(!d.rm) d.rm=String(+d.m||"");
+      MX.sheet={kind:"ev",k,i,d,err:"",sig0:rowSig(EDIT.pens[i])}; renderMatchAdmin(); return;
+    }
     const d=i>=0?JSON.parse(JSON.stringify(EDIT[ARR[k]][i])):Object.assign(BLANK[k](),preset||{});
     if(!d[CLUBKEY[k]]) d[CLUBKEY[k]]=sideClub(MX.tab==="lineup"?MX.side:"home")||"";
     MX.sheet={kind:"ev",k,i,d,err:"",sig0:i>=0?rowSig(EDIT[ARR[k]][i]):""}; renderMatchAdmin();
@@ -16861,11 +16879,15 @@ html.mx-editing #waFab{display:none!important}   /* زر واتساب كان ي�
         <div><span class="mx-lbl">اللاعب</span>${pickGrid(club,"p",d.p)}</div>`;   /* الدقيقة فوق قائمة اللاعبين (كانت تختفي تحت 26 لاعباً) + بدل الضائع 45+1 (المحررون 2026-09-30) */
     }
     if(k==="pen"){
-      body+=`${perChips(k,d)}<div class="mx-grid">${stepper("m",d.m,"الدقيقة",130)}</div>
-        <div><span class="mx-lbl">المنفّذ</span>${pickGrid(club,"p",d.p)}</div>
-        <div><span class="mx-lbl">النتيجة</span>${chips("res",LIST.penres,d.res,v=>v==="سجلت"?"ok":"")}</div>
-        <div><span class="mx-lbl">مكان التسديد</span>${penPickSVG(d.place, z=>`data-mset="place" data-mval="${esc(z)}"`)}</div>
-        <p class="mx-hint">أضفها «احتُسبت» لحظة احتسابها (إشعار احتساب)، ثم عدّلها: «سجلت» يضيف الهدف تلقائياً، أو الضائعة، أو «أُلغيت بعد VAR» حدثاً ثانياً — كل نتيجة لها إشعارها.</p>`;
+      body+=`${perChips(k,d)}<div class="mx-grid">${stepper("m",d.m,"دقيقة الاحتساب",130)}</div>
+        <p class="mx-hint">الاحتساب حدث وحده (إشعار «احتساب ركلة جزاء»). المنفّذ والنتيجة من زر «نتيجة ركلة جزاء» بدقيقتها.</p>`;
+    }
+    if(k==="penr"){
+      body+=`<div class="mx-grid">${stepper("rm",d.rm,"دقيقة النتيجة",130)}</div>
+        <div><span class="mx-lbl">النتيجة</span>${chips("res",LIST.penres.filter(v=>v!==PEN_PENDING),d.res,v=>v==="سجلت"?"ok":"")}</div>
+        ${d.res!==PEN_VOID?`<div><span class="mx-lbl">المنفّذ</span>${pickGrid(club,"p",d.p)}</div>
+        <div><span class="mx-lbl">مكان التسديد</span>${penPickSVG(d.place, z=>`data-mset="place" data-mval="${esc(z)}"`)}</div>`:""}
+        <p class="mx-hint">«سجلت» يضيف الهدف تلقائياً بهذه الدقيقة. كل نتيجة حدث مستقل بإشعاره.</p>`;
     }
     if(MEV[k]){
       if(k==="chance") body+=`<div><span class="mx-lbl">اللاعب</span>${pickGrid(club,"p",d.p)}</div>`;
@@ -16902,8 +16924,10 @@ html.mx-editing #waFab{display:none!important}   /* زر واتساب كان ي�
     if(k==="goal"){ const og=d.bp==="هدف عكسي"; if(og){ d.p=""; d.a=""; } else d.og="";
       if(!need(d.sc,"اختر الفريق المسجّل")||!need(og?d.og:d.p,og?"اختر اللاعب الذي سجّل في مرماه":"اختر اللاعب المسجّل")||!need(+d.m>=1,"أدخل دقيقة الهدف")||!need(d.det,"اختر تفصيل الهجمة (مطلوب لإحصاءات الأهداف)")) return; }
     if(k==="card"){ if(!need(d.club,"اختر الفريق")||!need(d.p,"اختر اللاعب")||!need(d.type,"اختر نوع البطاقة")) return; }
-    if(k==="pen"){ if(!need(d.by,"اختر الفريق المنفّذ")||!need(d.res,"اختر نتيجة الركلة")) return;
-      if(d.res==="سجلت" && (!need(d.p,"اختر المنفّذ — الركلة المسجّلة تُضاف هدفاً")||!need(+d.m>=1,"أدخل دقيقة الركلة"))) return; }
+    if(k==="pen"){ if(!need(d.by,"اختر الفريق")||!need(+d.m>=1,"أدخل دقيقة الاحتساب")) return; if(!d.res) d.res=PEN_PENDING; }
+    if(k==="penr"){ if(!need(d.res && d.res!==PEN_PENDING,"اختر نتيجة الركلة")||!need(+d.rm>=1,"أدخل دقيقة النتيجة")) return;
+      if(d.res==="سجلت" && !need(d.p,"اختر المنفّذ — الركلة المسجّلة تُضاف هدفاً")) return;
+      if(d.res===PEN_VOID){ d.p=d.p||""; d.place=""; } }
     if(k==="sub"){ if(!need(d.club,"اختر الفريق")||!need(d.out,"اختر اللاعب الخارج")||!need(d.in,"اختر اللاعب الداخل")) return; }
     if(k==="chance"){ if(!need(d.club,"اختر الفريق")||!need(d.p,"اختر اللاعب")||!need(+d.m>=1,"أدخل الدقيقة")) return; }
     if(k==="var"){ if(!need(+d.m>=1,"أدخل الدقيقة")) return; }
@@ -16920,15 +16944,16 @@ html.mx-editing #waFab{display:none!important}   /* زر واتساب كان ي�
     /* تعديل صف محفوظ أصلاً (موجود في base): لا إشعار له ولا لما يتولّد منه (منصور 2026-11-04) */
     const baseRow = at>=0 && S.sig0 ? ((EDIT.base&&EDIT.base[ARR[k]])||[]).find(r=>(r.uid&&r.uid===d.uid) || rowSig(r)===S.sig0) : null;
     /* نتيجة ركلة كانت «احتُسبت»، أو إلغاؤها بعد VAR = حدث جديد يُرسل؛ ما عدا ذلك تصحيح بلا إشعار */
-    const penNews = k==="pen" && !!baseRow && baseRow.res!==d.res && (baseRow.res===PEN_PENDING || d.res===PEN_VOID);
+    const penNews = (k==="pen"||k==="penr") && !!baseRow && baseRow.res!==d.res && (!baseRow.res || baseRow.res===PEN_PENDING || d.res===PEN_VOID);
     const wasSaved = !!baseRow && !penNews;
     if(wasSaved && window.LIVEPUSH && LIVEPUSH.noPush) LIVEPUSH.noPush(d.uid);
     if(at>=0) arr[at]=d; else arr.push(d);
     /* ركلة جزاء مسجّلة = هدف تلقائياً (منصور 2026-11-04: «حطيت البلنتي… النتيجة 0-0 المفروض 1-0»)، ما لم يوجد هدفها أصلاً */
-    if(k==="pen" && d.res==="سجلت" && d.p){
-      const has=EDIT.goals.some(g=>g.sc===d.by && g.p===d.p && g.det==="ركلة جزاء" && Math.abs((+g.m||0)-(+d.m||0))<=2);
+    if((k==="pen"||k==="penr") && d.res==="سجلت" && d.p){
+      const gm=+d.rm||+d.m||0;
+      const has=EDIT.goals.some(g=>g.sc===d.by && g.p===d.p && g.det==="ركلة جزاء" && (Math.abs((+g.m||0)-gm)<=2 || Math.abs((+g.m||0)-(+d.m||0))<=2));
       if(!has){ const gu=Date.now().toString(36)+Math.random().toString(36).slice(2,7);
-        EDIT.goals.push({sc:d.by, p:d.p, a:"", m:String(d.m), x:+d.x||0, det:"ركلة جزاء", bp:"", zone:"علامة الجزاء", og:"", uid:gu});
+        EDIT.goals.push({sc:d.by, p:d.p, a:"", m:String(gm), x:0, det:"ركلة جزاء", bp:"", zone:"علامة الجزاء", og:"", uid:gu});
         if(wasSaved && window.LIVEPUSH && LIVEPUSH.noPush) LIVEPUSH.noPush(gu); }
     }
     MX.sheet=null; FORMERR=""; renderMatchAdmin();
@@ -17104,7 +17129,12 @@ html.mx-editing #waFab{display:none!important}   /* زر واتساب كان ي�
       rerender(); });
     q("[data-mnew]",b=>b.onclick=()=>{ const k=b.dataset.mnew, preset={}; if(b.dataset.mtype) preset.type=b.dataset.mtype; if(b.dataset.mclub) preset[CLUBKEY[k]]=b.dataset.mclub; openEv(k,-1,preset); });
     q("[data-medit]",b=>b.onclick=()=>{ const [k,i]=b.dataset.medit.split("."); openEv(k,+i); });
-    q("[data-mdel]",b=>b.onclick=()=>{ const [k,i]=b.dataset.mdel.split("."); if(!confirm(`حذف ${TITLE[k]}؟`)) return; EDIT[ARR[k]].splice(+i,1); MX.sheet=null; rerender(); });
+    q("[data-mdel]",b=>b.onclick=()=>{ const [k,i]=b.dataset.mdel.split("."); if(!confirm(`حذف ${TITLE[k]}؟`)) return;
+      if(k==="penr"){ const r=EDIT.pens[+i]; if(r){ const gm=+r.rm||+r.m||0;
+          if(r.res==="سجلت") EDIT.goals=EDIT.goals.filter(g=>!(g.sc===r.by && g.p===r.p && g.det==="ركلة جزاء" && Math.abs((+g.m||0)-gm)<=2));
+          r.res=PEN_PENDING; delete r.rm; r.place=""; } }
+      else EDIT[ARR[k]].splice(+i,1);
+      MX.sheet=null; rerender(); });
     if(MX.sheet && MX.sheet.kind==="ev"){
       const d=MX.sheet.d;
       q("[data-mset]",b=>b.onclick=()=>{ const key=b.dataset.mset, v=b.dataset.mval;
