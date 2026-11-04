@@ -9,7 +9,7 @@
 
    عند كل نشر: ارفع رقم VER فتُبنى ذاكرة جديدة وتُحذف القديمة.
    ========================================================= */
-const VER   = 'mf-2026-11-04-682';
+const VER   = 'mf-2026-11-04-683';
 const SHELL = 'shell-' + VER;
 const RUN   = 'run-'   + VER;
 
@@ -53,8 +53,11 @@ self.addEventListener('activate', e => {
 });
 
 /* الصفحة تطلب التحديث الفوري بعد موافقة المستخدم */
+/* صفحات فتحت الصوت بلمسة (notif-prefs.js) — هي وحدها تشغّل الصوت المختار، وغيرها يأخذ صوت النظام */
+const AUDIO_OK = new Set();
 self.addEventListener('message', e => {
   if (e.data === 'SKIP_WAITING') self.skipWaiting();
+  if (e.data && e.data.type === 'MF_AUDIO' && e.source && e.source.id) { if (e.data.ok) AUDIO_OK.add(e.source.id); else AUDIO_OK.delete(e.source.id); }
 });
 
 const isFont = url => FONT_HOSTS.includes(url.hostname);
@@ -202,7 +205,8 @@ self.addEventListener('push', e => {
     const P = await npPrefs();
     /* صفحة مفتوحة ظاهرة: هي تشغّل الصوت المختار للحدث، فالإشعار نفسه صامت حتى لا يتداخل الصوتان */
     const cs = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
-    const seen = cs.some(c => c.visibilityState === 'visible');
+    /* صامت فقط إن كانت صفحة ظاهرة فتحت الصوت فعلاً — وإلا صوت النظام واهتزازه (كان الإشعار صامتاً والصفحة عاجزة عن التشغيل) */
+    const seen = cs.some(c => c.visibilityState === 'visible' && AUDIO_OK.has(c.id));
     cs.forEach(c => { try { c.postMessage({ mfpush: { ev, title, body, url } }); } catch (err) {} });
     await self.registration.showNotification(title, {
       body,

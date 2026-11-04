@@ -201,11 +201,23 @@ window.NPREF = (function(){
   }
 
   /* ---------- الأصوات ---------- */
-  let AUD = null;
+  let AUD = null, AUD_OK = false;
+  function audioEl(){ if(!AUD){ AUD = new Audio(); AUD.preload = 'auto'; AUD.setAttribute('playsinline',''); } return AUD; }
+  /* فتح الصوت بأول تفاعل: تشغيل صامت ثم إيقاف، ثم إخبار خادم الخدمة أن الصفحة تستطيع تشغيل الصوت بنفسها */
+  function unlockAudio(){
+    if(AUD_OK) return;
+    try{ const a = audioEl(); a.muted = true; a.src = SND_DIR + 'rem_tone.mp3';
+      const pr = a.play(); const done = () => { try{ a.pause(); a.currentTime = 0; }catch(e){} a.muted = false; AUD_OK = true; tellSW(); };
+      if(pr && pr.then) pr.then(done).catch(()=>{}); else done(); }catch(e){}
+  }
+  function tellSW(){ try{ const c = navigator.serviceWorker && navigator.serviceWorker.controller; if(c) c.postMessage({ type:'MF_AUDIO', ok: AUD_OK && document.visibilityState === 'visible' }); }catch(e){} }
+  try{ ['pointerdown','touchend','keydown'].forEach(t => document.addEventListener(t, unlockAudio, { passive:true }));
+       document.addEventListener('visibilitychange', tellSW); }catch(e){}
   function soundFor(cat, p){ p = p||P; const v = (p.snd||{})[cat]; if(v==='mute') return ''; return LIB[v] ? v : (SND_CAT.find(x=>x.k===cat)||{}).def||''; }
   function play(id, vol){
     if(!id) return;
-    try{ if(AUD){ AUD.pause(); } AUD = new Audio(SND_DIR + id + '.mp3'); AUD.volume = Math.max(0, Math.min(1, vol==null ? P.vol : vol)); AUD.play().catch(()=>{}); }catch(e){}
+    /* عنصر صوت واحد يُفتح بأول لمسة (سفاري/آيفون يمنعان التشغيل بلا لمسة سابقة — كان الصوت المختار لا يُسمع أبداً) */
+    try{ const a = audioEl(); a.pause(); a.muted = false; a.src = SND_DIR + id + '.mp3'; a.volume = Math.max(0, Math.min(1, vol==null ? P.vol : vol)); a.play().catch(()=>{}); }catch(e){}
   }
   function inDnd(p){
     p = p||P; if(!p.dnd || !p.dnd.on) return false;
