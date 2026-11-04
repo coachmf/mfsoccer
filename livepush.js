@@ -22,7 +22,10 @@
    ========================================================= */
 'use strict';
 window.LIVEPUSH = {
-  ON:'mf_lp_on', SENT:'mf_lp_sent', MAX:6,
+  ON:'mf_lp_on', SENT:'mf_lp_sent', NOP:'mf_lp_nop', MAX:6,
+  /* تعديل حدث محفوظ أصلاً لا يُرسل إشعاراً (منصور 2026-11-04: «لا يخربط النتيجة») — المحرّر يعلّم uid الصف هنا */
+  noPush(uid){ if(!uid) return; const a = this._get(this.NOP, []); if(a.indexOf(uid) < 0){ a.push(uid); this._set(this.NOP, a.slice(-400)); } },
+  _np(x){ return !!(x && x.uid && this._get(this.NOP, []).indexOf(x.uid) >= 0); },
 
   _get(k, d){ try{ return JSON.parse(localStorage.getItem(k)) || d; }catch(e){ return d; } },
   _set(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} },
@@ -110,7 +113,7 @@ window.LIVEPUSH = {
     const hadG = new Set((base.goals||[]).map(gk));
     const pens = cur.pens || [];
     (cur.goals||[]).forEach(g => {
-      if(hadG.has(gk(g))) return;
+      if(hadG.has(gk(g)) || this._np(g)) return;
       const og = g.bp === 'هدف عكسي';
       const who = og ? (g.og || g.p) + ' (هدف عكسي)' : g.p;
       const ast = (!og && g.a) ? ' · صناعة ' + g.a : '';
@@ -129,7 +132,7 @@ window.LIVEPUSH = {
     const ck = c => c.uid || [c.club, c.p, c.m, c.type].join('|');
     const hadC = new Set((base.cards||[]).map(ck));
     (cur.cards||[]).forEach((c, i) => {
-      if(hadC.has(ck(c))) return;
+      if(hadC.has(ck(c)) || this._np(c)) return;
       /* الإنذار الثاني: صريحاً أو إنذار ثانٍ لنفس اللاعب في المباراة (الترقية الآلية في الموقع) */
       const second = c.type === 'إنذار ثانٍ' || (c.type === 'إنذار' && (cur.cards||[]).some((o, j) => j !== i && o.p === c.p && o.club === c.club && o.type === 'إنذار' && ((+o.m||0) + (+o.x||0)/100) < ((+c.m||0) + (+c.x||0)/100)));
       const body = c.p + ' ' + this._mm(c) + ' · ' + score();
@@ -147,6 +150,7 @@ window.LIVEPUSH = {
     const oldP = new Map((base.pens||[]).map(x => [pk(x), x]));
     const MISS = ['تصدى لها الحارس','خارج المرمى','القائم / العارضة'];
     pens.forEach(x => {
+      if(this._np(x)) return;
       const o = oldP.get(pk(x)), sig = this._sig('pa', Object.assign({club:x.by}, R, x));
       if(!o) add(2, sig, 'ركلة جزاء — ' + x.by, (x.p ? x.p + ' · ' : '') + this._mm(x) + ' · ' + score(), E('pa'));
       if(MISS.indexOf(x.res) >= 0 && (!o || o.res !== x.res))
@@ -183,7 +187,7 @@ window.LIVEPUSH = {
     const sk = x => x.uid || [x.club, x.out, x.in, x.m, x.x||0].join('|');
     const hadS = new Set((base.subs||[]).map(sk));
     (cur.subs||[]).forEach(x => {
-      if(!x.in || !x.out || hadS.has(sk(x))) return;
+      if(!x.in || !x.out || hadS.has(sk(x)) || this._np(x)) return;
       add(6, this._sig('s', {r:m.round, comp, club:x.club, p:x.in + '>' + x.out, m:x.m, x:x.x, uid:x.uid}), '🔁 تبديل — ' + x.club,
         'دخول ' + x.in + ' بدلاً من ' + x.out + (x.m ? ' ' + this._mm(x) : ''), E('sub'), true);
     });

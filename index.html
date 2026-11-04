@@ -2257,7 +2257,7 @@ html[dir="ltr"] .tl-ev.a .tl-card{text-align:right;align-items:flex-end}
 <!-- كأس الخليج 27: قسم مستقل ببيانات منفصلة (seasons/gulf27) -->
 <link rel="stylesheet" href="gulf.css?v=18">
 <script src="gulf.js?v=50" defer></script>
-<script src="livepush.js?v=6" defer></script>
+<script src="livepush.js?v=7" defer></script>
 <script src="fantasy/js/push.js?v=288" defer></script>
 <script src="notify.js?v=8" defer></script>
 <script src="notif-prefs.js?v=2" defer></script>   <!-- لوحة تفضيلات الإشعارات والأصوات -->
@@ -16912,12 +16912,16 @@ html.mx-editing #waFab{display:none!important}   /* زر واتساب كان ي�
     if(!d.uid) d.uid=Date.now().toString(36)+Math.random().toString(36).slice(2,7);
     /* النموذج قد يُعاد تحميله بعد حفظ تلقائي والنافذة مفتوحة فيتغير ترتيب الصفوف: نبحث عن الصف نفسه لا عن رقمه */
     let at=S.i; if(S.i>=0 && S.sig0){ const j=arr.findIndex(r=>rowSig(r)===S.sig0); if(j>=0) at=j; else if(arr[S.i] && rowSig(arr[S.i])!==S.sig0) at=-1; }
+    /* تعديل صف محفوظ أصلاً (موجود في base): لا إشعار له ولا لما يتولّد منه (منصور 2026-11-04) */
+    const wasSaved = at>=0 && !!S.sig0 && ((EDIT.base&&EDIT.base[ARR[k]])||[]).some(r=>(r.uid&&r.uid===d.uid) || rowSig(r)===S.sig0);
+    if(wasSaved && window.LIVEPUSH && LIVEPUSH.noPush) LIVEPUSH.noPush(d.uid);
     if(at>=0) arr[at]=d; else arr.push(d);
     /* ركلة جزاء مسجّلة = هدف تلقائياً (منصور 2026-11-04: «حطيت البلنتي… النتيجة 0-0 المفروض 1-0»)، ما لم يوجد هدفها أصلاً */
     if(k==="pen" && d.res==="سجلت" && d.p){
       const has=EDIT.goals.some(g=>g.sc===d.by && g.p===d.p && g.det==="ركلة جزاء" && Math.abs((+g.m||0)-(+d.m||0))<=2);
-      if(!has) EDIT.goals.push({sc:d.by, p:d.p, a:"", m:String(d.m), x:+d.x||0, det:"ركلة جزاء", bp:"", zone:"علامة الجزاء", og:"",
-        uid:Date.now().toString(36)+Math.random().toString(36).slice(2,7)});
+      if(!has){ const gu=Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+        EDIT.goals.push({sc:d.by, p:d.p, a:"", m:String(d.m), x:+d.x||0, det:"ركلة جزاء", bp:"", zone:"علامة الجزاء", og:"", uid:gu});
+        if(wasSaved && window.LIVEPUSH && LIVEPUSH.noPush) LIVEPUSH.noPush(gu); }
     }
     MX.sheet=null; FORMERR=""; renderMatchAdmin();
   }
