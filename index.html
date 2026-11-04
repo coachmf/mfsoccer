@@ -16860,7 +16860,7 @@ html.mx-editing #waFab{display:none!important}   /* زر واتساب كان ي�
         <div><span class="mx-lbl">المنفّذ</span>${pickGrid(club,"p",d.p)}</div>
         <div><span class="mx-lbl">النتيجة</span>${chips("res",LIST.penres,d.res,v=>v==="سجلت"?"ok":"")}</div>
         <div><span class="mx-lbl">مكان التسديد</span>${penPickSVG(d.place, z=>`data-mset="place" data-mval="${esc(z)}"`)}</div>
-        <p class="mx-hint">ركلة الجزاء المسجّلة تُضاف أيضاً كهدف من تبويب الأحداث (هدف ← تفصيل «ركلة جزاء»).</p>`;
+        <p class="mx-hint">الركلة المسجّلة تُضاف هدفاً تلقائياً (تفصيل «ركلة جزاء») — لا تضفه مرة ثانية.</p>`;
     }
     if(MEV[k]){
       if(k==="chance") body+=`<div><span class="mx-lbl">اللاعب</span>${pickGrid(club,"p",d.p)}</div>`;
@@ -16897,7 +16897,8 @@ html.mx-editing #waFab{display:none!important}   /* زر واتساب كان ي�
     if(k==="goal"){ const og=d.bp==="هدف عكسي"; if(og){ d.p=""; d.a=""; } else d.og="";
       if(!need(d.sc,"اختر الفريق المسجّل")||!need(og?d.og:d.p,og?"اختر اللاعب الذي سجّل في مرماه":"اختر اللاعب المسجّل")||!need(+d.m>=1,"أدخل دقيقة الهدف")||!need(d.det,"اختر تفصيل الهجمة (مطلوب لإحصاءات الأهداف)")) return; }
     if(k==="card"){ if(!need(d.club,"اختر الفريق")||!need(d.p,"اختر اللاعب")||!need(d.type,"اختر نوع البطاقة")) return; }
-    if(k==="pen"){ if(!need(d.by,"اختر الفريق المنفّذ")||!need(d.res,"اختر نتيجة الركلة")) return; }
+    if(k==="pen"){ if(!need(d.by,"اختر الفريق المنفّذ")||!need(d.res,"اختر نتيجة الركلة")) return;
+      if(d.res==="سجلت" && (!need(d.p,"اختر المنفّذ — الركلة المسجّلة تُضاف هدفاً")||!need(+d.m>=1,"أدخل دقيقة الركلة"))) return; }
     if(k==="sub"){ if(!need(d.club,"اختر الفريق")||!need(d.out,"اختر اللاعب الخارج")||!need(d.in,"اختر اللاعب الداخل")) return; }
     if(k==="chance"){ if(!need(d.club,"اختر الفريق")||!need(d.p,"اختر اللاعب")||!need(+d.m>=1,"أدخل الدقيقة")) return; }
     if(k==="var"){ if(!need(+d.m>=1,"أدخل الدقيقة")) return; }
@@ -16912,6 +16913,12 @@ html.mx-editing #waFab{display:none!important}   /* زر واتساب كان ي�
     /* النموذج قد يُعاد تحميله بعد حفظ تلقائي والنافذة مفتوحة فيتغير ترتيب الصفوف: نبحث عن الصف نفسه لا عن رقمه */
     let at=S.i; if(S.i>=0 && S.sig0){ const j=arr.findIndex(r=>rowSig(r)===S.sig0); if(j>=0) at=j; else if(arr[S.i] && rowSig(arr[S.i])!==S.sig0) at=-1; }
     if(at>=0) arr[at]=d; else arr.push(d);
+    /* ركلة جزاء مسجّلة = هدف تلقائياً (منصور 2026-11-04: «حطيت البلنتي… النتيجة 0-0 المفروض 1-0»)، ما لم يوجد هدفها أصلاً */
+    if(k==="pen" && d.res==="سجلت" && d.p){
+      const has=EDIT.goals.some(g=>g.sc===d.by && g.p===d.p && g.det==="ركلة جزاء" && Math.abs((+g.m||0)-(+d.m||0))<=2);
+      if(!has) EDIT.goals.push({sc:d.by, p:d.p, a:"", m:String(d.m), x:+d.x||0, det:"ركلة جزاء", bp:"", zone:"علامة الجزاء", og:"",
+        uid:Date.now().toString(36)+Math.random().toString(36).slice(2,7)});
+    }
     MX.sheet=null; FORMERR=""; renderMatchAdmin();
   }
 
