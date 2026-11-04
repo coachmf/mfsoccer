@@ -152,7 +152,10 @@ window.LIVEPUSH = {
     pens.forEach(x => {
       if(this._np(x)) return;
       const o = oldP.get(pk(x)), sig = this._sig('pa', Object.assign({club:x.by}, R, x));
-      if(!o) add(2, sig, 'ركلة جزاء — ' + x.by, (x.p ? x.p + ' · ' : '') + this._mm(x) + ' · ' + score(), E('pa'));
+      if(!o) add(2, sig, 'احتساب ركلة جزاء — ' + x.by, (x.p ? x.p + ' · ' : '') + this._mm(x) + ' · ' + score(), E('pa'));
+      /* إلغاء الركلة بعد العودة إلى VAR — حدث ثانٍ مستقل (منصور 2026-11-04) */
+      if(x.res === 'أُلغيت بعد VAR' && (!o || o.res !== x.res))
+        add(2, sig + '|void', 'إلغاء ركلة الجزاء — ' + x.by, 'بعد العودة إلى تقنية الفيديو VAR · ' + score(), E('var'));
       if(MISS.indexOf(x.res) >= 0 && (!o || o.res !== x.res))
         add(2, sig + '|pm', 'ركلة جزاء ضائعة — ' + x.by, (x.p ? x.p + ' · ' : '') + x.res + ' · ' + score(), E('pm'));
     });

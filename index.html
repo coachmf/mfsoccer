@@ -2257,7 +2257,7 @@ html[dir="ltr"] .tl-ev.a .tl-card{text-align:right;align-items:flex-end}
 <!-- كأس الخليج 27: قسم مستقل ببيانات منفصلة (seasons/gulf27) -->
 <link rel="stylesheet" href="gulf.css?v=18">
 <script src="gulf.js?v=50" defer></script>
-<script src="livepush.js?v=7" defer></script>
+<script src="livepush.js?v=8" defer></script>
 <script src="fantasy/js/push.js?v=288" defer></script>
 <script src="notify.js?v=8" defer></script>
 <script src="notif-prefs.js?v=2" defer></script>   <!-- لوحة تفضيلات الإشعارات والأصوات -->
@@ -2269,7 +2269,7 @@ html[dir="ltr"] .tl-ev.a .tl-card{text-align:right;align-items:flex-end}
 <link rel="stylesheet" href="news.css?v=5">
 <script src="news.js?v=11" defer></script>   <!-- الأخبار: news/{id} + فهرس seasons/news + صور newsimg/{id} -->   <!-- دوري الدرجة الأولى: الترتيب والمباريات فقط (seasons/div1) -->
 <link rel="stylesheet" href="ext.css?v=3">
-<script src="ext.js?v=14" defer></script>   <!-- المشاركات الخارجية لأنديتنا: تحرير كامل مثل الدوري في وثيقة مستقلة (seasons/ext2627) -->
+<script src="ext.js?v=15" defer></script>   <!-- المشاركات الخارجية لأنديتنا: تحرير كامل مثل الدوري في وثيقة مستقلة (seasons/ext2627) -->
 <!-- التحليل الموسّع + تقييم اللاعبين 0–100 + البحث العام (منصور 2026-09-29) -->
 <link rel="stylesheet" href="analysis.css?v=11">
 <script src="tstats-data.js?v=1" defer></script>
@@ -2849,7 +2849,7 @@ let LIST = {
         "داخل منطقة الجزاء - يسار","داخل منطقة الجزاء - وسط","داخل منطقة الجزاء - يمين",
         "خارج منطقة الجزاء - يسار","خارج منطقة الجزاء - وسط","خارج منطقة الجزاء - يمين",
         "علامة الجزاء","مسافة بعيدة (+30م)"],
-  penres:["سجلت","تصدى لها الحارس","خارج المرمى","القائم / العارضة","أعيدت"],
+  penres:["احتُسبت","سجلت","تصدى لها الحارس","خارج المرمى","القائم / العارضة","أعيدت","أُلغيت بعد VAR"],
   cardtype:["إنذار","إنذار ثانٍ","طرد مباشر"]
 };
 const SETPIECE = /ركنية|ركلة حرة|رمية تماس|ركلة جزاء/;
@@ -3038,11 +3038,14 @@ function stampComp(d){
   (d.subs||[]).forEach(x=>{ if(!x.comp) x.comp="الدوري"; });
   return d;
 }
+/* ركلة جزاء «احتُسبت» (لم تُنفَّذ بعد) أو «أُلغيت بعد VAR» تظهر في أحداث المباراة فقط ولا تدخل الإحصاءات (منصور 2026-11-04) */
+const PEN_PENDING="احتُسبت", PEN_VOID="أُلغيت بعد VAR";
+const penInStats = x => x && x.res!==PEN_PENDING && x.res!==PEN_VOID;
 function applyComp(){
   const keep = x => COMP==="الكل" ? !PREV_COMPS.includes(compOf(x)) : compOf(x)===COMP;
   MATCHES = ALL.matches.filter(keep);
   GOALS   = ALL.goals.filter(keep);
-  PENS    = (ALL.pens||[]).filter(keep);
+  PENS    = (ALL.pens||[]).filter(keep).filter(penInStats);
   CARDS   = (ALL.cards||[]).filter(keep);
 }
 function compsPresent(){
@@ -7041,7 +7044,7 @@ function renderMatchAdmin(){
     const k=b.dataset.add;
     if(k==="goals") EDIT.goals.push({sc:"",p:"",a:"",m:"",x:0,det:"",bp:"",zone:"",og:""});
     if(k==="cards") EDIT.cards.push({club:"",p:"",m:"",type:"إنذار"});
-    if(k==="pens")  EDIT.pens.push({by:"",p:"",m:"",res:"سجلت",place:""});
+    if(k==="pens")  EDIT.pens.push({by:"",p:"",m:"",res:"احتُسبت",place:""});
     if(k==="lineup") EDIT.lineup.push({club:"",p:""});
     if(k==="subs")   EDIT.subs.push({club:"",out:"",in:"",h:"1",m:"",x:0});
   renderMatchAdmin();
@@ -8035,11 +8038,11 @@ function goalsTimeline(m,gs,mc){
       return;
     }
     if(e.t==="p"){
-      const p=e.p, ok=p.res==="سجلت";
+      const p=e.p, ok=p.res==="سجلت", pend=p.res===PEN_PENDING, voided=p.res===PEN_VOID;
       const pbody=`<div class="tl-ev pk${isH?" h":" a"}">
         <div class="tl-card">
-          <div class="tl-name" data-player="${esc(p.p)}" data-club="${esc(p.by)}"><i class="pkdot${ok?" ok":" no"}">P</i>${esc(p.p)}</div>
-          <div class="tl-sub">ركلة جزاء</div>
+          <div class="tl-name"${p.p?` data-player="${esc(p.p)}" data-club="${esc(p.by)}"`:""}><i class="pkdot${ok?" ok":(pend||voided)?"":" no"}">P</i>${esc(p.p||p.by)}</div>
+          <div class="tl-sub">احتساب ركلة جزاء</div>
         </div></div>`;
       rows.push(`<div class="tl-row pk${isH?" home":" away"}">
         <div class="tl-side r">${isH?pbody:""}</div>
@@ -8047,8 +8050,10 @@ function goalsTimeline(m,gs,mc){
         <div class="tl-side l">${isH?"":pbody}</div>
       </div>`);
       /* الصف الأول «ركلة جزاء» فقط، والثاني نتيجتها: الهدف صفّه المعتاد بعدها، والضائعة صفّ «لم تُسجَّل» (منصور 2026-11-02) */
-      if(!ok){
-        const mb=`<div class="tl-ev pk${isH?" h":" a"}"><div class="tl-card"><div class="tl-name"><i class="pkdot no">P</i>لم تُسجَّل</div><div class="tl-sub">${esc(p.res||"")}</div></div></div>`;
+      if(!ok && !pend){   /* بانتظار التنفيذ: صف الاحتساب وحده؛ الإلغاء بعد VAR حدث ثانٍ مستقل */
+        const mb = voided
+          ? `<div class="tl-ev pk${isH?" h":" a"}"><div class="tl-card"><div class="tl-name"><i class="pkdot no">P</i>إلغاء ركلة الجزاء</div><div class="tl-sub">بعد العودة إلى تقنية الفيديو VAR</div></div></div>`
+          : `<div class="tl-ev pk${isH?" h":" a"}"><div class="tl-card"><div class="tl-name"><i class="pkdot no">P</i>لم تُسجَّل</div><div class="tl-sub">${esc(p.res||"")}</div></div></div>`;
         rows.push(`<div class="tl-row pk${isH?" home":" away"}"><div class="tl-side r">${isH?mb:""}</div><div class="tl-min card"><span>${e.m}${e.x?"+"+e.x:""}'</span></div><div class="tl-side l">${isH?"":mb}</div></div>`);
       }
       return;
@@ -16710,7 +16715,7 @@ html.mx-editing #waFab{display:none!important}   /* زر واتساب كان ي�
 
   /* ===================== النافذة السفلية ===================== */
   const BLANK={goal:()=>({sc:"",p:"",a:"",m:"",x:0,det:"",bp:"",zone:"",og:""}),
-               card:()=>({club:"",p:"",m:"",type:"إنذار"}), pen:()=>({by:"",p:"",m:"",res:"سجلت",place:""}),
+               card:()=>({club:"",p:"",m:"",type:"إنذار"}), pen:()=>({by:"",p:"",m:"",res:"احتُسبت",place:""}),
                sub:()=>({club:"",out:"",in:"",h:"1",m:""}),
                chance:()=>({k:"chance",club:"",p:"",m:"",x:0,note:""}), var:()=>({k:"var",club:"",p:"",m:"",x:0,note:""}), note:()=>({k:"note",club:"",p:"",m:"",x:0,note:""})};
   const MEV={chance:1,var:1,note:1};
@@ -16860,7 +16865,7 @@ html.mx-editing #waFab{display:none!important}   /* زر واتساب كان ي�
         <div><span class="mx-lbl">المنفّذ</span>${pickGrid(club,"p",d.p)}</div>
         <div><span class="mx-lbl">النتيجة</span>${chips("res",LIST.penres,d.res,v=>v==="سجلت"?"ok":"")}</div>
         <div><span class="mx-lbl">مكان التسديد</span>${penPickSVG(d.place, z=>`data-mset="place" data-mval="${esc(z)}"`)}</div>
-        <p class="mx-hint">الركلة المسجّلة تُضاف هدفاً تلقائياً (تفصيل «ركلة جزاء») — لا تضفه مرة ثانية.</p>`;
+        <p class="mx-hint">أضفها «احتُسبت» لحظة احتسابها (إشعار احتساب)، ثم عدّلها: «سجلت» يضيف الهدف تلقائياً، أو الضائعة، أو «أُلغيت بعد VAR» حدثاً ثانياً — كل نتيجة لها إشعارها.</p>`;
     }
     if(MEV[k]){
       if(k==="chance") body+=`<div><span class="mx-lbl">اللاعب</span>${pickGrid(club,"p",d.p)}</div>`;
@@ -16913,7 +16918,10 @@ html.mx-editing #waFab{display:none!important}   /* زر واتساب كان ي�
     /* النموذج قد يُعاد تحميله بعد حفظ تلقائي والنافذة مفتوحة فيتغير ترتيب الصفوف: نبحث عن الصف نفسه لا عن رقمه */
     let at=S.i; if(S.i>=0 && S.sig0){ const j=arr.findIndex(r=>rowSig(r)===S.sig0); if(j>=0) at=j; else if(arr[S.i] && rowSig(arr[S.i])!==S.sig0) at=-1; }
     /* تعديل صف محفوظ أصلاً (موجود في base): لا إشعار له ولا لما يتولّد منه (منصور 2026-11-04) */
-    const wasSaved = at>=0 && !!S.sig0 && ((EDIT.base&&EDIT.base[ARR[k]])||[]).some(r=>(r.uid&&r.uid===d.uid) || rowSig(r)===S.sig0);
+    const baseRow = at>=0 && S.sig0 ? ((EDIT.base&&EDIT.base[ARR[k]])||[]).find(r=>(r.uid&&r.uid===d.uid) || rowSig(r)===S.sig0) : null;
+    /* نتيجة ركلة كانت «احتُسبت»، أو إلغاؤها بعد VAR = حدث جديد يُرسل؛ ما عدا ذلك تصحيح بلا إشعار */
+    const penNews = k==="pen" && !!baseRow && baseRow.res!==d.res && (baseRow.res===PEN_PENDING || d.res===PEN_VOID);
+    const wasSaved = !!baseRow && !penNews;
     if(wasSaved && window.LIVEPUSH && LIVEPUSH.noPush) LIVEPUSH.noPush(d.uid);
     if(at>=0) arr[at]=d; else arr.push(d);
     /* ركلة جزاء مسجّلة = هدف تلقائياً (منصور 2026-11-04: «حطيت البلنتي… النتيجة 0-0 المفروض 1-0»)، ما لم يوجد هدفها أصلاً */

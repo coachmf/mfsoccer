@@ -188,7 +188,7 @@ function withExt(fn, comp){
       const e = (DATA.squads[club]||[]).find(x=>x && x.n===name); return (e && e.f) || null; };
     natFlag = (name, club, cls) => ours().includes(club) ? saved.nf(name, club, cls) : "";
     window.CLUB_COLORS = Object.assign({}, saved.cc||{}, OPP_COLORS);
-    MATCHES = DATA.matches.filter(only); GOALS = DATA.goals.filter(only); PENS = DATA.pens.filter(only); CARDS = DATA.cards.filter(only);
+    MATCHES = DATA.matches.filter(only); GOALS = DATA.goals.filter(only); PENS = DATA.pens.filter(only).filter(x=>typeof penInStats!=="function" || penInStats(x)); CARDS = DATA.cards.filter(only);
     if(comp && cOfName(comp)){ const ts = new Set(); MATCHES.forEach(m=>{ ts.add(m.home); ts.add(m.away); }); teamsOf(cOfName(comp).id).forEach(t=>ts.add(t)); CLUBS = [...ts]; }
     return fn();
   } finally {
@@ -235,7 +235,7 @@ function withAll(fn){
       const e = (DATA.squads[club]||[]).find(x=>x && x.n===name); return (e && e.f) || null; };
     natFlag = (name, club, cls) => league.has(club) ? saved.nf(name, club, cls) : "";
     window.CLUB_COLORS = Object.assign({}, saved.cc||{}, OPP_COLORS);
-    MATCHES = A.matches.slice(); GOALS = A.goals.slice(); PENS = A.pens.slice(); CARDS = A.cards.slice();
+    MATCHES = A.matches.slice(); GOALS = A.goals.slice(); PENS = A.pens.filter(x=>typeof penInStats!=="function" || penInStats(x)); CARDS = A.cards.slice();
     return fn();
   } finally {
     ({ALL, SQUADS, CLUBS, LOGOS, COMP, MATCHES, GOALS, PENS, CARDS, LSCALE} = saved);
