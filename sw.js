@@ -9,7 +9,7 @@
 
    عند كل نشر: ارفع رقم VER فتُبنى ذاكرة جديدة وتُحذف القديمة.
    ========================================================= */
-const VER   = 'mf-2026-11-04-681';
+const VER   = 'mf-2026-11-04-682';
 const SHELL = 'shell-' + VER;
 const RUN   = 'run-'   + VER;
 
@@ -212,6 +212,7 @@ self.addEventListener('push', e => {
       lang: 'ar',
       tag: n.tag || ('mf-' + (ev || 'x') + '-' + Date.now()),   /* كل حدث إشعار مستقل — لا يمحو الهدفُ الثاني الأول */
       renotify: true,
+      vibrate: [200, 100, 200],   /* أندرويد/كروم — الآيفون يتبع إعدادات النظام */
       silent: seen || npQuiet(P, ev),
       data: { url }
     });

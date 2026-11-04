@@ -78,7 +78,10 @@ async function run(){
         headers:{ ...H, 'Content-Type':'application/json' },
         body: JSON.stringify({ message:{ condition: cond,
           notification:{ title: `الانطلاق بعد ${mins} دقيقة`, body: `${m.home} × ${m.away}${m.venue ? ' · ' + m.venue : ''}` },
-          data:{ ev:d, url:link }, webpush:{ fcm_options:{ link } } } }) });
+          data:{ ev:d, url:link },
+          apns:{ headers:{ 'apns-priority':'10' }, payload:{ aps:{ sound:'default' } } },
+          android:{ priority:'HIGH', notification:{ sound:'default', default_vibrate_timings:true } },
+          webpush:{ headers:{ Urgency:'high' }, fcm_options:{ link } } } }) });
       if(r.ok) okAny = true; else console.error('remind send', r.status, cond, (await r.text()).slice(0, 200));
     }
     if(okAny) sent.push(sig);

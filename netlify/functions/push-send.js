@@ -95,7 +95,11 @@ exports.handler = async (event) => {
         /* الحمولة كما ثبت وصولها: notification + رابط الفتح، ومعها data (نوع الحدث والرابط)
            ليختار خادم الخدمة الصوت ويفتح صفحة المباراة */
         body: JSON.stringify({ message: Object.assign(t,
-          { notification:{ title, body }, data, webpush:{ fcm_options:{ link } } }
+          { notification:{ title, body }, data,
+            /* صوت واهتزاز (منصور 2026-11-04: «ليش ما في اهتزاز»): APNs بلا aps.sound يصل الآيفون صامتاً بلا اهتزاز */
+            apns:{ headers:{ 'apns-priority':'10' }, payload:{ aps:{ sound:'default' } } },
+            android:{ priority:'HIGH', notification:{ sound:'default', default_vibrate_timings:true } },
+            webpush:{ headers:{ Urgency:'high' }, fcm_options:{ link } } }
         )})
       });
       return { ok: res.ok, out: await res.json().catch(() => ({})) };
