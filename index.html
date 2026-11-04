@@ -606,8 +606,11 @@ details.squadbox summary label.lb{margin:0;cursor:pointer}
 .rsum .n{font-family:var(--display);font-weight:700;font-size:1.2rem;color:#fff;font-variant-numeric:tabular-nums}
 .rsum .l{font-size:.6rem;color:var(--slate)}
 /* البطاقات */
-.pkdot{display:inline-grid;place-items:center;width:16px;height:16px;border-radius:50%;font:800 9px/1 Arial,sans-serif;font-style:normal;margin-inline-end:6px;vertical-align:-2px;background:#fff;color:#0B1F3A}
-.pkdot.no{background:#5b6375;color:#fff}
+.pkdot{display:inline-grid;place-items:center;width:22px;height:22px;font-style:normal;margin-inline-end:6px;vertical-align:-5px;color:#fff}
+.pkdot svg{width:22px;height:22px;display:block}
+.pkdot.no{color:#8a93a6}
+/* علامة الجزاء بدل حرف P (منصور 2026-11-04): منطقة الجزاء + النقطة + القوس */
+
 .cardpill{display:inline-block;width:9px;height:13px;border-radius:2px;vertical-align:-2px;margin-inline-start:3px}
 .cardpill.y{background:#E9B949}.cardpill.r{background:#E0644F}
 .ctag{font-size:.62rem;color:var(--slate);display:inline-flex;align-items:center;gap:2px}
@@ -7970,6 +7973,7 @@ const MEV_KIND={
 function matchMev(m){
   return (ALL && ALL.mev ? ALL.mev : []).filter(x=>x.r===m.round && compOf(x)===compOf(m) && x.home===m.home && x.away===m.away);
 }
+const PK_ICO=`<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="11.5" fill="currentColor"/><g fill="none" stroke="#0B1530" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 6.5h15M7 6.5v6.5h10V6.5"/><path d="M9.6 13a2.6 2.6 0 0 0 4.8 0"/></g><circle cx="12" cy="10.2" r="1.35" fill="#0B1530"/></svg>`;
 function goalsTimeline(m,gs,mc){
   mc = mc || [];
   const subs=(typeof matchSubs==="function")?matchSubs(m):[];
@@ -8043,14 +8047,14 @@ function goalsTimeline(m,gs,mc){
       const p=e.p, ok=p.res==="سجلت", pend=p.res===PEN_PENDING, voided=p.res===PEN_VOID;
       if(e.part==="o"){
         const mb = voided
-          ? `<div class="tl-ev pk${isH?" h":" a"}"><div class="tl-card"><div class="tl-name"><i class="pkdot no">P</i>إلغاء ركلة الجزاء</div><div class="tl-sub">بعد العودة إلى تقنية الفيديو VAR</div></div></div>`
-          : `<div class="tl-ev pk${isH?" h":" a"}"><div class="tl-card"><div class="tl-name"${p.p?` data-player="${esc(p.p)}" data-club="${esc(p.by)}"`:""}><i class="pkdot no">P</i>${p.p?esc(p.p):"لم تُسجَّل"}</div><div class="tl-sub">ركلة جزاء ضائعة · ${esc(p.res||"")}</div></div></div>`;
+          ? `<div class="tl-ev pk${isH?" h":" a"}"><div class="tl-card"><div class="tl-name"><i class="pkdot no">${PK_ICO}</i>إلغاء ركلة الجزاء</div><div class="tl-sub">بعد العودة إلى تقنية الفيديو VAR</div></div></div>`
+          : `<div class="tl-ev pk${isH?" h":" a"}"><div class="tl-card"><div class="tl-name"${p.p?` data-player="${esc(p.p)}" data-club="${esc(p.by)}"`:""}><i class="pkdot no">${PK_ICO}</i>${p.p?esc(p.p):"لم تُسجَّل"}</div><div class="tl-sub">ركلة جزاء ضائعة · ${esc(p.res||"")}</div></div></div>`;
         rows.push(`<div class="tl-row pk${isH?" home":" away"}"><div class="tl-side r">${isH?mb:""}</div><div class="tl-min card"><span>${e.m}'</span></div><div class="tl-side l">${isH?"":mb}</div></div>`);
         return;
       }
       const pbody=`<div class="tl-ev pk${isH?" h":" a"}">
         <div class="tl-card">
-          <div class="tl-name"${p.p?` data-player="${esc(p.p)}" data-club="${esc(p.by)}"`:""}><i class="pkdot${ok?" ok":(pend||voided)?"":" no"}">P</i>${esc(p.p||p.by)}</div>
+          <div class="tl-name"${p.p?` data-player="${esc(p.p)}" data-club="${esc(p.by)}"`:""}><i class="pkdot${ok?" ok":(pend||voided)?"":" no"}">${PK_ICO}</i>${esc(p.p||p.by)}</div>
           <div class="tl-sub">احتساب ركلة جزاء</div>
         </div></div>`;
       rows.push(`<div class="tl-row pk${isH?" home":" away"}">
@@ -8061,8 +8065,8 @@ function goalsTimeline(m,gs,mc){
       /* الصف الأول «ركلة جزاء» فقط، والثاني نتيجتها: الهدف صفّه المعتاد بعدها، والضائعة صفّ «لم تُسجَّل» (منصور 2026-11-02) */
       if(false){   /* النتيجة صارت صفاً مستقلاً بدقيقتها (part "o") */
         const mb = voided
-          ? `<div class="tl-ev pk${isH?" h":" a"}"><div class="tl-card"><div class="tl-name"><i class="pkdot no">P</i>إلغاء ركلة الجزاء</div><div class="tl-sub">بعد العودة إلى تقنية الفيديو VAR</div></div></div>`
-          : `<div class="tl-ev pk${isH?" h":" a"}"><div class="tl-card"><div class="tl-name"><i class="pkdot no">P</i>لم تُسجَّل</div><div class="tl-sub">${esc(p.res||"")}</div></div></div>`;
+          ? `<div class="tl-ev pk${isH?" h":" a"}"><div class="tl-card"><div class="tl-name"><i class="pkdot no">${PK_ICO}</i>إلغاء ركلة الجزاء</div><div class="tl-sub">بعد العودة إلى تقنية الفيديو VAR</div></div></div>`
+          : `<div class="tl-ev pk${isH?" h":" a"}"><div class="tl-card"><div class="tl-name"><i class="pkdot no">${PK_ICO}</i>لم تُسجَّل</div><div class="tl-sub">${esc(p.res||"")}</div></div></div>`;
         rows.push(`<div class="tl-row pk${isH?" home":" away"}"><div class="tl-side r">${isH?mb:""}</div><div class="tl-min card"><span>${e.m}${e.x?"+"+e.x:""}'</span></div><div class="tl-side l">${isH?"":mb}</div></div>`);
       }
       return;
