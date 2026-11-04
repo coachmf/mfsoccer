@@ -78,7 +78,7 @@ window.NPREF = (function(){
   ];
   const EV = {}; CATS.forEach(c=>c.ev.forEach(e=>{ e.cat=c.id; EV[e.k]=e; }));
   /* الأحداث التي كانت تصل كل الأجهزة قبل اللوحة — تبقى مفعّلة افتراضياً كما قرّر منصور (2026-11-02) */
-  const DEF_ON = ['r15','ko','h2','ft','g','gf','ga','y','r','var','pa','pm','sub','ht','et','pso','xi','gen'];
+  const DEF_ON = ['r30','r15','ko','h2','ft','g','gf','ga','y','r','var','pa','pm','sub','ht','et','pso','xi','gen'];
 
   /* ---------- مكتبة الأصوات ---------- */
   const SND_CAT = [

@@ -68,12 +68,20 @@ async function run(){
     if(seen.indexOf(sig) >= 0) continue;
     const ev = { d, comp: m.comp || 'الدوري', home: m.home, away: m.away };
     const link = 'https://mfsoccer.com/#m/' + matchKey(m);
-    const r = await fetch(`https://fcm.googleapis.com/v1/projects/${PROJECT}/messages:send`, { method:'POST',
-      headers:{ ...H, 'Content-Type':'application/json' },
-      body: JSON.stringify({ message:{ condition: condition(ev),
-        notification:{ title: `الانطلاق بعد ${mins} دقيقة`, body: `${m.home} × ${m.away}${m.venue ? ' · ' + m.venue : ''}` },
-        data:{ ev:d, url:link }, webpush:{ fcm_options:{ link } } } }) });
-    if(r.ok) sent.push(sig); else console.error('remind send', r.status, (await r.text()).slice(0, 200));
+    /* تذكير الـ30 دقيقة للجميع (منصور 2026-11-04 «للكل»): من اختاره + الأجهزة القديمة (موضوع all، والأجهزة على اللوحة
+       خرجت منه فلا تكرار) + كل جهاز على اللوحة لم يختره (gen بلا r30_a) */
+    const conds = [condition(ev)];
+    if(d === 'r30'){ conds[0] += " || 'all' in topics"; conds.push("'gen' in topics && !('r30_a' in topics)"); }
+    let okAny = false;
+    for(const cond of conds){
+      const r = await fetch(`https://fcm.googleapis.com/v1/projects/${PROJECT}/messages:send`, { method:'POST',
+        headers:{ ...H, 'Content-Type':'application/json' },
+        body: JSON.stringify({ message:{ condition: cond,
+          notification:{ title: `الانطلاق بعد ${mins} دقيقة`, body: `${m.home} × ${m.away}${m.venue ? ' · ' + m.venue : ''}` },
+          data:{ ev:d, url:link }, webpush:{ fcm_options:{ link } } } }) });
+      if(r.ok) okAny = true; else console.error('remind send', r.status, cond, (await r.text()).slice(0, 200));
+    }
+    if(okAny) sent.push(sig);
   }
   if(sent.length){
     const all = seen.concat(sent).slice(-300);
