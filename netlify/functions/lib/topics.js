@@ -5,7 +5,7 @@
 function h(s){ let x = 5381; s = String(s||''); for(let i=0;i<s.length;i++) x = ((x*33) ^ s.charCodeAt(i)) >>> 0; return x.toString(36); }
 
 const SIDE = new Set(['g','gp','gog','gat','y','r','r2']);
-const FAMS = new Set(['r30','r15','r5','ko','h2','ft','g','gp','gog','gat','y','r','r2','var','pa','pm','sub','add','ht','et','pso','xi','form']);
+const FAMS = new Set(['r30','r15','r5','ko','h2','ft','g','gp','gog','gat','y','r','r2','var','pa','pm','sub','add','ht','et','pso','xi','form','fd']);
 const TOPIC_RX = /^(gen|[a-z0-9]{1,4}_(a|[cfot]_[0-9a-z]{1,8}))$/;
 
 /* شرط الإرسال لحدث واحد: 4 مواضيع كحد أقصى (FCM يسمح بخمسة) */

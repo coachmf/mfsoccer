@@ -9,7 +9,7 @@
 
    عند كل نشر: ارفع رقم VER فتُبنى ذاكرة جديدة وتُحذف القديمة.
    ========================================================= */
-const VER   = 'mf-2026-11-04-683';
+const VER   = 'mf-2026-11-04-684';
 const SHELL = 'shell-' + VER;
 const RUN   = 'run-'   + VER;
 
@@ -181,7 +181,7 @@ async function npPrefs() {
 }
 const NP_SND = { r30:'remind', r15:'remind', r5:'remind', ko:'kickoff', h2:'kickoff', et:'kickoff', ft:'ft', ht:'ft',
   g:'goal', gp:'goal', gog:'goal', gat:'goal', y:'yellow', r:'red', r2:'red', var:'var', pa:'pen', pm:'pen', pso:'pen',
-  sub:'sub', add:'remind', xi:'lineup', form:'lineup', gen:'remind' };
+  sub:'sub', add:'remind', xi:'lineup', form:'lineup', gen:'remind', fd:'remind' };
 function npQuiet(P, ev) {
   if (!P) return false;
   if (P.muteAll || P.soundOn === 0) return true;

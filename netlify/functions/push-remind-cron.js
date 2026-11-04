@@ -19,6 +19,7 @@ function val(v){
   if('integerValue' in v) return Number(v.integerValue);
   if('doubleValue'  in v) return Number(v.doubleValue);
   if('booleanValue' in v) return v.booleanValue;
+  if('timestampValue' in v) return v.timestampValue;   /* meta/lock.deadline */
   if('nullValue'    in v) return null;
   if('arrayValue'   in v) return (v.arrayValue.values || []).map(val);
   if('mapValue'     in v){ const o = {}; const f = v.mapValue.fields || {}; for(const k in f) o[k] = val(f[k]); return o; }
@@ -58,7 +59,17 @@ async function run(){
       WIN.forEach(([d, mins]) => { if(left <= mins && left > mins - SLACK) due.push({ d, mins, m }); });
     });
   }
-  if(!due.length) return { ok:true, sent:0 };
+  /* ديدلاين الفانتسي (منصور 2026-11-04): قبل يوم وساعتين وساعة من meta/lock — من اختاره (fd_a) + الأجهزة القديمة (all)
+     + أجهزة اللوحة التي لم تختره بعد (gen بلا fd_a) */
+  const fdue = [];
+  const lock = await read(`fantasy/${SEASON}/meta/lock`).catch(() => null);
+  if(lock && lock.open !== false && !lock.provisional && lock.deadline){
+    const t = Date.parse(lock.deadline), left = (t - now) / 60000;
+    [['fd24',1440,'بعد يوم'],['fd2',120,'بعد ساعتين'],['fd1',60,'بعد ساعة']].forEach(([d, mins, lbl]) => {
+      if(left <= mins && left > mins - SLACK) fdue.push({ d, mins, lbl, gw:Number(lock.gw)||0, t });
+    });
+  }
+  if(!due.length && !fdue.length) return { ok:true, sent:0 };
 
   const log = await read('pushlog/remind').catch(() => null);
   const seen = (log && log.sent) || [];
@@ -86,12 +97,36 @@ async function run(){
     }
     if(okAny) sent.push(sig);
   }
+  const KW_D = ['الأحد','الإثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت'];
+  const KW_M = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
+  const kwLabel = t => { const k = new Date(t + 3*3600e3); let h = k.getUTCHours(); const mi = String(k.getUTCMinutes()).padStart(2,'0');
+    const ap = h >= 12 ? 'م' : 'ص'; h = h % 12 || 12; return `${KW_D[k.getUTCDay()]} ${k.getUTCDate()} ${KW_M[k.getUTCMonth()]} · ${h}:${mi} ${ap}`; };
+  for(const f of fdue){
+    const sig = ['fd', f.d, f.gw, f.t].join('|');
+    if(seen.indexOf(sig) >= 0) continue;
+    const link = 'https://mfsoccer.com/fantasy/';
+    const conds = ["'fd_a' in topics || 'all' in topics", "'gen' in topics && !('fd_a' in topics)"];
+    let okAny = false;
+    for(const cond of conds){
+      const r = await fetch(`https://fcm.googleapis.com/v1/projects/${PROJECT}/messages:send`, { method:'POST',
+        headers:{ ...H, 'Content-Type':'application/json' },
+        body: JSON.stringify({ message:{ condition: cond,
+          notification:{ title: `ديدلاين الفانتسي ${f.lbl}`, body: `الجولة ${f.gw} · آخر موعد للتعديل ${kwLabel(f.t)} — راجع تشكيلتك` },
+          data:{ ev:'fd', url:link },
+          apns:{ headers:{ 'apns-priority':'10' }, payload:{ aps:{ sound:'default' } } },
+          android:{ priority:'HIGH', notification:{ sound:'default', default_vibrate_timings:true } },
+          webpush:{ headers:{ Urgency:'high' }, fcm_options:{ link } } } }) });
+      if(r.ok) okAny = true; else console.error('fd send', r.status, cond, (await r.text()).slice(0, 200));
+    }
+    if(okAny) sent.push(sig);
+  }
+
   if(sent.length){
     const all = seen.concat(sent).slice(-300);
     await fetch(`${DOCS}/pushlog/remind`, { method:'PATCH', headers:{ ...H, 'Content-Type':'application/json' },
       body: JSON.stringify({ fields:{ sent:{ arrayValue:{ values: all.map(s => ({ stringValue:s })) } }, updated:{ stringValue:new Date().toISOString() } } }) });
   }
-  return { ok:true, due:due.length, sent:sent.length };
+  return { ok:true, due:due.length, fdue:fdue.length, sent:sent.length };
 }
 
 exports.handler = async () => {

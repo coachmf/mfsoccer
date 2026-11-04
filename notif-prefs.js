@@ -73,12 +73,14 @@ window.NPREF = (function(){
       {k:'form', t:'إعلان الخطة', snd:'lineup'},
       {k:'bench',t:'قائمة البدلاء', na:'المحرّر يسجّل الأساسيين فقط'},
       {k:'xch',  t:'تغيير في التشكيلة المعلنة', na:NA_DATA} ]},
+    { id:'fan', t:'الفانتسي', ev:[
+      {k:'fd', t:'ديدلاين الجولة (قبل يوم وساعتين وساعة)', snd:'remind'} ]},
     { id:'gen', t:'عام', ev:[
       {k:'gen', t:'أخبار وإعلانات MF SOCCER', snd:'remind'} ]}
   ];
   const EV = {}; CATS.forEach(c=>c.ev.forEach(e=>{ e.cat=c.id; EV[e.k]=e; }));
   /* الأحداث التي كانت تصل كل الأجهزة قبل اللوحة — تبقى مفعّلة افتراضياً كما قرّر منصور (2026-11-02) */
-  const DEF_ON = ['r30','r15','ko','h2','ft','g','gf','ga','y','r','var','pa','pm','sub','ht','et','pso','xi','gen'];
+  const DEF_ON = ['fd','r30','r15','ko','h2','ft','g','gf','ga','y','r','var','pa','pm','sub','ht','et','pso','xi','gen'];
 
   /* ---------- مكتبة الأصوات ---------- */
   const SND_CAT = [
@@ -123,6 +125,7 @@ window.NPREF = (function(){
     Object.keys(p.ev||{}).forEach(k=>{
       const e = EV[k]; if(!p.ev[k] || !e || e.na) return;
       if(k === 'gen'){ s.add('gen'); return; }
+      if(k === 'fd'){ s.add('fd_a'); return; }   /* ديدلاين الفانتسي للجميع، لا يتبع نطاق الفرق والبطولات */
       if(e.fav){ [].concat(e.d).forEach(d=>(p.teams||[]).forEach(t=>s.add(d+'_'+e.fav+'_'+h(t)))); return; }
       if(e.sub && p.ev[e.sub]) return;          /* الأب يغطيه في نفس النطاق — لا إشعار مكرر */
       scopeTopics(k, p).forEach(x=>s.add(x));
