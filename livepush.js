@@ -180,10 +180,12 @@ window.LIVEPUSH = {
                    ft:['ft','صافرة النهاية', m.home + '  ' + this._scoreNow(m, cur.goals) + '  ' + m.away] }[st];
       if(PH) add(st === 'ft' ? 0 : 3, this._sig(PH[0], {r:m.round, comp, club:m.home, p:m.away}), PH[1], PH[2], E(PH[0]), st === 'ft' || st === 'h1');   /* الانطلاق يصل الأجهزة القديمة أيضاً (منصور 2026-11-04) */
     }
-    /* الوقت بدل الضائع: أول إدخال له في الشوط */
+    /* الوقت بدل الضائع: يُرسل مرة واحدة بعد أن يثبت الرقم 10 ثوانٍ (منصور 2026-11-04: كان يرسل +1 والمحرّر لا يزال يزيد إلى +5) —
+       لا يدخل خطة الحفظة؛ مؤقت مستقل يرسل القيمة الأخيرة */
     [['add1','الشوط الأول'],['add2','الشوط الثاني']].forEach(([k, t]) => {
-      const a = +((cur.match||{})[k]) || 0, b = +((base.match||{})[k]) || 0;
-      if(a > 0 && !b) add(4, this._sig('add', {r:m.round, comp, club:m.home, p:m.away, type:k}), 'الوقت بدل الضائع +' + a, t + ' · ' + score(), E('add'));
+      const a = +((cur.match||{})[k]) || 0;
+      const sig = this._sig('add', {r:m.round, comp, club:m.home, p:m.away, type:k});
+      if(a > 0 && !this._seen(sig)) this._armAdd(sig, k, a, t, m, comp, E('add'), cur.goals);
     });
 
     /* ——— التبديلات ——— */
@@ -241,6 +243,27 @@ window.LIVEPUSH = {
       this._mark(sent);
       if(typeof toast === 'function') toast('أُرسل ' + sent.length + ' إشعاراً للمشتركين','ok');
     }
+  },
+
+  /* مؤقت الوقت بدل الضائع: كل تغيير في الرقم يعيد العدّ؛ بعد 10 ث بلا تغيير يُرسل الرقم الحالي من المحرّر */
+  _addT: {},
+  _armAdd(sig, k, a, t, m, comp, ev, goals){
+    const cur = this._addT[sig];
+    if(cur && cur.a === a) return;
+    if(cur) clearTimeout(cur.id);
+    const key = (typeof matchKey === 'function') ? matchKey(m) : '';
+    const fire = () => {
+      delete this._addT[sig];
+      if(this._seen(sig)) return;
+      let v = a, g = goals;
+      try{ if(typeof EDIT !== 'undefined' && EDIT && EDIT.match && (typeof matchKey !== 'function' || matchKey(EDIT.match) === key)){ v = +EDIT.match[k] || 0; g = EDIT.goals || g; } }catch(e){}
+      if(!(v > 0)) return;
+      if(v !== a){ this._armAdd(sig, k, v, t, m, comp, ev, g); return; }   /* تغيّر في آخر لحظة: ننتظر من جديد */
+      const sc = m.home + ' ' + this._scoreNow(m, g) + ' ' + m.away;
+      this._mark([sig]);
+      this.send([{ pri:4, sig, title:'الوقت بدل الضائع ⁦+' + v + '⁩', body: t + ' · ' + sc, ev, legacy:false, url:'/#m/' + key }], m, true);
+    };
+    this._addT[sig] = { a, id: setTimeout(fire, 10000) };
   },
 
   /* يُستدعى من saveMatch: يلتقط الخطة قبل استبدال EDIT */
