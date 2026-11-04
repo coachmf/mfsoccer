@@ -411,11 +411,11 @@ function hookSite(){
     renderMatchPage = function(){
       const m = (typeof MP==="object") ? MP.m : null;
       if(!(m && m.__ext)) return o.apply(this, arguments);
-      if(MP.tab==="table") MP.tab = "details";
-      const r = withExt(()=>o.apply(this, arguments), m.comp);
+      /* «الترتيب» = جدول المجموعة (منصور 2026-11-04) — يُحسب خارج السياق المعزول كما في صفحة المباريات */
+      MP.__tbl = (MP.tab==="table" && typeof mpTable==="function") ? mpTable(m) : null;
+      let r; try{ r = withExt(()=>o.apply(this, arguments), m.comp); } finally { MP.__tbl = null; }
       const box = document.getElementById("mpage");
       if(box){
-        box.querySelectorAll('.mp-tabs [data-mp-tab="table"]').forEach(b=>b.remove());
         box.querySelectorAll(".mp-share").forEach(b=>b.remove());     /* بطاقة المشاركة تُرسم خارج السياق */
         /* لاعبو الخصوم بلا ملف لاعب، وأنديتهم بلا صفحة نادٍ — لاعبو أنديتنا يفتحون ملفهم في الدوري كما هو */
         box.querySelectorAll("[data-player]").forEach(el=>{ const c = el.getAttribute("data-club"); if(!c || !ours().includes(c)){ el.removeAttribute("data-player"); el.style.cursor = "default"; } });

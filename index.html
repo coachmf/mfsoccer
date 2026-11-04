@@ -2256,7 +2256,7 @@ html[dir="ltr"] .tl-ev.a .tl-card{text-align:right;align-items:flex-end}
 <script src="admin-tabs.js?v=10" defer></script>
 <!-- كأس الخليج 27: قسم مستقل ببيانات منفصلة (seasons/gulf27) -->
 <link rel="stylesheet" href="gulf.css?v=18">
-<script src="gulf.js?v=49" defer></script>
+<script src="gulf.js?v=50" defer></script>
 <script src="livepush.js?v=4" defer></script>
 <script src="fantasy/js/push.js?v=288" defer></script>
 <script src="notify.js?v=8" defer></script>
@@ -2269,7 +2269,7 @@ html[dir="ltr"] .tl-ev.a .tl-card{text-align:right;align-items:flex-end}
 <link rel="stylesheet" href="news.css?v=5">
 <script src="news.js?v=11" defer></script>   <!-- الأخبار: news/{id} + فهرس seasons/news + صور newsimg/{id} -->   <!-- دوري الدرجة الأولى: الترتيب والمباريات فقط (seasons/div1) -->
 <link rel="stylesheet" href="ext.css?v=3">
-<script src="ext.js?v=12" defer></script>   <!-- المشاركات الخارجية لأنديتنا: تحرير كامل مثل الدوري في وثيقة مستقلة (seasons/ext2627) -->
+<script src="ext.js?v=13" defer></script>   <!-- المشاركات الخارجية لأنديتنا: تحرير كامل مثل الدوري في وثيقة مستقلة (seasons/ext2627) -->
 <!-- التحليل الموسّع + تقييم اللاعبين 0–100 + البحث العام (منصور 2026-09-29) -->
 <link rel="stylesheet" href="analysis.css?v=11">
 <script src="tstats-data.js?v=1" defer></script>
@@ -3101,7 +3101,7 @@ function extTeamCell(x){
 }
 const extIsKw = x => x && (x.t==="club" || (x.t==="flag" && x.c==="kw"));
 /* جدول ترتيب مجموعة الفريق الكويتي: يُحسب من المباريات التي لها نتيجة (hg/ag) فقط؛ قبل أول مباراة الكل أصفار */
-function extTableHTML(c, evs){
+function extTableHTML(c, evs, hl){
   const groups=EXT_GROUPS[c.id]||[]; if(!groups.length) return "";
   /* نتائج المجموعة التي لا تظهر في قوائم المباريات */
   evs = evs.concat((typeof EXT_TABLE_RESULTS!=="undefined" ? EXT_TABLE_RESULTS : []).filter(r=>r.comp===c.id));
@@ -3139,7 +3139,7 @@ function extTableHTML(c, evs){
       <h2 class="sec">جدول الترتيب<span class="sq-n">${esc(g.name)}</span></h2>
       <div class="hm-card hm-tblwrap"><table class="hm-tbl">
         <thead><tr><th class="c">#</th><th class="club">الفريق</th><th>ل</th><th>ف</th><th>ت</th><th>خ</th><th>+/-</th><th class="pts">ن</th><th class="frm">الفورمة</th></tr></thead>
-        <tbody>${rows.map((r,i)=>`<tr class="${i<2&&!c.noQ?"champ":""}${extIsKw(r.x)?" kw":""}">
+        <tbody>${rows.map((r,i)=>`<tr class="${i<2&&!c.noQ?"champ":""}${extIsKw(r.x)?" kw":""}"${hl&&hl.some(h=>h===r.key||h.startsWith(r.key+" ")||r.key.startsWith(h+" "))?' data-mp-hl="1"':""}${r.x.t==="club"?` data-club-open="${esc(r.x.n)}"`:""}>
           <td class="c">${i+1}</td>
           <td class="club"><span>${extTeamCell(r.x)}</span></td>
           <td>${r.P}</td><td>${r.W}</td><td>${r.D}</td><td>${r.L}</td><td dir="ltr">${(r.GF-r.GA)>0?"+":""}${r.GF-r.GA}</td>
@@ -12769,6 +12769,13 @@ html.mp-open{overflow:hidden}
 .mp-std .hm-std{margin:0}
 .mp-std tr[data-mp-hl]{background:rgba(95,178,232,.14)}
 .mp-std tr[data-mp-hl] td{font-weight:700}
+.mp-xstd .hm-std{margin:0}
+.mp-xstd tr[data-club-open]{cursor:pointer}
+.mp-tnote{font-size:.74rem;color:var(--text-muted,var(--slate));text-align:center;padding:10px 12px}
+.mp-clink{display:inline-flex;font-style:normal;cursor:pointer;border-radius:50%}
+.mp-clink:active{opacity:.6}
+.plog-r[data-plog-open]{cursor:pointer;transition:background .15s}
+.plog-r[data-plog-open]:active{background:rgba(255,255,255,.08)}
 .mp-xi{padding:8px}
 .mp-xi .xi{margin:0}
 .mp-seg{display:grid;grid-template-columns:1fr 1.4fr 1fr;gap:6px;margin-bottom:10px;background:rgba(0,0,0,.18);padding:4px;border-radius:12px}
@@ -14121,12 +14128,12 @@ function playerProfileHTML(D){
   const badge=(n,cls,inner)=> n?`<span class="pp-b ${cls}">${inner}${n>1?`<em>${n}</em>`:""}</span>`:"";
   const LL=[...D.log, ...(D.missLog||[])].sort(logCmp);   /* ما لعبه + ما غاب عنه مع السبب */
   const logHTML = LL.length ? `<div class="pprof-log"><h4>مباراة بمباراة</h4><div class="plog">${LL.map(l=>l.miss ? `
-    <div class="plog-r miss">
+    <div class="plog-r miss" data-plog-open="${matchKey(l.m)}">
       <span class="rd">ج${l.m.round}${compOf(l.m)!=="الدوري"?"<span> · </span><span>"+esc(compOf(l.m))+"</span>":""}</span>
       <span class="op">${crest(l.opp)}<span>${esc(l.opp)}<i> · ${l.home?"أرضه":"خارج أرضه"}</i></span></span>
       <span class="ev"><span class="mn why">${esc(l.miss)}</span><span class="rs ${l.k}">${l.res}</span></span>
     </div>` : `
-    <div class="plog-r">
+    <div class="plog-r" data-plog-open="${matchKey(l.m)}">
       <span class="rd">ج${l.m.round}${compOf(l.m)!=="الدوري"?"<span> · </span><span>"+esc(compOf(l.m))+"</span>":""}</span>
       <span class="op">${crest(l.opp)}<span>${esc(l.opp)}<i> · ${l.home?"أرضه":"خارج أرضه"}</i>${l.wc&&l.wc!==D.club?`<i class="wth"> · مع ${esc(l.wc)}</i>`:""}</span></span>
       <span class="ev">${badge(l.g,"goal",ICO_BALL)}${badge(l.a,"assist",ICO_BOOT)}${l.r?`<span class="pp-b card r"></span>`:l.y?`<span class="pp-b card y"></span>`:""}
@@ -14216,6 +14223,14 @@ function hidePlayerBox(){
   box.classList.remove("on"); box.hidden=true; box.innerHTML="";
   document.documentElement.classList.remove("pp-open");
 }
+/* «مباراة بمباراة» في ملف اللاعب/المدرب: الضغط على الصف يفتح صفحة المباراة (منصور 2026-11-04) */
+document.addEventListener("click", e=>{
+  const r=e.target.closest("[data-plog-open]"); if(!r || e.target.closest("[data-player],[data-club-open]")) return;
+  const mm=typeof matchByKey==="function" ? matchByKey(r.dataset.plogOpen) : null; if(!mm) return;
+  /* إخفاء الملف بلا history.back() — الرجوع غير المتزامن كان يغلق صفحة المباراة فور فتحها */
+  hidePlayerBox(); if((history.state&&history.state.pp) || /^#p\//.test(location.hash)){ try{ history.replaceState(null,"",location.pathname+location.search); }catch(err){} }
+  if(typeof MP!=="undefined"){ MP.tab="details"; MP.m=null; } openMatch(mm);
+});
 function closePlayer(){
   const box=$("#pprof"); if(!box || box.hidden) return;
   hidePlayerBox();
@@ -14305,7 +14320,7 @@ function coachProfileHTML(D){
   const form=(r.form||[]).slice(-5);
   const formHTML = form.length ? `<div class="cprof-form"><span class="lbl">آخر 5 مباريات</span>${form.map(f=>`<span class="${f}">${f==="w"?"ف":f==="d"?"ت":"خ"}</span>`).join("")}</div>` : "";
   const logHTML = D.log.length ? `<div class="pprof-log"><h4>مباراة بمباراة</h4><div class="plog">${D.log.map(l=>`
-    <div class="plog-r">
+    <div class="plog-r" data-plog-open="${matchKey(l.m)}">
       <span class="rd">ج${l.m.round}</span>
       <span class="op">${crest(l.opp)}<span>${esc(l.opp)}<i> · ${l.home?"أرضه":"خارج أرضه"}</i></span></span>
       <span class="ev"><span class="sc">${l.gf}-${l.ga}</span><span class="rs ${l.k}">${l.res}</span></span>
@@ -15482,8 +15497,12 @@ function mpHeader(m){
 const MP_TABS=[["details","التفاصيل"],["lineups","التشكيلة"],["squad","القائمة"],["table","الترتيب"],["matches","المباريات"]];
 /* تبويب «اللعب الفعلي» بعد التشكيلة، يظهر فقط إذا رُصدت المباراة في أداة الوقت الفعلي (منصور 2026-10-28) */
 const mpHasEff=m=>!!(window.EFFTIME && EFFTIME.has && EFFTIME.has(m));
-/* مباراة كأس أو مشاركة خارجية: لا تبويب «الترتيب» — جدول الدوري لا يخصّها (منصور 2026-10-29) */
-const mpTabs=m=>{ const T=compOf(m)==="الدوري" ? MP_TABS : MP_TABS.filter(([k])=>k!=="table");
+/* «الترتيب» لكل البطولات (منصور 2026-11-04): الدوري جدوله، البطولة الخارجية جدول مجموعتها، والكأس (خروج المغلوب بلا جدول) ترتيب الدوري */
+const mpExtComp=m=>{ if(typeof EXT_COMPS==="undefined" || typeof EXT_GROUPS==="undefined") return null;
+  const c = (typeof isGulfMatch==="function" && isGulfMatch(m)) ? EXT_COMPS.find(x=>x.id==="gulf27") : EXT_COMPS.find(x=>x.name===String(m.comp||""));
+  return c && (EXT_GROUPS[c.id]||[]).length ? c : null; };
+const mpHasTable=m=>compOf(m)==="الدوري" || COMPS.includes(compOf(m)) || !!mpExtComp(m);
+const mpTabs=m=>{ const T=mpHasTable(m) ? MP_TABS : MP_TABS.filter(([k])=>k!=="table");
   return mpHasEff(m) ? [...T.slice(0,2),["eff","اللعب الفعلي"],...T.slice(2)] : T; };
 function mpInfoRows(m){
   const rows=[];
@@ -15741,16 +15760,28 @@ function mpSquad(m){
   return `<div class="mp-card mp-squad" style="${accentVars(c)}">${seg}${clubSquadHTML(c)}</div>`;
 }
 function mpTable(m){
-  if(!playedMatches().length) return `<div class="mp-card mp-empty">يظهر الجدول بعد أول جولة.</div>`;
-  let html=hmStandingsHTML(standings());
+  if(MP.__tbl) return MP.__tbl;   /* جدول مجموعة البطولة الخارجية/الخليج: يُحسب خارج سياقها المعزول (ext.js / gulf.js) */
+  const xc=mpExtComp(m);
+  if(xc){
+    const hl=[m.home,m.away].map(t=>_norm(t));
+    const html=extTableHTML(xc, extEvents(xc.id), hl);
+    return html ? `<div class="mp-std mp-xstd">${html}</div>` : `<div class="mp-card mp-empty">لا جدول لهذه البطولة.</div>`;
+  }
+  const lg = compOf(m)==="الدوري" ? null : "الدوري";
+  const run = fn => lg ? withComp(lg, fn) : fn();
+  if(!run(()=>playedMatches().length)) return `<div class="mp-card mp-empty">يظهر الجدول بعد أول جولة.</div>`;
+  let html=run(()=>hmStandingsHTML(standings()));
+  if(lg) html=`<div class="mp-card mp-tnote">${esc(compOf(m))} بنظام خروج المغلوب — هذا ترتيب الدوري</div>`+html;
   [m.home,m.away].forEach(c=>{ html=html.replace(`data-club-open="${esc(c)}"`, `data-club-open="${esc(c)}" data-mp-hl="1"`); });
   return `<div class="mp-std">${html}</div>`;
 }
+/* شعار نادٍ محلي في قوائم «المباريات» يفتح صفحته (منصور 2026-11-04)؛ الخصم الخارجي بلا صفحة */
+const mpCrestLink=c=>(typeof CLUBS!=="undefined" && CLUBS.includes(c)) ? `<i class="mp-clink" data-club-open="${esc(c)}">${crest(c)}</i>` : crest(c);
 function mpMatchRow(x, club){
   const soon=isUpcoming(x), r=club?mpResult(x,club):"";
   return `<button type="button" class="mp-mrow" data-mp-open="${matchKey(x)}">
     <span class="d">${x.date?esc(String(x.date).slice(5).split("-").reverse().join("/")):""}<i>${esc(compOf(x))} · ج${x.round}</i></span>
-    <span class="t"><span>${crest(x.home)}<b>${esc(x.home)}</b></span><span>${crest(x.away)}<b>${esc(x.away)}</b></span></span>
+    <span class="t"><span>${mpCrestLink(x.home)}<b>${esc(x.home)}</b></span><span>${mpCrestLink(x.away)}<b>${esc(x.away)}</b></span></span>
     <span class="s" dir="ltr">${soon?`<em>${x.time?esc(x.time):"—"}</em>`:`<b>${x.hg}</b><b>${x.ag}</b>`}</span>
     ${r?`<span class="r ${r}">${MP_RES[r]}</span>`:`<span class="r"></span>`}
   </button>`;
@@ -15784,7 +15815,7 @@ function renderMatchPage(){
 function renderMatchPageRaw(){
   const box=$("#mpage"), m=MP.m; if(!box||!m) return;
   if(MP.tab==="eff" && !mpHasEff(m)) MP.tab="details";
-  if(MP.tab==="table" && compOf(m)!=="الدوري") MP.tab="details";
+  if(MP.tab==="table" && !mpHasTable(m)) MP.tab="details";
   const body = MP.tab==="eff" ? `<div data-effslot></div>` : MP.tab==="lineups" ? mpLineups(m) : MP.tab==="squad" ? mpSquad(m) : MP.tab==="table" ? mpTable(m) : MP.tab==="matches" ? mpMatches(m) : mpDetails(m);
   /* توهج رأس صفحة المباراة بلون القميص الأساسي: الأبيض يبقى أبيض (الإمارات/العراق كانا يظهران بالأحمر/الأخضر — منصور 2026-10-03) */
   const glowOf=c=>{ const cc=(window.CLUB_COLORS||{})[c]; return cc && lumOf(cc[0])>.85 ? "#FFFFFF" : clubAccent(c).a; };
@@ -15838,8 +15869,12 @@ document.addEventListener("click", e=>{
     const x=e.target.closest("[data-mp-mx]"); if(x){ MP_MX=x.dataset.mpMx; renderMatchPage(); return; }
     const q=e.target.closest("[data-mp-sq]"); if(q){ MP_SQ=q.dataset.mpSq; renderMatchPage(); return; }
     const lt=e.target.closest("[data-mp-lt]"); if(lt){ const y=box.querySelector(".mp-sheet").scrollTop; MP_LT=lt.dataset.mpLt; renderMatchPage(); box.querySelector(".mp-sheet").scrollTop=y; return; }
+    /* فتح النادي يتولاه المستمع العام (يسبق هذا المستمع) — قبل صف المباراة حتى يفتح الشعار ناديه. لا history.back():
+       كان الرجوع غير المتزامن يصل خطوة «الرئيسية» فتعود الصفحة إليها بعد فتح النادي (منصور 2026-11-04) */
+    if(e.target.closest("[data-club-open]")){ hideMatchBox();
+      if((history.state&&history.state.mp) || /^#m\//.test(location.hash)){ try{ history.replaceState({mfv:"clubs"},"",location.pathname+location.search); }catch(err){} }
+      return; }
     const o=e.target.closest("[data-mp-open]"); if(o){ const mm=matchByKey(o.dataset.mpOpen); if(mm){ MP.tab="details"; MP_MX="h2h"; MP.m=null; openMatch(mm); } return; }
-    if(e.target.closest("[data-club-open]")){ closeMatch(); return; }   /* فتح النادي يتولاه المستمع العام */
     return;
   }
   /* بطاقة المباراة في صفحة المباريات: الضغط على البطاقة (لا على «التفاصيل» أو اسم لاعب) يفتح صفحة المباراة */

@@ -510,10 +510,12 @@ function hookSite(){
     renderMatchPage = function(){
       const m = (typeof MP==="object") ? MP.m : null;
       if(!(m && m.__gulf)) return o.apply(this, arguments);
-      if(MP.tab==="squad" || MP.tab==="table") MP.tab = "details";
-      const r = withGulf(()=>o.apply(this, arguments));
+      if(MP.tab==="squad") MP.tab = "details";
+      /* «الترتيب» = جدول مجموعة خليجي 27 (منصور 2026-11-04)، يُحسب خارج السياق */
+      MP.__tbl = (MP.tab==="table" && typeof mpTable==="function") ? mpTable(m) : null;
+      let r; try{ r = withGulf(()=>o.apply(this, arguments)); } finally { MP.__tbl = null; }
       const box = document.getElementById("mpage");
-      if(box){ box.querySelectorAll('.mp-tabs [data-mp-tab="squad"], .mp-tabs [data-mp-tab="table"]').forEach(b=>b.remove());
+      if(box){ box.querySelectorAll('.mp-tabs [data-mp-tab="squad"]').forEach(b=>b.remove());
         box.querySelectorAll('[data-player]').forEach(el=>{ el.removeAttribute('data-player'); el.style.cursor='default'; });
         const hd = box.querySelector(".mp-head .mp-when"); if(hd && !/كأس الخليج/.test(hd.textContent)) hd.insertAdjacentHTML("afterbegin", `<b>${NAME}</b> · `); }
       return r;
