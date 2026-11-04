@@ -19,6 +19,12 @@ const CORS = {
 const reply = (code, obj) => ({ statusCode:code, headers:CORS, body: JSON.stringify(obj) });
 
 /* هل هذا الـuid من فريق العمل؟ نقرأ المستند نفسه الذي تقرأه اللعبة */
+/* نتيجة التحقق تُحفظ 10 دقائق في النسخة الدافئة: كل إشعار كان يقرأ مستند الفريق قبل الإرسال */
+const STAFF_OK = new Map();
+async function isStaffCached(uid, projectId, at){
+  const c = STAFF_OK.get(uid); if(c && Date.now() - c < 600000) return true;
+  const ok = await isStaff(uid, projectId, at); if(ok) STAFF_OK.set(uid, Date.now()); return ok;
+}
 async function isStaff(uid, projectId, at){
   const url = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/seasons/staff`;
   const r = await fetch(url, { headers:{ Authorization:'Bearer '+at } });
@@ -61,7 +67,7 @@ exports.handler = async (event) => {
     const uid = await verifyIdToken(idToken, projectId);
     const at  = await accessToken('https://www.googleapis.com/auth/firebase.messaging https://www.googleapis.com/auth/datastore');
 
-    if(uid !== OWNER_UID && !(await isStaff(uid, projectId, at)))
+    if(uid !== OWNER_UID && !(await isStaffCached(uid, projectId, at)))
       return reply(403, {ok:false, err:'للمدير فقط'});
 
     /* الإرسال لرمز بعينه للتشخيص — للمالك وحده، لا تعرضه الواجهة */
@@ -81,8 +87,8 @@ exports.handler = async (event) => {
     else targets = [{ condition: "'all' in topics || 'gen' in topics" }];
     const data = { ev: (ev && ev.d) || 'gen', url: link };
 
-    const ids = [];
-    for(const t of targets){
+    /* الأهداف معاً بالتوازي (شرط التفضيلات + all القديم) */
+    const outs = await Promise.all(targets.map(async t => {
       const res = await fetch(`https://fcm.googleapis.com/v1/projects/${projectId}/messages:send`, {
         method:'POST',
         headers:{ Authorization:'Bearer '+at, 'Content-Type':'application/json' },
@@ -92,10 +98,11 @@ exports.handler = async (event) => {
           { notification:{ title, body }, data, webpush:{ fcm_options:{ link } } }
         )})
       });
-      const out = await res.json();
-      if(!res.ok) return reply(502, {ok:false, err:'رفض FCM الإرسال', detail: JSON.stringify(out).slice(0,300)});
-      ids.push(out.name || '');
-    }
+      return { ok: res.ok, out: await res.json().catch(() => ({})) };
+    }));
+    const bad = outs.find(o => !o.ok);
+    if(bad) return reply(502, {ok:false, err:'رفض FCM الإرسال', detail: JSON.stringify(bad.out).slice(0,300)});
+    const ids = outs.map(o => o.out.name || '');
     return reply(200, {ok:true, id: ids[0] || '', ids});
   }catch(e){
     const m = String(e.message||e);

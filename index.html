@@ -2257,7 +2257,7 @@ html[dir="ltr"] .tl-ev.a .tl-card{text-align:right;align-items:flex-end}
 <!-- كأس الخليج 27: قسم مستقل ببيانات منفصلة (seasons/gulf27) -->
 <link rel="stylesheet" href="gulf.css?v=18">
 <script src="gulf.js?v=50" defer></script>
-<script src="livepush.js?v=5" defer></script>
+<script src="livepush.js?v=6" defer></script>
 <script src="fantasy/js/push.js?v=288" defer></script>
 <script src="notify.js?v=8" defer></script>
 <script src="notif-prefs.js?v=2" defer></script>   <!-- لوحة تفضيلات الإشعارات والأصوات -->
@@ -6748,6 +6748,7 @@ async function saveMatch(opt){
   if(quiet && (!EDIT || (window.MX && MX.sheet) || (window.EFFTIME && EFFTIME.isOpen && EFFTIME.isOpen()))) return;
   const E0 = JSON.parse(JSON.stringify(EDIT));      /* تعديلنا كما هو (مع base) — يُعاد دمجه في كل محاولة */
   const sig0 = JSON.stringify(EDIT);
+  if(fbDb && window.LIVEPUSH && LIVEPUSH.sendEarly && E0.base && !E0.gulf) LIVEPUSH.sendEarly(E0);   /* الإشعار لا ينتظر المعاملة */
   const tx = await txSaveMatch(E0);
   if(tx.r!=="ok"){
     /* لا شيء انكتب: النموذج باقٍ كما هو، والحفظ التلقائي يعيد المحاولة.
@@ -6870,7 +6871,7 @@ setInterval(()=>{
   if(MX.tab==="lineup"){ MX_ASIG=""; mxAutoPaint("busy","يُحفظ عند الخروج"); return; }
   mxAutoPaint("busy","سيُحفظ تلقائياً");
   if(s !== MX_ASIG){ MX_ASIG=s; MX_AT=Date.now(); return; }
-  if(Date.now()-MX_AT < 2000 || MX.sheet || mxTyping()) return;
+  if(Date.now()-MX_AT < 1200 || MX.sheet || mxTyping()) return;   /* كانت ثانيتين — أسرع للإشعارات */
   MX_ASIG=""; saveMatch({quiet:true});
 }, 700);
 

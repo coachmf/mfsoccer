@@ -54,8 +54,19 @@ window.LIVEPUSH = {
   _sig(k, x){ return x.uid ? [k, x.r, x.comp, 'u', x.uid].join('|') : [k, x.r, x.comp, x.club||x.sc||'', x.p||'', x.m||0, x.x||0, x.type||''].join('|'); },
   _seen(sig){ return this._get(this.SENT, []).indexOf(sig) >= 0; },
   _mark(sigs){
-    const a = this._get(this.SENT, []).concat(sigs);
+    const a0 = this._get(this.SENT, []), a = a0.concat(sigs.filter(s => a0.indexOf(s) < 0));
     this._set(this.SENT, a.slice(-600));          /* سقف حتى لا ينتفخ التخزين */
+  },
+  _unmark(sigs){ if(!sigs.length) return; this._set(this.SENT, this._get(this.SENT, []).filter(s => sigs.indexOf(s) < 0)); },
+
+  /* الإرسال فور بدء الحفظ، بلا انتظار معاملة Firestore (كانت تؤخر الإشعار ثوانيَ — منصور 2026-11-04):
+     البصمات تُعلَّم فوراً فلا يعيدها الالتقاط داخل المعاملة، وما فشل إرساله يُفكّ تعليمه ليُعاد في الحفظة التالية */
+  sendEarly(E){
+    try{
+      const lp = this.capture(E); if(!lp || !lp.length) return;
+      this._mark(lp.map(n => n.sig));
+      this.send(lp, null, true);
+    }catch(e){}
   },
 
   /* النتيجة من قائمة الأهداف نفسها: الالتقاط يحدث قبل applyEdit فقيم
@@ -160,7 +171,7 @@ window.LIVEPUSH = {
                    e1:['et','بداية الأشواط الإضافية', score()],
                    pso:['pso','ركلات الترجيح', score()],
                    ft:['ft','صافرة النهاية', m.home + '  ' + this._scoreNow(m, cur.goals) + '  ' + m.away] }[st];
-      if(PH) add(st === 'ft' ? 0 : 3, this._sig(PH[0], {r:m.round, comp, club:m.home, p:m.away}), PH[1], PH[2], E(PH[0]), st === 'ft');
+      if(PH) add(st === 'ft' ? 0 : 3, this._sig(PH[0], {r:m.round, comp, club:m.home, p:m.away}), PH[1], PH[2], E(PH[0]), st === 'ft' || st === 'h1');   /* الانطلاق يصل الأجهزة القديمة أيضاً (منصور 2026-11-04) */
     }
     /* الوقت بدل الضائع: أول إدخال له في الشوط */
     [['add1','الشوط الأول'],['add2','الشوط الثاني']].forEach(([k, t]) => {
@@ -193,7 +204,7 @@ window.LIVEPUSH = {
     return main.concat(out.filter(n => n.parent && keep.has(n.parent)));
   },
 
-  async send(list, m){
+  async send(list, m, early){
     if(!list || !list.length) return;
     /* FBUSER مُعرَّف بـlet في index.html، وlet على مستوى السكربت لا يُضاف
        إلى window — فـwindow.FBUSER كان undefined دائماً والإرسال يخرج هنا
@@ -203,9 +214,9 @@ window.LIVEPUSH = {
       const u = (typeof FBUSER !== 'undefined') ? FBUSER : null;
       if(u && u.getIdToken) tok = await u.getIdToken();
     }catch(e){}
-    if(!tok){ if(typeof toast === 'function') toast('البثّ يحتاج تسجيل دخول المحرّر','err'); return; }
-    const sent = [];
-    for(const n of list){
+    if(!tok){ if(early) this._unmark(list.map(n => n.sig)); if(typeof toast === 'function') toast('البثّ يحتاج تسجيل دخول المحرّر','err'); return; }
+    /* كل الإشعارات معاً بالتوازي (كانت واحداً بعد الآخر) */
+    const res = await Promise.all(list.map(async n => {
       try{
         const r = await fetch('/.netlify/functions/push-send', {
           method:'POST',
@@ -214,9 +225,11 @@ window.LIVEPUSH = {
           body: JSON.stringify({ title: n.title.slice(0,80), body: n.body.slice(0,240), url: n.url || '/', ev: n.ev, legacy: n.legacy })
         });
         const j = await r.json().catch(()=>({}));
-        if(j && j.ok) sent.push(n.sig);
-      }catch(e){}
-    }
+        return (j && j.ok) ? n.sig : null;
+      }catch(e){ return null; }
+    }));
+    const sent = res.filter(Boolean);
+    if(early) this._unmark(list.map(n => n.sig).filter(s => sent.indexOf(s) < 0));
     if(sent.length){
       this._mark(sent);
       if(typeof toast === 'function') toast('أُرسل ' + sent.length + ' إشعاراً للمشتركين','ok');
