@@ -310,17 +310,19 @@
         <span class="t${aw?" w":""}">${crest(m.away)}<b>${esc(m.away)}</b><em>${m.ag??""}</em></span>
         <small>${safe(()=>dayLabel(m.date))||""}</small></button>`; }).join("")}</div></section>`;
   }
-  /* مبدّل الترتيب في الرئيسية: الدوري الممتاز | دوري الدرجة الأولى (منصور 2026-10-08) */
-  let stdDiv1=false, stdT=null;
+  /* مبدّل الترتيب في الرئيسية: الدوري الممتاز | دوري الدرجة الأولى (منصور 2026-10-08) | دوري الهواة (منصور 2026-11-05: «حط دوري الهواه من ضمن الخيارات») */
+  let stdSide="0", stdT=null;
+  const STD_SIDES=()=>[["0","الدوري الممتاز",true],["1","دوري الدرجة الأولى",!!(window.DIV1 && DIV1.tableHTML)],["2","دوري الهواة",!!(window.AMATEUR && AMATEUR.tableHTML)]].filter(x=>x[2]);
   function stdSwitch(){
-    if(!(window.DIV1 && DIV1.tableHTML)) return "";
-    return `<div class="mf-stdsw" role="tablist">${[["0","الدوري الممتاز"],["1","دوري الدرجة الأولى"]].map(([k,t])=>
-      `<button type="button" role="tab" data-mf-stdsw="${k}" aria-selected="${(k==="1")===stdDiv1}">${t}</button>`).join("")}</div>`;
+    const L=STD_SIDES(); if(L.length<2) return "";
+    return `<div class="mf-stdsw" role="tablist">${L.map(([k,t])=>
+      `<button type="button" role="tab" data-mf-stdsw="${k}" aria-selected="${k===stdSide}">${t}</button>`).join("")}</div>`;
   }
   function standingsHTML(T){
     stdT=T;
-    if(stdDiv1 && window.DIV1 && DIV1.tableHTML)
-      return `<section class="mf-sec mf-std mf-std-d1" id="mfStd">${stdSwitch()}<div class="mf-d1t d1"><h2 class="mf-d1h">جدول الترتيب</h2>${DIV1.tableHTML()}</div></section>`;
+    const side=stdSide==="1" && window.DIV1 && DIV1.tableHTML ? DIV1 : stdSide==="2" && window.AMATEUR && AMATEUR.tableHTML ? AMATEUR : null;
+    if(side)
+      return `<section class="mf-sec mf-std mf-std-d1" id="mfStd">${stdSwitch()}<div class="mf-d1t d1${side===window.AMATEUR?" am":""}"><h2 class="mf-d1h">جدول الترتيب</h2>${side.tableHTML()}</div></section>`;
     const rows=T.length;
     return `<section class="mf-sec mf-std" id="mfStd">${stdSwitch()}<div class="hm">${hmStandingsHTML(T)}</div>
       ${rows>6?`<button type="button" class="mf-more" data-mf-std aria-expanded="false"><span>الجدول كاملاً</span>${IC.chev}</button>`:""}</section>`;
@@ -395,7 +397,7 @@
   }
   D.addEventListener("click", e=>{
     const sw=e.target.closest("#v-home [data-mf-stdsw]");
-    if(sw){ const on=sw.dataset.mfStdsw==="1"; if(on===stdDiv1) return; stdDiv1=on;
+    if(sw){ const on=sw.dataset.mfStdsw; if(on===stdSide) return; stdSide=on;
       const s=D.getElementById("mfStd"); if(s && stdT){ const t=D.createElement("div"); t.innerHTML=standingsHTML(stdT); s.replaceWith(t.firstElementChild); }
       return; }
     const sb=e.target.closest("#v-home [data-mf-std]");

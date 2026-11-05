@@ -152,6 +152,7 @@ function render(){
 AM.render = render;
 AM.count = () => { if(!DATA) DATA = normalize(null); return DATA.matches.length; };
 AM.crestSrc = crestSrc;
+AM.tableHTML = () => { if(!DATA) DATA = normalize(null); return tableHTML(); };   /* «الدوري» في الرئيسية (mf-shell، منصور 2026-11-05) */
 AM.openMatches = () => { VIEW.tab = "matches"; VIEW.scrolled = false; if(document.querySelector("#v-amateur.on")) render(); else if(typeof go==="function") go("amateur"); };
 AM.matchesHTML = () => { if(!DATA) DATA = normalize(null); return matchesHTML(); };   /* دائرة «دوري الهواة» في صفحة المباريات (mf-shell) */
 function repaint(){ if(document.querySelector("#v-amateur.on")) render(); paintAdmin();
