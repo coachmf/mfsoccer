@@ -2256,7 +2256,7 @@ html[dir="ltr"] .tl-ev.a .tl-card{text-align:right;align-items:flex-end}
 <link rel="stylesheet" href="site-theme.css?v=7">
 <script src="fantasy/js/i18n-more.js?v=14" defer></script>
 <script src="site-i18n.js?v=32" defer></script>
-<script src="i18n-data.js?v=25" defer></script>   <!-- إضافات الإنجليزية + البرتغالية (البرازيل/البرتغال) + الإسبانية + الصربية/الكرواتية -->
+<script src="i18n-data.js?v=26" defer></script>   <!-- إضافات الإنجليزية + البرتغالية (البرازيل/البرتغال) + الإسبانية + الصربية/الكرواتية -->
 <script src="i18n-langs.js?v=8" defer></script>   <!-- قائمة اللغات بالأعلام + البرتغالية والإسبانية والصربية/الكرواتية فوق محرك الإنجليزية -->
 <!-- غرفة التحكم (live.js / live-admin.js / live.css) مخفية منذ 2026-10-10 بطلب منصور — الملفات باقية؛ للإرجاع أعد السطرين:
      <link rel="stylesheet" href="live.css?v=9"> و <script src="live.js?v=21" defer></script> -->
@@ -2290,6 +2290,8 @@ html[dir="ltr"] .tl-ev.a .tl-card{text-align:right;align-items:flex-end}
 <script src="mf-shell.js?v=43" defer></script>
 <link rel="stylesheet" href="fmx.css?v=3">
 <script src="fmx.js?v=9" defer></script>   <!-- أفكار FM27: fmx.js يلفّ صفحات المباراة والنادي واللاعب والمباريات والتحليل -->
+<link rel="stylesheet" href="mxday.css?v=1">
+<script src="mxday.js?v=1" defer></script>   <!-- صفحة المباريات حسب اليوم (منصور 2026-11-07) -->
 <style>
 /* تبويب التحليل — التصميم الجديد (منصور 2026-09-17) */
 .an{--an-card:#0F1E35;--an-line:#213653;--an-txt:#EDF3FA;--an-mut:#8FA6C4;--an-track:rgba(143,166,196,.16);--an-acc:#2EB0F0;--an-acc2:#1878BE}
@@ -3268,6 +3270,7 @@ function amCardHTML(m){
 document.addEventListener("click", e=>{ if(e.target.closest && e.target.closest("[data-am-open]") && window.AMATEUR && AMATEUR.openMatches) AMATEUR.openMatches(); });
 function matchGoalsAll(m){ return (ALL?.goals||[]).some(g=>compOf(g)===compOf(m) && +g.r===+m.round && (g.sc===m.home||g.sc===m.away)); }
 function renderUpcomingMatches(){
+  if(window.MXDAY){ MXDAY.render(); return; }   /* صفحة المباريات حسب اليوم: شريط تواريخ + تقويم + فلاتر + أقسام البطولات (mxday.js، منصور 2026-11-07) — ما بعده احتياط */
   const items=MX_DAY<0 ? dayItems(mxDayIso()) : upcomingItems(), tIso=todayISO();
   const dayLabel=iso=>{ if(!iso) return "مؤجلة — يُحدَّد موعدها لاحقاً"; const d=new Date(iso+"T00:00:00"); if(isNaN(d)) return esc(iso); return `${AR_DOW[d.getDay()]} ${d.getDate()} ${AR_MON[d.getMonth()]}`; };
   let lastDay=null;
