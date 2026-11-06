@@ -2287,7 +2287,7 @@ html[dir="ltr"] .tl-ev.a .tl-card{text-align:right;align-items:flex-end}
 <link rel="stylesheet" href="mf-brand.css?v=21">
 <link rel="stylesheet" href="notif-prefs.css?v=1">
 <script>document.documentElement.classList.add("mf")</script>
-<script src="mf-shell.js?v=43" defer></script>
+<script src="mf-shell.js?v=44" defer></script>
 <link rel="stylesheet" href="fmx.css?v=3">
 <script src="fmx.js?v=9" defer></script>   <!-- أفكار FM27: fmx.js يلفّ صفحات المباراة والنادي واللاعب والمباريات والتحليل -->
 <link rel="stylesheet" href="mxday.css?v=1">
@@ -8868,7 +8868,7 @@ let ST_TAB = "g", ST_CLUB = "";
 const ST_TABS = [
   {k:"g",  t:"الهدافون"},       {k:"a",  t:"صناعة الأهداف"},  {k:"ga", t:"المساهمات"},
   {k:"y",  t:"الإنذارات"},      {k:"r",  t:"الطرد"},           {k:"cs", t:"الشباك النظيفة"},
-  {k:"mn", t:"دقائق اللعب"},    {k:"pk", t:"ركلات الجزاء"},    {k:"tm", t:"الفرق"}
+  {k:"mn", t:"دقائق اللعب"},    {k:"pk", t:"ركلات الجزاء"},    {k:"rt", t:"التقييم"},    {k:"tm", t:"الفرق"}   /* التقييم: منصور 2026-11-07 */
 ];
 const ST_SHOW = 20;
 function stClubs(){
@@ -8900,6 +8900,11 @@ function stData(){
   } else if (T==="mn"){
     col = "الدقائق";
     rows = Object.values(PP).map(p=>({...p, v:p.mins})).sort((x,y)=>y.v-x.v);
+  } else if (T==="rt"){
+    /* متوسط التقييم (averageRatings، نفس «أعلى متوسط تقييم»): من شارك في نصف مباريات الأكثر مشاركة على الأقل */
+    col = "التقييم";
+    const L = typeof averageRatings==="function" ? averageRatings() : [], mx = Math.max(0, ...L.map(x=>x.apps)), mn = Math.max(1, Math.ceil(mx*0.5));
+    rows = L.filter(x=>x.apps>=mn).map(x=>({...play(x.n,x.c), n:x.n, c:x.c, apps:x.apps, v:(+x.avg).toFixed(2)}));
   } else if (T==="pk"){
     col = "سجّل"; sub = "المحاولات";
     const d = {}; PENS.forEach(x=>{ const k=x.p+"|"+x.by; (d[k] ??= {n:x.p, c:x.by, v:0, apps:0}); d[k].apps++; if(/سجل/.test(x.res||"")) d[k].v++; });
