@@ -149,6 +149,7 @@ window.MXDAY = (function(){
   function render(){
     const V=document.getElementById("v-matches"); if(!V) return;
     const t=today(); if(!S.d) S.d=t;
+    S.st="all"; S.comp="all"; S.fav=false;   /* شريطا الحالة والبطولة أُزيلا (منصور 2026-11-07: «شيل هذول») */
     const ready = typeof ALL!=="undefined" && ALL && (ALL.matches||[]).length;
     const head = `<div class="mx-head"><h2 class="mx-title">المباريات</h2>${compSelect()}</div>`;
     if(!ready){
@@ -224,9 +225,7 @@ window.MXDAY = (function(){
           </div>
         </div>
         <div class="mxd-strip" role="group" aria-label="اختيار اليوم">${stripHTML(S.d, byDay)}</div>
-        <div class="mxd-seg" role="group" aria-label="حالة المباراة">${chip("all","الكل",c.all)}${chip("live","مباشر",c.live)}${chip("soon","القادمة",c.soon)}${chip("done","المنتهية",c.done)}</div>
       </div>
-      ${compsHTML}
       <div class="mxd-list">${secHTML||empty}</div>
     </div>`;
     /* التقويم في body: فوق شريط التنقل السفلي (#v-matches سياق تكديس أدنى) */
