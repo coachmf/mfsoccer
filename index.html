@@ -3215,18 +3215,19 @@ function upcomingItems(){
   const now=Date.now(), t=new Date(), todayIso=`${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,"0")}-${String(t.getDate()).padStart(2,"0")}`;
   const loc=(ALL?.matches||[]).filter(m=>{ const k=kickoffTS(m); if(k===null) return false;
       /* الجارية تبقى حتى صافرة النهاية — كانت تختفي مع أول هدف (منصور 2026-11-02: «وين المباره الحاليه ماتطلع هني») */
-      if(m.status==="ft") return false;
+      if(m.status==="ft") return m.date===todayIso;   /* مباريات اليوم المنتهية تبقى في القائمة حتى نهاية اليوم (منصور 2026-11-06: «المفروض مباريات اليوم تطلع هني») */
       if(["h1","ht","h2","e1","e2","pso"].includes(m.status)) return true;
       return (k>now) || (m.time && now>=k && now<k+2*3600e3 && !matchGoalsAll(m)); })
-    .map(m=>({d:m.date, time:normTime(m.time)||"", ts:kickoffTS(m), m}));
+    .map(m=>({d:m.date, time:normTime(m.time)||"", ts:kickoffTS(m), m, past:m.status==="ft"}));
   const ext=[];
   EXT_COMPS.forEach(c=>extEvents(c.id).forEach(e=>{
     if(e.to && e.to!==e.d) return;
     const parts=evParts(e); if(parts.length<2 || /نصف|نهائي|ربع|مباريات/.test(parts[0])) return;
+    if(e.d===todayIso){ ext.push({d:e.d, time:String(e.time||""), ts:new Date(e.d+"T"+(normTime(e.time)||"23:59")+":00").getTime(), e, c}); return; }   /* اليوم: كلها حتى المنتهية */
     const gx=extGx(c.id, e, parts[0], parts[1]); if(gx && gx.st==="done") return;   /* خليجي 27 / مشاركات أنديتنا انتهت: تخرج من القادمة */
     if(e.live || (gx && gx.st==="live") || (e.hg==null && e.d>=todayIso)) ext.push({d:e.d, time:String(e.time||""), ts:new Date(e.d+"T"+(normTime(e.time)||"23:59")+":00").getTime(), e, c});
   }));
-  const am=amItems(m=>m.hg==null && m.date>=todayIso);
+  const am=amItems(m=>(m.hg==null && m.date>=todayIso) || m.date===todayIso);
   return [...loc,...ext,...am].sort((a,b)=>String(a.d).localeCompare(String(b.d))||((a.ts||0)-(b.ts||0)));
 }
 /* «اليوم السابق» في صفحة المباريات القادمة (منصور 2026-10-29: «زر يرجعني يوم فقط ويظهر مباريات هاليوم وجذي»):
