@@ -8153,6 +8153,8 @@ function renderMatches(){
   if(SELDAY) list = list.filter(m=>m.date===SELDAY);
   else if(SELR!==null) list = list.filter(m=>m.round===SELR);
   list.sort((a,b)=>{
+    /* جولة أو يوم محدد: بترتيب الموعد من الأقدم (منصور 2026-11-07: «ليش صاير عكس» — كانت القادمة فوق والمنتهية تحت فيظهر 7 و8 قبل 6) */
+    if(SELR!==null || SELDAY) return (kickoffTS(a)??Infinity)-(kickoffTS(b)??Infinity);
     const ua=isUpcoming(a), ub=isUpcoming(b);
     if(ua!==ub) return ua?-1:1;                                   /* القادم أولاً */
     if(ua) return (kickoffTS(a)??Infinity)-(kickoffTS(b)??Infinity);   /* الأقرب موعداً، والمؤجلة (بلا تاريخ) آخراً */
