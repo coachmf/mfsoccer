@@ -11,8 +11,22 @@ const ADMIN = {
     return `<h2 style="margin-bottom:12px">لوحة الإدارة</h2>
     <div class="admin-grid">
       <div class="admin-menu">${menu.map(([id,l])=>`<button class="${sec===id?'active':''}" onclick="VIEWS.ui.adminSec='${id}';APP.render()">${l}</button>`).join('')}</div>
-      <div>${this['sec_'+sec]()}</div>
+      <div>${this.missingBonusAlert()}${this['sec_'+sec]()}</div>
     </div>`;
+  },
+  /* تنبيه دائم أعلى لوحة الإدارة (منصور 2026-11-07: «مابي ولا غلطه تتكرر»): مباراة لُعبت من الجولة 4 بلا 3 بونص،
+     أو مباراة انتهت في الموقع وما زالت غير معتمدة — بزر يفتح نموذجها مباشرة */
+  missingBonusAlert(){
+    try{
+      const st=DB.state, gw=st.currentGW;
+      const bad=(st.fixtures||[]).filter(f=>f.gw>=4 && f.gw<=gw && f.status==='F' && f.hs!=null && ((f.bonus||[]).filter(b=>b&&b.name).length<3));
+      if(!bad.length) return '';
+      const nm=c=>{ try{ return DB.club(c).short; }catch(e){ return c; } };
+      return `<div class="card" style="border:2px solid #F0605A;background:rgba(240,96,90,.10)"><h3 style="color:#F0605A">مباريات انتهت بلا بونص (${bad.length})</h3>
+        <div class="tiny" style="margin-bottom:8px">نقاط البونص لا تصل للمشتركين حتى تُدخل وتُنشر الجولة.</div>
+        ${bad.map(f=>`<div class="row spread" style="padding:6px 0"><span>ج${f.gw} · ${nm(f.h)} ${f.hs}-${f.as} ${nm(f.a)}</span>
+          <button class="btn sm" onclick="VIEWS.ui.adminSec='results';VIEWS.ui.adminGw=${f.gw};VIEWS.ui.editFx='${f.id}';APP.render()">إدخال البونص</button></div>`).join('')}</div>`;
+    }catch(e){ return ''; }
   },
 
   sec_admins(){ return ADMINAUTH.section(); },
