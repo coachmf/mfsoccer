@@ -4,7 +4,7 @@
    «ضيف دوري الهواة مع شعاراتهم و اسامي الانديه و التحرير فقط نتيجة بدون
    تفاصيل و يظهر ترتيب الدوري» — 14 فريقاً، النتائج والترتيب فقط: لا أهداف
    ولا بطاقات ولا لاعبين. منفصل تماماً عن باقي الموقع: وثيقة مستقلة
-   seasons/amateur {matches:[{id, round, date, time, home, away, hg, ag}], updated, updatedBy}
+   seasons/amateur {matches:[{id, round, date, time, home, away, hg, ag}], scorers:[{n, t, g}], updated, updatedBy}
    2026-10-31: جدول الأسابيع 2–9 من ملف الاتحاد — المباراة بلا نتيجة (hg/ag = null) مباراة قادمة بوقتها،
    وتُكتب نتيجتها لاحقاً من الإدارة على الصف نفسه.
    الجدول يُحسب من النتائج لحظة العرض. الإدخال: تبويب «الهواة» في الإدارة.
@@ -31,15 +31,15 @@ const crest = c => { const s = crestSrc(c); return s ? `<img class="d1-cr am-cr"
    لا يغيّر مفتاحاً موجوداً. أسماء الفرق تبقى بالإنجليزية في كل اللغات اللاتينية. */
 const SEASON_AR = `الموسم التاسع ${SEASON_L} · ${Object.keys(TEAMS).length} فريقاً`;
 const EN = {"دوري الهواة الكويتي":"Kuwait Amateur League", "دوري الهواة":"Amateur League", "الهواة":"Amateur", [SEASON_AR]:"Season 9 · 2026/2027 · 14 teams",
-  "النتائج":"Results", "الفريق":"Team", "لم تُسجَّل أي نتيجة بعد.":"No results yet.", "لا نتائج بعد.":"No results yet.",
+  "النتائج":"Results", "الفريق":"Team", "الإحصائيات":"Stats", "الهدافون":"Top scorers", "اللاعب":"Player", "الأهداف":"Goals", "لم يُسجَّل أي هدف بعد.":"No goals yet.", "لم تُسجَّل أي نتيجة بعد.":"No results yet.", "لا نتائج بعد.":"No results yet.",
   "هايدو":"Haido", "لوسيل":"Lusail", "كان":"CAN", "أطلس":"Atlas", "الأزرق 82":"Al-Azraq 82", "أور كامل":"Our Camel", "فيكتوريز":"Victories",
   "القادسية":"Qadsia", "هومنتمن":"Homenetmen", "الكوت":"Al-Kout", "فاموس":"Vamos", "النهضة":"Al-Nahda", "الريان":"Al-Rayan"};
 const OV = {
-  BR:{"Kuwait Amateur League":"Liga Amadora do Kuwait", "Amateur League":"Liga Amadora", "Amateur":"Amadores", "Season 9 · 2026/2027 · 14 teams":"9ª temporada · 2026/2027 · 14 times", "No results yet.":"Ainda sem resultados.", "Results":"Resultados", "Team":"Time"},
-  PT:{"Kuwait Amateur League":"Liga Amadora do Kuwait", "Amateur League":"Liga Amadora", "Amateur":"Amadores", "Season 9 · 2026/2027 · 14 teams":"9.ª época · 2026/2027 · 14 equipas", "No results yet.":"Ainda sem resultados.", "Results":"Resultados", "Team":"Equipa"},
-  ES:{"Kuwait Amateur League":"Liga Amateur de Kuwait", "Amateur League":"Liga Amateur", "Amateur":"Amateur", "Season 9 · 2026/2027 · 14 teams":"9.ª temporada · 2026/2027 · 14 equipos", "No results yet.":"Aún no hay resultados.", "Results":"Resultados", "Team":"Equipo"},
-  FR:{"Kuwait Amateur League":"Ligue amateur du Koweït", "Amateur League":"Ligue amateur", "Amateur":"Amateurs", "Season 9 · 2026/2027 · 14 teams":"9e saison · 2026/2027 · 14 équipes", "No results yet.":"Aucun résultat pour l'instant.", "Results":"Résultats", "Team":"Équipe"},
-  SH:{"Kuwait Amateur League":"Kuvajtska amaterska liga", "Amateur League":"Amaterska liga", "Amateur":"Amateri", "Season 9 · 2026/2027 · 14 teams":"9. sezona · 2026/2027 · 14 timova", "No results yet.":"Još nema rezultata.", "Results":"Rezultati", "Team":"Tim"}
+  BR:{"Stats":"Estatísticas", "Top scorers":"Artilheiros", "Player":"Jogador", "Goals":"Gols", "No goals yet.":"Ainda sem gols.", "Kuwait Amateur League":"Liga Amadora do Kuwait", "Amateur League":"Liga Amadora", "Amateur":"Amadores", "Season 9 · 2026/2027 · 14 teams":"9ª temporada · 2026/2027 · 14 times", "No results yet.":"Ainda sem resultados.", "Results":"Resultados", "Team":"Time"},
+  PT:{"Stats":"Estatísticas", "Top scorers":"Melhores marcadores", "Player":"Jogador", "Goals":"Golos", "No goals yet.":"Ainda sem golos.", "Kuwait Amateur League":"Liga Amadora do Kuwait", "Amateur League":"Liga Amadora", "Amateur":"Amadores", "Season 9 · 2026/2027 · 14 teams":"9.ª época · 2026/2027 · 14 equipas", "No results yet.":"Ainda sem resultados.", "Results":"Resultados", "Team":"Equipa"},
+  ES:{"Stats":"Estadísticas", "Top scorers":"Goleadores", "Player":"Jugador", "Goals":"Goles", "No goals yet.":"Aún no hay goles.", "Kuwait Amateur League":"Liga Amateur de Kuwait", "Amateur League":"Liga Amateur", "Amateur":"Amateur", "Season 9 · 2026/2027 · 14 teams":"9.ª temporada · 2026/2027 · 14 equipos", "No results yet.":"Aún no hay resultados.", "Results":"Resultados", "Team":"Equipo"},
+  FR:{"Stats":"Statistiques", "Top scorers":"Buteurs", "Player":"Joueur", "Goals":"Buts", "No goals yet.":"Aucun but pour le moment.", "Kuwait Amateur League":"Ligue amateur du Koweït", "Amateur League":"Ligue amateur", "Amateur":"Amateurs", "Season 9 · 2026/2027 · 14 teams":"9e saison · 2026/2027 · 14 équipes", "No results yet.":"Aucun résultat pour l'instant.", "Results":"Résultats", "Team":"Équipe"},
+  SH:{"Stats":"Statistika", "Top scorers":"Strijelci", "Player":"Igrač", "Goals":"Golovi", "No goals yet.":"Još nema golova.", "Kuwait Amateur League":"Kuvajtska amaterska liga", "Amateur League":"Amaterska liga", "Amateur":"Amateri", "Season 9 · 2026/2027 · 14 teams":"9. sezona · 2026/2027 · 14 timova", "No results yet.":"Još nema rezultata.", "Results":"Rezultati", "Team":"Tim"}
 };
 (function addI18n(){
   if(typeof I18N==="undefined" || !I18N.DICT) return;
@@ -54,6 +54,8 @@ const played = m => num(m.hg)!==null && num(m.ag)!==null;
 function normalize(d){
   const out = d && Array.isArray(d.matches) ? clone(d) : {matches:[]};
   out.matches = out.matches.filter(m=>m && m.home && m.away).map(m=>Object.assign({id:uid(), date:"", time:""}, m, {round:+m.round||1, hg:num(m.hg), ag:num(m.ag)}));
+  /* الهدافون (منصور 2026-11-07: «حطهم من ضمن احصائيات دوري الهواة… بس شعار النادي») — قائمة يدخلها المدير */
+  out.scorers = (d && Array.isArray(d.scorers) ? d.scorers : []).filter(x=>x && String(x.n||"").trim()).map(x=>({n:String(x.n).trim().slice(0,60), t:TEAMS[x.t] ? x.t : "", g:Math.max(1, Math.min(99, +x.g||1))}));
   return out;
 }
 let DATA = null;
@@ -115,6 +117,19 @@ function tableHTML(){
     ${any ? "" : `<p class="d1-empty">لم تُسجَّل أي نتيجة بعد.</p>`}
   </div>`;
 }
+/* الإحصائيات ← الهدافون: الأكثر أهدافاً أولاً، والمتساوون بنفس المركز (1، 1، 3…) — شعار النادي فقط بلا صور */
+function statsHTML(){
+  const L = (DATA.scorers||[]).map((x,i)=>Object.assign({i}, x)).sort((a,b)=>(b.g-a.g) || (a.i-b.i));
+  let rk = 0;
+  return `<div class="d1-rh"><h3>الهدافون</h3></div>
+  <div class="d1-card">${L.length ? `
+    <table class="d1-tbl am-sc">
+      <thead><tr><th>#</th><th class="cl">اللاعب</th><th class="pt" title="الأهداف">الأهداف</th></tr></thead>
+      <tbody>${L.map((x,i)=>{ if(!i || x.g!==L[i-1].g) rk = i+1;
+        return `<tr><td class="rk">${rk}</td><td class="cl"><span class="d1-tm">${crest(x.t)}<b>${H(x.n)}</b></span></td><td class="pt">${x.g}</td></tr>`; }).join("")}</tbody>
+    </table>` : `<p class="d1-empty">لم يُسجَّل أي هدف بعد.</p>`}
+  </div>`;
+}
 function matchHTML(m){
   const p = played(m), hw = p && m.hg>m.ag, aw = p && m.ag>m.hg;
   return `<div class="d1-m${p?" done":""}">
@@ -138,11 +153,11 @@ function matchesHTML(){
 function render(){
   const v = document.getElementById("v-amateur"); if(!v) return;
   if(!DATA) DATA = normalize(null);
-  const tabs = [["table","الترتيب"],["matches","المباريات"]];
+  const tabs = [["table","الترتيب"],["stats","الإحصائيات"],["matches","المباريات"]];   /* «الإحصائيات» يم الترتيب (منصور 2026-11-07) */
   v.innerHTML = `<div class="d1 am">
     <header class="d1-hero"><h2>${NAME}</h2><p>${SEASON_AR}</p></header>
     <nav class="d1-tabs" role="tablist">${tabs.map(([k,t])=>`<button type="button" role="tab" data-amtab="${k}" aria-selected="${VIEW.tab===k}">${t}</button>`).join("")}</nav>
-    <div class="d1-body">${VIEW.tab==="table" ? tableHTML() : matchesHTML()}</div>
+    <div class="d1-body">${VIEW.tab==="table" ? tableHTML() : VIEW.tab==="stats" ? statsHTML() : matchesHTML()}</div>
   </div>`;
   /* المباريات: يفتح على أول جولة لم تكتمل */
   if(VIEW.tab==="matches" && !VIEW.scrolled){ VIEW.scrolled = true;
@@ -168,7 +183,7 @@ let ED = null;   /* {matches, dirty} نسخة التحرير */
 const canEdit = () => TEST || (typeof isAdmin!=="undefined" && !!isAdmin);
 const teamOpts = sel => `<option value="">— اختر —</option>` + Object.keys(TEAMS).map(c=>`<option${c===sel?" selected":""}>${H(c)}</option>`).join("");
 function adminHTML(){
-  if(!ED) ED = {matches:clone((DATA||normalize(null)).matches), dirty:false};
+  if(!ED) ED = {matches:clone((DATA||normalize(null)).matches), scorers:clone((DATA||normalize(null)).scorers||[]), dirty:false};
   const rs = [...new Set(ED.matches.map(m=>m.round))].sort((a,b)=>a-b);
   const row = m => `<div class="d1a-row" data-id="${H(m.id)}">
       <span class="t h">${H(m.home)}</span>
@@ -196,8 +211,27 @@ function adminHTML(){
       </div>
       ${rs.slice().reverse().map((r,i)=>`<details class="rndbox"${i===0?" open":""}><summary><b>الجولة ${r}</b><span class="rc">${ED.matches.filter(m=>m.round===r).length} مباريات</span></summary>
         <div class="d1a-list">${ED.matches.filter(m=>m.round===r).map(row).join("")}</div></details>`).join("")}
+      <div class="d1a-add am-scd"><h4>الهدافون</h4>
+        <p class="hint">لاعب في كل سطر: عدد الأهداف ثم الاسم ثم «-» ثم الفريق (بالعربي أو الإنجليزي). بلا رقم = هدف واحد.</p>
+        <textarea id="amSc" rows="8" dir="rtl" style="width:100%" placeholder="2 راشد العويهان - أور كامل">${H(scText(ED.scorers))}</textarea>
+      </div>
       <div class="d1a-save"><button type="button" class="btn" data-ama="save"${ED.dirty?"":" disabled"}>حفظ</button><span>${ED.dirty ? "تعديلات غير محفوظة" : "كل شيء محفوظ"}</span></div>
     </div></div>`;
+}
+/* نص الهدافين في التحرير ↔ قائمة: «2 الاسم - الفريق» (الفريق بالعربي أو كما في قائمة الاتحاد بالإنجليزي) */
+const TEAM_EN = {"OUR CAMEL":"أور كامل","OURCAMEL":"أور كامل","VICTORIES":"فيكتوريز","QADSIA":"القادسية","HAIDO":"هايدو","ALAZRAQ":"الأزرق 82","AL AZRAQ":"الأزرق 82","ALAZRAQ82":"الأزرق 82",
+  "ALRAYAN":"الريان","AL RAYAN":"الريان","CAN":"كان","C.A.N":"كان","C7":"C7","ALNAHDA":"النهضة","AL NAHDA":"النهضة","ALKOUT":"الكوت","AL KOUT":"الكوت","VAMOS":"فاموس","ATLAS":"أطلس",
+  "LUSIL":"لوسيل","LUSAIL":"لوسيل","HOMENETMEN":"هومنتمن"};
+const scText = L => (L||[]).map(x=>`${x.g>1?x.g+" ":""}${x.n} - ${x.t}`).join("\n");
+function scParse(txt){
+  const out = [], bad = [];
+  String(txt||"").split(/\n+/).map(l=>l.trim()).filter(Boolean).forEach(l=>{
+    const m = /^(?:(\d{1,2})\s+)?(.+?)\s*[-–—]\s*(.+)$/.exec(l); if(!m){ bad.push(l); return; }
+    const raw = m[3].trim(), t = TEAMS[raw] ? raw : TEAM_EN[raw.toUpperCase().replace(/\s+/g," ")] || TEAM_EN[raw.toUpperCase().replace(/\s+/g,"")] || "";
+    if(!t){ bad.push(l); return; }
+    out.push({n:m[2].trim(), t, g:m[1] ? +m[1] : 1});
+  });
+  return {out, bad};
 }
 function paintAdmin(){
   const box = document.getElementById("amAdmin"); if(!box) return;
@@ -229,7 +263,8 @@ document.addEventListener("click", async e=>{
     const bad = ED.matches.find(m=>(num(m.hg)===null) !== (num(m.ag)===null));   /* خانة واحدة فقط = نتيجة ناقصة؛ الفارغتان = مباراة قادمة */
     if(bad){ say(`أكمل نتيجة ${bad.home} × ${bad.away}`, "err"); return; }
     b.disabled = true;
-    try{ const next = normalize({matches:ED.matches}); await store.save(next); DATA = next; ED = null; say("حُفظ دوري الهواة", "ok"); }
+    const sc = scParse((document.getElementById("amSc")||{}).value||""); if(sc.bad.length){ say("سطر هدافين غير مفهوم: "+sc.bad[0], "err"); b.disabled = false; return; }
+    try{ const next = normalize({matches:ED.matches, scorers:sc.out}); await store.save(next); DATA = next; ED = null; say("حُفظ دوري الهواة", "ok"); }
     catch(x){ console.error(x); say("تعذّر الحفظ: "+(x.code||x.message), "err"); b.disabled = false; return; }
     repaint(); }
 });
