@@ -16891,7 +16891,11 @@ html.mx-editing #waFab{display:none!important}   /* زر واتساب كان ي�
       return none+groups+more;
     }
     if(opt.only==="xi") ent=ent.filter(e=>xi.includes(e.n)||(EDIT.subs||[]).some(s=>s.club===club&&s.in===e.n));
-    if(opt.only==="bench") ent=ent.filter(e=>!xi.includes(e.n) && (e.n===cur || !absentWhy(EDIT.match, club, e.n, EDIT.match.abs||[])));   /* المصاب/الغائب ليس من البدلاء */
+    if(opt.only==="bench"){
+      /* «دخل»: من دخل أصلاً في تبديل آخر ليس من الاحتياط (منصور 2026-11-07: «ليش يطلعون لي الاعبين الي اصلا دشوا الملعب») — إلا لاعب هذا التبديل نفسه */
+      const usedIn=new Set((EDIT.subs||[]).filter(s=>s.club===club && s.in).map(s=>s.in));
+      ent=ent.filter(e=>!xi.includes(e.n) && (e.n===cur || (!usedIn.has(e.n) && !absentWhy(EDIT.match, club, e.n, EDIT.match.abs||[]))));   /* المصاب/الغائب ليس من البدلاء */
+    }
     ent.sort((a,b)=>(xi.includes(b.n)-xi.includes(a.n))||((a.s||999)-(b.s||999)));
     return `${none}<div class="mx-roster">${ent.map(btn).join("")}</div>`;
   }
