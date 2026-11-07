@@ -233,6 +233,8 @@ window.NPREF = (function(){
   }
   /* إشعار وصل والصفحة مفتوحة (خادم الخدمة يمرّره): صوت الحدث المختار */
   function onPush(d){
+    try{ if(d && d.ev === 'test' && window.__npTest){ const el = document.getElementById('npTestOut');
+      if(el) el.textContent = 'وصل الإشعار بعد ' + ((Date.now() - window.__npTest.t0)/1000).toFixed(1) + ' ث من الضغط'; window.__npTest = null; } }catch(e){}
     if(!d || document.visibilityState !== 'visible') return;
     if(!P.soundOn || P.muteAll || inDnd()) return;
     const e = EV[d.ev] || EV[{gp:'g',gog:'g',gat:'g',r2:'r'}[d.ev]] || null;
@@ -322,10 +324,28 @@ window.NPREF = (function(){
           <select data-np-snd="${c.k}" aria-label="صوت ${esc(c.t)}">${opts(c)}</select>
           <button type="button" class="np-play" data-np-play="${c.k}" aria-label="معاينة صوت ${esc(c.t)}"><svg viewBox="0 0 24 24" width="16" height="16"><path d="M8 5v14l11-7z" fill="currentColor"/></svg></button>
         </div>`).join('')}</div>
+      <button type="button" class="np-reset" data-np-test>تجربة سرعة الإشعار</button>
+      <p class="np-note" id="npTestOut">يرسل إشعار تجربة لهذا الجهاز وحده ويقيس كم ثانية أخذ حتى وصل.</p>
       <button type="button" class="np-reset" data-np-reset>استعادة الأصوات الافتراضية</button>
       <p class="np-note">الصوت المختار يُسمع والموقع أو التطبيق مفتوح. حين يكون مغلقاً يستخدم الجهاز صوت الإشعارات الخاص بالنظام — المتصفحات وتطبيق iOS الحالي لا تسمح بغيره. الكتم وعدم الإزعاج يعملان على المتصفح.</p>`;
   }
 
+/* تجربة سرعة الإشعار (منصور 2026-11-07): الخادم يرسل مباشرة لرمز هذا الجهاز ويعيد وقت الإرسال؛ الجهاز يقيس الوصول
+     (الصفحة المفتوحة تستقبل الإشعار عبر خادم الخدمة أو جسر التطبيق) — وإلا يُقرأ الوقت من شاشة القفل */
+  async function speedTest(b){
+    const out = document.getElementById('npTestOut'); const say = t => { if(out) out.textContent = t; };
+    b.disabled = true; say('جارٍ الإرسال…');
+    try{
+      const tok = await token(); if(!tok){ say('هذا الجهاز غير مسجّل للإشعارات — فعّلها أولاً'); b.disabled = false; return; }
+      const t0 = Date.now();
+      const r = await fetch('/.netlify/functions/push-test', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ token:tok, t0 }) });
+      const j = await r.json().catch(()=>({}));
+      if(!r.ok || !j.ok){ say('تعذّر الإرسال: ' + (j.err || r.status)); b.disabled = false; return; }
+      say('أُرسل خلال ' + ((Date.now()-t0)/1000).toFixed(1) + ' ث من الضغط. انظر متى يظهر الإشعار «تجربة سرعة» — اقفل الشاشة الآن إن أردت.');
+      window.__npTest = { id:j.id, t0 };
+    }catch(e){ say('تعذّر الإرسال'); }
+    b.disabled = false;
+  }
   function paint(){
     const box = document.getElementById('npSheet'); if(!box) return;
     const d = DRAFT, st = stateLine(), dirty = JSON.stringify(d) !== JSON.stringify(P);
@@ -353,6 +373,7 @@ window.NPREF = (function(){
     const b = ev.target.closest('button, input[type=radio]'); if(!b) { if(ev.target.id==='npSheet') close(); return; }
     const ds = b.dataset, d = DRAFT;
     if('npClose' in ds) return close();
+    if('npTest' in ds){ speedTest(b); return; }
     if(ds.npTab){ OPEN.tab = ds.npTab; return paint(); }
     if(ds.npCat){ OPEN.cat = OPEN.cat === ds.npCat ? '' : ds.npCat; return paint(); }
     if(ds.npEv){ d.ev[ds.npEv] = d.ev[ds.npEv] ? 0 : 1; return paint(); }

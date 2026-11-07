@@ -92,7 +92,7 @@ exports.handler = async (event) => {
     const data = { ev: (ev && ev.d) || 'gen', url: link, id };
 
     const msgOf = t => Object.assign(t, { notification:{ title, body }, data,
-      apns:{ headers:{ 'apns-priority':'10' }, payload:{ aps:{ sound:'default' } } },
+      apns:{ headers:{ 'apns-priority':'10', 'apns-push-type':'alert', 'apns-expiration':String(Math.floor(Date.now()/1000)+900) }, payload:{ aps:{ sound:'default', 'interruption-level':'time-sensitive' } } },
       android:{ priority:'HIGH', notification:{ sound:'default', default_vibrate_timings:true } },
       webpush:{ headers:{ Urgency:'high', TTL:'600' }, fcm_options:{ link } } });
 
@@ -110,7 +110,7 @@ exports.handler = async (event) => {
         body: JSON.stringify({ message: Object.assign(t,
           { notification:{ title, body }, data,
             /* صوت واهتزاز (منصور 2026-11-04: «ليش ما في اهتزاز»): APNs بلا aps.sound يصل الآيفون صامتاً بلا اهتزاز */
-            apns:{ headers:{ 'apns-priority':'10' }, payload:{ aps:{ sound:'default' } } },
+            apns:{ headers:{ 'apns-priority':'10', 'apns-push-type':'alert', 'apns-expiration':String(Math.floor(Date.now()/1000)+900) }, payload:{ aps:{ sound:'default', 'interruption-level':'time-sensitive' } } },
             android:{ priority:'HIGH', notification:{ sound:'default', default_vibrate_timings:true } },
             webpush:{ headers:{ Urgency:'high' }, fcm_options:{ link } } }
         )})

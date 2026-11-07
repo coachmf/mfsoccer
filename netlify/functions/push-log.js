@@ -20,6 +20,22 @@ exports.handler = async (event) => {
       const me = mem && mem[uid] && mem[uid].mapValue && mem[uid].mapValue.fields;
       if(!(me && me.active && me.active.booleanValue === true)) return { statusCode:403, headers:CORS, body: JSON.stringify({ok:false, uid}) };
     }
+    /* ?import=1: نقل أجهزة الحسابات المعروفة (pushprefs/{uid}.tokens + مواضيعها) إلى سجل الإرسال المباشر وإخراجها من المواضيع */
+    if((event.queryStringParameters||{}).import === '1'){
+      let page = '', moved = 0, seen = 0;
+      do{
+        const lr = await fetch(`https://firestore.googleapis.com/v1/projects/${pid}/databases/(default)/documents/pushprefs?pageSize=300${page ? '&pageToken='+page : ''}`, { headers:{ Authorization:'Bearer '+at } });
+        const lj = await lr.json(); page = lj.nextPageToken || '';
+        for(const d of (lj.documents||[])){
+          const f = d.fields || {}, arr = k => ((f[k] && f[k].arrayValue && f[k].arrayValue.values) || []).map(v => v.stringValue).filter(Boolean);
+          const topics = arr('topics'); for(const t of arr('tokens')){ seen++;
+            if(!REG.okTok(t) || !topics.length) continue;
+            if(await REG.get(at, pid, t)) continue;
+            if(await REG.put(at, pid, t, topics, true)){ moved++; await REG.leaveAllTopics(at, t); } }
+        }
+      }while(page);
+      return { statusCode:200, headers:CORS, body: JSON.stringify({ ok:true, seen, moved }) };
+    }
     const r = await fetch(`https://firestore.googleapis.com/v1/projects/${pid}/databases/(default)/documents:runQuery`, { method:'POST',
       headers:{ Authorization:'Bearer '+at, 'Content-Type':'application/json' },
       body: JSON.stringify({ structuredQuery:{ from:[{ collectionId:'pushlog' }], where:{ fieldFilter:{ field:{ fieldPath:'t1' }, op:'GREATER_THAN', value:{ integerValue:'0' } } }, orderBy:[{ field:{ fieldPath:'t1' }, direction:'DESCENDING' }], limit:30 } }) });
