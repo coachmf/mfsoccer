@@ -2265,7 +2265,7 @@ html[dir="ltr"] .tl-ev.a .tl-card{text-align:right;align-items:flex-end}
 <script src="admin-tabs.js?v=10" defer></script>
 <!-- كأس الخليج 27: قسم مستقل ببيانات منفصلة (seasons/gulf27) -->
 <link rel="stylesheet" href="gulf.css?v=18">
-<script src="gulf.js?v=50" defer></script>
+<script src="gulf.js?v=51" defer></script>
 <script src="livepush.js?v=11" defer></script>
 <script src="fantasy/js/push.js?v=288" defer></script>
 <script src="notify.js?v=8" defer></script>
@@ -2273,8 +2273,8 @@ html[dir="ltr"] .tl-ev.a .tl-card{text-align:right;align-items:flex-end}
 <link rel="stylesheet" href="efftime.css?v=4">
 <script src="efftime.js?v=15" defer></script>
 <link rel="stylesheet" href="div1.css?v=5">
-<script src="div1.js?v=8" defer></script>
-<script src="amateur.js?v=7" defer></script>   <!-- دوري الهواة: النتائج والترتيب فقط (seasons/amateur) -->
+<script src="div1.js?v=9" defer></script>
+<script src="amateur.js?v=8" defer></script>   <!-- دوري الهواة: النتائج والترتيب فقط (seasons/amateur) -->
 <link rel="stylesheet" href="news.css?v=5">
 <script src="news.js?v=11" defer></script>   <!-- الأخبار: news/{id} + فهرس seasons/news + صور newsimg/{id} -->   <!-- دوري الدرجة الأولى: الترتيب والمباريات فقط (seasons/div1) -->
 <link rel="stylesheet" href="ext.css?v=3">
@@ -3152,7 +3152,7 @@ function extTableHTML(c, evs, hl){
     return `<div class="hm xt-hm"><section class="hm-std xt">
       <h2 class="sec">جدول الترتيب<span class="sq-n">${esc(g.name)}</span></h2>
       <div class="hm-card hm-tblwrap"><table class="hm-tbl">
-        <thead><tr><th class="c">#</th><th class="club">الفريق</th><th>ل</th><th>ف</th><th>ت</th><th>خ</th><th>+/-</th><th class="pts">ن</th><th class="frm">الفورمة</th></tr></thead>
+        <thead><tr><th class="c">#</th><th class="club">الفريق</th><th>ل</th><th>ف</th><th>ت</th><th>خ</th><th><bdi dir="ltr">+/-</bdi></th><th class="pts">ن</th><th class="frm">الفورمة</th></tr></thead>
         <tbody>${rows.map((r,i)=>`<tr class="${i<2&&!c.noQ?"champ":""}${extIsKw(r.x)?" kw":""}"${hl&&hl.some(h=>h===r.key||h.startsWith(r.key+" ")||r.key.startsWith(h+" "))?' data-mp-hl="1"':""}${r.x.t==="club"?` data-club-open="${esc(r.x.n)}"`:""}>
           <td class="c">${i+1}</td>
           <td class="club"><span>${extTeamCell(r.x)}</span></td>
@@ -14705,7 +14705,7 @@ function hmStandingsHTML(T){
   return `<section class="hm-std">
     <h2 class="sec">جدول الترتيب<span class="sq-n">الدوري · ${esc(SEASON)}</span></h2>
     <div class="hm-card hm-tblwrap"><table class="hm-tbl">
-      <thead><tr><th class="c">#</th><th class="club">النادي</th><th>ل</th><th>ف</th><th>ت</th><th>خ</th><th class="gfa">له:عليه</th><th>+/-</th><th class="pts">ن</th><th class="frm">الفورمة</th></tr></thead>
+      <thead><tr><th class="c">#</th><th class="club">النادي</th><th>ل</th><th>ف</th><th>ت</th><th>خ</th><th class="gfa">له:عليه</th><th><bdi dir="ltr">+/-</bdi></th><th class="pts">ن</th><th class="frm">الفورمة</th></tr></thead>
       <tbody>${T.map((r,i)=>`<tr class="${i<4?"champ":""}${i>=n-2?" rel":""}" data-club-open="${esc(r.c)}">
         <td class="c">${i+1}</td>
         <td class="club"><span>${crest(r.c)}<b>${esc(r.c)}</b></span></td>
@@ -15619,7 +15619,7 @@ function mpMiniTable(m){
   const rows=[m.home,m.away].map(c=>({r:T.find(x=>x.c===c), i:T.findIndex(x=>x.c===c)})).filter(x=>x.r).sort((a,b)=>a.i-b.i);
   if(!rows.length) return "";
   return `<div class="mp-card"><div class="mp-hd"><h3>الترتيب</h3><button type="button" class="mp-link" data-mp-tab="table">الجدول كاملاً</button></div>
-    <table class="mp-tbl"><thead><tr><th>#</th><th class="club">النادي</th><th>ل</th><th>+/-</th><th>ن</th><th class="frm">الفورمة</th></tr></thead>
+    <table class="mp-tbl"><thead><tr><th>#</th><th class="club">النادي</th><th>ل</th><th><bdi dir="ltr">+/-</bdi></th><th>ن</th><th class="frm">الفورمة</th></tr></thead>
     <tbody>${rows.map(({r,i})=>`<tr data-club-open="${esc(r.c)}"><td>${i+1}</td><td class="club"><span>${crest(r.c)}<b>${esc(r.c)}</b></span></td>
       <td>${r.P}</td><td dir="ltr">${r.GD>0?"+":""}${r.GD}</td><td class="pts">${r.Pts}</td><td class="frm">${formPills(r.form)}</td></tr>`).join("")}</tbody></table></div>`;
 }

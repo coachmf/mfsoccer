@@ -426,7 +426,7 @@ function matchCard(m){
 function groupsHTML(){
   return GROUPS.map(([g,t])=>{ const rows = table(g), ms = (DATA.matches||[]).filter(m=>T[m.home]&&T[m.home].g===g&&m.round<=3).sort((a,b)=>String(a.date).localeCompare(String(b.date))||String(a.time).localeCompare(String(b.time)));
     return `<section class="gc-card"><h3>${t}</h3>
-      <div class="gc-tw"><table class="gc-tbl"><thead><tr><th>#</th><th class="tl">المنتخب</th><th>لعب</th><th>ف</th><th>ت</th><th>خ</th><th>له</th><th>عليه</th><th>+/-</th><th>ن</th></tr></thead>
+      <div class="gc-tw"><table class="gc-tbl"><thead><tr><th>#</th><th class="tl">المنتخب</th><th>لعب</th><th>ف</th><th>ت</th><th>خ</th><th>له</th><th>عليه</th><th><bdi dir="ltr">+/-</bdi></th><th>ن</th></tr></thead>
       <tbody>${rows.map((r,i)=>`<tr class="${i<2?"q":""}" data-gteam="${H(r.c)}"><td>${i+1}</td><td class="tl"><span class="gc-tn">${flagImg(r.c)}${H(r.c)}</span></td><td>${r.p}</td><td>${r.w}</td><td>${r.d}</td><td>${r.l}</td><td>${r.gf}</td><td>${r.ga}</td><td dir="ltr">${r.gf-r.ga>0?"+":""}${r.gf-r.ga}</td><td><b>${r.pts}</b></td></tr>`).join("")}</tbody></table></div>
       <p class="gc-hint">يتأهل الأول والثاني إلى نصف النهائي.</p>
       <div class="gc-ms">${ms.length?ms.map(matchCard).join(""):`<div class="gc-empty">لم تُضف مباريات هذه المجموعة بعد.</div>`}</div></section>`; }).join("")
