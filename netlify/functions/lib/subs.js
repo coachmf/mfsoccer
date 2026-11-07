@@ -2,6 +2,8 @@
    بالتوازي على دفعات حتى لا تتجاوز الدالة مهلتها. 'all' مسموح في الإزالة فقط (خروج الجهاز من الموضوع القديم). */
 'use strict';
 const { TOPIC_RX } = require('./topics');
+const REG = require('./reg');
+const { serviceAccount } = require('./google');
 const MAX = 300, PAR = 16;
 
 async function applyTopics(at, tokens, add, remove){
@@ -10,6 +12,17 @@ async function applyTopics(at, tokens, add, remove){
   remove = [...new Set(remove)].filter(t => t === 'all' || okT(t)).filter(t => add.indexOf(t) < 0);
   tokens = tokens.filter(t => typeof t === 'string' && t.length >= 100 && t.length <= 4096 && !/[^\w:.\-]/.test(t)).slice(0, 20);
   if(!tokens.length) return { ok:false, err:'رمز جهاز غير صالح' };
+  /* أجهزة التطبيق على الإرسال المباشر (السجل، x): تتغيّر مواضيعها في السجل لا في FCM — وإلا عادت إليها نسخة الموضوع فتتكرر */
+  try{
+    const pid = serviceAccount().project_id;
+    const ents = await Promise.all(tokens.map(t => REG.get(at, pid, t).catch(() => null)));
+    const appT = tokens.filter((t, i) => ents[i] && ents[i].x);
+    for(const t of appT){ const e = ents[tokens.indexOf(t)];
+      const p = e.p.filter(x => remove.indexOf(x) < 0).concat(add.filter(x => e.p.indexOf(x) < 0));
+      await REG.put(at, pid, t, p, true); }
+    tokens = tokens.filter(t => appT.indexOf(t) < 0);
+    if(!tokens.length) return { ok:true, n:0, direct:appT.length };
+  }catch(e){}
   if(add.length + remove.length > MAX) return { ok:false, err:'مواضيع أكثر من المسموح' };
   const jobs = add.map(t => ['batchAdd', t]).concat(remove.map(t => ['batchRemove', t]));
   let fail = 0, lastErr = '';

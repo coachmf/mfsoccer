@@ -96,27 +96,9 @@ exports.handler = async (event) => {
       android:{ priority:'HIGH', notification:{ sound:'default', default_vibrate_timings:true } },
       webpush:{ headers:{ Urgency:'high', TTL:'600' }, fcm_options:{ link } } });
 
-    /* الإرسال المباشر لأجهزة الويب المسجّلة — يبدأ مع إرسال الموضوع لا بعده (رمز بعينه للتشخيص لا يحتاجه) */
+    /* الإرسال المباشر لأجهزة السجل (ويب + تطبيق الآيفون) — يبدأ مع إرسال الموضوع لا بعده (رمز التشخيص لا يحتاجه) */
     let direct = { n:0, ok:0, gone:0 };
-    const directP = token ? Promise.resolve() : (async () => {
-      const want = new Set();
-      targets.forEach(t => { if(t.topic) want.add(t.topic); if(t.condition) REG.namesOf(t.condition).forEach(x => want.add(x)); });
-      const list = (await REG.all(at, projectId)).filter(d => d.p.some(x => want.has(x))).slice(0, 4000);
-      direct.n = list.length;
-      const PAR = 64;
-      for(let i = 0; i < list.length; i += PAR){
-        await Promise.all(list.slice(i, i + PAR).map(async d => {
-          try{
-            const r = await fetch(`https://fcm.googleapis.com/v1/projects/${projectId}/messages:send`, { method:'POST',
-              headers:{ Authorization:'Bearer '+at, 'Content-Type':'application/json' },
-              body: JSON.stringify({ message: msgOf({ token: d.t }) }) });
-            if(r.ok){ direct.ok++; return; }
-            /* رمز لم يعد صالحاً: يُحذف من السجل */
-            if(r.status === 404 || r.status === 400){ const j = await r.json().catch(() => ({})); if(/UNREGISTERED|INVALID_ARGUMENT|not a valid FCM/i.test(JSON.stringify(j))){ direct.gone++; await REG.del(at, projectId, d.t).catch(() => {}); } }
-          }catch(e){}
-        }));
-      }
-    })().catch(() => {});
+    const directP = token ? Promise.resolve() : REG.sendDirect(at, projectId, targets.map(t => Object.assign({}, t)), msgOf({})).then(r => { direct = r; }).catch(() => {});
 
     /* الأهداف معاً بالتوازي (شرط التفضيلات + all القديم) */
     const outs = await Promise.all(targets.map(async t => {

@@ -78,11 +78,32 @@ const PUSH = {
     if(!this.enabled()) return;
     /* جهاز على لوحة تفضيلات الإشعارات (notif-prefs.js): يُعاد ربط مواضيعه المختارة، لا موضوع «all» القديم */
     const np = typeof NPREF !== 'undefined' && NPREF.v2 && NPREF.v2();
-    if(this.iosApp()){ if(!this.iosBridge()) return; if(np){ NPREF.sync().catch(()=>{}); return; } this._ios.topic(true); return; }
+    if(this.iosApp()){ if(!this.iosBridge()) return; this._appDirect(np).catch(()=>{}); return; }
     if(!this.supported()) return;
     if(Notification.permission !== 'granted'){ this._off(); return; }
     try{ const t = await this._token(); if(t){ if(np) await NPREF.sync(t); else await this._topic(t, false); this._regDirect(t); } }
     catch(e){ /* صامت — لا نزعج المستخدم عند الإقلاع */ }
+  },
+
+  /* تطبيق الآيفون (منصور 2026-11-07: «ابي بالابل ستور»): الجهاز يُسجَّل للإرسال المباشر عند كل إقلاع ويخرجه الخادم من كل
+     المواضيع (فلا تصله نسختان). إن تعذّر التسجيل نعود للطريقة القديمة: مواضيع التفضيلات أو «all» من الطبقة الأصلية. */
+  async _appDirect(np){
+    let ok = false;
+    try{
+      const t = await this._ios.token();
+      if(t && t !== 'ERROR GET TOKEN'){
+        const tp = np ? NPREF.topics(NPREF.prefs) : ['all'];
+        const r = await fetch('/.netlify/functions/push-subscribe', { method:'POST', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({ token:String(t), reg:tp, app:1 }) });
+        const j = await r.json().catch(()=>({}));
+        ok = r.ok && j.ok;
+        /* التفضيلات تبقى محفوظة في الحساب؛ الخادم يحدّث السجل بدل مواضيع FCM لأجهزة التطبيق */
+        if(ok && np) NPREF.sync(String(t)).catch(()=>{});
+      }
+    }catch(e){}
+    try{ localStorage.setItem('mf_push_app', ok ? '1' : ''); }catch(e){}
+    if(!ok){ if(np) NPREF.sync().catch(()=>{}); else this._ios.topic(true); }
+    return ok;
   },
 
   /* سجل الإرسال المباشر (netlify/functions/lib/reg.js — منصور 2026-11-07: الإشعار يتأخر دقيقة عبر المواضيع):
@@ -177,6 +198,10 @@ const PUSH = {
       this._off();
       this._ios.topic(false);
       if(typeof NPREF !== 'undefined') NPREF.unsync().catch(()=>{});
+      /* يُحذف من سجل الإرسال المباشر — وإلا بقيت تصله الإشعارات بعد الإيقاف */
+      this._ios.token().then(t => { if(t && t !== 'ERROR GET TOKEN') fetch('/.netlify/functions/push-subscribe', { method:'POST',
+        headers:{'Content-Type':'application/json'}, body: JSON.stringify({ token:String(t), unsubscribe:true }) }).catch(()=>{}); }).catch(()=>{});
+      try{ localStorage.setItem('mf_push_app',''); }catch(e){}
       this._say('أُوقفت الإشعارات'); this._re(); return;
     }
     try{
@@ -196,8 +221,9 @@ const PUSH = {
       }
       try{ localStorage.setItem(this.KEY,'1'); }catch(e){}
       /* المواضيع المختارة عبر الخادم برمز الجهاز نفسه؛ إن تعذّر نعود للموضوع العام من الطبقة الأصلية */
-      const np = typeof NPREF !== 'undefined' ? await NPREF.sync(String(t)) : null;
-      if(!np || !np.ok) this._ios.topic(true);
+      const npOn = typeof NPREF !== 'undefined' && NPREF.v2 && NPREF.v2();
+      const okD = await this._appDirect(npOn);
+      if(!okD){ const np = typeof NPREF !== 'undefined' ? await NPREF.sync(String(t)) : null; if(!np || !np.ok) this._ios.topic(true); }
       this._say('تم التفعيل — اختر ما يصلك من «الإشعارات»');
     }catch(e){
       this._say('تعذّر تفعيل الإشعارات', true);

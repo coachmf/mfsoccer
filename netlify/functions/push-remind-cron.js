@@ -6,6 +6,7 @@
 'use strict';
 const { accessToken } = require('./lib/google');
 const { condition } = require('./lib/topics');
+const REG = require('./lib/reg');
 
 const PROJECT = 'mfsoccer-c7ee4';
 const SEASON = '2026-2027';
@@ -95,6 +96,11 @@ async function run(){
           webpush:{ headers:{ Urgency:'high' }, fcm_options:{ link } } } }) });
       if(r.ok) okAny = true; else console.error('remind send', r.status, cond, (await r.text()).slice(0, 200));
     }
+    /* أجهزة التطبيق خرجت من المواضيع (الإرسال المباشر) — تصلها التذكيرات مباشرة */
+    try{ const dr = await REG.sendDirect(at, PROJECT, conds.map(condition => ({ condition })), {
+        notification:{ title: `الانطلاق بعد ${mins} دقيقة`, body: `${m.home} × ${m.away}${m.venue ? ' · ' + m.venue : ''}` },
+        data:{ ev:d, url:link }, apns:{ headers:{ 'apns-priority':'10' }, payload:{ aps:{ sound:'default' } } } }, x => x.x);
+      if(dr.ok) okAny = true; }catch(e){}
     if(okAny) sent.push(sig);
   }
   const KW_D = ['الأحد','الإثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت'];
@@ -118,6 +124,10 @@ async function run(){
           webpush:{ headers:{ Urgency:'high' }, fcm_options:{ link } } } }) });
       if(r.ok) okAny = true; else console.error('fd send', r.status, cond, (await r.text()).slice(0, 200));
     }
+    try{ const dr = await REG.sendDirect(at, PROJECT, conds.map(condition => ({ condition })), {
+        notification:{ title: `ديدلاين الفانتسي ${f.lbl}`, body: `الجولة ${f.gw} · آخر موعد للتعديل ${kwLabel(f.t)} — راجع تشكيلتك` },
+        data:{ ev:'fd', url:link }, apns:{ headers:{ 'apns-priority':'10' }, payload:{ aps:{ sound:'default' } } } }, x => x.x);
+      if(dr.ok) okAny = true; }catch(e){}
     if(okAny) sent.push(sig);
   }
 
