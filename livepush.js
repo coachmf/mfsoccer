@@ -105,7 +105,18 @@ window.LIVEPUSH = {
     const R = {r:m.round, comp};
     const E = (d, side) => ({ d, comp, home:m.home, away:m.away, side: side||'' });
     const score = () => m.home + ' ' + this._scoreNow(m, cur.goals) + ' ' + m.away;
-    const add = (pri, sig, title, body, ev, legacy, parent) => { if(!this._seen(sig)) out.push({ pri, sig, title, body, ev, legacy: !!legacy, parent }); };
+    /* حدث مسجّل بأثر رجعي (منصور 2026-11-07: «اذا مر عشر دقايق… وسجلته باثر رجعي ما يدز اشعار») — دقيقته أقدم من ساعة
+       المباراة بأكثر من 5 دقائق (منصور: «خله خمس دقايق»)، أو أُضيف بعد أن كانت المباراة منتهية أصلاً: يُحفظ بلا إشعار. EM = دقيقة الحدث الحالي */
+    const stNow = (cur.match && cur.match.status) || m.status || '', stB = (base.match && base.match.status) || '';
+    const clk = (() => { const mm = Object.assign({}, m, cur.match || {});
+      const pm = (typeof phaseMinute === 'function') ? String(phaseMinute(mm) || '') : '';
+      const a = /^(\d+)(?:\+(\d+))?/.exec(pm); if(a) return (+a[1]) + (+a[2] || 0);
+      return stNow === 'ht' ? 45 : null; })();
+    const ended = stB === 'ft';
+    let EM = null;
+    const late = () => EM != null && (ended || (clk != null && clk - EM > 5));
+    const evMin = x => (+x.m || 0) + (+x.x || 0);
+    const add = (pri, sig, title, body, ev, legacy, parent) => { if(late()) return; if(!this._seen(sig)) out.push({ pri, sig, title, body, ev, legacy: !!legacy, parent }); };
     const isRedT = t => (typeof isRed === 'function') ? isRed(t) : /طرد|ثانٍ/.test(t||'');
 
     /* ——— الأهداف ——— */
@@ -114,6 +125,7 @@ window.LIVEPUSH = {
     const pens = cur.pens || [];
     (cur.goals||[]).forEach(g => {
       if(hadG.has(gk(g)) || this._np(g)) return;
+      EM = evMin(g);
       const og = g.bp === 'هدف عكسي';
       const who = og ? (g.og || g.p) + ' (هدف عكسي)' : g.p;
       const ast = (!og && g.a) ? ' · صناعة ' + g.a : '';
@@ -133,6 +145,7 @@ window.LIVEPUSH = {
     const hadC = new Set((base.cards||[]).map(ck));
     (cur.cards||[]).forEach((c, i) => {
       if(hadC.has(ck(c)) || this._np(c)) return;
+      EM = evMin(c);
       /* الإنذار الثاني: صريحاً أو إنذار ثانٍ لنفس اللاعب في المباراة (الترقية الآلية في الموقع) */
       const second = c.type === 'إنذار ثانٍ' || (c.type === 'إنذار' && (cur.cards||[]).some((o, j) => j !== i && o.p === c.p && o.club === c.club && o.type === 'إنذار' && ((+o.m||0) + (+o.x||0)/100) < ((+c.m||0) + (+c.x||0)/100)));
       const body = c.p + ' ' + this._mm(c) + ' · ' + score();
@@ -150,6 +163,7 @@ window.LIVEPUSH = {
     const oldP = new Map((base.pens||[]).map(x => [pk(x), x]));
     const MISS = ['تصدى لها الحارس','خارج المرمى','القائم / العارضة'];
     pens.forEach(x => {
+      EM = evMin({m: x.rm || x.m});
       if(this._np(x)) return;
       const o = oldP.get(pk(x)), sig = this._sig('pa', Object.assign({club:x.by}, R, x));
       if(!o) add(2, sig, 'احتساب ركلة جزاء — ' + x.by, (x.p ? x.p + ' · ' : '') + this._mm(x) + ' · ' + score(), E('pa'));
@@ -164,12 +178,14 @@ window.LIVEPUSH = {
     const mk = x => x.uid || [x.k, x.club, x.p, x.m, x.x||0, x.note].join('|');
     const hadM = new Set((base.mev||[]).map(mk));
     (cur.mev||[]).forEach(x => {
+      EM = evMin(x);
       if(x.k !== 'var' || hadM.has(mk(x))) return;
       add(2, this._sig('var', Object.assign({club:x.club}, R, x)), 'مراجعة VAR — ' + m.home + ' × ' + m.away,
         (x.m ? this._mm(x) + ' · ' : '') + (String(x.note||'').trim() || 'الحكم يراجع اللقطة'), E('var'));
     });
 
     /* ——— مراحل المباراة من الحالة التي يختارها المحرّر ——— */
+    EM = null;   /* المراحل والتشكيلة ليست أحداثاً بدقيقة */
     const st0 = (base.match && base.match.status) || '', st = (cur.match && cur.match.status) || '';
     if(st && st !== st0){
       const PH = { h1:['ko','انطلاق المباراة', m.home + ' × ' + m.away],
@@ -193,17 +209,20 @@ window.LIVEPUSH = {
     const hadS = new Set((base.subs||[]).map(sk));
     const grp = {}, order = [];
     (cur.subs||[]).forEach(x => {
+      EM = evMin(x);
       if(!x.in || !x.out || hadS.has(sk(x)) || this._np(x)) return;
       const k = [x.club, +x.h||1, +x.m||0, +x.x||0].join('|');
       if(!grp[k]){ grp[k] = []; order.push(k); } grp[k].push(x);
     });
     order.forEach(k => {
       const L = grp[k], x = L[0];
+      EM = evMin(x);
       const sig = L.map(y => this._sig('s', {r:m.round, comp, club:y.club, p:y.in + '>' + y.out, m:y.m, x:y.x, uid:y.uid})).join('+');
       if(L.length === 1) add(6, sig, '🔁 تبديل — ' + x.club, 'دخول ' + x.in + ' بدلاً من ' + x.out + (x.m ? ' ' + this._mm(x) : ''), E('sub'), true);
       else add(6, sig, '🔁 ' + (L.length === 2 ? 'تبديلان' : L.length + ' تبديلات') + ' — ' + x.club + (x.m ? ' ' + this._mm(x) : ''),
         L.map(y => 'خروج ' + y.out + ' | دخول ' + y.in).join('\n'), E('sub'), true);
     });
+    EM = null;
 
     /* ——— التشكيلتان: إشعار واحد حين تكتمل تشكيلة الفريقين معاً (منصور 2026-11-04: «لمن احط الفريقين يدزلي»)،
        ومعه خطة كل فريق — بدل إشعار لكل نادٍ وإشعار لكل خطة ——— */
