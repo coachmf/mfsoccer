@@ -253,6 +253,29 @@ const ADMIN = {
     if(now < last + 18*3600e3) return {ok:false, why:'waiting bonus'};
     return {ok:true, gw};
   },
+  /* مزامنة تلقائية للجولة على الخادم (منصور 2026-11-07: «كل جوله قاعده تصير مشاكل… سو كل شي»): أي جهاز مدير مفتوح يسحب
+     النتائج من الموقع ويقارنها بنسخة الخادم rounds/<gw>؛ مباراة انتهت (أو نتيجتها/بونصها مختلف) ← نشر الجولة فوراً.
+     كانت نتائج الجمعة لا تصل الخادم إلا حين ينشر أحد يدوياً. قفل 4 دقائق بين الأجهزة */
+  AUTO_SYNC_KEY:'kwf_autosync_at',
+  async autoSync(){
+    const st=DB.state;
+    if(typeof CLOUD==='undefined' || !CLOUD.admin || !st.fromCloud || this._autoSyncBusy) return;
+    try{ const l=+localStorage.getItem(this.AUTO_SYNC_KEY)||0; if(Date.now()-l < 4*60e3) return; }catch(e){}
+    this._autoSyncBusy=true;
+    try{
+      if(typeof MFSYNC!=='undefined') await MFSYNC.autoFixtures(true);
+      const gws=[...new Set((st.fixtures||[]).filter(f=>f.status==='F' && f.hs!=null).map(f=>f.gw))].filter(g=>g>=st.currentGW-1 && g<=st.currentGW);
+      for(const gw of gws){
+        const s=await CLOUD.round(gw).get({source:'server'}).catch(()=>null);
+        const srv=((s && s.exists && s.data().fixtures)||[]);
+        const sig=f=>[f.hs,f.as,!!f.over,(f.bonus||[]).filter(b=>b&&b.name).map(b=>b.name+b.pts).join('|')].join('/');
+        const diff=st.fixtures.filter(f=>f.gw===gw && f.status==='F' && f.hs!=null).some(f=>{ const o=srv.find(x=>x.id===f.id); return !o || sig(o)!==sig(f); });
+        if(diff){ try{ localStorage.setItem(this.AUTO_SYNC_KEY, String(Date.now())); }catch(e){}
+          const r=await CLOUD.publishRound(st, gw); console.log('autoSync gw', gw, r); }
+      }
+    }catch(e){ console.warn('autoSync', e); }
+    finally{ this._autoSyncBusy=false; }
+  },
   async autoFinalize(){
     const st=DB.state;
     if(typeof CLOUD==='undefined' || !CLOUD.admin || !st.fromCloud || this._autoFinBusy) return;

@@ -64,6 +64,10 @@
 [functions."push-remind-cron"]
   schedule = "*/5 * * * *"
 
+# فحص المباريات بعد كل يوم مباريات: تشكيلة ناقصة، نتيجة لم تُنشر في الفانتسي، بونص ناقص ← إشعار للإدارة (match-audit-cron.js)
+[functions."match-audit-cron"]
+  schedule = "*/10 * * * *"
+
 # ——— صور الأخبار من CDN (netlify/functions/newsimg.js) ———
 [[redirects]]
   from = "/api/newsimg/*"

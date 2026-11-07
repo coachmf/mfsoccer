@@ -174,6 +174,7 @@ const APP = {
       /* احتساب الجولة وفتح التالية تلقائياً عند اكتمالها (بعد سحب النتائج) — ثم كل 10 دقائق ما دامت اللعبة مفتوحة */
       if(CLOUD.admin && typeof ADMIN!=='undefined' && ADMIN.autoFinalize && !this._autoFinT){
         setTimeout(()=>ADMIN.autoFinalize(), 25000);
+        if(ADMIN.autoSync){ setTimeout(()=>ADMIN.autoSync(), 12000); this._autoSyncT=setInterval(()=>ADMIN.autoSync(), 5*60*1000); }   /* نشر النتائج للخادم تلقائياً */
         this._autoFinT=setInterval(()=>{ ADMIN.autoFinalize(); this.adminFixes(); this.syncPrices(); }, 10*60*1000);
       }
     });
