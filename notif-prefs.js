@@ -175,6 +175,8 @@ window.NPREF = (function(){
       const j = await r.json().catch(()=>({}));
       if(!r.ok || !j.ok) return {ok:false, why:'server', err:j.err||r.status};
       _set(SYNC, {tok, topics:want, at:Date.now()});
+      /* سجل الإرسال المباشر يتبع التفضيلات الجديدة فوراً (الويب فقط) */
+      try{ if(typeof PUSH !== 'undefined' && PUSH._regDirect){ try{ localStorage.removeItem('mf_push_reg'); }catch(e){} PUSH._regDirect(tok); } }catch(e){}
       return {ok:true};
     }catch(e){ return {ok:false, why:'net'}; }
   }

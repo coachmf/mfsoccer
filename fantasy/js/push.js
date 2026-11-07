@@ -81,8 +81,24 @@ const PUSH = {
     if(this.iosApp()){ if(!this.iosBridge()) return; if(np){ NPREF.sync().catch(()=>{}); return; } this._ios.topic(true); return; }
     if(!this.supported()) return;
     if(Notification.permission !== 'granted'){ this._off(); return; }
-    try{ const t = await this._token(); if(t){ if(np) await NPREF.sync(t); else await this._topic(t, false); } }
+    try{ const t = await this._token(); if(t){ if(np) await NPREF.sync(t); else await this._topic(t, false); this._regDirect(t); } }
     catch(e){ /* صامت — لا نزعج المستخدم عند الإقلاع */ }
+  },
+
+  /* سجل الإرسال المباشر (netlify/functions/lib/reg.js — منصور 2026-11-07: الإشعار يتأخر دقيقة عبر المواضيع):
+     رمز هذا الجهاز ومواضيعه يُرسلان للخادم مرة في اليوم أو عند تغيّرهما. متصفح الويب فقط — تطبيق الآيفون يبقى على المواضيع */
+  async _regDirect(t){
+    try{
+      if(!t || this.iosApp()) return;
+      const np = typeof NPREF !== 'undefined' && NPREF.v2 && NPREF.v2();
+      const tp = np ? NPREF.topics(NPREF.prefs) : ['all'];
+      const sig = t.slice(-24) + '|' + tp.slice().sort().join(',');
+      let o = null; try{ o = JSON.parse(localStorage.getItem('mf_push_reg') || 'null'); }catch(e){}
+      if(o && o.s === sig && Date.now() - o.at < 864e5) return;
+      const r = await fetch('/.netlify/functions/push-subscribe', { method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ token:t, reg:tp }) });
+      if(r.ok) try{ localStorage.setItem('mf_push_reg', JSON.stringify({ s:sig, at:Date.now() })); }catch(e){}
+    }catch(e){}
   },
 
   /* صفحة الفانتسي لا تسجّل sw.js — التسجيل في الصفحة الرئيسية وحدها.
@@ -142,6 +158,7 @@ const PUSH = {
       /* مع لوحة التفضيلات: الجهاز يشترك في مواضيع ما اختاره (الافتراضي = ما كان يصل الجميع) بدل «all» */
       const np = typeof NPREF !== 'undefined' ? await NPREF.sync(t) : null;
       if(!np || !np.ok) await this._topic(t, false);
+      this._regDirect(t);
       this._say('تم التفعيل — اختر ما يصلك من «الإشعارات»');
     }catch(e){
       console.warn('push enable failed', e);

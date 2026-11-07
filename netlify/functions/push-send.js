@@ -7,6 +7,7 @@
 'use strict';
 const { serviceAccount, accessToken, verifyIdToken } = require('./lib/google');
 const { FAMS, condition } = require('./lib/topics');
+const REG = require('./lib/reg');
 
 const OWNER_UID = 'iiTgVfDryXNLb9IrOyLkkNMHDxq2';
 
@@ -86,7 +87,36 @@ exports.handler = async (event) => {
       if(legacy) targets.push({ topic:'all' });
     }
     else targets = [{ condition: "'all' in topics || 'gen' in topics" }];
-    const data = { ev: (ev && ev.d) || 'gen', url: link };
+    /* id واحد للحدث: يصل الجهاز مرتين (مباشر + موضوع) فيعرضه خادم الخدمة مرة (sw.js: نفس الوسم بلا تنبيه ثانٍ) */
+    const id = Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+    const data = { ev: (ev && ev.d) || 'gen', url: link, id };
+
+    const msgOf = t => Object.assign(t, { notification:{ title, body }, data,
+      apns:{ headers:{ 'apns-priority':'10' }, payload:{ aps:{ sound:'default' } } },
+      android:{ priority:'HIGH', notification:{ sound:'default', default_vibrate_timings:true } },
+      webpush:{ headers:{ Urgency:'high', TTL:'600' }, fcm_options:{ link } } });
+
+    /* الإرسال المباشر لأجهزة الويب المسجّلة — يبدأ مع إرسال الموضوع لا بعده (رمز بعينه للتشخيص لا يحتاجه) */
+    let direct = { n:0, ok:0, gone:0 };
+    const directP = token ? Promise.resolve() : (async () => {
+      const want = new Set();
+      targets.forEach(t => { if(t.topic) want.add(t.topic); if(t.condition) REG.namesOf(t.condition).forEach(x => want.add(x)); });
+      const list = (await REG.all(at, projectId)).filter(d => d.p.some(x => want.has(x))).slice(0, 4000);
+      direct.n = list.length;
+      const PAR = 64;
+      for(let i = 0; i < list.length; i += PAR){
+        await Promise.all(list.slice(i, i + PAR).map(async d => {
+          try{
+            const r = await fetch(`https://fcm.googleapis.com/v1/projects/${projectId}/messages:send`, { method:'POST',
+              headers:{ Authorization:'Bearer '+at, 'Content-Type':'application/json' },
+              body: JSON.stringify({ message: msgOf({ token: d.t }) }) });
+            if(r.ok){ direct.ok++; return; }
+            /* رمز لم يعد صالحاً: يُحذف من السجل */
+            if(r.status === 404 || r.status === 400){ const j = await r.json().catch(() => ({})); if(/UNREGISTERED|INVALID_ARGUMENT|not a valid FCM/i.test(JSON.stringify(j))){ direct.gone++; await REG.del(at, projectId, d.t).catch(() => {}); } }
+          }catch(e){}
+        }));
+      }
+    })().catch(() => {});
 
     /* الأهداف معاً بالتوازي (شرط التفضيلات + all القديم) */
     const outs = await Promise.all(targets.map(async t => {
@@ -105,6 +135,7 @@ exports.handler = async (event) => {
       });
       return { ok: res.ok, out: await res.json().catch(() => ({})) };
     }));
+    await directP;
     /* سجل التوقيت (منصور 2026-11-07: الإشعار يتأخر 30–60 ث): متى فتح المحرّر الحدث (t0) ومتى أرسل جهازه (t1)
        ومتى وصل الخادم (tIn) ومتى ردّ FCM (tOut) — لمعرفة أين يضيع الوقت. مهلة قصيرة وأخطاؤه تُتجاهل */
     try{
@@ -113,7 +144,7 @@ exports.handler = async (event) => {
       await fetch(`https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/pushlog`, {
         method:'POST', signal: ctl.signal, headers:{ Authorization:'Bearer '+at, 'Content-Type':'application/json' },
         body: JSON.stringify({ fields:{ at:{ timestampValue: new Date(tS).toISOString() }, title:{ stringValue: title }, ev:{ stringValue: (ev && ev.d) || 'gen' },
-          t0: num(t0), t1: num(t1), tIn: num(T_IN), tOut: num(tS), quick:{ booleanValue: !!q }, ok:{ booleanValue: !outs.find(x => !x.ok) } } })
+          t0: num(t0), t1: num(t1), tIn: num(T_IN), tOut: num(tS), tDir: num(Date.now()), dN: num(direct.n), dOk: num(direct.ok), dGone: num(direct.gone), quick:{ booleanValue: !!q }, ok:{ booleanValue: !outs.find(x => !x.ok) } } })
       }).catch(() => {});
       clearTimeout(tm);
     }catch(e){}

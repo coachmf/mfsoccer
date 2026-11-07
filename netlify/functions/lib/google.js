@@ -22,9 +22,11 @@ function serviceAccount(){
 
 /* رمز وصول قصير العمر. نحتفظ به بين الاستدعاءات الساخنة فلا
    نُرهق خادم OAuth بطلب لكل إشعار. */
-let cached = { token:null, exp:0 };
+/* لكل نطاق رمزه: كانت ذاكرة واحدة تعيد رمز نطاق آخر إن اختلف النطاق في الاستدعاء نفسه */
+const CACHED = new Map();
 async function accessToken(scope){
   const now = Math.floor(Date.now()/1000);
+  const cached = CACHED.get(scope) || { token:null, exp:0 };
   if(cached.token && cached.exp - 60 > now) return cached.token;
 
   const sa = serviceAccount();
@@ -45,8 +47,8 @@ async function accessToken(scope){
   });
   const j = await res.json();
   if(!res.ok || !j.access_token) throw new Error('تعذّر الحصول على رمز وصول: '+JSON.stringify(j));
-  cached = { token: j.access_token, exp: now + (j.expires_in||3600) };
-  return cached.token;
+  CACHED.set(scope, { token: j.access_token, exp: now + (j.expires_in||3600) });
+  return j.access_token;
 }
 
 /* شهادات Google العامة للتحقّق من رموز Firebase — تتغيّر كل بضع ساعات */

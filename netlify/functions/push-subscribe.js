@@ -5,6 +5,7 @@
 'use strict';
 const { accessToken } = require('./lib/google');
 const { applyTopics } = require('./lib/subs');
+const REG = require('./lib/reg');
 
 const CORS = {
   'Access-Control-Allow-Origin': 'https://mfsoccer.com',
@@ -18,8 +19,8 @@ exports.handler = async (event) => {
   if(event.httpMethod !== 'POST')
     return { statusCode:405, headers:CORS, body: JSON.stringify({ok:false, err:'POST فقط'}) };
 
-  let token, unsubscribe, info, add, remove;
-  try{ ({ token, unsubscribe, info, add, remove } = JSON.parse(event.body||'{}')); }
+  let token, unsubscribe, info, add, remove, reg;
+  try{ ({ token, unsubscribe, info, add, remove, reg } = JSON.parse(event.body||'{}')); }
   catch(e){ return { statusCode:400, headers:CORS, body: JSON.stringify({ok:false, err:'جسم غير صالح'}) }; }
 
   /* رموز FCM طويلة ومحدودة الأحرف — نرفض ما لا يشبهها قبل أي نداء */
@@ -27,7 +28,15 @@ exports.handler = async (event) => {
     return { statusCode:400, headers:CORS, body: JSON.stringify({ok:false, err:'رمز جهاز غير صالح'}) };
 
   try{
-    const at = await accessToken('https://www.googleapis.com/auth/firebase.messaging');
+    const at = await accessToken('https://www.googleapis.com/auth/firebase.messaging https://www.googleapis.com/auth/datastore');
+    const pid = require('./lib/google').serviceAccount().project_id;
+
+    /* سجل الإرسال المباشر (lib/reg.js): الجهاز يرسل مواضيعه الحالية مرة في اليوم أو عند تغيّرها؛ إيقاف الإشعارات يحذفه */
+    if(Array.isArray(reg)){
+      const ok = await REG.put(at, pid, token, reg.filter(t => typeof t === 'string'));
+      return { statusCode: ok?200:502, headers:CORS, body: JSON.stringify({ok}) };
+    }
+    if(unsubscribe) await REG.del(at, pid, token).catch(() => {});
 
     /* تشخيص: يقرأ عضوية الرمز من FCM نفسه — الطريق الوحيد للتأكد
        أن الاشتراك ثبت فعلاً بدل الاكتفاء بنجاح نداء الاشتراك. */

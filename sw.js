@@ -9,7 +9,7 @@
 
    عند كل نشر: ارفع رقم VER فتُبنى ذاكرة جديدة وتُحذف القديمة.
    ========================================================= */
-const VER   = 'mf-2026-11-07-697';
+const VER   = 'mf-2026-11-07-698';
 const SHELL = 'shell-' + VER;
 const RUN   = 'run-'   + VER;
 
@@ -193,6 +193,17 @@ function npQuiet(P, ev) {
   return f <= t ? (m >= f && m < t) : (m >= f || m < t);
 }
 
+/* آخر 60 معرّف إشعار وصل هذا الجهاز (ذاكرة mf-np) */
+async function seenPush(id) {
+  try {
+    const c = await caches.open('mf-np'), r = await c.match('/__ids');
+    const a = r ? await r.json() : [];
+    if (a.indexOf(id) >= 0) return true;
+    a.push(id); await c.put('/__ids', new Response(JSON.stringify(a.slice(-60)), { headers: { 'Content-Type': 'application/json' } }));
+    return false;
+  } catch (err) { return false; }
+}
+
 self.addEventListener('push', e => {
   let p = {};
   try { p = e.data ? e.data.json() : {}; } catch (err) { p = {}; }
@@ -201,8 +212,12 @@ self.addEventListener('push', e => {
   const body  = n.body  || n.message || '';
   const url   = (p.fcmOptions && p.fcmOptions.link) || (p.data && p.data.url) || n.click_action || '/';
   const ev    = (p.data && p.data.ev) || '';
+  const id    = (p.data && p.data.id) || '';
   e.waitUntil((async () => {
     const P = await npPrefs();
+    /* الحدث نفسه قد يصل مرتين (إرسال مباشر + موضوع، منصور 2026-11-07): نفس الوسم بلا تنبيه ثانٍ.
+       لا نتجاهله كلياً — Safari يلغي الاشتراك إن وصل إشعار بلا عرض */
+    const dup = id ? await seenPush(id) : false;
     /* صفحة مفتوحة ظاهرة: هي تشغّل الصوت المختار للحدث، فالإشعار نفسه صامت حتى لا يتداخل الصوتان */
     const cs = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
     /* صامت فقط إن كانت صفحة ظاهرة فتحت الصوت فعلاً — وإلا صوت النظام واهتزازه (كان الإشعار صامتاً والصفحة عاجزة عن التشغيل) */
@@ -214,10 +229,10 @@ self.addEventListener('push', e => {
       badge: '/icon-192.png',
       dir: 'rtl',
       lang: 'ar',
-      tag: n.tag || ('mf-' + (ev || 'x') + '-' + Date.now()),   /* كل حدث إشعار مستقل — لا يمحو الهدفُ الثاني الأول */
-      renotify: true,
+      tag: n.tag || (id ? 'mf-' + id : ('mf-' + (ev || 'x') + '-' + Date.now())),   /* كل حدث إشعار مستقل — لا يمحو الهدفُ الثاني الأول */
+      renotify: !dup,
       vibrate: [200, 100, 200],   /* أندرويد/كروم — الآيفون يتبع إعدادات النظام */
-      silent: seen || npQuiet(P, ev),
+      silent: dup || seen || npQuiet(P, ev),
       data: { url }
     });
   })());
