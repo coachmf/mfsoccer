@@ -612,19 +612,17 @@ const ADMIN = {
     if(!CLOUD.admin){ UI.toast('سجّل دخول المدير في السحابة أولاً', true); return; }
     if(!st.fromCloud){ UI.toast('قائمة اللاعبين على هذا الجهاز ليست النسخة المنشورة — أعد تحميل الصفحة ثم أكّد', true); return; }
     if(P.some(p=>!(p.price>0))){ UI.toast('حدّد سعراً لكل لاعب قبل التأكيد', true); return; }
-    /* قد يكون اللاعب أُكّد من جهاز آخر بعد السحب: لا نكرّره، ونمنع تصادم المعرّفات مع القائمة المنشورة */
-    let maxId=st.players.reduce((m,p)=>Math.max(m, +String(p.id).replace(/\D/g,'')||0), 0);
-    let dup=0;
-    P.forEach(p=>{
-      if(st.players.some(x=>x.club===p.club && MFSYNC.norm(x.name)===MFSYNC.norm(p.name))){ dup++; return; }
-      if(st.players.some(x=>x.id===p.id)) p.id='p'+(++maxId);
-      delete p.newAt; p.status='a'; p.startPrice=p.price; st.players.push(p);
-    });
-    st.pending=[]; DB.save(); APP.render();
-    if(dup) UI.toast(`${dup} لاعب كان مؤكّداً من قبل فتُجوهل`);
+    /* التكرار وتصادم المعرّفات يُفحصان مقابل قائمة الخادم داخل publishNewPlayers (القائمة المحلية قد تحوي لاعبين لم يُنشروا) */
+    const fresh=P.map(p=>{ const q={...p, status:'a', startPrice:p.price}; delete q.newAt; return q; });
+    /* ينشر الجدد وحدهم في قائمة الخادم (لا «نشر اللعبة» الثقيل)؛ ولا تُفرَّغ قائمة الانتظار إلا بعد نجاح النشر — كانت تُفرَّغ قبله فيضيع اللاعبون لو انقطع */
     UI.toast('جاري نشر اللاعبين الجدد للمشتركين…');
-    const r=await CLOUD.publishGame(st);
-    if(r.ok) UI.toast(`نُشر ${P.length} لاعباً جديداً للجميع`); else UI.toast(r.err||'تعذّر النشر — انشر اللعبة يدوياً', true);
+    const r=await CLOUD.publishNewPlayers(fresh);
+    if(!r.ok){ UI.toast((r.err||'تعذّر النشر')+' — بقوا في قائمة الانتظار، أعد المحاولة', true); return; }
+    /* دمج لا استبدال: أسعار المدير المحلية غير المنشورة تبقى كما هي */
+    (r.added||[]).forEach(q=>{ if(!st.players.some(x=>x.id===q.id || (x.club===q.club && MFSYNC.norm(x.name)===MFSYNC.norm(q.name)))) st.players.push(q); });
+    st.pending=[]; DB.save(); APP.render();
+    const n=(r.added||[]).length, dup=fresh.length-n;
+    UI.toast(n ? `نُشر ${n} لاعباً جديداً للجميع${dup?` · ${dup} كان منشوراً من قبل`:''}` : 'كل اللاعبين منشورون من قبل');
   },
   /* الحالة تُنشر فوراً للمشتركين (منصور 2026-10-16) بدل أن تبقى على جهاز المدير حتى «نشر اللعبة» */
   async setStatus(pid,val){

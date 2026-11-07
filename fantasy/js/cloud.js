@@ -920,6 +920,30 @@ const CLOUD = {
     return r.ok ? {ok:true} : {ok:false, err: r.timeout ? 'الاتصال بطيء — لم تُنشر الحالة' : this.errAr(r.err)};
   },
 
+  /* لاعبون جدد فقط (منصور 2026-11-07: «ليش ما انتشروا الاعبين الجدد») — كان «تأكيد ونشر» يستدعي publishGame الثقيل
+     فتنتهي مهلة مستند اللعبة على الجوال (9 ث) ولا يصل اللاعبون للخادم. هنا نقرأ قائمة الخادم ونضيف الجدد وحدهم
+     (بلا تكرار، ومعرّف جديد لو تصادم) بمهلة أطول، وإن تعذّر فعبر دالة الخادم /api/fantasy-players. */
+  async publishNewPlayers(players){
+    if(!this.admin) return {ok:false, err:'النشر للمدير فقط'};
+    const g = await this.race(this.playersDoc().get({source:'server'}), 30000);
+    if(!g.ok) return {ok:false, err: g.timeout ? 'الاتصال بطيء — لم يكتمل النشر' : this.errAr(g.err)};
+    const d = g.v.data()||{}; const list = (d.list||[]).slice();
+    const norm = s => (typeof MFSYNC!=='undefined' ? MFSYNC.norm(s) : String(s||'').trim());
+    let mx = list.reduce((m,p)=>Math.max(m, +String(p.id).replace(/\D/g,'')||0), 0);
+    const added = [];
+    (players||[]).forEach(p=>{
+      if(list.some(x=>x.club===p.club && norm(x.name)===norm(p.name))) return;
+      const q = {...p}; delete q.newAt;
+      if(list.some(x=>x.id===q.id)) q.id = 'p'+(++mx);
+      list.push(q); added.push(q);
+    });
+    if(!added.length) return {ok:true, added};
+    const updated = new Date().toISOString();
+    let r = await this.race(this.playersDoc().update({list, updated}), 30000);
+    if(!r.ok) r = await this.serverPlayers(list, d.priceVer || (typeof SEED_PRICE_VER!=='undefined'? SEED_PRICE_VER : 1), updated);
+    return r.ok ? {ok:true, added, list} : {ok:false, err: r.timeout ? 'الاتصال بطيء — لم يكتمل النشر' : 'تعذّر نشر اللاعبين الجدد'};
+  },
+
   async publishGame(st){
     if(!this.admin) return {ok:false, err:'الاحتساب والنشر للمدير فقط'};
     if(await this.newerElsewhere()) return {ok:false, err:'نُشرت نسخة أحدث من جهاز مدير آخر — أعد تحميل الصفحة ثم انشر'};
