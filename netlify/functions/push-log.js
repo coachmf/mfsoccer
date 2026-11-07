@@ -12,8 +12,14 @@ exports.handler = async (event) => {
   try{
     const pid = serviceAccount().project_id;
     const uid = await verifyIdToken(auth.replace(/^Bearer /, ''), pid);
-    if(uid !== OWNER_UID) return { statusCode:403, headers:CORS, body: JSON.stringify({ok:false}) };
     const at = await accessToken('https://www.googleapis.com/auth/datastore https://www.googleapis.com/auth/firebase.messaging');
+    /* المالك أو عضو فعّال في فريق العمل (seasons/staff) */
+    if(uid !== OWNER_UID){
+      const sr = await fetch(`https://firestore.googleapis.com/v1/projects/${pid}/databases/(default)/documents/seasons/staff`, { headers:{ Authorization:'Bearer '+at } });
+      const d = sr.ok ? await sr.json() : {}; const mem = d.fields && d.fields.members && d.fields.members.mapValue && d.fields.members.mapValue.fields;
+      const me = mem && mem[uid] && mem[uid].mapValue && mem[uid].mapValue.fields;
+      if(!(me && me.active && me.active.booleanValue === true)) return { statusCode:403, headers:CORS, body: JSON.stringify({ok:false, uid}) };
+    }
     const r = await fetch(`https://firestore.googleapis.com/v1/projects/${pid}/databases/(default)/documents:runQuery`, { method:'POST',
       headers:{ Authorization:'Bearer '+at, 'Content-Type':'application/json' },
       body: JSON.stringify({ structuredQuery:{ from:[{ collectionId:'pushlog' }], where:{ fieldFilter:{ field:{ fieldPath:'t1' }, op:'GREATER_THAN', value:{ integerValue:'0' } } }, orderBy:[{ field:{ fieldPath:'t1' }, direction:'DESCENDING' }], limit:30 } }) });
