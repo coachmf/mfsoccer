@@ -232,8 +232,12 @@ window.LIVEPUSH = {
       if(u && u.getIdToken) tok = await u.getIdToken();
     }catch(e){}
     if(!tok){ if(early) this._unmark(list.map(n => n.sig)); if(typeof toast === 'function') toast('البثّ يحتاج تسجيل دخول المحرّر','err'); return; }
-    /* كل الإشعارات معاً بالتوازي (كانت واحداً بعد الآخر) */
-    const res = await Promise.all(list.map(async n => {
+    /* ترتيب الإشعارات (منصور 2026-11-07: «احتساب ركلة جزاء» ظهر فوق «ركلة جزاء ضائعة» — الآيفون يعرض الأحدث فوق، وكانت
+       إشعارات الحفظة الواحدة تُرسل معاً فيصل أيّها أولاً): حسب الدقيقة ثم ترتيب الخطة، واحداً بعد الآخر بفاصل قصير.
+       الإشعار الواحد (الغالب) يخرج فوراً كما هو */
+    const mOf = n => { const x = /(\d+)(?:\+(\d+))?′/.exec(n.body || '') || /(\d+)(?:\+(\d+))?'/.exec(n.body || ''); return x ? (+x[1]) + (+x[2] || 0) / 100 : 0; };
+    if(list.length > 1) list = list.map((n, i) => ({ n, i })).sort((a, b) => (mOf(a.n) - mOf(b.n)) || (a.i - b.i)).map(x => x.n);
+    const one = async n => {
       try{
         const r = await fetch('/.netlify/functions/push-send', {
           method:'POST',
@@ -244,7 +248,12 @@ window.LIVEPUSH = {
         const j = await r.json().catch(()=>({}));
         return (j && j.ok) ? n.sig : null;
       }catch(e){ return null; }
-    }));
+    };
+    const res = [];
+    for(let i = 0; i < list.length; i++){
+      if(i) await new Promise(z => setTimeout(z, 900));
+      res.push(await one(list[i]));
+    }
     const sent = res.filter(Boolean);
     if(early) this._unmark(list.map(n => n.sig).filter(s => sent.indexOf(s) < 0));
     if(sent.length){
