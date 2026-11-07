@@ -37,11 +37,12 @@ async function isStaff(uid, projectId, at){
 }
 
 exports.handler = async (event) => {
+  const T_IN = Date.now();
   if(event.httpMethod === 'OPTIONS') return { statusCode:204, headers:CORS, body:'' };
   if(event.httpMethod !== 'POST') return reply(405, {ok:false, err:'POST فقط'});
 
-  let title, body, url, token, ev, legacy;
-  try{ ({ title, body, url, token, ev, legacy } = JSON.parse(event.body||'{}')); }
+  let title, body, url, token, ev, legacy, t0, t1, q;
+  try{ ({ title, body, url, token, ev, legacy, t0, t1, q } = JSON.parse(event.body||'{}')); }
   catch(e){ return reply(400, {ok:false, err:'جسم غير صالح'}); }
 
   title = String(title||'').trim();
@@ -104,6 +105,18 @@ exports.handler = async (event) => {
       });
       return { ok: res.ok, out: await res.json().catch(() => ({})) };
     }));
+    /* سجل التوقيت (منصور 2026-11-07: الإشعار يتأخر 30–60 ث): متى فتح المحرّر الحدث (t0) ومتى أرسل جهازه (t1)
+       ومتى وصل الخادم (tIn) ومتى ردّ FCM (tOut) — لمعرفة أين يضيع الوقت. مهلة قصيرة وأخطاؤه تُتجاهل */
+    try{
+      const tS = Date.now(), num = v => ({ integerValue: String(Math.round(+v||0)) });
+      const ctl = new AbortController(); const tm = setTimeout(() => ctl.abort(), 2500);
+      await fetch(`https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/pushlog`, {
+        method:'POST', signal: ctl.signal, headers:{ Authorization:'Bearer '+at, 'Content-Type':'application/json' },
+        body: JSON.stringify({ fields:{ at:{ timestampValue: new Date(tS).toISOString() }, title:{ stringValue: title }, ev:{ stringValue: (ev && ev.d) || 'gen' },
+          t0: num(t0), t1: num(t1), tIn: num(T_IN), tOut: num(tS), quick:{ booleanValue: !!q }, ok:{ booleanValue: !outs.find(x => !x.ok) } } })
+      }).catch(() => {});
+      clearTimeout(tm);
+    }catch(e){}
     const bad = outs.find(o => !o.ok);
     if(bad) return reply(502, {ok:false, err:'رفض FCM الإرسال', detail: JSON.stringify(bad.out).slice(0,300)});
     const ids = outs.map(o => o.out.name || '');

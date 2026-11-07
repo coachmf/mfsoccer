@@ -2266,7 +2266,7 @@ html[dir="ltr"] .tl-ev.a .tl-card{text-align:right;align-items:flex-end}
 <!-- كأس الخليج 27: قسم مستقل ببيانات منفصلة (seasons/gulf27) -->
 <link rel="stylesheet" href="gulf.css?v=18">
 <script src="gulf.js?v=51" defer></script>
-<script src="livepush.js?v=11" defer></script>
+<script src="livepush.js?v=12" defer></script>
 <script src="fantasy/js/push.js?v=288" defer></script>
 <script src="notify.js?v=8" defer></script>
 <script src="notif-prefs.js?v=4" defer></script>   <!-- لوحة تفضيلات الإشعارات والأصوات -->
@@ -6867,6 +6867,8 @@ function mxAutoPaint(st, tx){
 }
 setInterval(()=>{
   if(!EDIT || !EDIT.orig || !EDIT.base || EDIT.gulf || !window.MX){ MX_ASIG=""; return; }
+  /* إشعار الهدف/الطرد فور اختيار الفريق واللاعب، قبل إكمال التفاصيل والحفظ (منصور 2026-11-07) */
+  if(MX.sheet && window.LIVEPUSH && LIVEPUSH.quick) LIVEPUSH.quick(EDIT, MX.sheet);
   /* ساعة الوقت الفعلي مفتوحة على هذا الجهاز: لا حفظ للمباراة منه أبداً (منصور 2026-10-19: «خلهم منفصلين») */
   if(window.EFFTIME && EFFTIME.isOpen && EFFTIME.isOpen()){ MX_ASIG=""; return; }
   if(SAVING_MATCH){ mxAutoPaint("busy","جارٍ الحفظ…"); return; }
@@ -16837,7 +16839,7 @@ html.mx-editing #waFab{display:none!important}   /* زر واتساب كان ي�
     }
     const d=i>=0?JSON.parse(JSON.stringify(EDIT[ARR[k]][i])):Object.assign(BLANK[k](),preset||{});
     if(!d[CLUBKEY[k]]) d[CLUBKEY[k]]=sideClub(MX.tab==="lineup"?MX.side:"home")||"";
-    MX.sheet={kind:"ev",k,i,d,err:"",sig0:i>=0?rowSig(EDIT[ARR[k]][i]):""}; renderMatchAdmin();
+    MX.sheet={kind:"ev",k,i,d,err:"",sig0:i>=0?rowSig(EDIT[ARR[k]][i]):"",t0:Date.now()}; renderMatchAdmin();
   }
   /* من في الملعب الآن مرتّباً حسب الرسم التكتيكي (المحررون 2026-09-30: «رتّب اللاعبين حسب الرسم»):
      موضع كل أساسي من الملعب في تبويب التشكيلة، والبديل يأخذ موضع من خرج مكانه، ومن خرج يُنقل إلى الاحتياط */

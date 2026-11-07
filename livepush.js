@@ -239,7 +239,7 @@ window.LIVEPUSH = {
           method:'POST',
           headers:{'Content-Type':'application/json', Authorization:'Bearer ' + tok},
           /* الإشعار يفتح صفحة المباراة نفسها */
-          body: JSON.stringify({ title: n.title.slice(0,80), body: n.body.slice(0,240), url: n.url || '/', ev: n.ev, legacy: n.legacy })
+          body: JSON.stringify({ title: n.title.slice(0,80), body: n.body.slice(0,240), url: n.url || '/', ev: n.ev, legacy: n.legacy, t0: n.t0 || 0, t1: Date.now(), q: n.q ? 1 : 0 })
         });
         const j = await r.json().catch(()=>({}));
         return (j && j.ok) ? n.sig : null;
@@ -272,6 +272,41 @@ window.LIVEPUSH = {
       this.send([{ pri:4, sig, title:'الوقت بدل الضائع ⁦+' + v + '⁩', body: t + ' · ' + sc, ev, legacy:false, url:'/#m/' + key }], m, true);
     };
     this._addT[sig] = { a, id: setTimeout(fire, 10000) };
+  },
+
+  /* إشعار فوري من نافذة الحدث قبل «حفظ» (منصور 2026-11-07: «الاشعار يتاخر دقيقه او ٣٠ ثانيه… ابي لحظه بلحظه»):
+     كان الهدف لا يدخل EDIT.goals إلا بعد أن يكمل المحرّر كل التفاصيل (التفصيل، القدم، المكان…) ثم ينتظر الحفظ التلقائي.
+     الآن: هدف جديد بفريق ولاعب، أو طرد جديد بلاعب ← يُرسل فوراً (الدقيقة من النافذة أو من ساعة المحرّر)، وتُعلَّم بصمته
+     بمعرّف الصف (uid) فلا يُعاد عند الحفظ الكامل. يُستدعى من مؤقت الحفظ التلقائي كل 700 ms. */
+  quick(E, S){
+    try{
+      if(!S || S.kind !== 'ev' || S.i >= 0 || S._qp || !E || !E.base || E.gulf || !E.match) return;
+      const d = S.d || {}, k = S.k, m = E.match;
+      let arr;
+      if(k === 'goal'){ if(!d.sc || !(d.p || d.og)) return; arr = 'goals'; }
+      else if(k === 'card'){
+        const red = (typeof isRed === 'function') ? isRed(d.type) : /طرد|ثانٍ/.test(d.type||'');
+        if(!d.club || !d.p || !(red || d.type === 'إنذار ثانٍ')) return; arr = 'cards';
+      } else return;
+      const key = (typeof matchKey === 'function') ? matchKey(m) : [m.comp, m.round, m.home, m.away].join('/');
+      if(!this.isOn(key, m)) return;
+      const row = Object.assign({}, d);
+      if(!(+row.m >= 1)){
+        const pm = (typeof phaseMinute === 'function') ? String(phaseMinute(m) || '') : '';
+        const mm = parseInt(pm, 10); if(!(mm >= 1)) return;          /* بلا دقيقة ولا ساعة: ننتظر المحرّر */
+        const ad = /\+(\d+)/.exec(pm); row.m = String(mm); row.x = ad ? +ad[1] : 0;
+      }
+      if(!d.uid) d.uid = Date.now().toString(36) + Math.random().toString(36).slice(2,7);
+      row.uid = d.uid;
+      const cur = Object.assign({}, E); cur[arr] = (E[arr]||[]).concat([row]);
+      const live = (ALL.matches||[]).find(z => +z.round === +m.round && compOf(z) === m.comp && z.home === m.home && z.away === m.away) || m;
+      const tag = '|u|' + d.uid, url = '/#m/' + key;
+      const lp = this.plan(E.base, cur, live).filter(n => n.sig.indexOf(tag) >= 0).map(n => Object.assign(n, { url, t0: S.t0 || 0, q: 1 }));
+      if(!lp.length) return;
+      S._qp = 1;
+      this._mark(lp.map(n => n.sig));
+      this.send(lp, null, true);
+    }catch(e){}
   },
 
   /* يُستدعى من saveMatch: يلتقط الخطة قبل استبدال EDIT */
