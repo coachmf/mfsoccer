@@ -4955,7 +4955,14 @@ function fbInit(){
       isOwner = !!(u && u.uid===ADMIN_UID);
       MYROLE = ""; STAFF = {}; MYPERM = "full";
       if(u){
-        const s = await fbLoad("staff");
+        /* قراءة الطاقم قد تفشل أو تتأخر عند الفتح (الآيباد، وأحياناً الجوال) فيُعامَل المحرّر كـ«غير مصرّح» حتى يخرج ويدخل
+           (منصور 2026-11-07). الآن: آخر طاقم معروف لهذا الحساب أولاً، ثم إعادة المحاولة من الخادم، ثم مستمع يعيد الحساب حين يصل */
+        let s = await fbLoad("staff");
+        if(!s || !s.members) s = await fbLoad("staff", {source:"server"});
+        if(!s || !s.members){ await new Promise(r=>setTimeout(r, 1500)); s = await fbLoad("staff", {source:"server"}); }
+        if(s && s.members) try{ localStorage.setItem("mf_staff_c", JSON.stringify({uid:u.uid, m:s.members[u.uid]||null})); }catch(e){}
+        else try{ const c = JSON.parse(localStorage.getItem("mf_staff_c")||"null"); if(c && c.uid===u.uid && c.m) s = {members:{[u.uid]:c.m}}; }catch(e){}
+        watchStaff(u);
         STAFF = (s && s.members) || {};
         const me = STAFF[u.uid];
         MYROLE = isOwner ? "owner"
@@ -4974,6 +4981,23 @@ function fbInit(){
     });
     return true;
   }catch(e){ FBSTATE="تعذّر التهيئة"; return false; }
+}
+/* مستمع وثيقة الطاقم: إن فشلت القراءة الأولى أو تغيّرت الصلاحية تُطبَّق فور وصولها بلا خروج ودخول */
+let STAFF_UNSUB = null;
+function watchStaff(u){
+  try{ if(STAFF_UNSUB) STAFF_UNSUB(); }catch(e){}
+  STAFF_UNSUB = null; if(!u || !fbDb) return;
+  STAFF_UNSUB = fbDb.collection("seasons").doc("staff").onSnapshot(d=>{
+    if(!FBUSER || FBUSER.uid!==u.uid || !d.exists) return;
+    const m = (d.data()||{}).members || {}; const me = m[u.uid];
+    try{ localStorage.setItem("mf_staff_c", JSON.stringify({uid:u.uid, m:me||null})); }catch(e){}
+    const role = isOwner ? "owner" : (me && me.active!==false && me.role==="editor") ? "editor" : "";
+    const perm = isOwner ? "full" : permOf(me);
+    if(role===MYROLE && perm===MYPERM && Object.keys(STAFF).length===Object.keys(m).length) return;
+    STAFF = m; MYROLE = role; MYPERM = perm; isAdmin = isOwner || MYROLE==="editor";
+    $("#adminBtn").classList.toggle("on", isAdmin); paintAdminBtn(); paintFantasyTab();
+    if(document.querySelector('nav.tabs button[aria-selected="true"]')?.dataset.v==="admin") renderAdmin();
+  }, ()=>{});
 }
 const seasonId = () => String(SEASON||"2026-2027").replace(/\//g,"-");
 /* Firestore يطبّق الكتابة محلياً فوراً، لكن الوعد لا يُحسم إلا بتأكيد الخادم.
