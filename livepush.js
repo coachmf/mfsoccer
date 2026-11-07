@@ -211,7 +211,8 @@ window.LIVEPUSH = {
     const both = L => xiN(L, m.home) >= 11 && xiN(L, m.away) >= 11;
     if(both(cur.lineup) && !both(base.lineup)){
       const fOf = club => ((cur.shapes||{})[club]||{}).f || '';
-      const side = club => club + (fOf(club) ? ' (' + fOf(club) + ')' : '');
+      /* الرسم داخل عزل LTR (U+2066…U+2069): في نص عربي كان «4-5-1» يظهر «1-5-4» (منصور 2026-11-07) */
+      const side = club => club + (fOf(club) ? ' (⁦' + fOf(club) + '⁩)' : '');
       add(7, this._sig('xi2', {r:m.round, comp, p:m.home + '×' + m.away}), 'التشكيلتان الرسميتان', side(m.home) + ' × ' + side(m.away), E('xi'));
     }
 
