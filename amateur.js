@@ -110,7 +110,7 @@ function tableHTML(){
     <table class="d1-tbl">
       <thead><tr><th>#</th><th class="cl">الفريق</th><th title="لعب">ل</th><th title="فوز">ف</th><th title="تعادل">ت</th><th title="خسارة">خ</th><th class="gl" title="له وعليه">له:عليه</th><th title="الفارق"><bdi dir="ltr">+/-</bdi></th><th class="pt" title="النقاط">ن</th></tr></thead>
       <tbody>${rows.map((r,i)=>{ const gd = r.gf-r.ga;
-        return `<tr><td class="rk">${i+1}</td><td class="cl"><span class="d1-tm">${crest(r.c)}<b>${H(r.c)}</b></span></td><td>${r.p}</td><td>${r.w}</td><td>${r.d}</td><td>${r.l}</td><td class="gl"><bdi dir="ltr">${r.gf}:${r.ga}</bdi></td><td><bdi dir="ltr">${gd>0?"+":""}${gd}</bdi></td><td class="pt">${r.pts}</td></tr>`; }).join("")}</tbody>
+        return `<tr><td class="rk">${i+1}</td><td class="cl"><span class="d1-tm">${crest(r.c)}<b>${H(r.c)}</b></span></td><td>${r.p}</td><td>${r.w}</td><td>${r.d}</td><td>${r.l}</td><td class="gl"><bdi>${r.gf}</bdi>:<bdi>${r.ga}</bdi></td><td><bdi dir="ltr">${gd>0?"+":""}${gd}</bdi></td><td class="pt">${r.pts}</td></tr>`; }).join("")}</tbody>
     </table>
     ${any ? "" : `<p class="d1-empty">لم تُسجَّل أي نتيجة بعد.</p>`}
   </div>`;

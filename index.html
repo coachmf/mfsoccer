@@ -2273,8 +2273,8 @@ html[dir="ltr"] .tl-ev.a .tl-card{text-align:right;align-items:flex-end}
 <link rel="stylesheet" href="efftime.css?v=4">
 <script src="efftime.js?v=15" defer></script>
 <link rel="stylesheet" href="div1.css?v=5">
-<script src="div1.js?v=9" defer></script>
-<script src="amateur.js?v=8" defer></script>   <!-- دوري الهواة: النتائج والترتيب فقط (seasons/amateur) -->
+<script src="div1.js?v=10" defer></script>
+<script src="amateur.js?v=9" defer></script>   <!-- دوري الهواة: النتائج والترتيب فقط (seasons/amateur) -->
 <link rel="stylesheet" href="news.css?v=5">
 <script src="news.js?v=11" defer></script>   <!-- الأخبار: news/{id} + فهرس seasons/news + صور newsimg/{id} -->   <!-- دوري الدرجة الأولى: الترتيب والمباريات فقط (seasons/div1) -->
 <link rel="stylesheet" href="ext.css?v=3">
@@ -14709,7 +14709,7 @@ function hmStandingsHTML(T){
       <tbody>${T.map((r,i)=>`<tr class="${i<4?"champ":""}${i>=n-2?" rel":""}" data-club-open="${esc(r.c)}">
         <td class="c">${i+1}</td>
         <td class="club"><span>${crest(r.c)}<b>${esc(r.c)}</b></span></td>
-        <td>${r.P}</td><td>${r.W}</td><td>${r.D}</td><td>${r.L}</td><td class="gfa" dir="ltr">${r.GF}:${r.GA}</td><td dir="ltr">${r.GD>0?"+":""}${r.GD}</td>
+        <td>${r.P}</td><td>${r.W}</td><td>${r.D}</td><td>${r.L}</td><td class="gfa"><bdi>${r.GF}</bdi>:<bdi>${r.GA}</bdi></td><td dir="ltr">${r.GD>0?"+":""}${r.GD}</td>
         <td class="pts">${r.Pts}</td><td class="frm">${formPills(r.form)}</td></tr>`).join("")}</tbody>
     </table></div>
     <div class="hm-legend"><span><i class="champ"></i>المراكز 1–4</span><span><i class="rel"></i>الهبوط (المركزان الأخيران)</span></div>
