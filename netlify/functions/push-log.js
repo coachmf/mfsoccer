@@ -1,0 +1,26 @@
+/* قراءة سجل توقيت الإشعارات (pushlog) وسجل الأجهزة (pushreg) — للمالك فقط، للتشخيص (منصور 2026-11-07: «الاشعارات وايد قاعد تتاخر»).
+   GET بترويسة Authorization: Bearer <رمز Firebase>. */
+'use strict';
+const { serviceAccount, accessToken, verifyIdToken } = require('./lib/google');
+const REG = require('./lib/reg');
+const OWNER_UID = 'iiTgVfDryXNLb9IrOyLkkNMHDxq2';
+const CORS = { 'Access-Control-Allow-Origin':'https://mfsoccer.com', 'Access-Control-Allow-Headers':'Authorization', 'Content-Type':'application/json; charset=utf-8', 'Cache-Control':'no-store' };
+
+exports.handler = async (event) => {
+  if(event.httpMethod === 'OPTIONS') return { statusCode:204, headers:CORS, body:'' };
+  const auth = event.headers.authorization || event.headers.Authorization || '';
+  try{
+    const pid = serviceAccount().project_id;
+    const uid = await verifyIdToken(auth.replace(/^Bearer /, ''), pid);
+    if(uid !== OWNER_UID) return { statusCode:403, headers:CORS, body: JSON.stringify({ok:false}) };
+    const at = await accessToken('https://www.googleapis.com/auth/datastore https://www.googleapis.com/auth/firebase.messaging');
+    const r = await fetch(`https://firestore.googleapis.com/v1/projects/${pid}/databases/(default)/documents:runQuery`, { method:'POST',
+      headers:{ Authorization:'Bearer '+at, 'Content-Type':'application/json' },
+      body: JSON.stringify({ structuredQuery:{ from:[{ collectionId:'pushlog' }], where:{ fieldFilter:{ field:{ fieldPath:'t1' }, op:'GREATER_THAN', value:{ integerValue:'0' } } }, orderBy:[{ field:{ fieldPath:'t1' }, direction:'DESCENDING' }], limit:30 } }) });
+    const rows = (await r.json()).filter(x => x.document).map(x => { const f = x.document.fields, n = k => +(f[k] && f[k].integerValue || 0);
+      return { title: f.title && f.title.stringValue, quick: !!(f.quick && f.quick.booleanValue), openToSend: n('t0') ? n('t1') - n('t0') : null,
+        netToServer: n('tIn') - n('t1'), serverToFcm: n('tOut') - n('tIn'), directDone: n('tDir') - n('tIn'), dN: n('dN'), dOk: n('dOk'), at: f.at && f.at.timestampValue }; });
+    const reg = await REG.all(at, pid);
+    return { statusCode:200, headers:CORS, body: JSON.stringify({ ok:true, devices: reg.length, appDevices: reg.filter(d => d.x).length, rows }) };
+  }catch(e){ return { statusCode:500, headers:CORS, body: JSON.stringify({ok:false, err:String(e.message||e)}) }; }
+};
