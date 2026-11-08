@@ -777,6 +777,9 @@ const VIEWS = {
       const next=team.squad.map(pid=>{ const k=tOut.indexOf(pid); return k>=0? tIn[k] : pid; });
       const ov=TEAM.clubOver(next, team.squad, st);
       if(ov){ UI.closeModal(); UI.toast(`الحد الأقصى ${ov.max} لاعبين من ${DB.club(ov.club).name}`,true); return; }
+      /* تدقيق 2026-11-09 (M4): فحص أخير للمراكز والرصيد وعدم التكرار — كان الزر وحده يحرسها (سعر تغيّر بين العرض والضغط = رصيد سالب) */
+      if(new Set(next).size!==next.length || this.posDist(next) > this.posDist(team.squad)){ UI.closeModal(); this.tReset(); UI.toast('تشكيلة القائمة غير صحيحة بعد هذه الصفقات — أعد اختيارها',true); APP.render(); return; }
+      if(this.tBankOf(tOut,tIn) < -1e-9){ UI.closeModal(); UI.toast('الرصيد لا يكفي لهذه الصفقات',true); return; }
     }
     const freeMode=team.activeChip==='wildcard'||team.activeChip==='freehit'||!!st.rules.freeChanges;
     const n=tOut.length;

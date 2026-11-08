@@ -521,13 +521,14 @@ const CLOUD = {
       const idToken = await this.race(this.user.getIdToken(), 15000);
       if(!idToken.ok) return false;
       const body = { idToken: idToken.v };
-      ['username','teamName','avatar','team'].forEach(k=>{ if(patch[k] !== undefined) body[k] = patch[k]; });
+      ['username','teamName','avatar','team','expectRev','late'].forEach(k=>{ if(patch[k] !== undefined) body[k] = patch[k]; });
       const ctl = typeof AbortController!=='undefined' ? new AbortController() : null;
       const t = setTimeout(()=>{ try{ ctl && ctl.abort(); }catch(e){} }, 20000);
       const r = await fetch('/api/fantasy-save', { method:'POST', headers:{'Content-Type':'application/json'},
         body: JSON.stringify(body), ...(ctl ? {signal:ctl.signal} : {}) });
       clearTimeout(t);
       const j = await r.json().catch(()=>null);
+      if(j && !j.ok && j.err==='conflict') return 'conflict';
       return !!(j && j.ok);
     }catch(e){ return false; }
   },
@@ -572,10 +573,33 @@ const CLOUD = {
 
   /* حفظ الملف والفريق — لا يمسّ history ولا total (المدير وحده يكتبهما).
      بعد موعد الإغلاق يرفض الخادم التشكيلة، فنرسل الملف وحده. */
-  async saveMyTeam(profile, team){
+  async saveMyTeam(profile, team, expectRev){
     if(!this.user) return false;
     const patch = {updated:new Date().toISOString()};
     if(team !== undefined) patch.team = team || null;   // undefined = لا تمسّ التشكيلة
+    /* تدقيق 2026-11-09 (C3): كتابة الفريق مشروطة برقم نسخته على الخادم — داخل معاملة: إن تغيّر منذ قرأناه (جهاز آخر،
+       تصحيح المدير، احتساب) تُرفض ويعود المستند ليُدمج بدل الكتابة فوقه. update يستبدل خريطة الفريق كاملة (لا بقايا مفاتيح قديمة) */
+    if(team && expectRev !== undefined){
+      const ref = this.managers().doc(this.user.uid), nt = {...team, rev: expectRev+1};
+      if(profile){ ['username','teamName','avatar'].forEach(k=>{ if(profile[k]!=null) patch[k]=profile[k]; }); }
+      const tr = await this.race(this.db.runTransaction(async tx => {
+        const s = await tx.get(ref);
+        if(!s.exists) return {missing:true};
+        const d = s.data(), cur = +((d.team||{}).rev)||0;
+        if(cur !== expectRev) return {conflict:true, doc:d};
+        tx.update(ref, {...patch, team: nt}); return {ok:true};
+      }), 15000);
+      if(tr.ok === true && tr.v && tr.v.ok) return true;
+      if(tr.ok === true && tr.v && tr.v.conflict) return {conflict:true, doc:tr.v.doc};
+      const denied = tr.err && tr.err.code === 'permission-denied', missing = tr.v && tr.v.missing;
+      if(!denied && !missing){
+        const sv = await this.serverSave({...patch, team: nt, expectRev});
+        if(sv === true) return true;
+        if(sv === 'conflict') return {conflict:true};
+        return false;
+      }
+      patch.team = nt;                                   // ملف مفقود/لا صلاحية: المسار القديم أدناه يصلحه أو يوضّح السبب
+    }
     if(profile){
       if(profile.username!=null) patch.username = profile.username;
       if(profile.teamName!=null) patch.teamName = profile.teamName;
@@ -1068,6 +1092,8 @@ const CLOUD = {
       /* لقطة تشكيلة غير صالحة (عُدّلت من المتصفح: 15 لاعباً في التشكيلة، كابتن من خارجها، كرت غير معروف…)
          لا تُعتمد — تُبنى من الفريق المقفل على الخادم عند الموعد (منصور 2026-09-30) */
       if(team.gwPicks[gw] && !this.validPicks(team.gwPicks[gw], st)){ team.gwPicks[gw]=null; this._badPicks=(this._badPicks||0)+1; }
+      /* إعادة احتساب جولة سابقة بلا تشكيلة محفوظة صالحة: لا نحسبها بفريق اليوم (قد يضم صفقات جولة لاحقة) — تبقى نتيجتها كما هي */
+      if(opts.recompute && prev && !team.gwPicks[gw]){ donePts.push(+prev.pts||0); board.push(this.boardRow(d.id, v)); return; }
       if(!team.gwPicks[gw]){
         team.gwPicks[gw] = TEAM.picksFrom(team);
         // احتساب جولة سابقة بلا لقطة: الكرت المفعّل الآن يخص الجولة الجارية لا هذه — لا يُحسب ولا يُستهلك
@@ -1092,13 +1118,17 @@ const CLOUD = {
       GWADMIN.rollover(r.team, gw, st);
       const team = JSON.parse(JSON.stringify(r.team));           // لا undefined في Firestore
       board.push(this.boardRow(r.uid, r.data, hist, hist.reduce((s,h)=>s+(h.pts||0), 0)));
-      writes.push([r.uid, {
-        history: hist,
-        total: hist.reduce((s,h)=>s+(h.pts||0), 0),
-        lastGW: opts.recompute ? Math.max(gw, +r.data.lastGW||0) : gw,   // إعادة احتساب جولة قديمة لا تُرجع lastGW للوراء (وإلا رفض الجهاز كل حفظ)
-        team,
-        email: firebase.firestore.FieldValue.delete()
-      }]);
+      /* تدقيق 2026-11-09 (C2): إعادة الاحتساب كانت تكتب الفريق كاملاً بنسخة قُرئت قبل دقائق فتمسح صفقات الجولة المفتوحة —
+         الآن تكتب النقاط والسجل فقط. والاحتساب العادي يرفع رقم نسخة الفريق فيُرفض أي حفظ من جهاز لم يرَ الترحيل */
+      if(opts.recompute) writes.push([r.uid, { history: hist, total: hist.reduce((s,h)=>s+(h.pts||0), 0), lastGW: Math.max(gw, +r.data.lastGW||0) }]);
+      else { team.rev = (+((r.data.team||{}).rev)||0) + 1;
+        writes.push([r.uid, {
+          history: hist,
+          total: hist.reduce((s,h)=>s+(h.pts||0), 0),
+          lastGW: gw,
+          team,
+          email: firebase.firestore.FieldValue.delete()
+        }]); }
     });
 
     // الكتابة على دفعات (حد Firestore 500 عملية للدفعة). 2026-10-11: دفعة 400 فريق تستغرق أكثر من 20 ث
@@ -1108,7 +1138,7 @@ const CLOUD = {
       const chunk=writes.slice(i,i+100);
       const batch=this.db.batch();
       chunk.forEach(([uid,data])=>batch.set(this.managers().doc(uid), data, {merge:true}));
-      const w = await this.race(batch.commit(), 120000);
+      const w = await this.race(batch.commit(), this.OP_MS.batch);
       if(!w.ok) return {ok:false, err:`تعذّر حفظ نتائج المشتركين (${done} من ${writes.length})`, done};
       done += chunk.length;
     }
@@ -1143,7 +1173,7 @@ const CLOUD = {
       if(changed) fixed++;
       if(opts.resetChips && hadChips) chips++;
       if(changed || (opts.resetChips && hadChips)){
-        team.repairedAt=now;
+        team.repairedAt=now; team.rev=(+team.rev||0)+1;
         writes.push([d.id, {team}]);
       }
     });
@@ -1174,7 +1204,7 @@ const CLOUD = {
     snap.forEach(d=>{
       const v=d.data(); if(!v.team || !(v.team.squad||[]).length) return;
       const team=JSON.parse(JSON.stringify(v.team));
-      if(COACH_UPGRADE.bumpTeam(team, st)){ bumped++; team.repairedAt=now; writes.push([d.id, {team}]); }
+      if(COACH_UPGRADE.bumpTeam(team, st)){ bumped++; team.repairedAt=now; team.rev=(+team.rev||0)+1; writes.push([d.id, {team}]); }
     });
     let done=0;
     for(let i=0;i<writes.length;i+=400){

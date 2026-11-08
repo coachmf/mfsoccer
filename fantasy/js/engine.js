@@ -188,7 +188,11 @@ const DB = {
     this.muted = true; clearTimeout(this._pushT);
     try{
       await this.hydrate();
-      if(CLOUD.user){ const doc=await CLOUD.getManager(CLOUD.user.uid); if(doc) await this.adoptManager(CLOUD.user.uid, doc); }
+      if(CLOUD.user){ const uid=CLOUD.user.uid, doc=await CLOUD.getManager(uid);
+        /* تدقيق 2026-11-09 (H4): نشر المدير (نتيجة/خبر) كان يمسح صفقة لم تُرفع بعد — نحتفظ بها ونعيدها فوق نسخة الخادم */
+        const lt=this.state.teams[uid];
+        const keep = doc && lt && (this.state.unsaved||{})[uid] && !GWADMIN.deadlinePassed(this.state.currentGW) ? JSON.parse(JSON.stringify(lt)) : null;
+        if(doc){ await this.adoptManager(uid, doc); if(keep && this.reapplyLocal(uid, keep, doc.team||{})) this.pendingPush=true; } }
     }catch(e){ console.warn('refresh failed', e); }
     this.muted = false;
     if(this.pendingPush){ this.pendingPush=false; this.pushTeam(); }
@@ -237,7 +241,11 @@ const DB = {
      الآن: إعادة محاولة متدرّجة وتنبيه ظاهر ما دامت هناك تعديلات لم تُحفظ والجولة مفتوحة */
   async pushWithRetry(){
     clearTimeout(this._retryT);
+    /* تدقيق 2026-11-09 (H5): رفعتان في نفس الوقت كانت تصل فيهما النسخة الأقدم أخيراً — رفع واحد في كل مرة، والطلب أثناءه يُعاد بعده */
+    if(this._pushing){ this._pushAgain=true; return false; }
+    this._pushing=true;
     let ok=false; try{ ok = await this.pushTeamNow(); }catch(e){ console.warn('push failed', e); }
+    finally{ this._pushing=false; if(this._pushAgain){ this._pushAgain=false; setTimeout(()=>this.pushTeam(), 0); } }
     const uid=CLOUD.user && CLOUD.user.uid;
     if(ok===true || !uid || !(this.state.unsaved||{})[uid] || GWADMIN.deadlinePassed(this.state.currentGW)){ this._retryN=0; return ok; }
     this._retryN=(this._retryN||0)+1;
@@ -291,6 +299,10 @@ const DB = {
       if(late){
         t.joinedGW=cur+1;
         const {history, ...team} = t;
+        /* تدقيق 2026-11-09 (H6): القواعد ترفض joinedGW من الجهاز بعد الموعد فلا يُحفظ فريق المنضم إلا على جهازه —
+           الحفظ عبر الخادم (fantasy-save يتحقق: لا فريق سابق أو منضم للتالية، ويكتب joinedGW = الجولة المقفلة + 1) */
+        const okL = CLOUD.serverSave ? await CLOUD.serverSave({...(profile||{}), team, late:true}) : false;
+        if(okL===true){ (this.state.syncedSig ??= {})[uid]=this.teamSig(t); this.clearUnsaved(uid); return true; }
         return await CLOUD.saveMyTeam({...(profile||{}), joinedGW:cur+1}, team);
       }
       return await CLOUD.saveMyTeam(profile, undefined);
@@ -298,9 +310,29 @@ const DB = {
     /* حماية التشكيلات (منصور 2026-10-09: «تاكد ان تشكيلاتهم ما تنمسح»): جهاز فريقه فارغ لا يرفع أبداً فوق تشكيلة
        محفوظة على الخادم (ملف مؤقت بعد قراءة فاشلة، جهاز جديد، ذاكرة ممسوحة…) — يُحفظ الملف الشخصي وحده */
     if(!(t.squad||[]).length && remote && remote.team && (remote.team.squad||[]).length) return await CLOUD.saveMyTeam(profile, undefined);
-    const {history, ...team} = t;                 // السجل لا يُرفع: المدير يكتبه
-    const okT = await CLOUD.saveMyTeam(profile, team);
-    if(okT===true){ (this.state.syncedSig ??= {})[uid]=this.teamSig(t); this.clearUnsaved(uid); }
+    /* تدقيق 2026-11-09 (C3): جهاز بنسخة قديمة كان يرفع فريقه فوق نسخة أحدث حفظها جهاز آخر (أي حفظ — تذكير، كابتن — يكفي).
+       1) فريق الجهاز = آخر نسخة اعتمدها من الخادم: لا شيء ليُرفع (الملف الشخصي فقط).
+       2) الخادم تغيّر منذ آخر اعتماد (جهاز آخر): نعتمد نسخة الخادم ونعيد عليها تعديلات هذا الجهاز ثم نرفع.
+       3) الكتابة نفسها مشروطة برقم نسخة الفريق (team.rev) داخل معاملة — لا يكتب أحد فوق نسخة لم يرها. */
+    const cur2=this.state.teams[uid] || t;            // قد يكون الفريق اعتُمد من جديد أثناء القراءة
+    const base=(this.state.syncedSig||{})[uid], mine=this.teamSig(cur2);
+    const rTeam=remote && remote.team, rSig=rTeam && (rTeam.squad||[]).length ? this.teamSig(rTeam) : '';
+    if(base!==undefined && mine===base){ this.clearUnsaved(uid); return await CLOUD.saveMyTeam(profile, undefined); }
+    const merge = async (srv)=>{
+      const keep=JSON.parse(JSON.stringify(this.state.teams[uid]||cur2));
+      this.muted=true; try{ await this.adoptManager(uid, srv); } finally{ this.muted=false; }
+      this.clearUnsaved(uid);
+      if(this.reapplyLocal(uid, keep, srv.team||{})){ this.pendingPush=true; setTimeout(()=>this.pushTeam(), 0); }
+      if(typeof UI!=='undefined') UI.toast('فريقك تعدّل من جهاز آخر — اعتمدنا آخر نسخة وأضفنا تعديلاتك عليها');
+      if(typeof APP!=='undefined') APP.render();
+      return false;
+    };
+    if(remote && base!==undefined && rSig && rSig!==base && rSig!==mine) return await merge(remote);
+    const {history, ...team} = cur2;                 // السجل لا يُرفع: المدير يكتبه
+    const expectRev = rTeam ? (+rTeam.rev||0) : 0;
+    const okT = await CLOUD.saveMyTeam(profile, team, remote ? expectRev : undefined);
+    if(okT && okT.conflict){ const srv = okT.doc || await CLOUD.getManager(uid); if(srv) return await merge(srv); this.pendingPush=true; return false; }
+    if(okT===true){ cur2.rev = expectRev+1; (this.state.syncedSig ??= {})[uid]=this.teamSig(cur2); this.clearUnsaved(uid); }
     return okT;
   },
   reset(){ try{ localStorage.removeItem(this.KEY);}catch(e){} this.state = buildSeedState(); this.save(); },
@@ -798,7 +830,9 @@ const TEAM = {
   normalize(team, st){
     st=st||DB.state; if(!team) return false;
     // قائمة اللاعبين ليست المنشورة (فشل التحميل) ولاعب غير معروف في الفريق: لا نحذفه — قد يكون لاعباً أُضيف لاحقاً
-    if(!st.fromCloud && (team.squad||[]).some(pid=>pid && !DB.player(pid))) return false;
+    /* تدقيق 2026-11-09 (H2): قائمة لاعبين قديمة على الجهاز كانت تحذف لاعباً جديداً من الفريق وتعيد بناء التشكيلة بالسعر ثم تُرفع.
+       لاعب غير معروف = نقص على هذا الجهاز لا في الفريق: لا نلمس الفريق إطلاقاً (كان الشرط على !fromCloud فقط) */
+    if((team.squad||[]).some(pid=>pid && !DB.player(pid))) return false;
     const before=JSON.stringify([team.squad,team.xi,team.bench,team.cap,team.vice]);
     const squad=[]; (team.squad||[]).forEach(pid=>{ if(pid && DB.player(pid) && !squad.includes(pid)) squad.push(pid); });
     team.squad=squad;

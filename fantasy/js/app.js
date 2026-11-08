@@ -92,7 +92,9 @@ const APP = {
           // عدّل المشترك فريقه أثناء الانتظار: نسخته أحدث من اللقطة القديمة — لا نطمسها، ونعيد القراءة من الخادم
           const d2 = await CLOUD.getManager(u.uid); if(d2) doc0 = d2;
           const localT = DB.state.session===u.uid && DB.state.teams[u.uid];
-          if(doc0 && localT && (localT.squad||[]).length && DB.dirtyAt > slowFired){ doc0 = {...doc0, team: localT}; DB.pendingPush = true; }
+          /* تدقيق 2026-11-09 (H2): أي حفظ (تذكير، تطبيع) كان يرفع فريق الجهاز القديم فوق الخادم — الآن فقط إن تغيّرت التشكيلة فعلاً */
+          const synced=(DB.state.syncedSig||{})[u.uid];
+          if(doc0 && localT && (localT.squad||[]).length && DB.dirtyAt > slowFired && DB.teamSig(localT)!==synced){ DB._srvSig = doc0.team && (doc0.team.squad||[]).length ? DB.teamSig(doc0.team) : ''; doc0 = {...doc0, team: localT}; DB.pendingPush = true; }
         }
         DB.muted = true; clearTimeout(DB._pushT);
         this.cloudState = h.ok ? 'ready' : (h.err==='no-game' ? 'nogame' : 'offline');
@@ -144,10 +146,12 @@ const APP = {
              && +(doc.team.rolledGW||0)===+(lt.rolledGW||0) && !(doc.team.repairedAt && doc.team.repairedAt!==(lt.repairedAt||null))
              && !(doc.updated && Date.parse(doc.updated) >= unAt)
              && DB.teamSig(lt)!==DB.teamSig(doc.team)){                 // نفس تشكيلة الخادم: لا شيء لنرجعه ولا تنبيه
-            doc = {...doc, team: lt}; DB.pendingPush = true;
+            DB._srvSig = DB.teamSig(doc.team); doc = {...doc, team: lt}; DB.pendingPush = true;
             setTimeout(()=>UI.toast('رجّعنا تعديلات فريقك اللي ما انحفظت — جارٍ حفظها على الخادم'), 1200);
           } else if(unAt) DB.clearUnsaved(u.uid);
           await DB.adoptManager(u.uid, doc);
+          /* اعتمدنا فريق الجهاز فوق نسخة الخادم (تعديلات لم تُحفظ): المرجع للمقارنة يبقى نسخة الخادم، وإلا ظن الرفع أن لا شيء تغيّر */
+          if(DB._srvSig!==undefined){ (DB.state.syncedSig ??= {})[u.uid]=DB._srvSig; DB._srvSig=undefined; }
           const me=DB.me(); if(me) me.verified = !!u.emailVerified;
         }else{
           DB.state.session=null;
@@ -198,7 +202,7 @@ const APP = {
       const ref=CLOUD.managers().doc(f.uid), s=await ref.get(); if(!s.exists) continue;
       const t=s.data().team||{}; if(t.fixes && t.fixes[f.id]) continue;
       const now=new Date().toISOString();
-      await ref.update(Object.assign(f.patch(t), {['team.fixes.'+f.id]:now, 'team.repairedAt':now, updated:now}));
+      await ref.update(Object.assign(f.patch(t), {['team.fixes.'+f.id]:now, 'team.repairedAt':now, 'team.rev':firebase.firestore.FieldValue.increment(1), updated:now}));
       console.info('adminFix done', f.id);
     }catch(e){ console.warn('adminFix', f.id, e); } }
   },
