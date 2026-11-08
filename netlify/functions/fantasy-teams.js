@@ -9,7 +9,7 @@ const { accessToken } = require('./lib/google');
 const PROJECT = 'mfsoccer-c7ee4';
 const API_KEY = 'AIzaSyD_ZzAE4HEKPIuAKCmta8tzN5KOa8IUfuo';
 const ALLOWED = /^\d{4}-\d{4}$/;
-const DROP = new Set(['transfers', 'fhBackup', 'repairedAt', 'bankBase', 'bankVer', 'history']);
+const DROP = new Set(['transfers', 'fhBackup', 'repairedAt', 'bankBase', 'bankVer', 'history', 'coachLog', 'gwStart', 'fhCancel', 'fixes', 'rev']);
 
 function val(v){
   if(!v || typeof v !== 'object') return null;
@@ -52,6 +52,8 @@ exports.handler = async (event) => {
       if(!t || !Array.isArray(t.squad) || !t.squad.length) continue;
       if(cur && (+v.joinedGW || 0) > cur) continue;
       const team = {}; for(const k in t) if(!DROP.has(k)) team[k] = t[k];
+      /* تدقيق 2026-11-09 (L5): الحساب المباشر يحتاج تشكيلة الجولة الحالية وحدها — كانت كل تشكيلات الجولات السابقة تُرسل لكل زائر (~2MB تكبر كل جولة) */
+      if(team.gwPicks && cur){ const g = team.gwPicks[cur]; team.gwPicks = g ? { [cur]: g } : {}; }
       rows.push({ id:d.name.split('/').pop(), name:v.username || 'مشترك', teamName:v.teamName || '', total:+v.total || 0, team });
     }
     return { statusCode:200, headers:{ ...json, 'Cache-Control':'public, max-age=0, must-revalidate',
