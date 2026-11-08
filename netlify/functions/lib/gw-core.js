@@ -195,10 +195,10 @@ async function step(io, opts){
     deadlineISO: (g && g.deadline) || null, provisional: !(g && g.deadline), open: !!g && g.status !== 'finished', updated };
   const meta = { rules:st.rules, scoring:st.scoring, currentGW:st.currentGW, gws:st.gws, news:st.news || [], liveSpeed:st.liveSpeed || 2,
     clubs:st.clubs, coaches:st.coaches || [], own:st.own || {}, managerCount:st.managerCount || 0, transferStats:st.transferStats || {},
-    ownUpdated:updated, board:st.board || [], updated, updatedBy:'server' };
+    updated, updatedBy:'server' };   /* لوحة الترتيب وطابعها في meta/own وحدها (M7) */
   /* اللاعبون (الأسعار) أولاً، ثم اللعبة، ثم لقطة الترتيب، ثم القفل — فلا تفتح الانتقالات قبل أن يكتمل كل شيء */
   await io.commit([{ path:`${F}/meta/players`, data:{ list:st.players, priceVer:E.SEED_PRICE_VER || 1, updated }, mask:false }]);
-  await io.commit([{ path:F, data:meta }]);
+  await io.commit([{ path:F, data:meta, deleteFields:['board','ownUpdated'] }]);
   await io.commit([{ path:`${F}/meta/own`, data:{ own:st.own || {}, managerCount:sc.count, registered:mgrs.length, ownUpdated:updated, board, updatedBy:'server' }, mask:false }]);
   await io.commit([{ path:`${F}/meta/lock`, data:lock, mask:false }]);
   run.state = 'done'; run.finished = updated; run.avg = agg.avg; run.high = agg.high; run.prices = fin.changes; run.lease = null; run.remaining = 0;

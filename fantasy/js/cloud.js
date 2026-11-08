@@ -982,7 +982,9 @@ const CLOUD = {
       clubs: st.clubs,
       coaches: st.coaches||[],
       own: st.own||{}, managerCount: st.managerCount||0, transferStats: st.transferStats||{},
-      ownUpdated: st.ownUpdated||null, board: st.board||[],
+      /* لوحة الترتيب في meta/own وحدها (تدقيق 2026-11-09، M7): نسختها في مستند اللعبة (~1MB قرب نهاية الموسم) كانت تُقرأ مع كل فحص
+         كل 5 دقائق على كل جهاز وتقترب من حد حجم المستند — تُحذف من هنا */
+      ownUpdated: st.ownUpdated||null, board: firebase.firestore.FieldValue.delete(),
       updated: new Date().toISOString(),
       updatedBy: (this.user && this.user.email) || ''
     };

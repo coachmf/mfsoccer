@@ -104,7 +104,7 @@ const DB = {
     if(game.own)            st.own = game.own;                     // تملّك اللاعبين — يحسبه المدير عند الاحتساب
     if(Array.isArray(game.board)) st.board = game.board;           // لقطة الترتيب العام — ينشرها المدير مع التملّك
     if(game.managerCount!=null) st.managerCount = +game.managerCount;
-    if(game.ownUpdated)     st.ownUpdated = game.ownUpdated;
+    if(game.ownUpdated && Array.isArray(game.board)) st.ownUpdated = game.ownUpdated;   /* بلا لوحة في مستند اللعبة: طابع meta/own هو المرجع (وإلا رُفضت لوحته كأنها قديمة) */
     if(game.transferStats)  st.transferStats = game.transferStats;
     /* اللقطة تحمل meta/own: تُطبَّق فوراً — على الشبكة البطيئة كانت قراءته في الخلفية تتجاوز المهلة فيبقى عدد المشاركين
        ودوريات المشجعين من لقطة قديمة (842 فريق، القادسية 1) — 2026-10-09 */
