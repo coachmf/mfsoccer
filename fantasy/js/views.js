@@ -1209,7 +1209,8 @@ const VIEWS = {
     const shownTeam=blocked? '—' : (doc.teamName||'فريق');
     /* ملف المدير على طراز FPL (منصور 2026-10-08): الصورة، النادي المفضل، النقاط والترتيبات، ودورياته */
     const av=AV.parse(doc.avatar), mFav=av.fav;
-    const gRows=this.globalTable(); const gi=gRows.findIndex(r=>r.id===uid); const gR=gi>=0? gRows[gi] : null;
+    /* تدقيق 2026-11-09 (M1): الملف يعرض نفس مجموع وترتيب «الترتيب العام» (الرسمي + نقاط الجولة الجارية) لا رقماً ثالثاً */
+    const gRows=this.liveApply(this.globalTable()); const gi=gRows.findIndex(r=>r.id===uid); const gR=gi>=0? gRows[gi] : null;
     const pop = LEAGUES.online()&&LEAGUES.cloud.board? LEAGUES.cloud.board.length : (st.managerCount||gRows.length);
     const rk=x=> x? (x.rank||0).toLocaleString('en') : '—';
     const lgLine=(name, sub, rank, move, onclick)=>`<tr${onclick? ` onclick="${onclick}"` : ''}><td class="lgx-n" data-i18n="off">${name}<small>${sub}</small></td><td class="lgx-r num">${rank}</td><td class="lgx-m">${rank!=='—'? this.moveIcon(move) : '<span class="lgx-dash"></span>'}</td></tr>`;
@@ -1231,7 +1232,7 @@ const VIEWS = {
       </div>
       <div class="mgr-stats">
         <h3>النقاط / الترتيبات</h3>
-        <div class="mgr-kv"><span>إجمالي النقاط</span><b>${total.toLocaleString('en')}</b></div>
+        <div class="mgr-kv"><span>إجمالي النقاط</span><b>${(gR && gR.total!=null ? gR.total : total).toLocaleString('en')}</b></div>
         <div class="mgr-kv"><span>الترتيب العام</span><b>${rk(gR)}</b></div>
         <div class="mgr-kv"><span>إجمالي المشتركين</span><b>${pop.toLocaleString('en')}</b></div>
         <div class="mgr-kv"><span>${last? 'نقاط الجولة '+last.gw : 'نقاط الجولة'}</span><b>${last? last.pts : '—'}</b></div>

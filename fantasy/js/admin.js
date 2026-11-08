@@ -269,7 +269,11 @@ const ADMIN = {
       for(const gw of gws){
         const s=await CLOUD.round(gw).get({source:'server'}).catch(()=>null);
         const srv=((s && s.exists && s.data().fixtures)||[]);
-        const sig=f=>[f.hs,f.as,!!f.over,(f.bonus||[]).filter(b=>b&&b.name).map(b=>b.name+b.pts).join('|')].join('/');
+        /* مفاتيح مرتّبة: Firestore يعيد الخرائط بترتيب مختلف عن الجهاز — وإلا ظهر «اختلاف» دائم ونُشرت الجولة كل 4 دقائق */
+        const canon=x=>JSON.stringify(x,(k,v)=>v && typeof v==='object' && !Array.isArray(v) ? Object.keys(v).sort().reduce((o,kk)=>(o[kk]=v[kk],o),{}) : v);
+        /* تدقيق 2026-11-09 (C6): أي تغيّر في الأهداف/البطاقات/الجزاءات/التبديلات/التشكيلة يُنشر أيضاً — كانت النتيجة والبونص وحدهما */
+        const sig=f=>[f.hs,f.as,!!f.over,(f.bonus||[]).filter(b=>b&&b.name).map(b=>b.name+b.pts).join('|'),
+          canon([f.goals||[],f.cards||[],f.pens||[],f.subs||[],f.lineups||null])].join('/');
         const diff=st.fixtures.filter(f=>f.gw===gw && f.status==='F' && f.hs!=null).some(f=>{ const o=srv.find(x=>x.id===f.id); return !o || sig(o)!==sig(f); });
         if(diff){ try{ localStorage.setItem(this.AUTO_SYNC_KEY, String(Date.now())); }catch(e){}
           const r=await CLOUD.publishRound(st, gw); console.log('autoSync gw', gw, r); }
