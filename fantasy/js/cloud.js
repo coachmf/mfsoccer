@@ -594,7 +594,8 @@ const CLOUD = {
       if(tr.ok === true && tr.v && tr.v.ok) return true;
       if(tr.ok === true && tr.v && tr.v.conflict) return {conflict:true, doc:tr.v.doc};
       const denied = tr.err && tr.err.code === 'permission-denied', missing = tr.v && tr.v.missing;
-      if(!denied && !missing){
+      /* رفض القواعد لا يعني فريقاً خاطئاً بالضرورة (نسخة قواعد أشدّ، ساعة الجهاز…): الخادم يتحقق بنفسه ويحفظ أو يوضّح السبب */
+      if(!missing){
         if(!same()) return false;
         const sv = await this.serverSave({...patch, team: nt, expectRev});
         if(sv === true) return true;
