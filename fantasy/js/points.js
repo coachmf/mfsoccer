@@ -259,7 +259,15 @@ Object.assign(VIEWS, {
     /* مركز خاص بهذا المشترك في هذه الجولة (TEAM.posFor — كنول الجولة 6) */
     const vt = (this.ui && this.ui.managerDoc && this.ui.managerDoc.team) || (DB.myTeam && DB.myTeam()) || null;
     const ovPos = vt ? TEAM.posFor(vt, pid, gw, st) : p.pos;
-    const ex = explainPoints(st, ovPos && ovPos!==p.pos ? Object.assign({}, p, {pos:ovPos}) : p, r);
+    const pX = ovPos && ovPos!==p.pos ? Object.assign({}, p, {pos:ovPos}) : p;
+    /* تدقيق 2026-11-09 (M5): جولة مزدوجة (مباراتان لناديه) — التفصيل لكل مباراة على حدة (الحضور والشباك النظيفة والأهداف المستقبلة لكل مباراة)
+       بدل تفصيل واحد على المجموع لا يطابق النقاط */
+    let ex;
+    if(r && r.fx > 1){
+      const per=[]; st.fixtures.forEach(f=>{ if(f.gw!==gw || !f.stats) return; for(const c in f.stats){ const x=f.stats[c] && f.stats[c][pid]; if(x && x.pts!=null) per.push(x); } });
+      const parts=per.map((x,i)=>{ const e=explainPoints(st, pX, x); e.rows.forEach(rw=>{ rw.label=rw.label+' (المباراة '+(i+1)+')'; }); return e; });
+      ex={ rows: [].concat(...parts.map(e=>e.rows)), total: parts.reduce((s,e)=>s+e.total,0), played: parts.some(e=>e.played) };
+    } else ex = explainPoints(st, pX, r);
     const total = r ? (r.pts||0) + (ovPos && ovPos!==p.pos ? TEAM.posDelta(st, r, p.pos, ovPos) : 0) : 0;
     if(played && ex.total!==total) console.warn('points breakdown mismatch', pid, gw, ex.total, total);
     const side=id=>`<span class="tm ${id===p.club?'me':''}">${UI.crest(id)}<b>${DB.club(id).short}</b></span>`;

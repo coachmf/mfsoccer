@@ -437,14 +437,14 @@ const MFSYNC = {
           const ogClub = benefiting===h? a : h;
           const pl=this.resolvePlayer(g.og, ogClub, report);
           /* لاعب غير معروف: الهدف يبقى (لتوقيت الأهداف المستقبلة) بلا مسجّل (منصور 2026-09-30) */
-          f.goals.push({min:+g.m||0, scorer:pl?pl.name:null, club:benefiting, assist:null, pen:false, og:true}); if(pl) report.goals++;
+          f.goals.push({min:+g.m||0, scorer:pl?pl.name:null, ...(pl?{scorerId:pl.id}:{}), club:benefiting, assist:null, pen:false, og:true}); if(pl) report.goals++;
           return;
         }
         const pl=this.resolvePlayer(g.p, benefiting, report);
-        let assist=null;
-        if(g.a){ const ap=this.resolvePlayer(g.a, benefiting, report); if(ap) assist=ap.name; }
+        let assist=null, assistId=null;
+        if(g.a){ const ap=this.resolvePlayer(g.a, benefiting, report); if(ap){ assist=ap.name; assistId=ap.id; } }
         /* مسجّل غير معروف لا يُسقط الهدف كله: الصناعة تُحتسب وتوقيت الأهداف المستقبلة يبقى صحيحاً */
-        f.goals.push({min:+g.m||0, scorer:pl?pl.name:null, club:benefiting, assist, pen:(g.det==='ركلة جزاء')});
+        f.goals.push({min:+g.m||0, scorer:pl?pl.name:null, ...(pl?{scorerId:pl.id}:{}), club:benefiting, assist, ...(assistId?{assistId}:{}), pen:(g.det==='ركلة جزاء')});
         report.goals++;
       });
       f.goals.sort((x,y)=>x.min-y.min);
@@ -457,7 +457,7 @@ const MFSYNC = {
         if(cid!==h && cid!==a) return;
         const pl=this.resolvePlayer(c.p, cid, report); if(!pl) return;
         const red = c.type!=='إنذار';
-        f.cards.push({name:pl.name, club:cid, type: red?'r':'y', ...(red && +c.m>0 ? {min:+c.m} : {}), ...(c.type==='إنذار ثانٍ'?{second:true}:{})});
+        f.cards.push({name:pl.name, pid:pl.id, club:cid, type: red?'r':'y', ...(red && +c.m>0 ? {min:+c.m} : {}), ...(c.type==='إنذار ثانٍ'?{second:true}:{})});
         report.cards++;
       });
       /* الطرد بإنذارين = -3 فقط (يُحذف الإنذار الأول) — أياً كان ترتيب إدخال البطاقتين (منصور 2026-09-30) */
@@ -473,7 +473,7 @@ const MFSYNC = {
         if(cid!==h && cid!==a) return;
         if(p.res==='تصدى لها الحارس') savedPens.push({vs: cid===h?a:h, m:+p.m||0});
         const pl=this.resolvePlayer(p.p, cid, report); if(!pl) return;
-        f.pens.push({name:pl.name, club:cid, type:'miss'});
+        f.pens.push({name:pl.name, pid:pl.id, club:cid, type:'miss'});
         report.pens++;
       });
 
@@ -503,7 +503,7 @@ const MFSYNC = {
         const po = x.out? this.resolvePlayer(x.out, cid, report) : null;
         const pi = x.in ? this.resolvePlayer(x.in , cid, report) : null;
         if(!po && !pi) return;
-        f.subs.push({club:cid, out:po?po.name:'', in:pi?pi.name:'', h:+x.h||1, m:+x.m||0});
+        f.subs.push({club:cid, out:po?po.name:'', in:pi?pi.name:'', ...(po?{outId:po.id}:{}), ...(pi?{inId:pi.id}:{}), h:+x.h||1, m:+x.m||0});
         // الداخل بديلاً = b (حتى لو كتبه الموقع خطأً ضمن الأساسيين)، والخارج لا بد أنه لعب:
         // إن لم يكن في تشكيلة الموقع فهو أساسي ناقص من كشفها (ما لم يكن دخل بديلاً قبل ذلك)
         if(f.lineups && f.lineups[cid]){
@@ -520,7 +520,7 @@ const MFSYNC = {
           const start = lu[pl.id]==='s' ? 0 : inS ? absMinute(inS.h,inS.m) : null; if(start==null) return false;
           const end = outS ? absMinute(outS.h,outS.m) : 999; return start<=sp.m && sp.m<=end; };
         const gk=st.players.find(x=>x.club===sp.vs && x.pos==='G' && on(x));
-        if(gk) f.pens.push({name:gk.name, club:sp.vs, type:'save'});
+        if(gk) f.pens.push({name:gk.name, pid:gk.id, club:sp.vs, type:'save'});
       });
 
       genMatchStats(st,f);

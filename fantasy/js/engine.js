@@ -603,7 +603,9 @@ function findByNameClub(st, name, clubId){
 function genMatchStats(st, fx){
   // كل شيء من بيانات حقيقية: التشكيلة والتبديلات من موقع النتائج
   // + الأهداف/الكروت/الجزاءات/البونص. لا توليد عشوائي.
-  const find=(name,clubId)=>findByNameClub(st,name,clubId);
+  /* تدقيق 2026-11-09 (M3): الحدث يحمل معرّف اللاعب (pid) منذ الآن — تغيير الاسم أو اسمان متشابهان في النادي لا يفصل الحدث
+     عن صاحبه. الأحداث القديمة بلا معرّف: بالاسم والنادي كما كانت (فلا تتغيّر نقاط أي جولة سابقة) */
+  const find=(name,clubId,pid)=>(pid && st.players.find(p=>p.id===pid)) || findByNameClub(st,name,clubId);
   // on/off = دقيقة الدخول والخروج (لحساب الأهداف المستقبلة أثناء وجوده في الملعب)
   const mkRow=(min,on,off)=>({min,on,off,g:0,a:0,cs:0,gc:0,ps:0,pm:0,og:0,yc:0,rc:0,bonus:0,pts:0});
   fx.stats={}; fx.stats[fx.h]={}; fx.stats[fx.a]={};
@@ -621,7 +623,7 @@ function genMatchStats(st, fx){
     const clubId=s.club; const rows=fx.stats[clubId]; if(!rows) return;
     const at=Math.max(0, Math.min(FPL_MATCH_MIN, absMinute(s.h, s.m)));
     if(s.out){
-      const po=find(s.out, clubId);
+      const po=find(s.out, clubId, s.outId);
       if(po){
         if(!rows[po.id]) rows[po.id]=mkRow(90,0,90);
         const r=rows[po.id];
@@ -630,35 +632,35 @@ function genMatchStats(st, fx){
       }
     }
     if(s.in){
-      const pi=find(s.in, clubId);
+      const pi=find(s.in, clubId, s.inId);
       // من دخل في الدقيقة 90 شارك فعلاً — دقيقة واحدة على الأقل ليأخذ نقطة المشاركة
       if(pi){ if(!rows[pi.id]) rows[pi.id]=mkRow(0,null,null); rows[pi.id].min=Math.max(1, 90-at); rows[pi.id].on=at; rows[pi.id].off=90; }
     }
   });
-  const rowFor=(name,clubId)=>{
-    const p=find(name,clubId); if(!p) return null;
+  const rowFor=(name,clubId,pid)=>{
+    const p=find(name,clubId,pid); if(!p) return null;
     const rows=fx.stats[clubId];
     if(!rows[p.id]) rows[p.id]=mkRow(90,0,90); // مساهم غير محدد بالتشكيلة يُحتسب أساسياً
     return rows[p.id];
   };
   (fx.goals||[]).forEach(g=>{
-    if(g.og){ const oc=g.club===fx.h?fx.a:fx.h; const r=rowFor(g.scorer,oc); if(r) r.og++; return; }
-    const r=rowFor(g.scorer,g.club); if(r) r.g++;
-    if(g.assist){ const a=rowFor(g.assist,g.club); if(a) a.a++; }
+    if(g.og){ const oc=g.club===fx.h?fx.a:fx.h; const r=rowFor(g.scorer,oc,g.scorerId); if(r) r.og++; return; }
+    const r=rowFor(g.scorer,g.club,g.scorerId); if(r) r.g++;
+    if(g.assist){ const a=rowFor(g.assist,g.club,g.assistId); if(a) a.a++; }
   });
   // كرت لمن ليس في التشكيلة ولا التبديلات (والتشكيلة معروفة): كرت من الدكة — لا مشاركة ولا خصم
-  const listed=(name,clubId)=>{ const lu=(fx.lineups||{})[clubId]; if(!lu) return true; const p=find(name,clubId); return !!(p && (lu[p.id] || fx.stats[clubId][p.id])); };
-  (fx.cards||[]).forEach(c=>{ if(!listed(c.name,c.club)) return; const r=rowFor(c.name,c.club); if(!r) return;
+  const listed=(name,clubId,pid)=>{ const lu=(fx.lineups||{})[clubId]; if(!lu) return true; const p=find(name,clubId,pid); return !!(p && (lu[p.id] || fx.stats[clubId][p.id])); };
+  (fx.cards||[]).forEach(c=>{ if(!listed(c.name,c.club,c.pid)) return; const r=rowFor(c.name,c.club,c.pid); if(!r) return;
     if(c.type==='r'){ r.rc++;
       /* الطرد ينهي دقائقه (منصور 2026-09-30): كان المطرود في الدقيقة 10 يأخذ 90 دقيقة وشباكاً نظيفة */
       const cm=Math.min(FPL_MATCH_MIN, +c.min||0); if(cm>0 && (r.off==null || cm<r.off)){ r.off=cm; r.min=Math.max(1, cm-(r.on||0)); } }
     else r.yc++; });
-  (fx.pens||[]).forEach(pn=>{ const r=rowFor(pn.name,pn.club); if(!r) return; if(pn.type==='save') r.ps++; else r.pm++; });
+  (fx.pens||[]).forEach(pn=>{ const r=rowFor(pn.name,pn.club,pn.pid); if(!r) return; if(pn.type==='save') r.ps++; else r.pm++; });
   /* البونص لمن شارك فقط (فحص 2026-10-07): كان يصنع صفاً بـ90 دقيقة لمن ليس في التشكيلة فيأخذ مشاركة وشباكاً نظيفة لم يلعبها.
      التشكيلة معروفة → لا بونص لمن لم يلعب؛ غير معروفة → السلوك القديم (يُعتبر أساسياً). */
   (fx.bonus||[]).forEach(b=>{
-    const lu=(fx.lineups||{})[b.club]; const p=find(b.name,b.club);
-    const r = lu ? (p && fx.stats[b.club][p.id]) : rowFor(b.name,b.club);
+    const lu=(fx.lineups||{})[b.club]; const p=find(b.name,b.club,b.pid);
+    const r = lu ? (p && fx.stats[b.club][p.id]) : rowFor(b.name,b.club,b.pid);
     if(r && (!lu || r.min>0)) r.bonus=(+b.pts||0);
   });
   // بديل له هدف/كرت/جزاء لكن بلا تبديل مسجَّل: شارك فعلاً — دقيقة واحدة على الأقل (لا يُصفَّر)

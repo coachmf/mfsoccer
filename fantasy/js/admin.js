@@ -404,8 +404,9 @@ const ADMIN = {
     const st=DB.state;
     const f=st.fixtures.find(x=>x.id===fid);
     if(!f){ VIEWS.ui.editFx=null; return this.sec_results(); }   // المباراة أُزيلت بمزامنة الجدول
-    const squads=st.players.filter(p=>(p.club===f.h||p.club===f.a)&&p.status!=='u');
-    const opts=sel=>squads.map(p=>`<option value="${p.id}" ${sel===p.name?'selected':''}>${esc(p.name)} (${DB.club(p.club).short})</option>`).join('');
+    const squads=this.fxPlayers(f);   /* C5: لاعبو أحداث المباراة ولو انتقلوا */
+    const isSel=(sel,p)=> sel && typeof sel==='object' ? (sel.id ? sel.id===p.id : sel.name===p.name) : sel===p.name;   /* M3: بالمعرّف أولاً */
+    const opts=sel=>squads.map(p=>`<option value="${p.id}" ${isSel(sel,p)?'selected':''}>${esc(p.name)} (${DB.club(p.club).short})</option>`).join('');
     const clubOpts=sel=>st.clubs.map(c=>`<option value="${c.id}" ${sel===c.id?'selected':''}>${c.name}</option>`).join('');
     return `<div class="card"><h3>تحرير: ${DB.club(f.h).name} × ${DB.club(f.a).name} — ج${f.gw}</h3>
       <div class="tiny" style="margin-bottom:8px">عدّل الفريقين والموعد ليطابقوا الجدول الرسمي للدوري — الجدولة الافتراضية تقديرية إلى أن تُعتمد الجولات الحقيقية.</div>
@@ -444,7 +445,7 @@ const ADMIN = {
         const cur=(f.bonus||[]).find(b=>b.pts===bp);
         return `<div class="row" style="gap:8px;margin-bottom:6px;align-items:center;flex-wrap:wrap">
           <span class="tiny" style="width:160px;font-weight:700">${label}</span>
-          <select class="bx_sel" data-pts="${bp}" style="width:230px"><option value="">—</option>${opts(cur?cur.name:null)}</select>
+          <select class="bx_sel" data-pts="${bp}" style="width:230px"><option value="">—</option>${opts(cur?{name:cur.name,id:cur.pid}:null)}</select>
         </div>`;
       }).join('')}
       <div class="row" style="gap:8px;margin-top:10px">
@@ -455,8 +456,8 @@ const ADMIN = {
   goalRow(f,g,i,opts){
     return `<div class="row" style="gap:6px;margin-bottom:6px;flex-wrap:wrap" data-goal="${i}">
       <input type="number" placeholder="دقيقة" value="${g?g.min:''}" style="width:70px" class="g_min">
-      <select class="g_scorer" style="width:180px"><option value="">— الهداف —</option>${opts(g?g.scorer:null)}</select>
-      <select class="g_assist" style="width:180px"><option value="">بدون صناعة</option>${opts(g?g.assist:null)}</select>
+      <select class="g_scorer" style="width:180px"><option value="">— الهداف —</option>${opts(g?{name:g.scorer,id:g.scorerId}:null)}</select>
+      <select class="g_assist" style="width:180px"><option value="">بدون صناعة</option>${opts(g&&g.assist?{name:g.assist,id:g.assistId}:null)}</select>
       <label class="pill" style="cursor:pointer"><input type="checkbox" class="g_pen" ${g&&g.pen?'checked':''} style="width:auto"> جزاء</label>
       <label class="pill" style="cursor:pointer"><input type="checkbox" class="g_og" ${g&&g.og?'checked':''} style="width:auto"> عكسي</label>
       <button class="btn sm danger" onclick="this.closest('[data-goal]').remove()">✕</button>
@@ -468,7 +469,7 @@ const ADMIN = {
   },
   cardRow(c,i,opts){
     return `<div class="row" style="gap:6px;margin-bottom:6px;flex-wrap:wrap" data-card="${i}">
-      <select class="c_player" style="width:200px"><option value="">— اللاعب —</option>${opts(c?c.name:null)}</select>
+      <select class="c_player" style="width:200px"><option value="">— اللاعب —</option>${opts(c?{name:c.name,id:c.pid}:null)}</select>
       <select class="c_type" style="width:110px">
         <option value="y" ${c&&c.type==='r'?'':'selected'}>صفراء</option>
         <option value="r" ${c&&c.type==='r'?'selected':''}>حمراء</option></select>
@@ -477,7 +478,7 @@ const ADMIN = {
   },
   penRow(p,i,opts){
     return `<div class="row" style="gap:6px;margin-bottom:6px;flex-wrap:wrap" data-pen="${i}">
-      <select class="p_player" style="width:200px"><option value="">— اللاعب —</option>${opts(p?p.name:null)}</select>
+      <select class="p_player" style="width:200px"><option value="">— اللاعب —</option>${opts(p?{name:p.name,id:p.pid}:null)}</select>
       <select class="p_type" style="width:150px">
         <option value="miss" ${p&&p.type==='save'?'':'selected'}>أهدر الركلة</option>
         <option value="save" ${p&&p.type==='save'?'selected':''}>تصدى لها (حارس)</option></select>
@@ -506,7 +507,8 @@ const ADMIN = {
     const st=DB.state;
     const f=st.fixtures.find(x=>x.id===fid);
     const squads=this.fxPlayers(f);
-    return sel=>squads.map(p=>`<option value="${p.id}" ${sel===p.name?'selected':''}>${esc(p.name)} (${DB.club(p.club).short})</option>`).join('');
+    const isSel=(sel,p)=> sel && typeof sel==='object' ? (sel.id ? sel.id===p.id : sel.name===p.name) : sel===p.name;
+    return sel=>squads.map(p=>`<option value="${p.id}" ${isSel(sel,p)?'selected':''}>${esc(p.name)} (${DB.club(p.club).short})</option>`).join('');
   },
   addCardRow(fid){ document.getElementById('cardRows').insertAdjacentHTML('beforeend', this.cardRow(null,Date.now(),this.fxOpts(fid))); },
   addPenRow(fid){ document.getElementById('penRows').insertAdjacentHTML('beforeend', this.penRow(null,Date.now(),this.fxOpts(fid))); },
@@ -547,7 +549,7 @@ const ADMIN = {
       const sp=DB.player(scorerId);
       const og=row.querySelector('.g_og').checked;
       const sc=this.fxClubOf(f, sp, prev);
-      f.goals.push({min, scorer:sp.name, club: og? (sc===f.h? f.a : f.h) : sc, assist: assistId? DB.player(assistId).name:null,
+      f.goals.push({min, scorer:sp.name, scorerId:sp.id, club: og? (sc===f.h? f.a : f.h) : sc, assist: assistId? DB.player(assistId).name:null, ...(assistId?{assistId}:{}),
         pen:row.querySelector('.g_pen').checked, og});          // العكسي يُحسب للفريق الآخر
     });
     f.goals.sort((a,b)=>a.min-b.min);
@@ -566,19 +568,19 @@ const ADMIN = {
       const id=row.querySelector('.c_player').value; if(!id) return;
       const p=DB.player(id), type=row.querySelector('.c_type').value;
       const old=prev.cards.find(x=>x.name===p.name && x.type===type);
-      f.cards.push({name:p.name, club:this.fxClubOf(f, p, prev), type, ...(old && old.min ? {min:old.min} : {})});
+      f.cards.push({name:p.name, pid:p.id, club:this.fxClubOf(f, p, prev), type, ...(old && old.min ? {min:old.min} : {})});
     });
     f.pens=[];
     document.querySelectorAll('#penRows [data-pen]').forEach(row=>{
       const id=row.querySelector('.p_player').value; if(!id) return;
       const p=DB.player(id);
-      f.pens.push({name:p.name, club:this.fxClubOf(f, p, prev), type:row.querySelector('.p_type').value});
+      f.pens.push({name:p.name, pid:p.id, club:this.fxClubOf(f, p, prev), type:row.querySelector('.p_type').value});
     });
     f.bonus=[];
     document.querySelectorAll('.bx_sel').forEach(sel=>{
       const id=sel.value; if(!id) return;
       const p=DB.player(id);
-      f.bonus.push({name:p.name, club:this.fxClubOf(f, p, prev), pts:+sel.dataset.pts});
+      f.bonus.push({name:p.name, pid:p.id, club:this.fxClubOf(f, p, prev), pts:+sel.dataset.pts});
     });
     // مسح إحصاءات المباراة القديمة من playerGW ثم إعادة التوليد
     if(f.stats){ for(const clubId in f.stats){ for(const pid in f.stats[clubId]){ if(st.playerGW[pid]) delete st.playerGW[pid][f.gw]; } } }
