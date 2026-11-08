@@ -67,6 +67,11 @@ const MFSYNC = {
   },
   gwOf(m, win, st){
     st=st||DB.state; const r=+m.round, total=(st.rules&&st.rules.totalGWs)||22;
+    /* تدقيق 2026-11-09 (C4): مباراة لُعبت ولها مباراة منتهية في الفانتسي تبقى في جولتها — كانت مؤجلة لُعبت لاحقاً تنتقل للجولة التالية
+       بعد إغلاق جولتها فتُنشأ لها مباراة ثانية ويأخذ اللاعبون نقاطها مرتين */
+    { const h=this.clubId(m.home), a=this.clubId(m.away);
+      const pin=h && a && (st.fixtures||[]).find(x=>x.status==='F' && x.h===h && x.a===a);
+      if(pin) return pin.gw; }
     const fin=n=>((st.gws||[]).find(g=>g.n===n)||{}).status==='finished';
     if(!m.date || !win) return r;
     if(this.notedPP(m)) return r;   /* «مؤجلة» على الموقع بموعد مؤقت: تبقى في جولتها مؤجلة حتى يُكتب موعدها الفعلي */
@@ -389,6 +394,9 @@ const MFSYNC = {
 
     const st=DB.state;
     const report={matches:0, goals:0, cards:0, pens:0, xi:0, subs:0, unmatched:[], notes:[], noXI:[], xiFixed:[], benchCards:[], upd:data.lastUpdate||''};
+    /* تدقيق 2026-11-09 (H1): جولة محتسبة مجمّدة — المزامنة التلقائية على كل جهاز لا تعيد بناء إحصاءاتها (كانت كل أجهزة المشتركين
+       تعيد حسابها بمراكز اليوم فيختلف ما يرونه عن المحتسب). التصحيح بعد الاحتساب: زر «سحب نتائج الجولة» للمدير فقط */
+    if(quiet && !opts.force && (DB.gw(gw)||{}).status==='finished') return report;
     // الجدول كله من الموقع أولاً: يُنشئ مباريات الجولة إن لم تكن عندنا ويحذف ما ليس على الموقع
     const fxRep=this.syncFixtures(data, st, {removeMissing:true});
     fxRep.notes.forEach(n=>report.notes.push(n));
@@ -547,6 +555,9 @@ const MFSYNC = {
       RANKS.recomputeGWRanks(st, gw);   // الترتيب بعد اكتمال نقاط الجميع
     }
     DB.save(); APP.render();
+    if(g && g.status==='finished' && typeof CLOUD!=='undefined' && CLOUD.admin){
+      CLOUD.publishRound(st, gw).then(r=>{ if(r && r.ok && typeof ADMIN!=='undefined') ADMIN.refinalize(gw); else UI.toast('تعذّر نشر التصحيح للخادم', true); }).catch(()=>{});
+    }
 
     UI.modal(`<h3>استيراد الجولة ${gw} من mfsoccer</h3>
       <div class="tiny" style="margin-bottom:8px">آخر تحديث للموقع: ${esc(report.upd)}</div>

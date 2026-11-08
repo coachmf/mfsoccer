@@ -477,10 +477,28 @@ const ADMIN = {
       <button class="btn sm danger" onclick="this.closest('[data-pen]').remove()">✕</button>
     </div>`;
   },
+  /* لاعبو المباراة في نموذج التحرير: لاعبو الناديين + كل من له حدث أو مكان في تشكيلة هذه المباراة ولو انتقل ناديه بعدها
+     (تدقيق 2026-11-09، C5: كانت أحداث اللاعب المنتقل تُحذف بصمت عند حفظ البونص) */
+  fxPlayers(f){
+    const st=DB.state, names=new Set();
+    (f.goals||[]).forEach(g=>{ if(g.scorer) names.add(g.scorer); if(g.assist) names.add(g.assist); });
+    [...(f.cards||[]), ...(f.pens||[]), ...(f.bonus||[])].forEach(x=>{ if(x.name) names.add(x.name); });
+    const inLu=new Set(); Object.values(f.lineups||{}).forEach(o=>Object.keys(o||{}).forEach(pid=>inLu.add(pid)));
+    return st.players.filter(p=>((p.club===f.h||p.club===f.a)&&p.status!=='u') || inLu.has(p.id) || names.has(p.name));
+  },
+  /* نادي اللاعب في هذه المباراة (لا ناديه الحالي): من التشكيلة أو حدث سابق، وإلا ناديه إن كان أحد الطرفين */
+  fxClubOf(f, p, prev){
+    if(p.club===f.h || p.club===f.a) return p.club;
+    for(const c of [f.h, f.a]) if(((f.lineups||{})[c]||{})[p.id] || ((prev&&prev.lineups||{})[c]||{})[p.id]) return c;
+    const ev=[...((prev&&prev.cards)||[]), ...((prev&&prev.pens)||[]), ...((prev&&prev.bonus)||[])].find(x=>x.name===p.name && (x.club===f.h||x.club===f.a));
+    if(ev) return ev.club;
+    const g=((prev&&prev.goals)||[]).find(x=>x.scorer===p.name && !x.og); if(g) return g.club;
+    return p.club;
+  },
   fxOpts(fid){
     const st=DB.state;
     const f=st.fixtures.find(x=>x.id===fid);
-    const squads=st.players.filter(p=>(p.club===f.h||p.club===f.a)&&p.status!=='u');
+    const squads=this.fxPlayers(f);
     return sel=>squads.map(p=>`<option value="${p.id}" ${sel===p.name?'selected':''}>${esc(p.name)} (${DB.club(p.club).short})</option>`).join('');
   },
   addCardRow(fid){ document.getElementById('cardRows').insertAdjacentHTML('beforeend', this.cardRow(null,Date.now(),this.fxOpts(fid))); },
@@ -488,7 +506,7 @@ const ADMIN = {
   addGoalRow(fid){
     const st=DB.state;
     const f=st.fixtures.find(x=>x.id===fid);
-    const squads=st.players.filter(p=>(p.club===f.h||p.club===f.a)&&p.status!=='u');
+    const squads=this.fxPlayers(f);
     const opts=sel=>squads.map(p=>`<option value="${p.id}">${esc(p.name)} (${DB.club(p.club).short})</option>`).join('');
     document.getElementById('goalRows').insertAdjacentHTML('beforeend', this.goalRow(f,null,Date.now(),opts));
   },
@@ -498,6 +516,7 @@ const ADMIN = {
     if(new Set(bxIds).size!==bxIds.length){ UI.toast('البونص: نفس اللاعب مختار في خانتين — اختر ثلاثة لاعبين مختلفين', true); return; }
     const st=DB.state;
     const f=st.fixtures.find(x=>x.id===fid);
+    const prev=JSON.parse(JSON.stringify({goals:f.goals||[], cards:f.cards||[], pens:f.pens||[], bonus:f.bonus||[], lineups:f.lineups||{}}));
     // مسح إحصاءات النسخة القديمة قبل أي تعديل
     if(f.stats){ for(const clubId in f.stats){ for(const pid in f.stats[clubId]){ if(st.playerGW[pid]) delete st.playerGW[pid][f.gw]; } } }
     f.stats=null;
@@ -520,7 +539,8 @@ const ADMIN = {
       if(!scorerId) return;
       const sp=DB.player(scorerId);
       const og=row.querySelector('.g_og').checked;
-      f.goals.push({min, scorer:sp.name, club: og? (sp.club===f.h? f.a : f.h) : sp.club, assist: assistId? DB.player(assistId).name:null,
+      const sc=this.fxClubOf(f, sp, prev);
+      f.goals.push({min, scorer:sp.name, club: og? (sc===f.h? f.a : f.h) : sc, assist: assistId? DB.player(assistId).name:null,
         pen:row.querySelector('.g_pen').checked, og});          // العكسي يُحسب للفريق الآخر
     });
     f.goals.sort((a,b)=>a.min-b.min);
@@ -533,23 +553,25 @@ const ADMIN = {
       f.lineups[cid]=f.lineups[cid]||{};
       f.lineups[cid][el.dataset.pid]=stt;
     });
+    /* تدقيق 2026-11-09 (C5): البطاقة تحتفظ بدقيقتها (الطرد يقطع دقائق اللعب والشباك النظيفة) ونادي اللاعب في المباراة لا ناديه الحالي */
     f.cards=[];
     document.querySelectorAll('#cardRows [data-card]').forEach(row=>{
       const id=row.querySelector('.c_player').value; if(!id) return;
-      const p=DB.player(id);
-      f.cards.push({name:p.name, club:p.club, type:row.querySelector('.c_type').value});
+      const p=DB.player(id), type=row.querySelector('.c_type').value;
+      const old=prev.cards.find(x=>x.name===p.name && x.type===type);
+      f.cards.push({name:p.name, club:this.fxClubOf(f, p, prev), type, ...(old && old.min ? {min:old.min} : {})});
     });
     f.pens=[];
     document.querySelectorAll('#penRows [data-pen]').forEach(row=>{
       const id=row.querySelector('.p_player').value; if(!id) return;
       const p=DB.player(id);
-      f.pens.push({name:p.name, club:p.club, type:row.querySelector('.p_type').value});
+      f.pens.push({name:p.name, club:this.fxClubOf(f, p, prev), type:row.querySelector('.p_type').value});
     });
     f.bonus=[];
     document.querySelectorAll('.bx_sel').forEach(sel=>{
       const id=sel.value; if(!id) return;
       const p=DB.player(id);
-      f.bonus.push({name:p.name, club:p.club, pts:+sel.dataset.pts});
+      f.bonus.push({name:p.name, club:this.fxClubOf(f, p, prev), pts:+sel.dataset.pts});
     });
     // مسح إحصاءات المباراة القديمة من playerGW ثم إعادة التوليد
     if(f.stats){ for(const clubId in f.stats){ for(const pid in f.stats[clubId]){ if(st.playerGW[pid]) delete st.playerGW[pid][f.gw]; } } }
