@@ -185,6 +185,7 @@ const ADMIN = {
     return `<div class="card"><h3 class="row spread" style="flex-wrap:wrap;gap:8px">إدارة الجولات
         <button class="btn sm" onclick="MFSYNC.adminSyncFixtures()">${UI.icon('swap',14)} سحب الجدول من موقع mfsoccer</button></h3>
       <div class="tiny" style="margin-bottom:10px">الجدول يُسحب من mfsoccer فقط: الجولة التي لم ينشر الموقع مبارياتها تبقى فارغة وبلا موعد إغلاق. موعد الإغلاق = انطلاق أول مباراة في الجولة. بعد الموعد تصير الجولة «مباشرة»: النقاط تظهر للمشتركين مع كل مباراة تُسجَّل على الموقع (ترتيب ومتوسط مباشران). الزر أدناه يُفعَّل فقط بعد اكتمال كل نتائج الجولة: يعتمد النقاط رسمياً على الخادم ويفتح الجولة التالية.</div>
+      <div id="gwRunBox" class="tiny" style="margin-bottom:10px">${this.gwRunHTML()}</div>
       <div class="row" style="gap:10px;flex-wrap:wrap;margin-bottom:14px;align-items:center">
         <button class="btn danger" ${(pending||noFx)?'disabled':''} onclick="ADMIN.finalizeConfirm()">اعتماد وإغلاق الجولة ${st.currentGW}</button>
         <span class="pill ${(pending||noFx)?'gold':'green'}">${noFx? 'لم يصدر جدول الجولة بعد' : pending? `ناقص ${pending} نتيجة` : 'كل النتائج مدخلة — جاهزة للإغلاق'}</span>
@@ -276,10 +277,33 @@ const ADMIN = {
     }catch(e){ console.warn('autoSync', e); }
     finally{ this._autoSyncBusy=false; }
   },
+  /* حالة الاحتساب التلقائي على الخادم (meta/gwrun) — للمتابعة فقط */
+  gwRunHTML(){
+    const d=this._gwRun;
+    if(this._gwRunAt===undefined || Date.now()-this._gwRunAt > 60e3){
+      this._gwRunAt=Date.now();
+      try{ CLOUD.root().collection('meta').doc('gwrun').get().then(s=>{ this._gwRun=s.exists ? s.data() : null;
+        const el=document.getElementById('gwRunBox'); if(el) el.innerHTML=this.gwRunHTML(); }).catch(()=>{}); }catch(e){}
+    }
+    if(!d) return '<b>الاحتساب التلقائي على الخادم:</b> يعمل كل 5 دقائق — يحتسب الجولة بعد اكتمال مبارياتها وبونصها ويفتح التالية';
+    const st={done:'اكتمل', scoring:'جارٍ'}[d.state]||d.state||'';
+    const t=d.updated ? new Date(d.updated).toLocaleString('ar-KW',{hour:'2-digit',minute:'2-digit',day:'numeric',month:'numeric'}) : '';
+    return `<b>الاحتساب التلقائي على الخادم:</b> الجولة ${d.gw} — ${st}${d.state==='done'&&d.avg!=null?` (متوسط ${d.avg}، أعلى ${d.high})`:''}${d.state==='scoring'&&d.remaining?` — بقي ${d.remaining}`:''} · آخر تحديث ${t}`
+      + ((d.log||[]).length ? `<div style="opacity:.75;margin-top:4px">${(d.log||[]).slice(-3).map(x=>esc(String(x))).join('<br>')}</div>` : '');
+  },
   async autoFinalize(){
     const st=DB.state;
     if(typeof CLOUD==='undefined' || !CLOUD.admin || !st.fromCloud || this._autoFinBusy) return;
     const r=this.autoFinalizeReady(st); if(!r.ok) return;
+    /* الخادم يحتسب الجولة (fantasy-gw-cron، تدقيق 2026-11-09): هذا الجهاز احتياط فقط — لا يبدأ إلا إن لم يتقدّم الخادم
+       خلال 20 دقيقة من جاهزية الجولة (لا تشغيلان معاً، ولا احتساب يُقطع بإغلاق الصفحة) */
+    try{
+      const s=await CLOUD.root().collection('meta').doc('gwrun').get(), d=s.exists ? s.data() : null;
+      if(d && d.gw===st.currentGW && (d.state==='done' || (d.updated && Date.now()-Date.parse(d.updated) < 20*60e3))) return;
+      const k='kwf_ready_'+st.currentGW; let since=+localStorage.getItem(k)||0;
+      if(!since){ since=Date.now(); localStorage.setItem(k, String(since)); }
+      if(Date.now()-since < 20*60e3) return;
+    }catch(e){ return; }
     try{ const l=+localStorage.getItem(this.AUTO_FIN_KEY)||0; if(Date.now()-l < 15*60e3) return; localStorage.setItem(this.AUTO_FIN_KEY, String(Date.now())); }catch(e){}
     this._autoFinBusy=true;
     /* إغلاق الصفحة أثناء الاحتساب يقطعه في منتصفه — تنبيه المتصفح قبل المغادرة */
@@ -548,8 +572,15 @@ const ADMIN = {
     GWADMIN.refreshDeadlines(st);
     DB.save(); VIEWS.ui.editFx=null;
     UI.toast('حُفظت النتيجة وأُعيد الاحتساب '); APP.render();
-    /* آخر بونص في الجولة = احتسابها وفتح التالية فوراً، لا انتظار مؤقّت الـ10 دقائق (منصور 2026-10-28) */
-    if(g.status!=='finished') setTimeout(()=>this.autoFinalize(), 8000);
+    /* تدقيق 2026-11-09: النتيجة/البونص تُنشر فوراً للخادم، والخادم (fantasy-gw-cron كل 5 دقائق) يحتسب الجولة ويفتح التالية —
+       لا احتساب من هذه الشاشة (كان يبدأ بعد 8 ث من جهاز قد يُغلق فينقطع في منتصفه). تصحيح جولة منتهية: إعادة احتساب نقاطها فقط */
+    if(typeof CLOUD!=='undefined' && CLOUD.admin){
+      CLOUD.publishRound(st, f.gw).then(r=>{
+        if(!r || !r.ok){ UI.toast('حُفظت على جهازك لكن تعذّر نشرها للخادم: '+((r&&r.err)||'')+' — ستُعاد تلقائياً', true); return; }
+        UI.toast(g.status==='finished' ? 'نُشر التصحيح — جارٍ إعادة احتساب نقاط الجولة '+f.gw : 'نُشرت النتيجة — الخادم يحتسب الجولة تلقائياً بعد اكتمال البونص');
+        if(g.status==='finished') this.refinalize(f.gw);
+      }).catch(()=>{});
+    }
   },
 
   /* ---------- نظام النقاط ---------- */

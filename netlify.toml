@@ -68,6 +68,20 @@
 [functions."match-audit-cron"]
   schedule = "*/10 * * * *"
 
+# احتساب الجولة تلقائياً على الخادم (تدقيق 2026-11-09): بعد اكتمال المباريات والبونص — بلا جهاز مدير مفتوح
+[functions."fantasy-gw-cron"]
+  schedule = "*/5 * * * *"
+  included_files = ["fantasy/js/data.js", "fantasy/js/engine.js", "fantasy/js/coach.js"]
+
+[functions."fantasy-gw-check"]
+  included_files = ["fantasy/js/data.js", "fantasy/js/engine.js", "fantasy/js/coach.js"]
+
+[[redirects]]
+  from = "/api/fantasy-gw"
+  to = "/.netlify/functions/fantasy-gw-check"
+  status = 200
+  force = true
+
 # ——— صور الأخبار من CDN (netlify/functions/newsimg.js) ———
 [[redirects]]
   from = "/api/newsimg/*"
