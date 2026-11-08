@@ -18,6 +18,8 @@ async function run(){
     await notifyStaff(at, `gwfail|${msg.slice(0, 60)}`, 'تنبيه للإدارة: تعذّر احتساب الجولة تلقائياً', msg + ' — يُعاد المحاولة كل 5 دقائق').catch(() => null);
     throw e;
   }
+  /* نبضة: آخر فحص للخادم ونتيجته — تظهر في لوحة الجولات فيُعرف أن الأتمتة تعمل */
+  try{ await io.commit([{ path:'fantasy/2026-2027/meta/gwbeat', data:{ at:new Date().toISOString(), gw:r.gw||null, result:JSON.stringify(r).slice(0, 300) }, mask:false }]); }catch(e){}
   if(r.state === 'done') await notifyStaff(at, `gwdone|${r.gw}`, `احتُسبت الجولة ${r.gw} تلقائياً`,
     `${r.eligible} مشتركاً · المتوسط ${r.avg} · الأعلى ${r.high} · تغيّر سعر ${r.prices} لاعباً`).catch(() => null);
   return r;

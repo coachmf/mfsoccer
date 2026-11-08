@@ -282,13 +282,16 @@ const ADMIN = {
     const d=this._gwRun;
     if(this._gwRunAt===undefined || Date.now()-this._gwRunAt > 60e3){
       this._gwRunAt=Date.now();
-      try{ CLOUD.root().collection('meta').doc('gwrun').get().then(s=>{ this._gwRun=s.exists ? s.data() : null;
+      try{ Promise.all([CLOUD.root().collection('meta').doc('gwrun').get(), CLOUD.root().collection('meta').doc('gwbeat').get()]).then(([s,b])=>{
+        this._gwRun=s.exists ? s.data() : null; this._gwBeat=b.exists ? b.data() : null;
         const el=document.getElementById('gwRunBox'); if(el) el.innerHTML=this.gwRunHTML(); }).catch(()=>{}); }catch(e){}
     }
-    if(!d) return '<b>الاحتساب التلقائي على الخادم:</b> يعمل كل 5 دقائق — يحتسب الجولة بعد اكتمال مبارياتها وبونصها ويفتح التالية';
+    const bt=this._gwBeat, beat = bt && bt.at ? (()=>{ const m=Math.round((Date.now()-Date.parse(bt.at))/60000);
+      return ` · <span class="pill ${m<=15?'green':'red'}">آخر فحص للخادم قبل ${m} دقيقة</span>`; })() : '';
+    if(!d) return '<b>الاحتساب التلقائي على الخادم:</b> يعمل كل 5 دقائق — يحتسب الجولة بعد اكتمال مبارياتها وبونصها ويفتح التالية'+beat;
     const st={done:'اكتمل', scoring:'جارٍ'}[d.state]||d.state||'';
     const t=d.updated ? new Date(d.updated).toLocaleString('ar-KW',{hour:'2-digit',minute:'2-digit',day:'numeric',month:'numeric'}) : '';
-    return `<b>الاحتساب التلقائي على الخادم:</b> الجولة ${d.gw} — ${st}${d.state==='done'&&d.avg!=null?` (متوسط ${d.avg}، أعلى ${d.high})`:''}${d.state==='scoring'&&d.remaining?` — بقي ${d.remaining}`:''} · آخر تحديث ${t}`
+    return `<b>الاحتساب التلقائي على الخادم:</b> الجولة ${d.gw} — ${st}${d.state==='done'&&d.avg!=null?` (متوسط ${d.avg}، أعلى ${d.high})`:''}${d.state==='scoring'&&d.remaining?` — بقي ${d.remaining}`:''} · آخر تحديث ${t}${beat}`
       + ((d.log||[]).length ? `<div style="opacity:.75;margin-top:4px">${(d.log||[]).slice(-3).map(x=>esc(String(x))).join('<br>')}</div>` : '');
   },
   async autoFinalize(){
