@@ -71,10 +71,10 @@
 # احتساب الجولة تلقائياً على الخادم (تدقيق 2026-11-09): بعد اكتمال المباريات والبونص — بلا جهاز مدير مفتوح
 [functions."fantasy-gw-cron"]
   schedule = "*/5 * * * *"
-  included_files = ["fantasy/js/data.js", "fantasy/js/engine.js", "fantasy/js/coach.js"]
+  included_files = ["fantasy/js/data.js", "fantasy/js/engine.js", "fantasy/js/coach.js", "fantasy/js/mfsync.js"]
 
 [functions."fantasy-gw-check"]
-  included_files = ["fantasy/js/data.js", "fantasy/js/engine.js", "fantasy/js/coach.js"]
+  included_files = ["fantasy/js/data.js", "fantasy/js/engine.js", "fantasy/js/coach.js", "fantasy/js/mfsync.js"]
 
 [[redirects]]
   from = "/api/fantasy-gw"

@@ -13,6 +13,47 @@ const LEASE_MS = 4 * 60e3;
 
 const clone = x => JSON.parse(JSON.stringify(x));
 
+/* ===== استيراد النتائج من الموقع على الخادم (تدقيق 2026-11-09، C7): نفس MFSYNC الذي يعمل في المتصفح، فلا تتوقف الجولة
+   على فتح المدير للعبة. يُنشر مستند الجولة إن اختلف عن نسخة الخادم (نفس مقارنة ADMIN.autoSync المرتّبة المفاتيح). ===== */
+const canon = x => JSON.stringify(x, (k, v) => v && typeof v === 'object' && !Array.isArray(v) ? Object.keys(v).sort().reduce((o, kk) => (o[kk] = v[kk], o), {}) : v);
+const fxSig = f => [f.hs, f.as, !!f.over, (f.bonus || []).filter(b => b && b.name).map(b => b.name + b.pts).join('|'),
+  canon([f.goals || [], f.cards || [], f.pens || [], f.subs || [], f.lineups || null]), f.status, f.date || ''].join('/');
+async function syncResults(io, E, st, R, opts){
+  opts = opts || {};
+  const site = await io.get(`seasons/${SEASON}`); if(!site) return { skip:'no site' };
+  const M = E.MFSYNC; M.fetchSeasonRaw = async () => clone(site.data);
+  const data = await M.fetchSeason();
+  M.syncFixtures(data, st, { removeMissing:true });
+  const out = { published:[], diff:{} };
+  for(const gw of (opts.gws || [st.currentGW])){
+    await M.importRound(gw, { quiet:true, data, force:!!opts.force });
+    const srv = (R[gw] && R[gw].fixtures) || [];
+    const loc = st.fixtures.filter(f => f.gw === gw);
+    const diff = loc.length !== srv.length || loc.some(f => { const o = srv.find(x => x.id === f.id); return !o || fxSig(o) !== fxSig(f); });
+    out.diff[gw] = diff;
+    if(diff && !opts.dry){
+      const pg = {}; for(const pid in st.playerGW){ const row = st.playerGW[pid][gw]; if(row) pg[pid] = row; }
+      await io.commit([{ path:`${F}/rounds/${gw}`, data:{ fixtures:clone(loc), playerGW:pg, updated:new Date().toISOString(), by:'server' }, mask:false }]);
+      out.published.push(gw);
+    }
+  }
+  return out;
+}
+/* فحص خفيف: هل في الموقع مباراة منتهية من الجولة الحالية لم تصل لنسخة الخادم بعد؟ */
+async function siteAhead(io, root, cur, roundFx){
+  const nz = x => String(x || '').replace(/[ىيئ]/g, '').replace(/[أإآ]/g, 'ا').replace(/ة/g, 'ه').replace(/\s+/g, '');
+  const ids = {}; (root.clubs || []).forEach(c => { if(c && c.id){ ids[nz(c.name)] = c.id; if(c.short) ids[nz(c.short)] = c.id; } });
+  const s = await io.get(`seasons/${SEASON}`); if(!s) return false;
+  return (s.data.matches || []).some(m => {
+    if((m.comp && m.comp !== 'الدوري') || +m.round !== cur || m.status !== 'ft') return false;
+    const h = ids[nz(m.home)], a = ids[nz(m.away)]; if(!h || !a) return false;
+    const f = roundFx.find(x => (x.h === h && x.a === a) || (x.h === a && x.a === h));
+    if(!f || f.status !== 'F' || f.over === false) return true;
+    const hs = f.h === h ? +f.hs : +f.as, as = f.h === h ? +f.as : +f.hs;
+    return hs !== +m.hg || as !== +m.ag;
+  });
+}
+
 /* readiness = ADMIN.autoFinalizeReady */
 function readiness(st){
   const gw = st.currentGW;
@@ -116,7 +157,7 @@ async function readState(io){
   const R = {}; rounds.forEach(d => { R[d.id] = d.data; });
   const E = makeEngine();
   const st = buildState(E, root.data, players.data, R);
-  return { E, st, root };
+  return { E, st, root, R };
 }
 
 /* سجل التشغيل والقفل */
@@ -138,14 +179,18 @@ async function step(io, opts){
     const cur = +root.data.currentGW, rd = await io.get(`${F}/rounds/${cur}`);
     const lite = { currentGW:cur, rules:root.data.rules || {}, gws:root.data.gws || [], fixtures:((rd && rd.data.fixtures) || []).map(f => ({ ...f, gw:cur })) };
     const pre = readiness(lite);
-    if(!pre.ok && pre.why !== 'too soon' && pre.why !== 'waiting bonus') return { ok:true, gw:cur, idle:pre.why };
+    if(!pre.ok && pre.why !== 'too soon' && pre.why !== 'waiting bonus'){
+      if(!(pre.why === 'matches left' && await siteAhead(io, root.data, cur, lite.fixtures))) return { ok:true, gw:cur, idle:pre.why };
+    }
   }
-  const { E, st } = await readState(io);
+  const { E, st, R } = await readState(io);
+  /* نتائج الجولة الحالية من الموقع أولاً (وتُنشر إن اختلفت) — ثم الجاهزية على البيانات المحدّثة */
+  let imp = null;
+  if(!opts.noImport){ try{ imp = await syncResults(io, E, st, R, { dry:opts.dry }); }catch(e){ imp = { error:String(e.message || e).slice(0, 120) }; } }
   const gw = st.currentGW, ready = readiness(st);
   const run0 = await getRun(io);
   if(!ready.ok){
-    /* لا شيء ليُحتسب — نسجّل آخر فحص فقط إن تغيّرت الحالة (لا كتابة كل 5 دقائق بلا داعٍ) */
-    return { ok:true, gw, idle:ready.why };
+    return { ok:true, gw, idle:ready.why, imported:imp };
   }
   const now = Date.now();
   if(run0 && run0.gw === gw && run0.lease && Date.parse(run0.lease) > now && run0.by !== by) return { ok:true, gw, busy:run0.by };
@@ -224,4 +269,4 @@ async function verify(io, gw){
   return { gw, checked:n, same, diff:diff.length, examples:diff.slice(0, 15) };
 }
 
-module.exports = { step, verify, readiness, scoreAll, writesFor, readState, getRun };
+module.exports = { step, verify, readiness, scoreAll, writesFor, readState, getRun, syncResults };

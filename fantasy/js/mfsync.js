@@ -70,7 +70,9 @@ const MFSYNC = {
     /* تدقيق 2026-11-09 (C4): مباراة لُعبت ولها مباراة منتهية في الفانتسي تبقى في جولتها — كانت مؤجلة لُعبت لاحقاً تنتقل للجولة التالية
        بعد إغلاق جولتها فتُنشأ لها مباراة ثانية ويأخذ اللاعبون نقاطها مرتين */
     { const h=this.clubId(m.home), a=this.clubId(m.away);
-      const pin=h && a && (st.fixtures||[]).find(x=>x.status==='F' && x.h===h && x.a===a);
+      /* نفس المباراة لا نفس الطرفين فقط: الطرفان قد يتقابلان مرتين بنفس الأرض في الموسم — فالمطابقة بيوم المباراة أيضاً */
+      const day=String(m.date||'').slice(0,10);
+      const pin=h && a && day && (st.fixtures||[]).find(x=>x.status==='F' && x.h===h && x.a===a && String(x.date||'').slice(0,10)===day);
       if(pin) return pin.gw; }
     const fin=n=>((st.gws||[]).find(g=>g.n===n)||{}).status==='finished';
     if(!m.date || !win) return r;
@@ -316,7 +318,7 @@ const MFSYNC = {
     if(opts.removeMissing!==false && ms.length>0){
       const before=st.fixtures.length;
       /* مباراة مؤجلة (P) نُقلت لجولة أخرى تُحذف من جولتها الأصلية حتى لو أُغلقت — لا نقاط لها هناك */
-      st.fixtures=st.fixtures.filter(f=>seen.has(f.id) || f.status==='F' || (f.status!=='P' && ((st.gws||[]).find(g=>g.n===f.gw)||{}).status==='finished'));
+      st.fixtures=st.fixtures.filter(f=>seen.has(f.id) || f.status==='F' || (f.status!=='P' && f.status!=='U' && ((st.gws||[]).find(g=>g.n===f.gw)||{}).status==='finished'));   /* «قادمة» في جولة منتهية = خلل (لا تبقى) */
       rep.removed=before-st.fixtures.length;
     }
     st.fixtures.sort((a,b)=>(a.gw-b.gw)||String(a.date||'').localeCompare(String(b.date||'')));
