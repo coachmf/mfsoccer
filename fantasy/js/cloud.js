@@ -575,6 +575,8 @@ const CLOUD = {
      بعد موعد الإغلاق يرفض الخادم التشكيلة، فنرسل الملف وحده. */
   async saveMyTeam(profile, team, expectRev){
     if(!this.user) return false;
+    /* تدقيق 2026-11-09 (L1): الحساب الذي بدأ الحفظ — إن تبدّل الحساب أثناء الانتظار (خروج ودخول) لا يُكتب فريق الأول في ملف الثاني */
+    const uid0 = this.user.uid, same = () => !!(this.user && this.user.uid === uid0);
     const patch = {updated:new Date().toISOString()};
     if(team !== undefined) patch.team = team || null;   // undefined = لا تمسّ التشكيلة
     /* تدقيق 2026-11-09 (C3): كتابة الفريق مشروطة برقم نسخته على الخادم — داخل معاملة: إن تغيّر منذ قرأناه (جهاز آخر،
@@ -593,6 +595,7 @@ const CLOUD = {
       if(tr.ok === true && tr.v && tr.v.conflict) return {conflict:true, doc:tr.v.doc};
       const denied = tr.err && tr.err.code === 'permission-denied', missing = tr.v && tr.v.missing;
       if(!denied && !missing){
+        if(!same()) return false;
         const sv = await this.serverSave({...patch, team: nt, expectRev});
         if(sv === true) return true;
         if(sv === 'conflict') return {conflict:true};
@@ -606,11 +609,13 @@ const CLOUD = {
       if(profile.avatar  !=null) patch.avatar   = profile.avatar;
       if(profile.joinedGW!=null) patch.joinedGW = profile.joinedGW;   /* المنضم بعد الإغلاق فقط (GWADMIN.lateJoiner) */
     }
-    const r = await this.race(this.managers().doc(this.user.uid).set(patch, {merge:true}));
+    if(!same()) return false;
+    const r = await this.race(this.managers().doc(uid0).set(patch, {merge:true}));
     if(r.ok === true) return true;
     /* قناة Firestore معلّقة/محجوبة على الجهاز (تطبيق iOS — محمد القلاف ووالده 2026-10-23: لم يُحفظ لهما شيء منذ 9 أكتوبر):
        نحفظ عبر خادمنا بنفس شروط القواعد بالضبط بدل الفشل الصامت. «لا صلاحية» (جولة مقفلة/ملف ناقص) يبقى كما هو أدناه */
     if(!(r.err && r.err.code === 'permission-denied')){
+      if(!same()) return false;
       const sv = await this.serverSave(patch);
       if(sv === true) return true;
     }
