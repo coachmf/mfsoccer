@@ -132,6 +132,14 @@ async function putRun(io, run, prevUT){
 async function step(io, opts){
   opts = opts || {};
   const t0 = Date.now(), budget = opts.budgetMs || 20000, by = opts.by || 'server';
+  /* فحص خفيف أولاً (مستندان صغيران): الأغلبية الساحقة من التشغيلات لا شيء فيها — لا نقرأ اللاعبين والجولات كلها كل 5 دقائق */
+  if(!opts.dry){
+    const root = await io.get(F); if(!root) return { ok:true, idle:'no game' };
+    const cur = +root.data.currentGW, rd = await io.get(`${F}/rounds/${cur}`);
+    const lite = { currentGW:cur, rules:root.data.rules || {}, gws:root.data.gws || [], fixtures:((rd && rd.data.fixtures) || []).map(f => ({ ...f, gw:cur })) };
+    const pre = readiness(lite);
+    if(!pre.ok && pre.why !== 'too soon' && pre.why !== 'waiting bonus') return { ok:true, gw:cur, idle:pre.why };
+  }
   const { E, st } = await readState(io);
   const gw = st.currentGW, ready = readiness(st);
   const run0 = await getRun(io);
