@@ -652,6 +652,7 @@ const VIEWS = {
       }
       team.chipAt=null;
       if(team.chipHits!=null){ team.pendingHits=+team.chipHits||0; team.chipHits=null; }   /* خصم صفقات ما قبل الكرت يعود مع الإلغاء */
+      if(key==='freehit' && team.chipFt!=null){ team.ft=+team.chipFt||0; team.chipFt=null; }   /* والانتقالات المجانية المسترجعة تعود كما كانت */
       // الإلغاء قبل الإغلاق لا يكلّف شيئاً: الاستخدام لا يُحسب إلا عند احتساب الجولة (rollover)
       team.activeChip=null; DB.save(); UI.toast('أُلغي الكرت — ما زال متاحاً لك'); APP.render(); return;
     }
@@ -677,6 +678,15 @@ const VIEWS = {
       team.fhCancel = cur;
     }
     if(key==='freehit' || key==='wildcard'){ team.chipHits=+team.pendingHits||0; team.pendingHits=0; }   /* الكرت يلغي خصم صفقات الجولة السابقة له (FPL) */
+    /* منصور 2026-11-09 («Yes, refund it»): الضربة الحرة ترجع الانتقالات المجانية المصروفة في صفقات الجولة قبل تفعيلها —
+       الفريق يرجع لبداية الجولة بعدها، فلا يخسر المشترك انتقالاته المجانية. المصروف = صفقات الجولة − الصفقات التي عليها خصم */
+    if(key==='freehit' && !st.rules.freeChanges){
+      const n=(team.transfers||[]).filter(t=>t.gw===st.currentGW).length;
+      const cost=+st.rules.transferCost||4, paid=Math.round((+team.chipHits||0)/cost);
+      const used=Math.max(0, n-paid);
+      team.chipFt=+team.ft||0;
+      if(used) team.ft=Math.min(+st.rules.maxSavedTransfers||5, (+team.ft||0)+used);
+    }
     team.activeChip=key; team.chipAt=new Date().toISOString();
     DB.save(); UI.toast(`فُعّل كرت ${st.rules.chips[key].label} لهذه الجولة`); APP.render();
   },

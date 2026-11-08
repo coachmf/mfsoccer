@@ -1319,7 +1319,7 @@ const GWADMIN = {
       team.cap=team.fhBackup.cap; team.vice=team.fhBackup.vice; team.bank=team.fhBackup.bank;
       if('coach' in team.fhBackup){ team.coach=team.fhBackup.coach; team.coachSince=team.fhBackup.coachSince; }
     }
-    team.fhBackup=null; team.fhCancel=null; team.gwStart=null; team.chipHits=null;
+    team.fhBackup=null; team.fhCancel=null; team.gwStart=null; team.chipHits=null; team.chipFt=null;
     // الكرت يُحسب مستخدماً هنا فقط (بعد احتساب الجولة) — قبلها يمكن إلغاؤه بلا خسارة
     const freeGW = typeof SEED_RULES!=='undefined' && !!SEED_RULES.freeChanges && gw <= (+SEED_RULES.scoringFromGW||1);   /* جولة التغييرات الحرة */
     if(picks && picks.chip && !(freeGW && picks.chip==='wildcard')){ team.usedChips=team.usedChips||{}; team.usedChips[picks.chip]=(team.usedChips[picks.chip]||0)+1; }   /* الوايلد كارد بلا أثر في جولة حرة — لا يُستهلك */
