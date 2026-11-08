@@ -31,7 +31,7 @@ exports.handler = async (event) => {
           const topics = arr('topics'); for(const t of arr('tokens')){ seen++;
             if(!REG.okTok(t) || !topics.length) continue;
             if(await REG.get(at, pid, t)) continue;
-            if(await REG.put(at, pid, t, topics, true)){ moved++; await REG.leaveAllTopics(at, t); } }
+            if(await REG.put(at, pid, t, topics, true)){ moved++; await REG.leaveAllTopics(at, t, topics); } }
         }
       }while(page);
       return { statusCode:200, headers:CORS, body: JSON.stringify({ ok:true, seen, moved }) };

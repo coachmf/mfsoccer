@@ -94,18 +94,38 @@ async function sendDirect(at, pid, targets, message, only){
   return out;
 }
 
-/* يُخرج رمزاً من كل مواضيع FCM (جهاز التطبيق صار على الإرسال المباشر وحده — لا تكرار) */
-async function leaveAllTopics(at, token){
+/* يُخرج رمزاً من كل مواضيع FCM (جهاز التطبيق صار على الإرسال المباشر وحده — لا تكرار).
+   منصور 2026-11-08 «جنه قاعد يندز اشعارين»: كنا نزيل فقط ما تعيده iid/info، وإن فشلت أو رجعت فارغة بقي الجهاز في
+   مواضيعه فوصله التذكير والانطلاق مرتين (موضوع + مباشر). الآن نزيل أيضاً ما نعرفه: مواضيعه في السجل + all + gen. */
+const BASE_TOPICS = ['all', 'gen'];
+async function leaveAllTopics(at, token, known){
+  let topics = [];
   try{
     const r = await fetch(`https://iid.googleapis.com/iid/info/${encodeURIComponent(token)}?details=true`, { headers:{ Authorization:'Bearer '+at, access_token_auth:'true' } });
-    if(!r.ok) return 0;
-    const j = await r.json().catch(() => ({}));
-    const topics = Object.keys((j.rel && j.rel.topics) || {});
-    await Promise.all(topics.map(t => fetch('https://iid.googleapis.com/iid/v1:batchRemove', { method:'POST',
-      headers:{ Authorization:'Bearer '+at, access_token_auth:'true', 'Content-Type':'application/json' },
-      body: JSON.stringify({ to:'/topics/'+t, registration_tokens:[token] }) }).catch(() => null)));
-    return topics.length;
-  }catch(e){ return 0; }
+    if(r.ok){ const j = await r.json().catch(() => ({})); topics = Object.keys((j.rel && j.rel.topics) || {}); }
+  }catch(e){}
+  topics = [...new Set(topics.concat(BASE_TOPICS, (known || []).filter(t => typeof t === 'string' && t.length <= 40)))];
+  await Promise.all(topics.map(t => fetch('https://iid.googleapis.com/iid/v1:batchRemove', { method:'POST',
+    headers:{ Authorization:'Bearer '+at, access_token_auth:'true', 'Content-Type':'application/json' },
+    body: JSON.stringify({ to:'/topics/'+t, registration_tokens:[token] }) }).catch(() => null)));
+  return topics.length;
 }
 
-module.exports = { put, del, get, all, evalCond, matches, sendDirect, leaveAllTopics, okTok, keyOf, shardOf };
+/* تنظيف جماعي: كل أجهزة التطبيق (x) في السجل تخرج من مواضيعها المعروفة + all + gen — نداء batchRemove واحد لكل موضوع
+   (حتى 1000 رمز). يُشغَّل من push-remind-cron مرة كل 6 ساعات فيُصلح الأجهزة التي سُجّلت قبل هذا الإصلاح بلا انتظار فتح التطبيق. */
+async function sweepAppTopics(at, pid){
+  const apps = (await all(at, pid)).filter(d => d.x);
+  const byTopic = {};
+  apps.forEach(d => BASE_TOPICS.concat(d.p || []).forEach(t => { if(typeof t === 'string' && t.length <= 40) (byTopic[t] = byTopic[t] || []).push(d.t); }));
+  let calls = 0;
+  const jobs = [];
+  Object.entries(byTopic).forEach(([t, toks]) => { for(let i = 0; i < toks.length; i += 1000) jobs.push([t, toks.slice(i, i + 1000)]); });
+  for(let i = 0; i < jobs.length; i += 16){
+    await Promise.all(jobs.slice(i, i + 16).map(([t, toks]) => fetch('https://iid.googleapis.com/iid/v1:batchRemove', { method:'POST',
+      headers:{ Authorization:'Bearer '+at, access_token_auth:'true', 'Content-Type':'application/json' },
+      body: JSON.stringify({ to:'/topics/'+t, registration_tokens:toks }) }).then(() => { calls++; }).catch(() => null)));
+  }
+  return { devices: apps.length, topics: Object.keys(byTopic).length, calls };
+}
+
+module.exports = { put, del, get, all, evalCond, matches, sendDirect, leaveAllTopics, sweepAppTopics, okTok, keyOf, shardOf };

@@ -70,7 +70,18 @@ async function run(){
       if(left <= mins && left > mins - SLACK) fdue.push({ d, mins, lbl, gw:Number(lock.gw)||0, t });
     });
   }
-  if(!due.length && !fdue.length) return { ok:true, sent:0 };
+  /* أجهزة التطبيق بقيت في مواضيعها فوصلها كل إشعار مرتين (منصور 2026-11-08) — تنظيف جماعي كل 6 ساعات */
+  let sweep = null;
+  try{
+    const sw = await read('pushlog/sweep').catch(() => null);
+    if(!sw || !sw.at || now - Date.parse(sw.at) > 6 * 3600e3){
+      sweep = await REG.sweepAppTopics(at, PROJECT);
+      await fetch(`${DOCS}/pushlog/sweep`, { method:'PATCH', headers:{ ...H, 'Content-Type':'application/json' },
+        body: JSON.stringify({ fields:{ at:{ stringValue:new Date().toISOString() }, devices:{ integerValue:String(sweep.devices) },
+          topics:{ integerValue:String(sweep.topics) }, calls:{ integerValue:String(sweep.calls) } } }) });
+    }
+  }catch(e){ console.error('sweep', e && e.message); }
+  if(!due.length && !fdue.length) return { ok:true, sent:0, sweep };
 
   const log = await read('pushlog/remind').catch(() => null);
   const seen = (log && log.sent) || [];

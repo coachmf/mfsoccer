@@ -35,7 +35,7 @@ exports.handler = async (event) => {
     if(Array.isArray(reg)){
       const ok = await REG.put(at, pid, token, reg.filter(t => typeof t === 'string'), !!app);
       /* تطبيق الآيفون: الإرسال المباشر وحده — يخرج من كل المواضيع عند كل إقلاع (لا تكرار؛ لا خادم خدمة فيه يدمج النسختين) */
-      const left = (ok && app) ? await REG.leaveAllTopics(at, token) : 0;
+      const left = (ok && app) ? await REG.leaveAllTopics(at, token, reg) : 0;
       return { statusCode: ok?200:502, headers:CORS, body: JSON.stringify({ok, left}) };
     }
     if(unsubscribe) await REG.del(at, pid, token).catch(() => {});
