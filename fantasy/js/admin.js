@@ -282,7 +282,10 @@ const ADMIN = {
     const r=this.autoFinalizeReady(st); if(!r.ok) return;
     try{ const l=+localStorage.getItem(this.AUTO_FIN_KEY)||0; if(Date.now()-l < 15*60e3) return; localStorage.setItem(this.AUTO_FIN_KEY, String(Date.now())); }catch(e){}
     this._autoFinBusy=true;
-    try{ await this.doFinalize(true); } finally{ this._autoFinBusy=false; }
+    /* إغلاق الصفحة أثناء الاحتساب يقطعه في منتصفه — تنبيه المتصفح قبل المغادرة */
+    const warn=e=>{ e.preventDefault(); e.returnValue='جارٍ احتساب الجولة — انتظر حتى يكتمل'; return e.returnValue; };
+    window.addEventListener('beforeunload', warn);
+    try{ await this.doFinalize(true); } finally{ this._autoFinBusy=false; window.removeEventListener('beforeunload', warn); }
     /* نشر القفل قد يتعثّر على اتصال بطيء فتبقى الانتقالات مغلقة — إعادة محاولة بعد دقيقة (والخادم يصلحه كل 10 دقائق: fantasy-lock-cron) */
     setTimeout(()=>{ try{ CLOUD.syncLock(DB.state).catch(()=>{}); }catch(e){} }, 60000);
   },

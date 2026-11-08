@@ -65,7 +65,9 @@ const CLOUD = {
   /* لا شيء يعلق بلا نهاية (منصور 2026-10-09: «وايد اشياء قاعده تعلق»): كل قراءة/كتابة Firestore في الصفحة
      تُرفض بخطأ deadline-exceeded إن لم يرد الخادم خلال المهلة — كل المستدعين أصلاً في try/catch فيظهر خطأ
      مفهوم («الشبكة بطيئة») ويرجع الزر بدل «جارٍ…» للأبد. الكتابة نفسها تبقى في طابور Firestore وتُرسل لما يرجع الاتصال. */
-  OP_MS: { docGet:15000, queryGet:25000, write:30000 },
+  /* batch: كتابة دفعة الاحتساب (100–200 فريق بسجلاتها) تأخذ أكثر من 30 ث — مهلة 30 ث كانت تقطع احتساب كل جولة في منتصفه
+     (يُكتب جزء ويتوقف الباقي — الجولة 8: 800 من 1458 مشتركاً) — منصور 2026-11-09 */
+  OP_MS: { docGet:15000, queryGet:25000, write:30000, batch:240000 },
   boundOps(){
     const fs = firebase.firestore; if(!fs || fs.__bounded) return; fs.__bounded = true;
     const lim = (p, ms, what) => new Promise((res, rej) => {
@@ -86,7 +88,7 @@ const CLOUD = {
     wrap(fs.Query, 'get', M.queryGet);
     ['set','update','delete'].forEach(n => wrap(fs.DocumentReference, n, M.write));
     wrap(fs.CollectionReference, 'add', M.write);
-    wrap(fs.WriteBatch, 'commit', M.write);
+    wrap(fs.WriteBatch, 'commit', M.batch);
   },
 
   async _onAuth(u){
@@ -1099,8 +1101,8 @@ const CLOUD = {
     // الكتابة على دفعات (حد Firestore 500 عملية للدفعة). 2026-10-11: دفعة 400 فريق تستغرق أكثر من 20 ث
     // (كل فريق بسجل اختياراته) فكانت «تفشل» وهي تُكتب فعلاً — 200 لكل دفعة ومهلة دقيقتين
     let done=0;
-    for(let i=0;i<writes.length;i+=200){
-      const chunk=writes.slice(i,i+200);
+    for(let i=0;i<writes.length;i+=100){
+      const chunk=writes.slice(i,i+100);
       const batch=this.db.batch();
       chunk.forEach(([uid,data])=>batch.set(this.managers().doc(uid), data, {merge:true}));
       const w = await this.race(batch.commit(), 120000);

@@ -1078,7 +1078,10 @@ const VIEWS = {
   liveApply(rows){
     if(typeof LIVEGW==='undefined' || !LIVEGW.active() || !LIVEGW.cache.rows || !LIVEGW.cache.rows.length) return rows;
     const base=new Map(rows.map((r,i)=>[r.id, r.rank||i+1])), tied=new Set(base.values()).size<=1;
-    const out=rows.map(r=>{ const lv=LIVEGW.liveOf(r.id), pv=LIVEGW.prevOf(r.id);
+    /* منصور 2026-11-09 (علي الشمري: «بيني وبين ربعي 13 نقطة صاروا 100»): مشترك احتُسبت له الجولة الجارية رسمياً (في سجله)
+       مجموعه يشملها — لا نضيف نقاطها المباشرة مرة ثانية (احتساب انقطع في منتصفه كان يعدّها مرتين لنصف المشتركين) */
+    const cgw=LIVEGW.gw(), inHist=r=>Array.isArray(r.hist) && r.hist.some(h=>+h.gw===+cgw);
+    const out=rows.map(r=>{ const done=inHist(r), lv=done? 0 : LIVEGW.liveOf(r.id), pv=done? 0 : LIVEGW.prevOf(r.id);
         return {...r, total:(+r.total||0)+(lv||0), _pt:(+r.total||0)+(pv!=null? pv : (lv||0))}; })
       .sort((a,b)=>b.total-a.total || String(a.name||'').localeCompare(String(b.name||''),'ar'));
     /* الحركة بعد كل مباراة (منصور 2026-10-11): المركز الآن مقابل المركز قبل آخر مباراة انتهت؛
