@@ -67,10 +67,11 @@ const CLOUD = {
      مفهوم («الشبكة بطيئة») ويرجع الزر بدل «جارٍ…» للأبد. الكتابة نفسها تبقى في طابور Firestore وتُرسل لما يرجع الاتصال. */
   /* batch: كتابة دفعة الاحتساب (100–200 فريق بسجلاتها) تأخذ أكثر من 30 ث — مهلة 30 ث كانت تقطع احتساب كل جولة في منتصفه
      (يُكتب جزء ويتوقف الباقي — الجولة 8: 800 من 1458 مشتركاً) — منصور 2026-11-09 */
-  OP_MS: { docGet:15000, queryGet:25000, write:30000, batch:240000 },
+  OP_MS: { docGet:15000, queryGet:25000, write:30000, batch:240000, adminWrite:120000 },
   boundOps(){
     const fs = firebase.firestore; if(!fs || fs.__bounded) return; fs.__bounded = true;
     const lim = (p, ms, what) => new Promise((res, rej) => {
+      if(typeof ms === 'function') ms = ms();
       const t = setTimeout(() => { const e = new Error('timeout: '+what); e.code = 'deadline-exceeded'; rej(e); }, ms);
       Promise.resolve(p).then(v => { clearTimeout(t); res(v); }, e => { clearTimeout(t); rej(e); });
     });
@@ -86,7 +87,9 @@ const CLOUD = {
     const M = this.OP_MS;
     wrap(fs.DocumentReference, 'get', M.docGet);
     wrap(fs.Query, 'get', M.queryGet);
-    ['set','update','delete'].forEach(n => wrap(fs.DocumentReference, n, M.write));
+    /* المدير ينشر مستندات كبيرة (حالة اللعبة، لقطة الترتيب، اللاعبون) تأخذ أكثر من 30 ث — مهلة دقيقتين له وحده */
+    const wMs = () => (this.admin ? M.adminWrite : M.write);
+    ['set','update','delete'].forEach(n => wrap(fs.DocumentReference, n, wMs));
     wrap(fs.CollectionReference, 'add', M.write);
     wrap(fs.WriteBatch, 'commit', M.batch);
   },
