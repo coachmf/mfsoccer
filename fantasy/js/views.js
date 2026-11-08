@@ -750,6 +750,9 @@ const VIEWS = {
   tConfirm(){
     const st=DB.state, team=DB.myTeam();
     const tOut=this.ui.tOut, tIn=this.ui.tIn.filter(Boolean);
+    { const next=team.squad.map(pid=>{ const k=tOut.indexOf(pid); return k>=0? tIn[k] : pid; });
+      const ov=TEAM.clubOver(next, team.squad, st);
+      if(ov){ UI.toast(`الحد الأقصى ${ov.max} لاعبين من ${DB.club(ov.club).name}`,true); return; } }
     const n=tOut.length;
     const freeMode=team.activeChip==='wildcard'||team.activeChip==='freehit'||!!st.rules.freeChanges;
     const hits=freeMode?0:Math.max(0,n-team.ft)*st.rules.transferCost;
@@ -769,6 +772,11 @@ const VIEWS = {
     // تغيّر الفريق تحت المسودة (إلغاء ضربة حرة، تحديث من الخادم…): لا ننفّذ صفقات على لاعبين لم يعودوا في الفريق
     if(tOut.length!==tIn.length || tOut.some(o=>!team.squad.includes(o)) || tIn.some(i=>team.squad.includes(i))){
       UI.closeModal(); this.tReset(); UI.toast('تغيّر فريقك أثناء التعديل — أعد اختيار الصفقات',true); APP.render(); return;
+    }
+    { /* فحص أخير للقائمة كاملة: لا يزيد أي نادٍ عن الحد */
+      const next=team.squad.map(pid=>{ const k=tOut.indexOf(pid); return k>=0? tIn[k] : pid; });
+      const ov=TEAM.clubOver(next, team.squad, st);
+      if(ov){ UI.closeModal(); UI.toast(`الحد الأقصى ${ov.max} لاعبين من ${DB.club(ov.club).name}`,true); return; }
     }
     const freeMode=team.activeChip==='wildcard'||team.activeChip==='freehit'||!!st.rules.freeChanges;
     const n=tOut.length;

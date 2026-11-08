@@ -205,7 +205,7 @@ const DB = {
       const o=this.player(x.out), i=this.player(x.in); if(!o||!i) continue;
       if(!nt.squad.includes(x.out) || nt.squad.includes(x.in) || o.pos!==i.pos) continue;
       const sq=nt.squad.map(p=>p===x.out?x.in:p), bank=Math.round(((+nt.bank||0)+o.price-i.price)*10)/10;
-      if(bank< -1e-9 || sq.filter(p=>(this.player(p)||{}).club===i.club).length>R.maxPerClub) continue;
+      if(bank< -1e-9 || TEAM.clubOver(sq, nt.squad, st)) continue;
       nt.squad=sq; nt.xi=(nt.xi||[]).map(p=>p===x.out?x.in:p); nt.bench=(nt.bench||[]).map(p=>p===x.out?x.in:p);
       if(nt.cap===x.out) nt.cap=x.in; if(nt.vice===x.out) nt.vice=x.in;
       nt.bank=bank; (nt.transfers ??= []).push(x);
@@ -745,6 +745,16 @@ function refreshGWSummary(st, gw){
    فريق المستخدم: تحقق، نقاط، تبديل تلقائي، كابتن، كروت
    ========================================================= */
 const TEAM = {
+  /* حد النادي على القائمة كلها (منصور 2026-11-08: «شلون حاط ٤ لاعبين من الكويت» — 7 فرق تجاوزت الحد بانتقالات لأن الفحص كان لكل اختيار وحده).
+     يعيد أول نادٍ يتجاوز الحد في القائمة الجديدة وزاد عدده عن القائمة القديمة، أو null.
+     نادٍ تجاوز الحد بانتقال لاعب حقيقي بين الأندية (بدر طارق → كاظمة) لا يُعاقب ما دام عدده لا يزيد. */
+  clubOver(newSq, oldSq, st){
+    st=st||DB.state; const max=+st.rules.maxPerClub||3;
+    const cnt=sq=>{ const c={}; (sq||[]).forEach(pid=>{ const p=DB.player(pid); if(p) c[p.club]=(c[p.club]||0)+1; }); return c; };
+    const a=cnt(newSq), b=cnt(oldSq);
+    for(const c in a) if(a[c]>max && a[c]>(b[c]||0)) return { club:c, n:a[c], max };
+    return null;
+  },
   validateSquad(squad, st, coachId){
     st = st||DB.state;
     const R = st.rules, errs=[];

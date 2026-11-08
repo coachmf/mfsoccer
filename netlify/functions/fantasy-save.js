@@ -58,6 +58,18 @@ exports.handler = async (event) => {
       const lock = lk.ok ? fields((await lk.json()).fields) : null;
       const dl = lock && lock.deadline ? Date.parse(lock.deadline) : NaN;
       if(isNaN(dl) || Date.now() >= dl) return out(403, {ok:false, err:'closed'});
+      /* حد النادي (منصور 2026-11-08): لا يزيد أي نادٍ عن 3 مقارنة بالنسخة المحفوظة — تجاوز قديم بانتقال لاعب بين الأندية يبقى */
+      try{
+        const [rp, rm] = await Promise.all([fetch(`${BASE}/meta/players`, { headers:auth }), fetch(`${BASE}/managers/${encodeURIComponent(uid)}`, { headers:auth })]);
+        if(rp.ok){
+          const list = (fields((await rp.json()).fields).list) || [];
+          const club = {}; list.forEach(p => { if(p && p.id) club[p.id] = p.club; });
+          const old = rm.ok ? ((fields((await rm.json()).fields).team || {}).squad || []) : [];
+          const cnt = sq => { const c = {}; sq.forEach(id => { const k = club[id]; if(k) c[k] = (c[k] || 0) + 1; }); return c; };
+          const a = cnt(t.squad), o = cnt(old);
+          for(const k in a) if(a[k] > 3 && a[k] > (o[k] || 0)) return out(400, {ok:false, err:'club', club:k});
+        }
+      }catch(e){}
       const { history, ...team } = t;          // السجل يكتبه المدير وحده
       patch.team = team;
     }
