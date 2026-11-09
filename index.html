@@ -1310,6 +1310,9 @@ label.lb,.fld label{color:var(--slate)}
 .shapebox{background:#F7FAFD;border-color:var(--line2)}
 .subrow .del,.tune .tdel{background:#FDECEC;border-color:#F5B5B0}
 .formerr{background:#FDECEC;border-color:#F5B5B0;color:#8A1F1A}
+.formok{margin:0 0 12px;padding:10px 12px;border-radius:10px;background:#E8F7EE;border:1px solid #A8DDBD;border-right:3px solid #1E9E5A;color:#155C36;font-size:13.5px;line-height:1.7}
+.linkbtn{display:block;margin:10px auto 0;background:none;border:0;padding:6px 4px;font:inherit;font-size:13.5px;font-weight:700;color:var(--gold,#B8892D);text-decoration:underline;text-underline-offset:3px;cursor:pointer}
+.linkbtn:disabled{opacity:.6;cursor:default}
 .mrow .mm span{color:var(--slate)}
 .pitch .ln{stroke:#9DB0C8} .pitch .goal{stroke:var(--zain-deep)} .pitch .zn{stroke:#B9C6D6}
 .pitch text{stroke:rgba(11,31,58,.55)} .pitch text.sm{fill:var(--slate)}
@@ -9826,6 +9829,7 @@ function renderEditorAdmin(){
   };
 }
 
+let RESETMSG="", LOGIN_EM="";
 function renderAdmin(){
   if(isAdmin) ensureXLSX().catch(()=>{});   /* تسخين مكتبة الإكسل قبل أن يختار المدير ملفاً */
   if(!isAdmin){
@@ -9834,6 +9838,7 @@ function renderAdmin(){
       <h2 class="sec">دخول فريق العمل</h2>
       <div class="card pad">
         ${SYNCMSG?`<div class="formerr">${esc(SYNCMSG)}</div>`:""}
+        ${RESETMSG?`<div class="formok">${esc(RESETMSG)}</div>`:""}
         ${wrongUser?`<div class="formerr">هذا الحساب غير مصرّح له بالتحرير بعد.</div>
           <div class="uidbox">
             <label class="lb">أرسل هذا الرمز للمالك ليضيفك لفريق العمل</label>
@@ -9841,24 +9846,36 @@ function renderAdmin(){
             <button class="btn ghost" id="copyUid">نسخ الرمز</button>
           </div>`:""}
         <label class="lb">البريد الإلكتروني</label>
-        <input type="text" id="em" autocomplete="username" inputmode="email" dir="ltr">
+        <input type="text" id="em" autocomplete="username" inputmode="email" dir="ltr" value="${esc(LOGIN_EM)}">
         <div style="height:10px"></div>
         <label class="lb">كلمة المرور</label>
         <input type="password" id="pw" autocomplete="current-password" dir="ltr">
         <div style="height:14px"></div>
         <button class="btn" id="loginBtn">دخول</button>
+        <button type="button" class="linkbtn" id="forgotPw">نسيت كلمة المرور؟</button>
         ${wrongUser?'<div style="height:8px"></div><button class="btn ghost" id="signOut">خروج</button>':""}
         <p class="hint" style="margin:12px 0 0">حالة السحابة: ${esc(FBSTATE)} · القراءة مفتوحة للزوار، والكتابة محصورة بحسابك وحده.</p>
       </div>`;
     const doLogin=async()=>{
       SYNCMSG="";
       if(!fbAuth){ SYNCMSG="السحابة غير متاحة — افتح الموقع من نطاق منشور لا من ملف محلي."; renderAdmin(); return; }
-      const em=$("#em").value.trim(), pw=$("#pw").value;
+      const em=$("#em").value.trim(), pw=$("#pw").value; LOGIN_EM=em; RESETMSG="";
       if(!em||!pw){ SYNCMSG="أدخل البريد وكلمة المرور."; renderAdmin(); return; }
       try{ await fbAuth.signInWithEmailAndPassword(em,pw); SYNCMSG=""; renderAdmin(); }
       catch(e){ SYNCMSG = AUTH_MSG[e.code] || ("تعذّر الدخول: "+(e.code||e.message)); renderAdmin(); }
     };
     $("#loginBtn").onclick=doLogin;
+    /* نسيت كلمة المرور: رابط تغيير من Firebase إلى البريد المكتوب (نفس الرسالة دائماً حتى لا يُكشف إن كان البريد مسجلاً) */
+    $("#forgotPw").onclick=async()=>{
+      SYNCMSG=""; RESETMSG=""; LOGIN_EM=$("#em").value.trim();
+      if(!fbAuth){ SYNCMSG="السحابة غير متاحة — افتح الموقع من نطاق منشور لا من ملف محلي."; renderAdmin(); return; }
+      if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(LOGIN_EM)){ SYNCMSG="اكتب بريدك الإلكتروني أولاً ثم اضغط «نسيت كلمة المرور؟»."; renderAdmin(); return; }
+      const b=$("#forgotPw"); b.disabled=true; b.textContent="جارٍ الإرسال…";
+      try{ fbAuth.languageCode="ar"; await fbAuth.sendPasswordResetEmail(LOGIN_EM.toLowerCase()); }
+      catch(e){ if(e && (e.code==="auth/too-many-requests" || e.code==="auth/network-request-failed")){ SYNCMSG = e.code==="auth/too-many-requests" ? "محاولات كثيرة — جرّب بعد قليل." : "تعذّر الاتصال — تأكد من الإنترنت."; renderAdmin(); return; } }
+      RESETMSG="إذا كان هذا البريد مسجلاً في فريق العمل فسيصلك رابط لتغيير كلمة المرور خلال دقائق — افحص البريد الوارد ومجلد الرسائل غير المرغوبة (Junk).";
+      renderAdmin();
+    };
     $("#pw").onkeydown=e=>{ if(e.key==="Enter") doLogin(); };
     const so=$("#signOut"); if(so) so.onclick=()=>fbAuth.signOut();
     const cu=$("#copyUid");

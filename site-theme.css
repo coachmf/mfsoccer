@@ -78,6 +78,7 @@ html[data-theme="dark"] .addbtn{color:var(--zain-text);background:#11283B}
 html[data-theme="dark"] .shapebox{background:#102336}
 html[data-theme="dark"] .subrow .del,html[data-theme="dark"] .tune .tdel{background:#3E1212;border-color:#6E2520}
 html[data-theme="dark"] .formerr{background:#3E1212;border-color:#6E2520;color:#DCB4B2}
+html[data-theme="dark"] .formok{background:#0F2E1E;border-color:#22593B;color:#A9DDBF}
 html[data-theme="dark"] .seg{background:#0D1C30}
 html[data-theme="dark"] .hlegend .sc{background:linear-gradient(90deg,#1A354D,var(--zain),var(--sand))}
 html[data-theme="dark"] .rchip{background:#0D1C30}
