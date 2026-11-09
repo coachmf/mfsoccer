@@ -286,17 +286,33 @@ const ADMIN = {
     const d=this._gwRun;
     if(this._gwRunAt===undefined || Date.now()-this._gwRunAt > 60e3){
       this._gwRunAt=Date.now();
-      try{ Promise.all([CLOUD.root().collection('meta').doc('gwrun').get(), CLOUD.root().collection('meta').doc('gwbeat').get()]).then(([s,b])=>{
+      try{ const M=id=>CLOUD.root().collection('meta').doc(id).get();
+        Promise.all([M('gwrun'), M('gwbeat'), M('xialert'), M('gwpush'), M('bkstat')]).then(([s,b,x,p,k])=>{
         this._gwRun=s.exists ? s.data() : null; this._gwBeat=b.exists ? b.data() : null;
+        this._gwX={ xi:x.exists? x.data():null, push:p.exists? p.data():null, bk:k.exists? k.data():null };
         const el=document.getElementById('gwRunBox'); if(el) el.innerHTML=this.gwRunHTML(); }).catch(()=>{}); }catch(e){}
     }
     const bt=this._gwBeat, beat = bt && bt.at ? (()=>{ const m=Math.round((Date.now()-Date.parse(bt.at))/60000);
       return ` · <span class="pill ${m<=15?'green':'red'}">آخر فحص للخادم قبل ${m} دقيقة</span>`; })() : '';
-    if(!d) return '<b>الاحتساب التلقائي على الخادم:</b> يعمل كل 5 دقائق — يحتسب الجولة بعد اكتمال مبارياتها وبونصها ويفتح التالية'+beat;
+    if(!d) return '<b>الاحتساب التلقائي على الخادم:</b> يعمل كل 5 دقائق — يحتسب الجولة بعد اكتمال مبارياتها وبونصها ويفتح التالية'+beat+this.gwAutoLines();
     const st={done:'اكتمل', scoring:'جارٍ'}[d.state]||d.state||'';
     const t=d.updated ? new Date(d.updated).toLocaleString('ar-KW',{hour:'2-digit',minute:'2-digit',day:'numeric',month:'numeric'}) : '';
     return `<b>الاحتساب التلقائي على الخادم:</b> الجولة ${d.gw} — ${st}${d.state==='done'&&d.avg!=null?` (متوسط ${d.avg}، أعلى ${d.high})`:''}${d.state==='scoring'&&d.remaining?` — بقي ${d.remaining}`:''} · آخر تحديث ${t}${beat}`
-      + ((d.log||[]).length ? `<div style="opacity:.75;margin-top:4px">${(d.log||[]).slice(-3).map(x=>esc(String(x))).join('<br>')}</div>` : '');
+      + ((d.log||[]).length ? `<div style="opacity:.75;margin-top:4px">${(d.log||[]).slice(-3).map(x=>esc(String(x))).join('<br>')}</div>` : '') + this.gwAutoLines();
+  },
+  /* بقية الأتمتة على الخادم في سطر لكل منها (منصور 2026-11-09): الترتيب المباشر، تنبيه التشكيلة، نتيجة الجولة، النسخة الاحتياطية */
+  gwAutoLines(){
+    const X=this._gwX||{}, cur=DB.state.currentGW; let lv=null;
+    try{ lv=JSON.parse((this._gwBeat||{}).result||'{}').live||null; }catch(e){}
+    const hm=t=>t? new Date(t).toLocaleString('ar-KW',{hour:'2-digit',minute:'2-digit',day:'numeric',month:'numeric'}) : '';
+    const L=[];
+    L.push('الترتيب المباشر: '+(!lv ? '—' : lv.error ? `<span class="pill red">خطأ</span> ${esc(lv.error)}` : lv.idle==='before deadline' ? 'يبدأ بعد إغلاق الجولة'
+      : lv.idle==='not live' ? 'لا جولة جارية' : (lv.n ? `${lv.n} مشتركاً · متوسط ${lv.avg} · أعلى ${lv.high}${lv.at? ' · '+hm(lv.at):''}` : esc(JSON.stringify(lv)))));
+    const xi=X.xi; L.push('تنبيه التشكيلة قبل الإغلاق بساعة: '+(xi && +xi.gw===cur ? `أُرسل للجولة ${xi.gw} — ${xi.users??'…'} مشتركاً، ${xi.sent??'…'} جهازاً` : 'لم يحن بعد'));
+    const p=X.push; L.push('نتيجة الجولة للمشتركين: '+(p ? `الجولة ${p.gw} — ${p.sent??'…'} جهازاً` : 'بعد احتساب الجولة 9'));
+    const k=X.bk; const kOld=k && Date.now()-Date.parse(k.at) > 30*3600e3;
+    L.push('النسخة الاحتياطية: '+(k ? `<span class="pill ${kOld?'red':'green'}">${k.day}</span> ${(k.counts||{}).managers||0} مشتركاً · ${k.kb} KB · ${k.days||1} يوماً محفوظة` : 'أول نسخة خلال ساعة'));
+    return `<div style="margin-top:6px;line-height:1.7">${L.join('<br>')}</div>`;
   },
   async autoFinalize(){
     const st=DB.state;

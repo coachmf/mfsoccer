@@ -327,7 +327,7 @@ async function live(io, opts){
   const fx = st.fixtures.filter(f => f.gw === gw);
   const sig = fx.map(f => f.id + ':' + fxSig(f)).join(';');
   const old = await io.get(`${F}/meta/liveboard`);
-  if(!opts.force && old && +old.data.gw === gw && old.data.sig === sig && Date.now() - Date.parse(old.data.at) < LIVE_MAX_AGE_MS) return { same:true, gw };
+  if(!opts.force && old && +old.data.gw === gw && old.data.sig === sig && Date.now() - Date.parse(old.data.at) < LIVE_MAX_AGE_MS) return { same:true, gw, n:+old.data.n, avg:+old.data.avg, high:+old.data.high, at:old.data.at };
   const picks = await livePicks(io, E, st, gw, opts.force);
   const calcAll = () => { const o = {}; for(const r of picks){ try{ o[r[0]] = +E.TEAM.gwPoints(liveTeam(r, gw), gw, st, { live:true }).total || 0; }catch(e){ o[r[0]] = 0; } } return o; };
   const now = calcAll(), prev = beforeLast(E, st, gw, calcAll);
@@ -343,4 +343,32 @@ async function live(io, opts){
   return { wrote:true, gw, n:rows.length, avg, high, played };
 }
 
-module.exports = { step, verify, readiness, scoreAll, writesFor, readState, getRun, syncResults, live };
+/* ===== مراقب الجولة (منصور 2026-11-09): تنبيه الإدارة إن تأخر شيء — 3 مستندات صغيرة كل تشغيل =====
+   1) مباراة مضى على موعدها 6 ساعات ولم تصل نتيجتها للفانتسي (لم تُدخل في الموقع أو لم تُستورد)
+   2) اكتملت المباريات منذ 24 ساعة والجولة لم تُحتسب
+   3) احتساب بدأ ولم يتقدّم منذ ساعة */
+async function watch(io){
+  const root = await io.get(F); if(!root) return [];
+  const cur = +root.data.currentGW, g = (root.data.gws || []).find(x => +x.n === cur);
+  if(!g || g.status === 'finished') return [];
+  const [rd, run] = await Promise.all([io.get(`${F}/rounds/${cur}`), getRun(io)]);
+  const fx = (rd && rd.data.fixtures) || [], now = Date.now(), out = [];
+  const name = id => { const c = (root.data.clubs || []).find(x => x.id === id); return (c && (c.short || c.name)) || id; };
+  for(const f of fx){
+    const t = Date.parse(f.date); if(isNaN(t) || f.status === 'P') continue;
+    if((f.status !== 'F' || f.over === false) && now > t + 6 * 3600e3)
+      out.push({ sig:`fxlate|${cur}|${f.id}`, title:'تنبيه للإدارة: نتيجة مباراة لم تصل للفانتسي',
+        body:`${name(f.h)} × ${name(f.a)} (الجولة ${cur}) — مضت 6 ساعات على موعدها. تأكد أن النتيجة والتشكيلة مدخلة في الموقع.` });
+  }
+  const played = fx.filter(f => f.status !== 'P');
+  if(played.length && played.every(f => f.status === 'F' && f.over !== false)){
+    const last = Math.max(...played.map(f => Date.parse(f.date)).filter(n => !isNaN(n)));
+    if(isFinite(last) && now > last + 24 * 3600e3 && !(run && +run.gw === cur && run.state === 'done'))
+      out.push({ sig:`gwlate|${cur}`, title:`تنبيه للإدارة: الجولة ${cur} لم تُحتسب`, body:'اكتملت المباريات منذ أكثر من 24 ساعة والاحتساب التلقائي لم ينتهِ — افتح لوحة الجولات.' });
+  }
+  if(run && +run.gw === cur && run.state === 'scoring' && run.updated && now - Date.parse(run.updated) > 3600e3)
+    out.push({ sig:`gwstuck|${cur}|${String(run.updated).slice(0, 13)}`, title:`تنبيه للإدارة: احتساب الجولة ${cur} متوقف`, body:`بقي ${run.remaining || '?'} مشتركاً ولم يتقدّم منذ ساعة.` });
+  return out;
+}
+
+module.exports = { step, verify, readiness, scoreAll, writesFor, readState, getRun, syncResults, live, watch };

@@ -1,10 +1,12 @@
 /* لوحة متابعة احتساب الجولة على الخادم — للمدير فقط (رمز Firebase لمالك أو مدير مفعّل).
    POST {idToken, action:'status'|'dry'|'verify'|'step', gw?}
+   backups = أيام النسخ الاحتياطية · restore {day, uid} = استرجاع مشترك واحد (المالك فقط)
    status = سجل meta/gwrun وجاهزية الجولة · dry = ما سيُكتب بلا كتابة · verify = نقاط جولة محتسبة بالمحرك مقابل المخزّن · step = تشغيل الآن */
 'use strict';
 const { accessToken, verifyIdToken } = require('./lib/google');
 const { makeIO, fields } = require('./lib/fsrest');
 const core = require('./lib/gw-core');
+const bk = require('./lib/backup');
 
 const PROJECT = 'mfsoccer-c7ee4';
 const OWNER_UID = 'iiTgVfDryXNLb9IrOyLkkNMHDxq2';
@@ -32,6 +34,13 @@ exports.handler = async (event) => {
     if(a === 'dry') return out(200, await core.step(io, { by:'check', dry:true }));
     if(a === 'verify') return out(200, { ok:true, ...(await core.verify(io, +b.gw)) });
     if(a === 'step') return out(200, await core.step(io, { by:'server', budgetMs:7000 }));
+    /* النسخ الاحتياطية: قائمة الأيام، واسترجاع مشترك واحد من يوم بعينه (الحالي يُحفظ في fbackups-restore قبل الاستبدال) */
+    if(a === 'backups') return out(200, { ok:true, days: await bk.days(io) });
+    if(a === 'restore'){
+      if(uid !== OWNER_UID) return out(403, { ok:false, err:'owner only' });
+      if(!/^\d{4}-\d{2}-\d{2}$/.test(b.day || '') || !/^[\w-]{1,128}$/.test(b.uid || '')) return out(400, { ok:false, err:'day/uid' });
+      return out(200, await bk.restoreManager(io, b.day, b.uid));
+    }
     return out(400, { ok:false, err:'action' });
   }catch(e){ return out(500, { ok:false, err:String(e.message || e).slice(0, 200) }); }
 };

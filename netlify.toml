@@ -80,6 +80,9 @@
   schedule = "*/5 * * * *"
   included_files = ["fantasy/js/data.js", "fantasy/js/engine.js", "fantasy/js/coach.js", "fantasy/js/mfsync.js"]
 
+[functions."fantasy-backup-cron"]
+  schedule = "17 * * * *"
+
 [functions."fantasy-gw-check"]
   included_files = ["fantasy/js/data.js", "fantasy/js/engine.js", "fantasy/js/coach.js", "fantasy/js/mfsync.js"]
 

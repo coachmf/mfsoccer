@@ -74,13 +74,14 @@ window.NPREF = (function(){
       {k:'bench',t:'قائمة البدلاء', na:'المحرّر يسجّل الأساسيين فقط'},
       {k:'xch',  t:'تغيير في التشكيلة المعلنة', na:NA_DATA} ]},
     { id:'fan', t:'الفانتسي', ev:[
-      {k:'fd', t:'ديدلاين الجولة (قبل يوم وساعتين وساعة)', snd:'remind'} ]},
+      {k:'fd', t:'ديدلاين الجولة (قبل يوم وساعتين وساعة)', snd:'remind'},
+      {k:'fr', t:'نقاطك وترتيبك بعد احتساب الجولة', snd:'remind'} ]},
     { id:'gen', t:'عام', ev:[
       {k:'gen', t:'أخبار وإعلانات MF SOCCER', snd:'remind'} ]}
   ];
   const EV = {}; CATS.forEach(c=>c.ev.forEach(e=>{ e.cat=c.id; EV[e.k]=e; }));
   /* الأحداث التي كانت تصل كل الأجهزة قبل اللوحة — تبقى مفعّلة افتراضياً كما قرّر منصور (2026-11-02) */
-  const DEF_ON = ['fd','r30','r15','ko','h2','ft','g','gf','ga','y','r','var','pa','pm','sub','ht','et','pso','xi','gen'];
+  const DEF_ON = ['fd','fr','r30','r15','ko','h2','ft','g','gf','ga','y','r','var','pa','pm','sub','ht','et','pso','xi','gen'];
 
   /* ---------- مكتبة الأصوات ---------- */
   const SND_CAT = [
@@ -107,7 +108,8 @@ window.NPREF = (function(){
   /* ---------- التخزين ---------- */
   const _get = (k,d) => { try{ const v=JSON.parse(localStorage.getItem(k)); return v==null?d:v; }catch(e){ return d; } };
   const _set = (k,v) => { try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} };
-  function load(){ const p = _get(K, null); return p ? Object.assign(defaults(), p, {dnd:Object.assign(defaults().dnd, p.dnd||{})}) : defaults(); }
+  /* «نقاطك بعد الجولة» أُضيف 2026-11-09: من حفظ تفضيلاته قبلها يأخذه كما اختار لديدلاين الفانتسي */
+  function load(){ const p = _get(K, null); if(p && p.ev && p.ev.fr === undefined) p.ev.fr = p.ev.fd ? 1 : 0; return p ? Object.assign(defaults(), p, {dnd:Object.assign(defaults().dnd, p.dnd||{})}) : defaults(); }
   let P = load(), DRAFT = null, OPEN = null;
 
   /* ---------- المواضيع ---------- */
@@ -125,7 +127,8 @@ window.NPREF = (function(){
     Object.keys(p.ev||{}).forEach(k=>{
       const e = EV[k]; if(!p.ev[k] || !e || e.na) return;
       if(k === 'gen'){ s.add('gen'); return; }
-      if(k === 'fd'){ s.add('fd_a'); return; }   /* ديدلاين الفانتسي للجميع، لا يتبع نطاق الفرق والبطولات */
+      if(k === 'fd'){ s.add('fd_a'); return; }
+      if(k === 'fr'){ s.add('fr_a'); return; }   /* نتيجة المشترك بعد الاحتساب — رسالة شخصية من الخادم لأجهزة حسابه */   /* ديدلاين الفانتسي للجميع، لا يتبع نطاق الفرق والبطولات */
       if(e.fav){ [].concat(e.d).forEach(d=>(p.teams||[]).forEach(t=>s.add(d+'_'+e.fav+'_'+h(t)))); return; }
       if(e.sub && p.ev[e.sub]) return;          /* الأب يغطيه في نفس النطاق — لا إشعار مكرر */
       scopeTopics(k, p).forEach(x=>s.add(x));

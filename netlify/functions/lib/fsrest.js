@@ -13,6 +13,7 @@ function val(v){
   if('booleanValue' in v) return v.booleanValue;
   if('nullValue'    in v) return null;
   if('timestampValue' in v) return v.timestampValue;
+  if('bytesValue'   in v) return v.bytesValue;   /* base64 */
   if('mapValue'     in v) return fields(v.mapValue.fields);
   if('arrayValue'   in v) return (v.arrayValue.values || []).map(val);
   return null;
@@ -27,6 +28,7 @@ function enc(x){
   if(Array.isArray(x)) return { arrayValue:{ values:x.map(v => enc(v === undefined ? null : v)) } };
   if(typeof x === 'object'){
     if(x.__ts) return { timestampValue: x.__ts };
+    if(x.__bytes) return { bytesValue: x.__bytes };
     const f = {}; for(const k in x) if(x[k] !== undefined) f[k] = enc(x[k]); return { mapValue:{ fields:f } };
   }
   return { nullValue:null };
@@ -55,10 +57,22 @@ function makeIO(token, apiKey){
       }
       throw new Error('list too long');
     },
+    /* معرّفات المستندات فقط (بلا حقول) — لمجموعات مستنداتها كبيرة */
+    async ids(coll, field){
+      const out = []; let tok = '';
+      for(let i = 0; i < 40; i++){
+        const r = await fetch(url(coll, 'pageSize=300&mask.fieldPaths=' + (field || 'day') + (tok ? `&pageToken=${encodeURIComponent(tok)}` : '')), { headers:H });
+        if(!r.ok) throw new Error(`ids ${coll} ${r.status}`);
+        const d = await r.json(); (d.documents || []).forEach(x => out.push(x.name.split('/').pop()));
+        if(!d.nextPageToken) return out; tok = d.nextPageToken;
+      }
+      return out;
+    },
     /* writes: [{path, data, mask?:[fieldPaths] (افتراضي: مفاتيح data), merge?:true, updateTime?, exists?}] — دفعة واحدة ذرّية */
     async commit(writes){
       if(!token) throw new Error('read-only io');
       const body = { writes: writes.map(w => {
+        if(w.delete) return { delete: `${ROOT}/${w.path}` };
         const o = { update: { name: `${ROOT}/${w.path}`, fields: enc(w.data).mapValue.fields } };
         if(w.mask !== false) o.updateMask = { fieldPaths: (w.mask || Object.keys(w.data)).map(k => k.split('.').map(s => /^[A-Za-z_][A-Za-z0-9_]*$/.test(s) ? s : '`' + s + '`').join('.')) };
         if(w.updateTime) o.currentDocument = { updateTime: w.updateTime };
