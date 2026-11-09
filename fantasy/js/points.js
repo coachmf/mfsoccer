@@ -104,7 +104,7 @@ Object.assign(VIEWS, {
   /* نقاط فريقي في جولة: من السجل إن اعتُمدت، أو حساب مباشر إن كانت جارية */
   pointsData(team, gw, isLive){
     const st=DB.state;
-    const res = isLive ? LIVEGW.mine() : TEAM.gwPoints(team, gw, st);
+    const res = isLive ? LIVEGW.mine() : (TEAM.fromHistory(team.history, gw, (team.gwPicks||{})[gw], st) || TEAM.gwPoints(team, gw, st));
     const ls = isLive ? (LIVEGW.summary()||{}) : {};
     const g = DB.gw(gw)||{};
     const hist=(team.history||[]).find(x=>x.gw===gw);

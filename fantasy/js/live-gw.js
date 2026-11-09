@@ -65,8 +65,16 @@ const LIVEGW = {
     this.busy=true;
     try{
       let rows=null;
-      const T = (typeof CLOUD!=='undefined' && CLOUD.loadTeamsSnap) ? await CLOUD.loadTeamsSnap() : null;
-      if(T && Array.isArray(T.rows) && T.rows.length){
+      /* أولاً: لقطة الخادم (تدقيق 2026-11-09، البند 2) — نفس الأرقام على كل الأجهزة وبلا تحميل تشكيلات الجميع.
+         تُعتمد إن كانت لهذه الجولة وحديثة (≤ 45 دقيقة؛ الخادم يجددها كل 30 دقيقة على الأقل) وتعكس عدد المباريات المنتهية على هذا الجهاز على الأقل؛ وإلا الحساب المحلي القديم */
+      const B = (typeof CLOUD!=='undefined' && CLOUD.loadLiveBoard) ? await CLOUD.loadLiveBoard() : null;
+      if(B && +B.gw===gw && Date.now()-Date.parse(B.at) < 45*60000 && (+B.played||0) >= this.matches().played && !this.zeroRows(B.rows)){
+        rows = B.rows.map(r=>({ id:r.id, name:r.name, teamName:r.teamName, live:+r.live||0, total:+r.total||0, prev: r.prev==null? undefined : +r.prev, liveRank:+r.liveRank||0 }));
+        this.snapAt = B.at; this.src='server'; this.saveFrozen(gw, rows, this.snapAt);
+      }
+      const T = rows ? null : ((typeof CLOUD!=='undefined' && CLOUD.loadTeamsSnap) ? await CLOUD.loadTeamsSnap() : null);
+      if(rows){ /* لقطة الخادم */ }
+      else if(T && Array.isArray(T.rows) && T.rows.length){ this.src='device';
         rows = T.rows.map(v=>{ let live=0; try{ live=+this.calc(v.team, gw).total||0; }catch(e){ live=0; }
           return { id:v.id, name:v.name, teamName:v.teamName, live, total:v.total }; });
         /* نقاط كل فريق قبل آخر مباراة انتهت — لأسهم الترتيب بعد كل مباراة (منصور 2026-10-11) */

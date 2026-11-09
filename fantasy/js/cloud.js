@@ -838,6 +838,18 @@ const CLOUD = {
   /* لقطة CDN (netlify/functions/fantasy.js): اللعبة + اللاعبون + الجولات في ~80 ك.ب — أسرع بكثير من قناة Firestore
      على شبكة الجوال (2026-10-09). أي فشل/مهلة = null فنرجع لـFirestore كما كان */
   /* تشكيلات كل المشتركين (CDN) — للمتوسط والترتيب الحي بعد ساعة من آخر مباراة اليوم */
+  /* الترتيب الحي كما حسبه الخادم (meta/liveboard عبر /api/fantasy-live) — تدقيق 2026-11-09، البند 2 */
+  async loadLiveBoard(){
+    if(typeof fetch==='undefined' || /^(localhost|127\.0\.0\.1)$/.test(location.hostname)) return null;
+    try{
+      const ctl = typeof AbortController!=='undefined' ? new AbortController() : null;
+      const t = setTimeout(()=>{ try{ ctl && ctl.abort(); }catch(e){} }, 10000);
+      const r = await fetch('/api/fantasy-live/'+this.SEASON, ctl ? {signal:ctl.signal} : {});
+      clearTimeout(t);
+      if(!r.ok) return null;
+      const v = await r.json(); return (v && Array.isArray(v.rows) && v.rows.length) ? v : null;
+    }catch(e){ return null; }
+  },
   async loadTeamsSnap(){
     if(typeof fetch==='undefined' || /^(localhost|127\.0\.0\.1)$/.test(location.hostname)) return null;
     try{
@@ -1119,10 +1131,12 @@ const CLOUD = {
     rows.forEach((r,i)=>{ if(prevPts===null || r.res.total<prevPts){ rank=i+1; prevPts=r.res.total; } r.rank=rank; });
 
     rows.forEach(r=>{
-      const hist=(r.data.history||[]).filter(h=>h.gw!==gw).concat([{
+      const prevDet=((r.data.history||[]).find(h=>h.gw===gw)||{}).det;
+      const det=(r.res.rows && r.res.rows.length) ? TEAM.detOf(r.res) : prevDet;
+      const hist=(r.data.history||[]).filter(h=>h.gw!==gw).concat([Object.assign({
         gw, pts:r.res.total, benchPts:r.res.benchPts, rank:r.rank,
         chip:r.res.chip||null, hits:r.res.hits||0
-      }]).sort((a,b)=>a.gw-b.gw);
+      }, det ? {det} : {})]).sort((a,b)=>a.gw-b.gw);
       GWADMIN.rollover(r.team, gw, st);
       const team = JSON.parse(JSON.stringify(r.team));           // لا undefined في Firestore
       board.push(this.boardRow(r.uid, r.data, hist, hist.reduce((s,h)=>s+(h.pts||0), 0)));
@@ -1181,16 +1195,19 @@ const CLOUD = {
       if(changed) fixed++;
       if(opts.resetChips && hadChips) chips++;
       if(changed || (opts.resetChips && hadChips)){
-        team.repairedAt=now; team.rev=(+team.rev||0)+1;
-        writes.push([d.id, {team}]);
+        /* تدقيق 2026-11-09 (M8): الحقول التي تغيّرت فقط، والرقم يُزاد على الخادم — لا يُكتب فريق كامل قُرئ قبل دقائق فوق حفظ المشترك */
+        const up={'team.repairedAt':now, 'team.rev':firebase.firestore.FieldValue.increment(1)};
+        if(changed) ['squad','xi','bench','cap','vice'].forEach(k=>{ up['team.'+k]=team[k]===undefined? null : team[k]; });
+        if(opts.resetChips) up['team.usedChips']={};
+        writes.push([d.id, up]);
       }
     });
     let done=0;
     for(let i=0;i<writes.length;i+=400){
       const chunk=writes.slice(i,i+400);
       const batch=this.db.batch();
-      chunk.forEach(([uid,data])=>batch.set(this.managers().doc(uid), data, {merge:true}));
-      const w = await this.race(batch.commit(), 20000);
+      chunk.forEach(([uid,data])=>batch.update(this.managers().doc(uid), data));
+      const w = await this.race(batch.commit(), this.OP_MS.batch);
       if(!w.ok) return {ok:false, err:`تعذّر الحفظ (${done} من ${writes.length})`, done};
       done += chunk.length;
     }
@@ -1212,14 +1229,16 @@ const CLOUD = {
     snap.forEach(d=>{
       const v=d.data(); if(!v.team || !(v.team.squad||[]).length) return;
       const team=JSON.parse(JSON.stringify(v.team));
-      if(COACH_UPGRADE.bumpTeam(team, st)){ bumped++; team.repairedAt=now; team.rev=(+team.rev||0)+1; writes.push([d.id, {team}]); }
+      if(COACH_UPGRADE.bumpTeam(team, st)){ bumped++;
+        writes.push([d.id, {'team.bank':firebase.firestore.FieldValue.increment(Math.round((team.bank-(+v.team.bank||0))*10)/10), 'team.bankBase':team.bankBase, 'team.bankVer':team.bankVer,
+          'team.repairedAt':now, 'team.rev':firebase.firestore.FieldValue.increment(1)}]); }
     });
     let done=0;
     for(let i=0;i<writes.length;i+=400){
       const chunk=writes.slice(i,i+400);
       const batch=this.db.batch();
-      chunk.forEach(([uid,data])=>batch.set(this.managers().doc(uid), data, {merge:true}));
-      const w = await this.race(batch.commit(), 20000);
+      chunk.forEach(([uid,data])=>batch.update(this.managers().doc(uid), data));
+      const w = await this.race(batch.commit(), this.OP_MS.batch);
       if(!w.ok) return {ok:false, err:`تعذّر الحفظ (${done} من ${writes.length})`, done};
       done += chunk.length;
     }

@@ -135,9 +135,10 @@ function scoreAll(E, st, gw, mgrs){
 function writesFor(E, st, gw, sc){
   const W = [];
   for(const r of sc.rows){
-    const hist = (r.v.history || []).filter(h => h.gw !== gw).concat([{
+    const det = (r.res.rows && r.res.rows.length) ? E.TEAM.detOf(r.res) : (r.prev && r.prev.det);
+    const hist = (r.v.history || []).filter(h => h.gw !== gw).concat([Object.assign({
       gw, pts:r.res.total, benchPts:r.res.benchPts || 0, rank:r.rank, chip:r.res.chip || null, hits:r.res.hits || 0
-    }]).sort((a, b) => a.gw - b.gw);
+    }, det ? { det } : {})]).sort((a, b) => a.gw - b.gw);
     const total = hist.reduce((s, h) => s + (h.pts || 0), 0);
     r.hist = hist; r.total = total;
     if(!r.done){
@@ -269,4 +270,77 @@ async function verify(io, gw){
   return { gw, checked:n, same, diff:diff.length, examples:diff.slice(0, 15) };
 }
 
-module.exports = { step, verify, readiness, scoreAll, writesFor, readState, getRun, syncResults };
+/* ===== الترتيب الحي على الخادم (تدقيق 2026-11-09، البند 2): كان كل جهاز يحمّل تشكيلات كل المشتركين (~1500) ويحسبها بنفسه،
+   فتختلف الأرقام بين جهاز وآخر حسب توقيت التحميل ويثقل الجوال. الآن يحسبها الخادم مرة بنفس المحرك وينشرها في meta/liveboard،
+   والأجهزة تقرأ اللقطة من /api/fantasy-live. نقاط المشترك نفسه تبقى تُحسب على جهازه لحظياً.
+   التشكيلات بعد الموعد مقفلة، فتُخزَّن مرة في meta/livepicks (تُجدَّد كل 6 ساعات لالتقاط أي تصحيح من الإدارة) — لا قراءة لكل المشتركين كل 5 دقائق. ===== */
+const LIVE_PICKS_MS = 6 * 3600e3, LIVE_MAX_AGE_MS = 30 * 60e3;
+function liveTeam(row, gw){ return { joinedGW:row[4], gwPicks:{ [gw]: row[5] }, transfers:[], history:[] }; }
+async function livePicks(io, E, st, gw, force){
+  const c = await io.get(`${F}/meta/livepicks`);
+  if(!force && c && +c.data.gw === gw && Date.now() - Date.parse(c.data.at) < LIVE_PICKS_MS){ try{ return JSON.parse(c.data.json); }catch(e){} }
+  const mgrs = await io.list(`${F}/managers`, 300), rows = [];
+  for(const m of mgrs){
+    const v = m.data, t = v.team;
+    if(!t || !Array.isArray(t.squad) || !t.squad.length) continue;
+    if((+v.joinedGW || 0) > gw) continue;                    // فريقه يبدأ من الجولة التالية
+    const p = (t.gwPicks && t.gwPicks[gw]) || E.TEAM.picksFrom(t);
+    rows.push([m.id, v.username || 'مشترك', v.teamName || '', +v.total || 0, +v.joinedGW || 1,
+      { xi:p.xi || [], bench:p.bench || [], cap:p.cap || null, vice:p.vice || null, chip:p.chip || null, hits:+p.hits || 0, coach:p.coach || null }]);
+  }
+  const json = JSON.stringify(rows);
+  if(json.length < 900000) await io.commit([{ path:`${F}/meta/livepicks`, data:{ gw, at:new Date().toISOString(), n:rows.length, json }, mask:false }]);   // حد المستند 1MB
+  return rows;
+}
+/* نقاط الجولة قبل آخر مباراة انتهت — LIVEGW.beforeLast نفسها (لأسهم الترتيب) */
+function beforeLast(E, st, gw, calc){
+  const fin = st.fixtures.filter(f => f.gw === gw && f.status === 'F' && f.over !== false && f.stats);
+  if(!fin.length) return null;
+  const f = fin.slice().sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')))[0];
+  const pids = new Set(); for(const c in f.stats) for(const pid in (f.stats[c] || {})) pids.add(pid);
+  const saved = {}; pids.forEach(pid => { saved[pid] = st.playerGW[pid] ? st.playerGW[pid][gw] : undefined; });
+  const sS = f.stats, sSt = f.status, sO = f.over, out = {};
+  try{
+    f.stats = null; f.status = 'U'; f.over = false;
+    pids.forEach(pid => { const r = E.aggPGW(st, pid, gw); st.playerGW[pid] = st.playerGW[pid] || {}; if(r) st.playerGW[pid][gw] = r; else delete st.playerGW[pid][gw]; });
+    out.v = calc();
+  }finally{
+    f.stats = sS; f.status = sSt; f.over = sO;
+    pids.forEach(pid => { if(saved[pid] === undefined){ if(st.playerGW[pid]) delete st.playerGW[pid][gw]; } else st.playerGW[pid][gw] = saved[pid]; });
+  }
+  return out.v;
+}
+/* opts: { force, dry, state:{E,st,R} } */
+async function live(io, opts){
+  opts = opts || {};
+  if(!opts.state && !opts.force){
+    /* فحص خفيف: قبل موعد إغلاق الجولة لا يوجد ترتيب حي — مستند واحد بدل قراءة الحالة كلها */
+    const root = await io.get(F); if(!root) return { idle:'no game' };
+    const cur = +root.data.currentGW, g = (root.data.gws || []).find(x => +x.n === cur);
+    if(!g || g.status === 'finished' || !g.deadline || Date.now() < Date.parse(g.deadline)) return { idle:'before deadline', gw:cur };
+  }
+  const S = opts.state || await readState(io);
+  const { E, st, R } = S;
+  if(!opts.state){ try{ await syncResults(io, E, st, R, { dry:true }); }catch(e){} }   // نتائج الموقع الآن (بلا نشر — النشر للاحتساب)
+  const gw = st.currentGW;
+  if(!E.GWADMIN.inProgress(gw)) return { idle:'not live', gw };
+  const fx = st.fixtures.filter(f => f.gw === gw);
+  const sig = fx.map(f => f.id + ':' + fxSig(f)).join(';');
+  const old = await io.get(`${F}/meta/liveboard`);
+  if(!opts.force && old && +old.data.gw === gw && old.data.sig === sig && Date.now() - Date.parse(old.data.at) < LIVE_MAX_AGE_MS) return { same:true, gw };
+  const picks = await livePicks(io, E, st, gw, opts.force);
+  const calcAll = () => { const o = {}; for(const r of picks){ try{ o[r[0]] = +E.TEAM.gwPoints(liveTeam(r, gw), gw, st, { live:true }).total || 0; }catch(e){ o[r[0]] = 0; } } return o; };
+  const now = calcAll(), prev = beforeLast(E, st, gw, calcAll);
+  const rows = picks.map(r => ({ id:r[0], name:r[1], teamName:r[2], total:r[3], live:now[r[0]] || 0, prev: prev ? (prev[r[0]] || 0) : null }));
+  rows.sort((a, b) => b.live - a.live);
+  let p = null, rank = 0; rows.forEach((r, i) => { if(p === null || r.live < p){ rank = i + 1; p = r.live; } r.liveRank = rank; });
+  const played = fx.filter(f => f.status === 'F' && f.over !== false).length;
+  if(rows.length > 1 && played > 0 && rows.every(r => r.live <= 0)) return { zero:true, gw };   // إحصاءات لم تصل بعد
+  const avg = rows.length ? Math.round(rows.reduce((s, r) => s + r.live, 0) / rows.length) : 0, high = rows.length ? rows[0].live : 0;
+  const compact = rows.map(r => [r.id, r.name, r.teamName, r.total, r.live, r.prev, r.liveRank]);
+  if(opts.dry) return { gw, n:rows.length, avg, high, played, rows };
+  await io.commit([{ path:`${F}/meta/liveboard`, data:{ gw, at:new Date().toISOString(), sig, n:rows.length, avg, high, played, json:JSON.stringify(compact) }, mask:false }]);
+  return { wrote:true, gw, n:rows.length, avg, high, played };
+}
+
+module.exports = { step, verify, readiness, scoreAll, writesFor, readState, getRun, syncResults, live };

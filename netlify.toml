@@ -38,6 +38,13 @@
   status = 200
   force = true
 
+# ——— الترتيب الحي محسوباً على الخادم (netlify/functions/fantasy-live.js) ———
+[[redirects]]
+  from = "/api/fantasy-live/*"
+  to = "/.netlify/functions/fantasy-live/:splat"
+  status = 200
+  force = true
+
 # ——— لقطة الفانتسي من CDN (netlify/functions/fantasy.js) ———
 [[redirects]]
   from = "/api/fantasy/*"

@@ -945,6 +945,16 @@ const TEAM = {
     return { total, rows, benchPts, chip, hits, coach, capName: (capUsed && DB.player(capUsed))? DB.player(capUsed).name : '—' };
   },
 
+  /* تدقيق 2026-11-09 (H9): تفصيل الجولة كما احتُسب فعلاً (يُحفظ مع السجل det: [معرّف، نقاط، فعلية، كابتن، دكة]) —
+     صفحة النقاط تعرضه بدل إعادة الحساب، فلا يختلف الرقم عن التفصيل بعد أي تصحيح لاحق */
+  detOf(res){ return (res && res.rows || []).map(r=>[r.pid, +r.pts||0, +r.eff||0, r.cap?1:0, r.bench?1:0]); },
+  fromHistory(hist, gw, picks, st){
+    st=st||DB.state; const h=(hist||[]).find(x=>+x.gw===+gw); if(!h || !Array.isArray(h.det) || !h.det.length) return null;
+    const rows=h.det.map(([pid,pts,eff,cap,bench])=>({pid, pts, eff, cap:!!cap, bench:!!bench}));
+    let coach=null; if(picks && picks.coach && typeof COACH!=='undefined'){ try{ const cp=COACH.points(st, picks.coach, gw); coach={ id:picks.coach, ...cp }; }catch(e){} }
+    const capRow=rows.find(r=>r.cap); const capP=capRow && DB.player(capRow.pid);
+    return { total:+h.pts||0, rows, benchPts:+h.benchPts||0, chip:h.chip||null, hits:+h.hits||0, coach, capName: capP? capP.name : '—', stored:true };
+  },
   totalPoints(team, st){
     st=st||DB.state;
     return (team.history||[]).reduce((s,h)=>s+h.pts,0);
@@ -1310,6 +1320,20 @@ const GWADMIN = {
     team.gwStart={gw:st.currentGW, squad:[...(team.squad||[])], xi:[...(team.xi||[])], bench:[...(team.bench||[])],
       cap:team.cap||null, vice:team.vice||null, bank:+team.bank||0, coach:team.coach||null, coachSince:team.coachSince||null};
   },
+  /* منصور 2026-11-09 (عزيز: الكابتن الثلاثي ومباراة الكابتن تأجلت): الكرت لا يُحسب مستخدماً إن ألغى التأجيل أثره —
+     الكابتن الثلاثي: مباراة الكابتن مؤجلة (لم يلعب ناديه في الجولة) ولم يأخذ النائب المضاعفة (لم يلعب). المقاعد: لاعبان على الأقل
+     من الأربعة مبارياتهم مؤجلة. الحساب نفسه لا يتغيّر — فقط الكرت يعود متاحاً (ويُسجَّل في chipRefunds) */
+  chipVoided(picks, gw, st){
+    st=st||DB.state; if(!picks || !picks.chip) return false;
+    const P=pid=>(st.players||[]).find(x=>x.id===pid);
+    const postponed=pid=>{ const p=P(pid); if(!p) return false;
+      const fx=(st.fixtures||[]).filter(f=>f.gw===gw && (f.h===p.club||f.a===p.club));
+      return fx.length>0 && !fx.some(f=>f.status==='F') && fx.some(f=>f.status==='P'); };
+    const mins=pid=>{ const r=((st.playerGW||{})[pid]||{})[gw]; return r ? (+r.min||0) : 0; };
+    if(picks.chip==='triplecap') return !!picks.cap && postponed(picks.cap) && !(picks.vice && mins(picks.vice)>0);
+    if(picks.chip==='benchboost') return (picks.bench||[]).filter(postponed).length>=2;
+    return false;
+  },
   rollover(team, gw, st){
     st=st||DB.state;
     if((team.rolledGW||0)>=gw) return team;
@@ -1322,7 +1346,8 @@ const GWADMIN = {
     team.fhBackup=null; team.fhCancel=null; team.gwStart=null; team.chipHits=null; team.chipFt=null;
     // الكرت يُحسب مستخدماً هنا فقط (بعد احتساب الجولة) — قبلها يمكن إلغاؤه بلا خسارة
     const freeGW = typeof SEED_RULES!=='undefined' && !!SEED_RULES.freeChanges && gw <= (+SEED_RULES.scoringFromGW||1);   /* جولة التغييرات الحرة */
-    if(picks && picks.chip && !(freeGW && picks.chip==='wildcard')){ team.usedChips=team.usedChips||{}; team.usedChips[picks.chip]=(team.usedChips[picks.chip]||0)+1; }   /* الوايلد كارد بلا أثر في جولة حرة — لا يُستهلك */
+    if(picks && picks.chip && !(freeGW && picks.chip==='wildcard') && !this.chipVoided(picks, gw, st)){ team.usedChips=team.usedChips||{}; team.usedChips[picks.chip]=(team.usedChips[picks.chip]||0)+1; }   /* الوايلد كارد بلا أثر في جولة حرة — لا يُستهلك */
+    else if(picks && picks.chip && this.chipVoided(picks, gw, st)) (team.chipRefunds ??= []).push({gw, chip:picks.chip});
     team.activeChip=null;
     team.pendingHits=0;
     /* نهاية الفترة الحرة: الجميع يبدأ بانتقال مجاني واحد (كـFPL بعد الجولة الأولى) — لا رصيد متراكم من فترة بلا حدود */

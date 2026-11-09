@@ -17,7 +17,7 @@ function source(){
   if(SRC) return SRC;
   const d = engineDir();
   SRC = ['data.js', 'engine.js', 'coach.js', 'mfsync.js'].map(f => fs.readFileSync(path.join(d, f), 'utf8')).join('\n;\n')
-    + '\n;globalThis.__E = { DB, TEAM, GWADMIN, MARKET, RANKS, STANDINGS, COACH, COACHES, NOTIF, buildSeedState, normalizeFixtures, applyFreeRule, computeDeadlines, SEED_RULES, SEED_PRICE_VER, finalizeGWStats, genMatchStats, MFSYNC };';
+    + '\n;globalThis.__E = { DB, TEAM, GWADMIN, MARKET, RANKS, STANDINGS, COACH, COACHES, NOTIF, buildSeedState, normalizeFixtures, applyFreeRule, computeDeadlines, SEED_RULES, SEED_PRICE_VER, finalizeGWStats, genMatchStats, MFSYNC, aggPGW };';
   return SRC;
 }
 

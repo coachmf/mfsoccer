@@ -7,6 +7,7 @@ const { accessToken } = require('./lib/google');
 const { makeIO } = require('./lib/fsrest');
 const core = require('./lib/gw-core');
 const { notifyStaff } = require('./lib/staff-alert');
+const xiAlert = require('./lib/xi-alert');
 
 async function run(){
   const at = await accessToken('https://www.googleapis.com/auth/datastore https://www.googleapis.com/auth/firebase.messaging');
@@ -17,6 +18,12 @@ async function run(){
     const msg = String(e && e.message || e).slice(0, 200);
     await notifyStaff(at, `gwfail|${msg.slice(0, 60)}`, 'تنبيه للإدارة: تعذّر احتساب الجولة تلقائياً', msg + ' — يُعاد المحاولة كل 5 دقائق').catch(() => null);
     throw e;
+  }
+  /* الترتيب الحي للجولة الجارية (meta/liveboard) — فقط حين لا يوجد احتساب جارٍ في هذا التشغيل */
+  if(r && r.idle && r.idle !== 'finished'){
+    try{ r.live = await core.live(io); }catch(e){ r.live = { error:String(e && e.message || e).slice(0, 120) }; }
+    /* تنبيه التشكيلة قبل الإغلاق بساعة (مصاب/موقوف/مباراة مؤجلة في الأساسيين) — مرة لكل جولة */
+    if(r.live && r.live.idle === 'before deadline'){ try{ r.xi = await xiAlert.run(io, at); }catch(e){ r.xi = { error:String(e && e.message || e).slice(0, 120) }; } }
   }
   /* نبضة: آخر فحص للخادم ونتيجته — تظهر في لوحة الجولات فيُعرف أن الأتمتة تعمل */
   try{ await io.commit([{ path:'fantasy/2026-2027/meta/gwbeat', data:{ at:new Date().toISOString(), gw:r.gw||null, result:JSON.stringify(r).slice(0, 300) }, mask:false }]); }catch(e){}

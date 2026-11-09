@@ -295,7 +295,7 @@ const VIEWS = {
     const gw=tabsGw.includes(this.ui.pointsGw)? this.ui.pointsGw : tabsGw[tabsGw.length-1];
     const isLive = liveOn && gw===st.currentGW;
     if(isLive) LIVEGW.refresh();
-    const res= isLive ? LIVEGW.mine() : TEAM.gwPoints(team, gw, st);
+    const res= isLive ? LIVEGW.mine() : (TEAM.fromHistory(team.history, gw, (team.gwPicks||{})[gw], st) || TEAM.gwPoints(team, gw, st));
     const ls = isLive ? (LIVEGW.summary()||{}) : {};
     const h= isLive ? {gw, pts:res.total, hits:res.hits, benchPts:res.benchPts, chip:res.chip, rank:ls.rank||'—', live:true}
                     : hist.find(x=>x.gw===gw);
@@ -1273,7 +1273,7 @@ const VIEWS = {
     const liveV = showGw===st.currentGW && typeof LIVEGW!=='undefined' && LIVEGW.active() && !(+doc.joinedGW>showGw) && !(doc.history||[]).some(x=>+x.gw===+showGw);
     if(liveV) LIVEGW.refresh();
     if(g && (g.status==='finished' || g.status==='live' || liveV)){
-      try{ res=TEAM.gwPoints({...vt, gwPicks:{[showGw]:picks}}, showGw, st, {live:g.status==='live' || liveV}); pts={}; res.rows.forEach(r=>{ pts[r.pid]=r.eff; }); }catch(e){}
+      try{ res=(g.status==='finished' && TEAM.fromHistory(doc.history, showGw, picks, st)) || TEAM.gwPoints({...vt, gwPicks:{[showGw]:picks}}, showGw, st, {live:g.status==='live' || liveV}); pts={}; res.rows.forEach(r=>{ pts[r.pid]=r.eff; }); }catch(e){}
     }
     const chip=picks.chip? (st.rules.chips[picks.chip]||{}).label||picks.chip : null;
     // مع نقاط محتسبة: بطاقات صفحة النقاط (الضغط يفتح تفصيل النقاط) بدل بطاقة العرض العادية
