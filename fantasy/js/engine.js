@@ -1321,8 +1321,7 @@ const GWADMIN = {
       cap:team.cap||null, vice:team.vice||null, bank:+team.bank||0, coach:team.coach||null, coachSince:team.coachSince||null};
   },
   /* منصور 2026-11-09 (عزيز: الكابتن الثلاثي ومباراة الكابتن تأجلت): الكرت لا يُحسب مستخدماً إن ألغى التأجيل أثره —
-     الكابتن الثلاثي: مباراة الكابتن مؤجلة (لم يلعب ناديه في الجولة) ولم يأخذ النائب المضاعفة (لم يلعب). المقاعد: لاعبان على الأقل
-     من الأربعة مبارياتهم مؤجلة. الحساب نفسه لا يتغيّر — فقط الكرت يعود متاحاً (ويُسجَّل في chipRefunds) */
+     الكابتن الثلاثي: مباراة الكابتن مؤجلة (لم يلعب ناديه في الجولة) ولم يأخذ النائب المضاعفة (لم يلعب).  الحساب نفسه لا يتغيّر — فقط الكرت يعود متاحاً (ويُسجَّل في chipRefunds) */
   chipVoided(picks, gw, st){
     st=st||DB.state; if(!picks || !picks.chip) return false;
     const P=pid=>(st.players||[]).find(x=>x.id===pid);
@@ -1331,7 +1330,7 @@ const GWADMIN = {
       return fx.length>0 && !fx.some(f=>f.status==='F') && fx.some(f=>f.status==='P'); };
     const mins=pid=>{ const r=((st.playerGW||{})[pid]||{})[gw]; return r ? (+r.min||0) : 0; };
     if(picks.chip==='triplecap') return !!picks.cap && postponed(picks.cap) && !(picks.vice && mins(picks.vice)>0);
-    if(picks.chip==='benchboost') return (picks.bench||[]).filter(postponed).length>=2;
+    /* منصور 2026-11-09: «only triple captain return the chip» — الدكة القوية لا تُعاد بسبب التأجيل */
     return false;
   },
   rollover(team, gw, st){
