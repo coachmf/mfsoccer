@@ -54,6 +54,7 @@ const vnow = d => { const c = d && d.vc; return c && c.x > 0 ? c.v + (Date.now()
 const spd = d => (d && d.vc && +d.vc.x) || 1;
 
 /* ───────────── الحساب ───────────── */
+const STALE = 4*3600e3;   /* لا شوط حقيقي يبقى مفتوحاً 4 ساعات */
 function calc(d, now){
   now = now==null ? vnow(d) : now;
   const out = {ph:{}, dur:0, stop:0, eff:0, n:0, reasons:{}, longest:null, cur:null, open:null, live:false, started:false};
@@ -74,6 +75,9 @@ function calc(d, now){
   const stops = (d.stops||[]).slice().sort((a,b)=>a.s-b.s);
   for(const [p] of PHS){
     const h = d.halves && d.halves[p]; if(!h || !h.s) continue;
+    /* شوط بدأ ولم يُغلق منذ أكثر من STALE (مباراة تأجلت بعد ضغط «بداية الشوط») — لا يُحسب ولا يُعرض جارياً
+       (القادسية×الساحل ج5: بدأ 2026-10-19 وظهر للناس «جارٍ 29818:09» بعد 20 يوماً) */
+    if(!h.e && now - h.s > STALE){ out.stale = true; continue; }
     out.started = true;
     const end = h.e || now, dur = Math.max(0, end - h.s);
     let stop = 0, n = 0;
@@ -535,7 +539,9 @@ function cardHTML(d, live){
 }
 EFF.cardHTML = cardHTML;
 /* تبويب «اللعب الفعلي» في صفحة المباراة: يظهر إذا كانت المباراة مرصودة (زمن مسجّل أو شوط جارٍ) */
-EFF.has = m => { const s = m && IDX.m[keyOf(m)]; return !!(s && (s.dur>0 || s.eff>0 || s.live)); };   /* الإدخال اليدوي بلا مدة (dur 0) له eff فقط — كان التبويب يختفي (النصر×الكويت ج4، الفحيحيل×الشباب ج5) */
+EFF.has = m => { const s = m && IDX.m[keyOf(m)]; if(!s) return false;
+  const live = s.live && !(Date.now() - (Date.parse(s.upd) || 0) > STALE);   /* فهرس «جارٍ» لم يُحدَّث منذ ساعات = شوط منسي */
+  return !!(s.dur>0 || s.eff>0 || live); };   /* الإدخال اليدوي بلا مدة (dur 0) له eff فقط — كان التبويب يختفي (النصر×الكويت ج4، الفحيحيل×الشباب ج5) */
 function mpInject(){
   const box = document.getElementById("mpage");
   const m = (typeof MP!=="undefined" && MP) ? MP.m : null;
