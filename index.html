@@ -9680,6 +9680,19 @@ function wireFanList(){
   });
 }
 /* قسم «فريق العمل» — للمالك ولمنصور (canStaff) */
+/* مركز التحليل: صفحة مستقلة (/office.html) تعرض من يعمل الآن وأين.
+   يراها كل فريق العمل لا المالك وحده — فهي أداة تنسيق بينهم، بخلاف
+   «فريق العمل» أدناه التي يحدّدها المالك ومنصور. (منصور 2026-11-10) */
+function officeSectionHTML(){
+  if(!(MYROLE==="owner" || MYROLE==="editor")) return "";
+  return `
+    <h2 class="sec">مركز التحليل</h2>
+    <p class="hint">من يعمل الآن ومن أين — إدارة الرصد أو اللعب الفعلي. يُحدَّث لحظياً، ومن أغلق الموقع يظهر غير متصل بعد دقيقتين.</p>
+    <div class="card pad">
+      <a class="btn" href="/office.html" style="display:inline-block;text-decoration:none">افتح مركز التحليل</a>
+    </div>`;
+}
+
 function staffSectionHTML(){
   if(!canStaff()) return "";
   return `
@@ -9793,6 +9806,8 @@ function renderEditorAdmin(){
       <div style="height:10px"></div>
       <button class="btn" id="scGo">احتسب نقاط الجمهور</button>
     </div>` : ""}
+
+    ${officeSectionHTML()}
 
     ${staffSectionHTML()}
 
@@ -9954,6 +9969,8 @@ function renderAdmin(){
       <div class="fld"><label>بحث بالاسم</label><input type="text" id="fanFind" placeholder="اكتب جزءاً من الاسم"></div>
       <div id="fanList">${fanListHTML("")}</div>
     </div>`:""}
+
+    ${officeSectionHTML()}
 
     ${staffSectionHTML()}
 
