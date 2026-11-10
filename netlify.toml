@@ -99,6 +99,12 @@
   status = 200
   force = true
 
+# ——— مركز التحليل الافتراضي (لفريق العمل) ———
+[[redirects]]
+  from = "/center"
+  to = "/center.html"
+  status = 200
+
 # ——— صفحة الروابط (للبايو) ———
 [[redirects]]
   from = "/links"

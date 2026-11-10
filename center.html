@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#0B0906">
+<title>مركز التحكم — MF Soccer</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.12.2/firebase-app-compat.min.js" defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.12.2/firebase-auth-compat.min.js" defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.12.2/firebase-firestore-compat.min.js" defer></script>
+<style>
+:root{--bg:#0B0906;--card:#15110B;--line:#2E2416;--line2:#4A3A22;--ink:#F4EEE2;--mute:#B5A88F;--gold:#D4A84B;--on:#3DDC5A}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:"IBM Plex Sans Arabic",system-ui,sans-serif}
+body{min-height:100vh}
+button,input{font-family:inherit}
+.wrap{max-width:1600px;margin:0 auto;padding:24px clamp(12px,3vw,40px) 48px;display:flex;flex-direction:column;gap:20px}
+header.top{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:16px}
+.brand{display:flex;flex-direction:column}
+.brand h1{margin:0;font-size:clamp(22px,2.6vw,34px);font-weight:700;line-height:1.2}
+.brand p{margin:2px 0 0;font-size:14px;color:var(--mute)}
+.side{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.stats{display:flex;gap:10px}
+.stat{display:flex;flex-direction:column;align-items:center;padding:6px 16px;border:1px solid var(--line);border-radius:12px;background:var(--card);min-width:84px}
+.stat b{font-size:24px;color:var(--gold);line-height:1.2}
+.stat span{font-size:12px;color:var(--mute)}
+.stat.live{border-color:#2E7A42;background:#0E2418}
+.stat.live b{color:var(--on)} .stat.live span{color:#A8D9B4}
+.toolbar{display:flex;gap:8px;flex-wrap:wrap}
+.btn{min-height:44px;padding:8px 16px;border-radius:12px;border:1px solid var(--line2);background:var(--card);color:var(--ink);font-size:14px;font-weight:600;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center}
+.btn:hover{border-color:var(--gold)} .btn.gold{background:var(--gold);color:#16120B;border-color:var(--gold)}
+.btn:focus-visible,input:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+
+/* الغرفة: الصورة المعتمدة، وفوق كل مكتب منطقة بالنِّسب فتبقى في مكانها بأي حجم */
+.scroller{overflow-x:auto;border-radius:18px;border:1px solid var(--line);-webkit-overflow-scrolling:touch}
+.stage{position:relative;min-width:960px;container-type:inline-size;direction:ltr}
+.room{display:block;width:100%;height:auto}
+.spot{position:absolute}
+/* المكتب المطفأ: رمادي معتم بحواف ناعمة تذوب في الأرضية (بلا إطار حاد) */
+.spot .dim{position:absolute;inset:0;background:rgba(6,5,3,.38);
+  -webkit-backdrop-filter:grayscale(1) brightness(.58);backdrop-filter:grayscale(1) brightness(.58);transition:opacity .6s;
+  -webkit-mask-image:linear-gradient(to right,transparent,#000 5%,#000 95%,transparent),linear-gradient(to bottom,transparent,#000 6%,#000 94%,transparent);
+  -webkit-mask-composite:source-in;
+  mask-image:linear-gradient(to right,transparent,#000 5%,#000 95%,transparent),linear-gradient(to bottom,transparent,#000 6%,#000 94%,transparent);
+  mask-composite:intersect}
+.spot.on .dim{opacity:0}
+.spot .glow{position:absolute;left:9%;right:9%;bottom:.25cqw;height:.32cqw;border-radius:99px;background:var(--on);
+  box-shadow:0 0 1.2cqw .3cqw rgba(61,220,90,.75);opacity:0;transition:opacity .6s}
+.spot.on .glow{opacity:1}
+.pill{position:absolute;direction:rtl;display:flex;align-items:center;gap:.55cqw;padding:.35cqw .9cqw;border-radius:99px;
+  border:.11cqw solid #6B7A90;background:rgba(14,14,16,.82);color:#C9CED6;white-space:nowrap}
+.pill.fixed{justify-content:center;padding:0 .6cqw}
+.pill.base{transform:translate(-50%,-50%);z-index:2;box-shadow:0 .2cqw .8cqw rgba(0,0,0,.55)}
+.pill .dot{width:.85cqw;height:.85cqw;border-radius:50%;background:#7C8796;flex:none}
+.pill .tx{display:flex;flex-direction:column;align-items:flex-start;line-height:1.15}
+.pill .tx b{font-size:1cqw;font-weight:700} .pill .tx small{font-size:.72cqw;font-weight:600;letter-spacing:.05em}
+.pill.on{border-color:var(--on);background:rgba(8,30,14,.88);color:#8AF0A0}
+.pill.on .dot{background:var(--on);box-shadow:0 0 .7cqw .15cqw rgba(61,220,90,.85);animation:pulse 2s ease-in-out infinite}
+@keyframes pulse{50%{box-shadow:0 0 .25cqw .05cqw rgba(61,220,90,.5)}}
+
+.edit{border:1px solid var(--line2);border-radius:16px;background:var(--card);padding:18px}
+.edit h2{margin:0 0 12px;font-size:18px}
+.edit .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}
+.mail{display:flex;flex-direction:column;gap:4px;font-size:14px}
+.mail small{color:var(--mute)}
+.mail input{min-height:42px;padding:6px 10px;border-radius:10px;border:1px solid var(--line2);background:#0E0B07;color:var(--ink);direction:ltr;text-align:left;font-size:14px}
+.legend{display:flex;justify-content:center;gap:24px;flex-wrap:wrap;font-size:14px;color:var(--mute)}
+.legend span{display:flex;align-items:center;gap:8px}
+.legend i{width:10px;height:10px;border-radius:50%;display:inline-block}
+.orph{border:1px dashed var(--line2);border-radius:14px;padding:12px 16px;color:var(--mute);font-size:14px}
+.orph b{color:var(--ink)}
+
+.gate{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
+.gate .box{width:min(420px,100%);background:var(--card);border:1px solid var(--line);border-radius:20px;padding:28px;display:flex;flex-direction:column;gap:14px;text-align:center}
+.gate img{height:96px;width:auto;align-self:center}
+.gate h2{margin:0;font-size:24px}
+.gate p{margin:0;color:var(--mute);font-size:15px}
+.gate label{text-align:right;font-size:14px;color:var(--mute)}
+.gate input{min-height:46px;padding:8px 12px;border-radius:12px;border:1px solid var(--line2);background:#0E0B07;color:var(--ink);font-size:16px;direction:ltr;text-align:left}
+.gate .err{color:#F08A78;font-size:14px;min-height:18px}
+[hidden]{display:none!important}
+@media (prefers-reduced-motion:reduce){.pill.on .dot{animation:none}*{transition:none!important}}
+</style>
+</head>
+<body>
+<div id="gate" class="gate" hidden>
+  <form class="box" id="loginForm">
+    <img src="/assets/brand/mf-logo-gold.webp" alt="MF Soccer">
+    <h2>مركز التحكم</h2>
+    <p id="gateMsg">لفريق العمل فقط — سجّل دخولك بحساب فريق العمل.</p>
+    <label for="em">البريد الإلكتروني</label>
+    <input id="em" type="email" autocomplete="username" required>
+    <label for="pw">كلمة المرور</label>
+    <input id="pw" type="password" autocomplete="current-password" required>
+    <div class="err" id="err" role="alert"></div>
+    <button class="btn gold" type="submit">دخول</button>
+    <button class="btn" type="button" id="outBtn" hidden>تسجيل الخروج</button>
+  </form>
+</div>
+<main id="app" class="wrap" hidden></main>
+<script src="center.js?v=6" defer></script>
+</body>
+</html>
