@@ -38,7 +38,8 @@ const DESKS = [
 ];
 const DEFAULT_EMAILS = {mf:"coachmf.kw@gmail.com", yaqoub:"alqais77@gmail.com", mansour:"mansourx04@gmail.com",
   hussain:"hussain_altamimi1989@hotmail.com", saad:"saad90khaled@gmail.com",
-  rakan:"rakanhwari26@gmail.com", yousef:"y99233239@gmail.com"};
+  rakan:"rakanhwari26@gmail.com", yousef:"y99233239@gmail.com",
+  ahmed:"mshmomah@gmail.com", jassim:"magaweer87@hotmail.com"};
 const SEC_AR = {mon:"إدارة الرصد", play:"اللعب الفعلي"};
 const esc = s => String(s==null?"":s).replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const $ = s => document.querySelector(s);
@@ -47,13 +48,15 @@ const boxStyle = r => `left:${pct(r[0],IMG_W)};top:${pct(r[1],IMG_H)};width:${pc
 
 /* ───────────── الرسم ───────────── */
 const pillHTML = (d, cls, style) => `<div class="pill ${cls||""}" id="p-${d.id}" ${style?`style="${style}"`:""} role="status" aria-label="${esc(d.name)}"><span class="dot"></span><span class="tx"><b>غير متصل</b><small>OFFLINE</small></span></div>`;
+/* الكبسولة: للمشرف فوق «ONLINE» المرسومة على الشاشة، ولغيره في منتصف قاعدة المكتب
+   (تحت لوحة الاسم) — لا تغطي وجهاً ولا اسماً */
+const baseStyle = r => `left:${pct((r[0]+r[2])/2,IMG_W)};top:${pct(r[3]+1,IMG_H)}`;
 function spotHTML(d){
   const sup = !!d.pill;
   return `<div class="spot${sup?" sup":""}" id="d-${d.id}" style="${boxStyle(d.b)}" title="${esc(d.name)} — ${esc(d.role)}">
       <div class="dim"></div><div class="glow"></div>
-      ${sup ? "" : pillHTML(d)}
     </div>
-    ${sup ? pillHTML(d, "fixed", boxStyle(d.pill)) : ""}`;
+    ${sup ? pillHTML(d, "fixed", boxStyle(d.pill)) : pillHTML(d, "base", baseStyle(d.b))}`;
 }
 function editHTML(){
   if(!EDIT) return "";
@@ -67,10 +70,7 @@ function editHTML(){
 function render(){
   $("#app").innerHTML = `
   <header class="top">
-    <div class="brand">
-      <img src="/assets/brand/mf-logo-gold.webp" alt="شعار MF Soccer" width="584" height="403">
-      <div><h1>مركز التحليل الافتراضي</h1><p>حالة فريق العمل لحظياً</p></div>
-    </div>
+    <div class="brand"><h1>مركز التحليل الافتراضي</h1><p>حالة فريق العمل لحظياً</p></div>
     <div class="side">
       <div class="stats">
         <div class="stat live"><b id="onCount">0</b><span>متصل الآن</span></div>
