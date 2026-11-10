@@ -1,5 +1,5 @@
 /* =====================================================================
-   مركز التحليل الافتراضي (/center) — 2026-11-10
+   مركز التحكم (/center) — 2026-11-10
    لفريق العمل فقط. الصفحة صورة الغرفة المعتمدة (assets/brand/center-room.webp)
    وفوق كل مكتب منطقة شفافة تتبع حالة صاحبه:
      متصل · إدارة الرصد  ← لوحة الإدارة مفتوحة عنده
@@ -70,7 +70,7 @@ function editHTML(){
 function render(){
   $("#app").innerHTML = `
   <header class="top">
-    <div class="brand"><h1>مركز التحليل الافتراضي</h1><p>حالة فريق العمل لحظياً</p></div>
+    <div class="brand"><h1>مركز التحكم</h1><p>حالة فريق العمل لحظياً</p></div>
     <div class="side">
       <div class="stats">
         <div class="stat live"><b id="onCount">0</b><span>متصل الآن</span></div>
