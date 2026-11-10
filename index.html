@@ -2466,12 +2466,14 @@ html[data-theme="light"] .an{--an-cell0:rgba(100,116,139,.08)}
 /* المقاس نسبة من عرض اللوحة (cqw) لا من الشاشة: الدائرة ≈ نصف ارتفاع الخانة على أي عرض */
 .pmk{position:absolute;transform:translate(-50%,-50%);z-index:4;pointer-events:none;
   display:flex;gap:.24em;align-items:center;font-size:clamp(9.5px,1.95cqw,18px)}
-.pmk i{box-shadow:0 0 0 .11em #fff,0 .12em .4em rgba(0,0,0,.34);font-weight:800;line-height:1;color:#fff}
+/* font-style:normal واجب — العلامة وسم <i> فيرثها مائلة، والميل يزيح الرقم عن مركز الدائرة */
+.pmk i{box-shadow:0 0 0 .11em #fff,0 .12em .4em rgba(0,0,0,.34);font-weight:800;line-height:1;
+  color:#fff;font-style:normal;font-variant-numeric:tabular-nums}
 /* min-width لا width: الرقم ذو الخانتين يمدّ العلامة قرصاً مستطيلاً بدل أن يُحشر في دائرة */
-.pdot{min-width:1.85em;height:1.85em;padding:0 .26em;border-radius:999px;background:#15A34A;display:grid;place-items:center;letter-spacing:-.02em}
+.pdot{min-width:1.85em;height:1.85em;padding:0 .34em;border-radius:999px;background:#15A34A;display:grid;place-items:center}
 .psv{height:1.85em;padding:0 .48em 0 .32em;border-radius:.93em;background:#DC2626;display:flex;align-items:center;gap:.14em}
 .psv svg{width:1.25em;height:1.25em;position:static;display:block}
-.pbar{min-width:1.7em;height:1.7em;padding:0 .24em;border-radius:999px;background:#A9790C;display:grid;place-items:center}
+.pbar{min-width:1.7em;height:1.7em;padding:0 .32em;border-radius:999px;background:#A9790C;display:grid;place-items:center}
 /* left لا inset-inline-start: الشريحة تبقى يسار الصورة فيزيائياً في العربية والإنجليزية،
    فلا تصطدم بعلامة العارضة الثابتة عند 70% مهما انقلب اتجاه الصفحة */
 /* «خارج» مربّع أبيض صغير بحدّ متقطّع أحمر — المتقطّع يقول إنها خارج الإطار لا داخله */
@@ -9247,7 +9249,8 @@ const PZ_MARK = {                                    /* مركز العلامة 
   /* 60% لا 70%: يبعد عن شريحة «خارج الإطار» يساراً. و13% لا 21.9%: يجلس على الحافة العليا للعارضة
      فلا يلامس علامات الصف الأعلى حين تمتلئ بالقفاز ورقم من خانتين */
   "العارضة":{x:60,y:13},
-  "القائم الأيسر":{x:7.1,y:55.4}, "القائم الأيمن":{x:92.9,y:55.4}
+  /* العلامة تلتصق بالخشبة من داخل المرمى لا من خارجه (القائم عند 7.3%‑8.1% و91.9%‑92.7%) */
+  "القائم الأيسر":{x:8.7,y:55.4}, "القائم الأيمن":{x:91.3,y:55.4}
 };
 PZ_CELLS.forEach((z,i)=>{ const col=PZ_COL[i%3], row=PZ_ROW[(i/3)|0];
   PZ_MARK[z]={x:col.l+col.w/2, y:row.t+row.h/2}; });
@@ -9284,9 +9287,9 @@ function anGoalSVG(list, u){
     <svg viewBox="0 0 1232 480" preserveAspectRatio="none" aria-hidden="true">
       <defs><filter id="pgsoft" x="-35%" y="-35%" width="170%" height="170%"><feGaussianBlur stdDeviation="12"/></filter></defs>
       <path d="M0 0H1232V432H0Z M84 94H1148V432H84Z" fill-rule="evenodd" fill="rgba(14,24,48,.17)"/>
-      <rect x="84" y="94" width="1064" height="23" fill="rgba(206,142,10,.46)"/>
-      <rect x="84" y="117" width="22" height="315" fill="rgba(206,142,10,.26)"/>
-      <rect x="1126" y="117" width="22" height="315" fill="rgba(206,142,10,.26)"/>
+      <rect x="88" y="96" width="1056" height="19" fill="rgba(206,142,10,.46)"/>
+      <rect x="88" y="115" width="14" height="317" fill="rgba(206,142,10,.26)"/>
+      <rect x="1130" y="115" width="14" height="317" fill="rgba(206,142,10,.26)"/>
       <g stroke="rgba(14,24,48,.18)" stroke-width="1.6"><line x1="100" y1="218" x2="1132" y2="218"/><line x1="100" y1="318" x2="1132" y2="318"/></g>
       <g fill="#fff" opacity=".62" filter="url(#pgsoft)">${halo.join("")}</g>
     </svg>
