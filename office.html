@@ -1,0 +1,514 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>مركز التحليل — mfsoccer</title>
+<meta name="robots" content="noindex,nofollow">
+<meta name="theme-color" content="#07101d">
+<link rel="icon" href="/favicon.svg?v=2">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+/* الهوية الذهبية — صفحة مستقلة تماماً، لا ترث شيئاً من index.html
+   فلا يمكن لأي تنسيق هنا أن يتسرّب إلى الموقع. */
+:root{
+  --ink:#07101d; --panel:#0d1a2b; --panel2:#122238;
+  --gold:#D9A441; --gold-soft:#F0CC7A; --gold-dim:rgba(217,164,65,.22);
+  --mist:#EDF3FA; --slate:#8FA6C4; --on:#35A47C; --off:#4A5B72;
+  --body:'Vazirmatn',system-ui,sans-serif; --r:16px;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{background:var(--ink);color:var(--mist);font-family:var(--body);font-size:15px;line-height:1.6;
+     min-height:100vh;padding:16px}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+input{font:inherit}
+:focus-visible{outline:3px solid var(--gold);outline-offset:3px;border-radius:10px}
+a{color:var(--gold-soft)}
+
+.wrap{max-width:1180px;margin:0 auto}
+
+/* ——— الترويسة ——— */
+.top{display:flex;align-items:flex-start;gap:14px;flex-wrap:wrap;margin-bottom:18px}
+.ttl{flex:1;min-width:200px}
+.ttl h1{font-size:1.5rem;font-weight:800;letter-spacing:-.01em;
+  background:linear-gradient(100deg,var(--gold-soft),var(--gold));
+  -webkit-background-clip:text;background-clip:text;color:transparent}
+.ttl p{font-size:.8rem;color:var(--slate);margin-top:2px}
+.acts{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.cnt{border:1px solid var(--gold-dim);border-radius:12px;padding:6px 12px;text-align:center;background:var(--panel)}
+.cnt b{display:block;font-size:1.15rem;font-weight:800;color:var(--gold-soft);line-height:1.2}
+.cnt span{font-size:.66rem;color:var(--slate)}
+.cnt.live b{color:var(--on)}
+.cnt.live{border-color:rgba(53,164,124,.4)}
+.btn{border:1px solid var(--gold-dim);border-radius:11px;padding:8px 14px;font-size:.78rem;
+     background:var(--panel);transition:border-color .15s,background .15s}
+.btn:hover{border-color:var(--gold);background:var(--panel2)}
+
+/* ——— الغرفة ——— */
+.room{border:1px solid var(--gold-dim);border-radius:20px;padding:20px;
+      background:
+        radial-gradient(1100px 380px at 50% -8%, rgba(217,164,65,.13), transparent 62%),
+        linear-gradient(180deg,var(--panel),#09131f)}
+
+/* مكتب المشرف العام — أكبر وفي الصدارة */
+.lead{display:flex;justify-content:center;margin-bottom:22px}
+.lead .desk{max-width:340px}
+.lead .av{width:76px;height:76px;font-size:1.5rem}
+
+.desks{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+@media(max-width:900px){ .desks{grid-template-columns:repeat(2,1fr)} }
+/* عمودان حتى على الجوال: تسعة أعضاء في عمود واحد تمرير طويل بلا داعٍ.
+   نصغّر الصورة والحشو بدل أن نطوي الشبكة. */
+@media(max-width:460px){
+  body{padding:10px}
+  .room{padding:12px;border-radius:16px}
+  .desks{gap:10px}
+  .desk{padding:11px 8px}
+  .av{width:46px;height:46px;font-size:.92rem;margin-bottom:8px}
+  .plate{padding:6px 5px}
+  .plate b{font-size:.76rem}
+  .plate span{font-size:.62rem}
+  .plate em{display:none}   /* لا مكان للإيميل في عمودين ضيقين */
+  .badge{font-size:.62rem;padding:3px 8px}
+  .lead .av{width:62px;height:62px;font-size:1.25rem}
+}
+
+.desk{border:1px solid var(--gold-dim);border-radius:var(--r);padding:14px;text-align:center;
+      min-width:0;   /* بدونها يفرض نصّ الشارة الطويل عرضاً فيظهر تمرير أفقي */
+      background:linear-gradient(180deg,var(--panel2),var(--panel));position:relative;
+      transition:border-color .2s,filter .3s,opacity .3s}
+.desk.on{border-color:rgba(217,164,65,.55);box-shadow:0 0 0 1px rgba(217,164,65,.14),0 8px 26px -14px rgba(217,164,65,.5)}
+.desk.off{filter:grayscale(1);opacity:.5}
+
+.av{width:58px;height:58px;border-radius:50%;margin:0 auto 10px;display:grid;place-items:center;
+    font-weight:800;font-size:1.1rem;color:#07101d;overflow:hidden;
+    background:linear-gradient(145deg,var(--gold-soft),var(--gold));
+    border:2px solid rgba(255,255,255,.14)}
+.av img{width:100%;height:100%;object-fit:cover;display:block}
+/* صاحب الصورة لا يحتاج خلفية ذهبية تحتها */
+.av.ph{background:var(--panel);border-color:rgba(217,164,65,.45)}
+.desk.off .av{background:linear-gradient(145deg,#7d8ca1,#5d6b80);color:#0d1a2b}
+.desk.off .av.ph{background:var(--panel)}
+
+.plate{border:1px solid var(--gold-dim);border-radius:10px;padding:7px 8px;margin-bottom:9px;
+       background:rgba(7,16,29,.55)}
+.plate b{display:block;font-size:.84rem;font-weight:700;color:#fff;
+         overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.plate span{display:block;font-size:.68rem;color:var(--gold-soft);margin-top:1px}
+.plate em{display:block;font-size:.6rem;font-style:normal;color:var(--slate);direction:ltr;
+          margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.desk.off .plate span{color:var(--slate)}
+
+.badge{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:4px 11px;
+       font-size:.68rem;font-weight:600;border:1px solid;max-width:100%;
+       white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.badge.on{color:#bdf0da;border-color:rgba(53,164,124,.5);background:rgba(53,164,124,.15)}
+.badge.off{color:var(--slate);border-color:rgba(143,166,196,.25);background:rgba(143,166,196,.07)}
+.dot{width:7px;height:7px;border-radius:50%;background:currentColor;flex:none}
+.badge.on .dot{background:var(--on);box-shadow:0 0 0 3px rgba(53,164,124,.22)}
+
+/* ——— وضع الغرفة: الصورة خلفية، والمكاتب مناطق فوقها ———
+   backdrop-filter يُرمّد ما خلف العنصر لا العنصر نفسه، فهو الطريق
+   الوحيد لترميد شخصٍ مرسومٍ داخل الصورة. */
+.room.pic{position:relative;padding:0;border:0;background:none;overflow:hidden;
+          aspect-ratio:1320/882;border-radius:20px;border:1px solid var(--gold-dim)}
+.room.pic .bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
+.seat{position:absolute;border-radius:10px;transition:backdrop-filter .35s,box-shadow .25s}
+/* الوجه فوق الكرسي: الحجم نسبةً لارتفاع المكتب حتى يبقى دائرياً
+   ومتناسباً في المنصّة العريضة والمكاتب الضيقة معاً. */
+.seat .face{position:absolute;left:50%;top:3%;transform:translateX(-50%);
+  height:42%;aspect-ratio:1;border-radius:50%;overflow:hidden;
+  background:linear-gradient(145deg,var(--gold-soft),var(--gold));
+  border:2px solid rgba(255,255,255,.22);box-shadow:0 6px 20px -6px #000c;
+  display:grid;place-items:center;font-weight:800;color:#07101d;
+  font-size:clamp(.6rem,1.5vw,1.3rem)}
+.seat .face img{width:100%;height:100%;object-fit:cover;display:block}
+.seat .face.ph{background:var(--panel)}
+.seat.off{backdrop-filter:grayscale(1) brightness(.5);-webkit-backdrop-filter:grayscale(1) brightness(.5)}
+.seat.on{box-shadow:inset 0 0 0 1px rgba(53,164,124,.35)}
+/* الشارة تُرسم فوق مكان الشارة المطبوعة فتغطّيها */
+.seat .tag{position:absolute;left:50%;bottom:1.5%;transform:translateX(-50%);
+           font-size:clamp(.5rem,.82vw,.76rem);font-weight:700;border-radius:999px;
+           padding:.28em .8em;display:inline-flex;align-items:center;gap:.4em;
+           white-space:nowrap;backdrop-filter:none;-webkit-backdrop-filter:none}
+.seat .tag.on{color:#dcffee;background:#13472f;border:1px solid rgba(53,164,124,.75)}
+.seat .tag.off{color:#c7d3e2;background:#1b2635;border:1px solid rgba(143,166,196,.4)}
+.seat .tag i{width:.5em;height:.5em;border-radius:50%;background:currentColor;flex:none}
+.seat .tag.on i{background:#35A47C}
+@media(max-width:620px){ .seat .tag{font-size:.45rem;padding:.2em .5em} }
+
+/* ——— التذييل ——— */
+.strip{margin-top:16px;border:1px solid var(--gold-dim);border-radius:13px;padding:11px 14px;
+       background:var(--panel);font-size:.76rem}
+.strip b{color:var(--gold-soft)}
+.legend{margin-top:12px;display:flex;gap:18px;justify-content:center;flex-wrap:wrap;
+        font-size:.7rem;color:var(--slate)}
+.legend i{width:8px;height:8px;border-radius:50%;display:inline-block;margin-left:5px}
+
+/* ——— الدخول والرسائل ——— */
+.gate{max-width:380px;margin:9vh auto;border:1px solid var(--gold-dim);border-radius:var(--r);
+      padding:22px;background:var(--panel)}
+.gate h2{font-size:1.1rem;margin-bottom:6px;color:var(--gold-soft)}
+.gate p{font-size:.78rem;color:var(--slate);margin-bottom:16px}
+.fld{margin-bottom:11px}
+.fld label{display:block;font-size:.72rem;color:var(--slate);margin-bottom:4px}
+.fld input{width:100%;border:1px solid var(--gold-dim);border-radius:10px;padding:10px;
+           background:var(--ink);color:var(--mist);direction:ltr}
+.msg{font-size:.76rem;border-radius:10px;padding:10px 12px;margin-bottom:12px;display:none}
+.msg.bad{display:block;color:#ffc9bf;border:1px solid rgba(224,100,79,.4);background:rgba(224,100,79,.12)}
+.msg.ok{display:block;color:#bdf0da;border:1px solid rgba(53,164,124,.4);background:rgba(53,164,124,.12)}
+.note{font-size:.76rem;color:var(--slate);text-align:center;padding:26px}
+
+/* ——— نافذة ربط المكاتب ——— */
+.ov{position:fixed;inset:0;background:rgba(3,8,15,.82);display:none;place-items:center;padding:16px;z-index:40}
+.ov.on{display:grid}
+.sheet{width:100%;max-width:520px;max-height:84vh;overflow:auto;border:1px solid var(--gold-dim);
+       border-radius:var(--r);padding:18px;background:var(--panel)}
+.sheet h3{font-size:1rem;color:var(--gold-soft);margin-bottom:4px}
+.srow{display:flex;gap:9px;align-items:center;padding:9px 0;border-bottom:1px dashed rgba(143,166,196,.16)}
+.srow:last-of-type{border:0}
+.srow .who{flex:1;min-width:0}
+.srow .who b{display:block;font-size:.8rem;color:#fff}
+.srow .who span{display:block;font-size:.68rem;color:var(--slate);direction:ltr;text-align:right}
+.srow input{width:92px;border:1px solid var(--gold-dim);border-radius:8px;padding:6px;
+            background:var(--ink);color:var(--mist);font-size:.74rem;text-align:center}
+.srow input.ttl2{width:116px;text-align:right}
+.srow input.pho{width:100%;text-align:right;direction:ltr;font-size:.68rem}
+@media(max-width:520px){ .srow{flex-wrap:wrap} .srow .who{flex:1 0 100%} }
+</style>
+</head>
+<body>
+
+<div class="wrap" id="root">
+  <div class="note">جارٍ التحميل…</div>
+</div>
+
+<div class="ov" id="ov"><div class="sheet" id="sheet"></div></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.12.2/firebase-app-compat.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.12.2/firebase-auth-compat.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.12.2/firebase-firestore-compat.min.js"></script>
+<script>
+/* =========================================================
+   مركز التحليل — من متصل الآن ومن أين
+   ---------------------------------------------------------
+   يقرأ مجموعتين: seasons/staff (الأسماء والصلاحيات) و presence
+   (النبضات التي يكتبها presence.js في الموقع). لا يكتب شيئاً
+   إلا خريطة المكاتب seasons/office عند ربطها، وهي للمالك.
+
+   صفحة مستقلة: لا تشارك الموقع أي سكربت ولا تنسيق، فعطبها —
+   إن وقع — لا يتجاوزها. (منصور 2026-11-10)
+   ========================================================= */
+'use strict';
+const GRACE = 150000;                 /* نبضة كل ٦٠ث؛ ١٥٠ث = لا وميض بين نبضتين */
+const OWNER = 'iiTgVfDryXNLb9IrOyLkkNMHDxq2';
+const LAYOUT_ADMINS = [OWNER, '8wlEYODqGPTqZKSQEtevcz0MGEl2'];   /* نفس قائمة الصلاحيات في الموقع */
+
+const WHERE = { rasad:'إدارة الرصد', eff:'اللعب الفعلي', admin:'لوحة الإدارة',
+                matches:'المباريات', players:'اللاعبين', clubs:'الأندية', home:'الموقع', site:'الموقع' };
+
+firebase.initializeApp({
+  apiKey:'AIzaSyD_ZzAE4HEKPIuAKCmta8tzN5KOa8IUfuo',
+  authDomain:'mfsoccer.com',
+  projectId:'mfsoccer-c7ee4',
+  storageBucket:'mfsoccer-c7ee4.firebasestorage.app',
+  messagingSenderId:'574478199897',
+  appId:'1:574478199897:web:dbd2b7dae6384503ea9548'
+});
+const auth = firebase.auth(), db = firebase.firestore();
+
+const ROOM_DEFAULT = '/assets/office/room.webp';
+let ME = null, STAFF = {}, PRES = {}, SEATS = {}, UNSUB = null, TICK = null, ERR = '';
+let ROOM = ROOM_DEFAULT;   /* صورة الغرفة؛ فارغة = شبكة البطاقات */
+
+const $  = s => document.querySelector(s);
+const esc = s => String(s==null?'':s).replace(/[&<>"']/g, c =>
+  ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+/* الأحرف الأولى حين لا توجد صورة. نُسقط «ال» التعريف من اسم العائلة،
+   وإلا صار محمد الفيلكاوي ومنصور الجمعة كلاهما «ما». */
+function initials(name, email){
+  const n = String(name||'').trim();
+  if(n){
+    const p = n.split(/\s+/).filter(Boolean);
+    const a = p[0][0] || '';
+    const fam = p.length > 1 ? p[1].replace(/^ال/, '') : '';
+    return a + (fam[0] || (p.length > 1 ? p[1][0] : '') || '');
+  }
+  return String(email||'?').slice(0,2).toUpperCase();
+}
+
+/* متصل = نبضة حديثة ولم يُغلق تبويبه.
+   at طابع خادم، فلا يفسده اختلال ساعة جهاز العضو. */
+function liveOf(p){
+  if(!p || p.out) return null;
+  let t = 0;
+  try{ t = p.at && p.at.toMillis ? p.at.toMillis() : 0; }catch(e){ t = 0; }
+  if(!t || Date.now() - t > GRACE) return null;
+  return WHERE[p.where] || 'الموقع';
+}
+
+/* ——— الرسم ——— */
+function render(){
+  if(!ME){ return gate(); }
+
+  const uids = Object.keys(STAFF);
+  if(!uids.length && !ERR) return paint(`<div class="note">لا أعضاء في فريق العمل بعد — أضفهم من لوحة الإدارة في الموقع.</div>`);
+
+  /* الترتيب: المقعد المعيَّن أولاً، ثم البقية أبجدياً */
+  const seatOf = u => (+seatFor(u).n) || 999;
+  const sorted = uids.filter(u => STAFF[u] && STAFF[u].active !== false)
+                     .sort((a,b) => seatOf(a)-seatOf(b) ||
+                           String(STAFF[a].name||'').localeCompare(String(STAFF[b].name||''),'ar'));
+
+  const lead = sorted.find(u => u === OWNER);
+  const rest = sorted.filter(u => u !== OWNER);
+  const onCount = sorted.filter(u => liveOf(PRES[u])).length;
+
+  /* متصلون لا يظهرون في فريق العمل (حساب أُزيل أو لم يُضف بعد) */
+  const ghosts = Object.keys(PRES).filter(u => !STAFF[u] && liveOf(PRES[u]));
+
+  const canLayout = LAYOUT_ADMINS.includes(ME.uid);
+
+  paint(`
+    <div class="top">
+      <div class="ttl">
+        <h1>مركز التحليل</h1>
+        <p>حالة فريق العمل لحظياً</p>
+      </div>
+      <div class="acts">
+        <div class="cnt"><b>${sorted.length}</b><span>أعضاء الفريق</span></div>
+        <div class="cnt live"><b>${onCount}</b><span>متصل الآن</span></div>
+        ${canLayout ? `<button class="btn" onclick="openLayout()">ربط المكاتب</button>` : ''}
+        <a class="btn" href="/">الموقع</a>
+        <button class="btn" onclick="auth.signOut()">خروج</button>
+      </div>
+    </div>
+
+    ${ERR ? `<div class="msg bad">${esc(ERR)}</div>` : ''}
+
+    ${ROOM
+      ? roomHTML(ROOM, sorted)
+      : `<div class="room">
+          ${lead ? `<div class="lead">${deskHTML(lead, true)}</div>` : ''}
+          <div class="desks">${rest.map(u => deskHTML(u, false)).join('')}</div>
+        </div>`}
+
+    ${ghosts.length ? `<div class="strip"><b>متصلون بدون مكتب:</b> ${
+      ghosts.map(u => `${esc(PRES[u].name || PRES[u].email || u)} — ${esc(liveOf(PRES[u]))}`).join(' · ')
+    }</div>` : ''}
+
+    <div class="legend">
+      <span><i style="background:var(--on)"></i>متصل: داخل الموقع في الرصد أو اللعب الفعلي</span>
+      <span><i style="background:var(--off)"></i>غير متصل</span>
+    </div>`);
+}
+
+/* توزيع ابتدائي بالاسم: يعمل قبل أي ربط يدوي، فلا تُفتح الصفحة
+   فارغة. أي ربط يُحفظ في seasons/office يغلبه — المفتاح هناك هو
+   الـuid، وهو أدقّ من الاسم إن تشابهت الأسماء. */
+const DEFAULTS = {
+  'محمد الفيلكاوي': {n:1, title:'المشرف العام',        photo:'/assets/staff/mohammed-alfailakawi.webp'},
+  'منصور الجمعة':  {n:2, title:'مشرف قسم التطوير',    photo:'/assets/staff/mansour-aljumaa.webp'},
+  'يوسف الأنصاري': {n:3, title:'مشرف اللعب الفعلي',   photo:'/assets/staff/yousef-alansari.webp'},
+  'سعد المنصور':   {n:4, title:'مشرف الرصد',          photo:'/assets/staff/saad-almansour.webp'},
+  'جاسم الخليفة':  {n:5, title:'اللعب الفعلي',        photo:'/assets/staff/jasem-alkhalifa.webp'},
+  'حسين التميمي':  {n:6, title:'الرصد',               photo:'/assets/staff/hussain-altamimi.webp'},
+  'احمد المشموم':  {n:7, title:'الرصد والديسكورد',    photo:'/assets/staff/ahmad-almashmoum.webp'},
+  'راكان حواري':   {n:8, title:'الرصد',               photo:'/assets/staff/rakan-hawari.webp'},
+  'يعقوب القيس':   {n:9, title:'الرصد',               photo:'/assets/staff/yaqoub-alqais.webp'},
+};
+/* مقعد العضو: ما رُبط يدوياً أولاً، ثم الافتراضي بالاسم */
+function seatFor(u){
+  return SEATS[u] || DEFAULTS[String((STAFF[u] || {}).name || '').trim()] || {};
+}
+
+/* مواضع المكاتب في assets/office/room.webp (1320×882) — مقيسة آلياً
+   من حواف اللوحات الذهبية بتحليل canvas، لا بالتقدير بالعين.
+   المقعد ١ منصّة المشرف، ٢–٥ الصفّ الأول، ٦–٩ الثاني. */
+const SEATBOX = {
+  1: {r:26.44, y:20.86, w:48.48, h:23.24},
+  2: {r:74.39, y:38.44, w:19.85, h:30.27},
+  3: {r:50.91, y:39.57, w:19.39, h:29.14},
+  4: {r:28.71, y:39.57, w:18.26, h:28.46},
+  5: {r:4.85, y:38.44, w:19.92, h:29.82},
+  6: {r:76.74, y:67.91, w:20.15, h:31.75},
+  7: {r:50.91, y:67.91, w:20.38, h:31.75},
+  8: {r:26.44, y:67.91, w:19.92, h:31.75},
+  9: {r:1.59, y:68.14, w:19.70, h:31.52},
+};
+
+/* وضع الغرفة: الصورة كما هي، والحالة تُرسم فوقها.
+   من لا مقعد له لا يظهر في الغرفة — يظهر في شريط «بدون مكتب». */
+function roomHTML(room, order){
+  const seats = order.filter(u => SEATBOX[seatFor(u).n]);
+  return `<div class="room pic">
+    <img class="bg" src="${esc(room)}" alt="غرفة التحليل">
+    ${seats.map(u => {
+      const b = SEATBOX[seatFor(u).n], w = liveOf(PRES[u]);
+      const m = STAFF[u] || {}, ph = photoOf(seatFor(u).photo);
+      const ini = esc(initials(m.name, m.email));
+      const face = ph
+        ? `<div class="face ph"><img src="${esc(ph)}" alt="${esc(m.name||'')}" loading="lazy"
+             onerror="this.parentNode.classList.remove('ph');this.replaceWith(document.createTextNode('${ini}'))"></div>`
+        : `<div class="face">${ini}</div>`;
+      return `<div class="seat ${w ? 'on' : 'off'}" title="${esc(m.name || '')}"
+        style="right:${b.r}%;top:${b.y}%;width:${b.w}%;height:${b.h}%">
+        ${face}
+        <span class="tag ${w ? 'on' : 'off'}"><i></i>${w ? esc(w) : 'غير متصل'}</span>
+      </div>`;
+    }).join('')}
+  </div>`;
+}
+
+function deskHTML(uid, big){
+  const m = STAFF[uid] || {}, p = PRES[uid], seat = seatFor(uid);
+  const w = liveOf(p);
+  const title = seat.title || (m.perm === 'matches' ? 'محرر' : 'مدير');
+  /* الصورة اختيارية: من لم تُربط له صورة يظهر بحرفَي اسمه.
+     onerror يُرجع الأحرف إن انكسر الرابط بدل مربع فارغ. */
+  const ph  = photoOf(seat.photo);
+  const av  = ph
+    ? `<div class="av ph"><img src="${esc(ph)}" alt="${esc(m.name||'')}" loading="lazy"
+         onerror="this.parentNode.classList.remove('ph');this.replaceWith(document.createTextNode('${esc(initials(m.name, m.email))}'))"></div>`
+    : `<div class="av">${esc(initials(m.name, m.email))}</div>`;
+  return `<div class="desk ${w ? 'on' : 'off'}">
+    ${av}
+    <div class="plate">
+      <b>${esc(m.name || m.email || 'بلا اسم')}</b>
+      <span>${esc(title)}</span>
+      ${m.email ? `<em>${esc(m.email)}</em>` : ''}
+    </div>
+    <span class="badge ${w ? 'on' : 'off'}"><i class="dot"></i>${w ? esc(w) : 'غير متصل'}</span>
+  </div>`;
+}
+
+/* لا نقبل في src إلا مساراً داخلياً أو https — خريطة المكاتب مقروءة
+   للعامة، فلا نترك فيها بوّابة لرابط javascript: أو data:. */
+function photoOf(u){
+  const v = String(u || '').trim();
+  if(!v) return '';
+  if(v.startsWith('/')) return v;
+  if(/^https:\/\//i.test(v)) return v;
+  return '';
+}
+
+function paint(html){ $('#root').innerHTML = html; }
+
+/* ——— الدخول ——— */
+function gate(msg){
+  paint(`<div class="gate">
+    <h2>مركز التحليل</h2>
+    <p>ادخل بحساب الموقع نفسه — الحساب الذي ترصد به المباريات.</p>
+    <div class="msg ${msg ? 'bad' : ''}" id="gmsg">${esc(msg || '')}</div>
+    <div class="fld"><label>البريد الإلكتروني</label>
+      <input id="em" type="email" autocomplete="username" placeholder="name@email.com"></div>
+    <div class="fld"><label>كلمة المرور</label>
+      <input id="pw" type="password" autocomplete="current-password"
+             onkeydown="if(event.key==='Enter') signin()"></div>
+    <button class="btn" style="width:100%;margin-top:6px" onclick="signin()">دخول</button>
+  </div>`);
+}
+
+async function signin(){
+  const e = ($('#em')||{}).value, p = ($('#pw')||{}).value;
+  if(!e || !p) return gate('أدخل البريد وكلمة المرور');
+  try{ await auth.signInWithEmailAndPassword(String(e).trim(), p); }
+  catch(x){ gate('البريد أو كلمة المرور غير صحيحة'); }
+}
+
+/* ——— ربط المكاتب (للمالك ومنصور) ——— */
+function openLayout(){
+  if(!LAYOUT_ADMINS.includes(ME.uid)) return;
+  const rows = Object.keys(STAFF).map(u => `<div class="srow">
+      <div class="who"><b>${esc(STAFF[u].name || 'بلا اسم')}</b><span>${esc(STAFF[u].email || '—')}</span></div>
+      <input class="ttl2" data-t="${esc(u)}" placeholder="القسم" value="${esc(seatFor(u).title||'')}">
+      <input type="number" min="1" max="99" data-n="${esc(u)}" placeholder="مكتب" value="${esc(seatFor(u).n||'')}">
+      <input class="pho" data-p="${esc(u)}" placeholder="/assets/staff/x.webp" value="${esc(seatFor(u).photo||'')}">
+    </div>`).join('');
+  $('#sheet').innerHTML = `<h3>ربط المكاتب</h3>
+    <p style="font-size:.76rem;color:var(--slate);margin-bottom:12px">رقم المكتب يحدّد ترتيب الظهور، والقسم يُكتب تحت الاسم، والصورة مسار داخلي مثل <code style="direction:ltr;display:inline-block">/assets/staff/saad.webp</code> أو رابط https. من بلا صورة يظهر بحرفَي اسمه.</p>
+    ${rows}
+    <div class="msg" id="lmsg"></div>
+    <div style="display:flex;gap:8px;margin-top:14px">
+      <button class="btn" style="flex:1" onclick="saveLayout(this)">حفظ</button>
+      <button class="btn" onclick="document.getElementById('ov').classList.remove('on')">إغلاق</button>
+    </div>`;
+  $('#ov').classList.add('on');
+}
+
+async function saveLayout(btn){
+  const seats = {};
+  document.querySelectorAll('[data-n]').forEach(i => {
+    const u = i.dataset.n, n = parseInt(i.value, 10);
+    const t = (document.querySelector(`[data-t="${CSS.escape(u)}"]`)||{}).value || '';
+    const ph = photoOf((document.querySelector(`[data-p="${CSS.escape(u)}"]`)||{}).value);
+    if(n > 0 || t.trim() || ph) seats[u] = Object.assign({},
+      n > 0 ? {n} : null,
+      t.trim() ? {title:t.trim().slice(0,24)} : null,
+      ph ? {photo:ph.slice(0,300)} : null);
+  });
+  btn.disabled = true; btn.textContent = 'جارٍ الحفظ…';
+  try{
+    await db.collection('seasons').doc('office').set({seats, updated:new Date().toISOString()});
+    SEATS = seats;
+    $('#ov').classList.remove('on');
+    render();
+  }catch(e){
+    const m = $('#lmsg'); if(m){ m.className = 'msg bad'; m.textContent = 'تعذّر الحفظ: ' + (e.message || e); }
+    btn.disabled = false; btn.textContent = 'حفظ';
+  }
+}
+
+/* ——— الإقلاع ——— */
+auth.onAuthStateChanged(async u => {
+  if(UNSUB){ try{ UNSUB(); }catch(e){} UNSUB = null; }
+  if(TICK){ clearInterval(TICK); TICK = null; }
+  ME = null; STAFF = {}; PRES = {}; SEATS = {}; ROOM = ROOM_DEFAULT; ERR = '';
+
+  if(!u) return gate();
+
+  /* فريق العمل فقط — ومن ليس منهم يُمنع بوضوح بدل شاشة فارغة */
+  try{
+    const s = await db.collection('seasons').doc('staff').get();
+    STAFF = (s.exists && s.data().members) || {};
+  }catch(e){
+    await auth.signOut();
+    return gate('تعذّرت قراءة فريق العمل — تأكد من الاتصال');
+  }
+  const mine = STAFF[u.uid];
+  if(u.uid !== OWNER && !(mine && mine.role === 'editor' && mine.active !== false)){
+    await auth.signOut();
+    return gate('حسابك ليس في فريق العمل — راجع مالك الموقع');
+  }
+  ME = u;
+
+  try{
+    const o = await db.collection('seasons').doc('office').get();
+    SEATS = (o.exists && o.data().seats) || {};
+    ROOM  = (o.exists && photoOf(o.data().room)) || ROOM_DEFAULT;
+  }catch(e){ SEATS = {}; ROOM = ROOM_DEFAULT; }
+
+  render();
+
+  /* القناة الحيّة. إن لم تُنشر قاعدة presence بعد، تُرفض القراءة —
+     فنقول السبب بدل أن تبقى اللوحة كلها «غير متصل» بلا تفسير. */
+  UNSUB = db.collection('presence').onSnapshot(q => {
+    const next = {};
+    q.forEach(d => { next[d.id] = d.data(); });
+    PRES = next; ERR = ''; render();
+  }, e => {
+    ERR = (e && e.code === 'permission-denied')
+      ? 'قاعدة presence غير منشورة بعد في Firestore — الحضور لن يظهر حتى تُضاف.'
+      : 'انقطعت قناة الحضور: ' + ((e && e.message) || e);
+    render();
+  });
+
+  /* إعادة رسم دورية: من انقطع يتحوّل رمادياً بمرور المهلة بلا حدث جديد */
+  TICK = setInterval(() => { if(ME) render(); }, 30000);
+});
+</script>
+</body>
+</html>
