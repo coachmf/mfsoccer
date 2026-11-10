@@ -64,6 +64,7 @@ const I18N = {
     'ركنية':'Corner', 'ركلة حرة مرتدة من الحائط':'Free kick rebound off the wall', 'ركلة حرة مرتدة من الحارس':'Free kick rebound off the keeper',
     'متابعة ركنية مرتدة':'Corner rebound follow-up', 'رمية تماس':'Throw-in', 'غير ذلك':'Other', 'سجلت':'Scored', 'سُجّلت':'Scored',
     'خارج المرمى':'Off target', 'وسط أسفل':'Bottom centre', 'وسط أعلى':'Top centre', 'يسار أسفل':'Bottom left', 'يسار أعلى':'Top left', 'يمين أسفل':'Bottom right', 'يمين أعلى':'Top right',
+    'يسار منتصف':'Middle left', 'وسط منتصف':'Middle centre', 'يمين منتصف':'Middle right', 'القائم الأيسر':'Left post', 'القائم الأيمن':'Right post',
     'أعيدت':'Retaken', 'القائم / العارضة':'Post / crossbar', 'تصدى لها الحارس':'Saved by the keeper', 'العارضة':'Crossbar', 'خارج إطار المرمى':'Off target',
     'إنذار ثانٍ':'Second yellow', 'طرد مباشر':'Straight red', '· ارتدت عن':'· deflected off', 'هدف عكسي':'Own goal', 'هدف عكسي⟨x⟩':'Own goal⟨x⟩',
     'مضمّنة في الملف':'Embedded in the file', 'نسخة محلية محفوظة':'Saved local copy', 'data.json المنشور':'published data.json', 'نسخة محلية':'Local copy',

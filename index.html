@@ -2447,6 +2447,39 @@ html[data-theme="light"] .ah{filter:drop-shadow(0 18px 18px rgba(11,31,58,.22))}
 html[data-theme="light"] .an{--an-cell0:rgba(100,116,139,.08)}
 .an-goal{max-width:440px;margin:4px auto 0}
 .an-goal svg{width:100%;height:auto;display:block;overflow:visible}
+
+/* ===== خريطة المرمى على صورة حقيقية (منصور 2026-11-10) ===== */
+.an-goal.pgw{max-width:none;margin:2px 0 0}
+.pgoal{position:relative;aspect-ratio:1232/480;border-radius:12px;overflow:hidden;
+  container-type:inline-size;background:#e0e1da center/100% 100% no-repeat}
+.pgoal > svg{position:absolute;inset:0;width:100%;height:100%;overflow:hidden}
+.pzz{position:absolute;pointer-events:none}
+.pzz.pz{pointer-events:auto;cursor:pointer;border-radius:4px;transition:background .14s,box-shadow .14s}
+.pzz.pz:hover,.pzz.pz:focus-visible{background:rgba(255,255,255,.26);outline:none}
+.pzz.pz.sel{background:rgba(255,255,255,.34);box-shadow:inset 0 0 0 2px #fff}
+/* العلامة زرّ مستقلّ فوق منطقتها */
+.pmk i.pz{pointer-events:auto;cursor:pointer;transition:box-shadow .14s,transform .14s}
+.pmk i.pz:hover{transform:scale(1.07)}
+.pmk i.pz:focus-visible{outline:none}
+.pmk i.pz.sel,.pmk i.pz:focus-visible{box-shadow:0 0 0 .11em #fff,0 0 0 .32em rgba(255,255,255,.55),0 .12em .4em rgba(0,0,0,.34)}
+/* العلامات: فوق مناطق اللمس ولا تبتلع الضغط */
+/* المقاس نسبة من عرض اللوحة (cqw) لا من الشاشة: الدائرة ≈ نصف ارتفاع الخانة على أي عرض */
+.pmk{position:absolute;transform:translate(-50%,-50%);z-index:4;pointer-events:none;
+  display:flex;gap:.24em;align-items:center;font-size:clamp(9.5px,1.95cqw,18px)}
+.pmk i{box-shadow:0 0 0 .11em #fff,0 .12em .4em rgba(0,0,0,.34);font-weight:800;line-height:1;color:#fff}
+/* min-width لا width: الرقم ذو الخانتين يمدّ العلامة قرصاً مستطيلاً بدل أن يُحشر في دائرة */
+.pdot{min-width:1.85em;height:1.85em;padding:0 .26em;border-radius:999px;background:#15A34A;display:grid;place-items:center;letter-spacing:-.02em}
+.psv{height:1.85em;padding:0 .48em 0 .32em;border-radius:.93em;background:#DC2626;display:flex;align-items:center;gap:.14em}
+.psv svg{width:1.25em;height:1.25em;position:static;display:block}
+.pbar{min-width:1.7em;height:1.7em;padding:0 .24em;border-radius:999px;background:#A9790C;display:grid;place-items:center}
+/* left لا inset-inline-start: الشريحة تبقى يسار الصورة فيزيائياً في العربية والإنجليزية،
+   فلا تصطدم بعلامة العارضة الثابتة عند 70% مهما انقلب اتجاه الصفحة */
+/* «خارج» مربّع أبيض صغير بحدّ متقطّع أحمر — المتقطّع يقول إنها خارج الإطار لا داخله */
+.pout{position:absolute;top:5%;left:3%;z-index:4;pointer-events:none;line-height:1.02;
+  display:grid;justify-items:center;gap:.14em;padding:.3em .36em;border-radius:5px;
+  background:rgba(255,255,255,.93);color:#55637d;border:1.4px dashed #C02B37;
+  font-weight:800;font-size:clamp(6.5px,1.25cqw,11px);box-shadow:0 2px 6px rgba(0,0,0,.2)}
+.pout b{font-size:1.5em;color:#B4232E;letter-spacing:-.02em}
 .an-goal .gband{stroke:rgba(143,166,196,.28);stroke-width:.5;stroke-dasharray:2 1.5}
 .an-goal .gnet line{stroke:rgba(255,255,255,.07);stroke-width:.35}
 html[data-theme="light"] .an-goal .gnet line{stroke:rgba(11,31,58,.07)}
@@ -2463,6 +2496,11 @@ html[data-theme="light"] .an-goal .gpost{stroke:#0B1F3A;filter:none}
 .pen-pick .gband.pp-z{fill:var(--an-cell0);transition:fill .12s}
 .pen-pick .gband.pp-z:hover{fill:rgba(239,68,68,.16)}
 .pen-pick .gband.pp-z.on{fill:rgba(239,68,68,.5)}
+.pen-pick .pp-z.fr rect{fill:rgba(206,142,10,.30)}
+.pen-pick .pp-z.fr:hover rect{fill:rgba(231,208,147,.5)}
+.pen-pick .pp-z.fr.on rect{fill:#E0A516}
+.pen-pick .pp-t.sm{font-size:3.2px;fill:#E7D093}
+.pen-pick .pp-z.fr.on .pp-t.sm{fill:#00061A}
 .pen-pick .pp-t{font-family:var(--body,inherit);font-size:5.4px;font-weight:700;fill:#C5CAD8;text-anchor:middle;dominant-baseline:central;pointer-events:none}
 .pen-pick .pp-z.on .pp-t{fill:#00061A}
 .pen-pick .pp-out.on{fill:#fff}
@@ -2851,7 +2889,13 @@ let PHOTOS = {};        /* صور اللاعبين — يرفعها المدير
 let PAV = {};           /* تأطير كل صورة: تكبير وموضع */
 let PHOTOSON = true;    /* إظهار الصور — أطفئه لمظهر موحّد */
 let PAVSIZE = 32;       /* قطر الصورة بالبكسل */
-const PZONES = ["يسار أعلى","وسط أعلى","يمين أعلى","يسار أسفل","وسط أسفل","يمين أسفل","خارج المرمى"];
+/* مناطق التسديد (منصور 2026-11-10): كانت ٦ (أعلى/أسفل) فصارت ٩ بإضافة صفّ منتصف،
+   والإطار انفصل عن «خارج المرمى» إلى العارضة وقائمين. الركلات المرصودة قبل اليوم تبقى في مناطقها الست. */
+const PZONES = ["يسار أعلى","وسط أعلى","يمين أعلى",
+                "يسار منتصف","وسط منتصف","يمين منتصف",
+                "يسار أسفل","وسط أسفل","يمين أسفل",
+                "العارضة","القائم الأيسر","القائم الأيمن","خارج المرمى"];
+const PZ_CELLS = PZONES.slice(0,9), PZ_FRAME = ["العارضة","القائم الأيسر","القائم الأيمن"];
 /* قوائم الإدخال — مطابقة لورقة الإعدادات، وتُحدَّث تلقائياً عند رفع ملف الإكسل */
 let LIST = {
   det:["هجمة مرتدة","بناء من الخلف","اختراق فردي","تمريرة بينية","عرضية من اللعب المفتوح",
@@ -3690,11 +3734,27 @@ const PZONE_SET = new Set(PZONES);
 function penPlaceOf(name){
   const n=(name||"").trim(); if(!n) return null;
   if(PZONE_SET.has(n)) return n;
-  if(/خارج|العارضة|عارضة|القائم|قائم|فوق المرمى|بجانب/.test(n)) return "خارج المرمى";
-  const side=/يسار|أيسر|يسرى/.test(n)?"يسار":/يمين|أيمن|يمنى/.test(n)?"يمين":/وسط|منتصف/.test(n)?"وسط":null;
-  const hi=/أعلى|اعلى|عليا|فوق/.test(n)?"أعلى":/أسفل|اسفل|سفلى|أرض|ارض|زاحفة/.test(n)?"أسفل":null;
-  if(!side && !hi) return null;
-  return (side||"وسط")+" "+(hi||"أسفل");
+  /* الإطار قبل الشبكة: «القائم الأيمن» يحوي «يمين» فلولا هذا الترتيب لذهب إلى خانة في الشبكة */
+  if(/عارضة/.test(n)) return "العارضة";
+  if(/قائم/.test(n)){
+    if(/أيسر|يسار|يسرى/.test(n)) return "القائم الأيسر";
+    if(/أيمن|يمين|يمنى/.test(n)) return "القائم الأيمن";
+    return null;                                   /* قائم بلا جهة: يُعرض في «غير مرسومة» ليصحّحه المحرّر */
+  }
+  if(/خارج|فوق المرمى|بجانب/.test(n)) return "خارج المرمى";
+  const row=/أعلى|اعلى|عليا|فوق/.test(n)?"أعلى"
+          :/أسفل|اسفل|سفلى|أرض|ارض|زاحفة/.test(n)?"أسفل"
+          :/منتصف|نصف|متوسط/.test(n)?"منتصف":null;
+  const col=/يسار|أيسر|يسرى/.test(n)?"يسار":/يمين|أيمن|يمنى/.test(n)?"يمين":/وسط|منتصف/.test(n)?"وسط":null;
+  if(!col && !row) return null;
+  return (col||"وسط")+" "+(row||"أسفل");
+}
+/* تفصيل نتائج منطقة واحدة: سُجّلت / تصدّى لها الحارس / غير ذلك */
+function penSplit(list, zone){
+  const ps=list.filter(x=>penPlaceOf((x.place||"").trim())===zone);
+  const ok=ps.filter(x=>/سجل/.test(x.res||"")).length;
+  const sv=ps.filter(x=>/تصد/.test(x.res||"")).length;
+  return {n:ps.length, ok, sv, other:ps.length-ok-sv};
 }
 function penCounts(list){
   const c={}, extra={}; PZONES.forEach(z=>c[z]=0);
@@ -7536,6 +7596,7 @@ function goalMap(list, svgOnly){
   const mx=Math.max(1,...Object.values(c));
   const cell=z=>{
     const g=PZ_GEO[z], n=c[z];
+    if(!g) return "";                 /* مناطق أضيفت بعد هذا الرسم القديم (صفّ المنتصف والإطار) */
     const t=n/mx;
     const f = n===0 ? "rgba(143,166,196,.07)"
       : `rgba(${Math.round(95+(233-95)*t)},${Math.round(178+(185-178)*t)},${Math.round(232+(73-232)*t)},${(0.24+0.6*t).toFixed(2)})`;
@@ -9171,50 +9232,91 @@ function anPeriods(){
     <div class="an-chart"><div class="half">${per.slice(0,4).map(col).join("")}</div><div class="ht"><span>بين الشوطين</span></div><div class="half">${per.slice(4).map(col).join("")}</div></div>
   </div>`;
 }
-/* خريطة مرمى الجزاءات للتحليل (منصور 2026-09-17): «خارج المرمى» شريط يحيط بالقائم والعارضة بدل صندوق تحت المرمى */
+/* خريطة مرمى الجزاءات (منصور 2026-11-10): صورة مرمى حقيقية بدل الرسم المتّجه، والعلامات فوقها —
+   دائرة خضراء لما سُجّل وقفاز أحمر لما تصدّى له الحارس. المواضع نِسب مئوية مقيسة من الصورة نفسها
+   (حوافّ المرمى عند x 470‑1522 و y 325‑651 في الأصل، ثم قُصّت إلى 1232×480) فتتمدّد مع أي عرض شاشة. */
+const PEN_GOAL_IMG = "/assets/pens/goal.webp";
+const PZ_COL = [{l:8.12,w:27.92},{l:36.69,w:26.54},{l:63.80,w:28.16}];   /* يسار · وسط · يمين */
+const PZ_ROW = [{t:23.12,h:21.46},{t:46.46,h:18.75},{t:67.08,h:20.63}];  /* أعلى · منتصف · أسفل */
+const PZ_HIT = {                                     /* الإطار: مساحة اللمس أوسع من الخشبة نفسها */
+  "العارضة":       {l:7.31, t:16.5, w:85.4, h:7.4},
+  "القائم الأيسر": {l:4.3,  t:23.1, w:5.6,  h:64.6},
+  "القائم الأيمن": {l:90.1, t:23.1, w:5.6,  h:64.6}
+};
+const PZ_MARK = {                                    /* مركز العلامة في كل منطقة */
+  /* 60% لا 70%: يبعد عن شريحة «خارج الإطار» يساراً. و13% لا 21.9%: يجلس على الحافة العليا للعارضة
+     فلا يلامس علامات الصف الأعلى حين تمتلئ بالقفاز ورقم من خانتين */
+  "العارضة":{x:60,y:13},
+  "القائم الأيسر":{x:7.1,y:55.4}, "القائم الأيمن":{x:92.9,y:55.4}
+};
+PZ_CELLS.forEach((z,i)=>{ const col=PZ_COL[i%3], row=PZ_ROW[(i/3)|0];
+  PZ_MARK[z]={x:col.l+col.w/2, y:row.t+row.h/2}; });
+const GLOVE_SVG = `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="7.8" y="5.2" width="3" height="8.8" rx="1.5"/><rect x="11.6" y="3.4" width="3" height="10.6" rx="1.5"/><rect x="15.4" y="5.2" width="3" height="8.8" rx="1.5"/><rect x="3.6" y="9" width="3" height="6.6" rx="1.5"/><path d="M3.6 12h14.8v5.4a4.6 4.6 0 0 1-4.6 4.6H8.2a4.6 4.6 0 0 1-4.6-4.6z"/></svg>`;
 let AN_PEN_UID=0;
 function anGoalSVG(list, u){
   const {c}=penCounts(list);
-  const mx=Math.max(1,...Object.values(c));
-  const fill=n=>{ if(!n) return "var(--an-cell0)"; const t=n/mx;
-    return `rgba(${Math.round(46+(233-46)*t)},${Math.round(176+(185-176)*t)},${Math.round(240+(73-240)*t)},${(0.30+0.6*t).toFixed(2)})`; };
-  const X0=26, Y0=20, CW=30, CH=26, GY=Y0+2*CH;            /* المرمى: 90×52 */
-  const cells=[["يسار أعلى",0,0],["وسط أعلى",1,0],["يمين أعلى",2,0],["يسار أسفل",0,1],["وسط أسفل",1,1],["يمين أسفل",2,1]];
   const out=c["خارج المرمى"]||0;
-  const cellSVG=([z,i,j])=>{ const x=X0+i*CW, y=Y0+j*CH, n=c[z];
-    const tap = u && n ? ` data-pz="${esc(z)}" data-pzu="${u}" role="button" tabindex="0"` : "";
-    return `<rect class="gc${tap?" pz":""}" x="${x}" y="${y}" width="${CW}" height="${CH}" fill="${fill(n)}"${tap}><title>${z}: ${n}</title></rect>`
-      + (n?`<text class="gn" x="${x+CW/2}" y="${y+CH/2}">${n}</text>`:""); };
-  const net=[]; for(let x=X0+5;x<X0+3*CW;x+=5) net.push(`<line x1="${x}" y1="${Y0}" x2="${x}" y2="${GY}"/>`); for(let y=Y0+5;y<GY;y+=5) net.push(`<line x1="${X0}" y1="${y}" x2="${X0+3*CW}" y2="${y}"/>`);
-  /* الشريط الخارجي: مستطيل كبير ناقص المرمى (evenodd) */
-  const O={x:6,y:4,w:130,h:GY-4};
-  const band=`M${O.x} ${GY} V${O.y} H${O.x+O.w} V${GY} Z M${X0} ${GY} V${Y0} H${X0+3*CW} V${GY} Z`;
-  return `<div class="an-goal"><svg viewBox="0 0 142 ${GY+12}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="خريطة مرمى ركلات الجزاء">
-    <path class="gband${u&&out?" pz":""}" d="${band}" fill-rule="evenodd" fill="${out?`rgba(239,68,68,${(0.10+0.22*out/mx).toFixed(2)})`:"var(--an-cell0)"}"${u&&out?` data-pz="خارج المرمى" data-pzu="${u}" role="button" tabindex="0"`:""}><title>خارج المرمى: ${out}</title></path>
-    <g class="gnet">${net.join("")}</g>
-    ${cells.map(cellSVG).join("")}
-    <g class="ggrid"><line x1="${X0+CW}" y1="${Y0}" x2="${X0+CW}" y2="${GY}"/><line x1="${X0+2*CW}" y1="${Y0}" x2="${X0+2*CW}" y2="${GY}"/><line x1="${X0}" y1="${Y0+CH}" x2="${X0+3*CW}" y2="${Y0+CH}"/></g>
-    <path class="gpost" d="M${X0} ${GY} V${Y0} H${X0+3*CW} V${GY}"/>
-    <line class="gline" x1="0" y1="${GY}" x2="142" y2="${GY}"/>
-    <text class="glab" x="71" y="${(O.y+Y0)/2}">خارج إطار المرمى${out?` · ${out}`:""}</text>
-  </svg></div>`;
+  const hit=(z,st)=>{ const n=c[z]||0; if(!(u&&n)) return `<i class="pzz" style="${st}"></i>`;
+    return `<i class="pzz pz" style="${st}" data-pz="${esc(z)}" data-pzu="${u}" role="button" tabindex="0" title="${esc(z)}: ${n}"></i>`; };
+  /* مناطق اللمس: الخانات التسع فوق الإطار فوق «خارج المرمى» */
+  const zones = hit("خارج المرمى","inset:0;z-index:1")
+    + PZ_FRAME.map(z=>{ const g=PZ_HIT[z];
+        return hit(z,`left:${g.l}%;top:${g.t}%;width:${g.w}%;height:${g.h}%;z-index:2`); }).join("")
+    + PZ_CELLS.map((z,i)=>{ const col=PZ_COL[i%3], row=PZ_ROW[(i/3)|0];
+        return hit(z,`left:${col.l}%;top:${row.t}%;width:${col.w}%;height:${row.h}%;z-index:3`); }).join("");
+  /* الهالات: تمسح خيوط الشبكة تحت الأرقام فلا تقع العلامة على خط */
+  const halo=[], mark=[];
+  PZ_CELLS.concat(PZ_FRAME).forEach(z=>{
+    const s=penSplit(list,z); if(!s.n) return;
+    const p=PZ_MARK[z], wide=s.ok&&s.sv, fr=PZ_FRAME.includes(z);
+    halo.push(`<ellipse cx="${(p.x*12.32).toFixed(1)}" cy="${(p.y*4.8).toFixed(1)}" rx="${wide?86:fr?38:48}" ry="${fr?22:32}"/>`);
+    /* العلامة نفسها زرّ: الدائرة تعرض المسجَّلة والقفاز يعرض ما تصدّى له الحارس وحده */
+    const tag=(cls,r,txt,lab)=> u
+      ? `<i class="${cls} pz" data-pz="${esc(z)}" data-pzu="${u}" data-pzres="${r}" role="button" tabindex="0" title="${esc(z)}${lab?" · "+lab:""}">${txt}</i>`
+      : `<i class="${cls}">${txt}</i>`;
+    const bits=[];
+    if(s.ok) bits.push(tag("pdot","ok",s.ok,"سُجّلت"));
+    if(s.sv) bits.push(tag("psv","sv",GLOVE_SVG+s.sv,"تصدّى لها الحارس"));
+    if(!s.ok && !s.sv) bits.push(tag("pbar","",s.n,""));
+    mark.push(`<span class="pmk" style="left:${p.x}%;top:${p.y}%">${bits.join("")}</span>`);
+  });
+  return `<div class="an-goal pgw"><div class="pgoal" style="background-image:url(${PEN_GOAL_IMG})">
+    <svg viewBox="0 0 1232 480" preserveAspectRatio="none" aria-hidden="true">
+      <defs><filter id="pgsoft" x="-35%" y="-35%" width="170%" height="170%"><feGaussianBlur stdDeviation="12"/></filter></defs>
+      <path d="M0 0H1232V432H0Z M84 94H1148V432H84Z" fill-rule="evenodd" fill="rgba(14,24,48,.17)"/>
+      <rect x="84" y="94" width="1064" height="23" fill="rgba(206,142,10,.46)"/>
+      <rect x="84" y="117" width="22" height="315" fill="rgba(206,142,10,.26)"/>
+      <rect x="1126" y="117" width="22" height="315" fill="rgba(206,142,10,.26)"/>
+      <g stroke="rgba(14,24,48,.18)" stroke-width="1.6"><line x1="100" y1="218" x2="1132" y2="218"/><line x1="100" y1="318" x2="1132" y2="318"/></g>
+      <g fill="#fff" opacity=".62" filter="url(#pgsoft)">${halo.join("")}</g>
+    </svg>
+    ${zones}${mark.join("")}
+    ${out?`<span class="pout" title="خارج إطار المرمى: ${out}"><b>${out}</b><span>خارج</span></span>`:""}
+  </div></div>`;
 }
 /* اختيار مكان ركلة الجزاء في المحرّرات بالضغط على المرمى نفسه (منصور 2026-10-24: «يطلع لي هذا القول… اضغط عليه و يتسجل المكان على طول»).
    نفس رسم خريطة المرمى؛ attr(z) يعطي كل منطقة سمات المحرّر (data-mset / data-chip / data-ppk) فيحفظها معالجه المعتاد */
 function penPickSVG(cur, attr){
-  const X0=26, Y0=20, CW=30, CH=26, GY=Y0+2*CH, sel=penPlaceOf(cur||"")||"";
-  const cells=[["يسار أعلى",0,0],["وسط أعلى",1,0],["يمين أعلى",2,0],["يسار أسفل",0,1],["وسط أسفل",1,1],["يمين أسفل",2,1]];
-  const net=[]; for(let x=X0+5;x<X0+3*CW;x+=5) net.push(`<line x1="${x}" y1="${Y0}" x2="${x}" y2="${GY}"/>`); for(let y=Y0+5;y<GY;y+=5) net.push(`<line x1="${X0}" y1="${y}" x2="${X0+3*CW}" y2="${y}"/>`);
-  const O={x:6,y:4,w:130,h:GY-4}, out=sel==="خارج المرمى";
+  const X0=22, Y0=20, CW=34, CH=18, T=4, GY=Y0+3*CH, W=3*CW, X1=X0+W, sel=penPlaceOf(cur||"")||"";
+  const net=[]; for(let x=X0+5;x<X1;x+=5) net.push(`<line x1="${x}" y1="${Y0}" x2="${x}" y2="${GY}"/>`);
+  for(let y=Y0+5;y<GY;y+=5) net.push(`<line x1="${X0}" y1="${y}" x2="${X1}" y2="${y}"/>`);
+  const O={x:4,y:3,w:134}, out=sel==="خارج المرمى";
+  const box=(z,x,y,w,h,lab,cls)=>{ const on=sel===z;
+    return `<g class="pp-z${cls?" "+cls:""}${on?" on":""}" ${attr(z)} role="button" aria-pressed="${on}" aria-label="${esc(z)}">
+      <rect x="${x}" y="${y}" width="${w}" height="${h}"><title>${z}</title></rect>
+      ${lab?`<text class="pp-t${cls?" sm":""}" x="${x+w/2}" y="${y+h/2}">${lab}</text>`:""}</g>`; };
   return `<div class="an-goal pen-pick"><svg viewBox="0 0 142 ${GY+6}" xmlns="http://www.w3.org/2000/svg" role="group" aria-label="مكان التسديد">
-    <path class="gband pp-z${out?" on":""}" d="M${O.x} ${GY} V${O.y} H${O.x+O.w} V${GY} Z M${X0} ${GY} V${Y0} H${X0+3*CW} V${GY} Z" fill-rule="evenodd" ${attr("خارج المرمى")} role="button" aria-pressed="${out}"><title>خارج المرمى</title></path>
+    <path class="gband pp-z${out?" on":""}" d="M${O.x} ${GY} V${O.y} H${O.x+O.w} V${GY} Z M${X0-T} ${GY} V${Y0-T} H${X1+T} V${GY} Z" fill-rule="evenodd" ${attr("خارج المرمى")} role="button" aria-pressed="${out}" aria-label="خارج المرمى"><title>خارج المرمى</title></path>
     <g class="gnet">${net.join("")}</g>
-    ${cells.map(([z,i,j])=>{ const x=X0+i*CW, y=Y0+j*CH, on=sel===z;
-      return `<g class="pp-z${on?" on":""}" ${attr(z)} role="button" aria-pressed="${on}"><rect x="${x}" y="${y}" width="${CW}" height="${CH}"><title>${z}</title></rect><text class="pp-t" x="${x+CW/2}" y="${y+CH/2}">${z}</text></g>`; }).join("")}
-    <g class="ggrid"><line x1="${X0+CW}" y1="${Y0}" x2="${X0+CW}" y2="${GY}"/><line x1="${X0+2*CW}" y1="${Y0}" x2="${X0+2*CW}" y2="${GY}"/><line x1="${X0}" y1="${Y0+CH}" x2="${X0+3*CW}" y2="${Y0+CH}"/></g>
-    <path class="gpost" d="M${X0} ${GY} V${Y0} H${X0+3*CW} V${GY}"/>
+    ${box("العارضة", X0-T, Y0-T, W+2*T, T, "العارضة", "fr")}
+    ${box("القائم الأيسر", X0-T, Y0, T, GY-Y0, "", "fr")}
+    ${box("القائم الأيمن", X1, Y0, T, GY-Y0, "", "fr")}
+    ${PZ_CELLS.map((z,i)=>box(z, X0+(i%3)*CW, Y0+((i/3)|0)*CH, CW, CH, z)).join("")}
+    <g class="ggrid"><line x1="${X0+CW}" y1="${Y0}" x2="${X0+CW}" y2="${GY}"/><line x1="${X0+2*CW}" y1="${Y0}" x2="${X0+2*CW}" y2="${GY}"/>
+      <line x1="${X0}" y1="${Y0+CH}" x2="${X1}" y2="${Y0+CH}"/><line x1="${X0}" y1="${Y0+2*CH}" x2="${X1}" y2="${Y0+2*CH}"/></g>
+    <path class="gpost" d="M${X0} ${GY} V${Y0} H${X1} V${GY}"/>
     <line class="gline" x1="0" y1="${GY}" x2="142" y2="${GY}"/>
-    <text class="pp-t pp-out${out?" on":""}" x="71" y="${(O.y+Y0)/2}">خارج المرمى</text>
+    <text class="pp-t pp-out${out?" on":""}" x="71" y="${(O.y+Y0-T)/2}">خارج المرمى</text>
   </svg></div>`;
 }
 /* المحرّر الكلاسيكي: القائمة المخفية تبقى مصدر الحفظ — الضغط يضبطها ويطلق change */
@@ -9226,12 +9328,15 @@ document.addEventListener("click", e=>{
   wrap.querySelectorAll(".pp-z").forEach(g=>{ const on=g.dataset.ppv===v; g.classList.toggle("on",on); g.setAttribute("aria-pressed",on); });
   const t=wrap.querySelector(".pp-out"); if(t) t.classList.toggle("on", v==="خارج المرمى");
 });
-function pzListHTML(k, list){
+/* res: "ok" = المسجَّلة وحدها · "sv" = ما تصدّى له الحارس وحده · "" = كل ركلات المنطقة */
+function pzListHTML(k, list, res){
   const ps=list.filter(x=>penPlaceOf((x.place||"").trim())===k)
+    .filter(x=>res==="ok" ? /سجل/.test(x.res||"") : res==="sv" ? /تصد/.test(x.res||"") : true)
     .sort((a,b)=>((+a.r||0)-(+b.r||0))||((+a.m||0)-(+b.m||0)));
   const n=ps.length, ok=ps.filter(x=>/سجل/.test(x.res||"")).length;
   const cnt=n===1?"ركلة واحدة":n===2?"ركلتان":n<=10?n+" ركلات":n+" ركلة";
-  return `<div class="ah-gh"><b>${esc(k)}</b><span>${cnt}${n?` · سُجّلت ${ok}`:""}</span><button type="button" class="ah-gx" data-pzclose aria-label="إغلاق">×</button></div>
+  const sub=res==="sv" ? `${cnt} · تصدّى لها الحارس` : res==="ok" ? `${cnt} · سُجّلت` : `${cnt}${n?` · سُجّلت ${ok}`:""}`;
+  return `<div class="ah-gh"><b>${esc(k)}</b><span>${sub}</span><button type="button" class="ah-gx" data-pzclose aria-label="إغلاق">×</button></div>
     <ol class="ah-gl">${ps.map(x=>{ const sc=/سجل/.test(x.res||"");
       return `<li><span class="m">${x.m?esc(x.m)+"′":"—"}</span><span class="p"><b>${esc(x.p||"—")}</b><small>${esc(x.by||"")}${x.vs?` ضد ${esc(x.vs)}`:""}${x.r?` · الجولة ${esc(x.r)}`:""}</small></span><span class="pz-res ${sc?"ok":"no"}">${esc(x.res||"—")}</span></li>`; }).join("")}</ol>`;
 }
@@ -9239,11 +9344,13 @@ document.addEventListener("click", e=>{
   const x=e.target.closest("[data-pzclose]");
   if(x){ const box=x.closest(".pz-box"); if(box){ box.hidden=true; box.innerHTML=""; box.dataset.k=""; document.querySelectorAll(`.pz.sel[data-pzu="${box.dataset.pzbox}"]`).forEach(g=>g.classList.remove("sel")); } return; }
   const b=e.target.closest(".pz[data-pz]"); if(!b) return;
-  const u=b.dataset.pzu, k=b.dataset.pz, box=document.querySelector(`.pz-box[data-pzbox="${u}"]`), list=(window.PZ_LISTS||{})[u];
+  const u=b.dataset.pzu, k=b.dataset.pz, res=b.dataset.pzres||"";
+  const key=k+"|"+res;                      /* القفاز والدائرة في منطقة واحدة: مفتاحان مختلفان */
+  const box=document.querySelector(`.pz-box[data-pzbox="${u}"]`), list=(window.PZ_LISTS||{})[u];
   if(!box || !list) return;
   document.querySelectorAll(`.pz.sel[data-pzu="${u}"]`).forEach(g=>g.classList.remove("sel"));
-  if(!box.hidden && box.dataset.k===k){ box.hidden=true; box.innerHTML=""; box.dataset.k=""; return; }
-  box.innerHTML=pzListHTML(k, list); box.dataset.k=k; box.hidden=false; b.classList.add("sel");
+  if(!box.hidden && box.dataset.k===key){ box.hidden=true; box.innerHTML=""; box.dataset.k=""; return; }
+  box.innerHTML=pzListHTML(k, list, res); box.dataset.k=key; box.hidden=false; b.classList.add("sel");
   box.scrollIntoView({block:"nearest", behavior:"smooth"});
 });
 document.addEventListener("keydown", e=>{ const t=e.target.closest && e.target.closest(".pz[data-pz]"); if(t && (e.key==="Enter"||e.key===" ")){ e.preventDefault(); t.dispatchEvent(new MouseEvent("click",{bubbles:true})); } });
@@ -9256,7 +9363,7 @@ function anPens(list){
   const u="pz"+(++AN_PEN_UID);
   (window.PZ_LISTS=window.PZ_LISTS||{})[u]=L;   /* الضغط على مكان في المرمى يعرض من سدّدها وضد من (منصور 2026-10-03) */
   return `<div class="an-card an-pens">
-    ${anGoalSVG(L, u)}${has?`<p class="pz-hint">اضغط على أي مكان في المرمى لترى من سدّد ركلاته هناك</p>`:""}
+    ${anGoalSVG(L, u)}${has?`<p class="pz-hint">اضغط على أي مكان في المرمى لترى من سدّد ركلاته هناك — أو على القفاز لترى ما تصدّى له الحارس وحده</p>`:""}
     <div class="ah-goals pz-box" data-pzbox="${u}" hidden></div>${extraNote(extra)}
     <div class="an-tiles t3">
       <div><b>${L.length}</b><span>مجموع الركلات</span></div>

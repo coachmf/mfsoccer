@@ -9,7 +9,7 @@
 
    عند كل نشر: ارفع رقم VER فتُبنى ذاكرة جديدة وتُحذف القديمة.
    ========================================================= */
-const VER   = 'mf-2026-11-10-736';
+const VER   = 'mf-2026-11-10-737';
 const SHELL = 'shell-' + VER;
 const RUN   = 'run-'   + VER;
 
@@ -28,6 +28,7 @@ const PRECACHE = [
   '/assets/hero/qadsia_12.webp', '/assets/hero/arabi_77.webp', '/assets/hero/kuwait_26.webp',
   '/assets/hero/salmiya_9.webp', '/assets/hero/kazma_10.webp',
   '/assets/hero/stadium.jpg', '/assets/hero/stadium_dark.jpg',
+  '/assets/pens/goal.webp',
   '/site-theme.css', '/site-i18n.js', '/i18n-data.js', '/i18n-langs.js', '/fantasy/js/i18n-more.js',
   '/admin-tabs.css', '/admin-tabs.js', '/gulf.css', '/gulf.js', '/livepush.js', '/notify.js', '/presence.js', '/notif-prefs.js', '/notif-prefs.css', '/fantasy/js/push.js', '/analysis.css', '/analysis.js', '/efftime.css', '/efftime.js', '/div1.css', '/div1.js', '/amateur.js', '/news.css', '/news.js', '/ext.css', '/ext.js', '/tstats-data.js', '/mf-brand.css', '/mf-shell.js', '/fmx.css', '/fmx.js', '/mxday.css', '/mxday.js', '/assets/brand/mf-mark.webp', '/assets/brand/mf-emblem.webp'
 ];
