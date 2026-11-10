@@ -259,7 +259,7 @@ function render(){
 
   /* الترتيب: المقعد المعيَّن أولاً، ثم البقية أبجدياً */
   const seatOf = u => (+seatFor(u).n) || 999;
-  const sorted = uids.filter(u => STAFF[u] && STAFF[u].active !== false)
+  const sorted = uids.filter(u => STAFF[u] && STAFF[u].active !== false && !HIDDEN.has(u))
                      .concat(STAFF[OWNER] ? [] : [OWNER])          /* المالك ولو لم يُدرج */
                      .sort((a,b) => seatOf(a)-seatOf(b) ||
                            nameOf(a).localeCompare(nameOf(b),'ar'));
@@ -273,7 +273,8 @@ function render(){
      تماماً — ونذكره متصلاً كان أو لا، بخلاف الغرباء. */
   const seated = new Set(sorted.filter(u => SEATBOX[seatFor(u).n]));
   const noSeat = sorted.filter(u => !seated.has(u));
-  const ghosts = Object.keys(PRES).filter(u => !seated.has(u) && !noSeat.includes(u) && liveOf(PRES[u]));
+  const ghosts = Object.keys(PRES).filter(u => !seated.has(u) && !noSeat.includes(u)
+                                          && !HIDDEN.has(u) && liveOf(PRES[u]));
 
   const canLayout = LAYOUT_ADMINS.includes(ME.uid);
 
@@ -330,6 +331,12 @@ const SEAT_BY_UID = {
   /* المكتب ٨ لراكان حواري في الصورة، ولا حساب له في seasons/staff بعد */
   'g6pJOdLrw1QaCM5sZAAtrDsgNlJ2': {n:9, name:'يعقوب القيس',   title:'الرصد',             photo:'/assets/staff/yaqoub-alqais.webp'},
 };
+
+/* من لا تعرضه اللوحة أصلاً — له حساب في seasons/staff لكنه خارج غرفة
+   التحكم. إخفاء من العرض فقط؛ صلاحيته كما هي. (منصور 2026-11-10) */
+const HIDDEN = new Set([
+  'fMh3vXLVsHQti2XNLdk5E6JIcdo1',   /* خالد النمش */
+]);
 
 /* مقعد العضو: ما رُبط يدوياً أولاً، ثم الخريطة أعلاه */
 function seatFor(u){ return SEATS[u] || SEAT_BY_UID[u] || {}; }
