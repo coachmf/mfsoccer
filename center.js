@@ -26,7 +26,7 @@ const ZONES = {
   dev:  {title:"قسم التطوير",      color:"#5B9BF0", icon:'<path d="M8 7l-5 5 5 5"/><path d="M16 7l5 5-5 5"/><path d="M13.5 5l-3 14"/>'}
 };
 const DESKS = [
-  {id:"mf",      name:"محمد الفيلكاوي", role:"المشرف العام",       zone:"sup"},
+  {id:"mf",      name:"محمد الفيلكاوي", role:"المشرف العام",       zone:"sup", img:"mf"},
   {id:"saad",    name:"سعد المنصور",    role:"مشرف الرصد",         zone:"mon",  lead:1, shirt:"#2F5D58", kind:"data"},
   {id:"hussain", name:"حسين التميمي",   role:"الرصد",              zone:"mon",  shirt:"#3D4F66", kind:"data"},
   {id:"ahmed",   name:"أحمد المشموم",   role:"الرصد والديسكورد",   zone:"mon",  shirt:"#4B3F6B", kind:"discord"},
@@ -36,6 +36,8 @@ const DESKS = [
   {id:"jassim",  name:"جاسم الخليفة",   role:"اللعب الفعلي",       zone:"play", shirt:"#4A5B70", kind:"pitch"},
   {id:"mansour", name:"منصور الجمعة",   role:"مشرف قسم التطوير",   zone:"dev",  lead:1, shirt:"#2B4778", kind:"code"}
 ];
+/* img: صورة ثلاثية الأبعاد للعضو — ملفان assets/team/<img>-on.webp و <img>-off.webp
+   (متصل / غير متصل). العضو بلا صورة يظهر بالرسم المسطح حتى تُضاف صورته. */
 const DEFAULT_EMAILS = {mf:"coachmf.kw@gmail.com"};
 const SEC_AR = {mon:"متصل · إدارة الرصد", play:"متصل · اللعب الفعلي"};
 const esc = s => String(s==null?"":s).replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -114,7 +116,13 @@ const mailHTML = id => EDIT ? `<div class="mail"><label for="m-${id}">إيميل
 const icon = (z) => `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="${ZONES[z].color}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ZONES[z].icon}</svg>`;
 const countAr = n => n===1 ? "عضو واحد" : n===2 ? "عضوان" : `${n} أعضاء`;
 
+const photoHTML = d => `<div class="photo">
+    <img class="ph-off" src="/assets/team/${esc(d.img)}-off.webp" alt="${esc(d.name)} — ${esc(d.role)}" loading="lazy">
+    <img class="ph-on" src="/assets/team/${esc(d.img)}-on.webp" alt="" aria-hidden="true" loading="lazy">
+  </div>`;
 function deskHTML(d){
+  if(d.img) return `<article class="desk${d.lead?" lead":""}" id="d-${d.id}" style="--zc:${ZONES[d.zone].color}">
+    ${pillHTML(d.id)}${photoHTML(d)}${mailHTML(d.id)}</article>`;
   return `<article class="desk${d.lead?" lead":""}" id="d-${d.id}" style="--zc:${ZONES[d.zone].color}">
     ${pillHTML(d.id)}
     <div class="station">${deskSVG(d)}</div>
@@ -154,9 +162,9 @@ function render(){
   </header>
   <section class="zone sup" id="d-${sup.id}" aria-label="الإشراف العام">
     <div class="zhead"><div class="zt"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="${G}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6z"/><path d="M9 12l2 2 4-4"/></svg><span>الإشراف العام</span></div>${pillHTML(sup.id)}</div>
-    <div class="station">${execSVG()}</div>
+    ${sup.img ? photoHTML(sup) : `<div class="station">${execSVG()}</div>
     <div class="ring"></div>
-    <div class="who"><b>${esc(sup.name)}</b><span>${esc(sup.role)}</span></div>
+    <div class="who"><b>${esc(sup.name)}</b><span>${esc(sup.role)}</span></div>`}
     ${mailHTML(sup.id)}
   </section>
   ${zoneHTML("mon")}

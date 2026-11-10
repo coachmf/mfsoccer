@@ -64,6 +64,10 @@ header.top{display:flex;flex-wrap:wrap;justify-content:space-between;align-items
 .station .scr{display:none} .on .station .scr{display:block}
 .lamp{fill:#5A6678} .lampglow{fill:#3DDC5A;fill-opacity:0}
 .on .lamp{fill:#3DDC5A} .on .lampglow{fill-opacity:.28}
+.photo{position:relative;width:min(560px,100%);aspect-ratio:885/887;border-radius:16px;overflow:hidden;background:#111}
+.desk .photo{width:220px}
+.photo img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;transition:opacity .6s}
+.photo .ph-on{opacity:0} .on .photo .ph-on{opacity:1} .on .photo .ph-off{opacity:0}
 .ring{width:200px;max-width:90%;height:4px;border-radius:999px;background:#22324A;transition:background .4s,box-shadow .4s}
 .zone.sup .ring{width:400px;height:5px}
 .on .ring{background:var(--on);box-shadow:0 0 16px 3px rgba(61,220,90,.65)}
@@ -109,6 +113,6 @@ header.top{display:flex;flex-wrap:wrap;justify-content:space-between;align-items
   </form>
 </div>
 <main id="app" class="wrap" hidden></main>
-<script src="center.js?v=1" defer></script>
+<script src="center.js?v=2" defer></script>
 </body>
 </html>
