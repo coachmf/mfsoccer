@@ -41,7 +41,7 @@ const DESKS = [
 /* avatar: صورة شخصية دائرية بجانب الاسم (assets/team/<avatar>-avatar.webp) — تُستخدم حتى تتوفر صورة 3D */
 const DEFAULT_EMAILS = {mf:"coachmf.kw@gmail.com", yaqoub:"alqais77@gmail.com", mansour:"mansourx04@gmail.com",
   hussain:"hussain_altamimi1989@hotmail.com", saad:"saad90khaled@gmail.com",
-  rakan:"rakanhwari26@gmail.com"};
+  rakan:"rakanhwari26@gmail.com", yousef:"y99233239@gmail.com"};
 const SEC_AR = {mon:"متصل · إدارة الرصد", play:"متصل · اللعب الفعلي"};
 const esc = s => String(s==null?"":s).replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const $ = s => document.querySelector(s);
