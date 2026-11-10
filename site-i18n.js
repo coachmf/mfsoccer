@@ -253,7 +253,7 @@ const I18N = {
     'إنهاء الهجمات':'Finishing',
     'تقييم اللاعبين':'Player ratings',
     'لا يوجد لاعب بعيّنة كافية في هذا المركز.':'No player with enough minutes in this position.',
-    'المساهمات':'G+A', 'المساهمات لكل مباراة':'G+A per match',
+    'المساهمات':'G+A', 'المساهمات لكل مباراة':'G+A per match', 'دقائق لكل هدف':'Minutes per goal', 'دقيقة لكل هدف':'Min per goal', 'نسبة المشاركة':'Minutes share', 'من الدقائق المتاحة':'Of available minutes', 'استقبال الحارس لكل مباراة':'Goals conceded per match', 'استقبل لكل مباراة':'Conceded per match', 'دقائق لكل إنذار':'Minutes per yellow card', 'دقيقة لكل إنذار':'Min per yellow',
     'الصناعة':'Assists',
     'ترتيب حسب':'Sort by',
     'آخر 5 مشاركات لكل لاعب (الأحدث أولاً): الأهداف والصناعة والدقائق والبطاقات. ارتفاع العمود = دقائقه في المباراة.':'Each player\'s last 5 appearances (latest first): goals, assists, minutes and cards. Bar height = minutes in that match.',

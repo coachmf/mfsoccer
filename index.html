@@ -2258,8 +2258,8 @@ html[dir="ltr"] .tl-ev.a .tl-card{text-align:right;align-items:flex-end}
 <!-- اللغة الإنجليزية والوضع الداكن -->
 <link rel="stylesheet" href="site-theme.css?v=7">
 <script src="fantasy/js/i18n-more.js?v=14" defer></script>
-<script src="site-i18n.js?v=33" defer></script>
-<script src="i18n-data.js?v=27" defer></script>   <!-- إضافات الإنجليزية + البرتغالية (البرازيل/البرتغال) + الإسبانية + الصربية/الكرواتية -->
+<script src="site-i18n.js?v=34" defer></script>
+<script src="i18n-data.js?v=29" defer></script>   <!-- إضافات الإنجليزية + البرتغالية (البرازيل/البرتغال) + الإسبانية + الصربية/الكرواتية -->
 <script src="i18n-langs.js?v=8" defer></script>   <!-- قائمة اللغات بالأعلام + البرتغالية والإسبانية والصربية/الكرواتية فوق محرك الإنجليزية -->
 <!-- غرفة التحكم (live.js / live-admin.js / live.css) مخفية منذ 2026-10-10 بطلب منصور — الملفات باقية؛ للإرجاع أعد السطرين:
      <link rel="stylesheet" href="live.css?v=9"> و <script src="live.js?v=21" defer></script> -->
@@ -2291,7 +2291,7 @@ html[dir="ltr"] .tl-ev.a .tl-card{text-align:right;align-items:flex-end}
 <link rel="stylesheet" href="mf-brand.css?v=21">
 <link rel="stylesheet" href="notif-prefs.css?v=1">
 <script>document.documentElement.classList.add("mf")</script>
-<script src="mf-shell.js?v=45" defer></script>
+<script src="mf-shell.js?v=46" defer></script>
 <link rel="stylesheet" href="fmx.css?v=3">
 <script src="fmx.js?v=9" defer></script>   <!-- أفكار FM27: fmx.js يلفّ صفحات المباراة والنادي واللاعب والمباريات والتحليل -->
 <link rel="stylesheet" href="mxday.css?v=1">
@@ -8896,9 +8896,9 @@ function wireTS(box){
    الترتيب · صورة اللاعب · الاسم · الفريق · الرقم · المباريات. كل الأرقام تُحسب من بيانات الموقع نفسها لحظة العرض. */
 let ST_TAB = "g", ST_CLUB = "";
 const ST_TABS = [
-  {k:"g",  t:"الهدافون"},       {k:"a",  t:"صناعة الأهداف"},  {k:"ga", t:"المساهمات"}, {k:"gpm", t:"المساهمات لكل مباراة"},
-  {k:"y",  t:"الإنذارات"},      {k:"r",  t:"الطرد"},           {k:"cs", t:"الشباك النظيفة"},
-  {k:"mn", t:"دقائق اللعب"},    {k:"pk", t:"ركلات الجزاء"},    {k:"rt", t:"التقييم"},    {k:"tm", t:"الفرق"}   /* التقييم: منصور 2026-11-07 */
+  {k:"g",  t:"الهدافون"},       {k:"a",  t:"صناعة الأهداف"},  {k:"ga", t:"المساهمات"}, {k:"gpm", t:"المساهمات لكل مباراة"}, {k:"mpg", t:"دقائق لكل هدف"},
+  {k:"y",  t:"الإنذارات"}, {k:"mpy", t:"دقائق لكل إنذار"},      {k:"r",  t:"الطرد"},           {k:"cs", t:"الشباك النظيفة"}, {k:"gca", t:"استقبال الحارس لكل مباراة"},
+  {k:"mn", t:"دقائق اللعب"}, {k:"shr", t:"نسبة المشاركة"},    {k:"pk", t:"ركلات الجزاء"},    {k:"rt", t:"التقييم"},    {k:"tm", t:"الفرق"}   /* التقييم: منصور 2026-11-07 */
 ];
 const ST_SHOW = 20;
 function stClubs(){
@@ -8925,7 +8925,36 @@ function stData(){
     const mx = Math.max(0, ...Object.values(PP).map(p=>p.apps)), mn = Math.max(1, Math.ceil(mx*0.5));
     rows = scorers().map(p=>({...play(p.n,p.c), n:p.n, c:p.c, g:p.g, ga:p.g+p.a})).filter(r=>r.ga>0 && r.apps>=mn)
       .map(r=>({...r, pm:Math.round(r.ga/r.apps*100)/100})).sort((x,y)=>y.pm-x.pm || y.ga-x.ga || y.g-x.g)
-      .map(r=>({...r, v:r.pm.toFixed(2)}));
+      .map(r=>({...r, v:r.pm.toFixed(2), rv:r.pm}));
+  } else if (T==="mpg"||T==="shr"||T==="gca"||T==="mpy"){
+    /* منصور 2026-11-10: دقائق لكل هدف · نسبة المشاركة · استقبال الحارس لكل مباراة — من دوال الموقع نفسها
+       (playerPlay للدقائق، playerProfileData للدقائق المتاحة ولأهداف استقبلها الحارس أثناء وجوده)؛
+       شرط «التقييم»: نصف مباريات الأكثر مشاركة على الأقل، والترتيب مشترك بلا قفز */
+    const mx = Math.max(0, ...Object.values(PP).map(p=>p.apps)), mn = Math.max(1, Math.ceil(mx*0.5));
+    const Q = Object.values(PP).filter(p=>p.apps>=mn);
+    if (T==="mpg"){
+      col = "دقيقة لكل هدف";
+      const G = {}; scorers().forEach(p=>{ G[p.n+"|"+p.c] = p.g; });
+      rows = Q.map(p=>({...p, g:G[p.n+"|"+p.c]||0})).filter(r=>r.g>0)
+        .map(r=>({...r, rv:Math.round(r.mins/r.g)})).sort((x,y)=>x.rv-y.rv || y.g-x.g).map(r=>({...r, v:r.rv+"′"}));
+    } else if (T==="shr"){
+      col = "من الدقائق المتاحة";
+      const fmr = new Set(), D = {};
+      Q.forEach(p=>{ const d = playerProfileData(p.n, p.c); D[p.n+"|"+p.c] = d; (d.former||[]).forEach(f=>fmr.add(p.n+"|"+f)); });
+      rows = Q.filter(p=>!fmr.has(p.n+"|"+p.c)).map(p=>{ const d = D[p.n+"|"+p.c]; const all = d.minsOf||0;
+          return {...p, mins:d.mins, apps:d.apps, rv: all ? Math.round(d.mins/all*100) : 0}; })
+        .filter(r=>r.rv>0).sort((x,y)=>y.rv-x.rv || y.mins-x.mins).map(r=>({...r, v:r.rv+"%"}));
+    } else if (T==="mpy"){
+      /* منصور: «ومعدل انذار للدقايق» — دقائق اللعب ÷ الإنذارات، الأقل أولاً (الأكثر إنذاراً بالنسبة لوقته) */
+      col = "دقيقة لكل إنذار";
+      const Y = {}; CARDS.forEach(x=>{ if(isYellow(x.type)){ const k=x.p+"|"+x.club; Y[k]=(Y[k]||0)+1; } });
+      rows = Q.map(p=>({...p, y:Y[p.n+"|"+p.c]||0})).filter(r=>r.y>0)
+        .map(r=>({...r, rv:Math.round(r.mins/r.y)})).sort((x,y)=>x.rv-y.rv || y.y-x.y).map(r=>({...r, v:r.rv+"′"}));
+    } else {
+      col = "استقبل لكل مباراة";
+      rows = Q.filter(p=>p.gk).map(p=>{ const d = playerProfileData(p.n, p.c); return {...p, con:d.conceded||0}; })
+        .map(r=>({...r, rv:Math.round(r.con/r.apps*100)/100})).sort((x,y)=>x.rv-y.rv || y.apps-x.apps || y.cs-x.cs).map(r=>({...r, v:r.rv.toFixed(2)}));
+    }
   } else if (T==="y"||T==="r"){
     col = T==="y" ? "الإنذارات" : "الطرد";
     const d = {}; CARDS.forEach(x=>{ const k=x.p+"|"+x.club; (d[k] ??= {n:x.p, c:x.club, y:0, r:0});
@@ -8957,7 +8986,7 @@ function stData(){
     rows = Object.values(d).sort((x,y)=>y.v-x.v || x.ga-y.ga);
   }
   if (ST_CLUB) rows = rows.filter(r=>r.c===ST_CLUB);
-  if (T==="gpm"){ let k=0; rows.forEach((r,i)=>{ if(!i || r.pm!==rows[i-1].pm) k++; r.rk = k; }); }
+  if (["gpm","mpg","shr","gca","mpy"].includes(T)){ let k=0; rows.forEach((r,i)=>{ if(!i || r.rv!==rows[i-1].rv) k++; r.rk = k; }); }
   else rows.forEach((r,i)=>{ r.rk = i+1; });
   return {rows, col, sub, team};
 }
