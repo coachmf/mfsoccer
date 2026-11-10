@@ -28,17 +28,20 @@ const ZONES = {
 const DESKS = [
   {id:"mf",      name:"محمد الفيلكاوي", role:"المشرف العام",       zone:"sup", img:"mf"},
   {id:"saad",    name:"سعد المنصور",    role:"مشرف الرصد",         zone:"mon",  lead:1, shirt:"#2F5D58", kind:"data"},
-  {id:"hussain", name:"حسين التميمي",   role:"الرصد",              zone:"mon",  shirt:"#3D4F66", kind:"data"},
+  {id:"hussain", name:"حسين التميمي",   role:"الرصد",              zone:"mon",  shirt:"#3D4F66", kind:"data", avatar:"hussain"},
   {id:"ahmed",   name:"أحمد المشموم",   role:"الرصد والديسكورد",   zone:"mon",  shirt:"#4B3F6B", kind:"discord"},
-  {id:"rakan",   name:"راكان حواري",    role:"الرصد",              zone:"mon",  shirt:"#5A4636", kind:"data"},
-  {id:"yaqoub",  name:"يعقوب القيس",    role:"الرصد",              zone:"mon",  shirt:"#2C4A6E", kind:"data"},
+  {id:"rakan",   name:"راكان حواري",    role:"الرصد",              zone:"mon",  shirt:"#5A4636", kind:"data", avatar:"rakan"},
+  {id:"yaqoub",  name:"يعقوب القيس",    role:"الرصد",              zone:"mon",  shirt:"#2C4A6E", kind:"data", avatar:"yaqoub"},
   {id:"yousef",  name:"يوسف الأنصاري",  role:"مشرف اللعب الفعلي",  zone:"play", lead:1, shirt:"#3E5A2E", kind:"pitch"},
   {id:"jassim",  name:"جاسم الخليفة",   role:"اللعب الفعلي",       zone:"play", shirt:"#4A5B70", kind:"pitch"},
-  {id:"mansour", name:"منصور الجمعة",   role:"مشرف قسم التطوير",   zone:"dev",  lead:1, shirt:"#2B4778", kind:"code"}
+  {id:"mansour", name:"منصور الجمعة",   role:"مشرف قسم التطوير",   zone:"dev",  lead:1, shirt:"#2B4778", kind:"code", avatar:"mansour"}
 ];
 /* img: صورة ثلاثية الأبعاد للعضو — ملفان assets/team/<img>-on.webp و <img>-off.webp
    (متصل / غير متصل). العضو بلا صورة يظهر بالرسم المسطح حتى تُضاف صورته. */
-const DEFAULT_EMAILS = {mf:"coachmf.kw@gmail.com"};
+/* avatar: صورة شخصية دائرية بجانب الاسم (assets/team/<avatar>-avatar.webp) — تُستخدم حتى تتوفر صورة 3D */
+const DEFAULT_EMAILS = {mf:"coachmf.kw@gmail.com", yaqoub:"alqais77@gmail.com", mansour:"mansourx04@gmail.com",
+  hussain:"hussain_altamimi1989@hotmail.com", saad:"saad90khaled@gmail.com",
+  rakan:"rakanhwari26@gmail.com"};
 const SEC_AR = {mon:"متصل · إدارة الرصد", play:"متصل · اللعب الفعلي"};
 const esc = s => String(s==null?"":s).replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const $ = s => document.querySelector(s);
@@ -127,7 +130,8 @@ function deskHTML(d){
     ${pillHTML(d.id)}
     <div class="station">${deskSVG(d)}</div>
     <div class="ring"></div>
-    <div class="who"><b>${esc(d.name)}</b><span>${esc(d.role)}</span>${d.lead?'<span class="badge">مشرف القسم</span>':""}</div>
+    ${d.avatar ? `<div class="who has-av"><img class="av" src="/assets/team/${esc(d.avatar)}-avatar.webp" alt="${esc(d.name)}" width="60" height="60" loading="lazy"><div class="who"><b>${esc(d.name)}</b><span>${esc(d.role)}</span>${d.lead?'<span class="badge">مشرف القسم</span>':""}</div></div>`
+               : `<div class="who"><b>${esc(d.name)}</b><span>${esc(d.role)}</span>${d.lead?'<span class="badge">مشرف القسم</span>':""}</div>`}
     ${mailHTML(d.id)}
   </article>`;
 }
