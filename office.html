@@ -260,15 +260,17 @@ function render(){
   /* الترتيب: المقعد المعيَّن أولاً، ثم البقية أبجدياً */
   const seatOf = u => (+seatFor(u).n) || 999;
   const sorted = uids.filter(u => STAFF[u] && STAFF[u].active !== false)
+                     .concat(STAFF[OWNER] ? [] : [OWNER])          /* المالك ولو لم يُدرج */
                      .sort((a,b) => seatOf(a)-seatOf(b) ||
-                           String(STAFF[a].name||'').localeCompare(String(STAFF[b].name||''),'ar'));
+                           nameOf(a).localeCompare(nameOf(b),'ar'));
 
   const lead = sorted.find(u => u === OWNER);
   const rest = sorted.filter(u => u !== OWNER);
   const onCount = sorted.filter(u => liveOf(PRES[u])).length;
 
   /* متصلون لا يظهرون في فريق العمل (حساب أُزيل أو لم يُضف بعد) */
-  const ghosts = Object.keys(PRES).filter(u => !STAFF[u] && liveOf(PRES[u]));
+  const inRoom = new Set(sorted);
+  const ghosts = Object.keys(PRES).filter(u => !inRoom.has(u) && liveOf(PRES[u]));
 
   const canLayout = LAYOUT_ADMINS.includes(ME.uid);
 
@@ -320,9 +322,23 @@ const DEFAULTS = {
   'راكان حواري':   {n:8, title:'الرصد',               photo:'/assets/staff/rakan-hawari.webp'},
   'يعقوب القيس':   {n:9, title:'الرصد',               photo:'/assets/staff/yaqoub-alqais.webp'},
 };
-/* مقعد العضو: ما رُبط يدوياً أولاً، ثم الافتراضي بالاسم */
+/* المالك غير مُدرج في seasons/staff (صلاحيته من الكود)، واسمه هناك
+   لاتيني، فلا يطابق خريطة الأسماء أعلاه — نفرده بمفتاح الـuid ونعطيه
+   اسم العرض معه. (منصور 2026-11-10) */
+const DEFAULT_UID = {
+  [OWNER]: {n:1, title:'المشرف العام', name:'محمد الفيلكاوي',
+            photo:'/assets/staff/mohammed-alfailakawi.webp'},
+};
+
+/* مقعد العضو: ما رُبط يدوياً أولاً، ثم بالـuid، ثم بالاسم */
 function seatFor(u){
-  return SEATS[u] || DEFAULTS[String((STAFF[u] || {}).name || '').trim()] || {};
+  return SEATS[u] || DEFAULT_UID[u] || DEFAULTS[String((STAFF[u] || {}).name || '').trim()] || {};
+}
+
+/* اسم العرض: المقعد يغلب، فاسم المالك في Firebase لاتيني */
+function nameOf(u){
+  return seatFor(u).name || (STAFF[u] || {}).name || (PRES[u] || {}).name
+      || (STAFF[u] || {}).email || '—';
 }
 
 /* مواضع المكاتب في assets/office/room.webp (1320×882) — مقيسة آلياً
@@ -349,12 +365,12 @@ function roomHTML(room, order){
     ${seats.map(u => {
       const b = SEATBOX[seatFor(u).n], w = liveOf(PRES[u]);
       const m = STAFF[u] || {}, ph = photoOf(seatFor(u).photo);
-      const ini = esc(initials(m.name, m.email));
+      const ini = esc(initials(nameOf(u), m.email));
       const face = ph
-        ? `<div class="face ph"><img src="${esc(ph)}" alt="${esc(m.name||'')}" loading="lazy"
+        ? `<div class="face ph"><img src="${esc(ph)}" alt="${esc(nameOf(u))}" loading="lazy"
              onerror="this.parentNode.classList.remove('ph');this.replaceWith(document.createTextNode('${ini}'))"></div>`
         : `<div class="face">${ini}</div>`;
-      return `<div class="seat ${w ? 'on' : 'off'}" title="${esc(m.name || '')}"
+      return `<div class="seat ${w ? 'on' : 'off'}" title="${esc(nameOf(u))}"
         style="right:${b.r}%;top:${b.y}%;width:${b.w}%;height:${b.h}%">
         ${face}
         <span class="tag ${w ? 'on' : 'off'}"><i></i>${w ? esc(w) : 'غير متصل'}</span>
@@ -371,13 +387,13 @@ function deskHTML(uid, big){
      onerror يُرجع الأحرف إن انكسر الرابط بدل مربع فارغ. */
   const ph  = photoOf(seat.photo);
   const av  = ph
-    ? `<div class="av ph"><img src="${esc(ph)}" alt="${esc(m.name||'')}" loading="lazy"
-         onerror="this.parentNode.classList.remove('ph');this.replaceWith(document.createTextNode('${esc(initials(m.name, m.email))}'))"></div>`
-    : `<div class="av">${esc(initials(m.name, m.email))}</div>`;
+    ? `<div class="av ph"><img src="${esc(ph)}" alt="${esc(nameOf(uid))}" loading="lazy"
+         onerror="this.parentNode.classList.remove('ph');this.replaceWith(document.createTextNode('${esc(initials(nameOf(uid), m.email))}'))"></div>`
+    : `<div class="av">${esc(initials(nameOf(uid), m.email))}</div>`;
   return `<div class="desk ${w ? 'on' : 'off'}">
     ${av}
     <div class="plate">
-      <b>${esc(m.name || m.email || 'بلا اسم')}</b>
+      <b>${esc(nameOf(uid))}</b>
       <span>${esc(title)}</span>
       ${m.email ? `<em>${esc(m.email)}</em>` : ''}
     </div>
