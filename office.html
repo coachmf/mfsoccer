@@ -269,8 +269,11 @@ function render(){
   const onCount = sorted.filter(u => liveOf(PRES[u])).length;
 
   /* متصلون لا يظهرون في فريق العمل (حساب أُزيل أو لم يُضف بعد) */
-  const inRoom = new Set(sorted);
-  const ghosts = Object.keys(PRES).filter(u => !inRoom.has(u) && liveOf(PRES[u]));
+  /* من لا مقعد له لا يظهر في الغرفة إطلاقاً، فلو لم نذكره هنا اختفى
+     تماماً — ونذكره متصلاً كان أو لا، بخلاف الغرباء. */
+  const seated = new Set(sorted.filter(u => SEATBOX[seatFor(u).n]));
+  const noSeat = sorted.filter(u => !seated.has(u));
+  const ghosts = Object.keys(PRES).filter(u => !seated.has(u) && !noSeat.includes(u) && liveOf(PRES[u]));
 
   const canLayout = LAYOUT_ADMINS.includes(ME.uid);
 
@@ -298,8 +301,12 @@ function render(){
           <div class="desks">${rest.map(u => deskHTML(u, false)).join('')}</div>
         </div>`}
 
-    ${ghosts.length ? `<div class="strip"><b>متصلون بدون مكتب:</b> ${
-      ghosts.map(u => `${esc(PRES[u].name || PRES[u].email || u)} — ${esc(liveOf(PRES[u]))}`).join(' · ')
+    ${noSeat.length ? `<div class="strip"><b>أعضاء بلا مكتب في الغرفة:</b> ${
+      noSeat.map(u => `${esc(nameOf(u))} — ${esc(liveOf(PRES[u]) || 'غير متصل')}`).join(' · ')
+    }</div>` : ''}
+
+    ${ghosts.length ? `<div class="strip"><b>متصلون من خارج الفريق:</b> ${
+      ghosts.map(u => `${esc(nameOf(u))} — ${esc(liveOf(PRES[u]))}`).join(' · ')
     }</div>` : ''}
 
     <div class="legend">
@@ -308,34 +315,26 @@ function render(){
     </div>`);
 }
 
-/* توزيع ابتدائي بالاسم: يعمل قبل أي ربط يدوي، فلا تُفتح الصفحة
-   فارغة. أي ربط يُحفظ في seasons/office يغلبه — المفتاح هناك هو
-   الـuid، وهو أدقّ من الاسم إن تشابهت الأسماء. */
-const DEFAULTS = {
-  'محمد الفيلكاوي': {n:1, title:'المشرف العام',        photo:'/assets/staff/mohammed-alfailakawi.webp'},
-  'منصور الجمعة':  {n:2, title:'مشرف قسم التطوير',    photo:'/assets/staff/mansour-aljumaa.webp'},
-  'يوسف الأنصاري': {n:3, title:'مشرف اللعب الفعلي',   photo:'/assets/staff/yousef-alansari.webp'},
-  'سعد المنصور':   {n:4, title:'مشرف الرصد',          photo:'/assets/staff/saad-almansour.webp'},
-  'جاسم الخليفة':  {n:5, title:'اللعب الفعلي',        photo:'/assets/staff/jasem-alkhalifa.webp'},
-  'حسين التميمي':  {n:6, title:'الرصد',               photo:'/assets/staff/hussain-altamimi.webp'},
-  'احمد المشموم':  {n:7, title:'الرصد والديسكورد',    photo:'/assets/staff/ahmad-almashmoum.webp'},
-  'راكان حواري':   {n:8, title:'الرصد',               photo:'/assets/staff/rakan-hawari.webp'},
-  'يعقوب القيس':   {n:9, title:'الرصد',               photo:'/assets/staff/yaqoub-alqais.webp'},
-};
-/* المالك غير مُدرج في seasons/staff (صلاحيته من الكود)، واسمه هناك
-   لاتيني، فلا يطابق خريطة الأسماء أعلاه — نفرده بمفتاح الـuid ونعطيه
-   اسم العرض معه. (منصور 2026-11-10) */
-const DEFAULT_UID = {
-  [OWNER]: {n:1, title:'المشرف العام', name:'محمد الفيلكاوي',
-            photo:'/assets/staff/mohammed-alfailakawi.webp'},
+/* المقاعد بمفتاح الـuid لا بالاسم. الربط بالاسم فشل: «يوسف الانصاري»
+   مسجَّل بألف بلا همزة، واحمد ويعقوب باسمَي مستخدم لاتينيَّين
+   (mshmomah، alqais77) — والـuid وحده ثابت. الاسم هنا هو اسم العرض،
+   يغلب ما في Firebase. (منصور 2026-11-10) */
+const SEAT_BY_UID = {
+  'iiTgVfDryXNLb9IrOyLkkNMHDxq2': {n:1, name:'محمد الفيلكاوي', title:'المشرف العام',      photo:'/assets/staff/mohammed-alfailakawi.webp'},
+  '8wlEYODqGPTqZKSQEtevcz0MGEl2': {n:2, name:'منصور الجمعة',  title:'مشرف قسم التطوير',  photo:'/assets/staff/mansour-aljumaa.webp'},
+  'YOsptBdYXxTy141tt0RKFwmQMbY2': {n:3, name:'يوسف الأنصاري', title:'مشرف اللعب الفعلي', photo:'/assets/staff/yousef-alansari.webp'},
+  'uE4wvtKDRGdXLa3l6GmPtRxF4kh2': {n:4, name:'سعد المنصور',   title:'مشرف الرصد',        photo:'/assets/staff/saad-almansour.webp'},
+  'h430Uu3DcSW96kWi3vGvhqxXiel1': {n:5, name:'جاسم الخليفة',  title:'اللعب الفعلي',      photo:'/assets/staff/jasem-alkhalifa.webp'},
+  '1XvPd5TbyOWHNJlV0XzzNShlXN93': {n:6, name:'حسين التميمي',  title:'الرصد',             photo:'/assets/staff/hussain-altamimi.webp'},
+  '8P9vihUnGadIE0GKZf1tMMK3kuU2': {n:7, name:'احمد المشموم',  title:'الرصد والديسكورد',  photo:'/assets/staff/ahmad-almashmoum.webp'},
+  /* المكتب ٨ لراكان حواري في الصورة، ولا حساب له في seasons/staff بعد */
+  'g6pJOdLrw1QaCM5sZAAtrDsgNlJ2': {n:9, name:'يعقوب القيس',   title:'الرصد',             photo:'/assets/staff/yaqoub-alqais.webp'},
 };
 
-/* مقعد العضو: ما رُبط يدوياً أولاً، ثم بالـuid، ثم بالاسم */
-function seatFor(u){
-  return SEATS[u] || DEFAULT_UID[u] || DEFAULTS[String((STAFF[u] || {}).name || '').trim()] || {};
-}
+/* مقعد العضو: ما رُبط يدوياً أولاً، ثم الخريطة أعلاه */
+function seatFor(u){ return SEATS[u] || SEAT_BY_UID[u] || {}; }
 
-/* اسم العرض: المقعد يغلب، فاسم المالك في Firebase لاتيني */
+/* اسم العرض: المقعد يغلب، فبعض الأسماء في Firebase لاتينية */
 function nameOf(u){
   return seatFor(u).name || (STAFF[u] || {}).name || (PRES[u] || {}).name
       || (STAFF[u] || {}).email || '—';
