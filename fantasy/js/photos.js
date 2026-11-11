@@ -54,6 +54,8 @@ const PLAYER_PHOTOS = {
   'SAH|ناصر القحطاني': '/assets/players/sah/14',
   'SAH|موريسيو': '/assets/players/sah/15',
   'SAH|عمر الهنودي': '/assets/players/sah/hanoudi',
+  'KAZ|يانيس مراح': '/assets/players/kaz/merah',
+  'KAZ|غابرييل اوروك': '/assets/players/kaz/orok',
   'SAH|جابر العجاجي': '/assets/players/sah/19',
   'SAH|فواز الدوسري': '/assets/players/sah/22',
   'SAH|لوكاس دي سوزا': '/assets/players/sah/23',
