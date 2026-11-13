@@ -1,0 +1,97 @@
+/* ===== تجربة التطبيق (html.mfa) — تعمل داخل التطبيق أو ‎?app=1 فقط؛ الموقع في المتصفح لا يتأثر ===== */
+
+/* ───── لمس بلا أثر متصفح ───── */
+html.mfa{-webkit-tap-highlight-color:transparent;-webkit-text-size-adjust:100%;overscroll-behavior-y:none}
+html.mfa body{overscroll-behavior-y:none}
+html.mfa :is(button,a,[role=button],[role=tab],.mc,.va-card,label.mf-sel,nav,.mf-bar,.mf-top,.mp-tabs,.mp-head){-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+html.mfa :is(button,a,[role=button],[role=tab],select,input,label){touch-action:manipulation}
+html.mfa img{-webkit-user-drag:none}
+/* ضغطة مرئية فورية (بلا hover على اللمس) */
+@media (hover:none){
+  html.mfa :is(.mc,.va-card,.mf-tile,.mf-node,.vap-mini,.nw-card,.hm-tile[role=button],.liverow,.nextm,.tp,.mf-crests button,.mf-ext button,.mf-nt button):active{transform:scale(.975);transition:transform 90ms ease}
+  html.mfa :is(.mf-bar button):active{transform:scale(.92);transition:transform 90ms ease}
+  html.mfa :is(.mf-bar button){transition:transform .18s cubic-bezier(.2,.8,.2,1)}
+}
+
+/* ───── انتقال الأقسام ───── */
+@keyframes mfaInF{from{opacity:0;transform:translate3d(calc(var(--mfa-dir,-1) * 22px),0,0)}to{opacity:1;transform:none}}
+@keyframes mfaInB{from{opacity:0;transform:translate3d(calc(var(--mfa-dir,-1) * -22px),0,0)}to{opacity:1;transform:none}}
+@keyframes mfaInU{from{opacity:0;transform:translate3d(0,10px,0)}to{opacity:1;transform:none}}
+html.mfa{--mfa-dir:-1}                         /* RTL: القسم التالي يأتي من اليسار */
+html.mfa[dir="ltr"]{--mfa-dir:1}
+html.mfa .mfa-in-f{animation:mfaInF .28s cubic-bezier(.2,.8,.2,1) both}
+html.mfa .mfa-in-b{animation:mfaInB .28s cubic-bezier(.2,.8,.2,1) both}
+html.mfa .mfa-in-u{animation:mfaInU .26s cubic-bezier(.2,.8,.2,1) both}
+html.mfa .mfa-fade{animation:mfaInU .22s cubic-bezier(.2,.8,.2,1) both}
+
+/* ───── الشريط العلوي يختفي مع التمرير (الهاتف) ───── */
+@media (max-width:899px){
+  html.mfa .mf-top{transition:transform .26s cubic-bezier(.2,.8,.2,1)}
+  html.mfa.mfa-hide .mf-top{transform:translate3d(0,calc(-100% + env(safe-area-inset-top)),0)}
+  html.mfa .mfa-sb{position:fixed;inset:0 0 auto;height:env(safe-area-inset-top);z-index:61;background:var(--mf-bg,#00061A);pointer-events:none}
+}
+@media (min-width:900px){ html.mfa .mfa-sb{display:none} }
+/* الشريط السفلي: ظل خفيف بدل خط المتصفح، ومساحة الإصبع كاملة */
+html.mfa .mf-bar{box-shadow:0 -8px 24px rgba(0,2,10,.28)}
+html[data-theme="light"].mfa .mf-bar{box-shadow:0 -6px 18px rgba(0,6,26,.07)}
+
+/* ───── المباريات | الترتيب ───── */
+.mfa-mseg{position:sticky;top:calc(var(--mf-top-h,56px) + env(safe-area-inset-top));z-index:20;display:grid;grid-template-columns:1fr 1fr;
+  margin:0 -16px 14px;padding:8px 16px;background:var(--mf-bg,#00061A);border-bottom:1px solid var(--mf-ln,rgba(231,208,147,.1));isolation:isolate}
+html.mfa.mfa-hide .mfa-mseg{top:env(safe-area-inset-top)}
+html.mfa .mfa-mseg{transition:top .26s cubic-bezier(.2,.8,.2,1)}
+.mfa-mseg button{position:relative;z-index:1;min-height:40px;border:0;background:transparent;color:var(--mf-tx3,#8C93A8);font:800 .92rem var(--mf-f,inherit);cursor:pointer;transition:color .2s}
+.mfa-mseg button[aria-selected="true"]{color:var(--mf-gold-ink,#1A1306)}
+.mfa-mseg i{position:absolute;z-index:0;top:8px;bottom:8px;width:calc(50% - 16px);inset-inline-start:16px;border-radius:999px;background:var(--mf-grad,#E7D093);
+  transition:transform .3s cubic-bezier(.2,.8,.2,1)}
+.mfa-mseg[data-on="table"] i{transform:translateX(calc(var(--mfa-dir,-1) * 100%))}   /* RTL: الترتيب على اليسار */
+.mfa-mseg{background-clip:padding-box}
+.mfa-mseg::before{content:"";position:absolute;z-index:-1;inset:8px 16px;border-radius:999px;background:var(--mf-c1,#07112B);border:1px solid var(--mf-ln2,rgba(231,208,147,.2))}
+#v-matches.mfa-show-std > :not(.mfa-mseg):not(.mfa-std){display:none!important}
+.mfa-std{display:flex;flex-direction:column;gap:12px;padding-bottom:12px}
+.mfa-sides{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none}
+.mfa-sides::-webkit-scrollbar{display:none}
+.mfa-sides button{flex:none;min-height:36px;padding:0 14px;border-radius:999px;border:1px solid var(--mf-ln2,rgba(231,208,147,.2));background:transparent;
+  color:var(--mf-tx2,#C5CAD8);font:700 .84rem var(--mf-f,inherit);cursor:pointer}
+.mfa-sides button[aria-selected="true"]{background:var(--mf-tx,#F6F3EA);color:var(--mf-bg,#00061A);border-color:transparent}
+.mfa-std .hm-std .sec{margin-top:0}
+
+/* ───── لوحة الأقسام: مقبض السحب ───── */
+html.mfa .mf-hub-sheet{transition:transform .22s cubic-bezier(.2,.8,.2,1)}
+html.mfa .mf-hub-hd{position:relative}
+html.mfa .mf-hub-hd::before{content:"";position:absolute;top:-6px;left:50%;width:40px;height:4px;margin-left:-20px;border-radius:2px;background:var(--mf-tx3,#8C93A8);opacity:.5}
+
+/* ───── مركز المباراة ───── */
+@keyframes mfaPush{from{transform:translate3d(0,26px,0);opacity:.0}to{transform:none;opacity:1}}
+html.mfa .mpage.mfa-open .mp-sheet{animation:mfaPush .34s cubic-bezier(.2,.8,.2,1) both}
+html.mfa .mpage .mp-sheet{transition:transform .22s cubic-bezier(.2,.8,.2,1);-webkit-overflow-scrolling:touch}
+/* لوحة النتيجة المصغّرة: تظهر بعد تجاوز الرأس، والتبويبات تلتصق تحتها */
+.mfa-mini{position:sticky;top:0;z-index:6;height:0;overflow:visible}
+.mfa-mini > *{visibility:hidden}
+html.mfa .mfa-mini{display:block}
+html:not(.mfa) .mfa-mini{display:none}
+.mfa-mini{--h:52px}
+.mfa-mini::before{content:"";position:absolute;inset:0 0 auto;height:calc(var(--h) + env(safe-area-inset-top));background:#0a1626;border-bottom:1px solid rgba(255,255,255,.08);
+  opacity:0;transform:translate3d(0,-8px,0);transition:opacity .2s,transform .2s}
+.mpage.mfa-mini-on .mfa-mini::before{opacity:1;transform:none}
+.mfa-mini{display:grid}
+.mfa-mini > .t,.mfa-mini > .s,.mfa-mini > .mfa-mini-x{position:absolute;top:env(safe-area-inset-top);height:var(--h);display:flex;align-items:center;gap:8px;color:#fff;
+  opacity:0;transition:opacity .2s;visibility:visible;pointer-events:none}
+.mpage.mfa-mini-on .mfa-mini > *{opacity:1;pointer-events:auto}
+.mfa-mini > .t{max-width:34%;inset-inline-start:52px}
+.mfa-mini > .t.a{inset-inline-start:auto;inset-inline-end:14px;justify-content:flex-end}
+.mfa-mini > .t em{font-style:normal;font-weight:700;font-size:.82rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mfa-mini > .t img{width:24px;height:24px;object-fit:contain;flex:none}
+.mfa-mini > .s{left:50%;transform:translateX(-50%);flex-direction:column;justify-content:center;gap:0}
+.mfa-mini > .s b{font-family:var(--mf-fh,inherit);font-size:1.05rem;font-weight:800;font-variant-numeric:tabular-nums;line-height:1.1}
+.mfa-mini > .s small{font-size:.62rem;color:rgba(255,255,255,.6);white-space:nowrap}
+.mfa-mini-x{inset-inline-start:6px;width:44px;justify-content:center;border:0;background:transparent;cursor:pointer;padding:0}
+/* أسماء الفرق تُخفى في المصغّرة على الشاشات الضيقة جداً */
+@media (max-width:360px){ .mfa-mini > .t em{display:none} }
+html.mfa .mpage.mfa-mini-on .mp-tabs{top:calc(52px + env(safe-area-inset-top));transition:top .2s}
+html.mfa .mpage .mp-tabs{transition:top .2s}
+html[data-theme="light"].mfa .mfa-mini::before{background:#0a1626}
+/* التبويبات: أهداف لمس أكبر */
+html.mfa .mp-tabs button{min-height:46px}
+html.mfa .mp-body{will-change:auto}
+@media (prefers-reduced-motion:reduce){ html.mfa *{animation:none!important;transition:none!important} }

@@ -5,6 +5,15 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=5">
 <meta name="theme-color" content="#061529">
 <script>
+/* وضع التطبيق (منصور 2026-11-14): داخل تطبيق iOS (PWAShell / app-platform) أو أندرويد أو التطبيق المثبّت، أو معاينة ?app=1
+   يضيف html.mfa قبل الرسم — app-shell.css/js لا يعملان بدونه، فالموقع في المتصفح يبقى كما هو. ?app=0 يلغي المعاينة */
+(function(){ try{ var q=new URLSearchParams(location.search).get("app"), K="mfa_preview";
+  if(q==="1") sessionStorage.setItem(K,"1"); else if(q==="0") sessionStorage.removeItem(K);
+  var ua=navigator.userAgent||"", app=/PWAShell/.test(ua) || /app-platform=/.test(document.cookie||"") || /^android-app:/.test(document.referrer||"")
+    || matchMedia("(display-mode: standalone)").matches || navigator.standalone===true || sessionStorage.getItem(K)==="1";
+  if(app) document.documentElement.classList.add("mfa"); }catch(e){} })();
+</script>
+<script>
 /* الرابط القديم mfsoccer.netlify.app ← mfsoccer.com (منصور 2026-10-19): نسخة كل رابط منفصلة في الجوال فبقي محرّر على نسخة قديمة.
    في متصفح عادي فقط — تطبيق الآيفون (PWAShell / app-platform) وتطبيق أندرويد والتطبيق المثبّت (standalone) لا يتحوّلون حتى لا تضيع جلستهم. */
 (function(){ try{ if(location.hostname!=="mfsoccer.netlify.app") return;
@@ -2281,6 +2290,7 @@ html[dir="ltr"] .tl-ev.a .tl-card{text-align:right;align-items:flex-end}
 <script src="amateur.js?v=10" defer></script>   <!-- دوري الهواة: النتائج والترتيب فقط (seasons/amateur) -->
 <link rel="stylesheet" href="news.css?v=5">
 <script src="news.js?v=11" defer></script>   <!-- الأخبار: news/{id} + فهرس seasons/news + صور newsimg/{id} -->   <!-- دوري الدرجة الأولى: الترتيب والمباريات فقط (seasons/div1) -->
+<link rel="stylesheet" href="app-shell.css?v=1">
 <link rel="stylesheet" href="ext.css?v=3">
 <script src="ext.js?v=16" defer></script>   <!-- المشاركات الخارجية لأنديتنا: تحرير كامل مثل الدوري في وثيقة مستقلة (seasons/ext2627) -->
 <!-- التحليل الموسّع + تقييم اللاعبين 0–100 + البحث العام (منصور 2026-09-29) -->
@@ -2292,6 +2302,7 @@ html[dir="ltr"] .tl-ev.a .tl-card{text-align:right;align-items:flex-end}
 <link rel="stylesheet" href="notif-prefs.css?v=1">
 <script>document.documentElement.classList.add("mf")</script>
 <script src="mf-shell.js?v=46" defer></script>
+<script src="app-shell.js?v=1" defer></script>   <!-- تجربة التطبيق: تعمل مع html.mfa فقط -->
 <link rel="stylesheet" href="fmx.css?v=3">
 <script src="fmx.js?v=9" defer></script>   <!-- أفكار FM27: fmx.js يلفّ صفحات المباراة والنادي واللاعب والمباريات والتحليل -->
 <link rel="stylesheet" href="mxday.css?v=1">
