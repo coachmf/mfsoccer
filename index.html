@@ -2286,7 +2286,7 @@ html[dir="ltr"] .tl-ev.a .tl-card{text-align:right;align-items:flex-end}
 <!-- التحليل الموسّع + تقييم اللاعبين 0–100 + البحث العام (منصور 2026-09-29) -->
 <link rel="stylesheet" href="analysis.css?v=11">
 <script src="tstats-data.js?v=1" defer></script>
-<script src="analysis.js?v=32" defer></script>
+<script src="analysis.js?v=33" defer></script>
 <!-- هوية MF SOCCER الذهبية + هيكل التطبيق (منصور 2026-10-05) -->
 <link rel="stylesheet" href="mf-brand.css?v=21">
 <link rel="stylesheet" href="notif-prefs.css?v=1">
@@ -15527,7 +15527,7 @@ function playerRating(m, club, name){
 }
 /* تقييمات فريق في مباراة، مرتبة من الأعلى */
 /* كأس الخليج بلا تقييمات لاعبين في أي مكان (منصور 2026-09-24) — التقييم الداخلي يبقى لاختيار «أفضل لاعب» تلقائياً فقط */
-function matchRatings(m, club){ return isGulfMatch(m) ? [] : matchRatingsRaw(m, club); }
+function matchRatings(m, club){ return matchRatingsRaw(m, club); }   /* كأس الخليج بتقييمات مثل باقي المباريات (منصور 2026-11-14: «خل فيها تقييم عشان ينحسب ضمن تقييم اللاعب») */
 /* التقييم يظهر بعد نهاية المباراة فقط (منصور 2026-10-08: «مابي التقييم يكون لايف»): «انتهت» صراحة،
    أو بلا مرحلة جارية ومضت ساعتان ونصف على الانطلاق (نافذة matchOver ساعتان فقط — تنتهي قبل الصافرة أحياناً) */
 function ratingsReady(m){
@@ -15569,7 +15569,6 @@ function ratingRowHTML(x, i){
 }
 /* متوسط تقييم الفريق (رأس بطاقة الفريق، مبدّل التشكيلة، التفاصيل) — شارة التقييم نفسها بمنزلتين */
 function teamAvgRating(m, club){
-  if(isGulfMatch(m)) return null;               /* كأس الخليج بلا متوسط تقييم للفريق (منصور 2026-09-23) */
   const R=matchRatings(m, club); if(!R.length) return null;
   return Math.round(R.reduce((a,x)=>a+x.r.v,0)/R.length*100)/100;
 }

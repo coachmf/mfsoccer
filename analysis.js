@@ -196,7 +196,7 @@ function computeRatings(cut){
       p.g+=e.g; p.pg+=e.pg; p.npg+=e.g-e.pg; p.pkm+=e.pk-e.pks; p.a+=e.a; p.og+=e.og; p.y+=e.y; p.r+=e.r;
       p.gfOn+=e.gfOn; p.gaOn+=e.gaOn; p.ptsW+=e.pts*e.share; p.shareSum+=e.share; p.faced+=e.faced; p.saved+=e.saved;
       /* منصور 2026-10-16 «المفروض ينبني على كل مباره الافرج»: تقييم كل مباراة (نفس تقييم صفحة المباراة) يدخل في المتوسط */
-      const mr=(typeof isGulfMatch==="function" && isGulfMatch(e.m)) || (typeof ratingsReady==="function" && !ratingsReady(e.m)) ? null : playerRating(e.m, e.club, e.n);
+      const mr=(typeof ratingsReady==="function" && !ratingsReady(e.m)) ? null : playerRating(e.m, e.club, e.n);   /* كأس الخليج داخل المتوسط (2026-11-14) */
       if(mr){ p.rSum+=mr.v; p.rN++; } });
     const out=new Map();
     const M=RATING_MODEL.metrics;
