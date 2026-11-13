@@ -12830,6 +12830,12 @@ html.mf .mf-ib.mf-bell.on{color:var(--mf-gold,#E7D093);border-color:rgba(231,208
   font-size:7.5px;line-height:11px;text-align:center;padding:0 2px}
 .mpx-card .pp-b.assist{top:-7px;right:-7px;left:auto;bottom:auto}
 .mpx-card .pp-b.goal + .pp-b.assist{top:-7px;bottom:auto}
+/* الشريحة بعدد بمقاسات ثابتة (منصور 2026-11-14 «يوسف ناصر هدفين… مايبين»): مقاسات cqw إذا رُفضت في iPhone
+   تسقط قاعدة font كاملة فيبقى الرقم 7.5px — هنا بالبكسل وبلا اعتماد على cqw */
+.mpx-card .pp-b.goal.n,.mpx-card .pp-b.assist.n{height:17px;min-width:31px;padding:0 4px 0 2px;gap:2px;white-space:nowrap}
+.mpx-card .pp-b.goal.n .ico-ball,.mpx-card .pp-b.assist.n .ico-boot{width:13px;height:13px;flex:none}
+.mpx-card .pp-b.goal.n em,.mpx-card .pp-b.assist.n em{position:static!important;display:block;flex:none;min-width:0;height:auto;padding:0;background:none!important;
+  color:#0B1F3A!important;font-family:var(--body,system-ui);font-weight:900;font-style:normal;font-size:11px!important;line-height:1!important}
 .mpx-card .pp-b.card{top:50%;margin-top:-6px;left:auto;right:-6px;bottom:auto;width:clamp(8px,2.5cqw,10px);height:clamp(11px,3.4cqw,14px);
   border-radius:2px;border:1px solid #fff;transform:rotate(10deg)}
 .mpx-card .pp-b.off{top:auto;bottom:-6px;right:-7px;left:auto;width:clamp(13px,4cqw,16px);height:clamp(13px,4cqw,16px);border:1px solid #fff}
