@@ -41,6 +41,7 @@
     clubs:sv('<path d="M12 3.5 19 6v5.6c0 4.3-2.9 7.6-7 8.9-4.1-1.3-7-4.6-7-8.9V6z"/>'),
     players:sv('<circle cx="12" cy="8" r="3.6"/><path d="M5 20c.6-3.8 3.4-6 7-6s6.4 2.2 7 6"/>'),
     stats:sv('<path d="M5 20V11M12 20V5M19 20v-6"/>'),
+    video:sv('<rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="m10.2 9.3 4.6 2.7-4.6 2.7z"/>'),
     news:sv('<path d="M5 4.5h11.5v15H6.5A1.5 1.5 0 0 1 5 18z"/><path d="M16.5 8.5H19v9.5a1.5 1.5 0 0 1-3 0"/><path d="M8 8h5.5M8 11.5h5.5M8 15h3.5"/>'),
     refs:sv('<circle cx="9" cy="14" r="4.6"/><path d="M13.2 11.6 20.5 8V5.2l-9 4"/>'),
     cups:sv('<path d="M8 20h8M12 16v4M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M17 5.5h2.5V7a3 3 0 0 1-2.8 3M7 5.5H4.5V7a3 3 0 0 0 2.8 3"/>'),
@@ -87,6 +88,7 @@
       {g:"stats",  k:"teams",   t:"الفرق",     ic:"tstat", ok:ax, go:()=>{ setAX("teams"); nav("analysis"); }},
       {g:"stats",  k:"overview",t:"نظرة عامة", ic:"stats", ok:ax, go:()=>{ setAX("overview"); nav("analysis"); }},
       {g:"stats",  k:"refs",    t:"الحكام",    ok:ax, go:()=>{ setAX("refs"); nav("analysis"); }},
+      {g:"stats",  k:"videos",  t:"تحليل الفيديو", ic:"video", ok:()=>shown("videos"), go:()=>nav("videos")},
       {g:"fans",   k:"predict", t:"التوقعات",  ok:()=>shown("predict"), go:()=>nav("predict")},
       {g:"fans",   k:"fans",    t:"تشكيلة الجمهور", ok:()=>shown("fans"), go:()=>nav("fans")}
     ];
@@ -95,7 +97,7 @@
 
   /* ---------- الشريط العلوي ---------- */
   /* الكمبيوتر: «الأندية» مباشرة في الشريط، والقائمة باسم واضح «الأقسام» (تدقيق الاستخدام 2026-11-02) */
-  const DNAV=[["home","الرئيسية"],["matches","المباريات"],["clubs","الأندية"],["stats","الإحصائيات"],["news","الأخبار"],["fantasy","الفانتسي"],["hub","الأقسام"]];
+  const DNAV=[["home","الرئيسية"],["matches","المباريات"],["clubs","الأندية"],["stats","الإحصائيات"],["news","الأخبار"],["videos","تحليل الفيديو"],["fantasy","الفانتسي"],["hub","الأقسام"]];
   function buildTop(){
     const top=D.createElement("header"); top.className="mf-top";
     top.innerHTML=`<div class="mf-top-in">
@@ -257,7 +259,7 @@
   /* تُسجَّل الخطوة قبل الضغط: الأخبار تستبدل الخطوة الحالية برابط #news عند فتحها */
   function pushView(v){
     if(popping || v===curView()) return;
-    if(location.hash && !/^#news/.test(location.hash)) return;   /* مباراة/لاعب مفتوح: مسجّلاتها تتولى الرجوع */
+    if(location.hash && !/^#(news|videos)/.test(location.hash)) return;   /* مباراة/لاعب مفتوح: مسجّلاتها تتولى الرجوع */
     try{ history.pushState({mfv:v}, "", location.pathname+location.search); }catch(e){}
   }
   try{ if(!history.state && !location.hash) history.replaceState({mfv:"home"}, "", location.href); }catch(e){}
@@ -288,12 +290,12 @@
   /* ---------- الحالة النشطة ---------- */
   function paintActive(){
     const v=curView(), hubOpen=hub && !hub.hidden;
-    const hubViews=["clubs","predict","fans","gulf","div1","amateur"];
+    const hubViews=["clubs","predict","fans","gulf","div1","amateur","videos"];
     D.querySelectorAll(".mf-bar [data-mf], .mf-dnav [data-mf]").forEach(b=>{
       const k=b.dataset.mf;
       const kv = k==="stats" ? (v==="players" ? "players" : "analysis") : k;
       const inDnav=!!b.closest(".mf-dnav");   /* في الكمبيوتر «الأندية» زر مستقل فلا تُضاء «الأقسام» معها */
-      const on = hubOpen ? k==="hub" : (kv===v || (k==="hub" && hubViews.includes(v) && !(inDnav && v==="clubs")));
+      const on = hubOpen ? k==="hub" : (kv===v || (k==="hub" && hubViews.includes(v) && !(inDnav && (v==="clubs"||v==="videos"))));
       b.classList.toggle("on", on);
       if(on) b.setAttribute("aria-current","page"); else b.removeAttribute("aria-current");
     });
