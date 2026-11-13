@@ -33,8 +33,16 @@ X.DOC_ID = DOC_ID;
 const CX = [
   {id:"acl2", g:6, tag:"اسيا 2"},
   {id:"gcl",  g:6, tag:"دوري أبطال الخليج للأندية"},
-  {id:"acc",  g:3, tag:"التحدي الاسيوي"}
+  {id:"acc",  g:3, tag:"التحدي الاسيوي"},
+  /* وديات المنتخب الأول (منصور 2026-11-13: «احسب الوديه ضمن بروفايل الاعب… ولا تنسى تخلينا نحرر المباريات»):
+     المنتخب باسم «منتخب الكويت» لا «الكويت» — في هذه الوثيقة «الكويت» هو النادي (دوري أبطال آسيا 2).
+     g كبير = لا أشواط إضافية ولا ترجيح، والدور يظهر «مباراة ودية». الفرق من teams (لا جدول ترتيب). */
+  {id:"ntfr", g:99, tag:"مباراة ودية", nat:"منتخب الكويت", stage:"مباراة ودية", teams:["منتخب الكويت","سوريا","هندوراس"]}
 ];
+const NT = "منتخب الكويت";
+const NAT_COMPS = () => CX.filter(c=>c.nat).map(c=>cName(c.id));
+X.NT = NT;
+X.isNat = n => !!(cOfName(n) && cOfName(n).nat);
 const ECOMPS = () => (typeof EXT_COMPS!=="undefined" ? EXT_COMPS : []);
 const EGROUPS = () => (typeof EXT_GROUPS!=="undefined" ? EXT_GROUPS : {});
 const cName = id => (ECOMPS().find(c=>c.id===id)||{}).name || id;
@@ -42,7 +50,7 @@ const cOfName = n => CX.find(c=>cName(c.id)===n) || null;
 const cOf = id => CX.find(c=>c.id===id) || null;
 X.comps = () => CX.map(c=>({id:c.id, name:cName(c.id), g:c.g}));
 X.isComp = n => !!cOfName(n);
-const nrm = t => ((typeof _norm==="function") ? _norm(t) : String(t||"").trim()).replace(/ة/g,"ه");   /* «الوحدة الاماراتي» يبدأ بـ«الوحده» */
+const nrm = t => ((typeof _norm==="function") ? _norm(t) : String(t||"").trim()).replace(/ة/g,"ه").replace(/^منتخب\s+/,"");   /* «منتخب الكويت» = «الكويت» في ملصق الوديات */   /* «الوحدة الاماراتي» يبدأ بـ«الوحده» */
 
 /* الفرق: من EXT_GROUPS — أنديتنا (الموجودة في الدوري) والخصوم */
 const OURS_FALLBACK = ["الكويت","كاظمة","القادسية","العربي"];
@@ -56,11 +64,22 @@ function ours(){
   return OURS;
 }
 X.isOurs = c => ours().includes(c);
-function teamsOf(id){ return [...new Set((EGROUPS()[id]||[]).flatMap(g=>g.teams||[]))]; }
+function teamsOf(id){ const c = cOf(id); if(c && c.teams) return c.teams.slice(); return [...new Set((EGROUPS()[id]||[]).flatMap(g=>g.teams||[]))]; }
 function teamsAll(){ return [...new Set(CX.flatMap(c=>teamsOf(c.id)))]; }
 const opponents = () => teamsAll().filter(t=>!ours().includes(t));
 /* شعار الخصم من EXT_CRESTS (evTeam في index.html) */
+/* المنتخبات: العلم بدل الشعار */
+const NATF = {"منتخب الكويت":"kw","سوريا":"sy","هندوراس":"hn"};
+const natFlagSrc = c => { const k = NATF[c] || (typeof FLAG_N!=="undefined" && typeof _norm==="function" ? FLAG_N[_norm(c)] : null); return k ? `https://flagcdn.com/w160/${k}.png` : ""; };
+X.natFlagSrc = natFlagSrc;
+/* لاعب المنتخب ← ناديه في الدوري (بالاسم في قوائم الأندية) */
+function leagueClubOf(squads, name){
+  for(const c of Object.keys(squads||{})) if((squads[c]||[]).some(x=>(typeof x==="string"?x:x&&x.n)===name)) return c;
+  return null;
+}
+X.leagueClubOf = name => leagueClubOf(typeof SQUADS!=="undefined" ? SQUADS : {}, name);
 function oppCrest(c){
+  if(NATF[c]) return natFlagSrc(c);
   try{ const x = typeof evTeam==="function" ? evTeam(c, "بطولة خارجية") : null; if(x && x.t==="ext") return x.src; }catch(e){}
   return "";
 }
@@ -122,7 +141,7 @@ function normalize(d){
     if(removed.has(fxKey(f.comp, f.round, f.home, f.away))) return;
     FX.set(fxKey(f.comp, f.round, f.home, f.away), f);
     let m = d.matches.find(x=>x.comp===f.comp && +x.round===f.round && pairEq(x.home,x.away,f.home,f.away));
-    if(!m){ m = {n:d.matches.length+1, round:f.round, comp:f.comp, date:f.date, time:f.time, venue:f.venue, home:f.home, away:f.away, note:"", ref:"", refs:{}, tv:"", status:"", add1:0, add2:0, hg:0, ag:0};
+    if(!m){ m = {n:d.matches.length+1, round:f.round, comp:f.comp, date:f.date, time:f.time, venue:f.venue, home:f.home, away:f.away, note:"", ref:"", refs:{}, tv:"", status:"", add1:0, add2:0, hg:0, ag:0, stage:(cOf(f.id)||{}).stage||""};
       d.matches.push(m); }
     else if(!m.ed){ Object.assign(m, {date:f.date, time:f.time, venue:f.venue||m.venue||""});
       if(m.home!==f.home && !hasRows(d, m)){ m.home = f.home; m.away = f.away; } }
@@ -133,8 +152,11 @@ function normalize(d){
       else if(gs && !gs.length && !m.status) m.status = "ft";   /* 0-0 منتهية */
     }
   });
+  /* قائمة «منتخب الكويت» أول مرة: من قائمة الكويت في كأس الخليج 27 (أسماء الدوري نفسها) */
+  if(Array.isArray(d.squads[NT]) && !d.squads[NT].length){ try{ const g = window.GULF && GULF.data && GULF.data(); const L = g && g.squads && g.squads["الكويت"]; if(L && L.length) d.squads[NT] = clone(L); }catch(e){} }
   d.matches.forEach(m=>{
     m.round = +m.round || 1;
+    { const c = cOfName(m.comp); if(c && c.stage && !m.stage) m.stage = c.stage; }
     if(!m.refs || typeof m.refs!=="object") m.refs = {};
     Object.defineProperty(m, "__ext", {value:true, enumerable:false, configurable:true});
     /* النتيجة من الأهداف — نفس قاعدة applyEdit */
@@ -185,6 +207,7 @@ function withExt(fn, comp){
     LOGOS = L; LSCALE = S;
     photoCut = (name, club) => { if(!name) return null;
       if(ours().includes(club)) return saved.pc(name, club);
+      if(club===NT){ const lc = leagueClubOf(saved.SQUADS, name); if(lc) return saved.pc(name, lc); }   /* لاعب المنتخب: صورته في ناديه */
       const e = (DATA.squads[club]||[]).find(x=>x && x.n===name); return (e && e.f) || null; };
     natFlag = (name, club, cls) => ours().includes(club) ? saved.nf(name, club, cls) : "";
     window.CLUB_COLORS = Object.assign({}, saved.cc||{}, OPP_COLORS);
@@ -206,12 +229,45 @@ X.compName = id => cOf(id) ? cName(id) : null;
    و«الإجمالي» داخل withAll من الدوري والكؤوس المحلية والبطولات الخارجية معاً، ثم تعود كل المتغيّرات كما كانت. */
 /* البطولات الخارجية التي شارك فيها لاعب من أنديتنا (بالاسم والنادي) */
 X.profileComps = (name, club) => {
-  if(!DATA || !name || !ours().includes(club)) return [];
-  return CX.filter(c=>{ const comp = cName(c.id), mine = x => x.comp===comp;
+  if(!DATA || !name) return [];
+  const out = !ours().includes(club) ? [] : CX.filter(c=>!c.nat).filter(c=>{ const comp = cName(c.id), mine = x => x.comp===comp;
     return DATA.lineups.some(x=>mine(x) && x.club===club && x.p===name) || DATA.subs.some(x=>mine(x) && x.club===club && x.in===name)
         || DATA.goals.some(g=>mine(g) && g.sc===club && (g.p===name || g.a===name)) || DATA.cards.some(x=>mine(x) && x.club===club && x.p===name); })
     .map(c=>({key:"x:"+c.id, label:cName(c.id)}));
+  if(ntRows(name, club).matches.length) out.push({key:"n:", label:"المنتخب"});
+  return out;
 };
+/* ───────────── المنتخب الأول في ملف اللاعب (منصور 2026-11-13) ─────────────
+   «المنتخب» = كل مباريات المنتخب الأول (الوديات هنا + كأس الخليج 27 من gulf.js)، وتدخل «الإجمالي» أيضاً.
+   المنتخب يضم لاعبين من أندية مختلفة، فلملف لاعب واحد تُنسخ مبارياته وصفوفها للقراءة فقط مع إبدال
+   «المنتخب» بنادي اللاعب — فتعمل حسابات الملف كما هي (لعب لفريقه ضد الخصم). لا شيء يُكتب. */
+const ROWF = {goals:["sc","cd"], cards:["club"], lineups:["club"], subs:["club"], shapes:["club"], mev:["club","home","away"], pens:["by","vs"]};
+function ntSources(){
+  const S = [{D:DATA, comps:NAT_COMPS(), T:NT}];
+  try{ const g = window.GULF && GULF.data && GULF.data(); if(g) S.push({D:g, comps:[GULF.COMP||"كأس الخليج"], T:"الكويت"}); }catch(e){}
+  return S;
+}
+function ntRows(name, club){
+  const out = {matches:[], goals:[], cards:[], pens:[], lineups:[], subs:[], shapes:[], mev:[]};
+  if(!name || !club || typeof SQUADS==="undefined" || leagueClubOf(SQUADS, name)!==club) return out;   /* لاعب أنديتنا فقط، وبلا تشابه أسماء */
+  ntSources().forEach(({D, comps, T})=>{
+    if(!D || !Array.isArray(D.matches)) return;
+    const inC = x => comps.includes(x.comp);
+    const me = x => inC(x) && ((x.club===T && x.p===name) || (x.club===T && x.in===name) || (x.sc===T && (x.p===name || x.a===name)) || (x.by===T && x.p===name));
+    if(!["lineups","subs","goals","cards","pens"].some(k=>(D[k]||[]).some(me))) return;   /* شارك فعلاً مع المنتخب */
+    const sw = v => v===T ? club : v;
+    D.matches.filter(m=>inC(m) && (m.home===T || m.away===T)).forEach(m=>{ const c = clone(m); c.home = sw(m.home); c.away = sw(m.away); out.matches.push(c); });
+    Object.keys(ROWF).forEach(k=>(D[k]||[]).filter(inC).forEach(x=>{
+      if(!ROWF[k].some(f=>x[f]===T)) return;
+      const c = clone(x); ROWF[k].forEach(f=>{ c[f] = sw(c[f]); }); out[k].push(c); }));
+  });
+  return out;
+}
+X.ntRows = ntRows;
+let WHO = null;   /* اللاعب الذي يُرسم ملفه الآن — يضبطه openPlayer */
+X.setWho = (name, club) => { WHO = name ? {name, club} : null; };
+/* شعارات خصوم المنتخب (أعلام) داخل سياق الملف */
+function ntLogos(L, R){ R.matches.forEach(m=>[m.home, m.away].forEach(t=>{ if(!L[t]){ const f = natFlagSrc(t); if(f) L[t] = f; } })); }
 /* «الإجمالي»: الدوري والكؤوس المحلية + البطولات الخارجية في سياق واحد للقراءة */
 function withAll(fn){
   if(!DATA) DATA = normalize(null);
@@ -223,14 +279,16 @@ function withAll(fn){
   try{
     const L0 = saved.ALL || {};
     /* كأس الأمير 2025/2026 المؤجّلة (PREV_COMPS) ليست من إجمالي هذا الموسم (منصور 2026-10-24) */
-    const cur = x => !(typeof PREV_COMPS!=="undefined" && PREV_COMPS.includes(x && x.comp)), cat = k => [...(L0[k]||[]).filter(cur), ...(DATA[k]||[])];
+    const nat = new Set(NAT_COMPS()), R = WHO ? ntRows(WHO.name, WHO.club) : null;
+    const cur = x => !(typeof PREV_COMPS!=="undefined" && PREV_COMPS.includes(x && x.comp)),
+          cat = k => [...(L0[k]||[]).filter(cur), ...(DATA[k]||[]).filter(x=>!nat.has(x && x.comp)), ...((R && R[k])||[])];
     const A = Object.assign({}, L0, {updated:"all|"+(L0.updated||"")+"|"+(DATA.updated||""),
       matches:cat("matches"), goals:cat("goals"), cards:cat("cards"), pens:cat("pens"), lineups:cat("lineups"), subs:cat("subs"), shapes:cat("shapes"), mev:cat("mev")});
     const league = new Set(saved.CLUBS||[]), opp = opponents().filter(c=>!league.has(c));
     ALL = A; COMP = "الكل";
     SQUADS = Object.assign({}, saved.SQUADS); opp.forEach(c=>{ SQUADS[c] = DATA.squads[c] || []; });
     CLUBS = [...(saved.CLUBS||[]), ...opp];
-    const L = Object.assign({}, saved.LOGOS); opp.forEach(c=>{ const s = oppCrest(c); if(s) L[c] = s; }); LOGOS = L;
+    const L = Object.assign({}, saved.LOGOS); opp.forEach(c=>{ const s = oppCrest(c); if(s) L[c] = s; }); if(R) ntLogos(L, R); LOGOS = L;
     photoCut = (name, club) => { if(!name) return null; if(league.has(club)) return saved.pc(name, club);
       const e = (DATA.squads[club]||[]).find(x=>x && x.n===name); return (e && e.f) || null; };
     natFlag = (name, club, cls) => league.has(club) ? saved.nf(name, club, cls) : "";
@@ -245,6 +303,29 @@ function withAll(fn){
   }
 }
 X.withAll = withAll;
+/* «المنتخب» في ملف اللاعب: مباريات المنتخب الأول وحدها (الوديات + كأس الخليج) */
+function withNT(fn){
+  if(depth) return fn();
+  const saved = GLOBALS(), R = WHO ? ntRows(WHO.name, WHO.club) : {matches:[], goals:[], cards:[], pens:[], lineups:[], subs:[], shapes:[], mev:[]};
+  depth++;
+  if(typeof PASS_MEMO==="object" && PASS_MEMO) PASS_MEMO.m = null;
+  try{
+    const L0 = saved.ALL || {};
+    ALL = Object.assign({}, L0, {updated:"nt|"+(DATA&&DATA.updated||"")+"|"+(WHO?WHO.name:""), matches:R.matches, goals:R.goals, cards:R.cards, pens:R.pens, lineups:R.lineups, subs:R.subs, shapes:R.shapes, mev:R.mev});
+    COMP = "الكل";
+    const opp = [...new Set(R.matches.flatMap(m=>[m.home, m.away]))].filter(t=>!(saved.CLUBS||[]).includes(t));
+    CLUBS = [...(saved.CLUBS||[]), ...opp];
+    const L = Object.assign({}, saved.LOGOS); ntLogos(L, R); LOGOS = L;
+    MATCHES = R.matches.slice(); GOALS = R.goals.slice(); PENS = R.pens.filter(x=>typeof penInStats!=="function" || penInStats(x)); CARDS = R.cards.slice();
+    return fn();
+  } finally {
+    ({ALL, SQUADS, CLUBS, LOGOS, COMP, MATCHES, GOALS, PENS, CARDS, LSCALE} = saved);
+    photoCut = saved.pc; natFlag = saved.nf; window.CLUB_COLORS = saved.cc;
+    if(typeof PASS_MEMO==="object" && PASS_MEMO) PASS_MEMO.m = null;
+    depth--;
+  }
+}
+X.withNT = withNT;
 X.inCtx = () => depth > 0;
 X.isKO = m => { const c = cOfName(m && m.comp); return !!(c && +m.round > c.g); };
 X.isGroup = m => { const c = cOfName(m && m.comp); return !!(c && +m.round >= 1 && +m.round <= c.g); };   /* دور المجموعات بلا أشواط إضافية (منصور 2026-10-29: ناساف × الكويت) */
@@ -418,10 +499,12 @@ function hookSite(){
       if(box){
         box.querySelectorAll(".mp-share").forEach(b=>b.remove());     /* بطاقة المشاركة تُرسم خارج السياق */
         /* لاعبو الخصوم بلا ملف لاعب، وأنديتهم بلا صفحة نادٍ — لاعبو أنديتنا يفتحون ملفهم في الدوري كما هو */
-        box.querySelectorAll("[data-player]").forEach(el=>{ const c = el.getAttribute("data-club"); if(!c || !ours().includes(c)){ el.removeAttribute("data-player"); el.style.cursor = "default"; } });
+        box.querySelectorAll("[data-player]").forEach(el=>{ const c = el.getAttribute("data-club");
+          if(c===NT){ const lc = leagueClubOf(typeof SQUADS!=="undefined" ? SQUADS : {}, el.getAttribute("data-player")); if(lc){ el.setAttribute("data-club", lc); return; } }   /* لاعب المنتخب يفتح ملفه مع ناديه */
+          if(!c || !ours().includes(c)){ el.removeAttribute("data-player"); el.style.cursor = "default"; } });
         box.querySelectorAll("[data-club-open]").forEach(el=>{ if(!ours().includes(el.getAttribute("data-club-open"))){ el.removeAttribute("data-club-open"); el.style.cursor = "default"; } });
         const hd = box.querySelector(".mp-head .mp-when");
-        const lbl = `${H(m.comp)} · ${X.isKO(m) ? `الدور الإقصائي ${+m.round-(cOfName(m.comp)||{g:0}).g}` : `الجولة ${H(m.round)}`}`;
+        const lbl = cOfName(m.comp) && cOfName(m.comp).nat ? H(m.comp) : `${H(m.comp)} · ${X.isKO(m) ? `الدور الإقصائي ${+m.round-(cOfName(m.comp)||{g:0}).g}` : `الجولة ${H(m.round)}`}`;
         if(hd){ if(!hd.querySelector(".xt-comp")) hd.insertAdjacentHTML("afterbegin", `<b class="xt-comp">${lbl}</b> · `); }
         else { const sc = box.querySelector(".mp-head .mp-score"); if(sc) sc.insertAdjacentHTML("beforebegin", `<div class="mp-when"><b class="xt-comp">${lbl}</b></div>`); }
       }

@@ -2282,7 +2282,7 @@ html[dir="ltr"] .tl-ev.a .tl-card{text-align:right;align-items:flex-end}
 <link rel="stylesheet" href="news.css?v=5">
 <script src="news.js?v=11" defer></script>   <!-- الأخبار: news/{id} + فهرس seasons/news + صور newsimg/{id} -->   <!-- دوري الدرجة الأولى: الترتيب والمباريات فقط (seasons/div1) -->
 <link rel="stylesheet" href="ext.css?v=3">
-<script src="ext.js?v=15" defer></script>   <!-- المشاركات الخارجية لأنديتنا: تحرير كامل مثل الدوري في وثيقة مستقلة (seasons/ext2627) -->
+<script src="ext.js?v=16" defer></script>   <!-- المشاركات الخارجية لأنديتنا: تحرير كامل مثل الدوري في وثيقة مستقلة (seasons/ext2627) -->
 <!-- التحليل الموسّع + تقييم اللاعبين 0–100 + البحث العام (منصور 2026-09-29) -->
 <link rel="stylesheet" href="analysis.css?v=11">
 <script src="tstats-data.js?v=1" defer></script>
@@ -7727,8 +7727,9 @@ const EXT_FIXTURES=[
   {d:"2026-10-31",t:"الكويت - العراق - كأس الخليج لقدامى اللاعبين",k:"منتخب",time:"17:30",venue:"استاد سعود بن عبدالرحمن، الدوحة",n:"المجموعة A",hg:0,ag:1},
   {d:"2026-11-02",t:"الكويت - عمان - كأس الخليج لقدامى اللاعبين",k:"منتخب",time:"17:30",venue:"استاد حمد الكبير، الدوحة",n:"المجموعة A",hg:1,ag:0},
   /* وديات الأزرق — نوفمبر 2026، نادي كاظمة الرياضي (ملصق الاتحاد الكويتي، منصور 2026-10-26) */
-  {d:"2026-11-13",t:"الكويت - سوريا - مباراة ودية",k:"منتخب",time:"18:00",venue:"نادي كاظمة الرياضي"},
-  {d:"2026-11-17",t:"الكويت - هندوراس - مباراة ودية",k:"منتخب",time:"18:00",venue:"نادي كاظمة الرياضي"},
+  /* 13/11: الوقت 19:30 واستاد الصداقة والسلام من ملصق طاقم التحكيم (منصور 2026-11-13). n = الجولة في ext.js (وديات قابلة للتحرير) */
+  {d:"2026-11-13",t:"الكويت - سوريا - مباراة ودية",k:"منتخب",time:"19:30",venue:"استاد الصداقة والسلام – نادي كاظمة الرياضي",n:"الجولة 1"},
+  {d:"2026-11-17",t:"الكويت - هندوراس - مباراة ودية",k:"منتخب",time:"18:00",venue:"نادي كاظمة الرياضي",n:"الجولة 2"},
   /* الأزرق — خليجي 27، جدة (المجموعة A) — التوقيت بتوقيت الكويت/السعودية */
   {d:"2026-09-23",t:"السعودية - الكويت - خليجي 27",k:"منتخب",time:"21:00",venue:"مدينة الملك عبدالله الرياضية، جدة",n:"الجولة 1 · الافتتاح"},
   {d:"2026-09-26",t:"الكويت - العراق - خليجي 27",k:"منتخب",time:"18:55",venue:"استاد الأمير عبدالله الفيصل، جدة",n:"الجولة 2"},
@@ -14491,6 +14492,8 @@ function fitNatFlag(img){
 function profRun(k, fn){
   const x=/^x:(.+)$/.exec(k||""), X=window.EXT;
   if(k==="*" && X && X.withAll) return X.withAll(fn);
+  if(k==="n:" && X && X.withNT) return X.withNT(fn);   /* المنتخب الأول: الوديات + كأس الخليج (منصور 2026-11-13) */
+  if(k==="n:"){ PROF_COMP="*"; k="الكل"; }
   if(x && X && X.withExt && X.compName && X.compName(x[1])) return X.withExt(fn, X.compName(x[1]));
   if(k==="*") return withComp("الكل", fn);   /* بلا ext.js: الإجمالي = كل البطولات المحلية */
   if(x){ PROF_COMP=COMP; k=COMP; }
@@ -14501,6 +14504,7 @@ function openPlayer(name, club, opts){
   club=String(club||"").trim() || clubOfPlayer(name);
   const box=$("#pprof"); if(!box) return;
   if(!(opts&&opts.keepComp)) PROF_COMP="*";   /* منصور 2026-10-12: الملف يفتح على «إجمالي كل البطولات» أولاً */
+  if(window.EXT && EXT.setWho) EXT.setWho(name, club);   /* مباريات المنتخب تُنسب لهذا اللاعب في «الإجمالي» و«المنتخب» */
   box.innerHTML=profRun(PROF_COMP, ()=>playerProfileHTML(playerProfileData(name, club)));
   { const bar=box.querySelector(".pprof-cbar"), on=bar&&bar.querySelector('[aria-pressed="true"]');   /* الشريحة المختارة ظاهرة (البطولات الخارجية و«الإجمالي» في آخر الشريط) */
     if(bar&&on&&PROF_COMP!=="*") bar.scrollLeft=on.offsetLeft-(bar.clientWidth-on.offsetWidth)/2; }
@@ -14869,6 +14873,7 @@ function hmTodayHTML(){
   const xs=COMP==="الكل" && window.EXT && EXT.today ? EXT.today(todayISO()) : [];   /* المشاركات الخارجية (منصور 2026-10-28: «يظهر جميع مباريات اليوم») */
   /* مباريات المنتخبات اليوم (منصور 2026-10-29: «ليش مباراة المنتخب ما تطلع هني») — من المناسبات «منتخب» (EXT_FIXTURES/الإدارة)، العلم بجانب الاسم */
   const nts=COMP==="الكل" ? allEvents().filter(e=>e.k==="منتخب" && e.d===todayISO() && evParts(e).length>=2)
+    .filter(e=>!(window.EXT && EXT.compName && EXT.compName(extCompOf(e))))   /* الوديات صارت مباريات قابلة للتحرير (ext.js) — تظهر من هناك مرة واحدة */
     .sort((a,b)=>String(a.time||"").localeCompare(String(b.time||""))) : [];
   const ams=COMP==="الكل" ? amItems(m=>m.date===todayISO()).sort((a,b)=>a.ts-b.ts) : [];   /* دوري الهواة (منصور 2026-11-05) */
   if(!list.length && !d1 && !xs.length && !nts.length && !ams.length) return "";
@@ -14879,9 +14884,9 @@ function hmTodayHTML(){
               : over ? `${sc}<span class="hm-td-st">انتهت</span>`
               : `<b class="hm-td-time" dir="ltr">${m.time?esc(m.time):"—"}</b>`;
     return `<button type="button" class="hm-td-row${live?" is-live":""}" data-mopen="${esc(matchKey(m))}">
-      <span class="hm-td-team h">${crest(m.home)}<b>${esc(m.home)}</b></span>
+      <span class="hm-td-team h">${crest(m.home)}<b>${esc(String(m.home).replace(/^منتخب /,""))}</b></span>
       <span class="hm-td-mid">${mid}</span>
-      <span class="hm-td-team a"><b>${esc(m.away)}</b>${crest(m.away)}</span></button>`;
+      <span class="hm-td-team a"><b>${esc(String(m.away).replace(/^منتخب /,""))}</b>${crest(m.away)}</span></button>`;
   };
   return `<section class="hm-nm hm-today">
     <div class="hm-nm-hd"><span class="hm-tag"><i></i>مباريات اليوم</span><span class="hm-muted">${list.length ? `${dayLabel(list[0].date)} · ${esc(rndLabel(list[0]))}` : dayLabel(todayISO())}</span></div>
