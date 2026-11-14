@@ -2267,7 +2267,7 @@ html[dir="ltr"] .tl-ev.a .tl-card{text-align:right;align-items:flex-end}
 <!-- اللغة الإنجليزية والوضع الداكن -->
 <link rel="stylesheet" href="site-theme.css?v=7">
 <script src="fantasy/js/i18n-more.js?v=14" defer></script>
-<script src="site-i18n.js?v=35" defer></script>
+<script src="site-i18n.js?v=36" defer></script>
 <script>/* أداء 2026-11-14: i18n-data.js (913KB) لغير العربية فقط — العربي لا يقرأه. التبديل من العربية يحمّله عند الطلب (I18N.loadData في i18n-langs.js) */
 (function(){ try{ var q=new URLSearchParams(location.search).get('lang'), l=String(q||localStorage.getItem('mf_lang')||'ar').toLowerCase(); if(l!=='ar') document.write('<script src="i18n-data.js?v=29" defer><\/script>'); }catch(e){} })();</script>   <!-- إضافات الإنجليزية + البرتغالية (البرازيل/البرتغال) + الإسبانية + الصربية/الكرواتية -->
 <script src="i18n-langs.js?v=9" defer></script>   <!-- قائمة اللغات بالأعلام + البرتغالية والإسبانية والصربية/الكرواتية فوق محرك الإنجليزية -->
@@ -2801,7 +2801,7 @@ const PREV_COMPS = ["كأس الأمير 2025/2026"];
 /* الكؤوس (منصور 2026-10-19): أندية الدرجة الأولى تشارك فيها — تظهر في محرّر مباريات الكؤوس فقط، لا في CLUBS ولا الدوري ولا الفانتسي.
    «الفائز من المباراة N» مكان مؤقت حتى يُعرف الطرف، ثم يُستبدل بالنادي من المحرّر. الدور (stage) يظهر بدل «الجولة N» في الكؤوس. */
 const CUP_CLUBS = ["سبورتي","خيطان","برقان","الجزيرة","الشامية","اتحاد الشرطة","اليرموك"];
-const CUP_TBD = ["الفائز من الملحق"].concat(Array.from({length:14},(_,i)=>"الفائز من المباراة "+(i+1)), ["الخاسر من المباراة 13","الخاسر من المباراة 14"]);
+const CUP_TBD = ["الفائز من الملحق","يحدد بعد القرعة"].concat(Array.from({length:27},(_,i)=>"الفائز من المباراة "+(i+1)), ["الخاسر من المباراة 13","الخاسر من المباراة 14"]);
 const CUP_STAGES = ["الملحق","الدور التمهيدي","دور الـ16","ربع النهائي","نصف النهائي","تحديد المركز الثالث","النهائي"];
 /* أندية الدرجة الأولى: لون القميص من شعار النادي، والمقلّم بلونيه كالقميص الحقيقي (منصور 2026-10-19) */
 const CUP_KIT_COLORS = {"سبورتي":["#5B3FA8","#FFFFFF"],"برقان":["#1D2A5C","#FFFFFF"],"الجزيرة":["#CFC9B2","#2A2F3A"],
@@ -2865,11 +2865,42 @@ const CUP_SEED = [
   {date:"2027-01-25", home:"الكويت", away:"كاظمة", stage:"الدور التمهيدي", round:1, note:"المباراة 1"},
   {date:"2027-01-25", home:"العربي", away:"القادسية", stage:"الدور التمهيدي", round:1, note:"المباراة 2"},
   {date:"2027-01-29", home:"الفائز من المباراة 1", away:"الفائز من المباراة 2", stage:"النهائي", round:2, note:"المباراة 3"}
-].map(x=>Object.assign({comp:"كأس السوبر", time:"", venue:"", ref:"", refs:{}, tv:"", status:"", add1:0, add2:0, hg:0, ag:0}, x)));
+].map(x=>Object.assign({comp:"كأس السوبر", time:"", venue:"", ref:"", refs:{}, tv:"", status:"", add1:0, add2:0, hg:0, ag:0}, x)))
+/* كأس سمو ولي العهد 2026-2027 من ملصقات الاتحاد (منصور 2026-11-14): دور الـ16 على 3 أسابيع (كل نادٍ 3 مباريات)،
+   ثم ربع النهائي (الكويت/القادسية/كاظمة/العربي ضد «يحدد بعد القرعة») ونصف النهائي. المضيف يمين الملصق،
+   «يحدد لاحقاً» = فارغ. الجولات 3… لأن الملحق استعمل 1 و2 (التشكيلات مفهرسة بالجولة+المسابقة+النادي).
+   dk: نفس المضيف يتكرر في دور الـ16، فالمباراة تُعرف بالمضيف والضيف معاً. */
+.concat([
+  {date:"2026-11-20", time:"17:20", home:"السالمية", away:"خيطان", venue:"عبدالله الخليفة الصباح", round:3},
+  {date:"2026-11-20", time:"19:30", home:"التضامن", away:"الجزيرة", venue:"مبارك العيار", round:3},
+  {date:"2026-11-21", time:"17:20", home:"الفحيحيل", away:"برقان", venue:"الشباب", round:3},
+  {date:"2026-11-21", time:"19:30", home:"النصر", away:"الصليبخات", venue:"محمد الحمد", round:3},
+  {date:"2026-11-22", time:"17:20", home:"الشباب", away:"الساحل", venue:"التضامن", round:3},
+  {date:"2026-11-21", time:"19:30", home:"الجهراء", away:"اليرموك", venue:"صباح السالم", round:3},
+  {date:"2027-01-26", home:"الساحل", away:"الفحيحيل", round:4, note:"المباراة 10"},
+  {date:"2027-01-26", home:"الجزيرة", away:"النصر", round:4, note:"المباراة 11"},
+  {date:"2027-01-27", home:"برقان", away:"الشباب", round:4, note:"المباراة 12"},
+  {date:"2027-01-27", home:"الصليبخات", away:"التضامن", round:4, note:"المباراة 13"},
+  {date:"2027-01-28", home:"خيطان", away:"الجهراء", round:4, note:"المباراة 14"},
+  {date:"2027-01-28", home:"اليرموك", away:"السالمية", round:4, note:"المباراة 15"},
+  {date:"2027-02-14", home:"السالمية", away:"الجهراء", round:5, note:"المباراة 16"},
+  {date:"2027-02-14", home:"اليرموك", away:"خيطان", round:5, note:"المباراة 17"},
+  {date:"2027-02-15", home:"التضامن", away:"النصر", round:5, note:"المباراة 18"},
+  {date:"2027-02-15", home:"الصليبخات", away:"الجزيرة", round:5, note:"المباراة 19"},
+  {date:"2027-02-16", home:"الفحيحيل", away:"الشباب", round:5, note:"المباراة 20"},
+  {date:"2027-02-16", home:"الساحل", away:"برقان", round:5, note:"المباراة 21"}
+].map(x=>Object.assign({stage:"دور الـ16", dk:1}, x)).concat([
+  {date:"2027-02-26", home:"الكويت", away:"يحدد بعد القرعة", stage:"ربع النهائي", round:6, note:"المباراة 22"},
+  {date:"2027-02-26", home:"القادسية", away:"يحدد بعد القرعة", stage:"ربع النهائي", round:6, note:"المباراة 23"},
+  {date:"2027-02-27", home:"كاظمة", away:"يحدد بعد القرعة", stage:"ربع النهائي", round:6, note:"المباراة 24"},
+  {date:"2027-02-27", home:"العربي", away:"يحدد بعد القرعة", stage:"ربع النهائي", round:6, note:"المباراة 25"},
+  {date:"2027-03-06", home:"الفائز من المباراة 22", away:"الفائز من المباراة 24", stage:"نصف النهائي", round:7, note:"المباراة 26"},
+  {date:"2027-03-07", home:"الفائز من المباراة 23", away:"الفائز من المباراة 25", stage:"نصف النهائي", round:7, note:"المباراة 27"}
+]).map(x=>Object.assign({comp:"كأس سمو ولي العهد", time:"", venue:"", note:"", ref:"", refs:{}, tv:"", status:"", add1:0, add2:0, hg:0, ag:0}, x)));
 function seedCupMatches(A){
   if(!A || !Array.isArray(A.matches)) return;
-  CUP_SEED.forEach(s=>{ if(A.matches.some(m=>compOf(m)===s.comp && m.home===s.home && String(m.stage||"")===s.stage)) return;
-    A.matches.push(Object.assign({}, s, {refs:{}, n:A.matches.length+1})); });
+  CUP_SEED.forEach(s=>{ if(A.matches.some(m=>compOf(m)===s.comp && m.home===s.home && String(m.stage||"")===s.stage && (!s.dk || m.away===s.away))) return;
+    const x = Object.assign({}, s, {refs:{}, n:A.matches.length+1}); delete x.dk; A.matches.push(x); });
 }
 const compLogo = (c, sz) => COMP_LOGO[c] ? `<img class="comp-logo" src="${COMP_LOGO[c]}" alt="" width="${sz||16}" height="${sz||16}" decoding="async">` : "";
 let COMP = "الكل";   /* يفتح الموقع على «إجمالي البطولات» (منصور 2026-10-29) */
