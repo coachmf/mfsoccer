@@ -94,18 +94,37 @@ D.addEventListener("click", e => { const b = e.target.closest && e.target.closes
 
 /* ---------------- 2) العين أعلى الرئيسية (الطاقم فقط) ---------------- */
 const TOT = {at: 0, all: 0, today: 0, month: 0, days: [], since: ""};
-async function loadTotals(force){
+/* قراءة كل 10 ساعات فقط (منصور 2026-11-14): العين واللوحة تُحفظان على الجهاز وتُعرضان من الحفظ؛
+   القراءة من السحابة مرة كل 10 ساعات لكل جهاز، أو عند ضغط «تحديث» في اللوحة */
+const TTL = 10 * 3600e3, CK = "mf_vx_cache";
+const cacheGet = () => { try{ return JSON.parse(localStorage.getItem(CK) || "null") || {}; }catch(e){ return {}; } };
+const cacheSet = (k, v) => { try{ const c = cacheGet(); c[k] = v; localStorage.setItem(CK, JSON.stringify(c)); }catch(e){} };
+const fresh = at => at && Date.now() - at < TTL && day(new Date(at)) === day();   /* بعد منتصف الليل يتغير «اليوم» فتُقرأ مرة */
+(() => { const c = cacheGet().tot; if(c && fresh(c.at)) Object.assign(TOT, c); })();
+let totP = null;   /* قراءة واحدة في الوقت نفسه */
+function loadTotals(force){
+  if(!force && fresh(TOT.at)) return Promise.resolve(TOT);
+  if(totP) return totP;
+  totP = loadTotals_().finally(() => { totP = null; });
+  return totP;
+}
+async function loadTotals_(){
   const d = db(); if(!d) return TOT;
-  if(!force && Date.now() - TOT.at < 120000) return TOT;
   try{
+    /* عدّاد زيارة هذه الجلسة (increment) إن كان معلّقاً يُظهر «اليوم = 1» بدل الرقم الحقيقي — ننتظره، ولا نحفظ قراءة ناقصة */
+    try{ await Promise.race([d.waitForPendingWrites(), new Promise(r => setTimeout(r, 6000))]); }catch(e){}
     const snap = await d.collection("stats").get();
-    const rows = []; snap.forEach(s => { const x = s.data() || {}; if(/^\d{4}-\d{2}-\d{2}$/.test(s.id)) rows.push({d: s.id, v: +x.v || 0}); });
+    let pend = false;
+    const rows = []; snap.forEach(s => { if(s.metadata && s.metadata.hasPendingWrites) pend = true; const x = s.data() || {};
+      if(/^\d{4}-\d{2}-\d{2}$/.test(s.id) && s.id <= day()) rows.push({d: s.id, v: +x.v || 0}); });
     rows.sort((a, b) => a.d < b.d ? -1 : 1);
     const t = day(), m = t.slice(0, 7);
     TOT.days = rows; TOT.all = rows.reduce((a, r) => a + r.v, 0);
     TOT.today = (rows.find(r => r.d === t) || {}).v || 0;
     TOT.month = rows.filter(r => r.d.startsWith(m)).reduce((a, r) => a + r.v, 0);
-    TOT.since = rows.length ? rows[0].d : ""; TOT.at = Date.now();
+    TOT.since = rows.length ? rows[0].d : "";
+    if(pend) TOT.at = Date.now() - TTL + 60000;   /* يعاد بعد دقيقة، بلا حفظ */
+    else { TOT.at = Date.now(); cacheSet("tot", TOT); }
   }catch(e){}
   return TOT;
 }
@@ -139,7 +158,7 @@ function watchHome(){
   new MutationObserver(ms => { if(ms.some(m => [...m.addedNodes, ...m.removedNodes].some(n => !(n.classList && n.classList.contains("vx-eye"))))) eyeSoon(); }).observe(v, {childList: true});
 }
 let wasStaff = false;
-setInterval(() => { const s = staff(); if(s !== wasStaff){ wasStaff = s; if(s) loadTotals(true).then(paintEye); else paintEye(); } else if(s && Date.now() - TOT.at > 120000) loadTotals().then(paintEye); }, 1500);
+setInterval(() => { const s = staff(); if(s !== wasStaff){ wasStaff = s; if(s) loadTotals().then(paintEye); else paintEye(); } else if(s && !fresh(TOT.at)) loadTotals().then(paintEye); }, 1500);
 
 /* ---------------- 3) الإدارة: «الزوار بالتفصيل» ---------------- */
 const VIEWN = {home:"الرئيسية", matches:"المباريات", players:"اللاعبون", clubs:"الأندية", stats:"الإحصائيات", news:"الأخبار", predict:"التوقعات",
@@ -152,11 +171,15 @@ const LANGN = {ar:"العربية", en:"English", "pt_br":"Português (BR)", "pt
 const ADM = {range: 30, rows: null, busy: false};
 const MON = ["يناير","فبراير","مارس","أبريل","مايو","يونيو","يوليو","أغسطس","سبتمبر","أكتوبر","نوفمبر","ديسمبر"];
 const dlab = s => { const [y, m, d] = String(s).split("-").map(Number); return y ? `${d} ${MON[m - 1]}` + (y !== new Date().getFullYear() ? ` ${y}` : "") : ""; };
-async function loadDetail(n){
+async function loadDetail(n, force){
+  const c = (cacheGet().det || {})[n];
+  if(!force && c && fresh(c.at)) return c.rows;
   const d = db(); if(!d) return [];
   const keys = []; for(let i = n - 1; i >= 0; i--){ const x = new Date(); x.setDate(x.getDate() - i); keys.push(day(x)); }
   const snaps = await Promise.all(keys.map(k => d.collection("visits").doc(k).get().catch(() => null)));
-  return snaps.map((s, i) => ({d: keys[i], x: s && s.exists ? (s.data() || {}) : {}}));
+  const rows = snaps.map((s, i) => ({d: keys[i], x: s && s.exists ? (s.data() || {}) : {}}));
+  if(snaps.some(Boolean)){ const det = cacheGet().det || {}; det[n] = {at: Date.now(), day: day(), rows}; cacheSet("det", det); }
+  return rows;
 }
 function nameMaps(){
   const M = {}, P = {}, C = {};
@@ -187,6 +210,7 @@ function detailHTML(){
   return `
     <div class="vx-seg" role="tablist">${[[7, "آخر 7 أيام"], [30, "آخر 30 يوماً"], [90, "آخر 90 يوماً"]].map(([n, t]) => `<button type="button" data-vxr="${n}" aria-pressed="${ADM.range === n}">${t}</button>`).join("")}
       <button type="button" class="vx-re" data-vxre>تحديث</button></div>
+    <p class="hint vx-note">آخر تحديث: ${TOT.at ? `<span dir="ltr">${new Date(TOT.at).toLocaleString("en-GB", {hour: "2-digit", minute: "2-digit"})}</span> · ${dlab(day(new Date(TOT.at)))}` : "—"} — الأرقام تُقرأ مرة كل 10 ساعات</p>
     <div class="vx-grid">${card(fmt(TOT.all), "منذ الانطلاق" + (TOT.since ? ` · ${dlab(TOT.since)}` : ""), 1)}${card(fmt(TOT.month), "هذا الشهر")}${card(fmt(TOT.today), "اليوم")}
       ${card(fmt(avg(7)), "متوسط آخر 7 أيام")}${card(fmt(avg(30)), "متوسط آخر 30 يوماً")}${card(best ? fmt(best.v) : "0", "أعلى يوم" + (best ? ` · ${dlab(best.d)}` : ""), 1)}</div>
     <div class="vx-days">${days.map(r => `<i class="${best && r.d === best.d ? "g" : ""}" style="height:${Math.max(3, Math.round(r.v / dmx * 100))}%" title="${dlab(r.d)}: ${r.v}"></i>`).join("")}</div>
@@ -211,7 +235,8 @@ async function fillAdmin(force){
   const box = D.getElementById("vxAdmin"); if(!box || ADM.busy) return;
   ADM.busy = true;
   if(!ADM.rows || force) box.innerHTML = `<p class="hint">جارٍ تحميل أرقام الزوار…</p>`;
-  try{ await loadTotals(force); if(!ADM.rows || force || ADM.rows.length !== ADM.range) ADM.rows = await loadDetail(ADM.range); }catch(e){}
+  try{ await loadTotals(force); if(!ADM.rows || force || ADM.rows.length !== ADM.range) ADM.rows = await loadDetail(ADM.range, force); }catch(e){}
+  if(force) paintEye();
   ADM.busy = false;
   const b2 = D.getElementById("vxAdmin"); if(!b2) return;
   b2.innerHTML = detailHTML();
