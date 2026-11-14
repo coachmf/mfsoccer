@@ -21,6 +21,7 @@ const TABS = [
   ["predict", "التوقعات"],
   ["fantasy", "الفانتسي"],
   ["events",  "المناسبات"],
+  ["visitors","الزوار"],
   ["brand",   "الهوية والصور"],
   ["data",    "البيانات"],
   ["account", "الحساب"],
@@ -38,10 +39,10 @@ const MAP = [
   ["شعارات الأندية","brand"], ["صور الهدافين","brand"], ["ضبط تأطير الوجوه","brand"], ["شعار الدوري","brand"],
   ["شعار العلامة","brand"], ["تنسيق حجم الشعارات","brand"], ["ضبط دقيق لكل نادٍ","brand"],
   ["بيانات الموسم","data"], ["النسخ الاحتياطية","data"], ["المزامنة السحابية","data"], ["حالة الحفظ","data"],
-  ["فريق العمل","account"], ["الزيارات","account"], ["إعدادات الموسم","account"]
+  ["فريق العمل","account"], ["الزيارات","visitors"], ["الزوار بالتفصيل","visitors"], ["إعدادات الموسم","account"]
 ];
 /* ما يراه «المحرر»: المباريات والمباريات الخارجية */
-const EDITOR_TABS = ["matches", "ext"];
+const EDITOR_TABS = ["matches", "ext", "visitors"];   /* الزوار لكل فريق العمل (منصور 2026-11-14) */
 const tabOfTitle = t => { t = String(t||"").trim(); const hit = MAP.find(([p])=>t.startsWith(p)); return hit ? hit[1] : "other"; };
 let CUR = (()=>{ try{ return localStorage.getItem("mf-admtab") || "matches"; }catch(e){ return "matches"; } })();
 const save = v => { try{ localStorage.setItem("mf-admtab", v); }catch(e){} };

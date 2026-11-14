@@ -148,6 +148,32 @@ service cloud.firestore {
       allow delete: if isOwner();
     }
 
+    // Visitor detail (2026-11-14, visitors.js): anonymous per-day counters — sections, matches,
+    // players, clubs, device, source, language, new/returning, hour. Any client may only ADD 1
+    // to at most 10 counter fields per write (names like v_home / m_1x2y3z, lowercase ascii),
+    // plus the fixed day field. No names, emails or device ids are stored.
+    match /visits/{day} {
+      function vxKey(k) { return k is string && k.matches('^[a-z]_[a-z0-9_]{1,30}$'); }
+      function vxNew(ks, i) { return i >= ks.size() || ks[i] == 'd'
+                                || (vxKey(ks[i]) && request.resource.data[ks[i]] == 1); }
+      function vxInc(ks, i) { return i >= ks.size()
+                                || (vxKey(ks[i]) && request.resource.data[ks[i]] == resource.data.get(ks[i], 0) + 1); }
+      function vxNewAll(ks) { return ks.size() <= 11 && vxNew(ks, 0) && vxNew(ks, 1) && vxNew(ks, 2) && vxNew(ks, 3)
+                                && vxNew(ks, 4) && vxNew(ks, 5) && vxNew(ks, 6) && vxNew(ks, 7) && vxNew(ks, 8)
+                                && vxNew(ks, 9) && vxNew(ks, 10); }
+      function vxIncAll(ks) { return ks.size() >= 1 && ks.size() <= 10 && vxInc(ks, 0) && vxInc(ks, 1) && vxInc(ks, 2)
+                                && vxInc(ks, 3) && vxInc(ks, 4) && vxInc(ks, 5) && vxInc(ks, 6) && vxInc(ks, 7)
+                                && vxInc(ks, 8) && vxInc(ks, 9); }
+      allow read: if true;
+      allow create: if day.matches('^20[0-9]{2}-[0-9]{2}-[0-9]{2}$')
+                    && request.resource.data.d == day
+                    && vxNewAll(request.resource.data.keys());
+      allow update: if request.resource.data.d == resource.data.d
+                    && request.resource.data.size() <= 5000
+                    && vxIncAll(request.resource.data.diff(resource.data).affectedKeys().toList());
+      allow delete: if isOwner();
+    }
+
     // Season backups: a full snapshot written after every successful save,
     // so a wipe can be rolled back. Staff only ‚Äî these are working copies,
     // not public data. Never editable once written; pruning deletes old ones.
