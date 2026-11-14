@@ -459,7 +459,7 @@ function stadHTML(){
       sortBy(L,"stad",{n:x=>x.n,m:x=>x.m,g:x=>x.g,avg:x=>x.avg}).map(x=>`<tr><td class="tl"><button type="button" class="rf-name" data-ax-stad="${H(x.k)}"><b>${H(x.n)}</b></button></td><td data-c="m" data-hw="${x.hw}" data-aw="${x.aw}" data-d="${x.d}">${x.m}</td><td data-c="g">${x.g}</td><td data-c="avg"><b>${f2(x.avg)}</b></td></tr>`).join(""))}`;
 }
 function stadDetail(s){
-  const img=s.cs&&s.cs.slug ? `assets/stadiums/${s.cs.slug}.jpg?v=7` : "";
+  const img=s.cs&&s.cs.slug ? `assets/stadiums/${s.cs.slug}.webp?v=8` : "";
   return `<div class="ax-body">
     <div class="an-card ax-stad-hero${img?" has-img":""}">${img?`<img src="${img}" alt="" loading="lazy" decoding="async">`:""}
       <div class="ax-stad-tx"><button type="button" class="rf-back" data-ax-back="stad">كل الملاعب</button><b>${H(s.n)}</b>${s.cs?`<small>ملعب ${H(s.cs.club)}</small>`:""}</div></div>

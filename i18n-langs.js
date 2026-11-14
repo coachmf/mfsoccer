@@ -13,11 +13,8 @@
   'use strict';
   if(typeof I18N === 'undefined') return;
 
-  /* إضافات الإنجليزية المشتركة (أسماء كأس الخليج، الملاعب، نصوص ناقصة) — لا تغيّر مفتاحاً موجوداً */
-  if(typeof I18N_EN_ADD !== 'undefined'){
-    for(const k in I18N_EN_ADD){ if(I18N.DICT[k] == null) I18N.DICT[k] = I18N_EN_ADD[k]; }
-    I18N._keysSorted = null; I18N._cmp = null;
-  }
+  /* مسار هذا الملف — منه يُحسب مسار i18n-data.js (الموقع / والفانتسي ../) */
+  const SELF = (document.currentScript && document.currentScript.src) || '';
 
   const LANGS = [
     {id:'ar',    label:'العربية',              flag:'kw', short:'AR'},
@@ -64,6 +61,37 @@
     return P[VAR[I18N.lang()] || 'BR'] || {};
   };
   const cache = {};
+
+  /* ---------- بيانات اللغات (i18n-data.js، 913KB) — لغير العربية فقط (أداء 2026-11-14) ----------
+     العربية لا تقرأ هذه البيانات، فالصفحة لا تحمّلها إلا إذا كانت اللغة المحفوظة غيرها.
+     التبديل من العربية يحمّلها أولاً ثم يترجم (I18N.setLang). من يضيف ترجمات فوقها يستعمل I18N.onData. */
+  const DATA_V = 29;
+  const hasData = () => typeof I18N_EN_ADD !== 'undefined';
+  const ONDATA = [];
+  let merged = false, loading = null;
+  function mergeData(){
+    if(merged || !hasData()) return;
+    merged = true;
+    /* إضافات الإنجليزية المشتركة (أسماء كأس الخليج، الملاعب، نصوص ناقصة) — لا تغيّر مفتاحاً موجوداً */
+    for(const k in I18N_EN_ADD){ if(I18N.DICT[k] == null) I18N.DICT[k] = I18N_EN_ADD[k]; }
+    ONDATA.splice(0).forEach(f => { try{ f(); }catch(e){ console.error(e); } });
+    I18N._keysSorted = null; I18N._cmp = null; I18N._ptKeys = null; I18N._ptCmp = null;
+    for(const k in cache) delete cache[k];
+  }
+  I18N.onData = function(f){ if(merged){ try{ f(); }catch(e){ console.error(e); } } else ONDATA.push(f); };
+  I18N.hasData = hasData;
+  I18N.loadData = function(){
+    if(hasData()){ mergeData(); return Promise.resolve(); }
+    if(loading) return loading;
+    return (loading = new Promise((res, rej) => {
+      const s = document.createElement('script');
+      s.src = new URL('i18n-data.js?v=' + DATA_V, SELF || location.href).href;
+      s.onload = () => { mergeData(); res(); };
+      s.onerror = () => { loading = null; s.remove(); rej(new Error('i18n-data')); };
+      (document.head || document.documentElement).appendChild(s);
+    }));
+  };
+  mergeData();
   const escRx = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   function tpls(){
     const l = I18N.lang();
@@ -228,6 +256,12 @@
   const isFantasy = () => typeof APP !== 'undefined' && APP && typeof APP.render === 'function' && typeof DB !== 'undefined';
   I18N.setLang = function(l){
     l = norm(l) || 'ar';
+    /* لغة غير العربية وبياناتها لم تُحمَّل بعد: نحمّلها أولاً (إن تعذّر — بلا إنترنت — نكمل بمحرك الإنجليزية وحده) */
+    if(l !== 'ar' && !hasData()){
+      const go = () => this.setLang(l);
+      this.loadData().then(go, () => { merged = true; go(); });
+      return;
+    }
     save(l);
     /* ?lang= في الرابط يغلب الاختيار المحفوظ — نزيله حتى يثبت الاختيار الجديد */
     try{ const u = new URL(location.href); if(u.searchParams.has('lang')){ u.searchParams.delete('lang'); history.replaceState(history.state, '', u.pathname + (u.search || '') + u.hash); } }catch(e){}

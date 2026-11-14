@@ -1566,3 +1566,7 @@ html.mf .rf-f span{font-size:.74rem;font-weight:700;color:var(--mf-tx3)}
   html.mf[dir="ltr"] .rf-f select{background-position:right 9px center}
 }
 #v-home .mf-std > .mf-sel.mf-sel-auto{display:flex;width:100%;max-width:420px;margin:0 auto var(--mf-s3);align-self:stretch}
+
+/* أداء 2026-11-14: مكان الشريط العلوي (.mf-top) محجوز قبل أن يبنيه mf-shell.js المؤجّل —
+   كان دخوله بعد أول رسم يدفع الصفحة كلها 57px للأسفل (أكبر مصدر لـ CLS). الارتفاع نفسه: --mf-top-h + منطقة الأمان + الحد السفلي */
+@media screen{ html.mf body:not(:has(> .mf-top)){padding-top:calc(var(--mf-top-h) + env(safe-area-inset-top) + 1px)} }   /* padding لا margin: هامش main كان ينهار مع body فيتحرك body نفسه */

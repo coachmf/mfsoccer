@@ -46,7 +46,9 @@ const OV = {
   for(const k in EN) if(I18N.DICT[k]==null) I18N.DICT[k] = EN[k];
   I18N.EXACT = Object.assign(I18N.EXACT || {}, {"كان":1});
   I18N._keysSorted = null; I18N._cmp = null;
-  if(typeof I18N_PT!=="undefined") for(const L in OV){ const D = I18N_PT[L] || (I18N_PT[L] = {}); for(const k in OV[L]) if(D[k]==null) D[k] = OV[L][k]; }
+  /* I18N_PT في i18n-data.js، ولا يُحمَّل للعربية إلا عند تبديل اللغة (أداء 2026-11-14) — نضيف فوقه حين يصل */
+  const ov = () => { if(typeof I18N_PT!=="undefined") for(const L in OV){ const D = I18N_PT[L] || (I18N_PT[L] = {}); for(const k in OV[L]) if(D[k]==null) D[k] = OV[L][k]; } };
+  if(typeof I18N.onData==="function") I18N.onData(ov); else ov();
 })();
 
 const num = v => (v===null || v===undefined || v==="") ? null : (Number.isFinite(+v) ? +v : null);
