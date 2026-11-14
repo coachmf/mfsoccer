@@ -704,12 +704,14 @@ let RESETMSG="", LOGIN_EM="";
 function __admRenderAdmin(){
   if(isAdmin) ensureXLSX().catch(()=>{});   /* تسخين مكتبة الإكسل قبل أن يختار المدير ملفاً */
   if(!isAdmin){
-    const wrongUser = !!FBUSER;
+    const checking = !!FBUSER && typeof STAFF_CHECKING!=="undefined" && STAFF_CHECKING;
+    const wrongUser = !!FBUSER && !checking;
     $("#v-admin").innerHTML=`
       <h2 class="sec">دخول فريق العمل</h2>
       <div class="card pad">
         ${SYNCMSG?`<div class="formerr">${esc(SYNCMSG)}</div>`:""}
         ${RESETMSG?`<div class="formok">${esc(RESETMSG)}</div>`:""}
+        ${checking?`<div class="formok">جارٍ التحقق من صلاحية حسابك…</div>`:""}
         ${wrongUser?`<div class="formerr">هذا الحساب غير مصرّح له بالتحرير بعد.</div>
           <div class="uidbox">
             <label class="lb">أرسل هذا الرمز للمالك ليضيفك لفريق العمل</label>
