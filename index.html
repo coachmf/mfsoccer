@@ -2267,9 +2267,9 @@ html[dir="ltr"] .tl-ev.a .tl-card{text-align:right;align-items:flex-end}
 <!-- اللغة الإنجليزية والوضع الداكن -->
 <link rel="stylesheet" href="site-theme.css?v=7">
 <script src="fantasy/js/i18n-more.js?v=14" defer></script>
-<script src="site-i18n.js?v=36" defer></script>
+<script src="site-i18n.js?v=37" defer></script>
 <script>/* أداء 2026-11-14: i18n-data.js (913KB) لغير العربية فقط — العربي لا يقرأه. التبديل من العربية يحمّله عند الطلب (I18N.loadData في i18n-langs.js) */
-(function(){ try{ var q=new URLSearchParams(location.search).get('lang'), l=String(q||localStorage.getItem('mf_lang')||'ar').toLowerCase(); if(l!=='ar') document.write('<script src="i18n-data.js?v=29" defer><\/script>'); }catch(e){} })();</script>   <!-- إضافات الإنجليزية + البرتغالية (البرازيل/البرتغال) + الإسبانية + الصربية/الكرواتية -->
+(function(){ try{ var q=new URLSearchParams(location.search).get('lang'), l=String(q||localStorage.getItem('mf_lang')||'ar').toLowerCase(); if(l!=='ar') document.write('<script src="i18n-data.js?v=30" defer><\/script>'); }catch(e){} })();</script>   <!-- إضافات الإنجليزية + البرتغالية (البرازيل/البرتغال) + الإسبانية + الصربية/الكرواتية -->
 <script src="i18n-langs.js?v=9" defer></script>   <!-- قائمة اللغات بالأعلام + البرتغالية والإسبانية والصربية/الكرواتية فوق محرك الإنجليزية -->
 <!-- غرفة التحكم (live.js / live-admin.js / live.css) مخفية منذ 2026-10-10 بطلب منصور — الملفات باقية؛ للإرجاع أعد السطرين:
      <link rel="stylesheet" href="live.css?v=9"> و <script src="live.js?v=21" defer></script> -->
@@ -2288,6 +2288,7 @@ html[dir="ltr"] .tl-ev.a .tl-card{text-align:right;align-items:flex-end}
 <script src="efftime.js?v=16" defer></script>
 <link rel="stylesheet" href="div1.css?v=5">
 <script src="div1.js?v=10" defer></script>
+<script src="player-dob.js?v=1" defer></script>   <!-- مواليد اللاعبين (FM27) للبروفايل: المواليد + العمر الحيّ -->
 <script src="amateur.js?v=11" defer></script>   <!-- دوري الهواة: النتائج والترتيب فقط (seasons/amateur) -->
 <link rel="stylesheet" href="news.css?v=5">
 <script src="news.js?v=11" defer></script>   <!-- الأخبار: news/{id} + فهرس seasons/news + صور newsimg/{id} -->   <!-- دوري الدرجة الأولى: الترتيب والمباريات فقط (seasons/div1) -->
@@ -11161,6 +11162,7 @@ html.pp-open,html.pp-open body{overflow:hidden}
 .pprof-id .meta{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
 .pprof-id .meta span{font-size:.72rem;padding:4px 9px;border-radius:999px;background:rgba(255,255,255,.07);border:1px solid rgba(143,166,196,.22);color:var(--mist)}
 [data-theme="light"] .pprof-id .meta span{background:#fff;border-color:var(--line2);color:var(--head)}
+.pprof-id .meta span.dob b{font-family:var(--display);font-weight:800;color:var(--head);margin-inline-start:3px}
 .pprof-id .meta span.num{background:var(--ca);color:var(--ctab-fg);border-color:transparent;font-family:var(--display);font-weight:800;font-size:.8rem}
 .pprof-close{position:absolute;top:10px;left:10px;z-index:2;width:34px;height:34px;border-radius:50%;border:1px solid rgba(255,255,255,.2);
   background:rgba(6,21,41,.55);color:#fff;font-size:1.1rem;display:grid;place-items:center;cursor:pointer;backdrop-filter:blur(6px)}
@@ -13381,6 +13383,23 @@ const logCmp=(a,b)=>(COMP==="الكل" && a.m.date && b.m.date && a.m.date!==b.m
     : (b.m.round-a.m.round)||String(b.m.date).localeCompare(String(a.m.date));
 /* دقيقة مطلقة (بعد إضافة بدل الشوط الأول) ← كما تظهر في أحداث المباراة: 45+3′، 67′، 90+4′ */
 function clockLabel(m, t){ const a1=add1Of(m); if(t<=45) return t+"′"; if(t<=45+a1) return "45+"+(t-45)+"′"; const c=t-a1; return c>90 ? "90+"+(c-90)+"′" : c+"′"; }
+/* المواليد + العمر الحيّ (منصور 2026-11-17): من PLAYER_DOB، العمر يُحسب بتاريخ الكويت فيزيد يوم عيد الميلاد */
+function playerDob(name,club){
+  const B=window.PLAYER_DOB; if(!B||!name) return "";
+  if(club&&B[club]&&B[club][name]) return B[club][name];
+  let hit=""; for(const c in B){ if(B[c][name]){ if(hit&&hit!==B[c][name]) return ""; hit=B[c][name]; } }   /* نفس الاسم في نادٍ آخر (انتقال) — فقط إن لم يتعارض */
+  return hit;
+}
+function playerAge(iso){
+  const [y,m,d]=iso.split("-").map(Number);
+  const t=new Date(Date.now()+3*3600e3), ty=t.getUTCFullYear(), tm=t.getUTCMonth()+1, td=t.getUTCDate();   /* الكويت UTC+3 بلا توقيت صيفي */
+  return ty-y-((tm<m||(tm===m&&td<d))?1:0);
+}
+function playerDobChips(D){
+  const iso=playerDob(D.name,D.club); if(!iso) return "";
+  const [y,m,d]=iso.split("-").map(Number);
+  return `<span class="dob">العمر <b>${playerAge(iso)}</b></span><span class="dob">المواليد <b dir="ltr">${d}/${m}/${y}</b></span>`;
+}
 function playerProfileHTML(D){
   const cut=(PHOTOSON && typeof LOCAL_PHOTOS!=="undefined") ? photoCut(D.name, D.club) : null;
   const st=(v,t,hi)=>`<div class="pstat${hi?" hi":""}"><b>${v}</b><small>${t}</small></div>`;
@@ -13423,7 +13442,7 @@ function playerProfileHTML(D){
       <div class="pprof-id">
         ${D.club?`<div class="club" data-club-link="${esc(D.club)}">${crest(D.club)}<span>${esc(D.club)}</span></div>`:""}
         <h3>${esc(D.name)}</h3>
-        <div class="meta">${D.num?`<span class="num">${D.num}</span>`:""}${D.pos?`<span>${esc(posLabel(D.pos))}</span>`:""}</div>
+        <div class="meta">${D.num?`<span class="num">${D.num}</span>`:""}${D.pos?`<span>${esc(posLabel(D.pos))}</span>`:""}${playerDobChips(D)}</div>
       </div>
     </div>
     <div class="segbar compbar pprof-cbar" role="tablist" aria-label="المسابقة">

@@ -113,7 +113,7 @@ const I18N = {
     // اللاعبون
     'الهدافون':'Top scorers', 'المساهمون':'Contributors', 'صنّاع الأهداف':'Assists', 'صناعة':'Assist', 'الشباك النظيفة (الحرّاس)':'Clean sheets (goalkeepers)',
     'حرّاس المرمى الذين لعبوا ثلثَي المباراة فأكثر — 60 دقيقة في مباراة 90، وأكثر إن طال الوقت بدل الضائع — في مباريات لم يستقبل فيها فريقهم هدفاً.':'Goalkeepers who played two thirds of the match or more — 60 minutes in a 90-minute match, more when stoppage time is long — in matches where their team did not concede.',
-    'دقائق اللعب':'Minutes played', 'إجمالي دقائق كل لاعب من التشكيلات والتبديلات. اضغط رأس المباريات للترتيب الذهني.':"Each player's total minutes from line-ups and substitutions.",
+    'دقائق اللعب':'Minutes played', 'العمر':'Age', 'المواليد':'Born', 'إجمالي دقائق كل لاعب من التشكيلات والتبديلات. اضغط رأس المباريات للترتيب الذهني.':"Each player's total minutes from line-ups and substitutions.",
     'لا توجد بيانات إنذارات بعد. أضف ورقة «سجل الإنذارات» في ملف الاستوديو بالأعمدة: الجولة · المسابقة · النادي · اللاعب · الدقيقة · النوع.':'No card data yet. Add the "Cards log" sheet to the studio file with the columns: Round · Competition · Club · Player · Minute · Type.',
     // التحليل
     'توزيع الأهداف على فترات المباراة':'Goals by match period', 'أكثر ما يميّز هذا الموقع عن مواقع النتائج — لا أحد يوفّر هذا التفصيل للدوري الكويتي.':'What sets this site apart from results sites — nobody else offers this detail for the Kuwaiti league.',
