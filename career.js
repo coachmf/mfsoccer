@@ -97,8 +97,7 @@
         ${S.loans ? `<div><b>${S.loans}</b><small>${S.loans === 1 ? "إعارة" : S.loans === 2 ? "إعارتان" : "إعارات"}</small></div>` : ""}
         ${S.abroad ? `<div><b>${S.abroad}</b><small>${S.abroad === 1 ? "نادٍ خارجي" : "أندية خارجية"}</small></div>` : ""}
       </div>` : "";
-    return `${sum}<ol class="cr-tl">${st.slice().reverse().map((x, k) => stageHTML(x, st.length - 1 - k)).join("")}</ol>
-      <p class="cr-src">المصدر: Football Manager 27 · المواسم من بداية مسيرته مع الفريق الأول</p>`;
+    return `${sum}<ol class="cr-tl">${st.slice().reverse().map((x, k) => stageHTML(x, st.length - 1 - k)).join("")}</ol>`;
   }
 
   window.CAREER = { rowsOf, build, summary, html };
