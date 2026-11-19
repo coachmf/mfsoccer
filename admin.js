@@ -335,8 +335,10 @@ function __admRenderMatchAdmin(){
    حقل <input type=date> الأصلي شكله وترتيبه يتبعان لغة الجهاز فلا نملكهما. وأيقونة التقويم
    تنادي showPicker() على حقل تاريخ مخفي، فيبقى منتقي النظام (عجلة الآيفون) متاحاً. */
 const DOB_CAL = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><rect x="3" y="5" width="18" height="16" rx="2.5"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>';
-const dobShow = iso => /^\d{4}-\d{2}-\d{2}$/.test(iso||"") ? iso.replace(/-/g,"/") : "";
-const dobISO  = v => { const m=String(v||"").match(/^(\d{4})\/(\d{2})\/(\d{2})$/); if(!m) return null;
+const dobShow = iso => /^\d{4}-\d{2}-\d{2}$/.test(iso||"") ? iso.replace(/-/g,"/") : /^\d{4}$/.test(iso||"") ? iso : "";   /* سنة فقط (منصور 2026-11-19: «مواليد 91») */
+const dobISO  = v => { const yo=String(v||"").match(/^(\d{4})$/);
+  if(yo){ const yr=new Date().getFullYear(); return (+yo[1]>=1960 && +yo[1]<=yr-14) ? yo[1] : null; }   /* سنة الميلاد فقط */
+  const m=String(v||"").match(/^(\d{4})\/(\d{2})\/(\d{2})$/); if(!m) return null;
   const [,y,mo,d]=m, t=new Date(+y,+mo-1,+d);
   if(t.getFullYear()!=+y || t.getMonth()!=+mo-1 || t.getDate()!=+d) return null;   /* 2001/02/30 */
   const yr=new Date().getFullYear();
@@ -347,7 +349,7 @@ function sqDobCellHTML(iso){
       <input type="text" class="sqb" lang="en" dir="ltr" inputmode="numeric" maxlength="10"
         value="${dobShow(iso)}" placeholder="YYYY/MM/DD" title="تاريخ الميلاد — سنة/شهر/يوم">
       <button type="button" class="sqcal" tabindex="-1" aria-label="اختر من التقويم">${DOB_CAL}</button>
-      <input type="date" class="sqnat" value="${iso||""}" tabindex="-1" aria-hidden="true">
+      <input type="date" class="sqnat" value="${/^\d{4}-/.test(iso||"")?iso:""}" tabindex="-1" aria-hidden="true">
     </span><span class="sqage${age?"":" nil"}" lang="en">${age||"—"}</span>`;
 }
 /* ================= الكشوفات وفريق العمل — أقسام مشتركة ================= */
@@ -505,11 +507,11 @@ function wireSquads(){
         const dg=t.value.replace(/\D/g,"").slice(0,8);
         t.value = dg.length>6 ? `${dg.slice(0,4)}/${dg.slice(4,6)}/${dg.slice(6)}`
                 : dg.length>4 ? `${dg.slice(0,4)}/${dg.slice(4)}` : dg;
-        const iso = dg.length===8 ? dobISO(t.value) : null;
+        const iso = dg.length===8 ? dobISO(t.value) : dg.length===4 ? dobISO(dg) : null;   /* 4 أرقام = سنة الميلاد فقط */
         t.classList.toggle("bad", dg.length===8 && !iso);
-        if(dg.length===8 && iso || !dg.length){
+        if((dg.length===8 || dg.length===4) && iso || !dg.length){
           SQ.dob(c, idx(t), iso||"");
-          const w=t.closest(".sqbw"); w.querySelector(".sqnat").value = iso||"";
+          const w=t.closest(".sqbw"); w.querySelector(".sqnat").value = iso && iso.length===10 ? iso : "";
           const a=w.nextElementSibling;
           a.textContent = iso ? playerAge(iso) : "—"; a.classList.toggle("nil", !iso);
         }
