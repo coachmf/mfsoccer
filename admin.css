@@ -311,3 +311,26 @@ html[data-theme="dark"] .mx select option{color:#E6EEF8;background:#0F1E35}   /*
 html.mx-open,html.mx-open body{overflow:hidden}
 html.mx-saving #matchAdmin,html.mx-saving .mx-sheet{pointer-events:none;opacity:.6;transition:opacity .2s}   /* أثناء الحفظ: لا إدخال يضيع */
 html.mx-editing #waFab{display:none!important}   /* زر واتساب كان يغطي «حفظ المباراة» */
+
+/* ===== تاريخ الميلاد في صفّ الكشف (منصور 2026-11-19) =====
+   الشبكة كانت 5 أعمدة (صورة · رقم · اسم · مركز · حذف) فصارت 7 بإضافة التاريخ والعمر. */
+html .squadbox .sqrow{grid-template-columns:40px 50px minmax(0,1fr) 96px 132px 46px 34px}
+.sqbw{position:relative;display:block;min-width:0}
+.sqbw .sqb{width:100%;text-align:left;letter-spacing:.04em;padding-inline:10px 32px;
+  font-variant-numeric:tabular-nums;font-feature-settings:"locl" 0}   /* locl 0: الخط العربي كان يبدل الأرقام لعربية */
+.sqbw .sqb::placeholder{letter-spacing:0;font-size:.72rem;opacity:.55}
+.sqbw .sqb.bad{border-color:rgba(224,100,79,.75);background:rgba(224,100,79,.10)}
+.sqcal{position:absolute;inset-block:0;right:2px;width:28px;display:grid;place-items:center;
+  background:none;border:0;color:var(--slate);cursor:pointer;padding:0}
+.sqcal:hover{color:var(--gold,#E0B852)}
+.sqcal svg{width:16px;height:16px}
+.sqnat{position:absolute;right:6px;bottom:0;width:1px;height:1px;opacity:0;pointer-events:none;border:0;padding:0}
+.sqage{font-size:.86rem;font-weight:800;text-align:center;line-height:1;align-self:stretch;
+  display:grid;place-items:center;border-radius:9px;background:rgba(255,255,255,.04);
+  border:1px solid var(--line,#223055);font-variant-numeric:tabular-nums;font-feature-settings:"locl" 0}
+.sqage.nil{color:var(--slate);opacity:.55}
+@media(max-width:520px){
+  html .squadbox .sqrow{grid-template-columns:38px 48px minmax(0,1fr) 32px}
+  html .squadbox .sqrow .sqbw{grid-column:1/-2}
+  html .squadbox .sqrow .sqage{grid-column:-2/-1}
+}

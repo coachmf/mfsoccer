@@ -6075,7 +6075,9 @@ const POS_ALL = POS_GROUPS.flatMap(g=>g[1]);
 const sqName = x => (typeof x==="string" ? x : (x && x.n) || "");
 const sqPos  = x => (typeof x==="string" ? ""  : (x && x.p) || "");
 const sqNum  = x => (typeof x==="string" ? 0   : (+(x && x.s) || 0));
-const sqItem = (n,p,s) => (p || s) ? {n:n, p:p||"", s:+s||0} : n;
+/* تاريخ الميلاد YYYY-MM-DD داخل عنصر الكشف (منصور 2026-11-19): كان في player-dob.js فلا يُحرَّر إلا بـcommit */
+const sqDob  = x => (typeof x==="string" ? ""  : (x && x.b) || "");
+const sqItem = (n,p,s,b) => (p || s || b) ? Object.assign({n:n, p:p||"", s:+s||0}, b?{b:b}:{}) : n;
 const posMain = x => POS_MAIN[sqPos(x)] || "";
 function posSelectHTML(cur){
   const known = POS_ALL.includes(cur);
@@ -7014,8 +7016,8 @@ function admLoad(){
   if(ADMX.ready) return Promise.resolve();
   if(ADMX_P) return ADMX_P;
   return (ADMX_P = new Promise((res, rej)=>{
-    const css = document.createElement("link"); css.rel = "stylesheet"; css.href = "admin.css?v=1";
-    const s = document.createElement("script"); s.src = "admin.js?v=2";
+    const css = document.createElement("link"); css.rel = "stylesheet"; css.href = "admin.css?v=2";
+    const s = document.createElement("script"); s.src = "admin.js?v=3";
     s.onload = ()=>{ ADMX.ready = true; res(); };
     s.onerror = ()=>{ ADMX_P = null; css.remove(); s.remove(); rej(new Error("admin.js")); };
     document.head.appendChild(css); document.head.appendChild(s);
@@ -13385,7 +13387,13 @@ const logCmp=(a,b)=>(COMP==="الكل" && a.m.date && b.m.date && a.m.date!==b.m
 function clockLabel(m, t){ const a1=add1Of(m); if(t<=45) return t+"′"; if(t<=45+a1) return "45+"+(t-45)+"′"; const c=t-a1; return c>90 ? "90+"+(c-90)+"′" : c+"′"; }
 /* المواليد + العمر الحيّ (منصور 2026-11-17): من PLAYER_DOB، العمر يُحسب بتاريخ الكويت فيزيد يوم عيد الميلاد */
 function playerDob(name,club){
-  const B=window.PLAYER_DOB; if(!B||!name) return "";
+  if(!name) return "";
+  /* الكشف أولاً (قابل للتحرير من الإدارة)، ثم player-dob.js احتياطاً لما لم يُرحَّل بعد */
+  const fromSq = c => { const e=(SQUADS&&SQUADS[c]||[]).find(x=>sqName(x)===name); return e?sqDob(e):""; };
+  if(club){ const v=fromSq(club); if(v) return v; }
+  else { let h=""; for(const c in (SQUADS||{})){ const v=fromSq(c);
+           if(v){ if(h&&h!==v) return ""; h=v; } } if(h) return h; }
+  const B=window.PLAYER_DOB; if(!B) return "";
   if(club&&B[club]&&B[club][name]) return B[club][name];
   let hit=""; for(const c in B){ if(B[c][name]){ if(hit&&hit!==B[c][name]) return ""; hit=B[c][name]; } }   /* نفس الاسم في نادٍ آخر (انتقال) — فقط إن لم يتعارض */
   return hit;

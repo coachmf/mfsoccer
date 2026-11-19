@@ -331,6 +331,25 @@ function __admRenderMatchAdmin(){
 
 
 /* ================= لوحة المدير ================= */
+/* تاريخ الميلاد في صفّ الكشف (منصور 2026-11-19): حقل نصّي سنة/شهر/يوم بأرقام لاتينية —
+   حقل <input type=date> الأصلي شكله وترتيبه يتبعان لغة الجهاز فلا نملكهما. وأيقونة التقويم
+   تنادي showPicker() على حقل تاريخ مخفي، فيبقى منتقي النظام (عجلة الآيفون) متاحاً. */
+const DOB_CAL = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><rect x="3" y="5" width="18" height="16" rx="2.5"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>';
+const dobShow = iso => /^\d{4}-\d{2}-\d{2}$/.test(iso||"") ? iso.replace(/-/g,"/") : "";
+const dobISO  = v => { const m=String(v||"").match(/^(\d{4})\/(\d{2})\/(\d{2})$/); if(!m) return null;
+  const [,y,mo,d]=m, t=new Date(+y,+mo-1,+d);
+  if(t.getFullYear()!=+y || t.getMonth()!=+mo-1 || t.getDate()!=+d) return null;   /* 2001/02/30 */
+  const yr=new Date().getFullYear();
+  return (+y>=1960 && +y<=yr-14) ? `${y}-${mo}-${d}` : null; };
+function sqDobCellHTML(iso){
+  const age = iso && typeof playerAge==="function" ? playerAge(iso) : "";
+  return `<span class="sqbw">
+      <input type="text" class="sqb" lang="en" dir="ltr" inputmode="numeric" maxlength="10"
+        value="${dobShow(iso)}" placeholder="YYYY/MM/DD" title="تاريخ الميلاد — سنة/شهر/يوم">
+      <button type="button" class="sqcal" tabindex="-1" aria-label="اختر من التقويم">${DOB_CAL}</button>
+      <input type="date" class="sqnat" value="${iso||""}" tabindex="-1" aria-hidden="true">
+    </span><span class="sqage${age?"":" nil"}" lang="en">${age||"—"}</span>`;
+}
 /* ================= الكشوفات وفريق العمل — أقسام مشتركة ================= */
 function squadRowsHTML(club){
   const a=SQUADS[club]||[];
@@ -345,6 +364,7 @@ function squadRowsHTML(club){
         value="${s||""}" placeholder="#" title="رقم القميص">
       <input type="text" class="sqn" value="${esc(sqName(x))}" spellcheck="false" placeholder="اسم اللاعب">
       <select class="sqp">${posSelectHTML(p)}</select>
+      ${sqDobCellHTML(sqDob(x))}
       <button type="button" class="sqx" title="حذف">✕</button>
     </div>`;
   }).join("");
@@ -400,7 +420,9 @@ function squadsSectionHTML(){
 const SQ = {
   arr(c){ return (SQUADS[c] = SQUADS[c] || []); },
   box(c){ return [...document.querySelectorAll(".squadbox")].find(b=>b.dataset.club===c); },
-  set(c,i,n,p,s){ this.arr(c)[i]=sqItem(n,p,s); },
+  /* b لا يُمرَّر في أغلب النداءات فيُحفظ من العنصر القائم — وإلا مسحه كل تعديل اسم أو رقم */
+  set(c,i,n,p,s,b){ const old=this.arr(c)[i];
+    this.arr(c)[i]=sqItem(n,p,s, b===undefined ? sqDob(old) : (b||"")); },
   paint(c){
     const b=this.box(c); if(!b) return;
     b.querySelector(".sqrows").innerHTML=squadRowsHTML(c);
@@ -411,6 +433,7 @@ const SQ = {
   name(c,i,v){ const x=this.arr(c)[i]; this.set(c,i, v.trim().replace(/\s+/g," "), sqPos(x), sqNum(x)); },
   pos(c,i,v){ const x=this.arr(c)[i]; this.set(c,i, sqName(x), v, sqNum(x)); this.paint(c); },
   num(c,i,v){ const x=this.arr(c)[i]; this.set(c,i, sqName(x), sqPos(x), parseInt(String(v).replace(/\D/g,""),10)||0); },
+  dob(c,i,iso){ const x=this.arr(c)[i]; this.set(c,i, sqName(x), sqPos(x), sqNum(x), iso||""); },
   del(c,i){ const a=this.arr(c); a.splice(i,1); if(!a.length) delete SQUADS[c]; this.paint(c); },
   add(c,n,p,s){
     n=(n||"").trim().replace(/\s+/g," "); if(!n) return false;
@@ -477,10 +500,35 @@ function wireSquads(){
       if(t.classList.contains("sqn"))  SQ.name(c, idx(t), t.value);
       if(t.classList.contains("sqno")){ t.value=t.value.replace(/\D/g,""); SQ.num(c, idx(t), t.value); }
       if(t.classList.contains("sqnewno")) t.value=t.value.replace(/\D/g,"");
+      if(t.classList.contains("sqb")){   /* الشرطتان تُكتبان وحدهما: 19870420 ← 1987/04/20 */
+        const dg=t.value.replace(/\D/g,"").slice(0,8);
+        t.value = dg.length>6 ? `${dg.slice(0,4)}/${dg.slice(4,6)}/${dg.slice(6)}`
+                : dg.length>4 ? `${dg.slice(0,4)}/${dg.slice(4)}` : dg;
+        const iso = dg.length===8 ? dobISO(t.value) : null;
+        t.classList.toggle("bad", dg.length===8 && !iso);
+        if(dg.length===8 && iso || !dg.length){
+          SQ.dob(c, idx(t), iso||"");
+          const w=t.closest(".sqbw"); w.querySelector(".sqnat").value = iso||"";
+          const a=w.nextElementSibling;
+          a.textContent = iso ? playerAge(iso) : "—"; a.classList.toggle("nil", !iso);
+        }
+      }
     });
-    box.addEventListener("change", e=>{ if(e.target.classList.contains("sqp")) SQ.pos(c, idx(e.target), e.target.value); });
+    box.addEventListener("change", e=>{
+      if(e.target.classList.contains("sqp")) SQ.pos(c, idx(e.target), e.target.value);
+      if(e.target.classList.contains("sqnat")){   /* اختيار من منتقي النظام */
+        const n=e.target, w=n.closest(".sqbw"), t=w.querySelector(".sqb");
+        t.value=dobShow(n.value); t.classList.remove("bad");
+        SQ.dob(c, idx(n), n.value||"");
+        const a=w.nextElementSibling;
+        a.textContent = n.value ? playerAge(n.value) : "—"; a.classList.toggle("nil", !n.value);
+      }
+    });
     box.addEventListener("click", e=>{
       const t=e.target;
+      const cal=t.closest&&t.closest(".sqcal");
+      if(cal){ const n=cal.parentElement.querySelector(".sqnat");
+        try{ n.showPicker ? n.showPicker() : n.click(); }catch(err){ n.focus(); } return; }
       if(t.classList.contains("sqx")) return SQ.del(c, idx(t));
       if(t.classList.contains("sqsort")) return SQ.sort(c);
       if(t.classList.contains("sqbulk")){
