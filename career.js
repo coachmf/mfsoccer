@@ -13,8 +13,44 @@
   const yr = s => parseInt(String(s).slice(0, 4), 10);
   const next = s => { const y = yr(s) + 1; return String(s).includes("/") ? `${y}/${String(y + 1).slice(2)}` : String(y); };   /* مواسم السنة الميلادية (البرازيل…) تُكتب «2023» */
 
+  /* ───── تعديلات المدير (منصور 2026-11-19: «اقدر اعدل على مسيرة اللاعب من الادمن») ─────
+     تُحفظ في وثيقة الموسم: careers = { النادي: { الاسم: { st:[{f,t,c,cc,k}], by, at } } }
+     f/t = أول وآخر موسم («2021/22» أو «2021»)، c = اسم النادي كما يظهر، cc = رمز الدولة (kw…)، k = ""|free|fee|loan|swap.
+     التعديل يحلّ محلّ مسيرة FM للاعب بالكامل؛ حذفه يرجّع مسيرة FM. */
+  const EDITS = () => (typeof CAREERS !== "undefined" && CAREERS) || {};
+  const CUSTOM = {};   /* أندية مكتوبة يدوياً وليست في player-career.js */
+  const clubOf = key => DB().clubs[key] || CUSTOM[key] || { n: key, cc: "kw", kw: true };
+  const SEASON_RE = /^(\d{4})(?:\/(\d{2}))?$/;
+  const seasonsOf = (f, t) => {
+    const a = String(f).match(SEASON_RE), b = String(t || f).match(SEASON_RE); if (!a || !b) return [];
+    const out = []; for (let y = +a[1]; y <= +b[1]; y++) out.push(a[2] !== undefined ? `${y}/${String(y + 1).slice(2)}` : String(y));
+    return out;
+  };
+  function keyFor(name, cc) {
+    const C = DB().clubs, nm = String(name).trim();
+    const hit = Object.keys(C).find(k => (C[k].n === nm || C[k].en === nm || k === nm) && (!cc || (C[k].cc || "") === cc || (cc === "kw" && C[k].kw)));
+    if (hit) return hit;
+    const k = `~${nm}|${cc || ""}`;
+    CUSTOM[k] = { n: nm, en: nm, cc: cc || "", kw: cc === "kw" };
+    return k;
+  }
+  function rowsFromStages(st) {
+    const rows = [];
+    for (const x of st || []) {
+      const key = keyFor(x.c, x.cc), ss = seasonsOf(x.f, x.t);
+      ss.forEach((s, i) => rows.push([s, key, x.k === "loan" || x.k === "swap" ? x.k : (i === 0 ? (x.k || "") : "")]));
+    }
+    return rows;
+  }
+  function editOf(name, club) {
+    const E = EDITS();
+    return (E[club] && E[club][name]) || (h => h.length === 1 ? E[h[0]][name] : null)(Object.keys(E).filter(c => E[c] && E[c][name]));
+  }
+
   /* البحث: النادي + الاسم، ثم اسم فريد في نادٍ آخر (انتقال) — مثل المواليد */
   function rowsOf(name, club) {
+    const ed = editOf(name, club);
+    if (ed && Array.isArray(ed.st)) { const r = rowsFromStages(ed.st); r.edited = true; return r; }
     const P = DB().p;
     const rec = (P[club] && P[club][name]) || (h => h.length === 1 ? P[h[0]][name] : null)(Object.keys(P).filter(c => P[c][name]));
     if (!rec) return null;
@@ -55,13 +91,13 @@
     if (!real.length) return null;
     const clubs = new Set(st.map(x => x.club)).size;
     const seasons = new Set(st.flatMap(x => x.seasons)).size;
-    return { clubs, seasons, since: yr(real[0].from), loans: st.filter(x => x.loan).length, abroad: new Set(st.filter(x => (DB().clubs[x.club] || {}).cc && DB().clubs[x.club].cc !== "kw").map(x => x.club)).size };
+    return { clubs, seasons, since: yr(real[0].from), loans: st.filter(x => x.loan).length, abroad: new Set(st.filter(x => clubOf(x.club).cc && clubOf(x.club).cc !== "kw").map(x => x.club)).size };
   }
 
   /* ───── العرض ───── */
   const KIND = { start: "بداية المسيرة", move: "انتقال", free: "انتقال حر", swap: "تبادل لاعبين", loan: "إعارة", back: "عودة من الإعارة", return: "عودة", site: "انتقال" };
   function clubMark(key) {
-    const c = DB().clubs[key] || { n: key, cc: "kw", kw: true };
+    const c = clubOf(key);
     if ((c.kw || !c.cc) && typeof crest === "function" && (window.LOGOS || {})[c.n]) return crest(c.n);
     if (c.kw && typeof crest === "function") return crest(c.n);
     return `<div class="cr-flag">${c.cc ? `<img src="https://flagcdn.com/w80/${c.cc}.png" alt="" decoding="async">` : `<b>${H((c.en || c.n).slice(0, 2))}</b>`}</div>`;
@@ -73,7 +109,7 @@
     return x.current ? `<b>${a}</b><i>–</i><b>الآن</b>` : (a + 1 === b && x.n <= 1 ? `<b>${x.from.slice(0, 4)}/${x.from.slice(5)}</b>` : `<b>${a}</b><i>–</i><b>${b}</b>`);
   };
   function stageHTML(x, i) {
-    const c = DB().clubs[x.club] || { n: x.club, cc: "kw" }, cname = DB().cn[c.cc] || "";
+    const c = clubOf(x.club), cname = DB().cn[c.cc] || (c.cc === "kw" ? "الكويت" : "");
     const period = x.from ? (x.from === x.to ? `موسم ${x.from}` : `${x.from} – ${x.to}`) : "منذ هذا الموسم";
     return `<li class="cr-st${x.current ? " cur" : ""}${x.loan ? " loan" : ""}" data-cr-i="${i}">
       <span class="cr-dot" aria-hidden="true"></span>
@@ -89,9 +125,74 @@
       </div>
     </li>`;
   }
+  /* ───── محرّر المدير ───── */
+  const canEdit = () => typeof isAdmin !== "undefined" && isAdmin && !(typeof MYPERM !== "undefined" && MYPERM === "matches");
+  const KOPT = [["", "انتقال"], ["free", "انتقال حر"], ["loan", "إعارة"], ["swap", "تبادل"], ["fee", "بمقابل"]];
+  function stagesForEdit(name, club) {
+    const ed = editOf(name, club);
+    if (ed && Array.isArray(ed.st)) return ed.st.map(x => Object.assign({}, x));
+    return build(rowsOf(name, club) || [], null).map(x => { const c = clubOf(x.club);
+      return { f: x.from, t: x.to, c: c.n, cc: c.cc || (c.kw ? "kw" : ""), k: x.loan ? "loan" : (x.how && x.how !== "loan" ? x.how : "") }; });
+  }
+  function edRowHTML(x) {
+    const cn = DB().cn, codes = Object.keys(cn).filter(Boolean).sort((a, b) => (a === "kw" ? -1 : b === "kw" ? 1 : String(cn[a]).localeCompare(cn[b], "ar")));
+    return `<div class="cred-row">
+      <input class="cred-f" dir="ltr" inputmode="numeric" maxlength="7" placeholder="2021/22" value="${H(x.f || "")}" aria-label="من موسم">
+      <input class="cred-t" dir="ltr" inputmode="numeric" maxlength="7" placeholder="2023/24" value="${H(x.t || "")}" aria-label="إلى موسم">
+      <input class="cred-c" list="crClubs" placeholder="النادي" value="${H(x.c || "")}" aria-label="النادي">
+      <select class="cred-cc" aria-label="الدولة"><option value="">بلا دولة</option>${codes.map(k => `<option value="${k}"${k === (x.cc || "") ? " selected" : ""}>${H(cn[k])}</option>`).join("")}</select>
+      <select class="cred-k" aria-label="النوع">${KOPT.map(([v, l]) => `<option value="${v}"${v === (x.k || "") ? " selected" : ""}>${l}</option>`).join("")}</select>
+      <button type="button" class="cred-x" data-crdel aria-label="حذف المرحلة">✕</button>
+    </div>`;
+  }
+  function editorHTML(name, club) {
+    const st = stagesForEdit(name, club).slice().reverse();   /* الأحدث أعلى مثل الخط الزمني */
+    const names = [...new Set(Object.values(DB().clubs).map(c => c.n))].sort((a, b) => a.localeCompare(b, "ar"));
+    return `<div class="cred">
+      <p class="cred-hint">مرحلة لكل سطر: من موسم، إلى موسم (مثل 2021/22 أو 2021 للدوريات بالسنة الميلادية)، النادي، الدولة، ونوع الانتقال. الأحدث في الأعلى.</p>
+      <div class="cred-head" aria-hidden="true"><span>من</span><span>إلى</span><span>النادي</span><span>الدولة</span><span>النوع</span><span></span></div>
+      <div class="cred-rows">${(st.length ? st : [{ f: CUR_SEASON, t: CUR_SEASON, c: club, cc: "kw" }]).map(edRowHTML).join("")}</div>
+      <datalist id="crClubs">${names.map(n => `<option value="${H(n)}">`).join("")}</datalist>
+      <div class="cred-act">
+        <button type="button" class="cred-btn ghost" data-cradd>إضافة مرحلة</button>
+        <span style="flex:1"></span>
+        ${editOf(name, club) ? `<button type="button" class="cred-btn ghost" data-crreset>إرجاع مسيرة FM</button>` : ""}
+        <button type="button" class="cred-btn ghost" data-crcancel>إلغاء</button>
+        <button type="button" class="cred-btn" data-crsave>حفظ</button>
+      </div>
+    </div>`;
+  }
+  function readEditor(pane) {
+    const st = [], err = [];
+    [...pane.querySelectorAll(".cred-row")].forEach((r, i) => {
+      const v = s => r.querySelector(s).value.trim();
+      const f = v(".cred-f"), t = v(".cred-t") || f, c = v(".cred-c").replace(/\s+/g, " ");
+      if (!f && !c) return;
+      const a = f.match(SEASON_RE), b = t.match(SEASON_RE);
+      const okS = m => m && (m[2] === undefined || m[2] === String(+m[1] + 1).slice(2));
+      if (!okS(a) || !okS(b) || (!!a[2]) !== (!!b[2]) || +b[1] < +a[1]) { err.push(`السطر ${i + 1}: الموسم غير صحيح`); return; }
+      if (!c) { err.push(`السطر ${i + 1}: اكتب اسم النادي`); return; }
+      st.push({ f, t, c, cc: v(".cred-cc"), k: v(".cred-k") });
+    });
+    st.reverse();   /* المحرّر يعرض الأحدث أولاً؛ المخزَّن بالترتيب الزمني */
+    return { st, err };
+  }
+  const say = (m, k) => typeof toast === "function" ? toast(m, k) : console.log(m);
+  async function saveEdit(pane, name, club, rec) {
+    if (typeof CAREERS === "undefined" || typeof persistData !== "function") { say("الحفظ غير متاح هنا", "err"); return; }
+    const apply = () => { if (rec) { (CAREERS[club] = CAREERS[club] || {})[name] = rec; } else if (CAREERS[club]) { delete CAREERS[club][name]; if (!Object.keys(CAREERS[club]).length) delete CAREERS[club]; } };
+    apply();
+    try { if (typeof rebaseOnCloud === "function") await rebaseOnCloud(() => apply); } catch (e) {}
+    apply();
+    const r = await persistData({ noBackup: true });
+    say(r === true ? "حُفظت المسيرة" : r === false ? "حُفظت على الجهاز فقط — تحقّق من الاتصال" : "الاتصال بطيء — سيكتمل الحفظ تلقائياً", r === true ? "ok" : "err");
+    pane.innerHTML = html(name, club);
+  }
+
   function html(name, club) {
+    const edBtn = canEdit() ? `<button type="button" class="cred-open" data-cred>تعديل المسيرة</button>` : "";
     const rows = rowsOf(name, club);
-    if (!rows || !rows.length) return `<div class="cr-empty"><p>لم تُضف مسيرة هذا اللاعب بعد.</p></div>`;
+    if (!rows || !rows.length) return `<div class="cr-empty"><p>لم تُضف مسيرة هذا اللاعب بعد.</p></div>${edBtn}`;
     const st = build(rows, club), S = rows.partial ? null : summary(st);   /* مسيرة غير مكتملة القراءة: لا ملخّص ولا «بداية المسيرة» */
     const sum = S ? `<div class="cr-sum">
         <div><b>${S.clubs}</b><small>${S.clubs === 1 ? "نادٍ" : S.clubs === 2 ? "ناديان" : "أندية"}</small></div>
@@ -99,10 +200,10 @@
         ${S.loans ? `<div><b>${S.loans}</b><small>${S.loans === 1 ? "إعارة" : S.loans === 2 ? "إعارتان" : "إعارات"}</small></div>` : ""}
         ${S.abroad ? `<div><b>${S.abroad}</b><small>${S.abroad === 1 ? "نادٍ خارجي" : "أندية خارجية"}</small></div>` : ""}
       </div>` : "";
-    return `${sum}<ol class="cr-tl">${st.slice().reverse().map((x, k) => stageHTML(x, st.length - 1 - k)).join("")}</ol>`;
+    return `${sum}<ol class="cr-tl">${st.slice().reverse().map((x, k) => stageHTML(x, st.length - 1 - k)).join("")}</ol>${edBtn}`;
   }
 
-  window.CAREER = { rowsOf, build, summary, html };
+  window.CAREER = { rowsOf, build, summary, html, editorHTML, readEditor };
 
   /* ───── التبويب داخل ملف اللاعب ───── */
   let TAB = "stats";
@@ -116,11 +217,27 @@
         const end = h.indexOf('<div class="segbar compbar pprof-cbar"'); if (end < 0) return h;
         const close = h.lastIndexOf("</div>");
         const tabs = `<div class="pp-tabs" role="tablist"><button type="button" role="tab" data-pptab="stats" aria-selected="${TAB === "stats"}">الإحصائيات</button><button type="button" role="tab" data-pptab="career" aria-selected="${TAB === "career"}">المسيرة</button></div>`;
-        return h.slice(0, end) + tabs + `<div class="pp-pane" data-pane="stats"${TAB === "stats" ? "" : " hidden"}>` + h.slice(end, close) + `</div><div class="pp-pane cr" data-pane="career"${TAB === "career" ? "" : " hidden"}>${html(D.name, D.club)}</div>` + h.slice(close);
+        return h.slice(0, end) + tabs + `<div class="pp-pane" data-pane="stats"${TAB === "stats" ? "" : " hidden"}>` + h.slice(end, close) + `</div><div class="pp-pane cr" data-pane="career" data-n="${H(D.name)}" data-c="${H(D.club || "")}"${TAB === "career" ? "" : " hidden"}>${html(D.name, D.club)}</div>` + h.slice(close);
       } catch (e) { return h; }
     };
   }
   document.addEventListener("click", e => {
+    const ed = e.target.closest && e.target.closest("[data-cred],[data-cradd],[data-crdel],[data-crsave],[data-crcancel],[data-crreset]");
+    if (ed) {
+      const pane = ed.closest(".pp-pane.cr"); if (!pane) return;
+      const name = pane.dataset.n, club = pane.dataset.c;
+      if (ed.hasAttribute("data-cred")) { if (canEdit()) pane.innerHTML = editorHTML(name, club); return; }
+      if (ed.hasAttribute("data-cradd")) { pane.querySelector(".cred-rows").insertAdjacentHTML("afterbegin", edRowHTML({ f: CUR_SEASON, t: CUR_SEASON, cc: "kw" })); return; }
+      if (ed.hasAttribute("data-crdel")) { ed.closest(".cred-row").remove(); return; }
+      if (ed.hasAttribute("data-crcancel")) { pane.innerHTML = html(name, club); return; }
+      if (!canEdit()) return;
+      if (ed.hasAttribute("data-crreset")) { if (confirm("حذف التعديل وإرجاع مسيرة FM لهذا اللاعب؟")) saveEdit(pane, name, club, null); return; }
+      const { st, err } = readEditor(pane);
+      if (err.length) { say(err[0], "err"); return; }
+      ed.disabled = true;
+      saveEdit(pane, name, club, { st, by: (typeof FBUSER !== "undefined" && FBUSER && FBUSER.email) || "", at: new Date().toISOString() });
+      return;
+    }
     const t = e.target.closest && e.target.closest("[data-pptab]");
     if (t) {
       TAB = t.dataset.pptab;

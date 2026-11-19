@@ -2307,9 +2307,9 @@ html[dir="ltr"] .tl-ev.a .tl-card{text-align:right;align-items:flex-end}
 <script src="app-shell.js?v=1" defer></script>   <!-- تجربة التطبيق: تعمل مع html.mfa فقط -->
 <link rel="stylesheet" href="fmx.css?v=3">
 <script src="fmx.js?v=9" defer></script>   <!-- أفكار FM27: fmx.js يلفّ صفحات المباراة والنادي واللاعب والمباريات والتحليل -->
-<link rel="stylesheet" href="career.css?v=2">
+<link rel="stylesheet" href="career.css?v=4">
 <script src="player-career.js?v=3" defer></script>   <!-- مسيرة اللاعبين من FM27 (صفوف خام لكل موسم) -->
-<script src="career.js?v=2" defer></script>   <!-- تبويب «المسيرة» في ملف اللاعب: يلفّ playerProfileHTML بعد fmx.js -->
+<script src="career.js?v=3" defer></script>   <!-- تبويب «المسيرة» في ملف اللاعب: يلفّ playerProfileHTML بعد fmx.js -->
 <link rel="stylesheet" href="mxday.css?v=1">
 <script src="mxday.js?v=2" defer></script>
 <script src="visitors.js?v=2" defer></script>   <!-- الزوار: قياس مجهول + العين للطاقم + «الزوار بالتفصيل» في الإدارة (2026-11-14) -->   <!-- صفحة المباريات حسب اليوم (منصور 2026-11-07) -->
@@ -2911,6 +2911,7 @@ let COMP = "الكل";   /* يفتح الموقع على «إجمالي البط
 let MXC = "upcoming";   /* صفحة المباريات: "upcoming" = المباريات القادمة من كل المسابقات (الافتراضي، منصور 2026-09-16)، أو بطولة خارجية (معرّف من EXT_COMPS)، أو null = المسابقة المحلية COMP */
 let CARDS = [];
 let ALL = null;
+let CAREERS = {};   /* تعديلات المدير على «المسيرة»: { النادي: { الاسم: {st:[{f,t,c,cc,k}], by, at} } } — career.js */
 let SQUADS = {};   /* كشوفات اللاعبين: { "النادي": ["اسم", {n:"اسم", p:"CDM", s:10}, ...] } */
 let SQNUMS_FOUND = 0;
 const SQOPEN = new Set();   /* أي أندية مفتوحة في الإعدادات */   /* كم رقم انفصل عن الأسماء في آخر تحميل */
@@ -4290,7 +4291,8 @@ function applyData(d, source){
                    tots:    keepField(d.tots,    ALL && ALL.tots),
                    mev:     keepField(d.mev,     ALL && ALL.mev),
                    refpool: keepField(d.refpool, ALL && ALL.refpool)});   /* قائمة الحكام وفئاتهم */   /* أحداث المباراة الإضافية: فرصة خطيرة / VAR / تعليق */
-  SQUADS = d.squads || SQUADS || {};   /* ملف بلا كشوفات لا يمسح الكشوفات الحالية */
+  SQUADS = d.squads || SQUADS || {};
+  CAREERS = d.careers || CAREERS || {};   /* وثيقة بلا تعديلات لا تمسح الحالية */   /* ملف بلا كشوفات لا يمسح الكشوفات الحالية */
   SQUAD_RENAME.forEach(r=>{ const l=SQUADS[r.c]; if(!Array.isArray(l)) return; const nm=e=>String(typeof e==="string"?e:e&&e.n||"").trim();
     if(!l.some(e=>nm(e)===r.from)) return;
     SQUADS[r.c]=l.filter(e=>nm(e)!==r.to).map(e=>nm(e)===r.from ? Object.assign({}, typeof e==="object"?e:{}, {n:r.to}) : e); });
@@ -4326,7 +4328,7 @@ function applyData(d, source){
 function dataObject(){
   return {season:SEASON, clubs:CLUBS,
           matches:ALL?ALL.matches:MATCHES, goals:ALL?ALL.goals:GOALS,
-          pens:ALL?ALL.pens:PENS, cards:ALL?ALL.cards:CARDS, squads:SQUADS,
+          pens:ALL?ALL.pens:PENS, cards:ALL?ALL.cards:CARDS, squads:SQUADS, careers:CAREERS,
           lineups:(ALL&&ALL.lineups)||[], subs:(ALL&&ALL.subs)||[],
           shapes:(ALL&&ALL.shapes)||[],
           kits:(ALL&&ALL.kits)||[],

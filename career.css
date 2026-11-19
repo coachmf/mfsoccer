@@ -59,3 +59,24 @@
 [data-theme="light"] .cr-st.cur .cr-yr b{color:#8a6d2b}
 @media (prefers-reduced-motion:reduce){.pp-pane.cr,.cr-more{animation:none}.cr-card{transition:none}}
 @media (min-width:720px){.cr-card{grid-template-columns:120px minmax(0,1fr) auto;grid-template-areas:"yr club tags"}.cr-tags{justify-self:end}}
+
+/* محرّر المدير (2026-11-19) */
+.cred-open{display:block;width:100%;margin-top:14px;min-height:44px;border-radius:12px;border:1px dashed rgba(231,208,147,.5);background:transparent;color:#F5E2A8;font:700 .84rem/1 var(--display,inherit);cursor:pointer}
+.cred-open:hover{background:rgba(231,208,147,.08)}
+.cred-hint{margin:0 0 12px;font-size:.74rem;line-height:1.7;color:var(--mist,#8FA6C4)}
+.cred-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) 44px;gap:6px;align-items:center}
+.cred-head{display:none}
+.cred-rows{display:flex;flex-direction:column;gap:10px}
+.cred-row{grid-template-areas:"f t x" "c c c" "cc k k";padding:8px;border-radius:12px;background:rgba(255,255,255,.035);border:1px solid rgba(143,166,196,.16)}
+.cred-f{grid-area:f}.cred-t{grid-area:t}.cred-c{grid-area:c}.cred-cc{grid-area:cc}.cred-k{grid-area:k}.cred-x{grid-area:x}
+.cred-row input,.cred-row select{width:100%;min-width:0;min-height:40px;padding:0 8px;border-radius:9px;border:1px solid rgba(143,166,196,.28);background:rgba(7,17,43,.6);color:var(--head,#fff);font:600 .8rem/1 inherit;font-size:16px}
+.cred-row input:focus,.cred-row select:focus{outline:2px solid #E7D093;outline-offset:1px}
+.cred-f,.cred-t{text-align:center;font-variant-numeric:tabular-nums}
+.cred-x{min-height:40px;border:0;border-radius:9px;background:rgba(229,72,77,.14);color:#F2777B;font-size:.9rem;cursor:pointer}
+.cred-act{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+.cred-btn{min-height:42px;padding:0 16px;border-radius:11px;border:0;background:#E7D093;color:#07112B;font:800 .82rem/1 var(--display,inherit);cursor:pointer}
+.cred-btn.ghost{background:transparent;color:var(--mist,#8FA6C4);border:1px solid rgba(143,166,196,.3)}
+.cred-btn:disabled{opacity:.5}
+[data-theme="light"] .cred-row{background:#fff;border-color:var(--line2,#dfe4ec)}
+[data-theme="light"] .cred-row input,[data-theme="light"] .cred-row select{background:#f6f8fb;color:#0B1736;border-color:#dfe4ec}
+[data-theme="light"] .cred-open{color:#0B1736;border-color:#b9a15a}
