@@ -497,7 +497,8 @@ function wireSquads(){
     const idx=el=>+el.closest(".sqrow").dataset.i;
     box.addEventListener("input", e=>{
       const t=e.target;
-      if(t.classList.contains("sqn"))  SQ.name(c, idx(t), t.value);
+      if(t.classList.contains("sqn")){ if(t.dataset.was===undefined) t.dataset.was=sqName(SQ.arr(c)[idx(t)]);
+        SQ.name(c, idx(t), t.value); }
       if(t.classList.contains("sqno")){ t.value=t.value.replace(/\D/g,""); SQ.num(c, idx(t), t.value); }
       if(t.classList.contains("sqnewno")) t.value=t.value.replace(/\D/g,"");
       if(t.classList.contains("sqb")){   /* الشرطتان تُكتبان وحدهما: 19870420 ← 1987/04/20 */
@@ -513,6 +514,17 @@ function wireSquads(){
           a.textContent = iso ? playerAge(iso) : "—"; a.classList.toggle("nil", !iso);
         }
       }
+    });
+    /* تعديل الاسم ينقل سجلات اللاعب معه — وإلا بقيت أهدافه وبطاقاته وتشكيلاته
+       معلّقة بالاسم القديم بلا أن ينتبه أحد (منصور 2026-11-19: خالد العجاجي).
+       عند الخروج من الحقل لا مع كل حرف، فلا تُعاد التسمية على اسم نصف مكتوب. */
+    box.addEventListener("focusout", e=>{
+      const t=e.target; if(!t.classList || !t.classList.contains("sqn")) return;
+      const from=t.dataset.was, to=sqName(SQ.arr(c)[idx(t)]);
+      delete t.dataset.was;
+      if(!from || !to || from===to) return;
+      if(typeof renameEverywhere==="function") renameEverywhere(from, to, c);
+      toast(`نُقلت سجلات «${from}» إلى «${to}» — احفظ الكشوفات للاعتماد`,"busy");
     });
     box.addEventListener("change", e=>{
       if(e.target.classList.contains("sqp")) SQ.pos(c, idx(e.target), e.target.value);

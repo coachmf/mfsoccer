@@ -5774,12 +5774,30 @@ function natOf(name, club){
   return _NATN[_natKey(club,name)] || ""; }
 function natFlag(name, club, cls){ const c=natOf(name, club); if(!c) return "";
   return `<img class="natf${cls?" "+cls:""}" src="https://flagcdn.com/w40/${c}.png" srcset="https://flagcdn.com/w80/${c}.png 2x" alt="" decoding="async" draggable="false">`; }
+/* ملفات الصور مسمّاة برقم القميص (assets/players/nsr/33)، وخرائط الأسماء مجرّد فهرس لها.
+   فإن غُيّر اسم لاعب في الكشف ضاع الفهرس وضاعت صورته — وهذا ما حصل لخالد العجاجي
+   (منصور 2026-11-19). الحلّ: إن لم يُطابق الاسم، نجرّب مسار رقمه في ناديه، ولا نقبله
+   إلا إن كان ملفاً معروفاً فعلاً (من قيم الخرائط نفسها) فلا تظهر صورة مكسورة. */
+let PHOTO_PATHS = null;
+function photoPathSet(){
+  if(PHOTO_PATHS) return PHOTO_PATHS;
+  PHOTO_PATHS = new Set(Object.values(LOCAL_PHOTOS).concat(Object.values(LOCAL_PHOTOS_BY_CLUB)));
+  return PHOTO_PATHS;
+}
+function photoByNumber(name, club){
+  const dir = club && CLUB_DIR[club]; if(!dir) return null;
+  const e = (typeof SQUADS!=="undefined" && SQUADS[club] || []).find(x=>sqName(x)===name);
+  const s = e ? sqNum(e) : 0; if(!s) return null;
+  const p = "assets/players/"+dir+"/"+s;
+  return photoPathSet().has(p) ? p : null;
+}
 function photoCut(name, club){
   if(club && CUP_CLUBS.includes(club)) return null;   /* الدرجة الأولى بلا صور: لا تُستعار صورة لاعب ممتاز بنفس الاسم */
   const k = club ? LOCAL_PHOTOS_BY_CLUB[club+"|"+name] : null; if(k) return k;
-  const cut = LOCAL_PHOTOS[name]; if(!cut) return null;
+  const cut = LOCAL_PHOTOS[name];
   const dir = club && CLUB_DIR[club];
-  return (dir && !cut.includes("/"+dir+"/")) ? null : cut;   /* صورة لاعب آخر بالاسم نفسه في نادٍ آخر */
+  if(cut && !(dir && !cut.includes("/"+dir+"/"))) return cut;   /* صورة لاعب آخر بالاسم نفسه في نادٍ آخر */
+  return photoByNumber(name, club);
 }
 
 function useLocalCrests(){
@@ -6120,6 +6138,30 @@ function renameInRecords(pairs, known){
   (ALL?.goals||[]).forEach(g=>{ g.p=fix(g.p); if(g.a) g.a=fix(g.a); });
   (ALL?.cards||[]).forEach(x=>{ x.p=fix(x.p); });
   (ALL?.pens ||[]).forEach(x=>{ x.p=fix(x.p); });
+}
+/* نقل اسم لاعب في كل سجلات الموسم (منصور 2026-11-19). renameInRecords تغطّي الأهداف
+   والبطاقات والجزاءات وحدها، وتعديل اسم خالد العجاجي كشف أن الاسم مخزّن أيضاً في:
+   التشكيلات، التبديلات، الغياب/الحاضرون وركلات الترجيح في المباراة، وفي shapes كمفتاح. */
+function renameEverywhere(from, to, club){
+  if(!from || !to || from===to) return 0;
+  let n=0;
+  const F = v => { if(v===from){ n++; return to; } return v; };
+  const sameClub = c => !club || !c || c===club;
+  (ALL?.goals||[]).forEach(g=>{ if(sameClub(g.sc)){ g.p=F(g.p); g.a=F(g.a); } if(sameClub(g.cd)) g.og=F(g.og); });
+  (ALL?.cards||[]).forEach(x=>{ if(sameClub(x.club)) x.p=F(x.p); });
+  (ALL?.pens ||[]).forEach(x=>{ if(sameClub(x.by))   x.p=F(x.p); });
+  (ALL?.subs ||[]).forEach(x=>{ if(sameClub(x.club)){ x.out=F(x.out); x.in=F(x.in); } });
+  (ALL?.mev  ||[]).forEach(x=>{ if(sameClub(x.club)) x.p=F(x.p); });
+  (ALL?.lineups||[]).forEach(l=>{ if(sameClub(l.club)) l.p=F(l.p); });          /* صفّ لكل لاعب: {comp,club,r,p} */
+  (ALL?.matches||[]).forEach(m=>{ ["abs","pres","psk"].forEach(k=>{            /* الغياب: [{p,c}] */
+    if(Array.isArray(m[k])) m[k]=m[k].map(v => (v && typeof v==="object")
+      ? ((!club || !v.c || v.c===club) ? (v.p=F(v.p), v) : v) : F(v)); }); });
+  (ALL?.shapes||[]).forEach(s=>{ if(!sameClub(s.club) || !s.pos) return;        /* الاسم مفتاح لا قيمة */
+    if(Object.prototype.hasOwnProperty.call(s.pos, from)){ s.pos[to]=s.pos[from]; delete s.pos[from]; n++; } });
+  (ALL?.tots||[]).forEach(t=>{                                                  /* {xi:[{club,n}], gk:{club,n}, best:{club,n}} */
+    if(Array.isArray(t.xi)) t.xi.forEach(e=>{ if(e && sameClub(e.club)) e.n=F(e.n); });
+    ["gk","best"].forEach(k=>{ const e=t[k]; if(e && typeof e==="object" && sameClub(e.club)) e.n=F(e.n); }); });
+  return n;
 }
 function squadsExtractNums(){
   const pairs=[]; let n=0;
@@ -7017,7 +7059,7 @@ function admLoad(){
   if(ADMX_P) return ADMX_P;
   return (ADMX_P = new Promise((res, rej)=>{
     const css = document.createElement("link"); css.rel = "stylesheet"; css.href = "admin.css?v=2";
-    const s = document.createElement("script"); s.src = "admin.js?v=4";
+    const s = document.createElement("script"); s.src = "admin.js?v=5";
     s.onload = ()=>{ ADMX.ready = true; res(); };
     s.onerror = ()=>{ ADMX_P = null; css.remove(); s.remove(); rej(new Error("admin.js")); };
     document.head.appendChild(css); document.head.appendChild(s);
