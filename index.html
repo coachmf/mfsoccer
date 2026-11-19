@@ -6128,7 +6128,7 @@ function squadsExtractNums(){
       const cur=sqName(x); if(!cur) return;
       const got=splitNumName(cur);
       if(!got.s || got.n===cur) return;
-      SQUADS[c][i]=sqItem(got.n, sqPos(x), sqNum(x)||got.s);
+      SQUADS[c][i]=sqItem(got.n, sqPos(x), sqNum(x)||got.s, sqDob(x));   /* sqDob وإلا مُسح التاريخ عند فصل الرقم */
       pairs.push({from:cur, to:got.n}); n++;
     });
   });
@@ -7017,7 +7017,7 @@ function admLoad(){
   if(ADMX_P) return ADMX_P;
   return (ADMX_P = new Promise((res, rej)=>{
     const css = document.createElement("link"); css.rel = "stylesheet"; css.href = "admin.css?v=2";
-    const s = document.createElement("script"); s.src = "admin.js?v=3";
+    const s = document.createElement("script"); s.src = "admin.js?v=4";
     s.onload = ()=>{ ADMX.ready = true; res(); };
     s.onerror = ()=>{ ADMX_P = null; css.remove(); s.remove(); rej(new Error("admin.js")); };
     document.head.appendChild(css); document.head.appendChild(s);

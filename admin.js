@@ -475,7 +475,7 @@ const SQ = {
       (SQUADS[c]||[]).forEach(x=>{
         const n=sqName(x).trim().replace(/\s+/g," ");
         if(!n || seen.has(n)) return;
-        seen.add(n); out.push(sqItem(n, sqPos(x), sqNum(x)));
+        seen.add(n); out.push(sqItem(n, sqPos(x), sqNum(x), sqDob(x)));   /* sqDob وإلا مُسح تاريخ كل اللاعبين عند الحفظ */
       });
       if(out.length) SQUADS[c]=out; else delete SQUADS[c];
     });
