@@ -96,11 +96,13 @@
 
   /* ───── العرض ───── */
   const KIND = { start: "بداية المسيرة", move: "انتقال", free: "انتقال حر", swap: "تبادل لاعبين", loan: "إعارة", back: "عودة من الإعارة", return: "عودة", site: "انتقال" };
+  /* بلا decoding="async": في سفاري iOS تُرسم الشعارات متأخرة أو نصف مرسومة داخل اللوحة المخفية ثم الظاهرة (منصور 11-19) */
+  const SYNC = s => s.replace(/ decoding="async"/g, ' decoding="sync"');
   function clubMark(key) {
     const c = clubOf(key);
-    if ((c.kw || !c.cc) && typeof crest === "function" && (window.LOGOS || {})[c.n]) return crest(c.n);
-    if (c.kw && typeof crest === "function") return crest(c.n);
-    return `<div class="cr-flag">${c.cc ? `<img src="https://flagcdn.com/w80/${c.cc}.png" alt="" decoding="async">` : `<b>${H((c.en || c.n).slice(0, 2))}</b>`}</div>`;
+    if ((c.kw || !c.cc) && typeof crest === "function" && (window.LOGOS || {})[c.n]) return SYNC(crest(c.n));
+    if (c.kw && typeof crest === "function") return SYNC(crest(c.n));
+    return `<div class="cr-flag">${c.cc ? `<img src="https://flagcdn.com/w80/${c.cc}.png" alt="" decoding="sync">` : `<b>${H((c.en || c.n).slice(0, 2))}</b>`}</div>`;
   }
   const years = x => {
     if (!x.from) return `<b>الآن</b>`;
@@ -244,6 +246,7 @@
       const sh = t.closest(".pprof-sheet"); if (!sh) return;
       sh.querySelectorAll("[data-pptab]").forEach(b => b.setAttribute("aria-selected", String(b === t)));
       sh.querySelectorAll(".pp-pane").forEach(p => { p.hidden = p.dataset.pane !== TAB; });
+      if (TAB === "career") sh.querySelectorAll(".pp-pane.cr img").forEach(i => { try { i.decode && i.decode().catch(() => {}); } catch (e) {} });
       return;
     }
     const c = e.target.closest && e.target.closest(".cr-card");

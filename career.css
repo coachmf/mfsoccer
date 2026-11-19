@@ -7,7 +7,7 @@
 [data-theme="light"] .pp-tabs button[aria-selected="true"]{background:#0B1736;color:#F5E2A8}
 .pp-pane[hidden]{display:none!important}
 .pp-pane.cr{padding:14px 16px 26px;animation:crIn .25s ease}
-@keyframes crIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+@keyframes crIn{from{opacity:0}to{opacity:1}}
 
 /* ملخص المسيرة */
 .cr-sum{display:grid;grid-template-columns:repeat(auto-fit,minmax(0,1fr));gap:8px;margin-bottom:18px}
