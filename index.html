@@ -5786,10 +5786,16 @@ function photoPathSet(){
 }
 function photoByNumber(name, club){
   const dir = club && CLUB_DIR[club]; if(!dir) return null;
-  const e = (typeof SQUADS!=="undefined" && SQUADS[club] || []).find(x=>sqName(x)===name);
+  const list = (typeof SQUADS!=="undefined" && SQUADS[club]) || [];
+  const e = list.find(x=>sqName(x)===name);
   const s = e ? sqNum(e) : 0; if(!s) return null;
   const p = "assets/players/"+dir+"/"+s;
-  return photoPathSet().has(p) ? p : null;
+  if(!photoPathSet().has(p)) return null;
+  /* الملف باسم الرقم، والرقم ينتقل بين اللاعبين. فإن كان زميل في النادي يملك هذا
+     المسار باسمه، فالصورة صورته لا صورتنا — لا نعرض وجه لاعب مكان آخر. */
+  const owned = list.some(x=>{ const n=sqName(x); if(!n || n===name) return false;
+    return LOCAL_PHOTOS_BY_CLUB[club+"|"+n]===p || LOCAL_PHOTOS[n]===p; });
+  return owned ? null : p;
 }
 function photoCut(name, club){
   if(club && CUP_CLUBS.includes(club)) return null;   /* الدرجة الأولى بلا صور: لا تُستعار صورة لاعب ممتاز بنفس الاسم */
