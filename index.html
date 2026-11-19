@@ -2288,7 +2288,7 @@ html[dir="ltr"] .tl-ev.a .tl-card{text-align:right;align-items:flex-end}
 <script src="efftime.js?v=16" defer></script>
 <link rel="stylesheet" href="div1.css?v=5">
 <script src="div1.js?v=10" defer></script>
-<script src="player-dob.js?v=9" defer></script>   <!-- مواليد اللاعبين (FM27) للبروفايل: المواليد + العمر الحيّ -->
+<script src="player-dob.js?v=10" defer></script>   <!-- مواليد اللاعبين (FM27) للبروفايل: المواليد + العمر الحيّ -->
 <script src="amateur.js?v=11" defer></script>   <!-- دوري الهواة: النتائج والترتيب فقط (seasons/amateur) -->
 <link rel="stylesheet" href="news.css?v=5">
 <script src="news.js?v=11" defer></script>   <!-- الأخبار: news/{id} + فهرس seasons/news + صور newsimg/{id} -->   <!-- دوري الدرجة الأولى: الترتيب والمباريات فقط (seasons/div1) -->
@@ -13443,7 +13443,7 @@ function playerDob(name,club){
            if(v){ if(h&&h!==v) return ""; h=v; } } if(h) return h; }
   const B=window.PLAYER_DOB; if(!B) return "";
   if(club&&B[club]&&B[club][name]) return B[club][name];
-  let hit=""; for(const c in B){ if(B[c][name]){ if(hit&&hit!==B[c][name]) return ""; hit=B[c][name]; } }   /* نفس الاسم في نادٍ آخر (انتقال) — فقط إن لم يتعارض */
+  let hit=""; for(const c in B){ if(B[c][name] && !(club&&c!==club&&(SQUADS&&SQUADS[c]||[]).some(x=>sqName(x)===name))){ if(hit&&hit!==B[c][name]) return ""; hit=B[c][name]; } }   /* نفس الاسم في نادٍ آخر (انتقال) — فقط إن لم يتعارض */
   return hit;
 }
 function playerAge(iso){
