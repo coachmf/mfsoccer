@@ -11,14 +11,15 @@
   const DB = () => window.PLAYER_CAREER || { clubs: {}, cn: {}, p: {} };
   const CUR_SEASON = "2026/27";
   const yr = s => parseInt(String(s).slice(0, 4), 10);
-  const next = s => { const y = yr(s) + 1; return `${y}/${String(y + 1).slice(2)}`; };
+  const next = s => { const y = yr(s) + 1; return String(s).includes("/") ? `${y}/${String(y + 1).slice(2)}` : String(y); };   /* مواسم السنة الميلادية (البرازيل…) تُكتب «2023» */
 
   /* البحث: النادي + الاسم، ثم اسم فريد في نادٍ آخر (انتقال) — مثل المواليد */
   function rowsOf(name, club) {
     const P = DB().p;
-    if (P[club] && P[club][name]) return P[club][name].r;
-    const hits = Object.keys(P).filter(c => P[c][name]);
-    return hits.length === 1 ? P[hits[0]][name].r : null;
+    const rec = (P[club] && P[club][name]) || (h => h.length === 1 ? P[h[0]][name] : null)(Object.keys(P).filter(c => P[c][name]));
+    if (!rec) return null;
+    const r = rec.r.slice(); r.partial = !!rec.t;   /* t:1 = المواسم الأقدم لم تُقرأ كاملة من FM */
+    return r;
   }
 
   /* ───── المنطق: صفوف المواسم → مراحل ─────
@@ -37,7 +38,7 @@
       x.n = new Set(x.seasons).size;
       const before = st.slice(0, i);
       if (x.loan) x.kind = "loan";
-      else if (i === 0) x.kind = "start";
+      else if (i === 0) x.kind = rows && rows.partial ? "" : "start";
       else if (before.some(b => !b.loan && b.club === x.club)) x.kind = before[before.length - 1].loan && before[before.length - 1].club !== x.club ? "back" : "return";
       else x.kind = x.how === "free" ? "free" : x.how === "swap" ? "swap" : "move";
     });
@@ -67,6 +68,7 @@
   }
   const years = x => {
     if (!x.from) return `<b>الآن</b>`;
+    if (!String(x.from).includes("/")) { const a = yr(x.from), b = yr(x.to); return x.current ? `<b>${a}</b><i>–</i><b>الآن</b>` : a === b ? `<b>${a}</b>` : `<b>${a}</b><i>–</i><b>${b}</b>`; }
     const a = yr(x.from), b = yr(x.to) + 1;
     return x.current ? `<b>${a}</b><i>–</i><b>الآن</b>` : (a + 1 === b && x.n <= 1 ? `<b>${x.from.slice(0, 4)}/${x.from.slice(5)}</b>` : `<b>${a}</b><i>–</i><b>${b}</b>`);
   };
@@ -83,14 +85,14 @@
       <div class="cr-more" hidden>
         <div><small>الفترة</small><b dir="ltr">${H(period)}</b></div>
         ${x.n ? `<div><small>المواسم</small><b>${x.n}</b></div>` : ""}
-        <div><small>نوع الانتقال</small><b>${H(KIND[x.kind] || "")}</b></div>
+        ${KIND[x.kind] ? `<div><small>نوع الانتقال</small><b>${H(KIND[x.kind])}</b></div>` : ""}
       </div>
     </li>`;
   }
   function html(name, club) {
     const rows = rowsOf(name, club);
     if (!rows || !rows.length) return `<div class="cr-empty"><p>لم تُضف مسيرة هذا اللاعب بعد.</p></div>`;
-    const st = build(rows, club), S = summary(st);
+    const st = build(rows, club), S = rows.partial ? null : summary(st);   /* مسيرة غير مكتملة القراءة: لا ملخّص ولا «بداية المسيرة» */
     const sum = S ? `<div class="cr-sum">
         <div><b>${S.clubs}</b><small>${S.clubs === 1 ? "نادٍ" : S.clubs === 2 ? "ناديان" : "أندية"}</small></div>
         <div><b>${S.seasons}</b><small>${S.seasons === 1 ? "موسم" : S.seasons === 2 ? "موسمان" : S.seasons <= 10 ? "مواسم" : "موسماً"} · منذ ${S.since}</small></div>
