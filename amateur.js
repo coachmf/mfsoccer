@@ -71,8 +71,10 @@ const store = {
     const early = d => { if(live || !d || !Array.isArray(d.matches)) return; const u = String(d.updated||""); if(last && u <= last) return; last = u; cb(d); };
     try{ const c = localStorage.getItem(CACHE_K); if(c) early(JSON.parse(c)); }catch(e){}
     if(typeof SNAP!=="undefined" && SNAP && SNAP.get) SNAP.get(DOC_ID).then(early).catch(()=>{});
+    /* فتح التطبيق من إشعار أو العودة إليه وقناة onSnapshot متوقفة: لقطة حديثة (مفتاح 15 ث) تُطبَّق إن كانت أحدث من المعروض — يستدعيها freshenSeason */
+    (window.MF_FRESH = window.MF_FRESH || []).push(()=>{ if(typeof SNAP==="undefined" || !SNAP || !SNAP.get) return; SNAP.get(DOC_ID, true, true).then(d=>{ if(!d || !Array.isArray(d.matches)) return; const u = String(d.updated||""); if(!u || u <= last) return; last = u; cb(d); }).catch(()=>{}); });
     const go = () => { if(typeof fbDb==="undefined" || !fbDb){ setTimeout(go, 400); return; }
-      fbDb.collection("seasons").doc(DOC_ID).onSnapshot(s=>{ live = true; const d = s.exists ? s.data() : null;
+      fbDb.collection("seasons").doc(DOC_ID).onSnapshot(s=>{ live = true; const d = s.exists ? s.data() : null; if(d && d.updated) last = String(d.updated);
         if(d) try{ localStorage.setItem(CACHE_K, JSON.stringify(d)); }catch(e){}
         cb(d); }, ()=>{}); };
     go();

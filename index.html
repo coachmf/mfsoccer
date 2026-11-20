@@ -51,7 +51,8 @@ const SNAP={_p:{},
     const t=setTimeout(()=>ctl&&ctl.abort(), 8000);
     return this._p[id]=fetch('/api/doc/'+id+(bust?'?v='+Math.floor(Date.now()/15000):''), {cache:'no-cache', signal:ctl&&ctl.signal})
       .then(r=>r.ok?r.json():null).catch(()=>null).finally(()=>clearTimeout(t)); }};
-if(/^https?:$/.test(location.protocol)){ SNAP.get('2026-2027'); SNAP.get('assets'); SNAP.get('gulf27'); }
+/* الفتح من إشعار (#m/…): لقطة الموسم بمفتاح 15 ث من أول لحظة — كانت تُرسم النسخة القديمة ثم تُصحَّح بعد ثوانٍ (منصور 2026-11-20) */
+if(/^https?:$/.test(location.protocol)){ SNAP.get('2026-2027', false, /^#m\//.test(location.hash)); SNAP.get('assets'); SNAP.get('gulf27'); }
 /* بعد التحليل تكون الحالة interactive قبل تنفيذ سكربتات defer (Firebase) — فعلامة
    DOMContentLoaded هي الدليل الوحيد على جاهزيتها (انظر domReady) */
 var DCL_FIRED=false; document.addEventListener('DOMContentLoaded', ()=>{ DCL_FIRED=true; }, {once:true});
@@ -2288,14 +2289,14 @@ html[dir="ltr"] .tl-ev.a .tl-card{text-align:right;align-items:flex-end}
 <link rel="stylesheet" href="efftime.css?v=4">
 <script src="efftime.js?v=16" defer></script>
 <link rel="stylesheet" href="div1.css?v=6">
-<script src="div1.js?v=13" defer></script>
+<script src="div1.js?v=14" defer></script>
 <script src="player-dob.js?v=13" defer></script>   <!-- مواليد اللاعبين (FM27) للبروفايل: المواليد + العمر الحيّ -->
-<script src="amateur.js?v=11" defer></script>   <!-- دوري الهواة: النتائج والترتيب فقط (seasons/amateur) -->
+<script src="amateur.js?v=12" defer></script>   <!-- دوري الهواة: النتائج والترتيب فقط (seasons/amateur) -->
 <link rel="stylesheet" href="news.css?v=5">
 <script src="news.js?v=11" defer></script>   <!-- الأخبار: news/{id} + فهرس seasons/news + صور newsimg/{id} -->   <!-- دوري الدرجة الأولى: الترتيب والمباريات فقط (seasons/div1) -->
 <link rel="stylesheet" href="app-shell.css?v=1">
 <link rel="stylesheet" href="ext.css?v=3">
-<script src="ext.js?v=16" defer></script>   <!-- المشاركات الخارجية لأنديتنا: تحرير كامل مثل الدوري في وثيقة مستقلة (seasons/ext2627) -->
+<script src="ext.js?v=17" defer></script>   <!-- المشاركات الخارجية لأنديتنا: تحرير كامل مثل الدوري في وثيقة مستقلة (seasons/ext2627) -->
 <!-- التحليل الموسّع + تقييم اللاعبين 0–100 + البحث العام (منصور 2026-09-29) -->
 <link rel="stylesheet" href="analysis.css?v=11">
 <script src="tstats-data.js?v=1" defer></script>
@@ -10521,19 +10522,34 @@ async function bootData(painted){
    ثم تُقدَّم قديمة مرة أخرى أثناء تجديدها، وقناة onSnapshot متوقفة في الخلفية. هنا نقرأ نسخة بمفتاح يتغير كل 15 ث،
    ونعيد القراءة مرة بعد 16 ث لحفظٍ وقع داخل النافذة نفسها. */
 let FRESH_AT=0;
+/* نافذة مباراة: مباراة اليوم بين ساعة ونصف قبل انطلاقها وثلاث ساعات بعده، أو مباراة جارية — فيها فقط نطلب النسخة الحديثة عند الفتح العادي */
+function matchWindowNow(){
+  try{
+    const iso=todayISO(), now=new Date(), mins=now.getHours()*60+now.getMinutes();
+    const near=t=>{ const k=/^(\d{1,2}):(\d{2})/.exec(String(t||"")); if(!k) return true; const x=(+k[1])*60+(+k[2]); return mins>=x-90 && mins<=x+180; };
+    if((ALL.matches||[]).some(m=>LIVE_PHASES.includes(m.status) || (m.date===iso && near(m.time)))) return true;
+    if(window.EXT && EXT.today && (EXT.today(iso)||[]).some(m=>near(m && m.time))) return true;
+    if(window.DIV1 && DIV1.todayRows && DIV1.todayRows(iso)) return true;
+  }catch(e){}
+  return false;
+}
 async function freshenSeason(again){
   if(EDIT) return;
-  if(!again){ if(Date.now()-FRESH_AT < 8000) return; FRESH_AT=Date.now(); }
+  if(!again){ if(Date.now()-FRESH_AT < 8000) return; FRESH_AT=Date.now();
+    try{ (window.MF_FRESH||[]).forEach(f=>{ try{ f(); }catch(e){} }); }catch(e){} }   /* المشاركات الخارجية والدرجة الأولى والهواة */
   const d=await SNAP.get(seasonId(), true, true);
   if(d && d.clubs && d.matches && !EDIT && String(d.updated||"") > String(DATA_UPDATED||"")){
     const st=stampOf(d); if(st!==LASTSTAMP){ LASTSTAMP=st; applyRemote(d); } }
   if(!again) setTimeout(()=>freshenSeason(true), 16000);
 }
 function watchResume(){
-  document.addEventListener("visibilitychange", ()=>{ if(document.visibilityState==="visible") freshenSeason(); });
+  const back=()=>{ if(document.visibilityState==="visible") freshenSeason(); };
+  document.addEventListener("visibilitychange", back);
+  addEventListener("pageshow", back); addEventListener("focus", back);   /* تطبيق iOS لا يُطلق visibilitychange في كل عودة */
   /* الضغط على إشعار يفتح #m/… — والتطبيق مفتوح أو عند الإقلاع من الإشعار */
   addEventListener("hashchange", ()=>{ if(/^#m\//.test(location.hash)) freshenSeason(); });
-  if(/^#m\//.test(location.hash)) setTimeout(()=>freshenSeason(), 2500);
+  /* فتح عادي وقت مباراة: اللقطة العادية قد تكون عمرها دقيقة وأكثر — نطلب الحديثة فوراً */
+  if(/^#m\//.test(location.hash) || matchWindowNow()) freshenSeason();
 }
 /* تدفئة ملفات الفانتسي في ذاكرة خادم الخدمة بعد اكتمال الإقلاع: تبويب «فانتسي» يفتح صفحة
    كاملة (ورقة أنماط + ~20 ملف JS)، وكان أول فتح من التطبيق يبدو معلّقاً. الروابط تُقرأ من
