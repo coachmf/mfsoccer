@@ -8244,11 +8244,12 @@ function renderMatches(){
     </article>`;
   }).join("");
 
+  const CPX_TABS = cupTabsHTML(COMP);
   $("#v-matches").innerHTML = `
     <div class="mx-head"><h2 class="mx-title">المباريات</h2>${compSelect()}</div>
-    ${CUP_GROUPS[COMP] ? cupTabsHTML() : ""}
-    ${CUP_GROUPS[COMP] && CPX_TAB==="groups" ? `<div class="mp-std mp-cgrp cpx-body">${cupGroupsHTML(null, COMP)}</div>`
-      : CUP_GROUPS[COMP] && CPX_TAB==="bracket" ? `<div class="cpx-body">${cupBracketHTML(COMP)}</div>`
+    ${CPX_TABS}
+    ${CPX_TABS && CPX_TAB==="groups" ? `<div class="mp-std mp-cgrp cpx-body">${cupGroupsHTML(null, COMP)}</div>`
+      : CPX_TABS && CPX_TAB==="bracket" ? `<div class="cpx-body">${cupBracketHTML(COMP)}</div>`
       : `${roundStrip()}
     ${roundSummary(list)}
     <div class="mx-list">${list.length?matchCards:'<div class="mx-empty">لا توجد مباريات ضمن هذا التحديد.</div>'}</div>`}`;
@@ -12151,11 +12152,14 @@ html.mp-open{overflow:hidden}
 .cpx-body .hm-std:first-child h2.sec{margin-top:6px}
 .cpb-note{margin:0 0 14px;text-align:center;font-size:.84rem;line-height:1.7;opacity:.72}
 .cpb-wrap{overflow-x:auto;margin-inline:-16px;padding:2px 16px 12px;scrollbar-width:none} .cpb-wrap::-webkit-scrollbar{display:none}
-.cpb{--h:560px;--gap:26px;display:grid;grid-template-columns:repeat(3,minmax(176px,1fr));gap:var(--gap);min-width:max-content}
-.cpb-col h3,.cpb-third h3{margin:0 0 10px;text-align:center;font:700 .86rem/1.5 var(--display,inherit);color:#E7D093}
-.cpb-cells{display:flex;flex-direction:column;justify-content:space-around;height:var(--h)}
-.cpb-m{position:relative;display:flex;flex-direction:column;gap:7px;width:100%;padding:9px 11px 10px;text-align:start;font:inherit;color:inherit;cursor:pointer;min-height:104px}
-.cpb-m small{font-size:.68rem;opacity:.6;letter-spacing:.02em}
+.cpb{--g:26px;--vg:14px;display:flex;min-width:max-content}
+.cpb-third h3{margin:0 0 10px;text-align:center;font:700 .86rem/1.5 var(--display,inherit);color:#E7D093}
+.bt-node{display:flex;align-items:center;position:relative}
+.bt-kids{display:flex;flex-direction:column;gap:var(--vg);margin-inline-end:var(--g)}
+.cpb-m{position:relative;display:flex;flex-direction:column;gap:7px;width:176px;flex:none;padding:9px 11px 10px;text-align:start;font:inherit;color:inherit;cursor:pointer;min-height:104px}
+.cpb-third .cpb-m{width:100%}
+.cpb-m small{display:flex;justify-content:space-between;gap:8px;font-size:.66rem;white-space:nowrap}
+.cpb-m small b{color:#E7D093;font-weight:700} .cpb-m small span{opacity:.6}
 .cpb-t{display:flex;align-items:center;gap:8px;min-width:0}
 .cpb-t img,.cpb-t .crest{width:24px;height:24px;flex:none;object-fit:contain}
 .cpb-t b{flex:1;min-width:0;font-weight:600;font-size:.86rem;line-height:1.5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -12163,13 +12167,13 @@ html.mp-open{overflow:hidden}
 .cpb-t.tbd b{opacity:.6;font-weight:500;font-size:.78rem}
 .cpb-t.w b,.cpb-t.w em{color:#E7D093}
 .cpb-q{flex:none;width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font-style:normal;font-size:.8rem;border:1px dashed rgba(231,208,147,.5);color:#E7D093}
-/* وصلات الشجرة: كل مباراتين تلتقيان في مباراة الدور التالي */
-.cpb-cells.q .cpb-m::after,.cpb-cells.s .cpb-m::after{content:"";position:absolute;inset-inline-end:calc(var(--gap) / -2);width:calc(var(--gap) / 2);border:0 solid rgba(231,208,147,.5);border-inline-end-width:1.5px}
-.cpb-cells.q .cpb-m:nth-child(odd)::after{top:50%;height:calc(var(--h) / 8);border-top-width:1.5px}
-.cpb-cells.q .cpb-m:nth-child(even)::after{bottom:50%;height:calc(var(--h) / 8);border-bottom-width:1.5px}
-.cpb-cells.s .cpb-m:nth-child(odd)::after{top:50%;height:calc(var(--h) / 4);border-top-width:1.5px}
-.cpb-cells.s .cpb-m:nth-child(even)::after{bottom:50%;height:calc(var(--h) / 4);border-bottom-width:1.5px}
-.cpb-cells.s .cpb-m::before,.cpb-cells.f .cpb-m::before{content:"";position:absolute;inset-inline-start:calc(var(--gap) / -2);top:50%;width:calc(var(--gap) / 2);border-top:1.5px solid rgba(231,208,147,.5)}
+/* وصلات الشجرة: من كل مباراة إلى مباراة الدور التالي */
+.bt-kids > .bt-node::after{content:"";position:absolute;inset-inline-end:calc(var(--g) / -2);width:calc(var(--g) / 2);top:50%;border-top:1.5px solid rgba(231,208,147,.5)}
+.bt-kids > .bt-node:not(:only-child)::before{content:"";position:absolute;inset-inline-end:calc(var(--g) / -2);border-inline-end:1.5px solid rgba(231,208,147,.5)}
+.bt-kids > .bt-node:first-child:not(:only-child)::before{top:50%;bottom:calc(var(--vg) / -2)}
+.bt-kids > .bt-node:last-child:not(:only-child)::before{top:calc(var(--vg) / -2);bottom:50%}
+.bt-kids > .bt-node:only-child::after{width:var(--g);inset-inline-end:calc(var(--g) * -1)}
+.bt-kids + .cpb-m::before{content:"";position:absolute;inset-inline-start:calc(var(--g) / -2);top:50%;width:calc(var(--g) / 2);border-top:1.5px solid rgba(231,208,147,.5)}
 .cpb-third{max-width:300px;margin:18px auto 0}
 .mp-std tr[data-mp-hl] td{font-weight:700}
 .mp-xstd .hm-std{margin:0}
@@ -15252,30 +15256,33 @@ function cupGroupsHTML(m, comp){
    المباريات | المجموعات | الأدوار الإقصائية. الشجرة تُبنى من مباريات البطولة نفسها: رقم المباراة من الملاحظة («المباراة 22»)،
    و«الفائز/الخاسر من المباراة N» يُستبدل باسم الفريق تلقائياً بعد انتهائها. */
 let CPX_TAB = "matches";
-const cupTabsHTML = () => `<div class="mf-stdsw cpx-tabs" role="tablist">${[["matches","المباريات"],["groups","المجموعات"],["bracket","الأدوار الإقصائية"]].map(([k,t])=>
-  `<button type="button" role="tab" data-cpx="${k}" aria-selected="${k===CPX_TAB}">${t}</button>`).join("")}</div>`;
+/* كل كأس فيها نهائي لها شجرة (منصور 2026-11-20: «والبطولات الثانية بعد… سويت لهم brackets؟») — كأس الأمير، كأس الأمير 2025/2026، كأس السوبر، كأس سمو ولي العهد */
+const cupHasKO = comp => isCupComp(comp) && MATCHES.some(m=>compOf(m)===comp && String(m.stage||"")==="النهائي");
+const cupTabsOf = comp => [["matches","المباريات"]].concat(CUP_GROUPS[comp] ? [["groups","المجموعات"]] : [], cupHasKO(comp) ? [["bracket","الأدوار الإقصائية"]] : []);
+const cupTabsHTML = comp => { const T = cupTabsOf(comp); if(T.length<2) return ""; if(!T.some(([k])=>k===CPX_TAB)) CPX_TAB = "matches";
+  return `<div class="mf-stdsw cpx-tabs" role="tablist">${T.map(([k,t])=>`<button type="button" role="tab" data-cpx="${k}" aria-selected="${k===CPX_TAB}">${t}</button>`).join("")}</div>`; };
+/* الشجرة تُبنى من النهائي رجوعاً: طرفا كل مباراة «الفائز من المباراة N» يشيران إلى مباراتي الدور السابق، فتصلح لأي شكل
+   (16 ← 8 ← 4 ← 2، أو فريق يدخل مباشرة بلا مباراة سابقة). الاسم يحلّ محل «الفائز من المباراة N» بعد انتهائها. */
 function cupBracketHTML(comp){
-  const ms = MATCHES.filter(m=>compOf(m)===comp), num = m => { const k=/(\d+)/.exec(String((m&&m.note)||"")); return k ? +k[1] : 0; };
+  const ms = MATCHES.filter(m=>compOf(m)===comp && !cupGroupOf(m)), num = m => { const k=/(\d+)/.exec(String((m&&m.note)||"")); return k ? +k[1] : 0; };
   const byN = {}; ms.forEach(m=>{ const n=num(m); if(n) byN[n]=m; });
-  const st = t => ms.filter(m=>String(m.stage||"")===t).sort((a,b)=>num(a)-num(b));
   const refN = t => { const k=/^(الفائز|الخاسر) من المباراة (\d+)$/.exec(String(t||"")); return k ? {w:k[1]==="الفائز", n:+k[2]} : null; };
   const homeWon = x => { if(!x || !matchOver(x)) return null; if(x.hg!==x.ag) return x.hg>x.ag; const P=psoOf(x); return P && P.h!==P.a ? P.h>P.a : null; };
   const res = (t, depth) => { const r=refN(t); if(!r) return {name:t, tbd:CUP_TBD.includes(t)};
     const hw = homeWon(byN[r.n]); if(hw!==null && (depth||0)<6) return res(hw===r.w ? byN[r.n].home : byN[r.n].away, (depth||0)+1);
     return {name:t, tbd:true}; };
-  const fin = st("النهائي")[0], third = st("تحديد المركز الثالث")[0];
-  const pick = (m, fallback) => { const a = m && refN(m.home), b = m && refN(m.away); return a && b && byN[a.n] && byN[b.n] ? [byN[a.n], byN[b.n]] : fallback; };
-  const sfs = pick(fin, st("نصف النهائي")).slice(0,2);
-  const qfAll = st("ربع النهائي"); let qfs = []; sfs.forEach(sf=>{ qfs = qfs.concat(pick(sf, [])); }); if(qfs.length!==4) qfs = qfAll.slice(0,4);
   const side = (t, g, win) => { const r = res(t), lbl = r.name==="يحدد بعد القرعة" ? "متأهل من المجموعات" : r.name;
     return `<span class="cpb-t${r.tbd?" tbd":""}${win?" w":""}">${r.tbd?'<i class="cpb-q">؟</i>':crest(r.name)}<b>${esc(lbl)}</b>${g==null?"":`<em dir="ltr">${g}</em>`}</span>`; };
-  const cell = m => { if(!m) return `<div class="cpb-m hm-card"></div>`;
-    const over = matchOver(m), hw = homeWon(m), d = m.date ? String(m.date).slice(5).split("-").reverse().join("/") : "يحدد لاحقاً";
-    return `<button type="button" class="cpb-m hm-card" data-mopen="${esc(matchKey(m))}"><small>${num(m)?`المباراة ${num(m)} · `:""}${esc(d)}</small>${side(m.home, over?m.hg:null, hw===true)}${side(m.away, over?m.ag:null, hw===false)}</button>`; };
-  const col = (t, cls, list) => `<div class="cpb-col"><h3>${t}</h3><div class="cpb-cells ${cls}">${list.map(cell).join("")}</div></div>`;
-  if(!qfs.length && !sfs.length && !fin) return `<div class="mx-empty">تُعلن الأدوار الإقصائية لاحقاً.</div>`;
-  return `<p class="cpb-note">الكويت والقادسية وكاظمة والعربي متأهلون مباشرة إلى ربع النهائي ويواجهون المتأهلين من المجموعات.</p>
-    <div class="cpb-wrap"><div class="cpb">${col("ربع النهائي","q",qfs)}${col("نصف النهائي","s",sfs)}${col("النهائي","f",[fin])}</div></div>
+  const cell = m => { const over = matchOver(m), hw = homeWon(m), d = m.date ? String(m.date).slice(5).split("-").reverse().join("/") : "يحدد لاحقاً";
+    return `<button type="button" class="cpb-m hm-card" data-mopen="${esc(matchKey(m))}"><small><b>${esc(stageLabel(m))}</b><span>${num(m)?`المباراة ${num(m)} · `:""}${esc(d)}</span></small>${side(m.home, over?m.hg:null, hw===true)}${side(m.away, over?m.ag:null, hw===false)}</button>`; };
+  const seen = new Set();
+  const node = (m, depth) => { if(!m || seen.has(m) || depth>6) return ""; seen.add(m);
+    const kids = [m.home, m.away].map(t=>{ const r=refN(t); return r && r.w ? byN[r.n] : null; }).filter(Boolean).map(k=>node(k, depth+1)).filter(Boolean);
+    return `<div class="bt-node">${kids.length?`<div class="bt-kids">${kids.join("")}</div>`:""}${cell(m)}</div>`; };
+  const fin = ms.find(m=>String(m.stage||"")==="النهائي"), third = ms.find(m=>String(m.stage||"")==="تحديد المركز الثالث");
+  if(!fin) return `<div class="mx-empty">تُعلن الأدوار الإقصائية لاحقاً.</div>`;
+  return `${CUP_GROUPS[comp]?`<p class="cpb-note">الكويت والقادسية وكاظمة والعربي متأهلون مباشرة إلى ربع النهائي ويواجهون المتأهلين من المجموعات.</p>`:""}
+    <div class="cpb-wrap"><div class="cpb">${node(fin, 0)}</div></div>
     ${third?`<div class="cpb-third"><h3>تحديد المركز الثالث</h3>${cell(third)}</div>`:""}`;
 }
 function mpTable(m){
