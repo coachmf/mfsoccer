@@ -51,6 +51,8 @@ html.mfa .mfa-mseg{transition:top .26s cubic-bezier(.2,.8,.2,1)}
 .mfa-std{display:flex;flex-direction:column;gap:12px;padding-bottom:12px}
 .mfa-sides{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none}
 .mfa-sides::-webkit-scrollbar{display:none}
+.mfa-cups{margin-top:-4px}
+.mfa-cups button{min-height:32px;font-size:.82rem}
 .mfa-sides button{flex:none;min-height:36px;padding:0 14px;border-radius:999px;border:1px solid var(--mf-ln2,rgba(231,208,147,.2));background:transparent;
   color:var(--mf-tx2,#C5CAD8);font:700 .84rem var(--mf-f,inherit);cursor:pointer}
 .mfa-sides button[aria-selected="true"]{background:var(--mf-tx,#F6F3EA);color:var(--mf-bg,#00061A);border-color:transparent}

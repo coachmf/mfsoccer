@@ -142,6 +142,9 @@
       const kp=e.target.closest("[data-hub-kpl]"); if(kp){ closeHub(true); setTimeout(()=>{ const it=hubItems().find(x=>x.k==="table"); if(it) it.go(); },0); return; }
       const d1=e.target.closest("[data-hub-div1]"); if(d1){ closeHub(true); setTimeout(()=>nav("div1"),0); }
       const am=e.target.closest("[data-hub-amateur]"); if(am){ closeHub(true); setTimeout(()=>nav("amateur"),0); }
+      const cu=e.target.closest("[data-hub-cup]"); if(cu){ const nm=cu.dataset.hubCup; closeHub(true);
+        setTimeout(()=>safe(()=>{ mxGroup=null; mxDiv1=false; MXC=null; COMP=nm; SELR=null; SELDAY=null; applyComp(); if(typeof paintRail==="function") paintRail();
+          CPX_TAB = CUP_GROUPS[nm] ? "groups" : cupHasKO(nm) ? "bracket" : "matches";   /* بعد applyComp: MATCHES هي مباريات الكأس */ window.MFA_OPEN_CUP=nm; nav("matches"); renderMatches(); }),0); return; }
       /* البطولات الخارجية: صفحة المباريات على البطولة نفسها (جدول المجموعة ثم المباريات) */
       const ex=e.target.closest("[data-hub-ext]"); if(ex){ const id=ex.dataset.hubExt; closeHub(true);
         setTimeout(()=>{ nav("matches"); setTimeout(()=>safe(()=>{ mxGroup=null; mxDiv1=false; MXC=id; SELDAY=null; renderMatches(); }),60); },0); }
@@ -159,6 +162,13 @@
   }
   /* الدوريات المحلية (منصور 2026-10-11): الدوري الممتاز ودوري الدرجة الأولى، كل واحد بشعاره — نفس شكل البطولات الخارجية.
      دوري الدرجة الأولى بنفس شعار الممتاز (منصور 2026-10-11) */
+  /* كل الكؤوس تحت «الدوريات المحلية» (منصور 2026-11-21): شعار الكأس واسمه، والضغط يفتح الكأس نفسها — الأدوار الإقصائية مباشرة إن لم تكن فيها مجموعات */
+  function cupRow(c){
+    const lg=COMP_LOGO["c:"+c], grp=safe(()=>!!CUP_GROUPS[c]), ko=safe(()=>withComp(c,()=>cupHasKO(c)));   /* withComp: «الكل» لا يحوي بطولات الموسم السابق */
+    const sub=grp&&ko?"المجموعات والأدوار الإقصائية":grp?"المجموعات والمباريات":ko?"المباريات والأدوار الإقصائية":"المباريات";
+    return `<button type="button" data-hub-cup="${esc(c)}">${lg?`<img class="mf-ext-lg" src="${lg}" alt="" width="44" height="44" loading="lazy">`:`<span class="mf-ext-lg mf-ext-ic" aria-hidden="true">${IC.cups}</span>`}
+        <span class="mf-ext-tx"><b>${esc(c)}</b><span class="mf-ext-cl"><small>${sub}</small></span></span></button>`;
+  }
   function localHTML(){
     const row=(attr,img,t)=>`<button type="button" ${attr}><img class="mf-ext-lg" src="${img}" alt="" width="44" height="44" loading="lazy">
         <span class="mf-ext-tx"><b>${t}</b><span class="mf-ext-cl"><small>الترتيب والمباريات</small></span></span></button>`;
@@ -166,6 +176,7 @@
       ${row("data-hub-kpl","assets/hero/kpl-mark.webp","الدوري الكويتي الممتاز")}
       ${shown("div1")?row("data-hub-div1","assets/comps/div1.webp?v=1","دوري الدرجة الأولى"):""}
       ${shown("amateur")?row("data-hub-amateur","assets/comps/amateur.webp?v=1","دوري الهواة الكويتي"):""}
+      ${cupsPresent().map(cupRow).join("")}
     </div></div>`;
   }
   /* البطولات الخارجية التي تشارك فيها الأندية الكويتية (منصور 2026-10-11): شعار البطولة + شعارات أنديتنا فيها.

@@ -85,13 +85,25 @@ addEventListener("scroll", ()=>{ if(!ticking){ ticking = true; requestAnimationF
 let MSEG = (()=>{ try{ return sessionStorage.getItem("mfa_mseg") || "list"; }catch(e){ return "list"; } })();
 let STD_SIDE = "0";
 function stdSides(){
-  return [["0","الدوري الممتاز",true],["1","الدرجة الأولى",!!(window.DIV1 && DIV1.tableHTML)],["2","الهواة",!!(window.AMATEUR && AMATEUR.tableHTML)]].filter(x=>x[2]);
+  return [["0","الدوري الممتاز",true],["1","الدرجة الأولى",!!(window.DIV1 && DIV1.tableHTML)],["2","الهواة",!!(window.AMATEUR && AMATEUR.tableHTML)],["3","الكؤوس",stdCups().length>0]].filter(x=>x[2]);
+}
+/* الكؤوس في «الترتيب» (منصور 2026-11-21): حبّة لكل كأس، ثم مجموعاتها (إن وُجدت) وشجرة الأدوار الإقصائية — نفس دوال صفحة المباريات */
+let STD_CUP = null;
+function stdCups(){ return safe(()=>compsPresent().filter(c=>isCupComp(c))) || []; }
+function stdCupHTML(){
+  const L = stdCups(); if(!L.includes(STD_CUP)) STD_CUP = L.includes(safe(()=>COMP)) ? COMP : L[0];
+  const c = STD_CUP, grp = safe(()=>CUP_GROUPS[c] ? withComp(c, ()=>cupGroupsHTML(null, c)) : ""), ko = safe(()=>withComp(c, ()=>cupHasKO(c) ? cupBracketHTML(c) : ""));   /* withComp: الحساب على مباريات الكأس نفسها أياً كانت البطولة المختارة */
+  return `<div class="mfa-sides mfa-cups" role="tablist">${L.map(x=>`<button type="button" role="tab" data-mfa-cup="${esc(x)}" aria-selected="${x===c}">${esc(x)}</button>`).join("")}</div>
+    ${grp?`<div class="mp-std mp-cgrp cpx-body">${grp}</div>`:""}${ko?`<div class="cpx-body">${ko}</div>`:""}${!grp&&!ko?`<div class="mx-empty">لا توجد أدوار إقصائية لهذه الكأس بعد.</div>`:""}`;
 }
 function stdHTML(){
+  /* كأس فُتحت من «الأقسام» ونحن على «الترتيب»: نعرضها هي لا جدول الدوري */
+  if(window.MFA_OPEN_CUP){ STD_SIDE = "3"; STD_CUP = window.MFA_OPEN_CUP; window.MFA_OPEN_CUP = null; }
   const S = stdSides(); if(!S.some(x=>x[0]===STD_SIDE)) STD_SIDE = "0";
   let body = "";
   if(STD_SIDE==="1") body = `<div class="mf-d1t d1">${safe(()=>DIV1.tableHTML())||""}</div>`;
   else if(STD_SIDE==="2") body = `<div class="mf-d1t d1 am">${safe(()=>AMATEUR.tableHTML())||""}</div>`;
+  else if(STD_SIDE==="3") body = stdCupHTML();
   else body = `<div class="hm">${safe(()=>hmStandingsHTML(withComp("الدوري", standings)))||""}</div>`;
   return `${S.length>1?`<div class="mfa-sides" role="tablist">${S.map(([k,t])=>`<button type="button" role="tab" data-mfa-side="${k}" aria-selected="${k===STD_SIDE}">${t}</button>`).join("")}</div>`:""}${body}`;
 }
@@ -131,7 +143,9 @@ D.addEventListener("click", e=>{
     if(c && !reduce){ c.classList.remove("mfa-fade"); void c.offsetWidth; c.classList.add("mfa-fade"); }
     window.scrollTo({top:0, behavior:"instant"}); return; }
   const d = e.target.closest && e.target.closest("[data-mfa-side]");
-  if(d){ STD_SIDE = d.dataset.mfaSide; paintMatchesSeg(true); }
+  if(d){ STD_SIDE = d.dataset.mfaSide; paintMatchesSeg(true); return; }
+  const cp = e.target.closest && e.target.closest("[data-mfa-cup]");
+  if(cp){ STD_CUP = cp.dataset.mfaCup; paintMatchesSeg(true); }
 });
 /* «الترتيب» في لوحة الأقسام: في التطبيق يفتح تبويب الترتيب داخل المباريات بدل النزول في الرئيسية */
 D.addEventListener("click", e=>{
