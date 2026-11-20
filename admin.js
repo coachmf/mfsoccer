@@ -1571,7 +1571,8 @@ ADMX.rma = __admRenderMatchAdmin;
   const PERS=[["1","الشوط الأول",1,45],["2","الشوط الثاني",46,90],["3","الإضافي الأول",91,105],["4","الإضافي الثاني",106,120]];
   const perOf=(k,d)=>{ if(k==="sub") return String(d.h||"1"); if(d._per) return d._per; const m=+d.m||0;
     if(!m){ const st=EDIT.match.status; return st==="h2"?"2":st==="e1"?"3":st==="e2"?"4":"1"; }
-    return m<=45?"1":m<=90?"2":m<=105?"3":"4"; };
+    /* دقيقة فوق 90 لا تعني شوطاً إضافياً (منصور 2026-11-20: هدف 95' في بدل ضائع طويل أظهر «بعد الأشواط الإضافية»): الإضافي فقط إن فُعّل للمباراة */
+    const et=hasET(EDIT.match); return m<=45?"1":(m<=90||!et)?"2":m<=105?"3":"4"; };
   const perChips=(k,d)=>{ const ko=isKO(EDIT.match); if(!ko && k!=="sub") return "";
     const L=ko?PERS:PERS.slice(0,2), cur=perOf(k,d);
     return `<div class="mx-span"><span class="mx-lbl">الشوط</span><div class="mx-chips">${L.map(([v,t])=>`<button class="mx-chip${cur===v?" on":""}" data-mper="${v}">${t}</button>`).join("")}</div></div>`; };
@@ -1786,7 +1787,7 @@ ADMX.rma = __admRenderMatchAdmin;
     { const per=perOf(k,d), mm=+d.m||0;      /* «الإضافي الأول، الدقيقة 5» = 95 */
       if(per==="3" && mm>=1 && mm<=15) d.m=String(90+mm);
       if(per==="4" && mm>=1 && mm<=15) d.m=String(105+mm);
-      if(+per>=3 && etAllowed(EDIT.match)) EDIT.match.et=true; delete d._per; }
+      if(d._per && +d._per>=3 && etAllowed(EDIT.match)) EDIT.match.et=true; delete d._per; }   /* فقط باختيار صريح للشوط الإضافي، لا استنتاجاً من الدقيقة */
     const arr=EDIT[ARR[k]];
     if(!d.uid) d.uid=Date.now().toString(36)+Math.random().toString(36).slice(2,7);
     /* النموذج قد يُعاد تحميله بعد حفظ تلقائي والنافذة مفتوحة فيتغير ترتيب الصفوف: نبحث عن الصف نفسه لا عن رقمه */
