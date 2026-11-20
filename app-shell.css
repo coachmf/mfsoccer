@@ -36,7 +36,7 @@ html.mfa .mf-bar{box-shadow:0 -8px 24px rgba(0,2,10,.28)}
 html[data-theme="light"].mfa .mf-bar{box-shadow:0 -6px 18px rgba(0,6,26,.07)}
 
 /* ───── المباريات | الترتيب ───── */
-.mfa-mseg{position:sticky;top:calc(var(--mf-top-h,56px) + env(safe-area-inset-top));z-index:20;display:grid;grid-template-columns:1fr 1fr;
+.mfa-mseg{position:sticky;top:calc(var(--mf-top-h,56px) + env(safe-area-inset-top));z-index:40;display:grid;grid-template-columns:1fr 1fr;
   margin:0 -16px 14px;padding:8px 16px;background:var(--mf-bg,#00061A);border-bottom:1px solid var(--mf-ln,rgba(231,208,147,.1));isolation:isolate}
 html.mfa.mfa-hide .mfa-mseg{top:env(safe-area-inset-top)}
 html.mfa .mfa-mseg{transition:top .26s cubic-bezier(.2,.8,.2,1)}
