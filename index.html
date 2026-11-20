@@ -45,11 +45,11 @@ addEventListener('afterprint', function(){ THEME.apply(THEME.get()); });
 /* لقطة البيانات من CDN تبدأ قبل تحليل بقية الصفحة (~600 ك.ب) ومكتبة Firestore — انظر bootData.
    SNAP.get(id) يعيد وعداً بالوثيقة أو null؛ لا يرمي أبداً. */
 const SNAP={_p:{},
-  get(id, fresh){
+  get(id, fresh, bust){   /* bust: مفتاح CDN يتغير كل 15 ث — نسخة لا يزيد عمرها عن ذلك (بعد الضغط على إشعار أو العودة للتطبيق) */
     if(!fresh && this._p[id]) return this._p[id];
     const ctl=('AbortController' in window)?new AbortController():null;
     const t=setTimeout(()=>ctl&&ctl.abort(), 8000);
-    return this._p[id]=fetch('/api/doc/'+id, {cache:'no-cache', signal:ctl&&ctl.signal})
+    return this._p[id]=fetch('/api/doc/'+id+(bust?'?v='+Math.floor(Date.now()/15000):''), {cache:'no-cache', signal:ctl&&ctl.signal})
       .then(r=>r.ok?r.json():null).catch(()=>null).finally(()=>clearTimeout(t)); }};
 if(/^https?:$/.test(location.protocol)){ SNAP.get('2026-2027'); SNAP.get('assets'); SNAP.get('gulf27'); }
 /* بعد التحليل تكون الحالة interactive قبل تنفيذ سكربتات defer (Firebase) — فعلامة
@@ -10514,17 +10514,23 @@ async function bootData(painted){
 }
 /* العودة للتطبيق بعد أن كان في الخلفية: iOS يوقف قناة onSnapshot فتبقى الأرقام قديمة حتى
    تُفتح من جديد. نقرأ اللقطة (مخزّنة دقيقة في CDN) ونطبّقها فقط إن كانت أحدث من المعروض. */
+/* إشعار «التشكيلة» كان يصل والصفحة تعرض «تُنشر التشكيلة فور إعلانها» (منصور 2026-11-20): اللقطة العادية تبقى دقيقة في CDN
+   ثم تُقدَّم قديمة مرة أخرى أثناء تجديدها، وقناة onSnapshot متوقفة في الخلفية. هنا نقرأ نسخة بمفتاح يتغير كل 15 ث،
+   ونعيد القراءة مرة بعد 16 ث لحفظٍ وقع داخل النافذة نفسها. */
+let FRESH_AT=0;
+async function freshenSeason(again){
+  if(EDIT) return;
+  if(!again){ if(Date.now()-FRESH_AT < 8000) return; FRESH_AT=Date.now(); }
+  const d=await SNAP.get(seasonId(), true, true);
+  if(d && d.clubs && d.matches && !EDIT && String(d.updated||"") > String(DATA_UPDATED||"")){
+    const st=stampOf(d); if(st!==LASTSTAMP){ LASTSTAMP=st; applyRemote(d); } }
+  if(!again) setTimeout(()=>freshenSeason(true), 16000);
+}
 function watchResume(){
-  let at=Date.now();
-  document.addEventListener("visibilitychange", async ()=>{
-    if(document.visibilityState!=="visible" || EDIT || Date.now()-at < 60000) return;
-    at=Date.now();
-    const d=await SNAP.get(seasonId(), true);
-    if(!d || !d.clubs || !d.matches || EDIT) return;
-    if(String(d.updated||"") <= String(DATA_UPDATED||"")) return;
-    const st=stampOf(d); if(st===LASTSTAMP) return;
-    LASTSTAMP=st; applyRemote(d);
-  });
+  document.addEventListener("visibilitychange", ()=>{ if(document.visibilityState==="visible") freshenSeason(); });
+  /* الضغط على إشعار يفتح #m/… — والتطبيق مفتوح أو عند الإقلاع من الإشعار */
+  addEventListener("hashchange", ()=>{ if(/^#m\//.test(location.hash)) freshenSeason(); });
+  if(/^#m\//.test(location.hash)) setTimeout(()=>freshenSeason(), 2500);
 }
 /* تدفئة ملفات الفانتسي في ذاكرة خادم الخدمة بعد اكتمال الإقلاع: تبويب «فانتسي» يفتح صفحة
    كاملة (ورقة أنماط + ~20 ملف JS)، وكان أول فتح من التطبيق يبدو معلّقاً. الروابط تُقرأ من
