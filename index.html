@@ -2289,14 +2289,14 @@ html[dir="ltr"] .tl-ev.a .tl-card{text-align:right;align-items:flex-end}
 <link rel="stylesheet" href="efftime.css?v=4">
 <script src="efftime.js?v=16" defer></script>
 <link rel="stylesheet" href="div1.css?v=6">
-<script src="div1.js?v=14" defer></script>
+<script src="div1.js?v=15" defer></script>
 <script src="player-dob.js?v=13" defer></script>   <!-- مواليد اللاعبين (FM27) للبروفايل: المواليد + العمر الحيّ -->
-<script src="amateur.js?v=12" defer></script>   <!-- دوري الهواة: النتائج والترتيب فقط (seasons/amateur) -->
+<script src="amateur.js?v=13" defer></script>   <!-- دوري الهواة: النتائج والترتيب فقط (seasons/amateur) -->
 <link rel="stylesheet" href="news.css?v=5">
 <script src="news.js?v=11" defer></script>   <!-- الأخبار: news/{id} + فهرس seasons/news + صور newsimg/{id} -->   <!-- دوري الدرجة الأولى: الترتيب والمباريات فقط (seasons/div1) -->
 <link rel="stylesheet" href="app-shell.css?v=1">
 <link rel="stylesheet" href="ext.css?v=3">
-<script src="ext.js?v=17" defer></script>   <!-- المشاركات الخارجية لأنديتنا: تحرير كامل مثل الدوري في وثيقة مستقلة (seasons/ext2627) -->
+<script src="ext.js?v=18" defer></script>   <!-- المشاركات الخارجية لأنديتنا: تحرير كامل مثل الدوري في وثيقة مستقلة (seasons/ext2627) -->
 <!-- التحليل الموسّع + تقييم اللاعبين 0–100 + البحث العام (منصور 2026-09-29) -->
 <link rel="stylesheet" href="analysis.css?v=11">
 <script src="tstats-data.js?v=1" defer></script>
@@ -7956,6 +7956,8 @@ function nextMatchCard(){
 }
 
 /* الرئيسية: النسخة الجديدة (renderHomeV2 في الكتلة الأخيرة) وإلا القديمة */
+/* إعادة رسم الرئيسية من ملفات البطولات (الخارجية/الأولى/الهواة) تُجمَع في رسمة واحدة: وصول ثلاث وثائق متتالية كان يعيد بناء الصفحة ثلاث مرات فتومض الصور */
+var HOME_SOON_T=0; window.renderHomeSoon=function(){ clearTimeout(HOME_SOON_T); HOME_SOON_T=setTimeout(function(){ try{ if(document.querySelector("#v-home.on") && typeof window.renderHome==="function") window.renderHome(); }catch(e){} }, 220); };
 function renderHome(){ return renderHomeLegacy(); }   /* التصميم الأصلي مع ثلاث قطع جديدة فقط: المؤشرات، الجدول، بطاقات الرادار (منصور 2026-09-15). renderHomeV2 كاملة موجودة للرجوع إليها */
 function renderHomeLegacy(){
   const T=standings(), tg=GOALS.length, played=playedMatches().length, soon=MATCHES.length-played;
@@ -10545,7 +10547,7 @@ async function freshenSeason(again){
 function watchResume(){
   const back=()=>{ if(document.visibilityState==="visible") freshenSeason(); };
   document.addEventListener("visibilitychange", back);
-  addEventListener("pageshow", back); addEventListener("focus", back);   /* تطبيق iOS لا يُطلق visibilitychange في كل عودة */
+  addEventListener("pageshow", back);   /* تطبيق iOS لا يُطلق visibilitychange في كل عودة (focus أزيل: يتكرر مع كل لمسة حقل) */
   /* الضغط على إشعار يفتح #m/… — والتطبيق مفتوح أو عند الإقلاع من الإشعار */
   addEventListener("hashchange", ()=>{ if(/^#m\//.test(location.hash)) freshenSeason(); });
   /* فتح عادي وقت مباراة: اللقطة العادية قد تكون عمرها دقيقة وأكثر — نطلب الحديثة فوراً */

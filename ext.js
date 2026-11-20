@@ -342,9 +342,9 @@ const store = {
     /* فتح التطبيق من إشعار أو العودة إليه وقناة onSnapshot متوقفة: لقطة حديثة (مفتاح 15 ث) تُطبَّق إن كانت أحدث من المعروض — يستدعيها freshenSeason */
     (window.MF_FRESH = window.MF_FRESH || []).push(()=>{ if(typeof SNAP==="undefined" || !SNAP || !SNAP.get) return; SNAP.get(DOC_ID, true, true).then(d=>{ if(!d || !Array.isArray(d.matches)) return; const u = String(d.updated||""); if(!u || u <= last) return; last = u; cb(d); }).catch(()=>{}); });
     const go = () => { if(typeof fbDb==="undefined" || !fbDb){ setTimeout(go, 400); return; }
-      fbDb.collection("seasons").doc(DOC_ID).onSnapshot(s=>{ live = true; const d = s.exists ? s.data() : null; if(d && d.updated) last = String(d.updated);
+      fbDb.collection("seasons").doc(DOC_ID).onSnapshot(s=>{ live = true; const d = s.exists ? s.data() : null; /* النسخة نفسها المرسومة من اللقطة: لا إعادة رسم (كانت الرئيسية تُرسم مرة لكل بطولة عند كل فتح — منصور 2026-11-20 «فليكرنق») */ const same = !!(d && d.updated && String(d.updated) === last); if(d && d.updated) last = String(d.updated);
         if(d) try{ localStorage.setItem(CACHE_K, JSON.stringify(d)); }catch(e){}
-        cb(d); }, ()=>cb(undefined)); };
+        if(!same) cb(d); }, ()=>cb(undefined)); };
     go();
   },
   async save(d){
@@ -815,7 +815,7 @@ function paintAdmin(){
 }
 function repaint(){
   paintAdmin();
-  try{ if(document.querySelector("#v-home.on") && typeof window.renderHome==="function") window.renderHome(); }catch(e){}
+  try{ if(document.querySelector("#v-home.on") && typeof window.renderHome==="function") (window.renderHomeSoon||window.renderHome)(); }catch(e){}
   try{ if(document.querySelector("#v-matches.on") && typeof renderMatches==="function" && (MXC==="upcoming" || cOf(MXC))) renderMatches(); }catch(e){}
   try{ if(typeof MP==="object" && MP && MP.m && MP.m.__ext){ const k = matchKey(MP.m), n = findExt(k); if(n){ MP.m = n; renderMatchPage(); } } }catch(e){}
 }

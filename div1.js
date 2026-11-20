@@ -94,9 +94,9 @@ const store = {
     /* فتح التطبيق من إشعار أو العودة إليه وقناة onSnapshot متوقفة: لقطة حديثة (مفتاح 15 ث) تُطبَّق إن كانت أحدث من المعروض — يستدعيها freshenSeason */
     (window.MF_FRESH = window.MF_FRESH || []).push(()=>{ if(typeof SNAP==="undefined" || !SNAP || !SNAP.get) return; SNAP.get(DOC_ID, true, true).then(d=>{ if(!d || !Array.isArray(d.matches)) return; const u = String(d.updated||""); if(!u || u <= last) return; last = u; cb(d); }).catch(()=>{}); });
     const go = () => { if(typeof fbDb==="undefined" || !fbDb){ setTimeout(go, 400); return; }
-      fbDb.collection("seasons").doc(DOC_ID).onSnapshot(s=>{ live = true; const d = s.exists ? s.data() : null; if(d && d.updated) last = String(d.updated);
+      fbDb.collection("seasons").doc(DOC_ID).onSnapshot(s=>{ live = true; const d = s.exists ? s.data() : null; /* النسخة نفسها المرسومة من اللقطة: لا إعادة رسم (كانت الرئيسية تُرسم مرة لكل بطولة عند كل فتح — منصور 2026-11-20 «فليكرنق») */ const same = !!(d && d.updated && String(d.updated) === last); if(d && d.updated) last = String(d.updated);
         if(d) try{ localStorage.setItem(CACHE_K, JSON.stringify(d)); }catch(e){}
-        cb(d); }, ()=>{}); };
+        if(!same) cb(d); }, ()=>{}); };
     go();
   },
   async save(d){
@@ -221,7 +221,7 @@ D1.todayRows = iso => { if(!DATA) DATA = normalize(null);
       <span class="hm-td-team a"><b>${H(m.away)}</b>${cr(m.away)}</span></button>`; }).join(""); };
 D1.count = () => { if(!DATA) DATA = normalize(null); return DATA.matches.length; };
 function repaint(){ if(document.querySelector("#v-div1.on")) render(); paintAdmin();
-  if(document.querySelector("#v-home.on") && typeof window.renderHome==="function") try{ window.renderHome(); }catch(e){} }
+  if(document.querySelector("#v-home.on") && typeof window.renderHome==="function") try{ (window.renderHomeSoon||window.renderHome)(); }catch(e){} }
 /* كشف نادي الدرجة الأولى لصفحة المباراة («القائمة») ومحرّر التشكيلة في الموقع — مباريات الكأس (منصور 2026-10-29: خيطان × اتحاد الشرطة «لم يُرفع كشف») */
 const POS_CODE = {"حارس مرمى":"GK","قلب دفاع":"CB","ظهير أيمن":"RB","ظهير أيسر":"LB","مدافع":"D","وسط مدافع":"CDM","وسط محور":"CM","جناح أيمن":"RW","جناح أيسر":"LW","مهاجم":"ST","حارس":"GK","دفاع":"D","وسط":"CM"};
 D1.squad = c => { const s = SQUADS[c]; return s ? s.players.map(([n,nm,pos])=>({n:nm, s:n, p:POS_CODE[pos]||""})) : []; };
