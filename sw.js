@@ -9,9 +9,13 @@
 
    عند كل نشر: ارفع رقم VER فتُبنى ذاكرة جديدة وتُحذف القديمة.
    ========================================================= */
-const VER   = 'mf-2026-11-20-785-boot';
+const VER   = 'mf-2026-11-20-786-img';
 const SHELL = 'shell-' + VER;
 const RUN   = 'run-'   + VER;
+/* الصور (لاعبون، شعارات، خلفيات) في ذاكرة ثابتة لا ترتبط برقم النسخة (منصور 2026-11-20: «الصور قاعده تطول»):
+   كانت ضمن RUN فتُمسح مع كل نشر ويعاد تنزيل كل الصور. الصورة المستبدلة تأتي برابط ?v= جديد، وما عداه يُجدَّد بعد 3 أيام. */
+const IMG   = 'mf-img-1';
+const isImg = url => url.origin === location.origin && /^\/(assets|fantasy\/assets)\/.+\.(webp|png|jpe?g|svg|avif)$/i.test(url.pathname);
 
 /* الحد الأدنى ليفتح التطبيق بلا إنترنت */
 const PRECACHE = [
@@ -47,8 +51,19 @@ self.addEventListener('install', e => {
 self.addEventListener('activate', e => {
   e.waitUntil((async () => {
     const keys = await caches.keys();
+    /* صور النسخة السابقة تُنقل إلى الذاكرة الثابتة قبل حذفها — لا يعاد تنزيلها */
+    try {
+      const img = await caches.open(IMG);
+      for (const k of keys.filter(k => k.indexOf('run-') === 0 && k !== RUN)) {
+        const old = await caches.open(k);
+        for (const rq of await old.keys()) {
+          if (!isImg(new URL(rq.url)) || await img.match(rq)) continue;
+          const rs = await old.match(rq); if (rs && rs.ok) await img.put(rq, rs);
+        }
+      }
+    } catch (err) {}
     /* mf-np = تفضيلات الإشعارات (notif-prefs.js) — ليست ذاكرة ملفات فلا تُحذف مع كل نسخة */
-    await Promise.all(keys.filter(k => k !== SHELL && k !== RUN && k !== 'mf-np').map(k => caches.delete(k)));
+    await Promise.all(keys.filter(k => k !== SHELL && k !== RUN && k !== IMG && k !== 'mf-np').map(k => caches.delete(k)));
     await self.clients.claim();
   })());
 });
@@ -151,6 +166,22 @@ self.addEventListener('fetch', e => {
       })();
       if (hit) { e.waitUntil(refresh); return hit; }
       return (await refresh) || (await c.match('/index.html')) || Response.error();
+    })());
+    return;
+  }
+
+  /* الصور: من الذاكرة الثابتة مباشرة بلا إعادة تنزيل في كل عرض؛ تُجدَّد في الخلفية فقط إن مضى على حفظها 3 أيام */
+  if (isImg(url)) {
+    e.respondWith((async () => {
+      const c = await caches.open(IMG);
+      const hit = await c.match(req);
+      const get = () => fetch(req).then(res => { if (res.ok) c.put(req, res.clone()); return res; }).catch(() => null);
+      if (hit) {
+        const d = Date.parse(hit.headers.get('date') || '');
+        if (d && Date.now() - d > 3 * 864e5) e.waitUntil(get());
+        return hit;
+      }
+      return (await get()) || Response.error();
     })());
     return;
   }
