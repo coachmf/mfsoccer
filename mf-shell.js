@@ -370,7 +370,7 @@
     const today=safe(()=>hmTodayHTML())||"";            /* يوم مباريات: القائمة تغني عن «جارية الآن» */
     const live=today?"":(safe(()=>liveCard())||"");
     const next=today||safe(()=>hmNextMatchHTML())||"";
-    v.innerHTML=`<div class="mf-home">
+    const html=`<div class="mf-home">
       ${safe(()=>fantasyDeadlineHTML())||""}
       ${compChips()}
       ${live}
@@ -392,6 +392,9 @@
         <div class="mf-credit"><img src="${BRAND}" alt="" width="40" height="40"><span><small>إعداد وإشراف الإحصائيات</small><b>${esc(OWNER)}</b></span></div>
       </div>
     </div>`;
+    /* تدقيق الأداء 2026-11-20: النص نفسه مرسوم أصلاً ← لا إعادة بناء (كانت الرئيسية تُبنى من جديد مع كل وثيقة تصل فتومض الصور) */
+    if(v.__mfHome===html && v.firstElementChild && v.firstElementChild.classList.contains("mf-home")) return;
+    v.innerHTML=html; v.__mfHome=html;
     wireComp(v);
     v.querySelectorAll("[data-golive]").forEach(b=>b.onclick=()=>go("matches"));
     if(typeof HM_CD_TIMER!=="undefined"){ if(HM_CD_TIMER) clearInterval(HM_CD_TIMER); HM_CD_TIMER = v.querySelector(".hm-nm") ? setInterval(hmTickCountdown,20000) : null; }

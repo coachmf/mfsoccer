@@ -2305,7 +2305,7 @@ html[dir="ltr"] .tl-ev.a .tl-card{text-align:right;align-items:flex-end}
 <link rel="stylesheet" href="mf-brand.css?v=22">
 <link rel="stylesheet" href="notif-prefs.css?v=1">
 <script>document.documentElement.classList.add("mf")</script>
-<script src="mf-shell.js?v=46" defer></script>
+<script src="mf-shell.js?v=47" defer></script>
 <script src="app-shell.js?v=1" defer></script>   <!-- تجربة التطبيق: تعمل مع html.mfa فقط -->
 <link rel="stylesheet" href="fmx.css?v=3">
 <script src="fmx.js?v=9" defer></script>   <!-- أفكار FM27: fmx.js يلفّ صفحات المباراة والنادي واللاعب والمباريات والتحليل -->
@@ -15241,6 +15241,7 @@ function renderMatchPage(){
   if(m && !isGulfMatch(m) && COMP!=="الكل" && compOf(m)!==COMP) return withComp(compOf(m), ()=>renderMatchPageRaw());
   return renderMatchPageRaw();
 }
+let MP_DOM=null;   /* آخر ما رُسم في صفحة المباراة: مفتاح المباراة ونصوص أجزائها الثلاثة */
 function renderMatchPageRaw(){
   const box=$("#mpage"), m=MP.m; if(!box||!m) return;
   if(MP.tab==="eff" && !mpHasEff(m)) MP.tab="details";
@@ -15248,10 +15249,28 @@ function renderMatchPageRaw(){
   const body = MP.tab==="eff" ? `<div data-effslot></div>` : MP.tab==="lineups" ? mpLineups(m) : MP.tab==="squad" ? mpSquad(m) : MP.tab==="table" ? mpTable(m) : MP.tab==="matches" ? mpMatches(m) : mpDetails(m);
   /* توهج رأس صفحة المباراة بلون القميص الأساسي: الأبيض يبقى أبيض (الإمارات/العراق كانا يظهران بالأحمر/الأخضر — منصور 2026-10-03) */
   const glowOf=c=>{ const cc=(window.CLUB_COLORS||{})[c]; return cc && lumOf(cc[0])>.85 ? "#FFFFFF" : clubAccent(c).a; };
-  box.innerHTML=`<div class="mp-sheet" style="--hc:${glowOf(m.home)};--ac:${glowOf(m.away)}">
-    <header class="mp-head">${mpHeader(m)}</header>
-    <nav class="mp-tabs">${mpTabs(m).map(([k,l])=>`<button type="button" data-mp-tab="${k}" aria-pressed="${MP.tab===k}">${l}</button>`).join("")}</nav>
+  const st=`--hc:${glowOf(m.home)};--ac:${glowOf(m.away)}`, head=mpHeader(m),
+        nav=mpTabs(m).map(([k,l])=>`<button type="button" data-mp-tab="${k}" aria-pressed="${MP.tab===k}">${l}</button>`).join(""),
+        k=matchKey(m)+(m.__ext?"|x":"")+(m.__gulf?"|g":"");
+  /* تدقيق الأداء 2026-11-20 (منصور: «فليكرنق… كأن الصفحة تسوي Refresh عدة مرات»): كانت الصفحة تُبنى كاملة مع كل نداء —
+     تحديث حيّ، وصول حالة الفانتسي، التصويت، التوقعات، اللعب الفعلي — فتُعاد الصور وتومض. الآن الورقة ثابتة،
+     ويُستبدل فقط الجزء الذي تغيّر نصّه فعلاً (الرأس / التبويبات / المحتوى)، وما لم يتغير لا يُلمس. */
+  const sheet=box.firstElementChild, L=MP_DOM;
+  if(L && L.k===k && sheet && sheet.classList.contains("mp-sheet")){
+    const H=sheet.querySelector(":scope > .mp-head"), N=sheet.querySelector(":scope > .mp-tabs"), B=sheet.querySelector(":scope > .mp-body");
+    if(H && N && B){
+      if(L.st!==st) sheet.setAttribute("style", st);
+      if(L.head!==head) H.innerHTML=head;
+      if(L.nav!==nav) N.innerHTML=nav;
+      if(L.body!==body) B.innerHTML=body;
+      MP_DOM={k,st,head,nav,body}; return;
+    }
+  }
+  box.innerHTML=`<div class="mp-sheet" style="${st}">
+    <header class="mp-head">${head}</header>
+    <nav class="mp-tabs">${nav}</nav>
     <div class="mp-body">${body}</div></div>`;
+  MP_DOM={k,st,head,nav,body};
 }
 function openMatch(m, opts){
   if(typeof m==="string") m=matchByKey(m);
@@ -15267,7 +15286,7 @@ function openMatch(m, opts){
 }
 function hideMatchBox(){
   const box=$("#mpage"); if(!box) return;
-  box.classList.remove("on"); box.hidden=true; box.innerHTML=""; MP.m=null;
+  box.classList.remove("on"); box.hidden=true; box.innerHTML=""; MP.m=null; MP_DOM=null;
   document.documentElement.classList.remove("mp-open");
 }
 function closeMatch(){
