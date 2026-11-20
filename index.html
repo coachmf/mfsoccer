@@ -2288,7 +2288,7 @@ html[dir="ltr"] .tl-ev.a .tl-card{text-align:right;align-items:flex-end}
 <link rel="stylesheet" href="efftime.css?v=4">
 <script src="efftime.js?v=16" defer></script>
 <link rel="stylesheet" href="div1.css?v=6">
-<script src="div1.js?v=12" defer></script>
+<script src="div1.js?v=13" defer></script>
 <script src="player-dob.js?v=13" defer></script>   <!-- مواليد اللاعبين (FM27) للبروفايل: المواليد + العمر الحيّ -->
 <script src="amateur.js?v=11" defer></script>   <!-- دوري الهواة: النتائج والترتيب فقط (seasons/amateur) -->
 <link rel="stylesheet" href="news.css?v=5">
@@ -5808,7 +5808,10 @@ function photoByNumber(name, club){
   return owned ? null : p;
 }
 function photoCut(name, club){
-  if(club && CUP_CLUBS.includes(club)) return null;   /* الدرجة الأولى بلا صور: لا تُستعار صورة لاعب ممتاز بنفس الاسم */
+  if(club && CUP_CLUBS.includes(club)){   /* الدرجة الأولى: صورته من كشف ناديه فقط (div1.js) — لا تُستعار صورة لاعب ممتاز بنفس الاسم */
+    if(!(window.DIV1 && DIV1.photoBase)) return null;
+    let num=0; try{ const e=(squadEntriesOf(club)||[]).find(x=>sqName(x)===name); num=e?sqNum(e):0; }catch(_){}
+    return DIV1.photoBase(club, name, num); }
   const k = club ? LOCAL_PHOTOS_BY_CLUB[club+"|"+name] : null; if(k) return k;
   const cut = LOCAL_PHOTOS[name];
   const dir = club && CLUB_DIR[club];

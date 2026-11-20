@@ -224,6 +224,8 @@ function repaint(){ if(document.querySelector("#v-div1.on")) render(); paintAdmi
 const POS_CODE = {"حارس مرمى":"GK","قلب دفاع":"CB","ظهير أيمن":"RB","ظهير أيسر":"LB","مدافع":"D","وسط مدافع":"CDM","وسط محور":"CM","جناح أيمن":"RW","جناح أيسر":"LW","مهاجم":"ST","حارس":"GK","دفاع":"D","وسط":"CM"};
 D1.squad = c => { const s = SQUADS[c]; return s ? s.players.map(([n,nm,pos])=>({n:nm, s:n, p:POS_CODE[pos]||""})) : []; };
 D1.photoOf = (c, name) => { const s = SQUADS[c]; if(!s || !s.photos) return null; const p = s.players.find(x=>x[1]===name); return p && hasPh(s, p[0]) ? photo(c, p[0], "_m") : null; };
+/* مسار صورة بلا لاحقة (…/<رقم>) ليستعمله photoCut في كل الموقع: ملعب التشكيلة والاحتياط والملف — بالاسم ثم برقم القميص (كشف الموسم قد يكتب الاسم بصيغة أخرى) */
+D1.photoBase = (c, name, num) => { const s = SQUADS[c]; if(!s || !s.photos) return null; const p = s.players.find(x=>x[1]===name) || (num ? s.players.find(x=>String(x[0])===String(num)) : null); return p && hasPh(s, p[0]) ? `assets/players/div1/${TEAMS[c]}/${p[0]}` : null; };
 D1.openClub = c => { VIEW.tab = "clubs"; VIEW.club = SQUADS[c] ? c : null; if(document.querySelector("#v-div1.on")) render(); else if(typeof go==="function") go("div1"); };
 document.addEventListener("click", e=>{
   const el = e.target.closest ? e.target : null; if(!el) return;
