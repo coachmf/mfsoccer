@@ -112,3 +112,7 @@ body.d1-lock{overflow:hidden}
 /* دوري الهواة: الجولة على يومين — عنوان صغير لكل يوم (2026-10-31) */
 .am [data-amr]{scroll-margin-top:96px}
 .am-day{margin:10px 2px 6px;font-size:.78rem;font-weight:700;color:var(--mf-tx2,#B8BDCC)}
+/* لاعب بلا صورة (اليرموك 2026-11-20): شعار النادي باهتاً مكان الصورة */
+.d1-pc .ph.np,.d1-shp.np{display:grid;place-items:center}
+.d1-pc .ph.np img,.d1-shp.np img{width:46%;max-width:120px;height:auto;margin:0;opacity:.28;-webkit-mask-image:none;mask-image:none;object-fit:contain}
+.d1-shp.np{min-height:210px}

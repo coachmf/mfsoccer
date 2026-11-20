@@ -54,6 +54,14 @@ const SQUADS = {
     [23,"سان بير","وسط مدافع"],[19,"وليد التورة","وسط مدافع"],[8,"طلال الأنصاري","وسط محور"],[24,"عبدالله ماوي","وسط محور"],[6,"مبارك المطيري","وسط محور"],[21,"أحمد نزال","وسط محور"],
     [33,"كريستنان","جناح أيمن"],[17,"ضاحي الشمري","جناح أيمن"],[10,"محمد عبيد","جناح أيمن"],[99,"إبراهيم جاي","جناح أيسر"],[88,"راضي جمال","جناح أيسر"],
     [9,"إيمانويل ماهوب","مهاجم"],[7,"محمد الحسن","مهاجم"]]},
+  /* اليرموك (منصور 2026-11-20): الـ27 من «كشف بأسماء لاعبين نادي اليرموك 2026/2027» (الرقم والاسم والجنسية/الصفة) — الكشف بلا مراكز،
+     فيُعرضون قائمة واحدة بالرقم. الصور من ألبوم «تيشيرت اليرموك الجديد» لـ13 لاعباً فقط من الـ27 (photos = أرقامهم) */
+  "اليرموك": {color:"36,48,110", photos:[2,4,5,8,10,11,17,18,23,26,46,50,97], players:[
+    [1,"عبدالرحمن المجدلي","","كويتي"],[2,"حسين ماتقي","","كويتي"],[3,"عبدالله ماجكي","","كويتي"],[4,"إدواردو دي أوليفيرا","","برازيلي · محترف"],[5,"عبدالرحمن الحربي","","كويتي"],[6,"محمد الصريعي","","كويتي"],
+    [8,"مشاري العازمي","","كويتي"],[9,"أحمد علاء عبده","","مصري · مواليد"],[10,"عثمان الدوسري","","كويتي"],[11,"جواو فيتور سانتوس","","برازيلي · محترف"],[12,"جاسم شموه","","كويتي"],[13,"ماجد العنزي","","كويتي"],
+    [15,"راشد الحملي","","كويتي"],[17,"ميكوس سانتوس","","برازيلي · محترف"],[18,"عبدالرحمن كرم","","كويتي"],[19,"بدر المنصور","","كويتي"],[20,"محمد الهيبدة","","كويتي"],[22,"علي القطان","","كويتي"],
+    [23,"خزام الخزام","","كويتي"],[25,"عثمان العثمان","","كويتي"],[26,"محمد بور","","إيراني · مواليد"],[34,"عبدالرحمن الحسينان","","كويتي"],[46,"فرنك لاندري","","فرنسي · محترف"],[50,"سند الشراكي","","كويتي"],
+    [66,"عبدالعزيز كابلي","","كويتي"],[77,"خالد الخزام","","كويتي"],[97,"ميلان دوكيتش","","صربي · محترف"]]},
   /* الجزيرة (منصور 2026-11-19): كل الـ28 من «AL-JAZEERA PLAYERS 26-27.pdf» (الرقم والاسم والمركز كما في الكشف) */
   "الجزيرة": {color:"126,98,96", photos:true, players:[
     [1,"بدر عبدالمحسن","حارس"],[22,"خليفة خلف","حارس"],[37,"بدر بن صعنون","حارس"],
@@ -62,6 +70,7 @@ const SQUADS = {
     [7,"طلال خالد","مهاجم"],[10,"مروان زيلا","مهاجم"],[11,"فهد يوسف","مهاجم"],[16,"محمد جزاع","مهاجم"],[20,"فهد سعود","مهاجم"],[29,"تشارلز ياو","مهاجم"],[43,"شون كومولافي","مهاجم"],[77,"سعود بدر","مهاجم"]]}
 };
 const PH_V = 1;
+const hasPh = (s, n) => !!s && (Array.isArray(s.photos) ? s.photos.includes(n) : !!s.photos);   /* photos:true = الكل، أو مصفوفة أرقام من لهم صور */
 const photo = (c, n, sfx) => `assets/players/div1/${TEAMS[c]}/${n}${sfx||""}.webp?v=${PH_V}`;
 const seed = () =>({matches:FIXTURES.map(([round,date,time,home,away,venue],i)=>({id:"f"+(i+1), round, date, time, venue, home, away, hg:null, ag:null}))});
 const num = v => (v===null || v===undefined || v==="") ? null : (Number.isFinite(+v) ? +v : null);
@@ -158,14 +167,15 @@ function clubsHTML(){
 }
 function squadHTML(c){
   const s = SQUADS[c]; if(!s) return clubsHTML();
-  const card = p => { const [n, nm, pos] = p;
+  const card = p => { const [n, nm, pos, nat] = p;
     return `<button type="button" class="d1-pc" data-d1pl="${n}">
-      <span class="ph">${s.photos ? `<img src="${photo(c,n,"_m")}" alt="" loading="lazy" width="520" height="650">` : ""}</span>
+      <span class="ph${hasPh(s,n)?"":" np"}">${hasPh(s,n) ? `<img src="${photo(c,n,"_m")}" alt="" loading="lazy" width="520" height="650">` : crest(c,"lg")}</span>
       <span class="no">${n}</span>${n===s.cap?`<span class="cap" title="القائد">C</span>`:""}
-      <b class="nm">${H(nm)}</b><small class="ps">${H(pos)}</small></button>`; };
+      <b class="nm">${H(nm)}</b><small class="ps">${H(pos||nat||"")}</small></button>`; };
   return `<div class="d1-sq" style="--d1c:${s.color}">
     <div class="d1-sqh"><button type="button" class="d1-back" data-d1back aria-label="رجوع"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button>${crest(c,"lg")}<div><h3>${H(c)}</h3><span>${s.players.length} لاعباً · ${SEASON_L}</span></div></div>
     ${LINES.map(([k,t])=>{ const ps = s.players.filter(p=>LINE_OF[p[2]]===k); return ps.length ? `<section class="d1-ln"><h4>${t}</h4><div class="d1-pg">${ps.map(card).join("")}</div></section>` : ""; }).join("")}
+    ${(()=>{ const ps = s.players.filter(p=>!LINE_OF[p[2]]); return ps.length ? `<section class="d1-ln"><h4>اللاعبون</h4><div class="d1-pg">${ps.map(card).join("")}</div></section>` : ""; })()}
   </div>`;
 }
 function playerSheet(c, n){
@@ -174,8 +184,8 @@ function playerSheet(c, n){
   const w = document.createElement("div"); w.className = "d1-ov"; w.id = "d1Sheet";
   w.innerHTML = `<div class="d1-sh" role="dialog" aria-modal="true" aria-label="${H(p[1])}" style="--d1c:${s.color}">
     <button type="button" class="d1-x" data-d1close aria-label="إغلاق">×</button>
-    <div class="d1-shp">${s.photos ? `<img src="${photo(c,p[0])}" alt="${H(p[1])}" width="800" height="1000">` : ""}<span class="no">${p[0]}</span></div>
-    <div class="d1-shi">${crest(c)}<div><h3>${H(p[1])}${p[0]===s.cap?` <span class="cap">C</span>`:""}</h3><span>${H(p[2])} · ${H(c)}</span></div></div>
+    <div class="d1-shp${hasPh(s,p[0])?"":" np"}">${hasPh(s,p[0]) ? `<img src="${photo(c,p[0])}" alt="${H(p[1])}" width="800" height="1000">` : crest(c,"lg")}<span class="no">${p[0]}</span></div>
+    <div class="d1-shi">${crest(c)}<div><h3>${H(p[1])}${p[0]===s.cap?` <span class="cap">C</span>`:""}</h3><span>${H([p[2]||p[3], c].filter(Boolean).join(" · "))}</span></div></div>
   </div>`;
   document.body.appendChild(w); document.body.classList.add("d1-lock");
   requestAnimationFrame(()=>w.classList.add("on"));
@@ -213,7 +223,7 @@ function repaint(){ if(document.querySelector("#v-div1.on")) render(); paintAdmi
 /* كشف نادي الدرجة الأولى لصفحة المباراة («القائمة») ومحرّر التشكيلة في الموقع — مباريات الكأس (منصور 2026-10-29: خيطان × اتحاد الشرطة «لم يُرفع كشف») */
 const POS_CODE = {"حارس مرمى":"GK","قلب دفاع":"CB","ظهير أيمن":"RB","ظهير أيسر":"LB","مدافع":"D","وسط مدافع":"CDM","وسط محور":"CM","جناح أيمن":"RW","جناح أيسر":"LW","مهاجم":"ST","حارس":"GK","دفاع":"D","وسط":"CM"};
 D1.squad = c => { const s = SQUADS[c]; return s ? s.players.map(([n,nm,pos])=>({n:nm, s:n, p:POS_CODE[pos]||""})) : []; };
-D1.photoOf = (c, name) => { const s = SQUADS[c]; if(!s || !s.photos) return null; const p = s.players.find(x=>x[1]===name); return p ? photo(c, p[0], "_m") : null; };
+D1.photoOf = (c, name) => { const s = SQUADS[c]; if(!s || !s.photos) return null; const p = s.players.find(x=>x[1]===name); return p && hasPh(s, p[0]) ? photo(c, p[0], "_m") : null; };
 D1.openClub = c => { VIEW.tab = "clubs"; VIEW.club = SQUADS[c] ? c : null; if(document.querySelector("#v-div1.on")) render(); else if(typeof go==="function") go("div1"); };
 document.addEventListener("click", e=>{
   const el = e.target.closest ? e.target : null; if(!el) return;
