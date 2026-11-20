@@ -2271,7 +2271,7 @@ html[dir="ltr"] .tl-ev.a .tl-card{text-align:right;align-items:flex-end}
 <script src="fantasy/js/i18n-more.js?v=14" defer></script>
 <script src="site-i18n.js?v=37" defer></script>
 <script>/* أداء 2026-11-14: i18n-data.js (913KB) لغير العربية فقط — العربي لا يقرأه. التبديل من العربية يحمّله عند الطلب (I18N.loadData في i18n-langs.js) */
-(function(){ try{ var q=new URLSearchParams(location.search).get('lang'), l=String(q||localStorage.getItem('mf_lang')||'ar').toLowerCase(); if(l!=='ar') document.write('<script src="i18n-data.js?v=30" defer><\/script>'); }catch(e){} })();</script>   <!-- إضافات الإنجليزية + البرتغالية (البرازيل/البرتغال) + الإسبانية + الصربية/الكرواتية -->
+(function(){ try{ var q=new URLSearchParams(location.search).get('lang'), l=String(q||localStorage.getItem('mf_lang')||'ar').toLowerCase(); if(l!=='ar') document.write('<script src="i18n-data.js?v=31" defer><\/script>'); }catch(e){} })();</script>   <!-- إضافات الإنجليزية + البرتغالية (البرازيل/البرتغال) + الإسبانية + الصربية/الكرواتية -->
 <script src="i18n-langs.js?v=9" defer></script>   <!-- قائمة اللغات بالأعلام + البرتغالية والإسبانية والصربية/الكرواتية فوق محرك الإنجليزية -->
 <!-- غرفة التحكم (live.js / live-admin.js / live.css) مخفية منذ 2026-10-10 بطلب منصور — الملفات باقية؛ للإرجاع أعد السطرين:
      <link rel="stylesheet" href="live.css?v=9"> و <script src="live.js?v=21" defer></script> -->
@@ -2829,7 +2829,17 @@ ${num?`<text x="50" y="69" text-anchor="middle" font-size="27" font-weight="800"
 const COMP_LOGO = {"كأس سمو ولي العهد":"assets/comps/cpcup.webp?v=2","كأس الأمير":"assets/comps/amircup.webp?v=1","كأس الأمير 2025/2026":"assets/comps/amircup.webp?v=1"};
 const isCupComp = c => !!c && c!=="الدوري" && c!=="الكل";
 const editClubs = m => isCupComp(m && m.comp) ? CLUBS.concat(CUP_CLUBS, CUP_TBD) : CLUBS;
-const rndLabel = m => isCupComp(m && m.comp) && m.stage ? String(m.stage) : `الجولة ${m.round}`;
+/* كأس سمو ولي العهد 2026-2027 بطولة مجموعات (منصور 2026-11-20: «ترا هذي بطولة مجموعات»): ثلاث مجموعات من أربعة، كل نادٍ ثلاث مباريات.
+   المباريات المحفوظة تحمل stage «دور الـ16» (به يُعرف البذر فلا يُغيَّر)، فيُعرض «دور المجموعات» لكل مباراة طرفاها في مجموعة واحدة،
+   وتبويب «الترتيب» في صفحتها يعرض جداول المجموعات بدل ترتيب الدوري. */
+const CUP_GROUPS = {"كأس سمو ولي العهد":[
+  {name:"المجموعة الأولى", teams:["السالمية","اليرموك","الجهراء","خيطان"]},
+  {name:"المجموعة الثانية", teams:["الجزيرة","التضامن","النصر","الصليبخات"]},
+  {name:"المجموعة الثالثة", teams:["الشباب","الساحل","برقان","الفحيحيل"]}]};
+const cupGroupOf = m => { const G = m && CUP_GROUPS[m.comp]; if(!G || String(m.stage||"")!=="دور الـ16") return null;
+  return G.find(g=>g.teams.includes(m.home) && g.teams.includes(m.away)) || null; };
+const stageLabel = m => cupGroupOf(m) ? "دور المجموعات" : String(m.stage||"");
+const rndLabel = m => isCupComp(m && m.comp) && m.stage ? stageLabel(m) : `الجولة ${m.round}`;
 /* ملحق كأس سمو ولي العهد من ملصق الاتحاد (منصور 2026-10-19): أُضيف بالكود لأن الكتابة في السحابة تحتاج حساب محرّر.
    يُضاف للبيانات فقط إن لم تكن المباراة مسجّلة (المسابقة + المضيف + الدور)، فأول حفظ من أي محرّر يكتبها في السحابة
    كمباريات عادية تُحرَّر وتُعدَّل (ومنها استبدال «الفائز من المباراة 1» بالفائز) ولا تتكرر. */
@@ -9312,7 +9322,7 @@ function fgListHTML(p, list){
   const n=list.length, cnt=n===1?"مباراة واحدة":n===2?"مباراتان":n<=10?n+" مباريات":n+" مباراة";
   const rows=list.slice().sort((a,b)=>(+b.m.round||0)-(+a.m.round||0)||String(b.m.date||"").localeCompare(String(a.m.date||""))).map(x=>{
     const m=x.m, g=matchGoals(m)[0]||{};
-    return `<li class="fg-row" data-mopen="${esc(matchKey(m))}"><span class="m">${esc(isCupComp(m.comp)&&m.stage?m.stage:"ج"+m.round)}</span><span class="p"><b>${esc(m.home)} <bdi dir="ltr">${scp(+m.hg,+m.ag,1)}</bdi> ${esc(m.away)}</b><small>الهدف الأول: ${esc(g.p||(g.og?g.og+" (عكسي)":"")||x.first)}${g.m?` <bdi dir="ltr">${esc(g.m)}′</bdi>`:""} · ${esc(x.first)}</small></span></li>`; }).join("");
+    return `<li class="fg-row" data-mopen="${esc(matchKey(m))}"><span class="m">${esc(isCupComp(m.comp)&&m.stage?stageLabel(m):"ج"+m.round)}</span><span class="p"><b>${esc(m.home)} <bdi dir="ltr">${scp(+m.hg,+m.ag,1)}</bdi> ${esc(m.away)}</b><small>الهدف الأول: ${esc(g.p||(g.og?g.og+" (عكسي)":"")||x.first)}${g.m?` <bdi dir="ltr">${esc(g.m)}′</bdi>`:""} · ${esc(x.first)}</small></span></li>`; }).join("");
   return `<div class="ah-gh"><b>${esc(p.l)}</b><span>${cnt}</span><button type="button" class="ah-gx" data-fgclose aria-label="إغلاق">×</button></div><ol class="ah-gl">${rows}</ol>`;
 }
 document.addEventListener("click", e=>{
@@ -9346,7 +9356,7 @@ function bpListHTML(p){
   const rows=gs.map(g=>{
     const m=played.find(x=>+x.round===+g.r && compOf(x)===compOf(g) && ((x.home===g.sc&&x.away===g.cd)||(x.away===g.sc&&x.home===g.cd)));
     const og=isOG(g), who=og?(g.og||g.p||"—"):(g.p||"—");
-    const rd=m&&isCupComp(m.comp)&&m.stage?m.stage:"الجولة "+g.r;
+    const rd=m&&isCupComp(m.comp)&&m.stage?stageLabel(m):"الجولة "+g.r;
     const sc=m?` <bdi dir="ltr">${+m.ag}-${+m.hg}</bdi>`:"";
     return `<li${m?` class="fg-row" data-mopen="${esc(matchKey(m))}"`:""}><span class="m">${g.m?esc(minLabel(g)):"—"}</span><span class="p"><b>${esc(who)}</b><small>${og?`لصالح ${esc(g.sc||"")}`:esc(g.sc||"")}${g.cd?` ضد ${esc(g.cd)}`:""}${sc} · ${esc(rd)}</small></span></li>`; }).join("");
   return `<div class="ah-gh"><b>${esc(p.l||"غير محدد")}</b><span>${cnt}</span><button type="button" class="ah-gx" data-bpclose aria-label="إغلاق">×</button></div><ol class="ah-gl">${rows}</ol>`;
@@ -15188,6 +15198,26 @@ function mpSquad(m){
     <button type="button" data-mp-sq="away" aria-pressed="${MP_SQ==="away"}">${crest(m.away)}<span>${esc(m.away)}</span></button></div>`;
   return `<div class="mp-card mp-squad" style="${accentVars(c)}">${seg}${clubSquadHTML(c)}</div>`;
 }
+/* جداول مجموعات الكأس: نقاط ← فارق الأهداف ← الأهداف المسجّلة ← الاسم. مجموعة المباراة أولاً وطرفاها مميّزان. تُستدعى داخل سياق المسابقة. */
+function cupGroupsHTML(m){
+  const G = CUP_GROUPS[compOf(m)] || [], mine = cupGroupOf(m), ms = playedMatches().filter(x=>cupGroupOf(x));
+  const tbl = g => { const t={}; g.teams.forEach(c=>t[c]={c,P:0,W:0,D:0,L:0,GF:0,GA:0,Pts:0,form:[]});
+    ms.filter(x=>cupGroupOf(x)===g).forEach(x=>{ const H=t[x.home], A=t[x.away]; if(!H||!A) return;
+      H.P++;A.P++;H.GF+=x.hg;H.GA+=x.ag;A.GF+=x.ag;A.GA+=x.hg;
+      if(x.hg>x.ag){H.W++;A.L++;H.Pts+=3;H.form.push("w");A.form.push("l");} else if(x.hg<x.ag){A.W++;H.L++;A.Pts+=3;A.form.push("w");H.form.push("l");} else {H.D++;A.D++;H.Pts++;A.Pts++;H.form.push("d");A.form.push("d");} });
+    const rows=Object.values(t).map(r=>({...r,GD:r.GF-r.GA})).sort((a,b)=>b.Pts-a.Pts||b.GD-a.GD||b.GF-a.GF||a.c.localeCompare(b.c,"ar"));
+    return `<section class="hm-std">
+    <h2 class="sec">${esc(g.name)}<span class="sq-n">${esc(compOf(m))} · دور المجموعات</span></h2>
+    <div class="hm-card hm-tblwrap"><table class="hm-tbl">
+      <thead><tr><th class="c">#</th><th class="club">النادي</th><th>ل</th><th>ف</th><th>ت</th><th>خ</th><th class="gfa">له:عليه</th><th><bdi dir="ltr">+/-</bdi></th><th class="pts">ن</th><th class="frm">الفورمة</th></tr></thead>
+      <tbody>${rows.map((r,i)=>`<tr${CLUBS.includes(r.c)?` data-club-open="${esc(r.c)}"`:""}${g===mine&&(r.c===m.home||r.c===m.away)?' data-mp-hl="1"':""}>
+        <td class="c">${i+1}</td>
+        <td class="club"><span>${crest(r.c)}<b>${esc(r.c)}</b></span></td>
+        <td>${r.P}</td><td>${r.W}</td><td>${r.D}</td><td>${r.L}</td><td class="gfa"><bdi>${r.GF}</bdi>:<bdi>${r.GA}</bdi></td><td dir="ltr">${r.GD>0?"+":""}${r.GD}</td>
+        <td class="pts">${r.Pts}</td><td class="frm">${formPills(r.form)}</td></tr>`).join("")}</tbody>
+    </table></div></section>`; };
+  return (mine?[mine]:[]).concat(G.filter(g=>g!==mine)).map(tbl).join("");
+}
 function mpTable(m){
   if(MP.__tbl) return MP.__tbl;   /* جدول مجموعة البطولة الخارجية/الخليج: يُحسب خارج سياقها المعزول (ext.js / gulf.js) */
   const xc=mpExtComp(m);
@@ -15196,6 +15226,7 @@ function mpTable(m){
     const html=extTableHTML(xc, extEvents(xc.id), hl);
     return html ? `<div class="mp-std mp-xstd">${html}</div>` : `<div class="mp-card mp-empty">لا جدول لهذه البطولة.</div>`;
   }
+  if(cupGroupOf(m)) return `<div class="mp-std mp-cgrp">${withComp(compOf(m), ()=>cupGroupsHTML(m))}</div>`;
   const lg = compOf(m)==="الدوري" ? null : "الدوري";
   const run = fn => lg ? withComp(lg, fn) : fn();
   if(!run(()=>playedMatches().length)) return `<div class="mp-card mp-empty">يظهر الجدول بعد أول جولة.</div>`;
