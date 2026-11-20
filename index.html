@@ -2271,7 +2271,7 @@ html[dir="ltr"] .tl-ev.a .tl-card{text-align:right;align-items:flex-end}
 <script src="fantasy/js/i18n-more.js?v=14" defer></script>
 <script src="site-i18n.js?v=37" defer></script>
 <script>/* أداء 2026-11-14: i18n-data.js (913KB) لغير العربية فقط — العربي لا يقرأه. التبديل من العربية يحمّله عند الطلب (I18N.loadData في i18n-langs.js) */
-(function(){ try{ var q=new URLSearchParams(location.search).get('lang'), l=String(q||localStorage.getItem('mf_lang')||'ar').toLowerCase(); if(l!=='ar') document.write('<script src="i18n-data.js?v=31" defer><\/script>'); }catch(e){} })();</script>   <!-- إضافات الإنجليزية + البرتغالية (البرازيل/البرتغال) + الإسبانية + الصربية/الكرواتية -->
+(function(){ try{ var q=new URLSearchParams(location.search).get('lang'), l=String(q||localStorage.getItem('mf_lang')||'ar').toLowerCase(); if(l!=='ar') document.write('<script src="i18n-data.js?v=32" defer><\/script>'); }catch(e){} })();</script>   <!-- إضافات الإنجليزية + البرتغالية (البرازيل/البرتغال) + الإسبانية + الصربية/الكرواتية -->
 <script src="i18n-langs.js?v=9" defer></script>   <!-- قائمة اللغات بالأعلام + البرتغالية والإسبانية والصربية/الكرواتية فوق محرك الإنجليزية -->
 <!-- غرفة التحكم (live.js / live-admin.js / live.css) مخفية منذ 2026-10-10 بطلب منصور — الملفات باقية؛ للإرجاع أعد السطرين:
      <link rel="stylesheet" href="live.css?v=9"> و <script src="live.js?v=21" defer></script> -->
@@ -12149,6 +12149,7 @@ html.mp-open{overflow:hidden}
 .mp-std tr[data-mp-hl]{background:rgba(95,178,232,.14)}
 /* صفحة بطولة المجموعات: تبويبات + شجرة الأدوار الإقصائية */
 .cpx-tabs{margin:4px auto 16px}
+.cpx-leg{margin:12px 4px 4px;line-height:1.6}
 .cpx-body .hm-std:first-child h2.sec{margin-top:6px}
 .cpb-note{margin:0 0 14px;text-align:center;font-size:.84rem;line-height:1.7;opacity:.72}
 .cpb-wrap{overflow-x:auto;margin-inline:-16px;padding:2px 16px 12px;scrollbar-width:none} .cpb-wrap::-webkit-scrollbar{display:none}
@@ -15235,22 +15236,29 @@ function mpSquad(m){
 function cupGroupsHTML(m, comp){
   comp = comp || compOf(m); m = m || {};
   const G = CUP_GROUPS[comp] || [], mine = m.home ? cupGroupOf(m) : null, ms = playedMatches().filter(x=>cupGroupOf(x));
-  const tbl = g => { const t={}; g.teams.forEach(c=>t[c]={c,P:0,W:0,D:0,L:0,GF:0,GA:0,Pts:0,form:[]});
+  const cmp = (a,b)=>b.Pts-a.Pts||b.GD-a.GD||b.GF-a.GF||a.c.localeCompare(b.c,"ar");
+  const rowsOf = g => { const t={}; g.teams.forEach(c=>t[c]={c,P:0,W:0,D:0,L:0,GF:0,GA:0,Pts:0,form:[]});
     ms.filter(x=>cupGroupOf(x)===g).forEach(x=>{ const H=t[x.home], A=t[x.away]; if(!H||!A) return;
       H.P++;A.P++;H.GF+=x.hg;H.GA+=x.ag;A.GF+=x.ag;A.GA+=x.hg;
       if(x.hg>x.ag){H.W++;A.L++;H.Pts+=3;H.form.push("w");A.form.push("l");} else if(x.hg<x.ag){A.W++;H.L++;A.Pts+=3;A.form.push("w");H.form.push("l");} else {H.D++;A.D++;H.Pts++;A.Pts++;H.form.push("d");A.form.push("d");} });
-    const rows=Object.values(t).map(r=>({...r,GD:r.GF-r.GA})).sort((a,b)=>b.Pts-a.Pts||b.GD-a.GD||b.GF-a.GF||a.c.localeCompare(b.c,"ar"));
+    return Object.values(t).map(r=>({...r,GD:r.GF-r.GA})).sort(cmp); };
+  /* نظام التأهل (منصور 2026-11-20): متصدر كل مجموعة + أفضل صاحب مركز ثانٍ إلى ربع النهائي. العلامة تظهر بعد أن يلعب الفريق،
+     وخصوم ربع النهائي بالقرعة فلا يُنقل المتأهل إلى الشجرة تلقائياً. */
+  const R = new Map(G.map(g=>[g, rowsOf(g)]));
+  const best2 = [...R.values()].map(r=>r[1]).filter(r=>r && r.P>0).sort(cmp)[0];
+  const tbl = g => { const rows = R.get(g);
     return `<section class="hm-std">
     <h2 class="sec">${esc(g.name)}<span class="sq-n">${esc(comp)} · دور المجموعات</span></h2>
     <div class="hm-card hm-tblwrap"><table class="hm-tbl">
       <thead><tr><th class="c">#</th><th class="club">النادي</th><th>ل</th><th>ف</th><th>ت</th><th>خ</th><th class="gfa">له:عليه</th><th><bdi dir="ltr">+/-</bdi></th><th class="pts">ن</th><th class="frm">الفورمة</th></tr></thead>
-      <tbody>${rows.map((r,i)=>`<tr${CLUBS.includes(r.c)?` data-club-open="${esc(r.c)}"`:""}${g===mine&&(r.c===m.home||r.c===m.away)?' data-mp-hl="1"':""}>
+      <tbody>${rows.map((r,i)=>`<tr class="${(i===0&&r.P>0)||r===best2?"champ":""}"${CLUBS.includes(r.c)?` data-club-open="${esc(r.c)}"`:""}${g===mine&&(r.c===m.home||r.c===m.away)?' data-mp-hl="1"':""}>
         <td class="c">${i+1}</td>
         <td class="club"><span>${crest(r.c)}<b>${esc(r.c)}</b></span></td>
         <td>${r.P}</td><td>${r.W}</td><td>${r.D}</td><td>${r.L}</td><td class="gfa"><bdi>${r.GF}</bdi>:<bdi>${r.GA}</bdi></td><td dir="ltr">${r.GD>0?"+":""}${r.GD}</td>
         <td class="pts">${r.Pts}</td><td class="frm">${formPills(r.form)}</td></tr>`).join("")}</tbody>
     </table></div></section>`; };
-  return (mine?[mine]:[]).concat(G.filter(g=>g!==mine)).map(tbl).join("");
+  return (mine?[mine]:[]).concat(G.filter(g=>g!==mine)).map(tbl).join("")
+    + `<div class="hm-legend cpx-leg"><span><i class="champ"></i>يتأهل إلى ربع النهائي: متصدر كل مجموعة وأفضل صاحب مركز ثانٍ</span></div>`;
 }
 /* صفحة بطولة المجموعات في «المباريات» (منصور 2026-11-20: «سولي ال brackets… إذا دشيت على البطولة راح يظهر لي»):
    المباريات | المجموعات | الأدوار الإقصائية. الشجرة تُبنى من مباريات البطولة نفسها: رقم المباراة من الملاحظة («المباراة 22»)،
@@ -15281,7 +15289,7 @@ function cupBracketHTML(comp){
     return `<div class="bt-node">${kids.length?`<div class="bt-kids">${kids.join("")}</div>`:""}${cell(m)}</div>`; };
   const fin = ms.find(m=>String(m.stage||"")==="النهائي"), third = ms.find(m=>String(m.stage||"")==="تحديد المركز الثالث");
   if(!fin) return `<div class="mx-empty">تُعلن الأدوار الإقصائية لاحقاً.</div>`;
-  return `${CUP_GROUPS[comp]?`<p class="cpb-note">الكويت والقادسية وكاظمة والعربي متأهلون مباشرة إلى ربع النهائي ويواجهون المتأهلين من المجموعات.</p>`:""}
+  return `${CUP_GROUPS[comp]?`<p class="cpb-note">الكويت والقادسية وكاظمة والعربي متأهلون مباشرة إلى ربع النهائي، ويواجهون بالقرعة متصدري المجموعات وأفضل ثانٍ.</p>`:""}
     <div class="cpb-wrap"><div class="cpb">${node(fin, 0)}</div></div>
     ${third?`<div class="cpb-third"><h3>تحديد المركز الثالث</h3>${cell(third)}</div>`:""}`;
 }
