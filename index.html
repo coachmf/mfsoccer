@@ -52,7 +52,7 @@ const SNAP={_p:{},
     return this._p[id]=fetch('/api/doc/'+id+(bust?'?v='+Math.floor(Date.now()/15000):''), {cache:'no-cache', signal:ctl&&ctl.signal})
       .then(r=>r.ok?r.json():null).catch(()=>null).finally(()=>clearTimeout(t)); }};
 /* الفتح من إشعار (#m/…): لقطة الموسم بمفتاح 15 ث من أول لحظة — كانت تُرسم النسخة القديمة ثم تُصحَّح بعد ثوانٍ (منصور 2026-11-20) */
-if(/^https?:$/.test(location.protocol)){ SNAP.get('2026-2027', false, /^#m\//.test(location.hash)); SNAP.get('assets'); SNAP.get('gulf27'); }
+if(/^https?:$/.test(location.protocol)){ SNAP.get('2026-2027', false, /^#m\//.test(location.hash)); SNAP.get('assets-lite'); SNAP.get('gulf27'); }
 /* بعد التحليل تكون الحالة interactive قبل تنفيذ سكربتات defer (Firebase) — فعلامة
    DOMContentLoaded هي الدليل الوحيد على جاهزيتها (انظر domReady) */
 var DCL_FIRED=false; document.addEventListener('DOMContentLoaded', ()=>{ DCL_FIRED=true; }, {once:true});
@@ -5144,7 +5144,7 @@ function fbInit(){
       }
       STAFF_CHECKING = false;
       isAdmin = isOwner || MYROLE==="editor";
-      if(isAdmin) admLoad().catch(()=>{});   /* الطاقم فقط: واجهة الإدارة (أداء 2026-11-14) */
+      if(isAdmin){ admLoad().catch(()=>{}); staffData(); }   /* الطاقم فقط: واجهة الإدارة (أداء 2026-11-14) + الصور الكاملة والبونص الحي (2026-11-21) */
       if(u && !isAdmin) ADMIN_HINT.set(false);   /* حساب مسجّل وليس مديراً — لا يُمسح قبل استرجاع الجلسة */
       $("#adminBtn").classList.toggle("on", isAdmin);
       paintAdminBtn();
@@ -5170,7 +5170,7 @@ function watchStaff(u){
     const perm = isOwner ? "full" : permOf(me);
     if(role===MYROLE && perm===MYPERM && Object.keys(STAFF).length===Object.keys(m).length) return;
     STAFF = m; MYROLE = role; MYPERM = perm; isAdmin = isOwner || MYROLE==="editor";
-    if(isAdmin) admLoad().catch(()=>{});   /* الطاقم فقط: واجهة الإدارة (أداء 2026-11-14) */
+    if(isAdmin){ admLoad().catch(()=>{}); staffData(); }   /* الطاقم فقط: واجهة الإدارة (أداء 2026-11-14) */
     $("#adminBtn").classList.toggle("on", isAdmin); paintAdminBtn(); paintFantasyTab();
     if($("#v-admin") && $("#v-admin").classList.contains("on")) renderAdmin();
   }, ()=>{});
@@ -5840,6 +5840,8 @@ applyAssets=function(a){ _applyAssetsOrig(a); useLocalCrests(); };
 useLocalCrests();
 async function fbSaveAssets(){
   if(!fbDb || !isOwner) return false;   /* الشعارات والهوية للمالك وحده */
+  /* الزوار يحمّلون نسخة خفيفة بلا PHOTOS — لا نحفظ أبداً قبل وصول الصور الكاملة وإلا حُذفت من السحابة */
+  if(!ASSETS_FULL){ await loadFullAssets(); if(!ASSETS_FULL){ SYNCMSG="تعذّر تحميل الصور الكاملة من السحابة — لم يُحفظ شيء حتى لا تُحذف الصور. أعد المحاولة."; return false; } }
   const payload=assetsObject();
   const size=JSON.stringify(payload).length;
   if(size > 900000){
@@ -9593,18 +9595,33 @@ async function restore(){
 }
 
 /* الشعارات والصور: السحابة، ثم ملف assets.json المنشور، ثم النسخة المحلية — الأحدث يفوز */
+/* الأداء (منصور 2026-11-21): وثيقة الصور الكاملة ~570 ك.ب منها ~500 صور PHOTOS بصيغة base64 لا تُعرض للزوار
+   منذ 2026-09-15 (القصّات الرسمية فقط) — الزائر يحمّل assets-lite (~64 ك.ب)، والطاقم يحمّل الكاملة بعد الدخول.
+   assets.json المنشور أُزيل من الإقلاع: غير موجود (404 مع كل فتح). */
+let ASSETS_FULL=false;
 async function bootAssets(){
   const c=[];
-  /* ~570 ك.ب (صور مرفوعة بصيغة base64): من لقطة CDN أولاً، والمكتبة احتياطاً */
-  try{ const cloud=(await SNAP.get("assets")) || await fbLoad("assets"); if(cloud) c.push([cloud,"السحابة"]); }catch(e){}
-  try{ const r=await fetch("./assets.json",{cache:"no-store"});
-       if(r.ok){ const d=await r.json(); if(d&&(d.LOGOS||d.BRAND)) c.push([d,"assets.json المنشور"]); } }catch(e){}
+  try{ const cloud=await SNAP.get("assets-lite"); if(cloud) c.push([cloud,"السحابة"]); }catch(e){}
+  if(!c.length){ try{ const full=await fbLoad("assets"); if(full) c.push([full,"السحابة"]); }catch(e){} }
   try{ const v=await localGet("zain_admin"); if(v) c.push([JSON.parse(v),"نسخة محلية"]); }catch(e){}
   if(!c.length) return;
   c.sort((a,b)=> new Date(b[0].updated||0) - new Date(a[0].updated||0));
   applyAssets(c[0][0]);
+  if(c[0][0].PHOTOS && !c[0][0].lite) ASSETS_FULL=true;
   ASSETSRC=c[0][1];
 }
+/* الصور الكاملة (PHOTOS) للطاقم فقط: تُدمج دون المساس بتعديلات لم تُحفظ بعد */
+let FULLASSETS_P=null;
+function loadFullAssets(){
+  if(ASSETS_FULL) return Promise.resolve();
+  return FULLASSETS_P || (FULLASSETS_P = (async()=>{
+    try{ const d=(await SNAP.get("assets", true)) || await fbLoad("assets");
+      if(d && d.PHOTOS && typeof d.PHOTOS==="object"){ PHOTOS=Object.assign({}, d.PHOTOS, PHOTOS||{}); ASSETS_FULL=true; }
+    }catch(e){}
+    FULLASSETS_P=null;
+  })());
+}
+function staffData(){ loadFullAssets(); watchFantasyBonus(); }
 let ASSETSRC="مضمّنة في الملف";
 
 function downloadAssets(){
@@ -14581,24 +14598,48 @@ function fantasyBonusOf(m, club, name){
   const t = FBONUS[m.round+"|"+m.home+"|"+m.away]; if(!t) return 0;
   return +(t[club+"|"+bonusName(name)] || 0);
 }
+/* rows = [{gw, h, a, b:[[club, name, pts]]}] بنفس الشكل من المستمع الحي أو من /api/doc/fbonus~<موسم> */
+function applyBonusRows(rows){
+  const nx = {};
+  (rows||[]).forEach(({gw, h:hc, a:ac, b})=>{
+    const h=FCLUB[hc], a=FCLUB[ac], r=+gw; if(!h || !a || !r || !Array.isArray(b) || !b.length) return;
+    const t = nx[r+"|"+h+"|"+a] = {};
+    b.forEach(([club, name, p])=>{ const c=FCLUB[club], pts=+p||0; if(c && name && pts>0) t[c+"|"+bonusName(name)] = pts; });
+  });
+  const sig = JSON.stringify(nx); if(sig===FBONUS_SIG) return;
+  FBONUS_SIG = sig; FBONUS = nx;
+  if(typeof EDIT!=="undefined" && EDIT) return;
+  try{ renderAll(); }catch(e){}
+  try{ const bx=$("#mpage"); if(bx && !bx.hidden && MP && MP.m) renderMatchPage(); }catch(e){}
+}
+/* الأداء (منصور 2026-11-21): المستمع الحي على كل جولات الفانتسي كان ينزّل ~400 ك.ب لكل زائر ويعيد إرسال الجولة
+   مع كل تحديث نقاط أثناء المباريات، والموقع يحتاج البونص فقط. الزائر: قائمة البونص (~3 ك.ب) من CDN كل دقيقتين
+   وعند العودة للتطبيق؛ الطاقم (يعتمد البونص ويحتاجه فوراً): المستمع الحي كما كان. */
+let FBONUS_POLL = null;
+async function pollFantasyBonus(){
+  if(!/^https?:$/.test(location.protocol)) return;
+  try{ const r = await fetch("/api/doc/fbonus~"+seasonId()); if(!r.ok) return;
+    const d = await r.json(); if(d && Array.isArray(d.rows)) applyBonusRows(d.rows); }catch(e){}
+}
 function watchFantasyBonus(){
-  if(!fbDb || FBONUS_UNSUB) return;
-  try{
-    FBONUS_UNSUB = fbDb.collection("fantasy").doc(seasonId()).collection("rounds").onSnapshot(q=>{
-      const nx = {};
-      q.forEach(doc=>{ const d=doc.data()||{};
-        (d.fixtures||[]).forEach(fx=>{
-          const h=FCLUB[fx.h], a=FCLUB[fx.a], r=+(fx.gw||doc.id); if(!h || !a || !r || !Array.isArray(fx.bonus) || !fx.bonus.length) return;
-          const t = nx[r+"|"+h+"|"+a] = {};
-          fx.bonus.forEach(b=>{ const c=FCLUB[b.club], pts=+b.pts||0; if(c && b.name && pts>0) t[c+"|"+bonusName(b.name)] = pts; });
-        }); });
-      const sig = JSON.stringify(nx); if(sig===FBONUS_SIG) return;
-      FBONUS_SIG = sig; FBONUS = nx;
-      if(typeof EDIT!=="undefined" && EDIT) return;
-      try{ renderAll(); }catch(e){}
-      try{ const b=$("#mpage"); if(b && !b.hidden && MP && MP.m) renderMatchPage(); }catch(e){}
-    }, ()=>{});
-  }catch(e){}
+  if(FBONUS_UNSUB) return;
+  if(isAdmin && fbDb){
+    if(FBONUS_POLL){ clearInterval(FBONUS_POLL); FBONUS_POLL = null; }
+    try{
+      FBONUS_UNSUB = fbDb.collection("fantasy").doc(seasonId()).collection("rounds").onSnapshot(q=>{
+        const rows = [];
+        q.forEach(doc=>{ const d=doc.data()||{};
+          (d.fixtures||[]).forEach(fx=>{ if(Array.isArray(fx.bonus) && fx.bonus.length)
+            rows.push({gw: fx.gw||doc.id, h: fx.h, a: fx.a, b: fx.bonus.map(x=>[x.club, x.name, x.pts])}); }); });
+        applyBonusRows(rows);
+      }, ()=>{});
+    }catch(e){}
+    return;
+  }
+  if(FBONUS_POLL) return;
+  pollFantasyBonus();
+  FBONUS_POLL = setInterval(()=>{ if(!document.hidden) pollFantasyBonus(); }, 120000);
+  document.addEventListener("visibilitychange", ()=>{ if(!document.hidden && FBONUS_POLL) pollFantasyBonus(); });
 }
 
 /* ================= تقييم اللاعبين (2026-09-15) =================

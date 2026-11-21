@@ -10,7 +10,7 @@ const { accessToken } = require('./lib/google');
 
 const PROJECT = 'mfsoccer-c7ee4';
 const API_KEY = 'AIzaSyD_ZzAE4HEKPIuAKCmta8tzN5KOa8IUfuo';   /* نفس المفتاح العام في index.html */
-const ALLOWED = /^(\d{4}-\d{4}|assets|gulf27|div1|amateur|ext2627|news|effidx|eff_[0-9a-z]{1,8}|boards~\d{4}-\d{4}(_p\d{1,2})?)$/;   /* gulf27 = كأس الخليج 27، div1 = دوري الدرجة الأولى، news = فهرس الأخبار المنشورة، boards~… = ترتيب التوقعات وتوقعات الجولات (عامة) */
+const ALLOWED = /^(\d{4}-\d{4}|assets|assets-lite|fbonus~\d{4}-\d{4}|gulf27|div1|amateur|ext2627|news|effidx|eff_[0-9a-z]{1,8}|boards~\d{4}-\d{4}(_p\d{1,2})?)$/;   /* gulf27 = كأس الخليج 27، div1 = دوري الدرجة الأولى، news = فهرس الأخبار المنشورة، boards~… = ترتيب التوقعات وتوقعات الجولات (عامة) */
 
 /* قيمة Firestore المُنمَّطة ← قيمة JSON عادية كما يعيدها SDK للصفحة */
 function val(v){
@@ -48,21 +48,50 @@ async function readDoc(id){
   return r;
 }
 
+/* الأداء (منصور 2026-11-21 «حسّن أداء التطبيق»):
+   assets-lite = وثيقة الصور بلا PHOTOS (~500 ك.ب base64 لا تُعرض للزوار منذ 2026-09-15) — المالك يحمّل الكاملة.
+   fbonus~<موسم> = بونص الفانتسي فقط من كل الجولات [{gw,h,a,b:[[club,name,pts]]}] بدل أن يحمّل كل زائر
+   وثائق الجولات كاملة (~400 ك.ب، وتُعاد إليه مع كل تحديث نقاط أثناء المباريات). */
+async function fantasyBonus(season){
+  const base = `https://firestore.googleapis.com/v1/projects/${PROJECT}/databases/(default)/documents/fantasy/${season}/rounds?pageSize=300&mask.fieldPaths=fixtures`;
+  let r = await fetch(`${base}&key=${API_KEY}`);
+  if(r.status === 429 || r.status === 403){
+    try{ const at = await accessToken('https://www.googleapis.com/auth/datastore'); r = await fetch(base, { headers:{ Authorization:'Bearer '+at } }); }catch(e){}
+  }
+  if(!r.ok) return { err:r.status };
+  const rows = [];
+  for(const d of ((await r.json()).documents || [])){
+    const id = String(d.name).split('/').pop(), fx = val((d.fields || {}).fixtures) || [];
+    for(const f of fx){
+      if(!f || !Array.isArray(f.bonus) || !f.bonus.length) continue;
+      rows.push({ gw: +(f.gw || id), h: f.h, a: f.a, b: f.bonus.filter(x => x && x.name && +x.pts > 0).map(x => [x.club, x.name, +x.pts]) });
+    }
+  }
+  return { rows };
+}
+
 exports.handler = async (event) => {
   const id = String((event.path || '').split('/').pop() || (event.queryStringParameters||{}).id || '');
   const json = { 'Content-Type':'application/json; charset=utf-8', 'Access-Control-Allow-Origin':'*' };
   if(!ALLOWED.test(id)) return { statusCode:400, headers:{...json, 'Cache-Control':'no-store'}, body:'{"err":"bad id"}' };
 
+  const cacheHdr = cdn => ({ ...json, 'Cache-Control':'public, max-age=0, must-revalidate', 'Netlify-CDN-Cache-Control':`public, durable, ${cdn}, stale-while-revalidate=86400` });
   try{
-    const r = await readDoc(id);
+    if(id.startsWith('fbonus~')){
+      const out = await fantasyBonus(id.slice(7));
+      if(out.err) return { statusCode:502, headers:{...json, 'Cache-Control':'no-store'}, body: JSON.stringify(out) };
+      return { statusCode:200, headers:cacheHdr('s-maxage=90'), body: JSON.stringify(out) };
+    }
+    const r = await readDoc(id === 'assets-lite' ? 'assets' : id);
     if(r.status === 404) return { statusCode:404, headers:{...json, 'Cache-Control':'public, max-age=60'}, body:'null' };
     if(!r.ok){
       /* لا نخزّن الخطأ في CDN — الصفحة ترجع إلى مكتبة Firestore */
       return { statusCode:502, headers:{...json, 'Cache-Control':'no-store'}, body: JSON.stringify({err:r.status}) };
     }
     const doc = fields((await r.json()).fields);
+    if(id === 'assets-lite'){ delete doc.PHOTOS; doc.lite = true; }
     /* المتصفح يعيد التحقق دائماً؛ CDN يحفظ دقيقة (الصور 5 دقائق) ويقدّم القديم أثناء التحديث */
-    const cdn = id === 'assets' ? 's-maxage=300' : 's-maxage=60';
+    const cdn = /^assets/.test(id) ? 's-maxage=300' : 's-maxage=60';
     return {
       statusCode: 200,
       headers: {
