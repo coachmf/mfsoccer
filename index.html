@@ -56,6 +56,19 @@ if(/^https?:$/.test(location.protocol)){ SNAP.get('2026-2027', false, /^#m\//.te
 /* بعد التحليل تكون الحالة interactive قبل تنفيذ سكربتات defer (Firebase) — فعلامة
    DOMContentLoaded هي الدليل الوحيد على جاهزيتها (انظر domReady) */
 var DCL_FIRED=false; document.addEventListener('DOMContentLoaded', ()=>{ DCL_FIRED=true; }, {once:true});
+/* الضغط على إشعار داخل تطبيق الآيفون (منصور 2026-11-21 «اضغط عليها يوديني الاشعار الخاص فيه… بدون تحديث apple»):
+   غلاف التطبيق (PWABuilder) يطلق على الصفحة حدث push-notification-click وفيه بيانات الإشعار (url = #m/<المباراة>، #fans…).
+   يُلتقط هنا في أول الصفحة فلا يضيع إن فُتح التطبيق من الإشعار وهو مغلق؛ يُنفَّذ بـ mfOpenUrl (أسفل الصفحة) أو يُحفظ حتى تجهز. */
+(function(){
+  function urlOf(d){ if(typeof d==='string'){ try{ d=JSON.parse(d); }catch(e){ return /^(https?:|#|\/)/.test(d)?d:''; } }
+    if(!d||typeof d!=='object') return '';
+    var c=[d.url, d.link, d.data&&d.data.url, d.fcm_options&&d.fcm_options.link, d.notification&&d.notification.click_action, d['gcm.notification.url']];
+    for(var i=0;i<c.length;i++) if(typeof c[i]==='string' && c[i]) return c[i];
+    return ''; }
+  addEventListener('push-notification-click', function(e){
+    var u=urlOf(e&&e.detail); if(!u) return;
+    if(typeof window.mfOpenUrl==='function') window.mfOpenUrl(u); else window.__MF_TAP=u; });
+})();
 </script>
 <meta name="apple-itunes-app" content="app-id=6810213944">   <!-- شريط أبل الرسمي في Safari: «تحميل» أو «فتح» لتطبيق MF Soccer -->
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -11275,9 +11288,7 @@ html .squadbox .sqrow .sqno::placeholder{color:var(--cct,#fff);opacity:.6}
       /* الضغط على إشعار والموقع مفتوح: افتح الرابط (صفحة المباراة) — Safari لا يدعم التنقل من خادم الخدمة */
       navigator.serviceWorker.addEventListener('message', function(e){
         if(!e.data || e.data.type!=='MF_OPEN' || !e.data.url) return;
-        try{ var u=new URL(e.data.url, location.href); if(u.origin!==location.origin) return;
-          if(u.pathname===location.pathname && u.hash){ if(location.hash!==u.hash) location.hash=u.hash; else if(typeof openMatchFromHash==='function') openMatchFromHash(); }
-          else location.href=u.href; }catch(er){}
+        window.mfOpenUrl(e.data.url);
       });
       navigator.serviceWorker.addEventListener('message', function(e){
         if(!e.data || e.data.type!=='HTML_UPDATED') return;
@@ -11290,6 +11301,15 @@ html .squadbox .sqrow .sqno::placeholder{color:var(--cct,#fff);opacity:.6}
     });
   }
 })();
+</script>
+<script>
+/* فتح رابط إشعار داخل الصفحة نفسها بلا إعادة تحميل: نفس الصفحة + hash → تغيير hash (صفحة المباراة/التصويت)، غير ذلك تنقّل عادي */
+window.mfOpenUrl=function(raw){
+  try{ var u=new URL(raw, location.href); if(u.origin!==location.origin) return;
+    if(u.pathname===location.pathname && u.hash){ if(location.hash!==u.hash) location.hash=u.hash; else if(typeof openMatchFromHash==='function') openMatchFromHash(); }
+    else if(u.href!==location.href) location.href=u.href; }catch(er){}
+};
+if(window.__MF_TAP){ var __t=window.__MF_TAP; window.__MF_TAP=''; window.mfOpenUrl(__t); }
 </script>
 <style>/* ===== صفحة النادي: تبويبات + نبذة + قائمة الفريق، وملف اللاعب العام (2026-09-15) ===== */
 .clubwrap{--ca:#1878BE;--cb:#0B1F3A;--ca-rgb:24,120,190;--ctab-fg:#fff}
