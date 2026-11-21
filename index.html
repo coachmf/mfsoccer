@@ -4423,7 +4423,7 @@ async function txSaveMatch(E0){
         if(out.lp && out.lp.length && window.LIVEPUSH) LIVEPUSH.send(out.lp);
         try{ paintRail(); renderAll(); }catch(e){} },
       ()=>{ done(); toast("تعذّر الحفظ بعد انتظار طويل — اضغط «حفظ الآن» مرة ثانية", "err"); });
-    return {r:"timeout"};
+    return {r:"timeout", late: p.then(()=>!!out, ()=>false)};
   }
   done();
   return {r:"err", msg:((r&&r.err&&(r.err.code||r.err.message))||"خطأ غير معروف")};
@@ -6974,7 +6974,12 @@ async function saveMatch(opt){
        «بطيء» قد يكون وصل فعلاً: نتذكر معرّفات ما أرسلناه فإن حُذف قبل الحفظ التالي يُحذف من السحابة أيضاً */
     if(EDIT){ const su=EDIT._sentU||{}; ROW_KINDS.forEach(k=>(E0[k]||[]).forEach(r=>{ if(r&&r.uid){ su[k]=su[k]||[]; if(!su[k].includes(r.uid)) su[k].push(r.uid); } })); EDIT._sentU=su; }
     if(quiet){ MX_ACLOUD=false; return; }
-    if(tx.r==="timeout") toast("الاتصال بطيء — الحفظ ما زال يعمل، لا تغلق الصفحة. بيطلع لك «وصل الحفظ» أول ما يوصل", "busy");
+    if(tx.r==="timeout"){ toast("الاتصال بطيء — الحفظ ما زال يعمل، لا تغلق الصفحة. بيطلع لك «وصل الحفظ» أول ما يوصل", "busy");
+      /* حسين 2026-11-21 «ماني قادر اطلع من التحرير»: الضغط اليدوي (حفظ وإغلاق) كان يبقي المحرّر مفتوحاً للأبد بعد المهلة —
+         نغلقه عند وصول الحفظ المتأخر، إلا إن فتح المحرّر مباراة أخرى أو كتب تعديلاً جديداً بعدها */
+      const k0 = edLockKey(), sigT = JSON.stringify(EDIT);
+      if(tx.late) tx.late.then(ok=>{ if(ok && EDIT && edLockKey()===k0 && JSON.stringify(EDIT)===sigT){ EDIT=null; FORMERR=""; renderMatchAdmin(); renderAll(); } });
+    }
     else toast(`تعذّر الحفظ (${tx.msg}) — تعديلاتك باقية`, "err");
     setTimeout(()=>renderMatchAdmin(),0); return;
   }
