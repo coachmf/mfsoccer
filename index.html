@@ -12147,6 +12147,12 @@ html.mf .mf-ib.mf-bell.on{color:var(--mf-gold,#E7D093);border-color:rgba(231,208
 .motm-tie{display:block;margin-top:2px;font-size:.66rem;font-weight:700;color:#f2c94c}
 .motm-empty{flex:1;display:grid;place-items:center;text-align:center;font-size:.74rem;color:var(--text-muted,#8fa6c4);padding:18px 6px}
 .motm-lists{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:8px}
+.mv-bar{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;margin:0 0 14px;padding:14px 16px;border-radius:16px;cursor:pointer;
+  border:1px solid rgba(233,185,73,.55);background:linear-gradient(90deg,rgba(233,185,73,.16),rgba(233,185,73,.05));color:inherit;text-align:right;font:inherit}
+.mv-bar span{display:flex;flex-direction:column;gap:4px;min-width:0}
+.mv-bar b{font:800 .95rem/1.5 var(--display,inherit);color:#f2c94c}
+.mv-bar small{font-size:.74rem;line-height:1.5;color:var(--slate,#9aa3b5)}
+.mv-bar i{flex:none;font-style:normal;font-weight:800;font-size:.8rem;padding:9px 14px;border-radius:999px;background:#E9B949;color:#1a1405}
 .mv-btn{margin-top:4px;border:1px solid rgba(233,185,73,.55);background:rgba(233,185,73,.14);color:#f2c94c;font:700 .74rem/1 var(--body,inherit);
   padding:8px 16px;border-radius:999px;cursor:pointer;min-height:34px}
 .mv-btn.on{background:transparent;color:var(--text-muted,#8fa6c4);border-color:rgba(143,166,196,.35)}
@@ -15055,6 +15061,13 @@ function motmPlayerHTML(n, c, extra){
     <span class="motm-ph" style="${accentVars(c)}">${cut?`<img src="${cut}_f.webp?v=39" alt="" decoding="async">`:crest(c,true)}</span>
     <b>${esc(n)}</b><small>${crest(c)}${esc(c)}</small>${extra}</div>`;
 }
+/* شريط التصويت أعلى «التشكيلة» (منصور 2026-11-21 «ليش مباريات الكووس مافي تصويت افضل لاعب»): التصويت موجود في «التفاصيل»
+   لكن شريط التبويبات يُخفيه خارج الشاشة — من يتصفّح التقييمات في التشكيلة يرى الدعوة ويُنقل للقائمة مباشرة (دوري وكؤوس) */
+function mpVoteBar(m){
+  if(!motmOpen(m)) return "";
+  const mine = FAN && (MOTMV[motmId(m)]||[]).find(v=>v.uid===FAN.uid);
+  return `<button type="button" class="mv-bar" data-mv-go><span><b>${mine?"صوّتَّ لـ "+esc(mine.n||"أفضل لاعب"):"صوّت لأفضل لاعب في المباراة"}</b><small>${mine?"تقدر تغيّر صوتك":"اختر رجل المباراة من اللاعبين المشاركين"}</small></span><i>${mine?"غيّر صوتك":"صوّت الحين"}</i></button>`;
+}
 function mpMotmHTML(m){
   const G=isGulfMatch(m);
   const raw=[...matchRatingsRaw(m,m.home), ...matchRatingsRaw(m,m.away)].sort((a,b)=>b.r.v-a.r.v);
@@ -15585,7 +15598,7 @@ function renderMatchPageRaw(){
   const box=$("#mpage"), m=MP.m; if(!box||!m) return;
   if(MP.tab==="eff" && !mpHasEff(m)) MP.tab="details";
   if(MP.tab==="table" && !mpHasTable(m)) MP.tab="details";
-  const body = MP.tab==="eff" ? `<div data-effslot></div>` : MP.tab==="lineups" ? mpLineups(m) : MP.tab==="squad" ? mpSquad(m) : MP.tab==="table" ? mpTable(m) : MP.tab==="matches" ? mpMatches(m) : mpDetails(m);
+  const body = MP.tab==="eff" ? `<div data-effslot></div>` : MP.tab==="lineups" ? mpVoteBar(m) + mpLineups(m) : MP.tab==="squad" ? mpSquad(m) : MP.tab==="table" ? mpTable(m) : MP.tab==="matches" ? mpMatches(m) : mpDetails(m);
   /* توهج رأس صفحة المباراة بلون القميص الأساسي: الأبيض يبقى أبيض (الإمارات/العراق كانا يظهران بالأحمر/الأخضر — منصور 2026-10-03) */
   const glowOf=c=>{ const cc=(window.CLUB_COLORS||{})[c]; return cc && lumOf(cc[0])>.85 ? "#FFFFFF" : clubAccent(c).a; };
   const st=`--hc:${glowOf(m.home)};--ac:${glowOf(m.away)}`, head=mpHeader(m),
@@ -15648,6 +15661,8 @@ document.addEventListener("click", e=>{
     const t=e.target.closest("[data-mp-tab]"); if(t){ MP.tab=t.dataset.mpTab; renderMatchPage(); box.querySelector(".mp-sheet").scrollTop=0; return; }
     const keepY=()=>{ const sh=box.querySelector(".mp-sheet"), y=sh?sh.scrollTop:0; renderMatchPage(); const s2=box.querySelector(".mp-sheet"); if(s2) s2.scrollTop=y; };
     if(e.target.closest("[data-mv-toggle]")){ MP_VOTE=!MP_VOTE; keepY(); return; }
+    if(e.target.closest("[data-mv-go]")){ MP.tab="details"; MP_VOTE=true; renderMatchPage();
+      const b2=box.querySelector(".mv-btn"); if(b2) b2.scrollIntoView({block:"center"}); return; }
     if(e.target.closest("[data-mv-login]")){ closeMatch(); go("predict"); return; }
     const mvp=e.target.closest("[data-mv-n]");
     if(mvp && MP.m){ if(mvp.disabled) return; mvp.disabled=true;
