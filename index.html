@@ -2692,6 +2692,7 @@ html[data-theme="light"] .rf-kpis .y b{color:#B98A00}
 .rf-mc b{font-weight:800;margin-inline-end:8px;font-variant-numeric:tabular-nums}
 .rf-mc em{font-style:normal;color:var(--an-mut);font-size:.72rem}.rf-mc em b{color:var(--an-txt);margin:0}
 .rf-na{color:var(--an-mut)}
+.rf-tbl td.rf-ef{white-space:nowrap;font-variant-numeric:tabular-nums;font-weight:700}
 .rf-dtabs{margin:12px 0 14px}
 .ctabs.rf-dtabs .ctab-ind{background:linear-gradient(135deg,#c9a14a,#f0d68a);box-shadow:0 4px 14px rgba(201,161,74,.35)}
 .ctabs.rf-dtabs button[aria-selected="true"]{color:#0b1530}
@@ -9650,7 +9651,7 @@ function rfAgg(rows){
     if(x.ef){ e.en++; e.es+=x.ef.eff; e.ds+=x.ef.dur; } });
   return Object.values(o).map(e=>({...e, avg:(e.y+e.r)/e.m, eff:e.en ? e.es/e.en : -1, effp:e.ds ? Math.round(e.es/e.ds*100) : -1}));
 }
-const RF_COLS = [["n","الحكم"],["m","المباريات"],["y","صفراء"],["r","حمراء"],["p","ركلات جزاء"],["avg","متوسط البطاقات"]];
+const RF_COLS = [["n","الحكم"],["m","المباريات"],["y","صفراء"],["r","حمراء"],["p","ركلات جزاء"],["avg","متوسط البطاقات"],["eff","متوسط اللعب الفعلي"]];
 const rfAvg = v => (Math.round(v*100)/100).toFixed(2);
 const rfCard = t => `<i class="rf-cd ${t}" aria-hidden="true"></i>`;
 /* بطاقة بلا كلمة (منصور 2026-09-29): الكلمة لقارئ الشاشة والتلميح فقط */
@@ -9711,7 +9712,7 @@ function rfOverviewHTML(rows){
       ${RF_COLS.map(([k,t])=>{ const on=RFA.sort===k; return `<th class="${k==="n"?"tl":""}" aria-sort="${on?(RFA.dir>0?"ascending":"descending"):"none"}"><button type="button" data-rf-sort="${k}" class="${on?"on":""}">${k==="y"?rfCardL("y"):k==="r"?rfCardL("r"):(typeof axLbl==="function"?axLbl(t):t)}${on?`<i class="rf-ar">${RFA.dir>0?"▲":"▼"}</i>`:""}</button></th>`; }).join("")}
     </tr></thead><tbody>
       ${rfSorted(L).map((e,i)=>`<tr><td class="tl"><button type="button" class="rf-name" data-rf-ref="${esc(e.n)}"><span class="rk">${i+1}</span>${refFace(e.n,"sm")}<b>${esc(e.n)}</b></button></td>
-        <td>${e.m}</td><td>${e.y}</td><td>${e.r}</td><td>${e.p}</td><td><b>${rfAvg(e.avg)}</b></td></tr>`).join("")}
+        <td>${e.m}</td><td>${e.y}</td><td>${e.r}</td><td>${e.p}</td><td><b>${rfAvg(e.avg)}</b></td><td class="rf-ef">${rfEffT(e.eff)}</td></tr>`).join("")}
     </tbody></table></div></div>${typeof axAbbr==="function"?axAbbr(RF_COLS.map(c=>c[1])):""}${typeof tblMore==="function"?tblMore("refs",L.length):""}</div>`;
   return out;
 }
