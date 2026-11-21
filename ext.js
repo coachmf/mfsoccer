@@ -289,7 +289,9 @@ function withAll(fn){
     SQUADS = Object.assign({}, saved.SQUADS); opp.forEach(c=>{ SQUADS[c] = DATA.squads[c] || []; });
     CLUBS = [...(saved.CLUBS||[]), ...opp];
     const L = Object.assign({}, saved.LOGOS); opp.forEach(c=>{ const s = oppCrest(c); if(s) L[c] = s; }); if(R) ntLogos(L, R); LOGOS = L;
-    photoCut = (name, club) => { if(!name) return null; if(league.has(club)) return saved.pc(name, club);
+    /* أندية الدرجة الأولى في الكؤوس (CUP_CLUBS) ليست من الممتاز ولا من الخصوم الخارجيين: صورتها من div1.js عبر photoCut الأصلية
+       — كان ملف لاعبيها في «الإجمالي» بلا صورة (منصور 2026-11-21، إيمانويل برقان) */
+    photoCut = (name, club) => { if(!name) return null; if(league.has(club) || (typeof CUP_CLUBS!=="undefined" && CUP_CLUBS.includes(club))) return saved.pc(name, club);
       const e = (DATA.squads[club]||[]).find(x=>x && x.n===name); return (e && e.f) || null; };
     natFlag = (name, club, cls) => league.has(club) ? saved.nf(name, club, cls) : "";
     window.CLUB_COLORS = Object.assign({}, saved.cc||{}, OPP_COLORS);
