@@ -565,12 +565,20 @@ function mpPaint(){
   if(old) old.replaceWith(el); else slot.appendChild(el);
 }
 function mpStop(){ if(MPW && MPW.unsub) MPW.unsub(); MPW = null; }
-/* تحديث الساعة في البطاقة أثناء شوط جارٍ */
+/* كل ثانية: (1) التنقل بين تبويبات المباراة يعيد رسم الخانة فارغة دون أن يلمس أبناء #mpage المباشرين
+   فلا يلتقطها المراقب — كان «اللعب الفعلي» يبقى فارغاً حتى يكتب الراصد تحديثاً جديداً (الفحيحيل×برقان 2026-11-21)؛
+   (2) أثناء شوط جارٍ تُعاد البطاقة كاملة فتتحرك أرقام الأشواط أيضاً لا الرقم الكبير فقط؛
+   (3) إن لم تصل البيانات بعد (فشل اللقطة أو تأخر الاتصال) نعيد المحاولة. */
 setInterval(()=>{
-  if(!MPW || !MPW.doc) return; const box = document.getElementById("mpage"); if(!box || box.hidden) return;
-  const c = calc(MPW.doc); if(!c.live) return;
-  const set = (k,v) => { const el = box.querySelector(`[data-effpc="${k}"]`); if(el) el.textContent = v; };
-  set("eff", fmt(c.eff)); set("dur", fmt(c.dur)); set("pct", pct(c.eff, c.dur)+"%");
+  const box = document.getElementById("mpage"); if(!box || box.hidden) return;
+  const slot = box.querySelector("[data-effslot]");
+  if(!MPW){ if(slot) mpInject(); return; }
+  if(!MPW.doc){ if(slot && (MPW.retry = (MPW.retry||0) + 1) % 5 === 0){ const key = MPW.key;
+      if(!TEST && typeof SNAP!=="undefined" && SNAP && SNAP.get) SNAP.get(idOf(key), true, true).then(d=>{ if(MPW && MPW.key===key && !MPW.doc && d){ MPW.doc = d; mpPaint(); } }).catch(()=>{}); }
+    if(!MPW.unsub && store.ready()) mpInject(); return; }
+  if(!MPW.unsub && store.ready()) mpInject();
+  if(!slot) return;
+  if(!slot.querySelector("[data-effp]") || calc(MPW.doc).live) mpPaint();
 }, 1000);
 
 /* قائمة مختصرة لكل المباريات المسجّلة (للإحصاءات): [{key,h,a,c,r,d,eff,dur,n,live}] */
