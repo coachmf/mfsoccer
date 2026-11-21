@@ -10,6 +10,13 @@
   status = 200
   force = true
 
+# ——— حفظ مباراة عبر الخادم: الجوال يرسل شريحة المباراة فقط (netlify/functions/match-save.js) ———
+[[redirects]]
+  from = "/api/match-save"
+  to = "/.netlify/functions/match-save"
+  status = 200
+  force = true
+
 # ——— ملف المشترك عبر الخادم (netlify/functions/fantasy-me.js) ———
 [[redirects]]
   from = "/api/fantasy-me"

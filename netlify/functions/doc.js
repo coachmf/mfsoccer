@@ -10,7 +10,7 @@ const { accessToken } = require('./lib/google');
 
 const PROJECT = 'mfsoccer-c7ee4';
 const API_KEY = 'AIzaSyD_ZzAE4HEKPIuAKCmta8tzN5KOa8IUfuo';   /* نفس المفتاح العام في index.html */
-const ALLOWED = /^(\d{4}-\d{4}|assets|assets-lite|fbonus~\d{4}-\d{4}|gulf27|div1|amateur|ext2627|news|effidx|eff_[0-9a-z]{1,8}|boards~\d{4}-\d{4}(_p\d{1,2})?)$/;   /* gulf27 = كأس الخليج 27، div1 = دوري الدرجة الأولى، news = فهرس الأخبار المنشورة، boards~… = ترتيب التوقعات وتوقعات الجولات (عامة) */
+const ALLOWED = /^(\d{4}-\d{4}|stamp~\d{4}-\d{4}|assets|assets-lite|fbonus~\d{4}-\d{4}|gulf27|div1|amateur|ext2627|news|effidx|eff_[0-9a-z]{1,8}|boards~\d{4}-\d{4}(_p\d{1,2})?)$/;   /* gulf27 = كأس الخليج 27، div1 = دوري الدرجة الأولى، news = فهرس الأخبار المنشورة، boards~… = ترتيب التوقعات وتوقعات الجولات (عامة) */
 
 /* قيمة Firestore المُنمَّطة ← قيمة JSON عادية كما يعيدها SDK للصفحة */
 function val(v){
@@ -81,6 +81,14 @@ exports.handler = async (event) => {
       const out = await fantasyBonus(id.slice(7));
       if(out.err) return { statusCode:502, headers:{...json, 'Cache-Control':'no-store'}, body: JSON.stringify(out) };
       return { statusCode:200, headers:cacheHdr('s-maxage=90'), body: JSON.stringify(out) };
+    }
+    /* stamp~<موسم> = طابع وثيقة الموسم فقط (بايتات) — شبكة أمان لزوار النبضة (watchPulse في index.html) */
+    if(id.startsWith('stamp~')){
+      const base = `https://firestore.googleapis.com/v1/projects/${PROJECT}/databases/(default)/documents/seasons/${id.slice(6)}?mask.fieldPaths=updated&mask.fieldPaths=updatedBy`;
+      const rs = await fetch(`${base}&key=${API_KEY}`);
+      if(!rs.ok) return { statusCode:502, headers:{...json, 'Cache-Control':'no-store'}, body: JSON.stringify({err:rs.status}) };
+      return { statusCode:200, headers:{ ...json, 'Cache-Control':'public, max-age=0, must-revalidate', 'Netlify-CDN-Cache-Control':'public, durable, s-maxage=10' },
+        body: JSON.stringify(fields((await rs.json()).fields)) };
     }
     const r = await readDoc(id === 'assets-lite' ? 'assets' : id);
     if(r.status === 404) return { statusCode:404, headers:{...json, 'Cache-Control':'public, max-age=60'}, body:'null' };

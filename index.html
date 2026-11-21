@@ -4296,6 +4296,7 @@ const SQUAD_MOVE=[
   {n:"مزيد نواف", from:"النصر", to:"الشباب", s:0, p:"CAM"},   /* منصور 2026-10-08: انتقل للشباب، صانع ألعاب (مزيد المطيري) */
 ];
 function applyData(d, source){
+  pulseKeepRaw(d);   /* نسخة خام قبل أي تعديل محلي (seedCupMatches/stampComp) — أساس نبضات الزائر */
   SEASON = d.season || SEASON;
   ALL = stampComp({matches:d.matches||[], goals:d.goals||[], pens:d.pens||[], cards:d.cards||[],
                    events:  keepField(d.events,  ALL && ALL.events),
@@ -4380,7 +4381,56 @@ async function persistData(opt){
    ويكتب — وإذا تغيّرت الوثيقة قبل الكتابة يعيد المحاولة تلقائياً على النسخة الأحدث.
    والمعاملة لا تُحفظ في الجهاز بلا اتصال، فلا كتابة قديمة تُرسل لاحقاً؛ التعديل يبقى في النموذج ويُعاد الحفظ. */
 let TX_INFLIGHT = null;   /* معاملة حفظ مباراة ما زالت تعمل (انظر txSaveMatch) */
+/* الحل الجذري (منصور 2026-11-21 «مشاكل بسرعة التطبيق و التعليق… تطلع هالرساله مع ان انترنت سريع»):
+   المعاملة كانت تنزّل وثيقة الموسم كاملة (~310 ك.ب) وترفعها في كل حفظ تلقائي، عبر long-polling في تطبيق iOS، ويعيدها Firestore
+   كلما حفظ محرّر آخر في نفس اللحظة. الآن: ندمج مباراتنا محلياً (mergeEdit/applyEdit كما كانت) ونرسل شريحتها فقط (بضعة ك.ب)
+   إلى /api/match-save، والخادم يدمجها في أحدث نسخة ويكتب بشرط ألا تكون تغيّرت (ويعيد بنفسه بأجزاء من الثانية).
+   أي فشل/مهلة → المعاملة القديمة نفسها (آمنة للتكرار: removeMatchByKey + الدمج بالتوقيع). */
+let SAVE_SRV_OFF = 0;   /* بعد فشل الخادم: المعاملة القديمة لدقيقتين */
+async function txSaveMatchServer(E0){
+  const u = (typeof firebase!=="undefined" && firebase.auth) ? firebase.auth().currentUser : null;
+  if(!u) return null;
+  const sq = JSON.parse(JSON.stringify(SQ_PENDING));
+  const merged = mergeEdit(JSON.parse(JSON.stringify(E0)));
+  const lp = (window.LIVEPUSH && E0.base) ? LIVEPUSH.capture(Object.assign({}, merged, {base:E0.base})) : null;
+  const M = JSON.parse(JSON.stringify(merged));
+  applyEdit(M); applyComp(); DATA_SOURCE="إدخال يدوي في الموقع";
+  const mm = M.match, cm = compOf(mm);
+  const x = (ALL.matches||[]).find(z=>+z.round===+mm.round && compOf(z)===cm && z.home===mm.home && z.away===mm.away);
+  if(!x){ SQ_PENDING = sq; return null; }
+  const pair=(a,b)=>(a===x.home&&b===x.away)||(a===x.away&&b===x.home);
+  const mine=r=>r.r===x.round && compOf(r)===cm && (r.club===x.home||r.club===x.away);
+  const slice = {match:x,
+    goals:(ALL.goals||[]).filter(g=>g.r===x.round && compOf(g)===cm && pair(g.sc,g.cd)),
+    cards:(ALL.cards||[]).filter(mine), pens:(ALL.pens||[]).filter(r=>r.r===x.round && compOf(r)===cm && pair(r.by,r.vs)),
+    lineups:(ALL.lineups||[]).filter(mine), shapes:(ALL.shapes||[]).filter(mine), subs:(ALL.subs||[]).filter(mine),
+    mev:(ALL.mev||[]).filter(r=>r.r===x.round && compOf(r)===cm && r.home===x.home && r.away===x.away)};
+  const by = (FBUSER&&FBUSER.email)||"";
+  let j = null;
+  try{
+    const tok = await Promise.race([u.getIdToken(), new Promise(r=>setTimeout(()=>r(null), 8000))]);
+    if(typeof tok!=="string") throw 0;
+    const ac = (typeof AbortController!=="undefined") ? new AbortController() : null;
+    const tm = setTimeout(()=>{ try{ ac&&ac.abort(); }catch(e){} }, 15000);
+    try{
+      const r = await fetch("/api/match-save", {method:"POST", headers:{"Content-Type":"application/json"}, signal:ac?ac.signal:undefined,
+        body:JSON.stringify({idToken:tok, orig:E0.orig||null, slice, squads:Object.keys(sq).length?sq:null, by})});
+      j = await r.json().catch(()=>null);
+    } finally { clearTimeout(tm); }
+  }catch(e){ j = null; }
+  if(!j || !j.ok){ SQ_PENDING = sq; SAVE_SRV_OFF = Date.now(); return null; }
+  /* الوثيقة على الخادم = أحدث نسخة + مباراتنا؛ نسختنا المحلية قد تنقصها مباريات حفظها غيرنا — صداها يصل من المستمع
+     (طابعه = CUR_STAMP) ويُطبَّق حين لا يوجد تعديل معلّق، ولا نتجاهله كصدى كتابتنا */
+  DATA_UPDATED = j.updated; DATA_BY = j.updatedBy||by;
+  CUR_STAMP = j.updated+"|"+(j.updatedBy||by); SYNCMSG="";
+  try{ const o=dataObject(); o.updated=j.updated; o.updatedBy=j.updatedBy||by; await localSet("zain_data", JSON.stringify(o)); }catch(e){}
+  return {r:"ok", E:merged, lp, by, changed:false, srv:true};
+}
 async function txSaveMatch(E0){
+  if(fbDb && isAdmin && !E0.ext && !E0.gulf && seasonId()==="2026-2027" && Date.now()-SAVE_SRV_OFF > 120000){
+    const s = await txSaveMatchServer(E0);
+    if(s) return s;
+  }
   if(!fbDb){   /* بلا سحابة (وضع الاختبار المحلي): نفس الدمج ثم حفظ على الجهاز */
     const merged = mergeEdit(JSON.parse(JSON.stringify(E0)));
     applyEdit(JSON.parse(JSON.stringify(merged))); applyComp(); DATA_SOURCE="إدخال يدوي في الموقع"; DATA_UPDATED=new Date().toISOString();
@@ -4409,6 +4459,7 @@ async function txSaveMatch(E0){
      ويبدأ الحفظ التلقائي معاملة ثانية فوقها فيزيد التزاحم. الآن: معاملة واحدة في وقت واحد (TX_INFLIGHT)، وإن تأخرت نكمل انتظارها
      في الخلفية ونخبر المحرّر عند وصولها. */
   TX_INFLIGHT = p;
+  p.then(()=>{ if(out) pulseFullWrite(out.obj); }, ()=>{});
   const done = ()=>{ if(TX_INFLIGHT===p) TX_INFLIGHT = null; };
   const settle = async ()=>{
     CUR_STAMP = LASTSTAMP = stampOf(out.obj); SYNCMSG="";
@@ -5208,7 +5259,10 @@ async function fbLoad(docId, opts){
 }
 async function fbSaveSeason(obj){
   if(!fbDb || !isAdmin) return false;
-  const r = await withTimeout(fbDb.collection("seasons").doc(seasonId()).set(obj||dataObject()), 9000);
+  const o = obj||dataObject();
+  const w = fbDb.collection("seasons").doc(seasonId()).set(o);
+  w.then(()=>pulseFullWrite(o), ()=>{});   /* الزوار على النبضة: يجلبون اللقطة الكاملة (حتى لو وصلت الكتابة بعد المهلة) */
+  const r = await withTimeout(w, 9000);
   if(r==="ok"){ SYNCMSG=""; return true; }
   if(r==="timeout"){ SYNCMSG="الاتصال بطيء — حُفظ محلياً وسيُرسل تلقائياً عند عودة الشبكة."; return "pending"; }
   SYNCMSG="تعذّر الحفظ: "+((r.err&&(r.err.code||r.err.message))||"خطأ غير معروف"); return false;
@@ -5240,11 +5294,98 @@ async function rebaseOnCloud(keep){
   LASTSTAMP = CUR_STAMP = st;
   return {ok, changed:true, by:d.updatedBy||""};
 }
+/* ===== نبضة الموسم للزوار (منصور 2026-11-21 «نبي حل جذري… سرعة التطبيق و التعليق») =====
+   مستمع وثيقة الموسم كان ينزّل لكل زائر الوثيقة كاملة (~220 ك.ب على الشبكة، ~310 ك.ب JSON) مع كل حفظ تلقائي للمحرّر —
+   عشرات المرات في المباراة الواحدة، ثم يحلّلها ويعيد رسم الموقع. الآن الزائر (غير الطاقم) يستمع إلى seasons/pulse-<الموسم>:
+   كل حفظ عبر /api/match-save يكتب فيها شريحة المباراة فقط (بضعة ك.ب) مع طابع النسخة السابقة (prev)؛ الزائر يطبّقها على نسخته
+   الخام بالخطوات نفسها التي طبّقها الخادم (pulseApply = applySlice في netlify/functions/lib/matchsave.js) فتصير مطابقة حرفياً.
+   إن فاتته نبضة (prev لا يطابق) أو كان الحفظ كاملاً (kind=full) يجلب اللقطة الكاملة مرة واحدة. وشبكة أمان: طابع الوثيقة
+   (/api/doc/stamp~…، بايتات) كل 45 ث في نافذة المباراة — يلتقط أي كتابة من نسخة قديمة لا تكتب نبضة. الطاقم على المستمع الكامل كما كان. */
+let SEASON_MODE = "";
+const PULSE = {raw:null, st:"", upd:"", busy:false, want:"", t:0};
+function pulseKeepRaw(d){
+  if(isAdmin || !d || !d.clubs || !d.matches) return;
+  const st = stampOf(d); if(st===PULSE.st && PULSE.raw) return;
+  try{ PULSE.raw = JSON.parse(JSON.stringify(d)); PULSE.st = st; if(String(d.updated||"") > PULSE.upd) PULSE.upd = String(d.updated||""); }catch(e){}
+}
+function pulseApply(d, p){   /* نسخة من applySlice (الخادم) — أي تغيير هناك ينعكس هنا */
+  const cmp = x => (x && x.comp) || "الدوري", key = m => `${m.round}|${cmp(m)}|${m.home}|${m.away}`;
+  const rm = k => { const old=(d.matches||[]).find(m=>key(m)===k); if(!old) return;
+    const pair=(a,b)=>(a===old.home&&b===old.away)||(a===old.away&&b===old.home), same=x=>x.r===old.round && cmp(x)===cmp(old);
+    const mine=x=>same(x) && (x.club===old.home||x.club===old.away);
+    d.matches=d.matches.filter(m=>key(m)!==k); d.goals=(d.goals||[]).filter(g=>!(same(g) && pair(g.sc,g.cd)));
+    d.cards=(d.cards||[]).filter(x=>!mine(x)); d.pens=(d.pens||[]).filter(x=>!(same(x) && pair(x.by,x.vs)));
+    d.lineups=(d.lineups||[]).filter(x=>!mine(x)); d.shapes=(d.shapes||[]).filter(x=>!mine(x)); d.subs=(d.subs||[]).filter(x=>!mine(x));
+    d.mev=(d.mev||[]).filter(x=>!(same(x) && x.home===old.home && x.away===old.away)); };
+  const s = p.slice;
+  if(p.squads && typeof p.squads==="object"){ d.squads=d.squads||{}; for(const c in p.squads) if(Array.isArray(p.squads[c])) d.squads[c]=p.squads[c]; }
+  if(p.orig) rm(p.orig);
+  rm(key(s.match));
+  d.matches=d.matches||[]; d.matches.push(s.match);
+  ["goals","cards","pens","lineups","shapes","subs","mev"].forEach(k=>{ d[k]=d[k]||[]; (s[k]||[]).forEach(r=>d[k].push(r)); });
+  d.matches.forEach(mm=>{
+    const gh=d.goals.filter(g=>g.r===mm.round && cmp(g)===cmp(mm) && g.sc===mm.home && g.cd===mm.away).length;
+    const ga=d.goals.filter(g=>g.r===mm.round && cmp(g)===cmp(mm) && g.sc===mm.away && g.cd===mm.home).length;
+    if(!(gh+ga) && mm.manH!=null && mm.manA!=null){ mm.hg=+mm.manH; mm.ag=+mm.manA; } else { mm.hg=gh; mm.ag=ga; } });
+  d.matches.sort((a,b)=>(a.round-b.round)||String(a.date).localeCompare(String(b.date)));
+  d.matches.forEach((mm,i)=>mm.n=i+1);
+  stampComp(d);
+  d.updated = p.updated; d.updatedBy = p.updatedBy||"";
+  return d;
+}
+async function pulseFull(target){
+  if(PULSE.busy){ if(String(target) > PULSE.want) PULSE.want = String(target); return; }
+  PULSE.busy = true; PULSE.want = "";
+  try{
+    const take = d => { if(!d || !d.clubs || !d.matches || String(d.updated||"") <= PULSE.upd) return false;
+      PULSE.upd = String(d.updated||""); const st=stampOf(d); if(st!==LASTSTAMP){ LASTSTAMP=st; applyRemote(d); } return true; };
+    for(let i=0; i<3; i++){
+      const d = await SNAP.get(seasonId(), true, true);
+      if(d && String(d.updated||"") >= String(target)){ take(d); return; }
+      await new Promise(r=>setTimeout(r, 16000));
+      if(String(target) <= PULSE.upd) return;   /* وصلت نبضة أحدث وطُبّقت أثناء الانتظار */
+    }
+    take(await fbLoad(seasonId(), {source:"server"}));
+  } finally { PULSE.busy = false; if(PULSE.want && PULSE.want > PULSE.upd) pulseFull(PULSE.want); }
+}
+function watchPulse(){
+  SEASON_UNSUB = fbDb.collection("seasons").doc("pulse-"+seasonId()).onSnapshot(snap=>{
+    if(!snap.exists) return;
+    const p = snap.data()||{};
+    if(!p.updated || String(p.updated) <= PULSE.upd) return;   /* نفس النسخة أو أقدم (أول لقطة عند الاشتراك) */
+    if(p.kind==="slice" && p.slice && p.slice.match && PULSE.raw && PULSE.st===p.prev){
+      try{
+        const d = pulseApply(JSON.parse(JSON.stringify(PULSE.raw)), p);
+        PULSE.raw = JSON.parse(JSON.stringify(d)); PULSE.st = stampOf(d); PULSE.upd = String(p.updated);
+        LASTSTAMP = PULSE.st; applyRemote(d); return;
+      }catch(e){}
+    }
+    pulseFull(p.updated);
+  }, ()=>{});
+  clearInterval(PULSE.t);
+  PULSE.t = setInterval(()=>{ if(matchWindowNow()) pulseCheck(); }, 45000);
+  pulseCheck(true);   /* اللقطة التي رُسم منها الإقلاع قد تكون قديمة (CDN) — كان المستمع الكامل يصحّحها فوراً */
+}
+let PULSE_CHK = 0;
+function pulseCheck(force){
+  if(SEASON_MODE!=="pulse" || document.hidden || PULSE.busy) return;
+  if(!force && Date.now()-PULSE_CHK < 20000) return; PULSE_CHK = Date.now();
+  fetch("/api/doc/stamp~"+seasonId()+"?v="+Math.floor(Date.now()/15000), {cache:"no-cache"}).then(r=>r.ok?r.json():null)
+    .then(s=>{ if(s && s.updated && String(s.updated) > PULSE.upd) pulseFull(s.updated); }).catch(()=>{});
+}
+document.addEventListener("visibilitychange", ()=>{ if(!document.hidden) pulseCheck(); });
+/* كتابة كاملة لوثيقة الموسم (لوحة الإدارة / المعاملة القديمة): نبضة «full» فيجلب الزوار اللقطة */
+function pulseFullWrite(obj){
+  try{ if(fbDb && obj && obj.updated) fbDb.collection("seasons").doc("pulse-"+seasonId()).set({updated:obj.updated, updatedBy:obj.updatedBy||"", kind:"full", prev:""}).catch(()=>{}); }catch(e){}
+}
 /* استماع حيّ لوثيقة الموسم: أي حفظ من أي عضو يظهر عند الجميع فوراً بلا تحديث للصفحة */
 function watchSeason(){
   if(!fbDb) return;
   watchFantasyBonus();
   if(SEASON_UNSUB){ try{ SEASON_UNSUB(); }catch(e){} SEASON_UNSUB=null; }
+  clearInterval(PULSE.t);
+  SEASON_MODE = (!isAdmin && seasonId()==="2026-2027") ? "pulse" : "full";
+  if(SEASON_MODE==="pulse"){ try{ watchPulse(); }catch(e){} return; }
   try{
     SEASON_UNSUB = fbDb.collection("seasons").doc(seasonId()).onSnapshot(snap=>{
       if(!snap.exists || snap.metadata.hasPendingWrites) return;   /* تجاهل صدى كتابتنا */
@@ -7000,8 +7141,9 @@ async function saveMatch(opt){
   LASTSYNC=new Date(); if(!quiet) toast(`حُفظت المباراة: ${m.home} ضد ${m.away} ✅`,"ok"); predsScoreSoon();
   if(tx.lp && tx.lp.length) LIVEPUSH.send(tx.lp);
   if(quiet && !mxTyping()) renderMatchAdmin();
-  /* أي لقطة وصلت أثناء التحرير أقدم من حفظنا — تطبيقها يتراجع عنه */
-  dropStaleRemote();
+  /* أي لقطة وصلت أثناء التحرير أقدم من حفظنا — تطبيقها يتراجع عنه. إلا صدى حفظ الخادم نفسه (أحدث نسخة كاملة) */
+  if(tx.srv && PENDING_REMOTE && stampOf(PENDING_REMOTE)===CUR_STAMP){ if(!EDIT) flushRemote(); }
+  else dropStaleRemote();
   paintRail(); renderAll(); if(!quiet || !mxTyping()) renderMatchAdmin();
   return true;
   } finally { SAVING_MATCH = false; document.documentElement.classList.remove("mx-saving"); }
@@ -9644,7 +9786,7 @@ function loadFullAssets(){
     FULLASSETS_P=null;
   })());
 }
-function staffData(){ loadFullAssets(); watchFantasyBonus(); }
+function staffData(){ loadFullAssets(); watchFantasyBonus(); if(SEASON_MODE==="pulse") watchSeason(); }   /* الطاقم: المستمع الكامل */
 let ASSETSRC="مضمّنة في الملف";
 
 function downloadAssets(){
