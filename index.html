@@ -2691,6 +2691,10 @@ html[data-theme="light"] .rf-kpis .y b{color:#B98A00}
 .rf-mc{display:flex;align-items:center;gap:2px;font-size:.78rem;white-space:nowrap}
 .rf-mc b{font-weight:800;margin-inline-end:8px;font-variant-numeric:tabular-nums}
 .rf-mc em{font-style:normal;color:var(--an-mut);font-size:.72rem}.rf-mc em b{color:var(--an-txt);margin:0}
+.rf-mc em.ef{margin-inline-start:10px}.rf-mc em.ef b{font-variant-numeric:tabular-nums}
+.rf-tbl td.rf-ef{white-space:nowrap;font-variant-numeric:tabular-nums}.rf-tbl td.rf-ef small{display:block;font-size:.62rem;color:var(--an-mut)}
+.rf-na{color:var(--an-mut)}
+.rf-efn{margin-top:12px}
 @media(max-width:560px){
   .rf-filters{gap:6px}.rf-f select{font-size:.78rem;padding:8px 10px 8px 24px;background-position:left 8px center}
   .rf-kpis{grid-template-columns:repeat(6,minmax(0,1fr))}
@@ -9613,18 +9617,28 @@ const rfRefOf = m => { const n=String(crewOf(m).ref||"").trim(); return n==="ل�
 const rfCards = m => CARDS.filter(x=>+x.r===+m.round && compOf(x)===compOf(m) && (x.club===m.home||x.club===m.away));
 const rfPens  = m => PENS.filter(x=>+x.r===+m.round && compOf(x)===compOf(m) &&
   ((x.by===m.home&&x.vs===m.away)||(x.by===m.away&&x.vs===m.home)));
+/* اللعب الفعلي (منصور 2026-11-21 «ابي تحط اللعب الفعلي حق كل الحكام — المباراة الي حكمها تروح له ضمن الاحصائيات»):
+   من فهرس ساعة التطبيق seasons/effidx (EFF.idx) بمفتاح المباراة نفسه؛ المباريات المرصودة المنتهية فقط (لا live). */
+function rfEffOf(m){
+  try{ const X=window.EFFTIME, I=(X && X.idx && X.idx() || {}).m || {}; const s=I[matchKey(m)];
+    return s && !s.live && +s.eff>0 && +s.dur>0 ? {eff:+s.eff, dur:+s.dur} : null; }catch(e){ return null; }
+}
+const rfMS = sec => { const t=Math.round(sec); return `${String(Math.floor(t/60)).padStart(2,"0")}:${String(t%60).padStart(2,"0")}`; };
+const rfEffT = v => v>0 ? `<bdi dir="ltr">${rfMS(v)}</bdi>` : `<span class="rf-na">—</span>`;
+let RF_IDX_HOOK=false;
 function rfRows(round){
   return playedMatches().filter(m=>round===""||String(m.round)===String(round)).map(m=>{
-    const cs=rfCards(m), ps=rfPens(m);
-    return {m, ref:rfRefOf(m), cs, ps, y:cs.filter(x=>!isRed(x.type)).length, r:cs.filter(x=>isRed(x.type)).length, p:ps.length};
+    const cs=rfCards(m), ps=rfPens(m), ef=rfEffOf(m);
+    return {m, ref:rfRefOf(m), cs, ps, y:cs.filter(x=>!isRed(x.type)).length, r:cs.filter(x=>isRed(x.type)).length, p:ps.length, ef};
   }).sort((a,b)=>(+a.m.round)-(+b.m.round) || String(a.m.date||"").localeCompare(String(b.m.date||"")));
 }
 function rfAgg(rows){
   const o={};
-  rows.forEach(x=>{ if(!x.ref) return; const e=o[x.ref] ||= {n:x.ref, m:0, y:0, r:0, p:0}; e.m++; e.y+=x.y; e.r+=x.r; e.p+=x.p; });
-  return Object.values(o).map(e=>({...e, avg:(e.y+e.r)/e.m}));
+  rows.forEach(x=>{ if(!x.ref) return; const e=o[x.ref] ||= {n:x.ref, m:0, y:0, r:0, p:0, en:0, es:0, ds:0}; e.m++; e.y+=x.y; e.r+=x.r; e.p+=x.p;
+    if(x.ef){ e.en++; e.es+=x.ef.eff; e.ds+=x.ef.dur; } });
+  return Object.values(o).map(e=>({...e, avg:(e.y+e.r)/e.m, eff:e.en ? e.es/e.en : -1, effp:e.ds ? Math.round(e.es/e.ds*100) : -1}));
 }
-const RF_COLS = [["n","الحكم"],["m","المباريات"],["y","صفراء"],["r","حمراء"],["p","ركلات جزاء"],["avg","متوسط البطاقات"]];
+const RF_COLS = [["n","الحكم"],["m","المباريات"],["y","صفراء"],["r","حمراء"],["p","ركلات جزاء"],["avg","متوسط البطاقات"],["eff","اللعب الفعلي"]];
 const rfAvg = v => (Math.round(v*100)/100).toFixed(2);
 const rfCard = t => `<i class="rf-cd ${t}" aria-hidden="true"></i>`;
 /* بطاقة بلا كلمة (منصور 2026-09-29): الكلمة لقارئ الشاشة والتلميح فقط */
@@ -9675,7 +9689,8 @@ function rfOverviewHTML(rows){
   const withRef=rows.filter(x=>x.ref), L=rfAgg(rows), none=rows.length-withRef.length;
   const sum=k=>withRef.reduce((s,x)=>s+x[k],0);
   let out=`<div class="rf-body">
-    ${rfKpis([[L.length,"إجمالي الحكام"],[withRef.length,"مباريات التحكيم"],[sum("y"),"البطاقات الصفراء","y"],[sum("r"),"البطاقات الحمراء","r"],[sum("p"),"ركلات الجزاء المحتسبة"]])}
+    ${(()=>{ const E=withRef.filter(x=>x.ef), es=E.reduce((s,x)=>s+x.ef.eff,0);
+      return rfKpis([[L.length,"إجمالي الحكام"],[withRef.length,"مباريات التحكيم"],[sum("y"),"البطاقات الصفراء","y"],[sum("r"),"البطاقات الحمراء","r"],[sum("p"),"ركلات الجزاء المحتسبة"],[E.length?rfEffT(es/E.length):"—","متوسط اللعب الفعلي"]]); })()}
     ${none?`<p class="hint rf-note">${none===1?"مباراة واحدة مُقامة":`${none} مباريات مُقامة`} بلا حكم ساحة مسجّل — لا تدخل في أرقام الحكام.</p>`:""}`;
   if(!L.length) return out+`<div class="an-card rf-empty">لم يُسجَّل حكم ساحة لأي مباراة مُقامة ضمن هذا الاختيار.</div></div>`;
   out+=`<h2 class="sec">البطاقات حسب الجولة</h2>${rfRoundChart(withRef)}
@@ -9685,8 +9700,9 @@ function rfOverviewHTML(rows){
       ${RF_COLS.map(([k,t])=>{ const on=RFA.sort===k; return `<th class="${k==="n"?"tl":""}" aria-sort="${on?(RFA.dir>0?"ascending":"descending"):"none"}"><button type="button" data-rf-sort="${k}" class="${on?"on":""}">${k==="y"?rfCardL("y"):k==="r"?rfCardL("r"):(typeof axLbl==="function"?axLbl(t):t)}${on?`<i class="rf-ar">${RFA.dir>0?"▲":"▼"}</i>`:""}</button></th>`; }).join("")}
     </tr></thead><tbody>
       ${rfSorted(L).map((e,i)=>`<tr><td class="tl"><button type="button" class="rf-name" data-rf-ref="${esc(e.n)}"><span class="rk">${i+1}</span>${refFace(e.n,"sm")}<b>${esc(e.n)}</b></button></td>
-        <td>${e.m}</td><td>${e.y}</td><td>${e.r}</td><td>${e.p}</td><td><b>${rfAvg(e.avg)}</b></td></tr>`).join("")}
-    </tbody></table></div></div>${typeof axAbbr==="function"?axAbbr(RF_COLS.map(c=>c[1])):""}${typeof tblMore==="function"?tblMore("refs",L.length):""}</div>`;
+        <td>${e.m}</td><td>${e.y}</td><td>${e.r}</td><td>${e.p}</td><td><b>${rfAvg(e.avg)}</b></td><td class="rf-ef">${rfEffT(e.eff)}${e.en&&e.en<e.m?`<small>${e.en}/${e.m}</small>`:""}</td></tr>`).join("")}
+    </tbody></table></div></div>${typeof axAbbr==="function"?axAbbr(RF_COLS.map(c=>c[1])):""}${typeof tblMore==="function"?tblMore("refs",L.length):""}
+    <p class="hint rf-note rf-efn">«3/6» تحت اللعب الفعلي = رُصد في 3 من 6 مباريات أدارها الحكم.</p></div>`;
   return out;
 }
 function rfDetailHTML(name, rows){
@@ -9705,13 +9721,14 @@ function rfDetailHTML(name, rows){
     t.p+=x.ps.filter(k=>k.by===c).length; }); });
   const TL=Object.values(teams).sort((a,b)=>b.m-a.m || (b.y+b.r)-(a.y+a.r) || a.c.localeCompare(b.c,"ar"));
   return `<div class="rf-body">${top}
-    ${rfKpis([[e.m,"المباريات"],[e.y,"البطاقات الصفراء","y"],[e.r,"البطاقات الحمراء","r"],[e.p,"ركلات الجزاء"],[rfAvg(e.avg),"متوسط البطاقات لكل مباراة","lead"]])}
+    ${rfKpis([[e.m,"المباريات"],[e.y,"البطاقات الصفراء","y"],[e.r,"البطاقات الحمراء","r"],[e.p,"ركلات الجزاء"],[rfAvg(e.avg),"متوسط البطاقات لكل مباراة","lead"],
+      [rfEffT(e.eff),"متوسط اللعب الفعلي"+(e.en&&e.en<e.m?` (${e.en} من ${e.m})`:""),"lead"],[e.effp>=0?`${e.effp}%`:"—","نسبة اللعب الفعلي من زمن المباراة"]])}
     <h2 class="sec">سجل المباريات</h2>
     <div class="an-card rf-log">${mine.map(x=>{ const m=x.m;
       return `<button type="button" class="rf-mrow" data-mopen="${esc(matchKey(m))}">
         <span class="rf-mr">ج${esc(String(m.round))}${m.date?`<small>${esc(mpDateLabel(m))}</small>`:""}</span>
         <span class="rf-mt"><span class="h">${esc(m.home)}</span>${crest(m.home)}<b class="sc" dir="ltr">${scp(+m.hg,+m.ag)}</b>${crest(m.away)}<span class="a">${esc(m.away)}</span></span>
-        <span class="rf-mc">${rfCard("y")}<b>${x.y}</b>${rfCard("r")}<b>${x.r}</b><em>جزاء <b>${x.p}</b></em></span>
+        <span class="rf-mc">${rfCard("y")}<b>${x.y}</b>${rfCard("r")}<b>${x.r}</b><em>جزاء <b>${x.p}</b></em>${x.ef?`<em class="ef">فعلي <b dir="ltr">${rfMS(x.ef.eff)}</b></em>`:""}</span>
       </button>`; }).join("")}</div>
     <h2 class="sec">الفرق التي أدار مبارياتها</h2>
     <div class="an-card rf-tcard${typeof tblClip==="function"?tblClip("refT"):""}"><div class="rf-tw"><table class="rf-tbl"><thead><tr>
@@ -9723,6 +9740,7 @@ function rfDetailHTML(name, rows){
 }
 function paintAnRefs(){
   const b=$("#anRefs"); if(!b) return;
+  if(!RF_IDX_HOOK && window.EFFTIME && EFFTIME.onIdx){ RF_IDX_HOOK=true; EFFTIME.onIdx(()=>{ if($("#anRefs")) paintAnRefs(); }); }
   b.innerHTML=anRefsHTML();
 }
 document.addEventListener("click", e=>{
