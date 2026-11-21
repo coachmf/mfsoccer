@@ -74,8 +74,9 @@ html.mfa .mfa-mini{display:block}
 html:not(.mfa) .mfa-mini{display:none}
 .mfa-mini{--h:52px}
 .mfa-mini::before{content:"";position:absolute;inset:0 0 auto;height:calc(var(--h) + env(safe-area-inset-top));background:#0a1626;border-bottom:1px solid rgba(255,255,255,.08);
-  opacity:0;transform:translate3d(0,-8px,0);transition:opacity .2s,transform .2s}
-.mpage.mfa-mini-on .mfa-mini::before{opacity:1;transform:none}
+  opacity:0;transform:translate3d(0,-8px,0);transition:opacity .2s,transform .2s;
+  pointer-events:none}   /* وهي مخفية كانت تغطي سهم الرجوع وزر المشاركة في رأس المباراة فلا يستجيبان في التطبيق (منصور 2026-11-21) */
+.mpage.mfa-mini-on .mfa-mini::before{opacity:1;transform:none;pointer-events:auto}
 .mfa-mini{display:grid}
 .mfa-mini > .t,.mfa-mini > .s,.mfa-mini > .mfa-mini-x{position:absolute;top:env(safe-area-inset-top);height:var(--h);display:flex;align-items:center;gap:8px;color:#fff;
   opacity:0;transition:opacity .2s;visibility:visible;pointer-events:none}
