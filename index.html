@@ -10508,6 +10508,12 @@ window.addEventListener("hashchange", ()=>{
   if(location.hash==="#admin"){ ADMIN_REVEAL=true; paintAdminBtn(); go("admin"); }
 });
 if(location.hash==="#admin"){ ADMIN_REVEAL=true; paintAdminBtn(); }   /* ومع goStart يفتح الرابط شاشة الدخول مباشرة */
+/* رابط #fans (إشعار «صوّت لتشكيلة الجولة» — منصور 2026-11-21): يفتح صفحة الجمهور بعد وصول البيانات */
+(function(){
+  const openFans = ()=>{ let n=0; const t=()=>{ if(typeof ALL!=="undefined" && ALL && ALL.matches && ALL.matches.length){ USER_NAV=true; go("fans"); } else if(++n<60) setTimeout(t,300); }; setTimeout(t,300); };
+  if(location.hash==="#fans") openFans();
+  window.addEventListener("hashchange", ()=>{ if(location.hash==="#fans") openFans(); });
+})();
 /* المدخل السرّي (ب): ضغطة مطوّلة (~0.8ث) على شعار MF SOCCER أعلى الصفحة (أو شعار الدوري القديم)
    — مفوَّضة على المستند لأن ترويسة mf-shell تُبنى لاحقاً، والضغطة التي تفتح الدخول لا تُكمل إلى «الرئيسية» */
 (function(){

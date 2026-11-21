@@ -71,6 +71,10 @@
 [functions."push-remind-cron"]
   schedule = "*/5 * * * *"
 
+# إشعارات التصويت: «صوّت لأفضل لاعب» بعد صافرة النهاية بدقيقتين، و«صوّت لتشكيلة الجولة» بعد نهاية جولة الدوري بساعة (push-vote-cron.js)
+[functions."push-vote-cron"]
+  schedule = "* * * * *"
+
 # فحص المباريات بعد كل يوم مباريات: تشكيلة ناقصة، نتيجة لم تُنشر في الفانتسي، بونص ناقص ← إشعار للإدارة (match-audit-cron.js)
 [functions."match-audit-cron"]
   schedule = "*/10 * * * *"
