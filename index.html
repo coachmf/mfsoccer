@@ -4379,6 +4379,7 @@ async function persistData(opt){
    الآن: runTransaction يقرأ أحدث نسخة من الخادم، يطبّق فرقنا فقط (mergeEdit: ما أضفناه/حذفناه/غيّرناه)،
    ويكتب — وإذا تغيّرت الوثيقة قبل الكتابة يعيد المحاولة تلقائياً على النسخة الأحدث.
    والمعاملة لا تُحفظ في الجهاز بلا اتصال، فلا كتابة قديمة تُرسل لاحقاً؛ التعديل يبقى في النموذج ويُعاد الحفظ. */
+let TX_INFLIGHT = null;   /* معاملة حفظ مباراة ما زالت تعمل (انظر txSaveMatch) */
 async function txSaveMatch(E0){
   if(!fbDb){   /* بلا سحابة (وضع الاختبار المحلي): نفس الدمج ثم حفظ على الجهاز */
     const merged = mergeEdit(JSON.parse(JSON.stringify(E0)));
@@ -4403,14 +4404,28 @@ async function txSaveMatch(E0){
     tx.set(ref, obj);
     out = {E:merged, obj, lp, by:(d&&d.updatedBy)||"", changed: !!d && stampOf(d)!==before};
   });
-  const r = await withTimeout(p, 25000);
-  if(r==="ok" && out){
+  /* منصور 2026-11-21 (حسين: «ماني قادر احفظ المباراة واصكرها»): المعاملة تقرأ وتكتب وثيقة الموسم كاملة (~300 ك.ب)، ومع محرّرَين
+     يحفظان معاً في نفس الوقت يعيدها Firestore فتتجاوز 25 ث على الجوال — كانت تُترك («لم يُحفظ») وهي ما زالت تعمل ثم تصل متأخرة،
+     ويبدأ الحفظ التلقائي معاملة ثانية فوقها فيزيد التزاحم. الآن: معاملة واحدة في وقت واحد (TX_INFLIGHT)، وإن تأخرت نكمل انتظارها
+     في الخلفية ونخبر المحرّر عند وصولها. */
+  TX_INFLIGHT = p;
+  const done = ()=>{ if(TX_INFLIGHT===p) TX_INFLIGHT = null; };
+  const settle = async ()=>{
     CUR_STAMP = LASTSTAMP = stampOf(out.obj); SYNCMSG="";
     try{ await localSet("zain_data", JSON.stringify(out.obj)); }catch(e){}
     if(Date.now()-LAST_BACKUP_AT > 15*60*1000){ LAST_BACKUP_AT=Date.now(); pushBackup(); }
-    return Object.assign({r:"ok"}, out);
+  };
+  const r = await withTimeout(p, 25000);
+  if(r==="ok" && out){ done(); await settle(); return Object.assign({r:"ok"}, out); }
+  if(r==="timeout"){
+    p.then(async ()=>{ done(); if(!out) return; await settle(); MX_ACLOUD = true;
+        const mm = out.E && out.E.match; toast(`✅ وصل الحفظ: ${mm?mm.home+" ضد "+mm.away:"المباراة"} (تأخر الاتصال)`, "ok");
+        if(out.lp && out.lp.length && window.LIVEPUSH) LIVEPUSH.send(out.lp);
+        try{ paintRail(); renderAll(); }catch(e){} },
+      ()=>{ done(); toast("تعذّر الحفظ بعد انتظار طويل — اضغط «حفظ الآن» مرة ثانية", "err"); });
+    return {r:"timeout"};
   }
-  if(r==="timeout") return {r:"timeout"};
+  done();
   return {r:"err", msg:((r&&r.err&&(r.err.code||r.err.message))||"خطأ غير معروف")};
 }
 
@@ -6940,6 +6955,8 @@ function predsScoreSoon(){
 async function saveMatch(opt){
   if(SAVING_MATCH || !EDIT) return;          /* ضغطة ثانية أثناء الحفظ لا تبدأ حفظاً آخر */
   const quiet = !!(opt && opt.quiet);
+  /* حفظ سابق تأخر وما زال يعمل في الخلفية: لا نبدأ معاملة ثانية فوقه (تزيد التزاحم) — الحفظ التلقائي يتخطى، والضغط يُنبّه */
+  if(TX_INFLIGHT){ if(!quiet) toast("الحفظ السابق ما زال يصل — انتظر ثواني ولا تغلق الصفحة، بيطلع لك «وصل الحفظ»","busy"); return; }
   if(!quiet) toast("جارٍ حفظ المباراة…","busy",true);
   FORMERR = validateEdit();
   if(FORMERR){ if(quiet){ FORMERR=""; return; } renderMatchAdmin(); return; }
@@ -6957,7 +6974,8 @@ async function saveMatch(opt){
        «بطيء» قد يكون وصل فعلاً: نتذكر معرّفات ما أرسلناه فإن حُذف قبل الحفظ التالي يُحذف من السحابة أيضاً */
     if(EDIT){ const su=EDIT._sentU||{}; ROW_KINDS.forEach(k=>(E0[k]||[]).forEach(r=>{ if(r&&r.uid){ su[k]=su[k]||[]; if(!su[k].includes(r.uid)) su[k].push(r.uid); } })); EDIT._sentU=su; }
     if(quiet){ MX_ACLOUD=false; return; }
-    toast(tx.r==="timeout" ? "الاتصال بطيء — لم يُحفظ بعد. تعديلاتك باقية وتنحفظ تلقائياً" : `تعذّر الحفظ (${tx.msg}) — تعديلاتك باقية`, "err");
+    if(tx.r==="timeout") toast("الاتصال بطيء — الحفظ ما زال يعمل، لا تغلق الصفحة. بيطلع لك «وصل الحفظ» أول ما يوصل", "busy");
+    else toast(`تعذّر الحفظ (${tx.msg}) — تعديلاتك باقية`, "err");
     setTimeout(()=>renderMatchAdmin(),0); return;
   }
   if(tx.changed && fromOther(tx.by)) toast(`وصل تحديث من ${tx.by} — دُمج مع تعديلك`,"busy");
