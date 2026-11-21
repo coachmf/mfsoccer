@@ -278,6 +278,22 @@ const ADMIN = {
         if(diff){ try{ localStorage.setItem(this.AUTO_SYNC_KEY, String(Date.now())); }catch(e){}
           const r=await CLOUD.publishRound(st, gw); console.log('autoSync gw', gw, r); }
       }
+      /* مواعيد المباريات (منصور 2026-11-21: «الجوله التاسعه مؤجله واحنا عدلنا ليش جذي صار»): تعديل الموعد في الموقع يصل الجهاز عبر
+         MFSYNC لكنه لم يكن يُنشر (المقارنة أعلاه للنتائج فقط) فبقي الخادم على المواعيد القديمة: موعد إغلاق خاطئ وتنبيه «لم تصل النتيجة».
+         توقيع مواعيد كل جولة قادمة يُحفظ محلياً؛ إن تغيّر تُقرأ نسخة الخادم مرة واحدة وتُنشر الجولة إن اختلفت (ومعها مواعيد الإغلاق والقفل) */
+      try{
+        const K='kwf_dates_sig'; let seen={}; try{ seen=JSON.parse(localStorage.getItem(K)||'{}')||{}; }catch(e){}
+        const total=(st.rules && st.rules.totalGWs)||22, dsigOf=L=>L.map(f=>f.id+'@'+(f.date||'')).sort().join(';'); let ch=false;
+        for(let gw=st.currentGW; gw<=total; gw++){
+          const g=DB.gw(gw); if(!g || g.status==='finished') continue;
+          const loc=st.fixtures.filter(f=>f.gw===gw); if(!loc.length) continue;
+          const dsig=dsigOf(loc); if(seen[gw]===dsig) continue;
+          const s=await CLOUD.round(gw).get({source:'server'}).catch(()=>null); if(!s) continue;
+          if(dsigOf((s.exists && s.data().fixtures)||[])!==dsig){ const r=await CLOUD.publishRound(st, gw); console.log('autoSync dates gw', gw, r); if(!r.ok) continue; }
+          seen[gw]=dsig; ch=true;
+        }
+        if(ch) try{ localStorage.setItem(K, JSON.stringify(seen)); }catch(e){}
+      }catch(e){ console.warn('autoSync dates', e); }
     }catch(e){ console.warn('autoSync', e); }
     finally{ this._autoSyncBusy=false; }
   },
