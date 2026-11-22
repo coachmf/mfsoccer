@@ -258,6 +258,11 @@ function __admRenderMatchAdmin(){
         <button class="seg" data-mcompf="الكل" aria-pressed="${mf==="الكل"}">كل البطولات <small>${ms.length}</small></button>
         ${COMPS.map(c=>`<button class="seg" data-mcompf="${esc(c)}" aria-pressed="${mf===c}">${esc(c)} <small>${cc[c]||0}</small></button>`).join("")}</div>
       <h2 class="sec">المباريات المسجّلة (${ms.length})</h2>
+      ${(()=>{ /* منصور 2026-11-22: سعد «مو لاقي المباراة» (مباراة كأس الجولة 3 مدفونة تحت جولات الدوري) — مباريات اليوم أولاً، مفتوحة، أياً كانت البطولة */
+        const t=new Date(Date.now()+3*3600e3), today=t.toISOString().slice(0,10);
+        const tm=ms.filter(m=>m.date===today).sort((a,b)=>String(a.time||"").localeCompare(String(b.time||"")));
+        return tm.length ? `<div class="card pad adm-today"><details class="rndbox" open><summary><b>مباريات اليوم</b><span class="rc">${tm.length} مباراة</span></summary><div class="rndbody adm-matches">${tm.map(mRow).join("")}</div></details></div>` : "";
+      })()}
       ${ms.length? `<div class="card pad">`+rounds.map((r,ri)=>{
         const rms=ms.filter(m=>+m.round===r).sort((a,b)=>String(a.date).localeCompare(String(b.date)));
         const up=rms.filter(isUpcoming).length;
