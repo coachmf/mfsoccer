@@ -15407,8 +15407,19 @@ function mpLinesOf(S){
 }
 /* منصور 2026-11-22 (مثل SofaScore): قبل اكتمال تقييمات المباراة يظهر تحت كل لاعب في التشكيلة متوسط تقييمه هذا الموسم
    (نفس رقم ملفه — PRATING.of)، ويختفي بمجرد ظهور تقييمات المباراة نفسها بعد صافرة النهاية. لاعب بلا مباراة مقيَّمة: بلا شارة. */
+/* منصور 2026-11-22 (ثانياً): «قبل المباره average الموسم، During matches الي اهي فعلاً بالمباره، بعد المباره التقييم بعد نهاية المباراة نفسها».
+   ملعب التشكيلة فقط: قبل الانطلاق = متوسط الموسم؛ منذ الانطلاق = تقييم المباراة بنفس معادلة RATING محسوباً حيّاً
+   (الدقائق من liveLen، والأهداف والبطاقات حتى الآن)، ثم تقييم المباراة النهائي. باقي الموقع (أفضل لاعب، المتوسطات) يبقى بعد الصافرة فقط. */
+const mpStarted = m => !!m && (isLive(m) || matchOver(m));
+function mpRatings(m, club){
+  if(ratingsReady(m)) return matchRatings(m, club);
+  if(!mpStarted(m)) return [];
+  const comp=compOf(m), men=new Set(xiNames(m.round, comp, club));
+  matchSubs(m).filter(s=>s.club===club && s.in).forEach(s=>men.add(s.in));
+  return [...men].map(n=>({n, c:club, r:playerRating(m, club, n)})).filter(x=>x.r).sort((a,b)=>b.r.v-a.r.v);
+}
 function mpPreRating(m, club, n){
-  if(ratingsReady(m)) return null;
+  if(mpStarted(m)) return null;
   try{ const x=window.PRATING && PRATING.of(n, club); return x && x.mN>0 && x.v!=null ? +x.v : null; }catch(e){ return null; }
 }
 const mpPreAvg = (m, club, names) => { const v=names.map(n=>mpPreRating(m, club, n)).filter(x=>x!=null); return v.length ? Math.round(v.reduce((a,x)=>a+x,0)/v.length*100)/100 : null; };
@@ -15418,7 +15429,7 @@ function mpTeamXI(m, club){
   /* نصف الملعب يُرسم والحارس أعلاه (الفريق يهاجم للأسفل)، فتنعكس الجهتان في نظر المشاهد:
      يُعكس ترتيب كل خط ليقع الظهير الأيمن والجناح الأيمن على يسار الصورة (منصور 2026-09-16) */
   const lines=mpLinesOf(S).map(l=>l.slice().reverse()), L=lines.length;
-  const R=matchRatings(m, club), rmap={}; R.forEach(x=>rmap[x.n]=x.r.v);
+  const R=mpRatings(m, club), rmap={}; R.forEach(x=>rmap[x.n]=x.r.v);
   const avg=R.length ? Math.round(R.reduce((a,x)=>a+x.r.v,0)/R.length*100)/100 : mpPreAvg(m, club, lines.flat().map(sp=>sp.p.n));
   const kit=Object.assign(kitOf(club),{club});
   const ROW=30, TOP=5, H=L*ROW+TOP+6;                            /* وحدات cqw: ارتفاع الملعب يتبع عدد الصفوف */
@@ -15458,7 +15469,7 @@ function mpBothXI(m){
   const LH=mpLinesOf(SH).map(l=>l.slice().reverse()), LA=mpLinesOf(SA);
   const H=18+(LH.length+LA.length)*ROW;
   const side=(club, lines, topOf, S, flip)=>{
-    const R=matchRatings(m, club), rmap={}; R.forEach(x=>rmap[x.n]=x.r.v);
+    const R=mpRatings(m, club), rmap={}; R.forEach(x=>rmap[x.n]=x.r.v);
     const kit=Object.assign(kitOf(club),{club});
     return lines.map((line,li)=>line.map((sp,k)=>{
       const n=line.length, pad = n===1 ? 50 : n===2 ? 30 : n===3 ? 19 : n===4 ? 13 : 10;
@@ -15479,7 +15490,7 @@ function mpBothXI(m){
   };
   const players = side(m.home, LH, (li,sp)=>EDGE+(SH.custom ? mpDepth(sp.y)*(LH.length-1) : li)*ROW, SH, true)
                 + side(m.away, LA, (li,sp)=>H-EDGE-ROW-(SA.custom ? mpDepth(sp.y)*(LA.length-1) : li)*ROW, SA, false);
-  const avgOf=c=>{ const R=matchRatings(m,c); if(R.length) return Math.round(R.reduce((a,x)=>a+x.r.v,0)/R.length*100)/100;
+  const avgOf=c=>{ const R=mpRatings(m,c); if(R.length) return Math.round(R.reduce((a,x)=>a+x.r.v,0)/R.length*100)/100;
     const S=c===m.home?SH:SA; return S ? mpPreAvg(m, c, S.spots.map(sp=>sp.p.n)) : null; };
   const lineCol="var(--pitch-line,rgba(127,196,255,.24))", V='vector-effect="non-scaling-stroke"';
   const svg=`<svg class="mpx-lines" viewBox="0 0 100 ${H}" preserveAspectRatio="none" aria-hidden="true"><g fill="none" stroke="${lineCol}" stroke-width="1" ${V}>
