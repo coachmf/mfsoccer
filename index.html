@@ -70,6 +70,27 @@ var DCL_FIRED=false; document.addEventListener('DOMContentLoaded', ()=>{ DCL_FIR
     if(typeof window.mfOpenUrl==='function') window.mfOpenUrl(u); else window.__MF_TAP=u; });
 })();
 </script>
+<script>
+/* حارس الإقلاع (منصور 2026-11-22: «لمن ادش التطبيق يطلع لي جذي ساعات» — هيكل الرئيسية بلا محتوى): السكربت الرئيسي
+   ينتظر أوراق الأنماط قبله، وعلى شبكة بطيئة قد يعلق طلب واحد فتبقى الشاشة على الهيكل. هذا السكربت قبل كل الأوراق
+   فلا ينتظرها: بعد 12 ث إن بقي الهيكل يُظهر شريطاً بأنماط سطرية وزر «إعادة المحاولة». */
+(function(){
+  setTimeout(function(){
+    var h=document.getElementById('v-home');
+    if(!h || !h.querySelector('.hm-skel') || !h.classList.contains('on') || document.getElementById('mfBootRetry')) return;
+    var en=false; try{ en=(localStorage.getItem('mf_lang')||'ar')!=='ar'; }catch(e){}
+    var d=document.createElement('div'); d.id='mfBootRetry'; d.setAttribute('role','alert'); d.dir=en?'ltr':'rtl';
+    d.style.cssText='position:fixed;left:16px;right:16px;bottom:calc(24px + env(safe-area-inset-bottom));z-index:99999;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 16px;border-radius:14px;background:#0b1838;border:1px solid rgba(231,208,147,.45);color:#f6f3ea;font:600 15px/1.5 system-ui,-apple-system,sans-serif;box-shadow:0 10px 30px rgba(0,0,0,.5)';
+    var t=document.createElement('span'); t.textContent=en?'Loading is taking longer than usual':'التحميل يتأخر';
+    var b=document.createElement('button'); b.type='button'; b.textContent=en?'Retry':'إعادة المحاولة';
+    b.style.cssText='flex:none;border:0;border-radius:10px;padding:9px 16px;background:#e7d093;color:#00061a;font:800 14px/1.2 system-ui,-apple-system,sans-serif;cursor:pointer';
+    b.onclick=function(){ location.reload(); };
+    d.appendChild(t); d.appendChild(b); (document.body||document.documentElement).appendChild(d);
+    /* إن اكتمل الإقلاع بعد ظهور الشريط يختفي وحده */
+    var iv=setInterval(function(){ if(!h.querySelector('.hm-skel') || !h.classList.contains('on')){ clearInterval(iv); d.remove(); } }, 1000);
+  }, 12000);
+})();
+</script>
 <meta name="apple-itunes-app" content="app-id=6810213944">   <!-- شريط أبل الرسمي في Safari: «تحميل» أو «فتح» لتطبيق MF Soccer -->
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -10779,7 +10800,8 @@ async function bootData(painted){
   let got = await Promise.race([snapP, new Promise(r=>setTimeout(()=>r(null),2500))]);
   if(!got){
     await domReady();                                 /* fbInit يسبقنا إليها في الإقلاع */
-    const cloudP = fbLoad(id).then(d=>ok(d)?[d,"السحابة (Firestore)"]:null);
+    /* مهلة 9 ث: قراءة Firestore بلا شبكة قد لا تنتهي، فتبقى الرئيسية على الهيكل (2026-11-22) */
+    const cloudP = Promise.race([fbLoad(id), new Promise(r=>setTimeout(()=>r(null),9000))]).then(d=>ok(d)?[d,"السحابة (Firestore)"]:null);
     got = await new Promise(res=>{ let left=2;
       [snapP, cloudP].forEach(p=>p.then(v=>{ if(v) res(v); else if(--left===0) res(null); })); });
   }
@@ -10787,7 +10809,7 @@ async function bootData(painted){
   if(painted) return;   /* لا سحابة، والجهاز رسم نسخته — تكفي */
   try{
     const res=await fetch("./data.json",{cache:"no-store"});
-    if(res.ok){ const d=await res.json(); if(d.clubs&&d.goals&&d.matches){ LASTSTAMP=stampOf(d); applyData(d,"data.json المنشور"); } }
+    if(res.ok){ const d=await res.json(); if(d.clubs&&d.goals&&d.matches) apply(d,"data.json المنشور"); }   /* apply يرسم الرئيسية أيضاً — كان يطبّق البيانات ويترك الهيكل */
   }catch(e){}
 }
 /* العودة للتطبيق بعد أن كان في الخلفية: iOS يوقف قناة onSnapshot فتبقى الأرقام قديمة حتى

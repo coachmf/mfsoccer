@@ -9,7 +9,7 @@
 
    عند كل نشر: ارفع رقم VER فتُبنى ذاكرة جديدة وتُحذف القديمة.
    ========================================================= */
-const VER   = 'mf-2026-11-22-815-admdob';
+const VER   = 'mf-2026-11-22-816-swwarm';
 const SHELL = 'shell-' + VER;
 const RUN   = 'run-'   + VER;
 /* الصور (لاعبون، شعارات، خلفيات) في ذاكرة ثابتة لا ترتبط برقم النسخة (منصور 2026-11-20: «الصور قاعده تطول»):
@@ -45,6 +45,22 @@ self.addEventListener('install', e => {
     const c = await caches.open(SHELL);
     /* ملف واحد مفقود يجب ألا يُفشل التثبيت كله */
     await Promise.all(PRECACHE.map(u => c.add(u).catch(() => {})));
+    /* ملفات الصفحة بأرقام نسخها (?v=) تُجهَّز هنا قبل أن تتسلّم النسخة الجديدة (منصور 2026-11-22: التطبيق يعلق
+       أحياناً على هيكل الرئيسية). كانت ذاكرة RUN تبدأ فارغة بعد كل نشر، فأول فتح بعده ينزّل ~40 ملفاً من الشبكة،
+       والسكربت الرئيسي ينتظر 14 ورقة أنماط قبله — شبكة جوال بطيئة = شاشة الهيكل حتى تكتمل. الملف الذي لم يتغير
+       رقمه يُنقل من ذاكرة النسخة السابقة بلا تنزيل؛ i18n-data (913 ك.ب، لغير العربية فقط) يبقى عند الطلب. */
+    try {
+      const page = await c.match('/');
+      const html = page ? (await page.clone().text()).replace(/<!--[\s\S]*?-->/g, '') : '';
+      const urls = [...new Set([...html.matchAll(/(?:href|src)="((?!https?:|\/\/|data:)[^"]+\.(?:css|js)\?v=[^"]+)"/g)]
+        .map(m => m[1]).filter(u => !/i18n-data\.js/.test(u)).map(u => new URL(u, location.origin + '/').href))];
+      await Promise.all(urls.map(async u => {
+        if (await c.match(u)) return;
+        const old = await caches.match(u);
+        if (old && old.ok) return c.put(u, old);
+        return c.add(u).catch(() => {});
+      }));
+    } catch (err) {}
   })());
 });
 
@@ -189,7 +205,7 @@ self.addEventListener('fetch', e => {
   /* بقية ملفات الموقع: الذاكرة أولاً مع تحديث صامت في الخلفية */
   e.respondWith((async () => {
     const c = await caches.open(RUN);
-    const hit = await c.match(req);
+    const hit = (await c.match(req)) || (await (await caches.open(SHELL)).match(req));
     const net = fetch(req).then(res => { if (res.ok) c.put(req, res.clone()); return res; })
                           .catch(() => null);
     if (hit) { e.waitUntil(net); return hit; }
