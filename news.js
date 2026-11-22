@@ -926,7 +926,20 @@ function boot(){
   hookSite(); hookNav(); hookAdmin(); testAdmin();
   /* الإقلاع انتهى قبل الربط؟ رابط #news يفتح القسم مباشرة */
   if(/^#news/.test(location.hash) && !isOn() && typeof go==="function") setTimeout(()=>{ if(/^#news/.test(location.hash) && !isOn()) go("news"); }, 0);
-  store.watchIndex(d=>{ IDX = d || {items:[]}; if(isOn() && NV.r!=="art") render(); });
+  store.watchIndex(d=>{ IDX = d || {items:[]}; if(isOn() && NV.r!=="art") render(); warmImgs(); });
+}
+/* تدفئة صور البطاقات (منصور 2026-11-22 «الصور تتاخر»): كانت صورة الخبر تُطلب لحظة فتح القسم (0.5–3 ث من CDN لكل صورة).
+   بعد الإقلاع وفي وقت الفراغ نطلب المصغّرات لأحدث الأخبار وأخبار رأس كل قسم؛ خادم الخدمة يحفظها في ذاكرة الصور الثابتة
+   فيُفتح القسم والصور جاهزة، ولا تُنزَّل مرة ثانية أبداً (الصورة لا تتغيّر بعد رفعها). */
+let WARMED = "";
+function warmImgs(){
+  if(TEST || LOCAL || !IDX || !(IDX.items||[]).length) return;
+  try{ if(navigator.connection && navigator.connection.saveData) return; }catch(e){}
+  const L = items().slice().sort((a,b)=>String(b.pub||"").localeCompare(String(a.pub||"")));
+  const ids = [...new Set([...new Set(L.map(x=>x.sec))].map(leadOf).concat(L.slice(0, 14)).filter(x=>x && x.cover && x.cover.id).map(x=>x.cover.id+"_t"))];
+  const key = ids.join(","); if(!ids.length || key===WARMED) return; WARMED = key;
+  const run = () => { let i = 0; const next = () => { if(i >= ids.length) return; fetch("/api/newsimg/"+encodeURIComponent(ids[i++])).catch(()=>{}).then(next); }; next(); next(); };
+  if(isOn()) run(); else if("requestIdleCallback" in window) requestIdleCallback(run, {timeout:6000}); else setTimeout(run, 4000);
 }
 NW._t = {store, NV, AD, open, compress, cleanHTML, parse, persist, blank, get IDX(){ return IDX; }, TEST};
 if(document.readyState==="loading") document.addEventListener("DOMContentLoaded", ()=>setTimeout(boot, 40)); else setTimeout(boot, 40);

@@ -9,7 +9,7 @@
 
    عند كل نشر: ارفع رقم VER فتُبنى ذاكرة جديدة وتُحذف القديمة.
    ========================================================= */
-const VER   = 'mf-2026-11-22-816-swwarm';
+const VER   = 'mf-2026-11-22-817-newsimg';
 const SHELL = 'shell-' + VER;
 const RUN   = 'run-'   + VER;
 /* الصور (لاعبون، شعارات، خلفيات) في ذاكرة ثابتة لا ترتبط برقم النسخة (منصور 2026-11-20: «الصور قاعده تطول»):
@@ -141,6 +141,18 @@ self.addEventListener('fetch', e => {
 
   /* لقطات الوثائق (/api/doc) من الشبكة دائماً (منصور 2026-09-29): كانت تمر بقاعدة «الذاكرة أولاً»
      فيفتح الموقع على نسخة قديمة، وقد يُفتح محرّر مباراة عليها */
+  /* صور الأخبار (/api/newsimg/<id>): الصورة لا تتغيّر بعد رفعها (الاستبدال = معرّف جديد)، فتُحفظ في ذاكرة الصور الثابتة
+     وتُعرض منها فوراً بلا شبكة (منصور 2026-11-22 «الصور تتاخر» — كانت تتخطى خادم الخدمة فتُطلب من CDN في كل فتح) */
+  if (url.pathname.startsWith('/api/newsimg/')) {
+    e.respondWith((async () => {
+      const c = await caches.open(IMG);
+      const hit = await c.match(req);
+      if (hit) return hit;
+      try { const res = await fetch(req); if (res.ok) c.put(req, res.clone()); return res; }
+      catch (err) { return Response.error(); }
+    })());
+    return;
+  }
   if (url.pathname.startsWith('/api/')) return;
 
   /* فحص النسخة من الفانتسي (?vcheck): من الشبكة مباشرة بلا ذاكرة — يكشف نسخة أحدث من المحفوظة */
