@@ -12148,6 +12148,8 @@ html.mf .mf-ib.mf-bell.on{color:var(--mf-gold,#E7D093);border-color:rgba(231,208
 .mpx-card .rtg.mpx-r{left:-8px;right:auto;bottom:-6px;transform:none;min-width:clamp(19px,6cqw,24px);height:clamp(12px,3.6cqw,14px);
   font-size:clamp(7.5px,2.3cqw,9px);border-radius:4px;padding:0 3px;border:1px solid rgba(255,255,255,.85)}
 .mpx-nm{margin-top:clamp(7px,2.2cqw,9px)}
+/* لاعب بلا تقييم (لا مباراة مقيَّمة بالموسم، أو أقل من 10 دقائق في المباراة): نفس شريط التقييم أبيض فاضي — منصور 2026-11-22 */
+.mpx-card .rtg.mpx-r.none{background:#fff;color:transparent}
 /* الاسم الأول والثاني في التشكيلة والاحتياط (منصور 2026-11-01: «الاسمين الاول و الثاني… جذي»): سطر واحد بعرض الاسم كاملاً بدل آخر كلمة */
 .mpx-nm{max-width:none;overflow:visible;font-size:clamp(9px,2.75cqw,12.5px);letter-spacing:-.1px}
 .mpx-nm em{margin-inline-end:3px}
@@ -15445,7 +15447,7 @@ function mpTeamXI(m, club){
       <span class="pp-card mpx-card${cut?"":" nophoto jer"}" style="${dotVars(kk)}">
         ${cut?`<img class="pp-img mpx-stand mpx-face" src="${cut}_f.webp?v=39" alt="" loading="lazy" draggable="false">`:`<span class="pp-jer">${jerseySVG(club, p.s, String(p.p||"").toUpperCase()==="GK")}</span>`}
         ${spotBadges(playerMatchEvents(m, club, p.n))}${natFlag(p.n, club)}
-        ${v!=null?`<span class="rtg mpx-r ${ratingCls(v)}${pre!=null?" pre":""}"${pre!=null?' title="متوسط تقييمه هذا الموسم"':""}>${v.toFixed(1)}</span>`:""}
+        ${v!=null?`<span class="rtg mpx-r ${ratingCls(v)}${pre!=null?" pre":""}"${pre!=null?' title="متوسط تقييمه هذا الموسم"':""}>${v.toFixed(1)}</span>`:`<span class="rtg mpx-r none" aria-hidden="true"></span>`}
       </span>
       <span class="mpx-nm">${p.s?`<em>${p.s}</em>`:""}${esc(p.n)}${gkTag(p.p||p.role||(p.line==="G"?"GK":""))}</span>
     </div>`;
@@ -15482,7 +15484,7 @@ function mpBothXI(m){
       <span class="pp-card mpx-card${cut?"":" nophoto jer"}" style="${dotVars(kk)}">
         ${cut?`<img class="pp-img mpx-stand mpx-face" src="${cut}_f.webp?v=39" alt="" loading="lazy" draggable="false">`:`<span class="pp-jer">${jerseySVG(club, p.s, String(p.p||"").toUpperCase()==="GK")}</span>`}
         ${spotBadges(playerMatchEvents(m, club, p.n))}${natFlag(p.n, club)}
-        ${v!=null?`<span class="rtg mpx-r ${ratingCls(v)}${pre!=null?" pre":""}"${pre!=null?' title="متوسط تقييمه هذا الموسم"':""}>${v.toFixed(1)}</span>`:""}
+        ${v!=null?`<span class="rtg mpx-r ${ratingCls(v)}${pre!=null?" pre":""}"${pre!=null?' title="متوسط تقييمه هذا الموسم"':""}>${v.toFixed(1)}</span>`:`<span class="rtg mpx-r none" aria-hidden="true"></span>`}
       </span>
       <span class="mpx-nm">${p.s?`<em>${p.s}</em>`:""}${esc(p.n)}${gkTag(p.p||p.role||(p.line==="G"?"GK":""))}</span>
     </div>`;
