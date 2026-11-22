@@ -100,7 +100,7 @@
     const top=D.createElement("header"); top.className="mf-top";
     top.innerHTML=`<div class="mf-top-in">
       <button type="button" class="mf-logo" data-mf="home" aria-label="MF SOCCER — الرئيسية">
-        <img src="assets/brand/mf-mark.webp" alt="" width="59" height="28"><span class="mf-word"><b>MF SOCCER</b><small>الدوري الكويتي الممتاز</small></span>
+        <img src="assets/brand/mf-mark.webp" alt="" width="59" height="28"><span class="mf-word"><b>MF SOCCER</b></span>
       </button>
       <nav class="mf-dnav" aria-label="التنقل الرئيسي">${DNAV.map(([v,t])=>`<button type="button" data-mf="${v}"${v==="hub"?' class="hubbtn" aria-haspopup="dialog"':""}>${t}</button>`).join("")}</nav>
       <div class="mf-tools">
