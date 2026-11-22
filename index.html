@@ -15405,6 +15405,13 @@ function mpLinesOf(S){
   L.forEach(sp=>{ const r=rows[rows.length-1]; if(r && Math.abs(r[r.length-1].y-sp.y)<9) r.push(sp); else rows.push([sp]); });
   return rows.map(r=>r.sort((a,b)=>a.x-b.x));
 }
+/* منصور 2026-11-22 (مثل SofaScore): قبل اكتمال تقييمات المباراة يظهر تحت كل لاعب في التشكيلة متوسط تقييمه هذا الموسم
+   (نفس رقم ملفه — PRATING.of)، ويختفي بمجرد ظهور تقييمات المباراة نفسها بعد صافرة النهاية. لاعب بلا مباراة مقيَّمة: بلا شارة. */
+function mpPreRating(m, club, n){
+  if(ratingsReady(m)) return null;
+  try{ const x=window.PRATING && PRATING.of(n, club); return x && x.mN>0 && x.v!=null ? +x.v : null; }catch(e){ return null; }
+}
+const mpPreAvg = (m, club, names) => { const v=names.map(n=>mpPreRating(m, club, n)).filter(x=>x!=null); return v.length ? Math.round(v.reduce((a,x)=>a+x,0)/v.length*100)/100 : null; };
 function mpTeamXI(m, club){
   const comp=compOf(m), S=pitchSpots(m.round, comp, club);
   if(!S) return "";
@@ -15412,7 +15419,7 @@ function mpTeamXI(m, club){
      يُعكس ترتيب كل خط ليقع الظهير الأيمن والجناح الأيمن على يسار الصورة (منصور 2026-09-16) */
   const lines=mpLinesOf(S).map(l=>l.slice().reverse()), L=lines.length;
   const R=matchRatings(m, club), rmap={}; R.forEach(x=>rmap[x.n]=x.r.v);
-  const avg=R.length ? Math.round(R.reduce((a,x)=>a+x.r.v,0)/R.length*100)/100 : null;
+  const avg=R.length ? Math.round(R.reduce((a,x)=>a+x.r.v,0)/R.length*100)/100 : mpPreAvg(m, club, lines.flat().map(sp=>sp.p.n));
   const kit=Object.assign(kitOf(club),{club});
   const ROW=30, TOP=5, H=L*ROW+TOP+6;                            /* وحدات cqw: ارتفاع الملعب يتبع عدد الصفوف */
   const players=lines.map((line,li)=>line.map((sp,k)=>{
@@ -15421,13 +15428,13 @@ function mpTeamXI(m, club){
     const w = Math.min(24, 96/n);
     const p=sp.p, cut=(typeof LOCAL_PHOTOS!=="undefined") ? photoCut(p.n, club) : null;
     const kk=(String(p.p||"").toUpperCase()==="GK") ? (gkKitOf(club, p.s)||kit) : kit;
-    const v=rmap[p.n];
+    const pre=rmap[p.n]==null ? mpPreRating(m, club, p.n) : null, v=rmap[p.n]!=null ? rmap[p.n] : pre;
     const row = S.custom ? mpDepth(sp.y)*(L-1) : li;
     return `<div class="mpx-p" data-player="${esc(p.n)}" data-club="${esc(club)}" style="right:${x.toFixed(2)}%;top:${((TOP+row*ROW)/H*100).toFixed(2)}%;width:${w.toFixed(2)}%">
       <span class="pp-card mpx-card${cut?"":" nophoto jer"}" style="${dotVars(kk)}">
         ${cut?`<img class="pp-img mpx-stand mpx-face" src="${cut}_f.webp?v=39" alt="" loading="lazy" draggable="false">`:`<span class="pp-jer">${jerseySVG(club, p.s, String(p.p||"").toUpperCase()==="GK")}</span>`}
         ${spotBadges(playerMatchEvents(m, club, p.n))}${natFlag(p.n, club)}
-        ${v!=null?`<span class="rtg mpx-r ${ratingCls(v)}">${v.toFixed(1)}</span>`:""}
+        ${v!=null?`<span class="rtg mpx-r ${ratingCls(v)}${pre!=null?" pre":""}"${pre!=null?' title="متوسط تقييمه هذا الموسم"':""}>${v.toFixed(1)}</span>`:""}
       </span>
       <span class="mpx-nm">${p.s?`<em>${p.s}</em>`:""}${esc(p.n)}${gkTag(p.p||p.role||(p.line==="G"?"GK":""))}</span>
     </div>`;
@@ -15459,12 +15466,12 @@ function mpBothXI(m){
       const w = Math.min(24, 96/n);
       const p=sp.p, cut=(typeof LOCAL_PHOTOS!=="undefined") ? photoCut(p.n, club) : null;
       const kk=(String(p.p||"").toUpperCase()==="GK") ? (gkKitOf(club, p.s)||kit) : kit;
-      const v=rmap[p.n];
+      const pre=rmap[p.n]==null ? mpPreRating(m, club, p.n) : null, v=rmap[p.n]!=null ? rmap[p.n] : pre;
       return `<div class="mpx-p" data-player="${esc(p.n)}" data-club="${esc(club)}" style="right:${x.toFixed(2)}%;top:${(topOf(li, sp)/H*100).toFixed(2)}%;width:${w.toFixed(2)}%">
       <span class="pp-card mpx-card${cut?"":" nophoto jer"}" style="${dotVars(kk)}">
         ${cut?`<img class="pp-img mpx-stand mpx-face" src="${cut}_f.webp?v=39" alt="" loading="lazy" draggable="false">`:`<span class="pp-jer">${jerseySVG(club, p.s, String(p.p||"").toUpperCase()==="GK")}</span>`}
         ${spotBadges(playerMatchEvents(m, club, p.n))}${natFlag(p.n, club)}
-        ${v!=null?`<span class="rtg mpx-r ${ratingCls(v)}">${v.toFixed(1)}</span>`:""}
+        ${v!=null?`<span class="rtg mpx-r ${ratingCls(v)}${pre!=null?" pre":""}"${pre!=null?' title="متوسط تقييمه هذا الموسم"':""}>${v.toFixed(1)}</span>`:""}
       </span>
       <span class="mpx-nm">${p.s?`<em>${p.s}</em>`:""}${esc(p.n)}${gkTag(p.p||p.role||(p.line==="G"?"GK":""))}</span>
     </div>`;
@@ -15472,7 +15479,8 @@ function mpBothXI(m){
   };
   const players = side(m.home, LH, (li,sp)=>EDGE+(SH.custom ? mpDepth(sp.y)*(LH.length-1) : li)*ROW, SH, true)
                 + side(m.away, LA, (li,sp)=>H-EDGE-ROW-(SA.custom ? mpDepth(sp.y)*(LA.length-1) : li)*ROW, SA, false);
-  const avgOf=c=>{ const R=matchRatings(m,c); return R.length ? Math.round(R.reduce((a,x)=>a+x.r.v,0)/R.length*100)/100 : null; };
+  const avgOf=c=>{ const R=matchRatings(m,c); if(R.length) return Math.round(R.reduce((a,x)=>a+x.r.v,0)/R.length*100)/100;
+    const S=c===m.home?SH:SA; return S ? mpPreAvg(m, c, S.spots.map(sp=>sp.p.n)) : null; };
   const lineCol="var(--pitch-line,rgba(127,196,255,.24))", V='vector-effect="non-scaling-stroke"';
   const svg=`<svg class="mpx-lines" viewBox="0 0 100 ${H}" preserveAspectRatio="none" aria-hidden="true"><g fill="none" stroke="${lineCol}" stroke-width="1" ${V}>
     <rect x="2" y="2" width="96" height="${H-4}" rx="1.5" ${V}/>
