@@ -16,7 +16,7 @@
 "use strict";
 const VA = window.VIDEOS = {};
 const D = document;
-const LOCAL = location.protocol!=="https:" || /^(localhost|127\.0\.0\.1)$/.test(location.hostname);
+const LOCAL = (location.protocol!=="https:" || /^(localhost|127\.0\.0\.1)$/.test(location.hostname)) && !/[?&]vaprod\b/.test(location.search);   /* ?vaprod = اختبار مسار الموقع المنشور محلياً (قراءة فقط) */
 const H = s => String(s==null?"":s).replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const safe = f => { try{ return f(); }catch(e){ return undefined; } };
 const rid = () => (Date.now().toString(36) + Math.random().toString(36).slice(2,8));
@@ -64,7 +64,7 @@ const nowISO = () => new Date().toISOString();
 /* ───────────── مصدر الفيديو ───────────── */
 function ytId(u){ const m = /(?:youtu\.be\/|youtube\.com\/(?:watch\?(?:.*&)?v=|embed\/|shorts\/|live\/))([\w-]{11})/.exec(String(u||"")); return m ? m[1] : ""; }
 const kindOf = u => ytId(u) ? "youtube" : "file";
-const thumbOf = v => v.thumb || (ytId(v.src) ? `https://i.ytimg.com/vi/${ytId(v.src)}/hqdefault.jpg` : "");
+const thumbOf = v => v.thumb || (ytId(v.src) ? `https://i.ytimg.com/vi/${ytId(v.src)}/hq720.jpg`   /* 16:9 بلا أشرطة سوداء (hqdefault 4:3 فيه أشرطة) */ : "");
 
 /* ───────────── المباريات والأندية (من بيانات الموقع المحمّلة أصلاً — لا قراءة جديدة) ───────────── */
 const keyOf = m => safe(()=>matchKey(m)) || "";
@@ -99,9 +99,9 @@ const store = {
     loading = (async()=>{
       let d = null;
       if(typeof SNAP!=="undefined" && SNAP && SNAP.get) d = await SNAP.get("videos").catch(()=>null);
-      if(!d){ const db = await dbReady(); const s = await db.collection("seasons").doc("videos").get().catch(()=>null); d = s && s.exists ? s.data() : {items:[]}; }
+      if(!d){ const db = await dbReady(); const s = await db.collection("seasons").doc("videos").get().catch(()=>null); d = s && s.exists ? s.data() : {items:seedCopy(), seed:true}; }
       LS.set(CKEY, d); setData(d);
-    })().catch(e=>{ console.warn("videos", e); if(!DATA) setData({items:[]}); });
+    })().catch(e=>{ console.warn("videos", e); if(!DATA) setData({items:seedCopy(), seed:true}); });
     return loading;
   },
   async edit(fn){
@@ -110,7 +110,7 @@ const store = {
     const db = await dbReady(), ref = db.collection("seasons").doc("videos");
     const who = (typeof FBUSER!=="undefined" && FBUSER && (FBUSER.email || FBUSER.uid)) || "";
     let out = null;
-    await db.runTransaction(async tx=>{ const s = await tx.get(ref); const items = fn(JSON.parse(JSON.stringify((s.exists && s.data().items) || [])));
+    await db.runTransaction(async tx=>{ const s = await tx.get(ref); const items = fn(s.exists ? JSON.parse(JSON.stringify(s.data().items || [])) : seedCopy());
       out = {items, updated:nowISO(), updatedBy:who}; tx.set(ref, out); });
     LS.set(CKEY, out); setData(out);
   }
@@ -154,6 +154,26 @@ function demoSeed(){
   }
   return {items:X, updated:nowISO(), demo:true};
 }
+
+/* ───────────── القائمة الأولى (منصور 2026-11-23: فيديوهات فريق MF SOCCER على يوتيوب @mfsoccerkw) ─────────────
+   تُعرض ما دامت وثيقة seasons/videos غير موجودة؛ أول حفظ من لوحة الإدارة ينسخها إلى الوثيقة ثم تصبح الوثيقة هي المصدر. */
+const CPC = "كأس سمو ولي العهد", mk = (h, a) => [CPC, 3, h, a].map(v=>encodeURIComponent(String(v))).join("/");
+const FB = mk("الفحيحيل","برقان"), NS = mk("النصر","الصليبخات"), TJ = mk("التضامن","الجزيرة");
+const sd = (id, yt, match, h, a, date, cat, title, dur, pub, o) => Object.assign({id:"yt-"+id, src:"https://www.youtube.com/watch?v="+yt, thumb:"", matchId:match, home:h, away:a,
+  comp:CPC, mdate:date, cat, title, desc:"", dur, pub, status:"published", pinned:false}, o||{});
+const SEED = [
+  sd("fah1", "9naOgd12lZ4", FB, "الفحيحيل", "برقان", "2026-11-21", "goals",     "هدف الفحيحيل الأول",                      40, "2026-11-23T10:00:00.000Z"),
+  sd("fah2", "hqBKKDWMFfE", FB, "الفحيحيل", "برقان", "2026-11-21", "goals",     "هدف الفحيحيل الثاني",                     43, "2026-11-23T10:01:00.000Z"),
+  sd("brg2", "7RncvLJauJk", FB, "الفحيحيل", "برقان", "2026-11-21", "goals",     "هدف برقان الثاني",                        38, "2026-11-23T10:02:00.000Z"),
+  sd("brg3", "IZwlJTsQdH4", FB, "الفحيحيل", "برقان", "2026-11-21", "setpieces", "هدف الفوز لبرقان",                        38, "2026-11-23T10:03:00.000Z", {pinned:true}),
+  sd("nsr1", "YFkpbKAGkz4", NS, "النصر", "الصليبخات", "2026-11-21", "tactics",   "تطوير البناء للنصر",                      40, "2026-11-23T10:04:00.000Z"),
+  sd("nsr2", "a8_4sh6sQgI", NS, "النصر", "الصليبخات", "2026-11-21", "goals",     "هدف الفوز للنصر",                         37, "2026-11-23T10:05:00.000Z"),
+  sd("jaz1", "mH_rlIyeh7k", TJ, "التضامن", "الجزيرة", "2026-11-20", "setpieces", "هدف الجزيرة",                             28, "2026-11-23T09:00:00.000Z"),
+  sd("tdm1", "xxmKtsoro5o", TJ, "التضامن", "الجزيرة", "2026-11-20", "transitions","فرصة خطرة للتضامن",                      32, "2026-11-23T09:01:00.000Z"),
+  sd("tdm2", "n6cWb3n8X9M", TJ, "التضامن", "الجزيرة", "2026-11-20", "goals",     "هدف التعادل للتضامن",                     39, "2026-11-23T09:02:00.000Z"),
+  sd("gk1",  "lHTc4KUNFvE", TJ, "التضامن", "الجزيرة", "2026-11-20", "keepers",   "فرصة خطرة للجزيرة وإبداع حارس التضامن",  44, "2026-11-23T09:03:00.000Z"),
+];
+const seedCopy = () => JSON.parse(JSON.stringify(SEED));
 
 /* ───────────── الاستعلام ───────────── */
 const isPub = v => v && v.status==="published" && (!v.pub || v.pub <= nowISO());
@@ -405,7 +425,9 @@ function mpSection(){
    مغلّفات renderMatchPage في ext/gulf ولا يرتد على إدراجنا داخل .mp-body */
 function hookMatchPage(){
   const box = D.getElementById("mpage"); if(!box || box.__va) return; box.__va = true;
-  new MutationObserver(()=>{ if(!box.hidden && !box.querySelector(".va-mp")) safe(mpSection); }).observe(box, {childList:true});
+  /* 2026-11-23: صفحة المباراة صارت داخل .mp-sheet وتُعاد رسمتها داخله → مراقبة الشجرة كاملة، مرة واحدة لكل إطار */
+  let raf = 0;
+  new MutationObserver(()=>{ if(raf) return; raf = requestAnimationFrame(()=>{ raf = 0; if(!box.hidden && !box.querySelector(".va-mp")) safe(mpSection); }); }).observe(box, {childList:true, subtree:true});
 }
 
 /* ═════════════════════════ النقرات ═════════════════════════ */
