@@ -425,7 +425,7 @@ function start(stage){
   const v = byId(stage.dataset.vaStage); if(!v) return;
   const yt = ytId(v.src);
   if(yt){
-    stage.innerHTML = `<iframe src="https://www.youtube-nocookie.com/embed/${yt}?autoplay=1&rel=0&playsinline=1&modestbranding=1" title="${H(v.title)}" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen></iframe>`;
+    stage.innerHTML = `<iframe src="https://www.youtube-nocookie.com/embed/${yt}?autoplay=1&rel=0&playsinline=1&modestbranding=1&vq=hd1080" title="${H(v.title)}" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen></iframe>`;
     return;
   }
   const t = thumbOf(v);
