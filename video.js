@@ -184,7 +184,7 @@ const forMatch = k => k ? published().filter(v=>v.matchId===k).sort((a,b)=>Strin
 VA.forMatch = forMatch;
 
 /* ═════════════════════════ الصفحة ═════════════════════════ */
-const ST = {cat:"", comp:"", club:"", sort:"new", page:1};
+const ST = {cat:"", comp:"", club:"", match:"", sort:"new", page:1};
 const PAGE = 12;
 const isOn = () => !!D.querySelector("#v-videos.on");
 function filtered(cat){
@@ -193,8 +193,36 @@ function filtered(cat){
     const c = ctxOf(v);
     if(ST.comp && c.comp!==ST.comp) return false;
     if(ST.club && c.home!==ST.club && c.away!==ST.club) return false;
+    if(ST.match && v.matchId!==ST.match) return false;
     return true;
-  }).sort(ST.sort==="old" ? (a,b)=>String(a.pub||"").localeCompare(String(b.pub||"")) : order);
+  }).sort(ST.match || ST.sort==="old" ? (a,b)=>String(a.pub||"").localeCompare(String(b.pub||"")) : order);
+}
+/* المباريات التي عليها فيديوهات (منصور 2026-11-23: «ابي مكان اختار البطوله بعدين المباره بشكل مرتب») — الأحدث أولاً */
+function videoMatches(comp){
+  const map = new Map();
+  published().forEach(v=>{ if(!v.matchId) return; const c = ctxOf(v); if(comp && c.comp!==comp) return;
+    const e = map.get(v.matchId) || {k:v.matchId, c, n:0}; e.n++; map.set(v.matchId, e); });
+  return [...map.values()].sort((a,b)=>String(b.c.date||"").localeCompare(String(a.c.date||"")) || a.c.home.localeCompare(b.c.home,"ar"));
+}
+const nVid = n => n===2 ? "فيديوان" : `${n} ${n>10||n<3?"فيديو":"فيديوهات"}`;
+const matchOpt = e => `${e.c.home} × ${e.c.away}${e.c.date?` · ${dFmt(e.c.date)}`:""} · ${nVid(e.n)}`;
+/* رأس المباراة المختارة: الشعاران والنتيجة (صاحب الأرض يمين، والرقم بجانب فريقه) والبطولة والتاريخ ورابط صفحة المباراة */
+function matchHeadHTML(k){
+  const e = videoMatches("").find(x=>x.k===k); if(!e) return "";
+  const c = e.c, m = c.m, done = m && !safe(()=>isUpcoming(m)) && m.hg!=null && m.hg!=="";
+  return `<section class="va-mh">
+    <div class="va-mh-row">
+      <span class="va-mh-t">${crestImg(c.home, 52)}<b>${H(c.home)}</b></span>
+      <span class="va-mh-s">${done?`<b dir="ltr">${H(m.ag)} - ${H(m.hg)}</b>`:`<b>×</b>`}<small>${H(nVid(e.n))}</small></span>
+      <span class="va-mh-t">${crestImg(c.away, 52)}<b>${H(c.away)}</b></span>
+    </div>
+    <div class="va-mh-meta">${metaHTML(c)}${m&&m.round&&!m.__ext?`<span>الجولة ${H(m.round)}</span>`:""}</div>
+    ${m?`<button type="button" class="va-mh-go" data-va-match="${H(k)}">صفحة المباراة<span aria-hidden="true">‹</span></button>`:""}
+  </section>`;
+}
+function syncURL(){
+  const h = ST.match ? "#videos/m/"+encodeURIComponent(ST.match) : ST.cat ? "#videos/c/"+ST.cat : "#videos";
+  try{ if(location.hash!==h) history.replaceState(history.state, "", h); }catch(e){}
 }
 
 /* البطاقة */
@@ -248,12 +276,15 @@ const railHTML = (title, cat, L, cls) => `<section class="va-blk${cls?" va-"+cls
 function filtersHTML(){
   const P = published();
   const comps = [...new Set(P.map(v=>ctxOf(v).comp).filter(Boolean))];
-  const clubs = [...new Set(P.flatMap(v=>{ const c = ctxOf(v); return [c.home, c.away]; }).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"ar"));
-  const sel = (k, label, all, L, fmt) => `<label class="mf-sel"><span class="mf-lbl">${label}</span><select data-va-f="${k}"><option value="">${all}</option>${L.map(x=>`<option value="${H(x)}"${ST[k]===x?" selected":""}>${H(fmt?fmt(x):x)}</option>`).join("")}</select></label>`;
+  const opt = (v, t, on) => `<option value="${H(v)}"${on?" selected":""}>${H(t)}</option>`;
+  const M = videoMatches(ST.comp);
+  /* بلا بطولة مختارة: المباريات مجمّعة تحت بطولاتها */
+  const mOpts = ST.comp ? M.map(e=>opt(e.k, matchOpt(e), ST.match===e.k)).join("")
+    : comps.map(cp=>{ const L = M.filter(e=>e.c.comp===cp); return L.length ? `<optgroup label="${H(compLabel(cp))}">${L.map(e=>opt(e.k, matchOpt(e), ST.match===e.k)).join("")}</optgroup>` : ""; }).join("");
   return `<div class="va-filters mf-sels">
-    ${comps.length>1 || ST.comp ? sel("comp", "البطولة", "كل البطولات", comps, compLabel) : ""}
-    ${sel("club", "النادي", "كل الأندية", clubs)}
-    <label class="mf-sel"><span class="mf-lbl">الترتيب</span><select data-va-f="sort"><option value="new"${ST.sort!=="old"?" selected":""}>الأحدث</option><option value="old"${ST.sort==="old"?" selected":""}>الأقدم</option></select></label>
+    <label class="mf-sel"><span class="mf-lbl">البطولة</span><select data-va-f="comp">${opt("", "كل البطولات", !ST.comp)}${comps.map(cp=>opt(cp, compLabel(cp), ST.comp===cp)).join("")}</select></label>
+    <label class="mf-sel"><span class="mf-lbl">المباراة</span><select data-va-f="match">${opt("", "كل المباريات", !ST.match)}${mOpts}</select></label>
+    ${ST.match ? "" : `<label class="mf-sel"><span class="mf-lbl">الترتيب</span><select data-va-f="sort"><option value="new"${ST.sort!=="old"?" selected":""}>الأحدث</option><option value="old"${ST.sort==="old"?" selected":""}>الأقدم</option></select></label>`}
   </div>`;
 }
 function tabsHTML(){
@@ -270,7 +301,7 @@ function render(){
   const P = published();
   let body = "";
   if(!P.length) body = `<div class="va-empty"><b>لا توجد تحليلات بعد</b><span>ستظهر الفيديوهات هنا فور نشرها من لوحة الإدارة.</span></div>`;
-  else if(!ST.cat && !ST.comp && !ST.club && ST.sort==="new"){
+  else if(!ST.cat && !ST.comp && !ST.club && !ST.match && ST.sort==="new"){
     /* الكل: مميّز ثم صف لكل تصنيف */
     /* الكل: المميّز، ثم «أحدث التحليلات»، ثم صف لكل تصنيف فيه ما يكفي (التصنيف الأقل يبقى في شريط التصنيفات) */
     const all = P.slice().sort(order), top = all[0], rest = all.filter(x=>x!==top);
@@ -279,8 +310,9 @@ function render(){
       + CATS.map(([k,t])=>{ const L = rest.filter(x=>x.cat===k); return L.length>=3 ? railHTML(t, k, L) : ""; }).join("");
   } else {
     const L = filtered(ST.cat), shown = L.slice(0, ST.page*PAGE);
-    body = L.length ? `<div class="va-grid">${shown.map(x=>card(x)).join("")}</div>${L.length>shown.length?`<div class="va-more"><button type="button" data-va-more>عرض المزيد</button></div>`:""}`
-      : `<div class="va-empty"><b>لا توجد تحليلات بهذه التصفية</b><span>جرّب تصنيفاً آخر أو اختر «كل الأندية».</span></div>`;
+    body = (ST.match ? matchHeadHTML(ST.match) : "")
+      + (L.length ? `<div class="va-grid">${shown.map(x=>card(x)).join("")}</div>${L.length>shown.length?`<div class="va-more"><button type="button" data-va-more>عرض المزيد</button></div>`:""}`
+      : `<div class="va-empty"><b>لا توجد تحليلات بهذه التصفية</b><span>جرّب تصنيفاً آخر أو اختر «كل المباريات».</span></div>`);
   }
   v.innerHTML = `<div class="va">${mastHTML()}${LOCAL?localBar():""}${P.length?tabsHTML()+filtersHTML():""}${body}</div>`;
   paintArrows(v);
@@ -307,9 +339,10 @@ function parse(h){
   const p = String(h||"").replace(/^#videos\/?/,"").split("/").filter(Boolean);
   if(p[0]==="v" && p[1]) return {v:decodeURIComponent(p[1])};
   if(p[0]==="c" && CAT[p[1]]) return {cat:p[1]};
+  if(p[0]==="m" && p[1]) return {cat:"", match:decodeURIComponent(p[1])};
   return {cat:""};
 }
-function setCat(c){ ST.cat = c||""; ST.page = 1; try{ history.replaceState(history.state, "", c ? "#videos/c/"+c : "#videos"); }catch(e){} render(); }
+function setCat(c){ ST.cat = c||""; ST.page = 1; syncURL(); render(); }
 function openView(){
   if(typeof go==="function") go("videos");
 }
@@ -441,6 +474,8 @@ D.addEventListener("click", e=>{
   if(t.hasAttribute("data-va-close")){ closePlayer(); return; }
   if(t.hasAttribute("data-va-start")){ start(t.closest("[data-va-stage]")); return; }
   if(t.dataset.vaMatch){ const m = findMatch(t.dataset.vaMatch); if(!m) return;
+    /* من رأس المباراة في القسم: نُبقي #videos/m/… في السجل فيرجع «رجوع» إلى المباراة نفسها في القسم */
+    if(!PL && t.closest(".va-mh")){ if(typeof openMatch==="function") openMatch(m); return; }
     const fromMatch = PL && PL.from==="match";
     hidePlayer();
     if(fromMatch && history.state && history.state.va){ history.back(); return; }
@@ -454,7 +489,12 @@ D.addEventListener("click", e=>{
 });
 D.addEventListener("change", e=>{
   const s = e.target.closest && e.target.closest("[data-va-f]"); if(!s) return;
-  ST[s.dataset.vaF] = s.value || (s.dataset.vaF==="sort" ? "new" : ""); ST.page = 1; render();
+  const k = s.dataset.vaF;
+  ST[k] = s.value || (k==="sort" ? "new" : ""); ST.page = 1;
+  if(k==="comp") ST.match = "";                                   /* بطولة جديدة = اختيار مباراة من جديد */
+  if(k==="match" && ST.match){ const e = videoMatches("").find(x=>x.k===ST.match); if(e) ST.comp = e.c.comp; }
+  syncURL(); render();
+  if(k==="match") window.scrollTo({top:0, behavior:"instant"});
 });
 D.addEventListener("keydown", e=>{ if(e.key==="Escape" && PL && !D.getElementById("vaPlayer").hidden){ e.preventDefault(); closePlayer(); } });
 window.addEventListener("popstate", ()=>{
@@ -462,7 +502,7 @@ window.addEventListener("popstate", ()=>{
   if(/^#videos\/v\//.test(h)){ const st = parse(h); const go2 = () => { if(PL && PL.id===st.v) return; openPlayer(st.v, {noHistory:true}); if(PL) PL.pushed = true; };
     DATA ? go2() : store.ensure().then(go2); return; }
   if(PL) hidePlayer();
-  if(/^#videos/.test(h)){ const st = parse(h); ST.cat = st.cat || ""; if(!isOn()) openView(); else render(); }
+  if(/^#videos/.test(h)){ const st = parse(h); ST.cat = st.cat || ""; ST.match = st.match || ""; if(!isOn()) openView(); else render(); }
 });
 
 /* ═════════════════════════ مدخل الرئيسية (منصور 2026-11-23: «هني فوق ابي tab تحليل الفيديو يكون موجود») ═════════════════════════
@@ -516,8 +556,8 @@ function hookSite(){
     const a = D.getElementById("v-news") || D.getElementById("v-matches"); (a?a.parentNode:D.querySelector("main")||D.body).insertBefore(s, a?a.nextSibling:null); }
   if(typeof RENDER==="object" && RENDER) RENDER.videos = ()=>{
     const h = location.hash;
-    if(/^#videos/.test(h) && !/^#videos\/v\//.test(h)) ST.cat = parse(h).cat || "";
-    else if(!/^#videos/.test(h)){ try{ history.replaceState(history.state, "", ST.cat ? "#videos/c/"+ST.cat : "#videos"); }catch(e){} }
+    if(/^#videos/.test(h) && !/^#videos\/v\//.test(h)){ const st = parse(h); ST.cat = st.cat || ""; ST.match = st.match || ""; }
+    else if(!/^#videos/.test(h)) syncURL();
     render(); store.ensure().then(()=>{ if(isOn()) render(); });
   };
 }
