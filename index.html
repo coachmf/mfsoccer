@@ -2350,7 +2350,7 @@ html[dir="ltr"] .tl-ev.a .tl-card{text-align:right;align-items:flex-end}
 <script src="career.js?v=4" defer></script>   <!-- تبويب «المسيرة» في ملف اللاعب: يلفّ playerProfileHTML بعد fmx.js -->
 <link rel="stylesheet" href="mxday.css?v=1">
 <script src="mxday.js?v=2" defer></script>
-<script src="visitors.js?v=2" defer></script>   <!-- الزوار: قياس مجهول + العين للطاقم + «الزوار بالتفصيل» في الإدارة (2026-11-14) -->   <!-- صفحة المباريات حسب اليوم (منصور 2026-11-07) -->
+<script src="visitors.js?v=3" defer></script>   <!-- الزوار: قياس مجهول + العين للطاقم + «الزوار بالتفصيل» في الإدارة (2026-11-14) -->   <!-- صفحة المباريات حسب اليوم (منصور 2026-11-07) -->
 <style>
 /* تبويب التحليل — التصميم الجديد (منصور 2026-09-17) */
 .an{--an-card:#0F1E35;--an-line:#213653;--an-txt:#EDF3FA;--an-mut:#8FA6C4;--an-track:rgba(143,166,196,.16);--an-acc:#2EB0F0;--an-acc2:#1878BE}
@@ -9914,34 +9914,9 @@ function downloadAssets(){
 
 /* ================= التنقل ================= */
 /* ================= عدّاد الزوار =================
-   عدّاد يومي في Firestore. القواعد تسمح بزيادة واحدة فقط لكل طلب،
-   فلا يقدر أحد ينفخ الرقم دفعة واحدة. جلسة واحدة = زيارة واحدة. */
-let VISITS = null;
-const dayKey = d => { const x=d||new Date();
-  return x.getFullYear()+"-"+String(x.getMonth()+1).padStart(2,"0")+"-"+String(x.getDate()).padStart(2,"0"); };
-
-async function countVisit(){
-  if(!fbDb) return;
-  try{
-    if(sessionStorage.getItem("mf_seen")) return;   /* جلسة واحدة = زيارة واحدة */
-    sessionStorage.setItem("mf_seen","1");
-  }catch(e){}
-  const k = dayKey();
-  try{
-    await fbDb.collection("stats").doc(k).set(
-      {v: firebase.firestore.FieldValue.increment(1), d:k}, {merge:true});
-  }catch(e){}
-}
-async function loadVisits(days){
-  if(!fbDb) return [];
-  const out=[], n=days||30, keys=[];
-  for(let i=n-1;i>=0;i--){ const d=new Date(); d.setDate(d.getDate()-i); keys.push(dayKey(d)); }
-  try{
-    const snaps = await Promise.all(keys.map(k=>fbDb.collection("stats").doc(k).get()));
-    snaps.forEach((sn,i)=>out.push({d:keys[i], v: sn.exists ? (sn.data().v||0) : 0}));
-  }catch(e){}
-  VISITS = out; return out;
-}
+   انتقل كاملاً إلى الخادم 2026-11-23: netlify/functions/visit.js هو الكاتب الوحيد،
+   وvisitors.js هو من يستدعيه (زيارة الجلسة + الزائر الفريد + التفصيل المجهول).
+   كان هنا countVisit() يكتب في stats/{يوم} مباشرة بيوم ساعة الجهاز — فحُذف. */
 
 /* ================================================================
    تحدي التوقعات — تسجيل الجمهور، التوقعات، جداول الترتيب
@@ -10910,7 +10885,6 @@ const domParsed = () => new Promise(r => document.readyState!=="loading" ? r() :
   watchResume();
   await assetsP;
   await metaP;
-  countVisit();
   paintRail(); paintHeader(); paintFoot();
   /* المستخدم اختار قسماً أثناء الإقلاع؟ نعيد رسمه في مكانه ولا نسحبه للرئيسية */
   const cur=document.querySelector('nav.tabs button[aria-selected="true"]');

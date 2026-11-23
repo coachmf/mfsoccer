@@ -5,16 +5,20 @@
    1) قياس مجهول الهوية لكل جلسة زائر (بلا أسماء ولا بريد ولا معرّفات أجهزة):
       الأقسام التي فتحها، المباريات/اللاعبون/الأندية التي فتحها، نوع الجهاز (تطبيق/متصفح)،
       اللغة، مصدر الدخول، جديد أم عائد، ساعة الزيارة. كل عنصر يُعدّ مرة واحدة في الجلسة.
-      يُجمع في وثيقة يومية visits/{يوم} بزيادات +1 فقط، بدفعات (2–3 كتابات للجلسة).
+      يُرسل إلى /api/visit (netlify/functions/visit.js) وهو الكاتب الوحيد: يحسب يوم
+      الكويت على الخادم ويزيد +1. العميل لا يكتب في Firestore إطلاقاً (2026-11-23).
       الطاقم لا يُحسب (حتى لا تتلوّث الأرقام بمتابعتهم).
-   2) العين أعلى الرئيسية — لفريق العمل فقط: الزيارات منذ الانطلاق + اليوم (من stats/{يوم}).
+   2) العين أعلى الرئيسية — لفريق العمل فقط: الزيارات منذ الانطلاق + اليوم + الزوار
+      الفريدون (قراءة واحدة من stats/_all الذي يحمل المجموع وخطّ الأيام).
    3) قسم «الزوار بالتفصيل» في لوحة الإدارة (تبويب «الزوار»).
    ========================================================= */
 (function(){
 "use strict";
 const D = document, H = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const fmt = n => Number(n || 0).toLocaleString("en-US");
-const day = d => { const x = d || new Date(); return x.getFullYear() + "-" + String(x.getMonth() + 1).padStart(2, "0") + "-" + String(x.getDate()).padStart(2, "0"); };
+/* يوم الكويت (UTC+3 بلا توقيت صيفي) — نفس ما يحسبه الخادم، فمفاتيح اللوحة تطابق دلاء الخادم
+   مهما كان توقيت جهاز المدير. ساعة الجهاز الخاطئة لم تعد تُحرّك الدلو: الخادم هو من يقرّر. */
+const day = d => new Date((d ? new Date(d) : new Date()).getTime() + 3 * 3600e3).toISOString().slice(0, 10);
 const staff = () => { try{ return !!isAdmin; }catch(e){ return false; } };
 const db = () => { try{ return (typeof fbDb !== "undefined" && fbDb) ? fbDb : null; }catch(e){ return null; } };
 /* مفتاح قصير ثابت لاسم عربي (حقول Firestore: حروف لاتينية وأرقام فقط) — الإدارة تعيده لاسمه بحساب نفس البصمة */
@@ -23,28 +27,52 @@ const safe = s => String(s).toLowerCase().replace(/[^a-z0-9_]/g, "_").slice(0, 2
 
 /* ---------------- 1) القياس ---------------- */
 const SS = "mf_vx_", PEND = {};
-let flushT = 0, first = true;
+const SESS = "mf_vx_sess";   /* sessionStorage: هذه الجلسة حُسبت زيارةً */
+const UDAY = "mf_vx_uday";   /* localStorage: آخر يوم كويتي حُسب فيه هذا الجهاز زائراً فريداً */
+let flushT = 0, first = true, sending = false;
 const seen = k => { try{ if(sessionStorage.getItem(SS + k)) return true; sessionStorage.setItem(SS + k, "1"); }catch(e){} return false; };
 function hit(k){
   if(!k || staff() || seen(k)) return;
   PEND[k] = 1;
   clearTimeout(flushT); flushT = setTimeout(flush, first ? 4000 : 60000);
 }
-function flush(){
-  clearTimeout(flushT);
-  const d = db(); if(!d || staff()) return;
-  const ks = Object.keys(PEND); if(!ks.length) return;
-  first = false;
-  const inc = firebase.firestore.FieldValue.increment(1);
-  /* القواعد تقبل حتى 10 حقول في الكتابة الواحدة */
-  for(let i = 0; i < ks.length; i += 10){
-    const part = ks.slice(i, i + 10), k = day(), o = {d: k};
-    part.forEach(f => { o[f] = inc; delete PEND[f]; });
-    d.collection("visits").doc(k).set(o, {merge: true}).catch(() => {});
-  }
+/* ما زال معلّقاً: زيارة هذه الجلسة؟ وزائر فريد لهذا اليوم؟ */
+function flags(){
+  let s = 0, u = 0;
+  try{ if(!sessionStorage.getItem(SESS)) s = 1; }catch(e){ s = 1; }
+  try{ if(localStorage.getItem(UDAY) !== day()) u = 1; }catch(e){}
+  return { s, u };
 }
-D.addEventListener("visibilitychange", () => { if(D.visibilityState === "hidden") flush(); });
-addEventListener("pagehide", flush);
+/* beacon عند إخفاء الصفحة (يصل بعد إغلاق التبويب)، وfetch عادي غير ذلك */
+function send(body, beacon){
+  const s = JSON.stringify(body);
+  if(beacon){ try{ if(navigator.sendBeacon("/api/visit", new Blob([s], {type: "application/json"}))) return Promise.resolve(null); }catch(e){} }
+  return fetch("/api/visit", {method: "POST", headers: {"Content-Type": "application/json"}, body: s, keepalive: true})
+    .then(r => r.json()).catch(() => null);
+}
+function flush(beacon){
+  clearTimeout(flushT);
+  if(staff()) return;
+  /* إرسال جارٍ: نعيد الجدولة بدل إسقاط ما وصل بينهما (وإلّا انتظر إغلاق الصفحة) */
+  if(sending){ if(Object.keys(PEND).length) flushT = setTimeout(flush, 3000); return; }
+  const ks = Object.keys(PEND), f = flags();
+  if(!ks.length && !f.s && !f.u) return;
+  first = false; sending = true;
+  ks.forEach(k => delete PEND[k]);
+  /* الدفعة الأولى تحمل العدّادين؛ سقف الخادم 40 مفتاحاً فنقسّم الزائد */
+  const parts = ks.length ? [] : [[]];
+  for(let i = 0; i < ks.length; i += 40) parts.push(ks.slice(i, i + 40));
+  Promise.all(parts.map((part, i) => send(i ? {k: part} : {s: f.s, u: f.u, k: part}, beacon)))
+    .then(rs => {
+      const r = rs[0];
+      if(f.s){ try{ sessionStorage.setItem(SESS, "1"); }catch(e){} }
+      /* نحفظ اليوم الذي قرّره الخادم لا الذي حسبه الجهاز */
+      if(f.u){ try{ localStorage.setItem(UDAY, (r && r.day) || day()); }catch(e){} }
+    })
+    .finally(() => { sending = false; });
+}
+D.addEventListener("visibilitychange", () => { if(D.visibilityState === "hidden") flush(true); });
+addEventListener("pagehide", () => flush(true));
 
 function device(){
   const ua = navigator.userAgent || "", app = D.documentElement.classList.contains("mfa") || /PWAShell/.test(ua);
@@ -71,9 +99,23 @@ function source(){
 }
 function sessionStart(){
   if(staff()) return;
-  let ret = false; try{ ret = !!localStorage.getItem("mf_vx_first"); if(!ret) localStorage.setItem("mf_vx_first", day()); }catch(e){}
+  /* جديد أم عائد يُحسم مرة واحدة لكل جلسة: كان أول تحميل يسجّل «جديد» ثم أي تحميل
+     تالٍ في الجلسة نفسها يسجّل «عائد» (لأن mf_vx_first صار موجوداً)، فالجلسة الواحدة
+     تُحسب في الخانتين وتتضخّم النسبة. القرار محفوظ في sessionStorage. */
+  let ret = false; try{
+    const s = sessionStorage.getItem("mf_vx_ret");
+    if(s !== null) ret = s === "1";
+    else { ret = !!localStorage.getItem("mf_vx_first");
+           if(!ret) localStorage.setItem("mf_vx_first", day());
+           sessionStorage.setItem("mf_vx_ret", ret ? "1" : "0"); }
+  }catch(e){}
   let lang = "ar"; try{ lang = I18N.lang ? I18N.lang() : "ar"; }catch(e){}
-  hit("d_" + device()); hit("s_" + source()); hit("l_" + safe(lang)); hit(ret ? "n_ret" : "n_new");
+  /* المصدر مرة واحدة لكل جلسة: أول دخول هو مصدر الجلسة. كان كل تحميل صفحة يحسبه
+     من document.referrer، فمن دخل من إنستغرام ثم فتح الفانتسي أُضيف له s_internal
+     فوق s_instagram وتجاوزت النسب عدد الجلسات. */
+  hit("d_" + device()); hit("l_" + safe(lang)); hit(ret ? "n_ret" : "n_new");
+  try{ if(!sessionStorage.getItem("mf_vx_src")){ sessionStorage.setItem("mf_vx_src", "1"); hit("s_" + source()); } }
+  catch(e){ hit("s_" + source()); }
   hit("h_" + String(new Date().getHours()).padStart(2, "0"));
 }
 /* التنقل: نغلّف بعد تحميل كل الملفات حتى يكون غلافنا الخارجي (لا يغيّر سلوك أي دالة) */
@@ -93,7 +135,7 @@ D.addEventListener("click", e => { const b = e.target.closest && e.target.closes
   const c = b.dataset.club || b.dataset.clubOpen || b.dataset.clubLink; if(c) hit("c_" + hk(c)); }, true);
 
 /* ---------------- 2) العين أعلى الرئيسية (الطاقم فقط) ---------------- */
-const TOT = {at: 0, all: 0, today: 0, month: 0, days: [], since: ""};
+const TOT = {at: 0, all: 0, today: 0, month: 0, uall: 0, utoday: 0, umonth: 0, days: [], since: ""};
 /* قراءة كل 10 ساعات فقط (منصور 2026-11-14): العين واللوحة تُحفظان على الجهاز وتُعرضان من الحفظ؛
    القراءة من السحابة مرة كل 10 ساعات لكل جهاز، أو عند ضغط «تحديث» في اللوحة */
 const TTL = 10 * 3600e3, CK = "mf_vx_cache";
@@ -111,20 +153,22 @@ function loadTotals(force){
 async function loadTotals_(){
   const d = db(); if(!d) return TOT;
   try{
-    /* عدّاد زيارة هذه الجلسة (increment) إن كان معلّقاً يُظهر «اليوم = 1» بدل الرقم الحقيقي — ننتظره، ولا نحفظ قراءة ناقصة */
-    try{ await Promise.race([d.waitForPendingWrites(), new Promise(r => setTimeout(r, 6000))]); }catch(e){}
-    const snap = await d.collection("stats").get();
-    let pend = false;
-    const rows = []; snap.forEach(s => { if(s.metadata && s.metadata.hasPendingWrites) pend = true; const x = s.data() || {};
-      if(/^\d{4}-\d{2}-\d{2}$/.test(s.id) && s.id <= day()) rows.push({d: s.id, v: +x.v || 0}); });
-    rows.sort((a, b) => a.d < b.d ? -1 : 1);
-    const t = day(), m = t.slice(0, 7);
-    TOT.days = rows; TOT.all = rows.reduce((a, r) => a + r.v, 0);
-    TOT.today = (rows.find(r => r.d === t) || {}).v || 0;
+    /* قراءة واحدة: stats/_all يحمل المجموع (v/u) وخطّ الأيام (days/ud).
+       كان يقرأ كل مستندات stats — مستند لكل يوم، فالقراءات تنمو بلا حدّ مع عمر الموقع. */
+    const s = await d.collection("stats").doc("_all").get();
+    const x = (s.exists && s.data()) || {}, dm = x.days || {}, um = x.ud || {};
+    const rows = Object.keys(dm).filter(k => /^\d{4}-\d{2}-\d{2}$/.test(k)).sort()
+      .map(k => ({d: k, v: +dm[k] || 0, u: +um[k] || 0}));
+    const t = day(), m = t.slice(0, 7), tod = rows.find(r => r.d === t) || {};
+    TOT.days = rows;
+    TOT.all = +x.v || rows.reduce((a, r) => a + r.v, 0);
+    TOT.uall = +x.u || 0;
+    TOT.today = tod.v || 0;
+    TOT.utoday = tod.u || 0;
     TOT.month = rows.filter(r => r.d.startsWith(m)).reduce((a, r) => a + r.v, 0);
+    TOT.umonth = rows.filter(r => r.d.startsWith(m)).reduce((a, r) => a + r.u, 0);
     TOT.since = rows.length ? rows[0].d : "";
-    if(pend) TOT.at = Date.now() - TTL + 60000;   /* يعاد بعد دقيقة، بلا حفظ */
-    else { TOT.at = Date.now(); cacheSet("tot", TOT); }
+    TOT.at = Date.now(); cacheSet("tot", TOT);
   }catch(e){}
   return TOT;
 }
@@ -134,7 +178,9 @@ function eyeHTML(){
     <span class="vx-ic">${EYE}</span>
     <span class="vx-n"><b dir="ltr">${TOT.at ? fmt(TOT.all) : "…"}</b><small>زيارة منذ الانطلاق</small></span>
     <span class="vx-sep" aria-hidden="true"></span>
-    <span class="vx-n"><b dir="ltr">${TOT.at ? fmt(TOT.today) : "…"}</b><small>اليوم</small></span>
+    <span class="vx-n"><b dir="ltr">${TOT.at ? fmt(TOT.today) : "…"}</b><small>زيارات اليوم</small></span>
+    ${TOT.utoday ? `<span class="vx-sep" aria-hidden="true"></span>
+    <span class="vx-n"><b dir="ltr">${fmt(TOT.utoday)}</b><small>زائر اليوم</small></span>` : ""}
     <span class="vx-only">للطاقم فقط</span></button>`;
 }
 function paintEye(){
@@ -211,8 +257,10 @@ function detailHTML(){
     <div class="vx-seg" role="tablist">${[[7, "آخر 7 أيام"], [30, "آخر 30 يوماً"], [90, "آخر 90 يوماً"]].map(([n, t]) => `<button type="button" data-vxr="${n}" aria-pressed="${ADM.range === n}">${t}</button>`).join("")}
       <button type="button" class="vx-re" data-vxre>تحديث</button></div>
     <p class="hint vx-note">آخر تحديث: ${TOT.at ? `<span dir="ltr">${new Date(TOT.at).toLocaleString("en-GB", {hour: "2-digit", minute: "2-digit"})}</span> · ${dlab(day(new Date(TOT.at)))}` : "—"} — الأرقام تُقرأ مرة كل 10 ساعات</p>
-    <div class="vx-grid">${card(fmt(TOT.all), "منذ الانطلاق" + (TOT.since ? ` · ${dlab(TOT.since)}` : ""), 1)}${card(fmt(TOT.month), "هذا الشهر")}${card(fmt(TOT.today), "اليوم")}
+    <div class="vx-grid">${card(fmt(TOT.all), "زيارة منذ الانطلاق" + (TOT.since ? ` · ${dlab(TOT.since)}` : ""), 1)}${card(fmt(TOT.month), "زيارات هذا الشهر")}${card(fmt(TOT.today), "زيارات اليوم")}
       ${card(fmt(avg(7)), "متوسط آخر 7 أيام")}${card(fmt(avg(30)), "متوسط آخر 30 يوماً")}${card(best ? fmt(best.v) : "0", "أعلى يوم" + (best ? ` · ${dlab(best.d)}` : ""), 1)}</div>
+    ${TOT.uall ? `<div class="vx-grid">${card(fmt(TOT.uall), "زائر فريد منذ القياس", 1)}${card(fmt(TOT.umonth), "زوار هذا الشهر")}${card(fmt(TOT.utoday), "زوار اليوم")}</div>
+      <p class="hint vx-note">«زيارة» = جلسة (فتح الموقع). «زائر فريد» = جهاز واحد في اليوم مهما فتح — بدأ قياسه 2026-11-23، فلا تقارنه بما قبله.</p>` : ""}
     <div class="vx-days">${days.map(r => `<i class="${best && r.d === best.d ? "g" : ""}" style="height:${Math.max(3, Math.round(r.v / dmx * 100))}%" title="${dlab(r.d)}: ${r.v}"></i>`).join("")}</div>
     <div class="vx-dl"><span>قبل ${days.length} يوماً</span><span>اليوم</span></div>
     <p class="hint vx-note">الأرقام أعلاه من عدّاد الزيارات (زيارة = جلسة). التفاصيل أدناه تبدأ من يوم تفعيل القياس التفصيلي، ولا تشمل الطاقم.
@@ -311,5 +359,19 @@ function boot(){
   let tries = 0; const t = setInterval(() => { tries++; if((db() && tries > 4) || tries > 40){ clearInterval(t); sessionStart(); hit("v_" + safe(((D.querySelector(".view.on") || {}).id || "v-home").replace(/^v-/, ""))); } }, 500);
 }
 if(D.readyState === "loading") D.addEventListener("DOMContentLoaded", () => setTimeout(boot, 60)); else setTimeout(boot, 60);
-window.MFVX = {flush, loadTotals, hk};
+/* صندوق الزوار القديم في لوحة الإدارة (admin.js → #visLoad) كان يستدعي loadVisits
+   من index.html، وقد حُذفت مع countVisit عند نقل العدّاد إلى الخادم. نعيدها هنا
+   من stats/_all بنفس الشكل: صفّ لكل يوم من الأيام n الأخيرة، والأيام بلا زيارات أصفار. */
+async function loadVisits(n){
+  const t = await loadTotals(), map = {};
+  (t.days || []).forEach(r => { map[r.d] = r.v; });
+  const out = [];
+  for(let i = (n || 30) - 1; i >= 0; i--){
+    const x = new Date(); x.setDate(x.getDate() - i);
+    const k = day(x); out.push({d: k, v: map[k] || 0});
+  }
+  return out;
+}
+try{ window.loadVisits = loadVisits; }catch(e){}
+window.MFVX = {flush, loadTotals, loadVisits, hk};
 })();

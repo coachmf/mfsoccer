@@ -76,5 +76,73 @@
   (function(){ try{ var q=new URLSearchParams(location.search).get('lang'), l=String(q||localStorage.getItem('kwf_lang')||localStorage.getItem('mf_lang')||'ar').toLowerCase(); if(l!=='ar') document.write('<script src="../i18n-data.js?v=29"><\/script>'); }catch(e){} })();</script>
   <script src="../i18n-langs.js?v=9"></script>
   <script src="js/gate.js?v=286"></script>
+  <!-- ——— الزوار: نبضة قياس لصفحة الفانتسي (منصور 2026-11-23) ———
+       كانت الفانتسي خارج العدّاد كلياً. تستعمل نفس مفاتيح التخزين التي يستعملها
+       visitors.js على الرئيسية (نفس الأصل)، فمن فتح الموقع ثم الفانتسي يُحسب
+       زيارةً واحدة — ويُضاف v_fantasy فقط. الكتابة كلها على الخادم: /api/visit. -->
+  <script>
+  (function(){
+    var SESS = "mf_vx_sess", UDAY = "mf_vx_uday";
+    var day = function(){ return new Date(Date.now() + 3*3600e3).toISOString().slice(0,10); };   /* يوم الكويت */
+    var get = function(st, k){ try{ return st.getItem(k); }catch(e){ return null; } };
+    var set = function(st, k, v){ try{ st.setItem(k, v); }catch(e){} };
+    var safe = function(s){ return String(s).toLowerCase().replace(/[^a-z0-9_]/g, "_").slice(0,28); };
+    function device(){
+      var ua = navigator.userAgent || "", app = document.documentElement.classList.contains("mfa") || /PWAShell/.test(ua);
+      var ios = /iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1), and = /Android/.test(ua);
+      var tab = /iPad/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1) || (and && !/Mobile/.test(ua));
+      return app ? (ios ? "app_ios" : and ? "app_android" : "app_other") : (tab ? "web_tablet" : (ios||and) ? "web_phone" : "web_desktop");
+    }
+    function source(){
+      var ua = navigator.userAgent || "", r = document.referrer || "";
+      if(/Instagram/.test(ua)) return "instagram";
+      if(/TikTok|musical_ly|BytedanceWebview/.test(ua)) return "tiktok";
+      if(/FBAN|FBAV|FB_IAB/.test(ua)) return "facebook";
+      if(/Snapchat/.test(ua)) return "snapchat";
+      if(!r) return "direct";
+      try{ var h = new URL(r).hostname.replace(/^www\./, "");
+        if(h === location.hostname) return "internal";
+        if(/instagram/.test(h)) return "instagram"; if(/tiktok/.test(h)) return "tiktok";
+        if(/whatsapp|wa\.me/.test(h)) return "whatsapp"; if(/google/.test(h)) return "google";
+        if(/facebook|fb\./.test(h)) return "facebook"; if(/snapchat/.test(h)) return "snapchat";
+        return "other"; }catch(e){ return "other"; }
+    }
+    /* الطاقم لا يُحسب — ننتظر ردّ Firebase على حالة الدخول قبل القياس */
+    function staff(){ try{ return typeof CLOUD !== "undefined" && !!CLOUD.admin; }catch(e){ return false; } }
+    var tries = 0, t = setInterval(function(){
+      var ready = (typeof CLOUD !== "undefined" && CLOUD.user !== undefined);
+      if(!ready && ++tries < 24) return;
+      clearInterval(t);
+      if(staff()) return;
+      var lang = "ar"; try{ lang = String(localStorage.getItem("kwf_lang") || localStorage.getItem("mf_lang") || "ar").toLowerCase(); }catch(e){}
+      /* جديد أم عائد محسوم لكل جلسة (نفس إصلاح visitors.js: وإلّا حُسبت الجلسة جديدة وعائدة) */
+      var ret = false, rs = get(sessionStorage, "mf_vx_ret");
+      if(rs !== null) ret = rs === "1";
+      else { ret = !!get(localStorage, "mf_vx_first");
+             if(!ret) set(localStorage, "mf_vx_first", day());
+             set(sessionStorage, "mf_vx_ret", ret ? "1" : "0"); }
+      /* منع التكرار لكل مفتاح داخل الجلسة — نفس مفاتيح visitors.js (mf_vx_<key>).
+         بدونها يُعاد إرسال الجهاز واللغة والساعة لمن فتح الرئيسية ثم الفانتسي
+         في الجلسة نفسها، فتُحسب مرتين. يبقى v_fantasy وحده في الحالة الشائعة. */
+      /* المصدر مرة واحدة لكل جلسة (نفس إصلاح visitors.js) */
+      var src = null;
+      if(!get(sessionStorage, "mf_vx_src")){ set(sessionStorage, "mf_vx_src", "1"); src = "s_" + source(); }
+      var k = ["v_fantasy", "d_" + device(), src, "l_" + safe(lang),
+               ret ? "n_ret" : "n_new", "h_" + String(new Date().getHours()).padStart(2,"0")]
+        .filter(Boolean)
+        .filter(function(key){
+          if(get(sessionStorage, "mf_vx_" + key)) return false;
+          set(sessionStorage, "mf_vx_" + key, "1"); return true;
+        });
+      var s = get(sessionStorage, SESS) ? 0 : 1, u = get(localStorage, UDAY) === day() ? 0 : 1;
+      if(!s && !u && !k.length) return;   /* لا شيء جديد — لا نُرسل طلباً فارغاً */
+      fetch("/api/visit", {method:"POST", headers:{"Content-Type":"application/json"},
+        body: JSON.stringify({s:s, u:u, k:k}), keepalive:true})
+        .then(function(r){ return r.json(); })
+        .then(function(r){ if(s) set(sessionStorage, SESS, "1"); if(u) set(localStorage, UDAY, (r && r.day) || day()); })
+        .catch(function(){});
+    }, 500);
+  })();
+  </script>
 </body>
 </html>
