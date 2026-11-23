@@ -465,6 +465,43 @@ window.addEventListener("popstate", ()=>{
   if(/^#videos/.test(h)){ const st = parse(h); ST.cat = st.cat || ""; if(!isOn()) openView(); else render(); }
 });
 
+/* ═════════════════════════ مدخل الرئيسية (منصور 2026-11-23: «هني فوق ابي tab تحليل الفيديو يكون موجود») ═════════════════════════
+   أعلى الرئيسية مباشرة (بعد بطاقة الزوار للطاقم إن وُجدت). لا قراءة من Firestore هنا: البيانات المحمّلة أو النسخة المحفوظة أو القائمة الأولى. */
+function homeItems(){
+  const src = (DATA && DATA.items) || (safe(()=>LS.get(LOCAL ? LKEY : CKEY)) || {}).items || (LOCAL ? [] : SEED);
+  return src.filter(isPub).sort((a,b)=>String(b.pub||"").localeCompare(String(a.pub||"")));
+}
+function homeHTML(){
+  const L = homeItems(); if(!L.length) return "";
+  const th = L.slice(0,3).map(v=>{ const t = thumbOf(v); return t ? `<i style="background-image:url('${H(t)}')"></i>` : ""; }).join("");
+  const n = L.length, nTxt = `${n} ${n>10||n<3?"فيديو":"فيديوهات"}`;
+  return `<button type="button" class="va-home" aria-label="تحليل الفيديو">
+    <span class="va-home-ic">${ICON}</span>
+    <span class="va-home-t"><b>تحليل الفيديو</b><small>${H(nTxt)}</small></span>
+    <span class="va-home-th" aria-hidden="true">${th}</span>
+    <svg class="va-home-go" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
+  </button>`;
+}
+function paintHome(){
+  const v = D.getElementById("v-home"); if(!v) return;
+  const old = v.querySelector(":scope > .va-home"), html = homeHTML();
+  if(!html){ if(old) old.remove(); return; }
+  if(old && old._h === html){ const eye = v.querySelector(":scope > .vx-eye"); if(!eye || eye.nextElementSibling === old) return; }
+  const box = D.createElement("div"); box.innerHTML = html; const el = box.firstElementChild; el._h = html;
+  el.onclick = () => { try{ if(!location.hash) history.pushState({mfv:"videos"}, "", location.pathname + location.search); }catch(e){} if(typeof go==="function") go("videos"); window.scrollTo(0,0); };
+  if(old) old.remove();
+  const eye = v.querySelector(":scope > .vx-eye");
+  if(eye) eye.after(el); else v.insertBefore(el, v.firstChild);
+}
+let homeQ = 0;
+const homeSoon = () => { if(homeQ) return; homeQ = requestAnimationFrame(()=>{ homeQ = 0; safe(paintHome); }); };
+function watchHomeEntry(){
+  const v = D.getElementById("v-home"); if(!v || v.__vaHome) return; v.__vaHome = true;
+  /* الرئيسية تُرسم من جديد بـ innerHTML، وبطاقة الزوار تُدرج نفسها أولاً: نعيد المدخل إن اختفى أو تغيّر ترتيبه */
+  new MutationObserver(ms=>{ if(ms.some(m=>[...m.addedNodes, ...m.removedNodes].some(n=>!(n.classList && n.classList.contains("va-home"))))) homeSoon(); }).observe(v, {childList:true});
+  onData(homeSoon); homeSoon();
+}
+
 /* ═════════════════════════ ربط الموقع ═════════════════════════ */
 const ICON = `<svg class="ic" aria-hidden="true" width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="m10.2 9.3 4.6 2.7-4.6 2.7z"/></svg>`;
 function hookSite(){
@@ -676,7 +713,7 @@ D.addEventListener("input", e=>{ const q = e.target.closest && e.target.closest(
 
 /* ═════════════════════════ الإقلاع ═════════════════════════ */
 function boot(){
-  hookSite(); hookNav(); hookMatchPage(); hookAdmin();
+  hookSite(); hookNav(); hookMatchPage(); hookAdmin(); watchHomeEntry();
   if(/^#videos/.test(location.hash) && !isOn()) setTimeout(()=>{ if(/^#videos/.test(location.hash) && !isOn()) deepLink(); }, 0);
   /* صفحة مباراة مفتوحة قبل جاهزية القسم (رابط #m/ مباشر) */
   if(D.querySelector("#mpage.on")) mpSection();

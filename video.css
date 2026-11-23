@@ -242,3 +242,23 @@ html.mf[data-theme="light"] .vap-stage{background:#000}
 html.mf[data-theme="light"] .va-mp-en{color:#7A5C2C}
 
 @media (prefers-reduced-motion:reduce){ .va *,.vap,.vap *{transition:none!important;animation:none!important} }
+
+/* ── مدخل الرئيسية «تحليل الفيديو» (منصور 2026-11-23) ── */
+#v-home > .va-home{all:unset;box-sizing:border-box;display:flex;align-items:center;gap:12px;width:100%;margin:0 0 var(--mf-s3,12px);padding:10px 12px 10px 14px;cursor:pointer;
+  border-radius:var(--mf-rc,16px);background:linear-gradient(135deg,rgba(231,208,147,.10),rgba(231,208,147,0) 55%),var(--mf-c1,#07112B);
+  border:1px solid var(--mf-ln2,rgba(231,208,147,.28));color:var(--mf-tx,#fff);font-family:inherit;-webkit-tap-highlight-color:transparent;transition:transform .15s,border-color .15s}
+#v-home > .va-home:active{transform:scale(.985)}
+@media (hover:hover){ #v-home > .va-home:hover{border-color:var(--mf-gold,#E7D093)} }
+#v-home > .va-home:focus-visible{outline:2px solid var(--mf-gold,#E7D093);outline-offset:2px}
+.va-home .va-home-ic{display:grid;place-items:center;width:44px;height:44px;border-radius:12px;flex:none;color:#00061A;
+  background:linear-gradient(135deg,#F5E2A8,#E7D093 45%,#AD8F59)}
+.va-home .va-home-ic .ic{width:24px;height:24px}
+.va-home .va-home-t{display:flex;flex-direction:column;min-width:0;flex:1 1 auto;line-height:1.35}
+.va-home .va-home-t b{font:800 1.05rem/1.4 var(--mf-fh,inherit);color:var(--mf-tx,#fff);text-align:start}
+.va-home .va-home-t small{font-size:.72rem;color:var(--mf-tx3,#8C93A8);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.va-home .va-home-th{display:flex;flex:none;direction:ltr}
+.va-home .va-home-th i{display:block;width:46px;height:30px;border-radius:7px;background:#0B1838 center/cover no-repeat;
+  box-shadow:0 0 0 2px var(--mf-c1,#07112B);margin-left:-14px}
+.va-home .va-home-th i:first-child{margin-left:0}
+.va-home .va-home-go{flex:none;color:var(--mf-gold,#E7D093)}
+@media (max-width:370px){ .va-home .va-home-th i:nth-child(3){display:none} }
