@@ -11,10 +11,16 @@
         الآن مستند واحد stats/_all يحمل المجموع وخطّ الأيام.
      4) صفحة الفانتسي ما كانت تُحسب إطلاقاً.
 
-   POST /api/visit  { s:1?, u:1?, k:["v_home","d_app_ios",...] }
-     s=1 زيارة (جلسة) · u=1 زائر فريد لهذا اليوم · k حقول التفصيل
-   الردّ: { ok, day } — العميل يحفظ day ليعرف متى يتغيّر اليوم الكويتي.
-   لا يُخزَّن أي معرّف: لا IP ولا بريد ولا معرّف جهاز. زيادات +1 فقط.
+   POST /api/visit  { s:1?, u:1?, c:1?, k:["v_home","d_app_ios",...] }
+     s=1 زيارة (جلسة) · u=1 زائر فريد لهذا اليوم · c=1 سجّل دولة هذه الجلسة
+     k حقول التفصيل
+   الردّ: { ok, day, cc } — العميل يحفظ day ليعرف متى يتغيّر اليوم الكويتي،
+   وcc يؤكّد تسجيل الدولة فلا يُعيد طلبها.
+
+   الدولة تُستخرج على الخادم من بيانات Netlify الجغرافية، ولا تُقبل من العميل
+   إطلاقاً (مفاتيح g_ الواردة منه تُحذف) — وإلّا زيّف أي أحد دولته.
+   لا يُخزَّن أي معرّف: لا IP ولا بريد ولا معرّف جهاز — الدولة تُشتقّ من الـIP
+   ثم يُهمل الـIP، فالمحفوظ رمز دولة وعدّاد فقط (g_kw = 12).
    ========================================================================= */
 'use strict';
 const { serviceAccount, accessToken } = require('./lib/google');
@@ -22,6 +28,22 @@ const { serviceAccount, accessToken } = require('./lib/google');
 const OK_ORIGIN = ['https://mfsoccer.com', 'https://www.mfsoccer.com'];
 const KEY = /^[a-z]_[a-z0-9_]{1,30}$/;
 const MAXK = 40;
+
+/* رمز الدولة من ترويسات Netlify. x-nf-geo هو المصدر الرسمي (JSON بترميز base64)،
+   والبقية احتياط إن تغيّرت المنصة. يرجع حرفين صغيرين أو '' — و'' يعني لا نسجّل. */
+function country(h) {
+  const g = h['x-nf-geo'] || h['X-NF-Geo'];
+  if (g) { try {
+    const j = JSON.parse(Buffer.from(g, 'base64').toString('utf8'));
+    const c = j && j.country && j.country.code;
+    if (/^[A-Za-z]{2}$/.test(c || '')) return c.toLowerCase();
+  } catch (e) {} }
+  for (const k of ['x-country', 'cf-ipcountry', 'x-geo-country']) {
+    const v = h[k];
+    if (/^[A-Za-z]{2}$/.test(v || '')) return v.toLowerCase();
+  }
+  return '';
+}
 
 /* يوم الكويت: UTC+3 ثابت (الكويت بلا توقيت صيفي) */
 const kwDay = () => new Date(Date.now() + 3 * 3600e3).toISOString().slice(0, 10);
@@ -43,10 +65,17 @@ exports.handler = async (event) => {
   let b = {};
   try { b = JSON.parse(event.body || '{}'); } catch (e) { return { statusCode: 400, headers: H, body: '{"ok":false}' }; }
 
-  const keys = [...new Set((Array.isArray(b.k) ? b.k : []).filter(k => KEY.test(k)))].slice(0, MAXK);
+  /* مفاتيح g_ من العميل مرفوضة: الدولة من الخادم وحده */
+  const keys = [...new Set((Array.isArray(b.k) ? b.k : [])
+    .filter(k => KEY.test(k) && !k.startsWith('g_')))].slice(0, MAXK);
   const sess = b.s === 1 || b.s === true;
   const uniq = b.u === 1 || b.u === true;
+  const cc   = (b.c === 1 || b.c === true) ? country(event.headers || {}) : '';
+  if (cc) keys.push('g_' + cc);
   const day  = kwDay();
+  /* diag: أسماء الترويسات الجغرافية الموجودة (أسماء لا قيم) — لفحص المنصة بعد أي تغيير */
+  if (b.diag === 1) return { statusCode: 200, headers: H, body: JSON.stringify({ ok: true, day, cc,
+    geoHeaders: Object.keys(event.headers || {}).filter(k => /^(x-nf|x-country|cf-|x-geo)/i.test(k)) }) };
   if (!sess && !uniq && !keys.length) return { statusCode: 200, headers: H, body: JSON.stringify({ ok: true, day, noop: true }) };
 
   try {
@@ -74,7 +103,7 @@ exports.handler = async (event) => {
       headers: { Authorization: 'Bearer ' + at, 'Content-Type': 'application/json' },
       body: JSON.stringify({ writes }) });
     if (!r.ok) throw new Error('commit ' + r.status + ' ' + (await r.text().catch(() => '')).slice(0, 200));
-    return { statusCode: 200, headers: H, body: JSON.stringify({ ok: true, day, n: keys.length }) };
+    return { statusCode: 200, headers: H, body: JSON.stringify({ ok: true, day, n: keys.length, cc }) };
   } catch (e) {
     /* القياس لا يُفشل الصفحة أبداً: نُبلّغ 200 ونسجّل الخطأ في لوحة Netlify */
     console.error('visit', e.message || e);

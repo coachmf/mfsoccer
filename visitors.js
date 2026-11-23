@@ -29,6 +29,7 @@ const safe = s => String(s).toLowerCase().replace(/[^a-z0-9_]/g, "_").slice(0, 2
 const SS = "mf_vx_", PEND = {};
 const SESS = "mf_vx_sess";   /* sessionStorage: هذه الجلسة حُسبت زيارةً */
 const UDAY = "mf_vx_uday";   /* localStorage: آخر يوم كويتي حُسب فيه هذا الجهاز زائراً فريداً */
+const GEO  = "mf_vx_geo";    /* sessionStorage: دولة هذه الجلسة سُجّلت (الخادم يستخرجها) */
 let flushT = 0, first = true, sending = false;
 const seen = k => { try{ if(sessionStorage.getItem(SS + k)) return true; sessionStorage.setItem(SS + k, "1"); }catch(e){} return false; };
 function hit(k){
@@ -38,10 +39,11 @@ function hit(k){
 }
 /* ما زال معلّقاً: زيارة هذه الجلسة؟ وزائر فريد لهذا اليوم؟ */
 function flags(){
-  let s = 0, u = 0;
+  let s = 0, u = 0, c = 0;
   try{ if(!sessionStorage.getItem(SESS)) s = 1; }catch(e){ s = 1; }
   try{ if(localStorage.getItem(UDAY) !== day()) u = 1; }catch(e){}
-  return { s, u };
+  try{ if(!sessionStorage.getItem(GEO)) c = 1; }catch(e){}
+  return { s, u, c };
 }
 /* beacon عند إخفاء الصفحة (يصل بعد إغلاق التبويب)، وfetch عادي غير ذلك */
 function send(body, beacon){
@@ -56,18 +58,27 @@ function flush(beacon){
   /* إرسال جارٍ: نعيد الجدولة بدل إسقاط ما وصل بينهما (وإلّا انتظر إغلاق الصفحة) */
   if(sending){ if(Object.keys(PEND).length) flushT = setTimeout(flush, 3000); return; }
   const ks = Object.keys(PEND), f = flags();
-  if(!ks.length && !f.s && !f.u) return;
-  first = false; sending = true;
+  if(!ks.length && !f.s && !f.u && !f.c) return;
+  /* نافذة «أول إرسال سريع» (4 ث) تُستهلك بإرسال مفاتيح فعلي فقط. كانت دفعة
+     العدّادات الفارغة تستهلكها، فتتأجّل أول دفعة تفصيل إلى 60 ثانية. */
+  if(ks.length) first = false;
+  sending = true;
   ks.forEach(k => delete PEND[k]);
+  /* الدولة تُعلَّم عند الإرسال لا عند تأكيد الردّ: إرسال beacon (زائر يغادر قبل
+     المهلة) لا يُقرأ ردّه، فكانت تُرسل ثانيةً وتُحسب الدولة مرتين للجلسة الواحدة.
+     إن لم يجد الخادم دولة فلا يُكتب شيء — نفقد دولة جلسة بدل أن ننفخ العدد. */
+  if(f.c){ try{ sessionStorage.setItem(GEO, "1"); }catch(e){} }
   /* الدفعة الأولى تحمل العدّادين؛ سقف الخادم 40 مفتاحاً فنقسّم الزائد */
   const parts = ks.length ? [] : [[]];
   for(let i = 0; i < ks.length; i += 40) parts.push(ks.slice(i, i + 40));
-  Promise.all(parts.map((part, i) => send(i ? {k: part} : {s: f.s, u: f.u, k: part}, beacon)))
+  Promise.all(parts.map((part, i) => send(i ? {k: part} : {s: f.s, u: f.u, c: f.c, k: part}, beacon)))
     .then(rs => {
       const r = rs[0];
       if(f.s){ try{ sessionStorage.setItem(SESS, "1"); }catch(e){} }
       /* نحفظ اليوم الذي قرّره الخادم لا الذي حسبه الجهاز */
       if(f.u){ try{ localStorage.setItem(UDAY, (r && r.day) || day()); }catch(e){} }
+      /* الردّ يحمل رمز الدولة — نحفظه للتشخيص فقط، فالعلامة ضُبطت عند الإرسال */
+      if(f.c && r && r.cc){ try{ sessionStorage.setItem(GEO, r.cc); }catch(e){} }
     })
     .finally(() => { sending = false; });
 }
@@ -214,6 +225,16 @@ const DEVN = {app_ios:"تطبيق آيفون", app_android:"تطبيق أندر�
 const SRCN = {direct:"مباشر / رابط محفوظ", internal:"من داخل الموقع", instagram:"إنستغرام", tiktok:"تيك توك", whatsapp:"واتساب", x:"إكس", google:"Google",
   facebook:"فيسبوك", snapchat:"سناب شات", search:"محركات بحث أخرى", other:"مواقع أخرى"};
 const LANGN = {ar:"العربية", en:"English", "pt_br":"Português (BR)", "pt_pt":"Português (PT)", es:"Español", fr:"Français", sh:"BCMS"};
+/* الدولة: الاسم العربي من Intl (يغطّي كل الدول بلا جدول عندنا)، وعلم من حرفَي الرمز */
+let REGN = null;
+try{ REGN = new Intl.DisplayNames(["ar"], {type: "region"}); }catch(e){}
+const flag = cc => cc.length === 2 ? String.fromCodePoint(...[...cc.toUpperCase()].map(c => 0x1F1E6 + c.charCodeAt(0) - 65)) : "";
+function ctryName(cc){
+  const u = String(cc || "").toUpperCase();
+  if(u.length !== 2) return "دولة غير معروفة";
+  let n = u; try{ n = (REGN && REGN.of(u)) || u; }catch(e){}
+  return flag(u) + " " + n;
+}
 const ADM = {range: 30, rows: null, busy: false};
 const MON = ["يناير","فبراير","مارس","أبريل","مايو","يونيو","يوليو","أغسطس","سبتمبر","أكتوبر","نوفمبر","ديسمبر"];
 const dlab = s => { const [y, m, d] = String(s).split("-").map(Number); return y ? `${d} ${MON[m - 1]}` + (y !== new Date().getFullYear() ? ` ${y}` : "") : ""; };
@@ -248,6 +269,7 @@ function detailHTML(){
   const grp = (p, names, fallback) => Object.entries(sum).filter(([k]) => k.startsWith(p)).map(([k, v]) => { const id = k.slice(p.length); return [names[id] || (fallback ? fallback(id) : id), v]; }).sort((a, b) => b[1] - a[1]);
   const {M, P, C} = nameMaps();
   const views = grp("v_", VIEWN), dev = grp("d_", DEVN), src = grp("s_", SRCN), lang = grp("l_", LANGN);
+  const ctry = grp("g_", {}, ctryName);
   const mt = grp("m_", M, () => "مباراة (مؤرشفة)"), pl = grp("p_", P, () => "لاعب سابق"), cl = grp("c_", C, () => "نادٍ آخر");
   const hours = Array.from({length: 24}, (_, h) => sum["h_" + String(h).padStart(2, "0")] || 0), hmx = Math.max(1, ...hours), hBest = hours.indexOf(Math.max(...hours));
   const days = TOT.days.slice(-ADM.range), dmx = Math.max(1, ...days.map(r => r.v)), best = days.reduce((a, r) => r.v > (a ? a.v : -1) ? r : a, null);
@@ -272,6 +294,8 @@ function detailHTML(){
       <section><h3>أكثر الأندية مشاهدة</h3>${bars(cl, sessions, "", 12)}</section>
       <section><h3>الأجهزة</h3>${bars(dev, sessions)}</section>
       <section><h3>من أين يأتون</h3>${bars(src, sessions)}</section>
+      <section><h3>من أي دولة${ctry.length ? ` — ${ctry.length} دولة` : ""}</h3>${bars(ctry, sessions, "", 15)}
+        ${ctry.length ? "" : `<p class="hint" style="margin:6px 0 0">يبدأ تسجيل الدول من 2026-11-23.</p>`}</section>
       <section><h3>اللغة</h3>${bars(lang, sessions)}</section>
       <section><h3>جديد أم عائد</h3>${bars([["زائر جديد", sum.n_new || 0], ["زائر عائد", sum.n_ret || 0]].filter(r => r[1]), sessions)}</section>
       <section class="vx-wide"><h3>ساعات الزيارة (توقيت الجهاز)${sessions ? ` — الذروة ${hBest}:00` : ""}</h3>

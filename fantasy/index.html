@@ -135,11 +135,14 @@
           set(sessionStorage, "mf_vx_" + key, "1"); return true;
         });
       var s = get(sessionStorage, SESS) ? 0 : 1, u = get(localStorage, UDAY) === day() ? 0 : 1;
-      if(!s && !u && !k.length) return;   /* لا شيء جديد — لا نُرسل طلباً فارغاً */
+      var c = get(sessionStorage, "mf_vx_geo") ? 0 : 1;   /* الدولة يستخرجها الخادم مرة لكل جلسة */
+      if(!s && !u && !c && !k.length) return;   /* لا شيء جديد — لا نُرسل طلباً فارغاً */
+      if(c) set(sessionStorage, "mf_vx_geo", "1");   /* تُعلَّم عند الإرسال فلا تُحسب مرتين */
       fetch("/api/visit", {method:"POST", headers:{"Content-Type":"application/json"},
-        body: JSON.stringify({s:s, u:u, k:k}), keepalive:true})
+        body: JSON.stringify({s:s, u:u, c:c, k:k}), keepalive:true})
         .then(function(r){ return r.json(); })
-        .then(function(r){ if(s) set(sessionStorage, SESS, "1"); if(u) set(localStorage, UDAY, (r && r.day) || day()); })
+        .then(function(r){ if(s) set(sessionStorage, SESS, "1"); if(u) set(localStorage, UDAY, (r && r.day) || day());
+                           if(c && r && r.cc) set(sessionStorage, "mf_vx_geo", r.cc); })
         .catch(function(){});
     }, 500);
   })();
