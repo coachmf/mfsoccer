@@ -15,7 +15,8 @@
 
   /* ───── تعديلات المدير (منصور 2026-11-19: «اقدر اعدل على مسيرة اللاعب من الادمن») ─────
      تُحفظ في وثيقة الموسم: careers = { النادي: { الاسم: { st:[{f,t,c,cc,k}], by, at } } }
-     f/t = أول وآخر موسم («2021/22» أو «2021»)، c = اسم النادي كما يظهر، cc = رمز الدولة (kw…)، k = ""|free|fee|loan|swap.
+     f/t = أول وآخر موسم («2021/22» أو «2021»)، c = اسم النادي كما يظهر، cc = رمز الدولة (kw…)، k = ""|free|fee|loan|swap|youth.
+     youth = الفئات السنية (منصور 2026-11-24: سعود قاسم مسجّل بالقادسية من 2010 وصعد للفريق الأول 2021): مرحلة منفصلة لا تُدمج مع الفريق الأول ولا تُحسب في عدد المواسم.
      التعديل يحلّ محلّ مسيرة FM للاعب بالكامل؛ حذفه يرجّع مسيرة FM. */
   const EDITS = () => (typeof CAREERS !== "undefined" && CAREERS) || {};
   const CUSTOM = {};   /* أندية مكتوبة يدوياً وليست في player-career.js */
@@ -38,7 +39,7 @@
     const rows = [];
     for (const x of st || []) {
       const key = keyFor(x.c, x.cc), ss = seasonsOf(x.f, x.t);
-      ss.forEach((s, i) => rows.push([s, key, x.k === "loan" || x.k === "swap" ? x.k : (i === 0 ? (x.k || "") : "")]));
+      ss.forEach((s, i) => rows.push([s, key, x.k === "loan" || x.k === "swap" || x.k === "youth" ? x.k : (i === 0 ? (x.k || "") : "")]));
     }
     return rows;
   }
@@ -66,16 +67,18 @@
   function build(rows, currentClub) {
     const st = [];
     for (const [s, club, t] of rows || []) {
-      const loan = t === "loan", last = st[st.length - 1];
-      if (last && last.club === club && last.loan === loan && (last.to === s || next(last.to) === s)) { last.to = s; last.n = new Set([...last.seasons, s]).size; last.seasons.push(s); continue; }
-      st.push({ club, from: s, to: s, loan, how: t, seasons: [s], n: 1 });
+      const loan = t === "loan", youth = t === "youth", last = st[st.length - 1];
+      if (last && last.club === club && last.loan === loan && !!last.youth === youth && (last.to === s || next(last.to) === s)) { last.to = s; last.n = new Set([...last.seasons, s]).size; last.seasons.push(s); continue; }
+      st.push({ club, from: s, to: s, loan, youth, how: t, seasons: [s], n: 1 });
     }
     st.forEach((x, i) => {
       x.n = new Set(x.seasons).size;
       const before = st.slice(0, i);
       if (x.loan) x.kind = "loan";
+      else if (x.youth) x.kind = "youth";
+      else if (before.length && before.every(b => b.youth) && before[before.length - 1].club === x.club) x.kind = "up";
       else if (i === 0) x.kind = rows && rows.partial ? "" : "start";
-      else if (before.some(b => !b.loan && b.club === x.club)) x.kind = before[before.length - 1].loan && before[before.length - 1].club !== x.club ? "back" : "return";
+      else if (before.some(b => !b.loan && !b.youth && b.club === x.club)) x.kind = before[before.length - 1].loan && before[before.length - 1].club !== x.club ? "back" : "return";
       else x.kind = x.how === "free" ? "free" : x.how === "swap" ? "swap" : "move";
     });
     /* النادي الحالي من الموقع: إن انتقل بعد تاريخ بيانات FM تُضاف مرحلته ولا نخترع تاريخاً لها */
@@ -87,15 +90,15 @@
   }
 
   function summary(st) {
-    const real = st.filter(x => x.from);
+    const real = st.filter(x => x.from), senior = real.filter(x => !x.youth), yth = real.filter(x => x.youth);
     if (!real.length) return null;
     const clubs = new Set(st.map(x => x.club)).size;
-    const seasons = new Set(st.flatMap(x => x.seasons)).size;
-    return { clubs, seasons, since: yr(real[0].from), loans: st.filter(x => x.loan).length, abroad: new Set(st.filter(x => clubOf(x.club).cc && clubOf(x.club).cc !== "kw").map(x => x.club)).size };
+    const seasons = new Set(st.filter(x => !x.youth).flatMap(x => x.seasons)).size;
+    return { clubs, seasons, since: yr((senior[0] || real[0]).from), youthSince: yth.length ? yr(yth[0].from) : 0, loans: st.filter(x => x.loan).length, abroad: new Set(st.filter(x => clubOf(x.club).cc && clubOf(x.club).cc !== "kw").map(x => x.club)).size };
   }
 
   /* ───── العرض ───── */
-  const KIND = { start: "بداية المسيرة", move: "انتقال", free: "انتقال حر", swap: "تبادل لاعبين", loan: "إعارة", back: "عودة من الإعارة", return: "عودة", site: "انتقال" };
+  const KIND = { start: "بداية المسيرة", move: "انتقال", free: "انتقال حر", swap: "تبادل لاعبين", loan: "إعارة", youth: "الفئات السنية", up: "الصعود للفريق الأول", back: "عودة من الإعارة", return: "عودة", site: "انتقال" };
   /* بلا decoding="async": في سفاري iOS تُرسم الشعارات متأخرة أو نصف مرسومة داخل اللوحة المخفية ثم الظاهرة (منصور 11-19) */
   const SYNC = s => s.replace(/ decoding="async"/g, ' decoding="sync"');
   function clubMark(key) {
@@ -113,12 +116,12 @@
   function stageHTML(x, i) {
     const c = clubOf(x.club), cname = DB().cn[c.cc] || (c.cc === "kw" ? "الكويت" : "");
     const period = x.from ? (x.from === x.to ? `موسم ${x.from}` : `${x.from} – ${x.to}`) : "منذ هذا الموسم";
-    return `<li class="cr-st${x.current ? " cur" : ""}${x.loan ? " loan" : ""}" data-cr-i="${i}">
+    return `<li class="cr-st${x.current ? " cur" : ""}${x.loan ? " loan" : ""}${x.youth ? " youth" : ""}" data-cr-i="${i}">
       <span class="cr-dot" aria-hidden="true"></span>
       <button type="button" class="cr-card" aria-expanded="false">
         <span class="cr-yr">${years(x)}</span>
         <span class="cr-club">${clubMark(x.club)}<span class="cr-nm"><b>${H(c.n)}</b><small>${H(cname)}${c.en && c.en !== c.n && !c.kw ? ` · <span dir="ltr">${H(c.en)}</span>` : ""}</small></span></span>
-        <span class="cr-tags">${x.current ? `<em class="cr-tag now">النادي الحالي</em>` : ""}${x.loan ? `<em class="cr-tag ln">إعارة</em>` : x.kind === "back" ? `<em class="cr-tag bk">عودة من الإعارة</em>` : ""}</span>
+        <span class="cr-tags">${x.current ? `<em class="cr-tag now">النادي الحالي</em>` : ""}${x.loan ? `<em class="cr-tag ln">إعارة</em>` : x.youth ? `<em class="cr-tag yt">فئات سنية</em>` : x.kind === "back" ? `<em class="cr-tag bk">عودة من الإعارة</em>` : ""}</span>
       </button>
       <div class="cr-more" hidden>
         <div><small>الفترة</small><b dir="ltr">${H(period)}</b></div>
@@ -129,12 +132,12 @@
   }
   /* ───── محرّر المدير ───── */
   const canEdit = () => typeof isAdmin !== "undefined" && isAdmin && !(typeof MYPERM !== "undefined" && MYPERM === "matches");
-  const KOPT = [["", "انتقال"], ["free", "انتقال حر"], ["loan", "إعارة"], ["swap", "تبادل"], ["fee", "بمقابل"]];
+  const KOPT = [["", "انتقال"], ["free", "انتقال حر"], ["loan", "إعارة"], ["swap", "تبادل"], ["fee", "بمقابل"], ["youth", "فئات سنية"]];
   function stagesForEdit(name, club) {
     const ed = editOf(name, club);
     if (ed && Array.isArray(ed.st)) return ed.st.map(x => Object.assign({}, x));
     return build(rowsOf(name, club) || [], null).map(x => { const c = clubOf(x.club);
-      return { f: x.from, t: x.to, c: c.n, cc: c.cc || (c.kw ? "kw" : ""), k: x.loan ? "loan" : (x.how && x.how !== "loan" ? x.how : "") }; });
+      return { f: x.from, t: x.to, c: c.n, cc: c.cc || (c.kw ? "kw" : ""), k: x.loan ? "loan" : x.youth ? "youth" : (x.how && x.how !== "loan" ? x.how : "") }; });
   }
   function edRowHTML(x) {
     const cn = DB().cn, codes = Object.keys(cn).filter(Boolean).sort((a, b) => (a === "kw" ? -1 : b === "kw" ? 1 : String(cn[a]).localeCompare(cn[b], "ar")));
@@ -199,6 +202,7 @@
     const sum = S ? `<div class="cr-sum">
         <div><b>${S.clubs}</b><small>${S.clubs === 1 ? "نادٍ" : S.clubs === 2 ? "ناديان" : "أندية"}</small></div>
         <div><b>${S.seasons}</b><small>${S.seasons === 1 ? "موسم" : S.seasons === 2 ? "موسمان" : S.seasons <= 10 ? "مواسم" : "موسماً"} · منذ ${S.since}</small></div>
+        ${S.youthSince ? `<div><b>${S.youthSince}</b><small>الفئات السنية</small></div>` : ""}
         ${S.loans ? `<div><b>${S.loans}</b><small>${S.loans === 1 ? "إعارة" : S.loans === 2 ? "إعارتان" : "إعارات"}</small></div>` : ""}
         ${S.abroad ? `<div><b>${S.abroad}</b><small>${S.abroad === 1 ? "نادٍ خارجي" : "أندية خارجية"}</small></div>` : ""}
       </div>` : "";
