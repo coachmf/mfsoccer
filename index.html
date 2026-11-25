@@ -2338,7 +2338,7 @@ html[dir="ltr"] .tl-ev.a .tl-card{text-align:right;align-items:flex-end}
 <script src="tstats-data.js?v=1" defer></script>
 <script src="analysis.js?v=34" defer></script>
 <!-- هوية MF SOCCER الذهبية + هيكل التطبيق (منصور 2026-10-05) -->
-<link rel="stylesheet" href="mf-brand.css?v=23">
+<link rel="stylesheet" href="mf-brand.css?v=24">
 <link rel="stylesheet" href="notif-prefs.css?v=1">
 <script>document.documentElement.classList.add("mf")</script>
 <script src="mf-shell.js?v=50" defer></script>
@@ -15520,7 +15520,7 @@ function mpTeamXI(m, club){
     return `<div class="mpx-p" data-player="${esc(p.n)}" data-club="${esc(club)}" style="right:${x.toFixed(2)}%;top:${((TOP+row*ROW)/H*100).toFixed(2)}%;width:${w.toFixed(2)}%">
       <span class="pp-card mpx-card${cut?"":" nophoto jer"}" style="${dotVars(kk)}">
         ${cut?`<img class="pp-img mpx-stand mpx-face" src="${cut}_f.webp?v=39" alt="" loading="lazy" draggable="false">`:`<span class="pp-jer">${jerseySVG(club, p.s, String(p.p||"").toUpperCase()==="GK")}</span>`}
-        ${spotBadges(playerMatchEvents(m, club, p.n))}${natFlag(p.n, club)}
+        ${spotBadges(playerMatchEvents(m, club, p.n))}${natFlag(p.n, club)}${p.s?`<span class="mpx-no" dir="ltr">${p.s}</span>`:""}
         ${v!=null?`<span class="rtg mpx-r ${ratingCls(v)}${pre!=null?" pre":""}"${pre!=null?' title="متوسط تقييمه هذا الموسم"':""}>${v.toFixed(1)}</span>`:`<span class="rtg mpx-r none" aria-hidden="true"></span>`}
       </span>
       <span class="mpx-nm">${p.s?`<em>${p.s}</em>`:""}${esc(p.n)}${gkTag(p.p||p.role||(p.line==="G"?"GK":""))}</span>
@@ -15557,7 +15557,7 @@ function mpBothXI(m){
       return `<div class="mpx-p" data-player="${esc(p.n)}" data-club="${esc(club)}" style="right:${x.toFixed(2)}%;top:${(topOf(li, sp)/H*100).toFixed(2)}%;width:${w.toFixed(2)}%">
       <span class="pp-card mpx-card${cut?"":" nophoto jer"}" style="${dotVars(kk)}">
         ${cut?`<img class="pp-img mpx-stand mpx-face" src="${cut}_f.webp?v=39" alt="" loading="lazy" draggable="false">`:`<span class="pp-jer">${jerseySVG(club, p.s, String(p.p||"").toUpperCase()==="GK")}</span>`}
-        ${spotBadges(playerMatchEvents(m, club, p.n))}${natFlag(p.n, club)}
+        ${spotBadges(playerMatchEvents(m, club, p.n))}${natFlag(p.n, club)}${p.s?`<span class="mpx-no" dir="ltr">${p.s}</span>`:""}
         ${v!=null?`<span class="rtg mpx-r ${ratingCls(v)}${pre!=null?" pre":""}"${pre!=null?' title="متوسط تقييمه هذا الموسم"':""}>${v.toFixed(1)}</span>`:`<span class="rtg mpx-r none" aria-hidden="true"></span>`}
       </span>
       <span class="mpx-nm">${p.s?`<em>${p.s}</em>`:""}${esc(p.n)}${gkTag(p.p||p.role||(p.line==="G"?"GK":""))}</span>

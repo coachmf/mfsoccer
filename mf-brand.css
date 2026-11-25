@@ -1572,3 +1572,22 @@ html.mf .rf-f span{font-size:.74rem;font-weight:700;color:var(--mf-tx3)}
 /* أداء 2026-11-14: مكان الشريط العلوي (.mf-top) محجوز قبل أن يبنيه mf-shell.js المؤجّل —
    كان دخوله بعد أول رسم يدفع الصفحة كلها 57px للأسفل (أكبر مصدر لـ CLS). الارتفاع نفسه: --mf-top-h + منطقة الأمان + الحد السفلي */
 @media screen{ html.mf body:not(:has(> .mf-top)){padding-top:calc(var(--mf-top-h) + env(safe-area-inset-top) + 1px)} }   /* padding لا margin: هامش main كان ينهار مع body فيتحرك body نفسه */
+/* ===== تشكيلة صفحة المباراة بشكل الستوري (منصور 2026-11-25 «ابي التشكيلة هذي نفس الستوري بالضبط بالشكل الذهبي») =====
+   ملعب أسود بخطوط ذهبية، دائرة اللاعب سوداء داخل حلقة ذهبية، الرقم شارة سوداء/ذهبية أسفل اليسار، التقييم أعلى اليمين — مثل css/c_lineups.css في الستوري. */
+html.mf .mpx .mpx-pitch{--pitch-line:rgba(231,208,147,.42);
+  background:repeating-linear-gradient(180deg,rgba(231,208,147,.035) 0 9%,transparent 9% 18%),radial-gradient(120% 70% at 50% 50%,#17140d 0%,#0b0a07 60%,#050504 100%);
+  border:1.5px solid rgba(231,208,147,.62);box-shadow:0 12px 30px rgba(0,0,0,.45),inset 0 0 60px rgba(0,0,0,.5)}
+html.mf .mpx .mpx-card.pp-card:not(.jer){border-radius:50%;padding:2.5px;border:0;overflow:visible;
+  background:linear-gradient(160deg,#FFF1C4,#E7D093 45%,#8B6C3C)!important;box-shadow:0 6px 14px rgba(0,0,0,.55)}
+html.mf .mpx .mpx-card.pp-card:not(.jer) .pp-img.mpx-face{position:absolute;inset:2.5px;width:calc(100% - 5px);height:calc(100% - 5px);border-radius:50%;
+  object-fit:cover;object-position:50% 15%;background:radial-gradient(70% 70% at 50% 30%,#2a2418,#0b0a07)}
+html.mf .mpx .mpx-no{position:absolute;left:-7px;bottom:-5px;z-index:3;min-width:clamp(15px,4.6cqw,20px);height:clamp(15px,4.6cqw,20px);padding:0 3px;box-sizing:border-box;
+  border-radius:999px;display:grid;place-items:center;font:800 clamp(8.5px,2.7cqw,11px)/1 "Barlow Condensed","Vazirmatn",sans-serif;
+  color:#F5E2A8;background:#0b0a07;border:1.5px solid #E7D093;box-shadow:0 2px 5px rgba(0,0,0,.5)}
+html.mf .mpx .mpx-card.jer .mpx-no{display:none}
+html.mf .mpx .mpx-card .rtg.mpx-r{left:auto;right:-11px;top:-5px;bottom:auto;transform:none;border:1.5px solid #0b0a07;z-index:3}
+html.mf .mpx .mpx-card .pp-b.assist{top:-7px;left:-7px;right:auto}
+html.mf .mpx .mpx-card .pp-b.goal + .pp-b.assist{top:12px;left:-10px}
+html.mf .mpx .mpx-card .pp-b.assist.n{left:auto;right:calc(100% - 8px);top:12px}
+html.mf .mpx .mpx-nm{color:#fff;text-shadow:0 1px 4px rgba(0,0,0,.8)}
+html.mf .mpx .mpx-nm em{display:none}
