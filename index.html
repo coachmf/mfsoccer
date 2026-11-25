@@ -14361,7 +14361,9 @@ function hmTodayHTML(){
     .filter(e=>!(window.EXT && EXT.compName && EXT.compName(extCompOf(e))))   /* الوديات صارت مباريات قابلة للتحرير (ext.js) — تظهر من هناك مرة واحدة */
     .sort((a,b)=>String(a.time||"").localeCompare(String(b.time||""))) : [];
   const ams=COMP==="الكل" ? amItems(m=>m.date===todayISO()).sort((a,b)=>a.ts-b.ts) : [];   /* دوري الهواة (منصور 2026-11-05) */
-  if(!list.length && !d1 && !xs.length && !nts.length && !ams.length) return "";
+  /* كأس الأمير 2025/2026 (PREV_COMPS) خارج «إجمالي البطولات» لكن مبارياته تُلعب هذا الموسم — تظهر في «مباريات اليوم» تحت عنوانها (منصور 2026-11-25 «ليش مباراة القادسية مو طالعة هني») */
+  const pvs=COMP==="الكل" && ALL && ALL.matches ? ALL.matches.filter(m=>m.date===todayISO() && PREV_COMPS.includes(compOf(m))).sort((a,b)=>(kickoffTS(a)||0)-(kickoffTS(b)||0)) : [];
+  if(!list.length && !pvs.length && !d1 && !xs.length && !nts.length && !ams.length) return "";
   const HM_CTA=list.length ? hmCTA(list) : "";
   const row=m=>{
     const live=LIVE_PHASES.includes(m.status) && !staleLive(m), over=!live && matchOver(m), sc=`<b class="hm-td-sc" dir="ltr">${scp(+m.hg,+m.ag)}</b>`;
@@ -14375,7 +14377,7 @@ function hmTodayHTML(){
   };
   return `<section class="hm-nm hm-today">
     <div class="hm-nm-hd"><span class="hm-tag"><i></i>مباريات اليوم</span><span class="hm-muted">${list.length ? `${dayLabel(list[0].date)} · ${esc(rndLabel(list[0]))}` : dayLabel(todayISO())}</span></div>
-    <div class="hm-td-list">${list.map(row).join("")}${xs.length ? [...new Set(xs.map(m=>m.comp))].map(c=>`<div class="hm-td-sub">${esc(c)}</div>${EXT.withExt(()=>xs.filter(m=>m.comp===c).map(row).join(""), c)}`).join("") : ""}${d1 ? `<div class="hm-td-sub">دوري الدرجة الأولى</div>${d1}` : ""}${hmAmRows(ams)}${hmNtRows(nts)}</div>
+    <div class="hm-td-list">${list.map(row).join("")}${pvs.length ? [...new Set(pvs.map(compOf))].map(c=>`<div class="hm-td-sub">${esc(c)}</div>${withComp(c, ()=>pvs.filter(m=>compOf(m)===c).map(row).join(""))}`).join("") : ""}${xs.length ? [...new Set(xs.map(m=>m.comp))].map(c=>`<div class="hm-td-sub">${esc(c)}</div>${EXT.withExt(()=>xs.filter(m=>m.comp===c).map(row).join(""), c)}`).join("") : ""}${d1 ? `<div class="hm-td-sub">دوري الدرجة الأولى</div>${d1}` : ""}${hmAmRows(ams)}${hmNtRows(nts)}</div>
     ${HM_CTA}
   </section>`;
 }
