@@ -2643,6 +2643,13 @@ html[data-theme="light"] .an .an-tabs{background:rgba(13,79,146,.06);border-colo
 .rf-empty{text-align:center;color:var(--an-mut);font-size:.86rem;padding:26px 16px}
 .rf-note{margin:-2px 0 10px}
 .rf-filters{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:0 0 14px}
+.rf-filters.rf-f4{grid-template-columns:repeat(4,minmax(0,1fr))}
+.rf-roles{display:flex;flex-wrap:wrap;gap:6px;margin:-4px 0 14px}
+.rf-role{display:inline-flex;align-items:center;gap:5px;font-style:normal;font-size:.72rem;font-weight:700;line-height:1;padding:5px 9px;border-radius:999px;white-space:nowrap;
+  color:var(--an-txt);background:var(--an-track);border:1px solid var(--an-line)}
+.rf-role b{font-variant-numeric:tabular-nums}
+.rf-role.ref{color:#1a1405;background:linear-gradient(160deg,#F5E2A8,#C9A45C);border-color:transparent}
+.rf-mc .rf-role{margin-inline-end:8px;font-size:.68rem;padding:4px 8px}
 .rf-f{display:flex;flex-direction:column;gap:4px;min-width:0}
 .rf-f span{font-size:.7rem;color:var(--an-mut);font-weight:600}
 .rf-f select{width:100%;min-width:0;appearance:none;-webkit-appearance:none;font:inherit;font-size:.84rem;font-weight:600;color:var(--an-txt);
@@ -2732,6 +2739,7 @@ html[data-theme="light"] .rf-kpis .y b{color:#B98A00}
 .rf-efx small{display:block;font-size:.66rem}
 @media (max-width:560px){ .rf-erow .rf-eb{grid-column:2;flex-direction:row;justify-content:center;gap:8px} }
 @media(max-width:560px){
+  .rf-filters.rf-f4{grid-template-columns:repeat(2,minmax(0,1fr))}
   .rf-filters{gap:6px}.rf-f select{font-size:.78rem;padding:8px 10px 8px 24px;background-position:left 8px center}
   .rf-kpis{grid-template-columns:repeat(6,minmax(0,1fr))}
   .rf-kpis>div{grid-column:span 2}
@@ -9675,10 +9683,28 @@ function renderAnalysis(){
    - المباريات = المُقامة فقط (playedMatches) ضمن المسابقة المختارة (COMP) والجولة المختارة.
    - البطاقات = CARDS لفريقي المباراة في جولتها ومسابقتها؛ الحمراء = طرد مباشر أو إنذار ثانٍ (isRed) كبقية الموقع، والباقي صفراء.
    - ركلات الجزاء = سجلات PENS للمباراة (المحتسبة، سُجّلت أو أُهدرت). */
-let RFA = {round:"", ref:"", sort:"m", dir:-1, dt:"stats"};
-const rfRefOf = m => { const n=String(crewOf(m).ref||"").trim(); return n==="لا يوجد" ? "" : n; };
-const rfCards = m => CARDS.filter(x=>+x.r===+m.round && compOf(x)===compOf(m) && (x.club===m.home||x.club===m.away));
-const rfPens  = m => PENS.filter(x=>+x.r===+m.round && compOf(x)===compOf(m) &&
+/* منصور 2026-11-25 «لازم نحدد البطولة نفسها أو جميع البطولات، وكل مباراة يبين شنو دوره»:
+   فلتر بطولة خاص بالحكام (RFA.comp: "" = جميع بطولات الموسم المحلية بما فيها كأس الأمير 2025/2026 المُقام هذا الموسم)،
+   يقرأ ALL مباشرة (لا يتأثر بـ COMP)، والجولة مفتاحها «البطولة|الجولة» حتى لا تختلط جولات البطولات.
+   صفحة الحكم تشمل كل المباريات التي كان فيها ضمن الطاقم بأي دور، مع الدور في كل مباراة؛ أرقام البطاقات للحكم كحكم ساحة. */
+let RFA = {comp:"", round:"", ref:"", sort:"m", dir:-1, dt:"stats"};
+const RF_ROLE = {ref:"حكم الساحة", ar1:"المساعد الأول", ar2:"المساعد الثاني", fourth:"الحكم الرابع", var:"حكم الفيديو", avar:"مساعد الفيديو"};
+const RF_CTAG = {"كأس الأمير":"أمير","كأس الأمير 2025/2026":"أمير","كأس سمو ولي العهد":"و.ع","كأس السوبر":"سوبر"};   /* وسم قصير لعمود الرسم */
+const RF_CSHORT = {"كأس الأمير":"كأس الأمير","كأس الأمير 2025/2026":"كأس الأمير 25/26","كأس سمو ولي العهد":"ولي العهد","كأس السوبر":"السوبر"};
+const rfNm = v => { const n=String(v||"").trim(); return n==="لا يوجد" ? "" : n; };
+const rfRefOf = m => rfNm(crewOf(m).ref);
+/* أدوار شخص في مباراة: ["ref","ar1",…] */
+const rfRolesOf = (m, name) => { const c=crewOf(m), out=[]; if(rfNm(c.ref)===name) out.push("ref");
+  Object.keys(RF_ROLE).forEach(k=>{ if(k!=="ref" && rfNm((c.refs||{})[k])===name) out.push(k); }); return out; };
+const rfCrewNames = m => { const c=crewOf(m); return [c.ref, ...Object.values(c.refs||{})].map(rfNm).filter(Boolean); };
+const rfAllM  = () => ((ALL && ALL.matches) || MATCHES).filter(m=>!isUpcoming(m));
+const rfComps = () => { const set=new Set(rfAllM().map(compOf)); return COMPS.filter(c=>set.has(c)); };
+const rfRKey  = m => `${compOf(m)}|${m.round}`;
+const rfRLbl  = (m, withComp) => { const c=compOf(m), st=String(m.stage||"").trim(), r=st || `الجولة ${m.round}`;
+  return withComp && c!=="الدوري" ? `${RF_CSHORT[c]||c} · ${r}` : r; };
+const rfScopeLbl = () => RFA.comp ? RFA.comp : "جميع البطولات";
+const rfCards = m => ((ALL && ALL.cards) || CARDS).filter(x=>+x.r===+m.round && compOf(x)===compOf(m) && (x.club===m.home||x.club===m.away));
+const rfPens  = m => ((ALL && ALL.pens) || PENS).filter(penInStats).filter(x=>+x.r===+m.round && compOf(x)===compOf(m) &&
   ((x.by===m.home&&x.vs===m.away)||(x.by===m.away&&x.vs===m.home)));
 /* اللعب الفعلي (منصور 2026-11-21 «ابي تحط اللعب الفعلي حق كل الحكام — المباراة الي حكمها تروح له ضمن الاحصائيات»):
    من فهرس ساعة التطبيق seasons/effidx (EFF.idx) بمفتاح المباراة نفسه؛ المباريات المرصودة المنتهية فقط (لا live). */
@@ -9690,10 +9716,10 @@ const rfMS = sec => { const t=Math.round(sec); return `${String(Math.floor(t/60)
 const rfEffT = v => v>0 ? `<bdi dir="ltr">${rfMS(v)}</bdi>` : `<span class="rf-na">—</span>`;
 let RF_IDX_HOOK=false;
 function rfRows(round){
-  return playedMatches().filter(m=>round===""||String(m.round)===String(round)).map(m=>{
+  return rfAllM().filter(m=>(!RFA.comp||compOf(m)===RFA.comp) && (round===""||rfRKey(m)===String(round))).map(m=>{
     const cs=rfCards(m), ps=rfPens(m), ef=rfEffOf(m);
     return {m, ref:rfRefOf(m), cs, ps, y:cs.filter(x=>!isRed(x.type)).length, r:cs.filter(x=>isRed(x.type)).length, p:ps.length, ef};
-  }).sort((a,b)=>(+a.m.round)-(+b.m.round) || String(a.m.date||"").localeCompare(String(b.m.date||"")));
+  }).sort((a,b)=>String(a.m.date||"").localeCompare(String(b.m.date||"")) || (+a.m.round)-(+b.m.round));
 }
 function rfAgg(rows){
   const o={};
@@ -9714,11 +9740,14 @@ function rfSorted(L){
   });
 }
 function rfFiltersHTML(refs){
-  const rounds=[...new Set(playedMatches().map(m=>m.round))].sort((a,b)=>a-b);
+  const seen=new Set(), rounds=[];
+  rfAllM().filter(m=>!RFA.comp||compOf(m)===RFA.comp).sort((a,b)=>String(a.date||"").localeCompare(String(b.date||""))||(+a.round)-(+b.round))
+    .forEach(m=>{ const k=rfRKey(m); if(!seen.has(k)){ seen.add(k); rounds.push([k, rfRLbl(m, !RFA.comp)]); } });
   const opt=(v,t,sel)=>`<option value="${esc(String(v))}"${sel?" selected":""}>${esc(t)}</option>`;
-  return `<div class="rf-filters">
+  return `<div class="rf-filters rf-f4">
     <label class="rf-f"><span>الموسم</span><select data-rf-f="season">${opt(SEASON,SEASON,true)}</select></label>
-    <label class="rf-f"><span>الجولة</span><select data-rf-f="round">${opt("","كل الجولات",RFA.round==="")}${rounds.map(r=>opt(r,`الجولة ${r}`,String(r)===RFA.round)).join("")}</select></label>
+    <label class="rf-f"><span>البطولة</span><select data-rf-f="comp">${opt("","جميع البطولات",RFA.comp==="")}${rfComps().map(c=>opt(c,c,c===RFA.comp)).join("")}</select></label>
+    <label class="rf-f"><span>الجولة</span><select data-rf-f="round">${opt("","كل الجولات",RFA.round==="")}${rounds.map(([k,t])=>opt(k,t,k===RFA.round)).join("")}</select></label>
     <label class="rf-f"><span>الحكم</span><select data-rf-f="ref">${opt("","كل الحكام",RFA.ref==="")}${refs.map(n=>opt(n,n,n===RFA.ref)).join("")}</select></label>
   </div>`;
 }
@@ -9727,25 +9756,27 @@ function rfKpis(items){
 }
 /* البطاقات حسب الجولة: عمود لكل جولة (أصفر فوق أحمر) */
 function rfRoundChart(rows){
-  const by={}; rows.forEach(x=>{ const e=by[x.m.round] ||= {r:x.m.round, y:0, red:0}; e.y+=x.y; e.red+=x.r; });
-  const L=Object.values(by).sort((a,b)=>a.r-b.r); if(!L.length) return "";
+  const by={}; rows.forEach(x=>{ const m=x.m, c=compOf(m), e=by[rfRKey(m)] ||= {r:m.round, d:String(m.date||""), lb:c==="الدوري"?`ج${m.round}`:`${RF_CTAG[c]||"ك"} ${m.round}`, y:0, red:0};
+    if(String(m.date||"")<e.d) e.d=String(m.date||""); e.y+=x.y; e.red+=x.r; });
+  const L=Object.values(by).sort((a,b)=>a.d.localeCompare(b.d)||a.r-b.r); if(!L.length) return "";
   const max=Math.max(1,...L.map(e=>e.y+e.red));
   return `<div class="an-card rf-chart-card"><div class="rf-chart">${L.map(e=>`<div class="rf-col">
       <span class="v">${e.y+e.red}</span>
       <div class="rf-area"><div class="rf-stack" style="height:${Math.round((e.y+e.red)/max*100)}%">${e.red?`<i class="r" style="flex:${e.red}"></i>`:""}${e.y?`<i class="y" style="flex:${e.y}"></i>`:""}</div></div>
-      <span class="p">ج${e.r}</span></div>`).join("")}</div>
+      <span class="p">${esc(e.lb)}</span></div>`).join("")}</div>
     <div class="rf-legend"><span>${rfCardL("y")}</span><span>${rfCardL("r")}</span></div></div>`;
 }
 function anRefsHTML(){
+  if(RFA.comp && !rfComps().includes(RFA.comp)) RFA.comp="";
   const scope=rfRows("");
-  const refsAll=[...new Set(scope.map(x=>x.ref).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"ar"));
-  if(RFA.round && !scope.some(x=>String(x.m.round)===RFA.round)) RFA.round="";
+  const refsAll=[...new Set(scope.flatMap(x=>rfCrewNames(x.m)))].sort((a,b)=>a.localeCompare(b,"ar"));
+  if(RFA.round && !scope.some(x=>rfRKey(x.m)===RFA.round)) RFA.round="";
   if(RFA.ref && !refsAll.includes(RFA.ref)) RFA.ref="";
   const rows=rfRows(RFA.round);
   const head=`<h2 class="sec">تحليل الحكام</h2>
-    <p class="hint">حكم الساحة في كل مباراة مُقامة، وما سُجّل في مبارياته من بطاقات وركلات جزاء — ${esc(compLabel(COMP))}. الإنذار الثاني يُحتسب بطاقة حمراء.</p>
+    <p class="hint">حكم الساحة في كل مباراة مُقامة، وما سُجّل في مبارياته من بطاقات وركلات جزاء — ${esc(rfScopeLbl())}. الإنذار الثاني يُحتسب بطاقة حمراء.</p>
     ${rfFiltersHTML(refsAll)}`;
-  if(!scope.length) return head+`<div class="an-card rf-empty">لا توجد مباريات مُقامة في ${esc(compLabel(COMP))} بعد.</div>`;
+  if(!scope.length) return head+`<div class="an-card rf-empty">لا توجد مباريات مُقامة في ${esc(rfScopeLbl())} بعد.</div>`;
   return head + (RFA.ref ? rfDetailHTML(RFA.ref, rows) : rfOverviewHTML(rows));
 }
 function rfOverviewHTML(rows){
@@ -9768,11 +9799,26 @@ function rfOverviewHTML(rows){
 }
 function rfDetailHTML(name, rows){
   const mine=rows.filter(x=>x.ref===name), e=rfAgg(mine)[0];
+  const crew=rows.map(x=>({...x, roles:rfRolesOf(x.m, name)})).filter(x=>x.roles.length);
+  const rc={}; crew.forEach(x=>x.roles.forEach(k=>rc[k]=(rc[k]||0)+1));
+  const rx=RFA.round ? rows.find(x=>rfRKey(x.m)===RFA.round) : null, rlab=rx ? ` · ${rfRLbl(rx.m, !RFA.comp)}` : "";
   const top=`<div class="an-card rf-hero">
       <button type="button" class="rf-back" data-rf-back>كل الحكام</button>
-      <div class="rf-id">${refFace(name,"lg")}<div><b>${esc(name)}</b><small>حكم ساحة · ${esc(compLabel(COMP))}${RFA.round?` · الجولة ${esc(RFA.round)}`:""}</small></div></div>
+      <div class="rf-id">${refFace(name,"lg")}<div><b>${esc(name)}</b><small>${esc(rfScopeLbl())}${esc(rlab)}</small></div></div>
     </div>`;
-  if(!e) return `<div class="rf-body">${top}<div class="an-card rf-empty">لم يُدِر ${esc(name)} أي مباراة مُقامة ضمن هذا الاختيار.</div></div>`;
+  if(!crew.length) return `<div class="rf-body">${top}<div class="an-card rf-empty">لم يكن ${esc(name)} ضمن طاقم أي مباراة مُقامة ضمن هذا الاختيار.</div></div>`;
+  const roleChips=`<div class="rf-roles">${Object.keys(RF_ROLE).filter(k=>rc[k]).map(k=>`<span class="rf-role ${k}">${RF_ROLE[k]} <b>${rc[k]}</b></span>`).join("")}</div>`;
+  const logHTML=`<h2 class="sec">سجل المباريات</h2>
+    <p class="hint">كل مباراة كان فيها ضمن الطاقم ودوره فيها؛ البطاقات والجزاء = ما سُجّل في المباراة.</p>
+    <div class="an-card rf-log">${crew.map(x=>{ const m=x.m, c=compOf(m);
+      return `<button type="button" class="rf-mrow" data-mopen="${esc(matchKey(m))}">
+        <span class="rf-mr">${c==="الدوري"?`ج${esc(String(m.round))}`:esc(RF_CSHORT[c]||c)}${m.date?`<small>${esc(mpDateLabel(m))}</small>`:""}</span>
+        <span class="rf-mt"><span class="h">${esc(m.home)}</span>${crest(m.home)}<b class="sc" dir="ltr">${scp(+m.hg,+m.ag)}</b>${crest(m.away)}<span class="a">${esc(m.away)}</span></span>
+        <span class="rf-mc">${x.roles.map(k=>`<em class="rf-role ${k}">${RF_ROLE[k]}</em>`).join("")}${rfCard("y")}<b>${x.y}</b>${rfCard("r")}<b>${x.r}</b><em>جزاء <b>${x.p}</b></em></span>
+      </button>`; }).join("")}</div>`;
+  if(!e) return `<div class="rf-body">${top}
+    ${rfKpis([[crew.length,"مباريات ضمن الطاقم","lead"],[0,"كحكم ساحة"]])}
+    ${roleChips}${logHTML}</div>`;
   /* الفرق التي أدار مبارياتها: من زاوية كل فريق */
   const teams={};
   mine.forEach(x=>{ const m=x.m; [m.home,m.away].forEach(c=>{
@@ -9784,14 +9830,9 @@ function rfDetailHTML(name, rows){
   return `<div class="rf-body">${top}
     ${rfDetTabs()}
     ${RFA.dt==="eff" ? rfEffTabHTML(mine, e) : `
-    ${rfKpis([[e.m,"المباريات"],[e.y,"البطاقات الصفراء","y"],[e.r,"البطاقات الحمراء","r"],[e.p,"ركلات الجزاء"],[rfAvg(e.avg),"متوسط البطاقات لكل مباراة","lead"]])}
-    <h2 class="sec">سجل المباريات</h2>
-    <div class="an-card rf-log">${mine.map(x=>{ const m=x.m;
-      return `<button type="button" class="rf-mrow" data-mopen="${esc(matchKey(m))}">
-        <span class="rf-mr">ج${esc(String(m.round))}${m.date?`<small>${esc(mpDateLabel(m))}</small>`:""}</span>
-        <span class="rf-mt"><span class="h">${esc(m.home)}</span>${crest(m.home)}<b class="sc" dir="ltr">${scp(+m.hg,+m.ag)}</b>${crest(m.away)}<span class="a">${esc(m.away)}</span></span>
-        <span class="rf-mc">${rfCard("y")}<b>${x.y}</b>${rfCard("r")}<b>${x.r}</b><em>جزاء <b>${x.p}</b></em></span>
-      </button>`; }).join("")}</div>
+    ${rfKpis([[e.m,"المباريات كحكم ساحة"],[e.y,"البطاقات الصفراء","y"],[e.r,"البطاقات الحمراء","r"],[e.p,"ركلات الجزاء"],[rfAvg(e.avg),"متوسط البطاقات لكل مباراة","lead"]])}
+    ${crew.length>e.m?roleChips:""}
+    ${logHTML}
     <h2 class="sec">الفرق التي أدار مبارياتها</h2>
     <div class="an-card rf-tcard${typeof tblClip==="function"?tblClip("refT"):""}"><div class="rf-tw"><table class="rf-tbl"><thead><tr>
       <th class="tl"><span>الفريق</span></th>${["المباريات","فوز","تعادل","خسارة"].map(t=>`<th><span>${typeof axLbl==="function"?axLbl(t):t}</span></th>`).join("")}<th><span>${rfCardL("y")}</span></th><th><span>${rfCardL("r")}</span></th><th><span>${typeof axLbl==="function"?axLbl("ركلات جزاء له"):"ركلات جزاء له"}</span></th>
@@ -9840,6 +9881,7 @@ document.addEventListener("click", e=>{
 });
 document.addEventListener("change", e=>{
   const f=e.target.closest("#anRefs [data-rf-f]"); if(!f) return;
+  if(f.dataset.rfF==="comp"){ RFA.comp=f.value; RFA.round=""; }
   if(f.dataset.rfF==="round") RFA.round=f.value;
   if(f.dataset.rfF==="ref") RFA.ref=f.value;
   paintAnRefs();
