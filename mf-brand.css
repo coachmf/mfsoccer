@@ -1591,3 +1591,9 @@ html.mf .mpx .mpx-card .pp-b.goal + .pp-b.assist{top:12px;left:-10px}
 html.mf .mpx .mpx-card .pp-b.assist.n{left:auto;right:calc(100% - 8px);top:12px}
 html.mf .mpx .mpx-nm{color:#fff;text-shadow:0 1px 4px rgba(0,0,0,.8)}
 html.mf .mpx .mpx-nm em{display:none}
+/* ===== خلفية التطبيق (منصور 2026-11-25): سقف ملعب بإضاءة ذهبية أعلى الشاشة (Gemini)، وتحته نقشة معيّنات رفيعة بنفس ذهبي/كحلي الملعب تبدأ خافتة تحته فتندمج معه — صورة ثابتة، الوضع الداكن فقط ===== */
+@media screen{
+  html.mf[data-theme="dark"] body{background:transparent}
+  html.mf[data-theme="dark"]::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
+    background:url(assets/brand/bg-stadium-diamond.webp) center top/cover no-repeat,var(--mf-bg)}
+}
