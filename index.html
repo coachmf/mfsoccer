@@ -12,7 +12,12 @@
   var ua=navigator.userAgent||"", app=/PWAShell/.test(ua) || /app-platform=/.test(document.cookie||"") || /^android-app:/.test(document.referrer||"")
     || matchMedia("(display-mode: standalone)").matches || navigator.standalone===true || sessionStorage.getItem(K)==="1";
   if(app) document.documentElement.classList.add("mfa"); }catch(e){} })();
+/* منصور 2026-11-25 «اللوقو يصير معوّق»: شاشة الإطلاق في تطبيق iOS صورة شعار بمربع أسود تبقى حتى يكتمل تحميل الصفحة،
+   وخلفها تتحوّل الصفحة للكحلي فيظهر المربع. داخل التطبيق: خلفية سوداء حتى حدث load ثم الكحلي المعتاد. */
+(function(){ var h=document.documentElement; if(!h.classList.contains("mfa")) return; h.classList.add("mfa-boot");
+  addEventListener("load", function(){ setTimeout(function(){ h.classList.remove("mfa-boot"); }, 300); }); })();
 </script>
+<style>html.mfa-boot,html.mfa-boot body{background:#000!important}html.mfa-boot::before{opacity:0!important}</style>
 <script>
 /* الرابط القديم mfsoccer.netlify.app ← mfsoccer.com (منصور 2026-10-19): نسخة كل رابط منفصلة في الجوال فبقي محرّر على نسخة قديمة.
    في متصفح عادي فقط — تطبيق الآيفون (PWAShell / app-platform) وتطبيق أندرويد والتطبيق المثبّت (standalone) لا يتحوّلون حتى لا تضيع جلستهم. */
