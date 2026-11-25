@@ -3625,7 +3625,10 @@ function isLive(m){
 const playedMatches = () => MATCHES.filter(m=>!isUpcoming(m));
 /* أداء 2026-11-14: ذاكرة المهمة الحالية (PASS_MEMO) — كانت تمرّ على كل الأهداف آلاف المرات في رسم صفحة اللاعبين.
    COMP في المفتاح لأن withComp يبدّل GOALS داخل المهمة نفسها؛ ext/gulf يمسحان الذاكرة عند تبديل السياق. */
-const matchGoals = m => PASS_MEMO.get("g|"+COMP+"|"+m.round+"|"+compOf(m)+"|"+m.home+"|"+m.away, ()=>GOALS.filter(g=>g.r===m.round && compOf(g)===compOf(m) &&
+/* مباراة من بطولة سابقة (PREV_COMPS مثل «كأس الأمير 2025/2026») تُستبعد من GOALS/CARDS في «إجمالي البطولات»،
+   فكانت صفحتها بلا أهداف ولا بطاقات رغم حفظها (القادسية × الفحيحيل 25/11). أحداث المباراة نفسها تُقرأ من ALL دائماً. */
+const ownSrc = (m, arr, key) => (ALL && ALL.matches && ALL.matches.includes(m)) ? (ALL[key]||[]) : arr;
+const matchGoals = m => PASS_MEMO.get("g|"+COMP+"|"+m.round+"|"+compOf(m)+"|"+m.home+"|"+m.away, ()=>ownSrc(m,GOALS,"goals").filter(g=>g.r===m.round && compOf(g)===compOf(m) &&
   ((g.sc===m.home&&g.cd===m.away)||(g.sc===m.away&&g.cd===m.home))).sort((a,b)=>abs(a)-abs(b)));
 
 /* ================= الحسابات ================= */
@@ -8365,9 +8368,10 @@ function goalsTimeline(m,gs,mc){
         rows.push(`<div class="tl-row pk${isH?" home":" away"}"><div class="tl-side r">${isH?mb:""}</div><div class="tl-min card"><span>${e.m}'</span></div><div class="tl-side l">${isH?"":mb}</div></div>`);
         return;
       }
+      /* صف «احتساب ركلة جزاء» باسم الفريق فقط؛ المنفّذ يظهر مرة واحدة في صف الهدف «هدف» أو صف الضائعة (منصور 2026-11-25) */
       const pbody=`<div class="tl-ev pk${isH?" h":" a"}">
         <div class="tl-card">
-          <div class="tl-name"${p.p?` data-player="${esc(p.p)}" data-club="${esc(p.by)}"`:""}><i class="pkdot${ok?" ok":(pend||voided)?"":" no"}">${PK_ICO}</i>${esc(p.p||p.by)}</div>
+          <div class="tl-name"><i class="pkdot${ok?" ok":(pend||voided)?"":" no"}">${PK_ICO}</i>${esc(p.by)}</div>
           <div class="tl-sub">احتساب ركلة جزاء</div>
         </div></div>`;
       rows.push(`<div class="tl-row pk${isH?" home":" away"}">
@@ -8478,7 +8482,7 @@ function renderMatches(){
   let lastDay=null;
   const matchCards = list.map(m=>{
     const gs=matchGoals(m);
-    const mc=CARDS.filter(x=>x.r===m.round && compOf(x)===compOf(m) && (x.club===m.home||x.club===m.away));
+    const mc=ownSrc(m,CARDS,"cards").filter(x=>x.r===m.round && compOf(x)===compOf(m) && (x.club===m.home||x.club===m.away));
     const y=mc.filter(x=>isYellow(x.type)).length, r=mc.filter(x=>isRed(x.type)).length;
     const soon=isUpcoming(m), live=!soon && !matchOver(m);
     const st = soon ? (m.date ? '<span class="mc-st soon">لم تبدأ</span>' : '<span class="mc-st soon">مؤجلة</span>') : live ? liveStHTML(m.status,m) : '<span class="mc-st done">انتهت</span>';   /* بلا تاريخ = مؤجلة (جدول الاتحاد 2026-10-02) */
@@ -8770,7 +8774,7 @@ function renderClubXI(c){
 /* التبديلات والإنذارات في تلك الجولة — تكمل التقرير */
 function clubXIExtras(m, c){
   const ss=matchSubs(m).filter(s=>s.club===c);
-  const cd=CARDS.filter(x=>x.r===m.round && compOf(x)===compOf(m) && x.club===c)
+  const cd=ownSrc(m,CARDS,"cards").filter(x=>x.r===m.round && compOf(x)===compOf(m) && x.club===c)
                 .sort((a,b)=>(+a.m||0)-(+b.m||0));
   if(!ss.length && !cd.length) return "";
   return `<div class="xi-x">
@@ -13846,7 +13850,7 @@ function playerProfileData(name, club){
       const g=gs.filter(x=>x.sc===cl && x.p===name && x.bp!=="هدف عكسي").length;
       const a=gs.filter(x=>x.sc===cl && x.a===name && !isOG(x)).length;
       const con=gs.filter(x=>x.sc!==cl && goalAbs(m,x)>=w.start && (w.end>=liveLen(m) || goalAbs(m,x)<=w.end)).length; conceded+=con;   /* ما لم يُستبدل، أهداف الوقت المحتسب عليه أيضاً */
-      const cd=CARDS.filter(x=>x.r===m.round && compOf(x)===compOf(m) && x.club===cl && x.p===name);
+      const cd=ownSrc(m,CARDS,"cards").filter(x=>x.r===m.round && compOf(x)===compOf(m) && x.club===cl && x.p===name);
       const home=m.home===cl, opp=home?m.away:m.home;
       const gf=home?+m.hg:+m.ag, ga=home?+m.ag:+m.hg;
       log.push({m,opp,home,wc:cl,mins:w.end-w.start,on:w.start,offAt:w.end,g,a,con,y:cd.some(x=>isYellow(x.type)),r:cd.some(x=>isRed(x.type)),
@@ -15015,7 +15019,7 @@ function ratingCtx(m, club, name){
   const on = g => { const t=Math.min(matchLen(m), goalAbs(m,g)); return t>=w.start && t<=w.end; };
   const mine=gs.filter(g=>g.p===name && g.sc===club && g.bp!=="هدف عكسي");
   const pens=(PENS||[]).filter(p=>p.r===m.round && compOf(p)===compOf(m) && p.p===name && p.by===club);
-  const cards=CARDS.filter(x=>x.r===m.round && compOf(x)===compOf(m) && x.club===club && x.p===name);
+  const cards=ownSrc(m,CARDS,"cards").filter(x=>x.r===m.round && compOf(x)===compOf(m) && x.club===club && x.p===name);
   const red=cards.filter(x=>isRed(x.type)).length;
   return {m, club, name, line:playerLine(club,name), mins, csLimit:csLimit(m), share:Math.min(1, mins/matchLen(m)),
     win:gf>ga, draw:gf===ga, loss:gf<ga,
@@ -15393,7 +15397,7 @@ function mpDetails(m){
   let body="";
   if(!soon){
     const gs=matchGoals(m);
-    const mc=CARDS.filter(x=>x.r===m.round && compOf(x)===compOf(m) && (x.club===m.home||x.club===m.away));
+    const mc=ownSrc(m,CARDS,"cards").filter(x=>x.r===m.round && compOf(x)===compOf(m) && (x.club===m.home||x.club===m.away));
     const tl=goalsTimeline(m,gs,mc);
     body += tl ? `<div class="mp-card"><div class="mp-hd"><h3>أحداث المباراة</h3></div>${tl}</div>`
                : `<div class="mp-card mp-empty">لم تُسجَّل أحداث لهذه المباراة.</div>`;
