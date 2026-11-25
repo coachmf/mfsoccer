@@ -1390,8 +1390,8 @@ ADMX.rma = __admRenderMatchAdmin;
           ولا يُعاد إرسال حدث أُرسل. لا يمكن سحب إشعار بعد إرساله.`
           :`احفظ المباراة أولاً، ثم يصير البثّ متاحاً.`}</p></div>
       ${isKO(m)?`<div class="mx-card"><h3>الأشواط الإضافية وركلات الترجيح<small>لمباريات خروج المغلوب</small></h3>
-        <label class="mx-et"><input type="checkbox" data-met ${hasET(m)?"checked":""}> امتدت المباراة للأشواط الإضافية (30 دقيقة)</label>
-        <p class="mx-hint">بعد التفعيل تُسجَّل أحداث الأشواط الإضافية بدقيقتها الحقيقية: 91 إلى 120 (مثلاً هدف في الدقيقة 100). وبدل ضائع الإضافي على 105 أو 120.</p>
+        ${hasET(m)?`<label class="mx-et"><input type="checkbox" data-met checked> امتدت المباراة للأشواط الإضافية (30 دقيقة) — أزل العلامة إن لم تُلعب</label>`:""}
+        <p class="mx-hint">${hasET(m)?"أحداث الأشواط الإضافية تُسجَّل بدقيقتها الحقيقية: 91 إلى 120 (مثلاً هدف في الدقيقة 100). وبدل ضائع الإضافي على 105 أو 120.":"الأشواط الإضافية تُفعَّل بالضغط على «الشوط الإضافي الأول» في مراحل المباراة. بدل الضائع وحده لا يعني أشواطاً إضافية."}</p>
         <span class="mx-lbl" style="margin-top:14px">ركلات الترجيح بالترتيب${pskOf(m).length?` — النتيجة <b dir="ltr">${psoOf(m).h} - ${psoOf(m).a}</b>`:""}</span>
         <div class="mx-psk">${pskOf(m).map((k,i)=>{ const club=k.t==="h"?m.home:m.away;
           const names=(typeof roster==="function"?roster(club):[]).map(e=>e.n);
@@ -1579,7 +1579,7 @@ ADMX.rma = __admRenderMatchAdmin;
     /* دقيقة فوق 90 لا تعني شوطاً إضافياً (منصور 2026-11-20: هدف 95' في بدل ضائع طويل أظهر «بعد الأشواط الإضافية»): الإضافي فقط إن فُعّل للمباراة */
     const et=hasET(EDIT.match); return m<=45?"1":(m<=90||!et)?"2":m<=105?"3":"4"; };
   const perChips=(k,d)=>{ const ko=isKO(EDIT.match); if(!ko && k!=="sub") return "";
-    const L=ko?PERS:PERS.slice(0,2), cur=perOf(k,d);
+    const L=ko&&hasET(EDIT.match)?PERS:PERS.slice(0,2), cur=perOf(k,d);   /* شوطا الإضافي يظهران بعد تفعيله من المراحل فقط */
     return `<div class="mx-span"><span class="mx-lbl">الشوط</span><div class="mx-chips">${L.map(([v,t])=>`<button class="mx-chip${cur===v?" on":""}" data-mper="${v}">${t}</button>`).join("")}</div></div>`; };
   const PER_MIN={"1":[1,15,30,45],"2":[46,60,75,90],"3":[91,95,100,105],"4":[106,110,115,120]};
   const minChips=(key,per)=>{ const st=EDIT.match.status; const L=per&&isKO(EDIT.match)?PER_MIN[per]:st==="h1"?[1,15,30,45]:st==="h2"?[46,60,75,90]:st==="e1"?[91,95,100,105]:st==="e2"?[106,110,115,120]:
@@ -1792,7 +1792,7 @@ ADMX.rma = __admRenderMatchAdmin;
     { const per=perOf(k,d), mm=+d.m||0;      /* «الإضافي الأول، الدقيقة 5» = 95 */
       if(per==="3" && mm>=1 && mm<=15) d.m=String(90+mm);
       if(per==="4" && mm>=1 && mm<=15) d.m=String(105+mm);
-      if(d._per && +d._per>=3 && etAllowed(EDIT.match)) EDIT.match.et=true; delete d._per; }   /* فقط باختيار صريح للشوط الإضافي، لا استنتاجاً من الدقيقة */
+      delete d._per; }   /* منصور 2026-11-25: الأشواط الإضافية تُفعَّل فقط بزر «الشوط الإضافي الأول» في مراحل المباراة، لا من شوط الحدث */
     const arr=EDIT[ARR[k]];
     if(!d.uid) d.uid=Date.now().toString(36)+Math.random().toString(36).slice(2,7);
     /* النموذج قد يُعاد تحميله بعد حفظ تلقائي والنافذة مفتوحة فيتغير ترتيب الصفوف: نبحث عن الصف نفسه لا عن رقمه */
@@ -1913,7 +1913,7 @@ ADMX.rma = __admRenderMatchAdmin;
     q("[data-mround]",b=>b.onclick=()=>{ EDIT.match.round=String(Math.max(1,(+EDIT.match.round||0)+(+b.dataset.mround))); rerender(); });
     q("[data-mvenue]",b=>b.onclick=()=>{ EDIT.match.venue=b.dataset.mvenue; rerender(); });
     q("[data-mref]",el=>{ el.oninput=()=>{ EDIT.match.refs=EDIT.match.refs||{}; EDIT.match.refs[el.dataset.mref]=el.value; }; });
-    q("[data-met]",el=>el.onchange=()=>{ EDIT.match.et=el.checked; rerender(); });
+    q("[data-met]",el=>el.onchange=()=>{ if(!el.checked) EDIT.match.et=false; rerender(); });   /* إلغاء فقط — التفعيل من زر «الشوط الإضافي الأول» */
     q("[data-mpsk-add]",b=>b.onclick=()=>{ EDIT.match.psk=EDIT.match.psk||[]; EDIT.match.psk.push({t:b.dataset.mpskAdd, p:"", ok:true}); rerender(); });
     q("[data-mpsk-p]",el=>el.onchange=()=>{ const k=(EDIT.match.psk||[])[+el.dataset.mpskP]; if(k){ k.p=el.value; rerender(); } });
     q("[data-mpsk-ok]",b=>b.onclick=()=>{ const k=(EDIT.match.psk||[])[+b.dataset.mpskOk]; if(k){ k.ok=b.dataset.v==="1"; rerender(); } });
@@ -2001,7 +2001,7 @@ ADMX.rma = __admRenderMatchAdmin;
         if(MX.sheet.k==="sub") d.h=v; else d._per=v;
         /* الدقيقة خارج مدى الشوط المختار → بداية الشوط (التبديل في الشوطين الأصليين يحتفظ بطريقة الإدخال القديمة) */
         if(!(MX.sheet.k==="sub" && +v<=2) && ((m && (m<row[2] || m>row[3])) || (!m && +v>=3))) d.m=String(row[2]);
-        if(+v>=3 && etAllowed(EDIT.match)) EDIT.match.et=true; rerender(); });
+        rerender(); });
       q("[data-mbench]",b=>b.onclick=()=>{ const S=MX.sheet; S.bench=S.bench||{}; S.bench[b.dataset.mbench]=true; rerender(); });
       q("[data-mpick]",b=>b.onclick=()=>{ const key=b.dataset.mpick, v=b.dataset.mname; d[key]=(d[key]===v&&key==="a")?"":v; if(MX.sheet.plOpen) MX.sheet.plOpen=""; rerender(); });
       q("[data-mplopen]",b=>b.onclick=()=>{ MX.sheet.plOpen=b.dataset.mplopen; rerender(); });
