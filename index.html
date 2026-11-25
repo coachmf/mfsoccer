@@ -6272,7 +6272,7 @@ function refShirtSVG(name){
 }
 function refFace(name, cls){
   const f=REF_PHOTOS[String(name||"").trim()];
-  return f ? `<img class="ref-face${cls?" "+cls:""}" src="assets/referees/${f}.webp?v=1" alt="" loading="lazy">`
+  return f ? `<img class="ref-face${cls?" "+cls:""}" src="assets/referees/${f}.webp?v=2" alt="" loading="lazy">`
            : `<span class="ref-face ref-face-ph${cls?" "+cls:""}" aria-hidden="true"></span>`;
 }
 function crewOf(m){ const b=REF_BOOK[`${m.round}|${m.home}|${m.away}`]||{}, saved=m.refs||{}, refs={};
