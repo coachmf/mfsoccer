@@ -9813,9 +9813,44 @@ function rfOverviewHTML(rows){
     </tr></thead><tbody>
       ${rfSorted(L).map((e,i)=>`<tr><td class="tl"><button type="button" class="rf-name" data-rf-ref="${esc(e.n)}"><span class="rk">${i+1}</span>${refFace(e.n,"sm")}<b>${esc(e.n)}</b></button></td>
         <td>${e.m}</td><td>${e.y}</td><td>${e.r}</td><td>${e.p}</td><td><b>${rfAvg(e.avg)}</b></td><td class="rf-ef">${rfEffT(e.eff)}</td></tr>`).join("")}
-    </tbody></table></div></div>${typeof axAbbr==="function"?axAbbr(RF_COLS.map(c=>c[1])):""}${typeof tblMore==="function"?tblMore("refs",L.length):""}</div>`;
+    </tbody></table></div></div>${typeof axAbbr==="function"?axAbbr(RF_COLS.map(c=>c[1])):""}${typeof tblMore==="function"?tblMore("refs",L.length):""}
+    ${rfCrewTableHTML(rows)}</div>`;
   return out;
 }
+/* منصور 2026-11-25 «الحكام المساعدين والفار لمن أدش عليهم يبين حكموا أي مباراة»: جدول ثانٍ لكل من كان في الطاقم بدور غير حكم الساحة،
+   والضغط على الاسم يفتح صفحته (سجل مبارياته ودوره في كل مباراة) */
+function rfCrewTableHTML(rows){
+  const o={};
+  rows.forEach(x=>{ const c=crewOf(x.m); Object.entries(c.refs||{}).forEach(([k,v])=>{ const n=rfNm(v); if(!n) return;
+    const e=o[n] ||= {n, m:0, ar:0, fourth:0, var:0, avar:0, seen:new Set()};
+    if(!e.seen.has(x.m)){ e.seen.add(x.m); e.m++; }
+    if(k==="ar1"||k==="ar2") e.ar++; else if(e[k]!==undefined) e[k]++; }); });
+  const L=Object.values(o).sort((a,b)=>b.m-a.m || a.n.localeCompare(b.n,"ar"));
+  if(!L.length) return "";
+  const H=[["المباريات"],["مساعد"],["رابع"],["VAR"],["AVAR"]];
+  return `<h2 class="sec">الحكام المساعدون وحكام الفيديو</h2>
+    <p class="hint">اضغط الاسم لعرض المباريات التي كان فيها ودوره في كل مباراة.</p>
+    <div class="an-card rf-tcard${typeof tblClip==="function"?tblClip("crew"):""}"><div class="rf-tw"><table class="rf-tbl rf-crew"><thead><tr>
+      <th class="tl"><span>الحكم</span></th>${H.map(([t])=>`<th><span>${t}</span></th>`).join("")}
+    </tr></thead><tbody>
+      ${L.map((e,i)=>`<tr><td class="tl"><button type="button" class="rf-name" data-rf-ref="${esc(e.n)}"><span class="rk">${i+1}</span>${refFace(e.n,"sm")}<b>${esc(e.n)}</b></button></td>
+        <td><b>${e.m}</b></td><td>${e.ar||"—"}</td><td>${e.fourth||"—"}</td><td>${e.var||"—"}</td><td>${e.avar||"—"}</td></tr>`).join("")}
+    </tbody></table></div></div>${typeof tblMore==="function"?tblMore("crew",L.length):""}`;
+}
+/* فتح صفحة أي فرد من الطاقم من مكان آخر (صفحة المباراة) */
+function rfOpenPerson(name){
+  const open=!!document.querySelector("#mpage:not([hidden])");
+  if(open && typeof closeMatch==="function") closeMatch();
+  setTimeout(()=>rfOpenPerson2(name), open ? 380 : 0);   /* closeMatch يرجع بالتاريخ (history.back) — ننتظر popstate قبل التنقّل */
+}
+function rfOpenPerson2(name){
+  if(typeof AX!=="undefined"){ AX.tab="refs"; AX.sel=null; }
+  RFA.ref=name; RFA.comp=""; RFA.round=""; RFA.dt="stats";
+  const b=document.querySelector('nav.tabs [data-v="analysis"]');
+  if(b && !document.querySelector("#v-analysis.on")) b.click(); else if(typeof renderAnalysisX==="function") renderAnalysisX(); else go("analysis");
+  setTimeout(()=>{ const box=$("#anRefs"); if(box) box.scrollIntoView({block:"start"}); }, 120);
+}
+document.addEventListener("click", e=>{ const b=e.target.closest("[data-rf-open]"); if(!b) return; e.preventDefault(); rfOpenPerson(b.dataset.rfOpen); });
 function rfDetailHTML(name, rows){
   const mine=rows.filter(x=>x.ref===name), e=rfAgg(mine)[0];
   const crew=rows.map(x=>({...x, roles:rfRolesOf(x.m, name)})).filter(x=>x.roles.length);
@@ -12479,6 +12514,9 @@ html.mp-open{overflow:hidden}
 .mp-crew .crew-main b{font-size:1rem}
 .mp-crew .crew-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:7px;padding-top:2px}
 .mp-crew .crew-p{display:flex;align-items:center;gap:8px;min-width:0}
+.mp-crew .crew-go{width:100%;background:none;border:0;padding:4px 2px;font:inherit;color:inherit;text-align:start;cursor:pointer;border-radius:10px}
+.mp-crew .crew-go:hover{background:rgba(231,208,147,.06)}
+.mp-crew .crew-go .crew-ar{margin-inline-start:auto;width:7px;height:7px;border:solid var(--text-muted,#8fa6c4);border-width:0 1.6px 1.6px 0;transform:rotate(135deg);flex:none;opacity:.7}
 .mp-crew .crew-p>div{min-width:0}
 .mp-crew .crew-p .ref-role{width:30px;height:30px}
 .mp-crew .crew-p small{font-size:.62rem;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -15380,7 +15418,8 @@ function mpInfoRows(m){
   REF_ROLES.forEach(([k,label])=>{ if(refs[k]) people.push([label, refs[k], k]); });
   const none=v=>v==="لا يوجد";
   const crewCard = people.length ? `<div class="mp-card mp-crew"><div class="mp-hd"><h3>طاقم التحكيم</h3></div>
-    <div class="crew-grid">${people.map(([l,n,k])=>`<div class="crew-p${none(n)?" none":""}">${refRoleIco(k)}<div><small>${l}</small><b>${esc(n)}</b></div></div>`).join("")}</div></div>` : "";
+    <div class="crew-grid">${people.map(([l,n,k])=>none(n) ? `<div class="crew-p none">${refRoleIco(k)}<div><small>${l}</small><b>${esc(n)}</b></div></div>`
+      : `<button type="button" class="crew-p crew-go" data-rf-open="${esc(n)}">${refRoleIco(k)}<div><small>${l}</small><b>${esc(n)}</b></div><i class="crew-ar" aria-hidden="true"></i></button>`).join("")}</div></div>` : "";
   return `<div class="mp-card mp-info">${rows.map(([k,v])=>`<div class="mp-irow"><span>${k}</span><b>${v}</b></div>`).join("")}
     ${m.note?`<div class="mp-note">${esc(m.note)}</div>`:""}</div>${crewCard}`;
 }
