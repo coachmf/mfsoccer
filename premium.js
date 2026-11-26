@@ -88,7 +88,8 @@
     const p = ptrEl();
     if(!(dy > TH)){ p.classList.remove("show","ready"); p.style.transform = ""; return; }
     busy = true; p.classList.add("spin"); p.classList.remove("ready"); p.style.transform = "translate(-50%, 54px)"; p.querySelector("span").textContent = "جارٍ التحديث…";
-    try{ safe(() => { FRESH_AT = 0; }); await (typeof freshenSeason === "function" ? freshenSeason() : null); }catch(err){}
+    /* حد أقصى 6 ثوانٍ: الشبكة البطيئة لا تُبقي «جارٍ التحديث…» عالقاً (منصور 2026-11-26) — التحديث يكمل وحده في الخلفية */
+    try{ safe(() => { FRESH_AT = 0; }); await Promise.race([ (typeof freshenSeason === "function" ? freshenSeason() : null), new Promise(r => setTimeout(r, 6000)) ]); }catch(err){}
     safe(() => { if(typeof renderMatches === "function" && curView() === "matches") renderMatches(); });
     p.querySelector("span").textContent = "تم التحديث";
     setTimeout(() => { p.classList.remove("show","spin"); p.style.transform = ""; busy = false; }, 650);
