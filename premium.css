@@ -270,3 +270,24 @@ html.mf .mf-bar button svg{transition:color .2s ease,transform .2s ease}
 html.mf :is(.mxd-empty,.empty,.va-empty,.nw-empty){border:1px dashed var(--pm-ln2)!important;background:transparent!important;border-radius:var(--pm-r);color:var(--pm-tx2)}
 /* هياكل التحميل بلمعة أنعم */
 html.mf .mxd-sk :is(i,b){background:linear-gradient(90deg,var(--pm-s2) 0%,color-mix(in srgb,var(--pm-tx) 7%,var(--pm-s2)) 50%,var(--pm-s2) 100%);background-size:200% 100%}
+
+/* ===== الأهداف والتبديلات في أحداث المباراة بشكل التصور ===== */
+/* الهدف: الاسم بخط عريض، وتحته سطر واحد صغير «صناعة X · نوع الهدف» */
+html.mf #mpage .tl-ev .tl-assist,html.mf #mpage .tl-ev .tl-assist + .tl-det{display:inline;font-size:11px;font-weight:500;color:var(--pm-tx3);line-height:1.5}
+html.mf #mpage .tl-ev .tl-assist svg{display:none}
+html.mf #mpage .tl-ev .tl-assist::before{content:"صناعة "}
+html.mf #mpage .tl-ev .tl-assist + .tl-det::before{content:" · "}
+html.mf #mpage .tl-ev .tl-name .ico-ball{width:16px;height:16px}
+html.mf #mpage .tl-ev .tl-score{display:none}
+/* التبديل: أيقونة سهمين (أخضر للداخل، أحمر للخارج)، الداخل بخط عريض و«بدلاً من الخارج» تحته */
+html.mf #mpage .tl-ev.sub{display:flex;align-items:center;gap:8px}
+html.mf #mpage .tl-ev.sub.a{flex-direction:row-reverse}
+html.mf #mpage .tl-ev.sub::before{content:"";flex:none;width:18px;height:18px;background:no-repeat center/16px url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke-width='2.4' stroke-linecap='round'%3E%3Cpath d='M7 16V8M4 11l3-3 3 3' stroke='%233DD68C'/%3E%3Cpath d='M17 8v8M14 13l3 3 3-3' stroke='%23EF4B4B'/%3E%3C/svg%3E")}
+html.mf #mpage .tl-ev.sub .tl-card{display:flex;flex-direction:column;gap:1px}
+html.mf #mpage .tl-ev.sub .tl-sub-in{order:-1;font-size:13px;font-weight:700;color:var(--pm-tx)}
+html.mf #mpage .tl-ev.sub .tl-sub-out{font-size:11px;font-weight:500;color:var(--pm-tx3)}
+html.mf #mpage .tl-ev.sub .tl-sub-out::before{content:"بدلاً من "}
+html.mf #mpage .tl-ev.sub :is(.tl-sub-in,.tl-sub-out) > i{display:none}
+html.mf #mpage .tl-ev.sub.a .tl-card{align-items:flex-start}
+html.mf #mpage .tl-ev.sub :is(.tl-sub-in,.tl-sub-out){display:block!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+html.mf #mpage .tl-ev.sub .tl-card{min-width:0}
