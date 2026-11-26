@@ -46,9 +46,24 @@ const ADMIN = {
         <input id="pn_body" maxlength="240" placeholder="هدف في الدقيقة 23"></div>
       <div class="field"><label>الوجهة عند الضغط</label>
         <select id="pn_url">
+          <optgroup label="الموقع">
           <option value="/">الصفحة الرئيسية</option>
+          <option value="/#go/matches">المباريات</option>
+          <option value="/#go/table">الترتيب</option>
+          <option value="/#go/cups">الكؤوس</option>
+          <option value="/#go/players">إحصائيات اللاعبين</option>
+          <option value="/#go/teams">إحصائيات الفرق</option>
+          <option value="/#go/refs">إحصائيات الحكام</option>
+          <option value="/#go/videos">تحليل الفيديو</option>
+          <option value="/#go/news">الأخبار</option>
+          <option value="/#go/predict">التوقعات</option>
+          <option value="/#go/fans">تشكيلة الجمهور</option>
+          <option value="/#go/clubs">الأندية</option>
+          </optgroup>
+          <optgroup label="الفانتسي">
           <option value="/fantasy/">الفانتسي</option>
-          <option value="/fantasy/#players">اللاعبون</option>
+          <option value="/fantasy/#players">لاعبو الفانتسي</option>
+          </optgroup>
         </select></div>
       <button class="btn" onclick="ADMIN.pushSend(event)">إرسال للجميع</button>
       <div class="tiny" style="margin-top:12px;color:var(--text3)">

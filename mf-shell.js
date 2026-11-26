@@ -255,6 +255,21 @@
      كان الانتقال بين الأقسام لا يُسجَّل، فزر الرجوع في الهاتف (وسحب الرجوع في iPhone) يُخرج من الموقع.
      كل انتقال من الشريط/القائمة يُسجَّل {mfv}، والرجوع يضغط زر القسم السابق. روابط #m/ #p/ #news وغيرها
      لها مسجّلاتها الخاصة فلا نلمسها. */
+  /* ---------- روابط الأقسام #go/<قسم> (محمد الفيلكاوي 2026-11-26: «أبي بالإشعارات تحديد القسم — يضغط على الإشعار يوديه قسم تحليل الفيديو أو إحصائيات الحكام») ----------
+     الإشعار (ولوحة الإرسال) يحمل /#go/refs مثلاً؛ نفتح القسم بنفس دالة «الأقسام» ثم نمسح الرابط فيبقى الرجوع طبيعياً.
+     الأقسام: matches · table · clubs · cups · players · teams · overview · refs · videos · predict · fans · news · home */
+  function goHash(){
+    const m=/^#go\/([a-z0-9]+)$/.exec(location.hash); if(!m) return false;
+    const k=m[1]==="stats" ? "players" : m[1];
+    const it=k==="home" ? {go:()=>nav("home")} : k==="news" ? {go:()=>nav("news")} : hubItems().find(x=>x.k===k);
+    if(!it) return false;
+    try{ history.replaceState({mfv:"home"}, "", location.pathname+location.search); }catch(e){}
+    closeHub(true); safe(it.go); scrollTo(0,0); return true;
+  }
+  window.addEventListener("hashchange", goHash);
+  /* فتح من إشعار والتطبيق مغلق: ننتظر جاهزية أزرار الأقسام والبيانات (حتى 8 ث) */
+  if(/^#go\//.test(location.hash)){ let n=0; const t=()=>{ if(D.querySelector('nav.tabs button[data-v="matches"]') && (safe(()=>Array.isArray(MATCHES) && MATCHES.length>0) || n>16)){ setTimeout(goHash, 300); return; } if(++n<40) setTimeout(t, 250); }; setTimeout(t, 400); }
+
   let popping=false;
   /* تُسجَّل الخطوة قبل الضغط: الأخبار تستبدل الخطوة الحالية برابط #news عند فتحها */
   function pushView(v){
