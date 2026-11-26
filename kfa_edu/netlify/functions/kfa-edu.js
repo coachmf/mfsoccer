@@ -1,6 +1,6 @@
 /* =========================================================================
-   بيانات موقع إدارة التعليم وتطوير الدارسين (kfa-edu/) — المصدر المركزي.
-   Firestore بحساب الخدمة (FIREBASE_SERVICE_ACCOUNT الموجود في الموقع):
+   بيانات موقع إدارة التعليم وتطوير الدارسين (kfa_edu) — المصدر المركزي.
+   Firestore بحساب الخدمة KFA_FIREBASE_SERVICE_ACCOUNT (مشروع Firebase مستقل):
      kfaedu/settings        { courses:[…], cats:[…], updatedAt }
      kfaedu_regs/{ref}      طلب تسجيل واحد
 
@@ -17,9 +17,9 @@
 const crypto = require('crypto');
 const { accessToken } = require('./lib/google');
 const { makeIO } = require('./lib/fsrest');
+const { JSON_H, hasDb } = require('./lib/site');
 const { seed, priceFor, isOpenFor, cleanCourse, cleanCat, LIC_RANK } = require('./lib/kfaedu');
 
-const ORIGINS = ['https://mfsoccer.com', 'https://www.mfsoccer.com'];
 const SETTINGS = 'kfaedu/settings';
 const REGS = 'kfaedu_regs';
 const STATUSES = ['pending', 'paid', 'confirmed', 'cancelled'];
@@ -60,19 +60,10 @@ function isAdmin(event) {
 function newRef() { return `KFA-${new Date().getFullYear()}-${crypto.randomInt(10000, 100000)}`; }
 
 exports.handler = async (event) => {
-  const origin = event.headers.origin || '';
-  const H = {
-    'Content-Type': 'application/json; charset=utf-8',
-    'Access-Control-Allow-Origin': ORIGINS.includes(origin) ? origin : ORIGINS[0],
-    'Access-Control-Allow-Headers': 'Content-Type, x-kfa-admin',
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Cache-Control': 'no-store'
-  };
-  const out = (code, body) => ({ statusCode: code, headers: H, body: JSON.stringify(body) });
-  if (event.httpMethod === 'OPTIONS') return out(204, {});
+  const out = (code, body) => ({ statusCode: code, headers: JSON_H, body: JSON.stringify(body) });
   if (event.httpMethod !== 'POST') return out(405, { error: 'method' });
   let b; try { b = JSON.parse(event.body || '{}'); } catch { return out(400, { error: 'bad json' }); }
-  if (!process.env.FIREBASE_SERVICE_ACCOUNT) return out(503, { error: 'unconfigured' });
+  if (!hasDb()) return out(503, { error: 'unconfigured' });
 
   try {
     const db = await io();

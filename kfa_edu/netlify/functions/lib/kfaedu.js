@@ -1,14 +1,14 @@
-/* أدوات دورات إدارة التعليم على الخادم: القواعد المشتركة + البذرة من kfa-edu/config.js */
+/* أدوات دورات إدارة التعليم على الخادم: القواعد المشتركة + البذرة من site/config.js */
 'use strict';
 const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
-const rules = require('../../../kfa-edu/rules.js');
+const rules = require('../../../site/rules.js');
 
 let _seed = null;
 function seed() {
   if (_seed) return _seed;
-  const candidates = [path.join(__dirname, '../../../kfa-edu/config.js'), path.join(process.cwd(), 'kfa-edu/config.js')];
+  const candidates = [path.join(__dirname, '../../../site/config.js'), path.join(process.cwd(), 'site/config.js')];
   for (const p of candidates) {
     try {
       const box = { window: {} };

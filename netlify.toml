@@ -144,25 +144,6 @@
   force = true
 
 # ——— ترويسات أمان عامة ———
-# ——— الدفع لدورات إدارة التعليم (netlify/functions/kfa-pay.js) ———
-[[redirects]]
-  from = "/api/kfa-pay"
-  to = "/.netlify/functions/kfa-pay"
-  status = 200
-  force = true
-
-[[redirects]]
-  from = "/api/kfa-edu"
-  to = "/.netlify/functions/kfa-edu"
-  status = 200
-  force = true
-
-[functions."kfa-pay"]
-  included_files = ["kfa-edu/config.js", "kfa-edu/rules.js"]
-
-[functions."kfa-edu"]
-  included_files = ["kfa-edu/config.js", "kfa-edu/rules.js"]
-
 [[headers]]
   for = "/*"
   [headers.values]

@@ -1,5 +1,5 @@
 /* =========================================================================
-   الدفع الإلكتروني لدورات إدارة التعليم وتطوير الدارسين (kfa-edu/).
+   الدفع الإلكتروني لدورات إدارة التعليم وتطوير الدارسين (kfa_edu).
    البوابة: MyFatoorah — تدعم كي نت KNET، فيزا/ماستر، Apple Pay بالدينار الكويتي.
 
    POST /api/kfa-pay
@@ -15,31 +15,23 @@
 
    الأمان:
    - المبلغ لا يُقبل من المتصفح؛ يُقرأ من طلب التسجيل المحفوظ في Firestore (kfaedu_regs/{ref})
-     الذي حسبه الخادم عند التسجيل، أو من kfa-edu/config.js إن لم تُضبط Firestore.
+     الذي حسبه الخادم عند التسجيل، أو من site/config.js إن لم تُضبط Firestore.
    - عند نجاح التحقق تُحدَّث حالة الطلب إلى «مدفوع» على الخادم نفسه.
-   - رابط العودة مقيّد بنطاقات الموقع.
+   - رابط العودة مقيّد بنطاقات الموقع (lib/site.js).
    - التحقق من الدفع يتم على الخادم من البوابة مباشرة، ويُطابَق رقم الطلب (CustomerReference).
    ========================================================================= */
 'use strict';
 
-const ORIGINS = ['https://mfsoccer.com', 'https://www.mfsoccer.com'];
 const BASE = (process.env.MYFATOORAH_BASE || 'https://apitest.myfatoorah.com').replace(/\/+$/, '');
 const KEY = process.env.MYFATOORAH_API_KEY || '';
 const REF = /^KFA-\d{4}-\d{5}$/;
 
-const H = (origin) => ({
-  'Content-Type': 'application/json; charset=utf-8',
-  'Access-Control-Allow-Origin': ORIGINS.includes(origin) ? origin : ORIGINS[0],
-  'Access-Control-Allow-Headers': 'Content-Type',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-  'Cache-Control': 'no-store'
-});
 const clean = (s, n) => String(s || '').replace(/[\u0000-\u001f<>]/g, '').trim().slice(0, n);
 
 const { seed } = require('./lib/kfaedu');
 const { accessToken } = require('./lib/google');
 const { makeIO } = require('./lib/fsrest');
-const HAS_DB = () => !!process.env.FIREBASE_SERVICE_ACCOUNT;
+const { allowedOrigins, JSON_H, hasDb: HAS_DB } = require('./lib/site');
 const db = async () => makeIO(await accessToken('https://www.googleapis.com/auth/datastore'));
 
 async function mf(endpoint, body) {
@@ -66,9 +58,7 @@ async function paymentMethodId(method, amount) {
 }
 
 exports.handler = async (event) => {
-  const origin = event.headers.origin || event.headers.Origin || '';
-  const out = (code, body) => ({ statusCode: code, headers: H(origin), body: JSON.stringify(body) });
-  if (event.httpMethod === 'OPTIONS') return out(204, {});
+  const out = (code, body) => ({ statusCode: code, headers: JSON_H, body: JSON.stringify(body) });
   if (event.httpMethod !== 'POST') return out(405, { error: 'method' });
 
   let b;
@@ -95,7 +85,7 @@ exports.handler = async (event) => {
 
       let ret;
       try { ret = new URL(String(b.returnUrl || '')); } catch { return out(400, { error: 'رابط عودة غير صالح' }); }
-      if (!ORIGINS.includes(ret.origin)) return out(400, { error: 'رابط عودة غير مسموح' });
+      if (!allowedOrigins().includes(ret.origin)) return out(400, { error: 'رابط عودة غير مسموح' });
       ret.search = ''; ret.hash = '';
       ret.searchParams.set('ref', ref);
 
