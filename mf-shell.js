@@ -301,6 +301,45 @@
   let selQ=0;
   function paintSels(){ selQ=0; SEL_ROWS.forEach(([q,l])=>D.querySelectorAll(q).forEach(r=>{ if(r.dataset.mfSel) return; safe(()=>rowToSel(r,l)); })); }
   new MutationObserver(()=>{ if(!selQ) selQ=requestAnimationFrame(paintSels); }).observe(D.documentElement,{childList:true,subtree:true});
+  /* ---------- القوائم المنسدلة بشكل التطبيق (منصور 2026-11-26: «التحديد خله مودرن أكثر») ----------
+     فوق كل <select> داخل .mf-sel زر شفاف يفتح لوحة من الأسفل (خيارات + علامة على المختار). الاختيار يكتب في
+     الـselect نفسه ويطلق change، فكل المستمعين الحاليين يعملون كما هم. لوحة المفاتيح تبقى على الـselect الأصلي. */
+  let sheet=null, sheetSel=null;
+  const CHECK='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>';
+  function closeSheet(){ if(!sheet) return; sheet.classList.remove("on"); const s=sheetSel; sheetSel=null; setTimeout(()=>{ if(sheet && !sheet.classList.contains("on")) sheet.hidden=true; }, 260); if(s) safe(()=>s.closest(".mf-sel").querySelector(".mf-sel-hit").focus({preventScroll:true})); }
+  function openSheet(sel){
+    if(!sheet){
+      sheet=D.createElement("div"); sheet.className="mf-sheet"; sheet.hidden=true;
+      sheet.innerHTML=`<div class="mf-sheet-bg" data-sh-x></div><div class="mf-sheet-p" role="dialog" aria-modal="true"><i class="mf-sheet-hd"></i><h3 class="mf-sheet-t"></h3><div class="mf-sheet-l" role="listbox"></div></div>`;
+      D.body.appendChild(sheet);
+      sheet.addEventListener("click", e=>{
+        if(e.target.closest("[data-sh-x]")){ closeSheet(); return; }
+        const o=e.target.closest("[data-sh-v]"); if(!o || !sheetSel) return;
+        const s=sheetSel; closeSheet();
+        if(s.value!==o.dataset.shV){ s.value=o.dataset.shV; s.dispatchEvent(new Event("input",{bubbles:true})); s.dispatchEvent(new Event("change",{bubbles:true})); }
+      });
+      D.addEventListener("keydown", e=>{ if(e.key==="Escape" && sheetSel) closeSheet(); });
+    }
+    sheetSel=sel;
+    const lbl=sel.closest(".mf-sel").querySelector(".mf-lbl");
+    sheet.querySelector(".mf-sheet-t").textContent=lbl ? lbl.textContent.trim() : "";
+    const row=o=>`<button type="button" role="option" class="mf-sheet-o${o.selected?" on":""}" aria-selected="${o.selected}" data-sh-v="${esc(o.value)}"${o.disabled?" disabled":""}><span>${esc(o.textContent.trim())}</span>${o.selected?CHECK:""}</button>`;
+    sheet.querySelector(".mf-sheet-l").innerHTML=[...sel.children].map(c=>c.tagName==="OPTGROUP"
+      ? `<div class="mf-sheet-g">${esc(c.label)}</div>${[...c.children].map(row).join("")}` : row(c)).join("");
+    sheet.hidden=false; requestAnimationFrame(()=>{ sheet.classList.add("on"); const on=sheet.querySelector(".mf-sheet-o.on"); if(on) on.scrollIntoView({block:"center"}); });
+  }
+  function enhanceSels(){
+    D.querySelectorAll(".mf-sel > select").forEach(sel=>{
+      const w=sel.parentElement; if(w.querySelector(":scope > .mf-sel-hit")) return;
+      const b=D.createElement("button"); b.type="button"; b.className="mf-sel-hit"; b.tabIndex=-1; b.setAttribute("aria-hidden","true");
+      b.addEventListener("click", e=>{ e.preventDefault(); e.stopPropagation(); const s=w.querySelector(":scope > select"); if(s && !s.disabled) openSheet(s); });
+      w.classList.add("mf-sel-x"); w.appendChild(b);
+    });
+  }
+  let enhQ=0;
+  new MutationObserver(()=>{ if(!enhQ) enhQ=requestAnimationFrame(()=>{ enhQ=0; enhanceSels(); }); }).observe(D.documentElement,{childList:true,subtree:true});
+
+
 
   /* ---------- الحالة النشطة ---------- */
   function paintActive(){
