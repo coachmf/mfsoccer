@@ -321,3 +321,46 @@ html.mf #mpage .tl-row .tl-side{padding:0 6px!important;min-width:0;width:auto!i
 html.mf #mpage .tl-row .tl-min{width:auto!important;justify-self:center}
 html.mf #mpage .tl-ev{width:100%!important;max-width:none!important}
 html.mf #mpage .tl-sub,html.mf #mpage .tl-det,html.mf #mpage .tl-assist{line-height:1.45}
+
+/* ================= 8) الإضافات: بطاقة مباشرة، حركة الهدف، السحب للتحديث ================= */
+/* 1) بطاقة النتيجة المباشرة: كبسولة زجاجية أعلى الصفحة تحت الشريط العلوي */
+.pm-live{position:fixed;z-index:58;top:calc(var(--mf-top-h,56px) + env(safe-area-inset-top) + 8px);left:50%;transform:translate(-50%,-14px);opacity:0;
+  display:flex;align-items:center;gap:9px;max-width:calc(100vw - 24px);padding:7px 14px 7px 12px;border-radius:999px;cursor:pointer;
+  border:1px solid rgba(255,90,95,.35);color:#F4F1E8;font:600 12.5px/1 var(--mf-f,inherit);
+  background:rgba(10,19,48,.86);-webkit-backdrop-filter:saturate(170%) blur(18px);backdrop-filter:saturate(170%) blur(18px);
+  box-shadow:0 10px 30px rgba(0,0,0,.45);transition:transform .35s cubic-bezier(.2,.8,.2,1),opacity .3s ease}
+.pm-live.on{transform:translate(-50%,0);opacity:1}
+.pm-live[hidden]{display:none}
+.pm-live:active{transform:translate(-50%,0) scale(.97)}
+.pm-lc-dot{width:7px;height:7px;border-radius:50%;background:#FF5A5F;box-shadow:0 0 0 0 rgba(255,90,95,.6);animation:pmLive 1.6s ease-out infinite;flex:none}
+.pm-lc-t{display:flex;align-items:center;gap:6px;min-width:0}
+.pm-lc-t b{max-width:84px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:700}
+.pm-lc-t img{width:22px;height:22px;object-fit:contain;flex:none}
+.pm-lc-x{font-style:normal;font-size:10px;width:22px;height:22px;border-radius:50%;display:grid;place-items:center;background:rgba(255,255,255,.1)}
+.pm-lc-sc{display:flex;flex-direction:row-reverse;gap:5px;font:800 15px/1 var(--mf-fh,inherit);font-variant-numeric:tabular-nums;padding:0 2px}
+.pm-lc-sc i{font-style:normal;opacity:.4}
+.pm-lc-clk{font-size:11px;font-weight:700;color:#FF8A8E;white-space:nowrap}
+.pm-lc-clk .mclk{font-family:var(--mf-fh,inherit)}
+@keyframes pmLive{70%{box-shadow:0 0 0 7px rgba(255,90,95,0)}100%{box-shadow:0 0 0 0 rgba(255,90,95,0)}}
+html.mf[data-theme="light"] .pm-live{background:rgba(255,255,255,.9);color:#00061A;border-color:rgba(214,58,47,.35)}
+/* 2) حركة الهدف: النتيجة تنبض بالذهبي ويتوهّج صف المباراة لحظياً */
+.pm-goal{animation:pmGoal 1.4s cubic-bezier(.2,.8,.2,1) 2;display:inline-flex}
+@keyframes pmGoal{0%{transform:scale(1)}18%{transform:scale(1.32);color:#F5E2A8;text-shadow:0 0 18px rgba(231,208,147,.85)}40%{transform:scale(.96)}60%{transform:scale(1.08)}100%{transform:scale(1);text-shadow:none}}
+.pm-goal-row{animation:pmGoalRow 3s ease-out}
+@keyframes pmGoalRow{0%{background-color:rgba(231,208,147,.22)}100%{background-color:transparent}}
+/* 3) السحب للتحديث */
+.pm-ptr{position:fixed;z-index:57;top:calc(var(--mf-top-h,56px) + env(safe-area-inset-top) - 30px);left:50%;transform:translate(-50%,0);opacity:0;
+  display:flex;align-items:center;gap:8px;padding:8px 14px;border-radius:999px;pointer-events:none;
+  background:rgba(10,19,48,.9);border:1px solid rgba(255,255,255,.1);color:#C5CAD8;font:600 12px var(--mf-f,inherit);
+  -webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);transition:opacity .2s ease}
+.pm-ptr.show{opacity:1}
+.pm-ptr i{width:16px;height:16px;border-radius:50%;border:2px solid rgba(231,208,147,.25);border-top-color:#E7D093;flex:none}
+.pm-ptr.ready{color:#F4F1E8;border-color:rgba(231,208,147,.45)}
+.pm-ptr.spin{transition:transform .25s ease,opacity .2s ease}
+.pm-ptr.spin i{animation:pmSpin .7s linear infinite}
+@keyframes pmSpin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.pm-lc-dot,.pm-goal,.pm-goal-row,.pm-ptr.spin i{animation:none}}
+/* البطاقة المباشرة فوق الشريط السفلي حتى لا تغطي عناوين الصفحات */
+.pm-live{top:auto;bottom:calc(var(--mf-bar-h,64px) + env(safe-area-inset-bottom) + 18px);transform:translate(-50%,14px)}
+.pm-live.on{transform:translate(-50%,0)}
+@media (min-width:900px){ .pm-live{bottom:24px} }

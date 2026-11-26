@@ -9,7 +9,7 @@
 
    عند كل نشر: ارفع رقم VER فتُبنى ذاكرة جديدة وتُحذف القديمة.
    ========================================================= */
-const VER   = 'mf-2026-11-26-860-events2';
+const VER   = 'mf-2026-11-26-861-extras';
 const SHELL = 'shell-' + VER;
 const RUN   = 'run-'   + VER;
 /* الصور (لاعبون، شعارات، خلفيات) في ذاكرة ثابتة لا ترتبط برقم النسخة (منصور 2026-11-20: «الصور قاعده تطول»):
@@ -34,7 +34,7 @@ const PRECACHE = [
   '/assets/hero/stadium.jpg', '/assets/hero/stadium_dark.jpg',
   '/assets/pens/goal.webp',
   '/site-theme.css', '/site-i18n.js', '/i18n-langs.js',   /* i18n-data.js لغير العربية فقط: يُخزَّن عند أول طلب */ '/fantasy/js/i18n-more.js',
-  '/admin-tabs.css', '/admin-tabs.js', '/gulf.css', '/gulf.js', '/livepush.js', '/notify.js', '/presence.js', '/notif-prefs.js', '/notif-prefs.css', '/fantasy/js/push.js', '/analysis.css', '/analysis.js', '/efftime.css', '/efftime.js', '/div1.css', '/div1.js', '/amateur.js', '/player-dob.js', '/news.css', '/news.js', '/video.css', '/video.js', '/app-shell.css', '/app-shell.js', '/ext.css', '/ext.js', '/tstats-data.js', '/mf-brand.css', '/mf-shell.js', '/fmx.css', '/fmx.js', '/mxday.css', '/mxday.js', '/premium.css', '/visitors.js', '/assets/brand/mf-mark.webp', '/assets/brand/mf-emblem.webp'
+  '/admin-tabs.css', '/admin-tabs.js', '/gulf.css', '/gulf.js', '/livepush.js', '/notify.js', '/presence.js', '/notif-prefs.js', '/notif-prefs.css', '/fantasy/js/push.js', '/analysis.css', '/analysis.js', '/efftime.css', '/efftime.js', '/div1.css', '/div1.js', '/amateur.js', '/player-dob.js', '/news.css', '/news.js', '/video.css', '/video.js', '/app-shell.css', '/app-shell.js', '/ext.css', '/ext.js', '/tstats-data.js', '/mf-brand.css', '/mf-shell.js', '/fmx.css', '/fmx.js', '/mxday.css', '/mxday.js', '/premium.css', '/premium.js', '/visitors.js', '/assets/brand/mf-mark.webp', '/assets/brand/mf-emblem.webp'
 ];
 
 /* نطاقات تُخزَّن عند أول استعمال: الخطوط ثابتة فلا داعي لإعادة جلبها */
