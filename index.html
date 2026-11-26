@@ -2346,15 +2346,15 @@ html[dir="ltr"] .tl-ev.a .tl-card{text-align:right;align-items:flex-end}
 <link rel="stylesheet" href="mf-brand.css?v=30">
 <link rel="stylesheet" href="notif-prefs.css?v=1">
 <script>document.documentElement.classList.add("mf")</script>
-<script src="mf-shell.js?v=53" defer></script>
+<script src="mf-shell.js?v=54" defer></script>
 <script src="app-shell.js?v=2" defer></script>   <!-- تجربة التطبيق: تعمل مع html.mfa فقط -->
 <link rel="stylesheet" href="fmx.css?v=3">
 <script src="fmx.js?v=9" defer></script>   <!-- أفكار FM27: fmx.js يلفّ صفحات المباراة والنادي واللاعب والمباريات والتحليل -->
 <link rel="stylesheet" href="career.css?v=6">
 <script src="player-career.js?v=5" defer></script>   <!-- مسيرة اللاعبين من FM27 (صفوف خام لكل موسم) -->
 <script src="career.js?v=5" defer></script>   <!-- تبويب «المسيرة» في ملف اللاعب: يلفّ playerProfileHTML بعد fmx.js -->
-<link rel="stylesheet" href="mxday.css?v=1">
-<script src="mxday.js?v=2" defer></script>
+<link rel="stylesheet" href="mxday.css?v=3">
+<script src="mxday.js?v=3" defer></script>
 <script src="visitors.js?v=3" defer></script>   <!-- الزوار: قياس مجهول + العين للطاقم + «الزوار بالتفصيل» في الإدارة (2026-11-14) -->   <!-- صفحة المباريات حسب اليوم (منصور 2026-11-07) -->
 <style>
 /* تبويب التحليل — التصميم الجديد (منصور 2026-09-17) */
@@ -2809,8 +2809,8 @@ html[data-theme="light"] .rf-kpis .y b{color:#B98A00}
 
 <nav class="tabs" role="tablist">
   <div class="in">
-    <button role="tab" data-v="home" aria-selected="true"><svg class="ic" aria-hidden="true" width="23" height="23" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><use href="#ni-home"/></svg>الرئيسية</button>
-    <button role="tab" data-v="matches" aria-selected="false"><svg class="ic" aria-hidden="true" width="23" height="23" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><use href="#ni-matches"/></svg>المباريات</button>
+    <button role="tab" data-v="home" aria-selected="false"><svg class="ic" aria-hidden="true" width="23" height="23" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><use href="#ni-home"/></svg>الرئيسية</button>
+    <button role="tab" data-v="matches" aria-selected="true"><svg class="ic" aria-hidden="true" width="23" height="23" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><use href="#ni-matches"/></svg>المباريات</button>
     <button role="tab" data-v="clubs" aria-selected="false"><svg class="ic" aria-hidden="true" width="23" height="23" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><use href="#ni-clubs"/></svg>الأندية</button>
     <button role="tab" data-v="players" aria-selected="false"><svg class="ic" aria-hidden="true" width="23" height="23" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><use href="#ni-players"/></svg>اللاعبون</button>
     <button role="tab" data-v="predict" aria-selected="false"><svg class="ic" aria-hidden="true" width="23" height="23" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><use href="#ni-predict"/></svg>التوقعات</button>
@@ -2833,13 +2833,13 @@ html[data-theme="light"] .rf-kpis .y b{color:#B98A00}
    title="راسلنا على واتساب" aria-label="راسلنا على واتساب">
   <span class="waic"></span><span class="lbl">اقتراح؟ راسلنا</span></a>
 <main>
-  <section class="view on" id="v-home"><div class="hm hm-skel" aria-hidden="true">
+  <section class="view" id="v-home"><div class="hm hm-skel" aria-hidden="true">
   <div class="sk sk-card" style="height:150px"></div>
   <div class="sk-row"><div class="sk sk-card" style="height:76px"></div><div class="sk sk-card" style="height:76px"></div><div class="sk sk-card" style="height:76px"></div></div>
   <div class="sk sk-line" style="width:40%"></div>
   <div class="sk sk-card" style="height:320px"></div>
 </div></section>
-  <section class="view" id="v-matches"></section>
+  <section class="view on" id="v-matches"><div class="mx-head"><h2 class="mx-title">المباريات</h2></div><div class="mxd"><div class="mxd-load" aria-busy="true" aria-label="جارٍ التحميل"><div class="mxd-sk"><i></i><b></b><i></i></div><div class="mxd-sk"><i></i><b></b><i></i></div><div class="mxd-sk"><i></i><b></b><i></i></div><div class="mxd-sk"><i></i><b></b><i></i></div><div class="mxd-sk"><i></i><b></b><i></i></div></div></div></section>
   <section class="view" id="v-clubs"></section>
   <section class="view" id="v-players"></section>
   <section class="view" id="v-predict"></section>
@@ -10833,7 +10833,8 @@ function paintFoot(){
 /* var لا let: شريط التنقل الذهبي (mf-shell.js) يضبط window.USER_NAV — مع let كان يضبط متغيراً آخر فيُعاد المستخدم للرئيسية بعد الإقلاع */
 var USER_NAV = false;
 /* الصفحة الأولى بعد تحميل البيانات: الرئيسية، إلا إذا فُتح الرابط بـ #admin فشاشة الإدارة */
-function goStart(){ go(location.hash==="#admin" ? "admin" : "home"); }
+/* منصور 2026-11-26: «أول ما أشغّل التطبيق يوديني على المباريات على طول، الرئيسية ما تطلع» */
+function goStart(){ go(location.hash==="#admin" ? "admin" : "matches"); }
 document.addEventListener('click', e=>{ if(e.isTrusted && e.target.closest('nav.tabs, .hero-sub')) USER_NAV=true; }, true);
 /* اللمسة تُظهر التبويب المختار فوراً ثم يُرسم القسم في الإطار التالي — كان الزر لا يتغيّر
    حتى ينتهي رسم القسم كله (أثقلها اللاعبون) فتبدو الأيقونة كأنها لم تُضغط. */

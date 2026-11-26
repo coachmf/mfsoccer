@@ -23,7 +23,8 @@ window.MXDAY = (function(){
   const IC = {
     cal: SV('<rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/>'),
     prev: SV('<path d="M9 6l6 6-6 6"/>',16), next: SV('<path d="M15 6l-6 6 6 6"/>',16),   /* RTL: السابق يميناً */
-    chev: SV('<path d="M6 9l6 6 6-6"/>',16)
+    chev: SV('<path d="M6 9l6 6 6-6"/>',16),
+    go: SV('<path d="M15 18l-6-6 6-6"/>',18)   /* RTL: صفحة البطولة = سهم للأمام */
   };
 
   /* ---------- الحالة ---------- */
@@ -61,11 +62,12 @@ window.MXDAY = (function(){
 
   /* نموذج موحّد للكرت: الحالة والنتيجة والمعلومات الثانوية — نفس منطق البطاقات السابقة */
   function model(it){
-    const x={st:"soon", time:"", sc:"", lab:"", notes:"", meta:[], open:"", note:"", rnd:""};
+    const x={st:"soon", time:"", sc:"", lab:"", notes:"", meta:[], open:"", note:"", rnd:"", w:""};   /* w: الفائز h|a بعد النهاية (للتمييز البصري فقط) */
     if(it.m){ const m=it.m;
       const soon=isUpcoming(m), live=!soon && !matchOver(m);
       x.st = live ? "live" : soon ? "soon" : "done"; x.time = m.time||"";
       if(!soon) x.sc = scp(+m.hg||0, +m.ag||0);
+      if(x.st==="done"){ const P0=psoOf(m), h=+m.hg||0, a=+m.ag||0; x.w = h>a ? "h" : a>h ? "a" : (P0 ? (+P0.h>+P0.a ? "h" : +P0.a>+P0.h ? "a" : "") : ""); }
       if(live) x.lab = m.status==="ht" ? "بين الشوطين" : ((LIVE_PHASES.includes(m.status) && mclkHTML(m)) || LIVE_PH_AR[m.status] || "مباشر");
       const P=psoOf(m);
       if(!soon) x.notes = P ? `ركلات الترجيح <span dir="ltr">${P.a} - ${P.h}</span>` : (hasET(m) && matchOver(m)) ? "بعد الأشواط الإضافية" : "";
@@ -84,6 +86,7 @@ window.MXDAY = (function(){
       x.st = liveNow ? "live" : up ? "soon" : "done"; x.time = String(e.time||"");
       if(x.st!=="soon") x.sc = (eh!=null && ea!=null && eh!=="" && ea!=="") ? scp(+eh,+ea) : "–";
       if(liveNow){ const ph=gx&&gx.ph; x.lab = ph==="ht" ? "بين الشوطين" : (ph && LIVE_PH_AR[ph]) || "مباشر"; }
+      if(x.st==="done" && eh!=null && ea!=null && eh!=="" && ea!==""){ x.w = +eh>+ea ? "h" : +ea>+eh ? "a" : (e.pso && e.pso.h!=null ? (+e.pso.h>+e.pso.a ? "h" : +e.pso.a>+e.pso.h ? "a" : "") : ""); }
       if(e.pso && e.pso.h!=null && e.pso.a!=null) x.notes = `ركلات الترجيح <span dir="ltr">${+e.pso.a} - ${+e.pso.h}</span>`;
       x.h = extTeamCell(it.a); x.a = extTeamCell(it.b);
       if(gx && gx.tv && x.st!=="done") x.meta.push({t:gx.tv});
@@ -93,7 +96,7 @@ window.MXDAY = (function(){
       return x; }
     const m=it.am, p=m.hg!=null && m.ag!=null;
     const cr=c=>{ const s=window.AMATEUR && AMATEUR.crestSrc ? AMATEUR.crestSrc(c) : ""; return s?`<div class="crest has-logo" style="background:transparent"><img src="${s}" alt="" decoding="async"></div>`:`<div class="crest">${H(String(c).slice(0,2))}</div>`; };
-    x.st = p ? "done" : "soon"; x.time = m.time||""; if(p) x.sc = scp(m.hg, m.ag);
+    x.st = p ? "done" : "soon"; x.time = m.time||""; if(p){ x.sc = scp(m.hg, m.ag); x.w = +m.hg>+m.ag ? "h" : +m.ag>+m.hg ? "a" : ""; }
     x.h = `${cr(m.home)}<b>${H(m.home)}</b>`; x.a = `${cr(m.away)}<b>${H(m.away)}</b>`;
     if(m.venue) x.meta.push({t:m.venue});
     x.rnd = `الجولة ${+m.round||1}`; x.open = 'data-am-open="1"';
@@ -107,7 +110,7 @@ window.MXDAY = (function(){
       : `<span class="mxd-sc" dir="ltr">${x.sc}</span>${x.st==="live" ? `<span class="mxd-lb live"><i></i>${x.lab}</span>` : `<span class="mxd-lb">انتهت</span>`}`;
     const meta = x.meta.map(z=>`<span class="${z.off?"off":""}">${z.k?`<em>${H(z.k)}</em> `:""}<bdi>${H(z.t)}</bdi></span>`).join("");
     return `<article class="mc mxd-c is-${x.st}${fav?" is-fav":""}" ${x.open}${x.open?' tabindex="0" role="link"':""}>
-      <div class="mxd-r"><div class="mc-team h mxd-tm">${x.h}</div><div class="mxd-mid">${mid}</div><div class="mc-team a mxd-tm">${x.a}</div></div>
+      <div class="mxd-r"><div class="mc-team h mxd-tm${x.w==="a"?" lose":x.w==="h"?" win":""}">${x.h}</div><div class="mxd-mid">${mid}</div><div class="mc-team a mxd-tm${x.w==="h"?" lose":x.w==="a"?" win":""}">${x.a}</div></div>
       ${x.notes?`<div class="mxd-nt">${x.notes}</div>`:""}
       ${meta?`<div class="mc-foot mxd-meta">${meta}</div>`:""}
       ${x.note?`<div class="mxd-note">${H(x.note)}</div>`:""}
@@ -186,7 +189,7 @@ window.MXDAY = (function(){
             <span class="mxd-tt"><b>${H(g.sec.name)}</b><small>${rs.length===1?`<span>${H(rs[0])}</span>`:""}<span>${cnt(g.L.length)}</span>${live?`<span class="lv">${live===1?"مباراة جارية":live+" جارية"}</span>`:""}</small></span>
             <i class="mxd-cv">${IC.chev}</i>
           </button>
-          <button type="button" class="mxd-cp" data-mxd-comp-open="${H(g.sec.key)}">${g.sec.kind==="am"?"النتائج والترتيب":"صفحة البطولة"}</button>
+          <button type="button" class="mxd-cp" data-mxd-comp-open="${H(g.sec.key)}" aria-label="${g.sec.kind==="am"?"النتائج والترتيب":"صفحة البطولة"}" title="${g.sec.kind==="am"?"النتائج والترتيب":"صفحة البطولة"}">${IC.go}</button>
         </div>
         <div class="mxd-cards"${col?" hidden":""}>${g.L.map(z=>cardHTML(z.it, z.x, z.fav && !S.fav)).join("")}</div>
       </section>`;
@@ -217,14 +220,14 @@ window.MXDAY = (function(){
     const keepCal = S.cal ? calHTML(byDay) : "";
     V.innerHTML = head + `<div class="mxd">
       <div class="mxd-bar">
+        <div class="mxd-strip" role="group" aria-label="اختيار اليوم">${stripHTML(S.d, byDay)}</div>
         <div class="mxd-top">
-          <div class="mxd-sel"><b>${H(longDay(S.d))}</b></div>
+          <div class="mxd-sel"><b>${H(longDay(S.d))}</b>${day.length?`<small>${cnt(day.length)}</small>`:""}</div>
           <div class="mxd-acts">
-            <button type="button" class="mxd-pill sm${S.d===t?" on":""}" data-mxd-d="${t}"${S.d===t?' aria-current="date"':""}>اليوم</button>
+            ${S.d!==t?`<button type="button" class="mxd-pill sm" data-mxd-d="${t}">اليوم</button>`:""}
             <button type="button" class="mxd-ib" data-mxd-cal aria-label="التقويم" aria-haspopup="dialog">${IC.cal}</button>
           </div>
         </div>
-        <div class="mxd-strip" role="group" aria-label="اختيار اليوم">${stripHTML(S.d, byDay)}</div>
       </div>
       <div class="mxd-list">${secHTML||empty}</div>
     </div>`;

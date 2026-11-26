@@ -263,7 +263,7 @@
     const k=m[1]==="stats" ? "players" : m[1];
     const it=k==="home" ? {go:()=>nav("home")} : k==="news" ? {go:()=>nav("news")} : hubItems().find(x=>x.k===k);
     if(!it) return false;
-    try{ history.replaceState({mfv:"home"}, "", location.pathname+location.search); }catch(e){}
+    try{ history.replaceState({mfv:"matches"}, "", location.pathname+location.search); }catch(e){}
     closeHub(true); safe(it.go); scrollTo(0,0); return true;
   }
   window.addEventListener("hashchange", goHash);
@@ -277,11 +277,11 @@
     if(location.hash && !/^#(news|videos)/.test(location.hash)) return;   /* مباراة/لاعب مفتوح: مسجّلاتها تتولى الرجوع */
     try{ history.pushState({mfv:v}, "", location.pathname+location.search); }catch(e){}
   }
-  try{ if(!history.state && !location.hash) history.replaceState({mfv:"home"}, "", location.href); }catch(e){}
+  try{ if(!history.state && !location.hash) history.replaceState({mfv:"matches"}, "", location.href); }catch(e){}
   window.addEventListener("popstate", e=>{
     if(location.hash) return;
     if(hub && !hub.hidden) closeHub(true);
-    const v=(e.state && e.state.mfv) || "home", b=tab(v);
+    const v=(e.state && e.state.mfv) || "matches", b=tab(v);
     if(curView()===v || !b || b.style.display==="none") return;
     popping=true; try{ b.click(); }finally{ popping=false; }
     scrollTo(0,0);
