@@ -1,0 +1,126 @@
+/* =====================================================================
+   MF SOCCER Premium UI (منصور 2026-11-26: «كمّل جزء جزء من التطبيق — بس الفانتسي لا تجيسه — تطبيق premium»)
+   طبقة شكل فقط تُحمَّل بعد كل الأنماط: لا تغيّر منطقاً ولا بيانات ولا تحذف خاصية.
+   الرموز نفسها في كل الأقسام: كحلي #00061A، سطح c1، سطح مرفوع c2، خطوط بيضاء خافتة، ذهبي للمختار فقط.
+   ===================================================================== */
+html.mf{--pm-bg:var(--mf-bg,#00061A);--pm-s1:var(--mf-c1,#0A1330);--pm-s2:var(--mf-c2,#101B3E);
+  --pm-ln:rgba(255,255,255,.06);--pm-ln2:rgba(255,255,255,.10);--pm-r:18px;--pm-r-s:12px;
+  --pm-tx:var(--mf-tx,#F4F1E8);--pm-tx2:var(--mf-tx2,#A6AEC4);--pm-tx3:var(--mf-tx3,#6C7591);--pm-acc:var(--mf-acc-tx,#E7D093);--pm-live:#FF5A5F}
+html.mf[data-theme="light"]{--pm-ln:rgba(0,6,26,.07);--pm-ln2:rgba(0,6,26,.12)}
+
+/* ================= 1) صفحة المباراة ================= */
+/* الرأس: كحلي موحّد مع لمسة خافتة جداً من لوني الفريقين بدل التوهّج البرتقالي/الأزرق */
+html.mf #mpage .mp-head{background:linear-gradient(180deg,var(--pm-s2) 0%,var(--pm-bg) 100%);padding-bottom:14px}
+html.mf #mpage .mp-head::before,html.mf #mpage .mp-head::after{opacity:.28;filter:saturate(.7)}
+html.mf[data-theme="light"] #mpage .mp-head{background:linear-gradient(180deg,#0B1736 0%,#00061A 100%)}
+html.mf #mpage .mp-top button{width:38px;height:38px;border-radius:999px;background:rgba(255,255,255,.07);display:grid;place-items:center}
+/* التاريخ والقناة: سطر واحد بلا فقاعة */
+html.mf #mpage .mp-when{background:none;padding:0;border-radius:0;font-size:.8rem;font-weight:600;color:rgba(246,243,234,.72)}
+html.mf #mpage .mp-when .mp-when-tv{display:inline;font-size:inherit;opacity:.9}
+html.mf #mpage .mp-when .mp-when-tv::before{content:" · "}
+html.mf #mpage .mp-add{display:inline-flex;gap:6px;margin-top:6px;padding:3px 10px;border-radius:999px;background:rgba(255,255,255,.07);font-size:.72rem}
+html.mf #mpage .mp-add small{font-size:inherit;opacity:.75}
+html.mf #mpage .mp-res b{font-family:var(--mf-fh,inherit);font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:.02em}
+html.mf #mpage .mp-res i{opacity:.35}
+html.mf #mpage .mp-st{font-size:.76rem;font-weight:600;opacity:.7}
+html.mf #mpage .mp-team b{font-size:.95rem}
+html.mf #mpage .mp-scorers{font-size:.76rem;opacity:.85}
+html.mf #mpage .mp-scorers em{opacity:.6;font-style:normal}
+/* التبويبات: خط ذهبي رفيع تحت المختار */
+html.mf #mpage .mp-tabs{background:var(--pm-bg);border-bottom:1px solid var(--pm-ln);padding:0 14px;gap:20px}
+html.mf #mpage .mp-tabs button{padding:13px 0 11px;font-size:.86rem;font-weight:600;color:var(--pm-tx3);background:none;border:0;border-radius:0;position:relative}
+html.mf #mpage .mp-tabs button[aria-pressed="true"]{color:var(--pm-tx);font-weight:800;background:none;box-shadow:none}
+html.mf #mpage .mp-tabs button[aria-pressed="true"]::after{content:"";position:absolute;inset-inline:0;bottom:-1px;height:2.5px;border-radius:2px;background:var(--pm-acc)}
+/* البطاقات */
+html.mf #mpage .mp-sheet,html.mf #mpage .mp-body{background:var(--pm-bg)}
+html.mf #mpage .mp-body{padding:12px 14px 24px}
+html.mf #mpage .mp-card{background:var(--pm-s1);border:1px solid var(--pm-ln);border-radius:var(--pm-r);box-shadow:none}
+html.mf #mpage .mp-hd h3{font-size:.98rem;font-weight:800;letter-spacing:-.005em}
+html.mf #mpage .mp-compcard{padding:10px 14px;font-size:.84rem;color:var(--pm-tx2)}
+html.mf #mpage .fmx-says li{color:var(--pm-tx2);line-height:1.8}
+/* الأحداث: خط في الوسط، الدقيقة وسم صغير، بلا صناديق حول الأحداث */
+html.mf #mpage .tl{background:none;border:0}
+html.mf #mpage .tl-row,html.mf #mpage .tl-row.card,html.mf #mpage .tl-ev,html.mf #mpage .tl-row .tl-min{background:none!important;border:0!important;box-shadow:none!important}
+html.mf #mpage .tl-row{min-height:48px}
+html.mf #mpage .tl-min span{background:var(--pm-bg);border:1px solid var(--pm-ln2);border-radius:8px;font-family:var(--mf-fh,inherit);font-weight:700;font-size:.72rem;color:var(--pm-tx2);font-variant-numeric:tabular-nums;padding:2px 6px;min-width:34px}
+html.mf #mpage .tl-row:not(.card):not(.sub):not(.pk) .tl-min span{color:var(--pm-tx);border-color:color-mix(in srgb,var(--pm-acc) 45%,transparent)}
+html.mf #mpage .tl-name{font-weight:700;color:var(--pm-tx)}
+html.mf #mpage .tl-sub,html.mf #mpage .tl-det{color:var(--pm-tx3);font-size:.72rem}
+html.mf #mpage .tl-xnote,html.mf #mpage .tl-head{border-radius:999px}
+html.mf #mpage .tl-xnote{background:var(--pm-s2);font-size:.74rem;padding:5px 14px;margin-inline:auto;width:fit-content}
+html.mf #mpage .tl-score{opacity:.7;font-size:.72rem}
+
+/* ================= 0) عناوين الأقسام في كل التطبيق ================= */
+/* بدل العنوان الوسطي بين خطين: عنوان بجهة البداية، خط عريض، والعدّاد/الوصف بجانبه بحجم أصغر */
+html.mf .view h2.sec,html.mf #pprof h2.sec,html.mf #mpage h2.sec{display:flex;justify-content:flex-start;align-items:baseline;gap:10px;margin:26px 2px 12px;
+  font-family:var(--mf-f,inherit);font-size:1.12rem;font-weight:800;letter-spacing:-.01em;color:var(--pm-tx);text-align:start}
+html.mf .view h2.sec::before,html.mf .view h2.sec::after,html.mf #pprof h2.sec::before,html.mf #pprof h2.sec::after,html.mf #mpage h2.sec::before,html.mf #mpage h2.sec::after{display:none!important}
+html.mf h2.sec .sec-c{align-items:flex-start;max-width:none;flex-direction:row;align-items:baseline;gap:10px;flex-wrap:wrap}
+html.mf h2.sec .sec-t{flex-direction:row;align-items:baseline;gap:10px}
+html.mf h2.sec .sq-n,html.mf h2.sec .sec-n{font-size:.62em;font-weight:600;padding:3px 9px;border-radius:999px;background:var(--pm-s2);color:var(--pm-tx2);border:0}
+html.mf h2.sec .sec-s{font-size:.66em;font-weight:500;color:var(--pm-tx3)}
+html.mf h2.sec + .hint{text-align:start}
+
+/* ================= 2) الرئيسية ================= */
+/* مباريات اليوم: سطح هادئ بلا الشريط الذهبي ولا مربعات الوقت المنقّطة */
+html.mf #v-home .hm-today{background:var(--pm-s1);border:1px solid var(--pm-ln);border-radius:var(--pm-r)}
+html.mf #v-home .hm-today::before{display:none}
+html.mf #v-home .hm-td-time{border:0;padding:0;font-family:var(--mf-fh,inherit);font-weight:700;font-variant-numeric:tabular-nums}
+html.mf #v-home .hm-td-row{border-radius:0}
+html.mf #v-home .hm-td-row + .hm-td-row{border-top:1px solid var(--pm-ln)}
+html.mf #v-home .hm-tag i{background:var(--pm-acc)}
+/* بطاقات النتائج والأرقام والترتيب: نفس السطح */
+html.mf #v-home :is(.mf-rc,.hm-tiles > *,.hm-std,.mf-std .hm-std){background:var(--pm-s1);border:1px solid var(--pm-ln);box-shadow:none}
+/* أبرز اللاعبين: بلا تدرّج لون النادي الصارخ — لمسة خافتة في الأعلى فقط */
+html.mf #v-home .tp{background:linear-gradient(180deg,color-mix(in srgb,var(--pm-s2) 100%,transparent),var(--pm-s1) 55%)!important;border:1px solid var(--pm-ln)!important;border-radius:var(--pm-r)}
+html.mf #v-home .va-home{background:var(--pm-s1);border:1px solid var(--pm-ln);border-radius:var(--pm-r)}
+html.mf h2.sec .sec-c,html.mf h2.sec .sec-t{flex:1 1 auto;min-width:0;white-space:normal;text-wrap:balance}
+html.mf h2.sec .sec-t{flex-wrap:wrap;row-gap:4px}
+html.mf #v-home .hm-std h2.sec{margin:4px 2px 10px}
+
+/* ================= 3) الأندية وصفحة النادي ================= */
+/* أزرار الأقسام (ctabs) في كل التطبيق: مؤشر مرفوع محايد بدل لون النادي الصارخ */
+html.mf .ctabs{background:var(--pm-s1);border:1px solid var(--pm-ln);border-radius:14px;padding:4px}
+html.mf .ctabs .ctab-ind{background:var(--pm-s2)!important;box-shadow:inset 0 0 0 1px var(--pm-ln2)!important;border-radius:11px}
+html.mf .ctabs button{color:var(--pm-tx3);font-weight:700}
+html.mf .ctabs button[aria-selected="true"]{color:var(--pm-tx)}
+/* النبذة: لون النادي لمسة خافتة في الأعلى فقط، الإطار محايد */
+html.mf #v-clubs .cabout{background:linear-gradient(180deg,color-mix(in srgb,var(--cc,#122552) 14%,var(--pm-s1)) 0%,var(--pm-s1) 38%)!important;border:1px solid var(--pm-ln)!important;border-radius:var(--pm-r)}
+html.mf #v-clubs .cabout-hero{background:linear-gradient(180deg,rgba(255,255,255,.03),transparent)!important}
+html.mf #v-clubs .cfact{background:var(--pm-bg);border:1px solid var(--pm-ln);border-radius:var(--pm-r-s)}
+html.mf #v-clubs :is(.card,.chon-it,.cpres){background:var(--pm-s1);border:1px solid var(--pm-ln);border-radius:var(--pm-r);box-shadow:none}
+html.mf #v-clubs .chon-top .n{color:var(--pm-tx)!important;font-family:var(--mf-fh,inherit);font-weight:800;font-variant-numeric:tabular-nums}
+html.mf #v-clubs .chon .y bdi{background:var(--pm-bg);border-color:var(--pm-ln)}
+html.mf #v-clubs .cpres small{color:var(--pm-acc)!important}
+/* شريط شعارات الأندية */
+html.mf #v-clubs .mf-clubpick [aria-selected="true"]{background:var(--pm-s2);box-shadow:inset 0 0 0 1px var(--pm-ln2)}
+
+/* ================= 4) ملف اللاعب ================= */
+html.mf #pprof .pp-tabs{background:var(--pm-s1);border:1px solid var(--pm-ln);border-radius:14px;padding:4px}
+html.mf #pprof .pp-tabs button{color:var(--pm-tx3);font-weight:700;background:none}
+html.mf #pprof .pp-tabs button[aria-selected="true"],html.mf #pprof .pp-tabs button[aria-pressed="true"],html.mf #pprof .pp-tabs button.on{background:var(--pm-s2)!important;color:var(--pm-tx)!important;box-shadow:inset 0 0 0 1px var(--pm-ln2)}
+/* عناوين الأقسام الداخلية بلا الشريط الأزرق القديم */
+html.mf #pprof :is(h3,h4)::before,html.mf #pprof :is(h3,h4)::after{display:none!important}
+html.mf #pprof :is(h3,h4){font-weight:800;letter-spacing:-.005em}
+html.mf #pprof :is(.card,.an-card,.pp-stat,.pp-kpi){background:var(--pm-s1);border:1px solid var(--pm-ln);box-shadow:none}
+
+/* ================= 5) الإحصائيات والتحليل ================= */
+/* دوائر الأقسام: المختار حلقة ذهبية رفيعة على سطح مرفوع بدل الدائرة الذهبية الممتلئة */
+html.mf .mf-circ i{background:var(--pm-s1)!important;border:1px solid var(--pm-ln2);color:var(--pm-tx2)}
+html.mf .mf-circ[aria-pressed="true"] i{background:var(--pm-s2)!important;border:1.5px solid var(--pm-acc);color:var(--pm-acc)!important;box-shadow:0 0 0 4px color-mix(in srgb,var(--pm-acc) 10%,transparent)}
+html.mf .mf-circ[aria-pressed="true"] i svg{color:var(--pm-acc)}
+/* البطاقات: بلا الشريط الذهبي العلوي، سطح وحواف موحّدة */
+html.mf :is(#v-analysis,#v-players,#v-home) .an-card::before{display:none}
+html.mf :is(#v-analysis,#v-players) :is(.an-card,.card,.ts-pod,.pcard){background:var(--pm-s1);border:1px solid var(--pm-ln);border-radius:var(--pm-r);box-shadow:none}
+html.mf :is(#v-analysis,#v-players) .hint{color:var(--pm-tx3)}
+/* العنوان سطر واحد إن اتسع (كان يُقسم بسبب شبكة الأعمدة الثلاثة القديمة) */
+html.mf :is(.view,#pprof,#mpage) h2.sec{display:block!important;grid-template-columns:none!important}
+html.mf :is(.view,#pprof,#mpage) h2.sec .sec-c{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 10px;max-width:100%;text-wrap:wrap}
+html.mf :is(.view,#pprof,#mpage) h2.sec .sec-t{display:inline-flex;flex:0 1 auto}
+
+/* ================= 6) الأخبار وتحليل الفيديو ================= */
+/* نص فوق الصور: ظل أعمق في الأسفل حتى لا يتداخل العنوان مع كتابة الصورة نفسها */
+html.mf #v-news .nw-panel::after{background:linear-gradient(0deg,rgba(0,6,26,.98) 0%,rgba(0,6,26,.9) 38%,rgba(0,6,26,.45) 68%,rgba(0,6,26,.08) 100%)}
+html.mf #v-news .nw-panel{border:1px solid var(--pm-ln);border-radius:var(--pm-r);overflow:hidden}
+html.mf #v-videos :is(.va-card,.va-row){border-radius:var(--pm-r-s)}
+html.mf #v-videos .va-hero-ph::after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(0deg,rgba(0,6,26,.97) 0%,rgba(0,6,26,.86) 36%,rgba(0,6,26,.25) 66%,transparent 100%)}
