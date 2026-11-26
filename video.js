@@ -163,6 +163,7 @@ const QF = ["كأس الأمير 2025/2026", 1, "القادسية", "الفحي�
 const FB = mk("الفحيحيل","برقان"), NS = mk("النصر","الصليبخات"), TJ = mk("التضامن","الجزيرة"), SK = mk("السالمية","خيطان");
 const sd = (id, yt, match, h, a, date, cat, title, dur, pub, o) => Object.assign({id:"yt-"+id, src:"https://www.youtube.com/watch?v="+yt, thumb:"", matchId:match, home:h, away:a,
   comp:CPC, mdate:date, cat, title, desc:"", dur, pub, status:"published", pinned:false}, o||{});
+/* العناوين تمر بالقاموس (2026-11-26): المترجَم يظهر بلغة الزائر، وغير المترجَم يبقى عربياً كاملاً */
 const SEED = [
   /* 2026-11-26 السالمية 4-2 خيطان (كأس سمو ولي العهد ج3): الأهداف مع بعض، والحالات بروحها (منصور) */
   sd("salkhn-g", "QDYf_hEuyJs", SK, "السالمية", "خيطان", "2026-11-20", "goals", "تحليل أهداف مباراة السالمية وخيطان", 87, "2026-11-26T14:07:00.000Z", {pinned:true}),
@@ -255,7 +256,7 @@ function card(v, opt){
       <span class="va-pl">${PLAY}</span>
     </div>
     <div class="va-tx">
-      <h3 data-i18n="off">${H(v.title)}</h3>
+      <h3>${H(v.title)}</h3>
       ${teamsHTML(c)}
       <div class="va-meta">${metaHTML(c)}</div>
     </div></article>`;
@@ -267,7 +268,7 @@ function heroHTML(v){
     <div class="va-hero-ph">${thumbHTML(v, c, true)}</div>
     <div class="va-hero-tx">
       <span class="va-tag">${H(catT(v.cat))}${v.demo?` · تجريبي`:""}</span>
-      <h2 data-i18n="off">${H(v.title)}</h2>
+      <h2>${H(v.title)}</h2>
       ${teamsHTML(c, 22)}
       <div class="va-meta">${metaHTML(c)}</div>
       <span class="va-cta">${PLAY}<span>شاهد التحليل</span>${v.dur?`<em dir="ltr">${mmss(v.dur)}</em>`:""}</span>
@@ -373,7 +374,7 @@ function playerHTML(v){
         </div>
         <div class="vap-info">
           <span class="va-tag">${H(catT(v.cat))}${v.demo?` · تجريبي`:""}</span>
-          <h1 data-i18n="off">${H(v.title)}</h1>
+          <h1>${H(v.title)}</h1>
           ${c.home ? `<button type="button" class="vap-match"${m?` data-va-match="${H(v.matchId)}"`:" disabled"}>
             <span class="t">${crestImg(c.home, 30)}<b>${H(c.home)}</b></span>
             <span class="s">${done?`<b dir="ltr">${H(m.ag)} - ${H(m.hg)}</b>`:`<b>×</b>`}<small>${H(compLabel(c.comp))}${m&&m.round&&!m.__ext?` · الجولة ${H(m.round)}`:""}</small></span>
@@ -393,7 +394,7 @@ function playerHTML(v){
 function mini(v){
   const c = ctxOf(v);
   return `<button type="button" class="vap-mini" data-va-play="${H(v.id)}"><span class="va-th">${thumbHTML(v, c)}${v.dur?`<span class="va-dur" dir="ltr">${mmss(v.dur)}</span>`:""}</span>
-    <span class="vap-mini-tx"><small>${H(catT(v.cat))}</small><b data-i18n="off">${H(v.title)}</b><em>${H([c.home, c.away].filter(Boolean).join(" × "))}</em></span></button>`;
+    <span class="vap-mini-tx"><small>${H(catT(v.cat))}</small><b>${H(v.title)}</b><em>${H([c.home, c.away].filter(Boolean).join(" × "))}</em></span></button>`;
 }
 function player(){ let p = D.getElementById("vaPlayer"); if(!p){ p = D.createElement("div"); p.id = "vaPlayer"; p.className = "vap"; p.hidden = true;
   p.setAttribute("role","dialog"); p.setAttribute("aria-modal","true"); p.setAttribute("aria-label","تحليل الفيديو"); D.body.appendChild(p); } return p; }
@@ -628,7 +629,7 @@ function adminHTML(){
     </div>
     <div class="vaa-list">${L.length ? L.map(v=>{ const c = ctxOf(v); return `<div class="vaa-row">
         <span class="vaa-th">${thumbHTML(v, c)}</span>
-        <span class="vaa-tx"><b data-i18n="off">${H(v.title)}</b><small>${H(catT(v.cat))} · ${H([c.home,c.away].filter(Boolean).join(" × ") || "بدون مباراة")}${v.dur?` · <span dir="ltr">${mmss(v.dur)}</span>`:""}</small>
+        <span class="vaa-tx"><b>${H(v.title)}</b><small>${H(catT(v.cat))} · ${H([c.home,c.away].filter(Boolean).join(" × ") || "بدون مباراة")}${v.dur?` · <span dir="ltr">${mmss(v.dur)}</span>`:""}</small>
           <em class="st-${v.status==="published"?"on":"off"}">${st(v)}${v.pinned?" · مثبّت":""}${v.demo?" · تجريبي":""}${v.matchId && !findMatch(v.matchId)?" · المباراة غير موجودة":""}</em></span>
         <span class="vaa-acts"><button type="button" class="vaa-b" data-vaa="edit" data-id="${H(v.id)}">تعديل</button>
           <button type="button" class="vaa-b" data-vaa="toggle" data-id="${H(v.id)}">${v.status==="published"?"إخفاء":"نشر"}</button>

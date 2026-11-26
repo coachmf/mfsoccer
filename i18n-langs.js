@@ -65,7 +65,7 @@
   /* ---------- بيانات اللغات (i18n-data.js، 913KB) — لغير العربية فقط (أداء 2026-11-14) ----------
      العربية لا تقرأ هذه البيانات، فالصفحة لا تحمّلها إلا إذا كانت اللغة المحفوظة غيرها.
      التبديل من العربية يحمّلها أولاً ثم يترجم (I18N.setLang). من يضيف ترجمات فوقها يستعمل I18N.onData. */
-  const DATA_V = 29;
+  const DATA_V = 34;
   const hasData = () => typeof I18N_EN_ADD !== 'undefined';
   const ONDATA = [];
   let merged = false, loading = null;
@@ -74,6 +74,8 @@
     merged = true;
     /* إضافات الإنجليزية المشتركة (أسماء كأس الخليج، الملاعب، نصوص ناقصة) — لا تغيّر مفتاحاً موجوداً */
     for(const k in I18N_EN_ADD){ if(I18N.DICT[k] == null) I18N.DICT[k] = I18N_EN_ADD[k]; }
+    /* تصحيحات مراجعة الترجمة (2026-11-26) تتقدّم على القاموس */
+    if(typeof I18N_EN_FIX !== 'undefined') for(const k in I18N_EN_FIX) I18N.DICT[k] = I18N_EN_FIX[k];
     ONDATA.splice(0).forEach(f => { try{ f(); }catch(e){ console.error(e); } });
     I18N._keysSorted = null; I18N._cmp = null; I18N._ptKeys = null; I18N._ptCmp = null;
     for(const k in cache) delete cache[k];
@@ -111,7 +113,7 @@
   const DOWS = {
     pt:{Sun:'Dom',Mon:'Seg',Tue:'Ter',Wed:'Qua',Thu:'Qui',Fri:'Sex',Sat:'Sáb',Sunday:'Domingo',Monday:'Segunda-feira',Tuesday:'Terça-feira',Wednesday:'Quarta-feira',Thursday:'Quinta-feira',Friday:'Sexta-feira',Saturday:'Sábado'},
     es:{Sun:'Dom',Mon:'Lun',Tue:'Mar',Wed:'Mié',Thu:'Jue',Fri:'Vie',Sat:'Sáb',Sunday:'Domingo',Monday:'Lunes',Tuesday:'Martes',Wednesday:'Miércoles',Thursday:'Jueves',Friday:'Viernes',Saturday:'Sábado'},
-    fr:{Sun:'Dim',Mon:'Lun',Tue:'Mar',Wed:'Mer',Thu:'Jeu',Fri:'Ven',Sat:'Sam',Sunday:'Dimanche',Monday:'Lundi',Tuesday:'Mardi',Wednesday:'Mercredi',Thursday:'Jeudi',Friday:'Vendredi',Saturday:'Samedi'},
+    fr:{Sun:'dim.',Mon:'lun.',Tue:'mar.',Wed:'mer.',Thu:'jeu.',Fri:'ven.',Sat:'sam.',Sunday:'Dimanche',Monday:'Lundi',Tuesday:'Mardi',Wednesday:'Mercredi',Thursday:'Jeudi',Friday:'Vendredi',Saturday:'Samedi'},
     sh:{Sun:'Ned',Mon:'Pon',Tue:'Uto',Wed:'Sri',Thu:'Čet',Fri:'Pet',Sat:'Sub',Sunday:'Nedjelja',Monday:'Ponedjeljak',Tuesday:'Utorak',Wednesday:'Srijeda',Thursday:'Četvrtak',Friday:'Petak',Saturday:'Subota'}};
   const MONS_ = {
     pt:{Jan:'jan',Feb:'fev',Mar:'mar',Apr:'abr',May:'mai',Jun:'jun',Jul:'jul',Aug:'ago',Sep:'set',Sept:'set',Oct:'out',Nov:'nov',Dec:'dez',
@@ -134,7 +136,11 @@
     const words = t24.match(/[A-Za-z]+/g) || [];
     if(!words.length) return t24 !== s ? t24 : null;
     if(!words.every(w => W[w] != null)) return null;
-    return t24.replace(/[A-Za-z]+/g, w => W[w]);
+    let out = t24.replace(/[A-Za-z]+/g, w => W[w]);
+    /* BCMS: «25 avgust» ← «25. avgusta» (redni broj + genitiv) — مراجعة الترجمة 2026-11-26 */
+    if(fam() === 'sh') out = out.replace(/\b(\d{1,2}) (januar|februar|mart|april|maj|juni|juli|avgust|septembar|oktobar|novembar|decembar)\b/g,
+      (m, d, mo) => d + '. ' + ({januar:'januara',februar:'februara',mart:'marta',april:'aprila',maj:'maja',juni:'juna',juli:'jula',avgust:'avgusta',septembar:'septembra',oktobar:'oktobra',novembar:'novembra',decembar:'decembra'})[mo]);
+    return out;
   }
   /* إنجليزي ← برتغالي (نص كامل، ثم نمط بأجزاء متغيرة، ثم تاريخ، ثم أجزاء مفصولة بـ · أو —) */
   function toPt(s, depth){
