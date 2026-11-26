@@ -28,9 +28,7 @@
       card.addEventListener("click", () => { const k = card.dataset.k; if(k){ location.hash = "#m/" + k; } }); }
     const onMatch = !!D.querySelector("#mpage.on");
     const L = liveMatches();
-    paintStrip(L);
-    const stripShown = !!D.querySelector(".view.on .pm-ls");
-    if(!L.length || onMatch || stripShown){ card.hidden = true; card.classList.remove("on"); lastHTML = ""; return; }
+    if(!L.length || onMatch){ card.hidden = true; card.classList.remove("on"); lastHTML = ""; return; }
     const m = L[0], k = safe(() => matchKey(m)) || "";
     const clk = safe(() => mclkHTML(m)) || (m.status === "ht" ? "بين الشوطين" : "مباشر");
     const html = `<span class="pm-lc-dot" aria-hidden="true"></span>
@@ -42,34 +40,6 @@
     card.setAttribute("aria-label", `مباشر: ${m.home} ${+m.hg||0} - ${+m.ag||0} ${m.away}`);
     if(html !== lastHTML){ card.innerHTML = html; lastHTML = html; }
     if(card.hidden){ card.hidden = false; requestAnimationFrame(() => card.classList.add("on")); }
-  }
-
-  /* 1ب) «مباشر الآن» داخل الصفحة: أعلى «المباريات» وفوق «الترتيب» (منصور 2026-11-26)
-     كل مباراة جارية سطر مستقل؛ عند وجودها تختفي الكبسولة العائمة في تلك الصفحة */
-  let stripHTML = "";
-  function stripRow(m){
-    const k = safe(() => matchKey(m)) || "";
-    const clk = safe(() => mclkHTML(m)) || (m.status === "ht" ? "بين الشوطين" : "مباشر");
-    return `<button type="button" class="pm-ls-r" data-pm-k="${H(k)}" aria-label="مباشر: ${H(m.home)} ${+m.hg||0} - ${+m.ag||0} ${H(m.away)}">
-      <span class="pm-ls-t h">${crestImg(m.home)}<b>${H(m.home)}</b></span>
-      <span class="pm-ls-m"><span class="pm-ls-sc" data-pm-sc="${H(k)}" dir="ltr"><b>${+m.hg||0}</b><i>-</i><b>${+m.ag||0}</b></span><span class="pm-ls-clk">${clk}</span></span>
-      <span class="pm-ls-t a"><b>${H(m.away)}</b>${crestImg(m.away)}</span></button>`;
-  }
-  function paintStrip(L){
-    const html = L.length ? `<div class="pm-ls-h"><span class="pm-lc-dot" aria-hidden="true"></span><b>مباشر الآن</b>${L.length > 1 ? `<small>${L.length} مباريات</small>` : ""}</div>${L.map(stripRow).join("")}` : "";
-    const spots = [];
-    const mh = D.querySelector("#v-matches > .mx-head"); if(mh) spots.push(["m", mh]);
-    const st = D.querySelector("#v-home #mfStd"); if(st) spots.push(["s", st]);
-    spots.forEach(([id, anchor]) => {
-      let box = anchor.parentNode.querySelector(`:scope > .pm-ls[data-at="${id}"]`);
-      if(!html){ if(box) box.remove(); return; }
-      if(!box){ box = D.createElement("section"); box.className = "pm-ls"; box.dataset.at = id; box.setAttribute("aria-label", "مباشر الآن");
-        box.addEventListener("click", e => { const r = e.target.closest(".pm-ls-r"); if(r && r.dataset.pmK) location.hash = "#m/" + r.dataset.pmK; }); }
-      if(id === "m"){ if(anchor.nextElementSibling !== box) anchor.after(box); }
-      else if(anchor.previousElementSibling !== box) anchor.before(box);
-      if(box.dataset.h !== html){ box.innerHTML = html; box.dataset.h = html; }
-    });
-    stripHTML = html;
   }
 
   /* ---------------- 2) حركة الهدف ---------------- */
