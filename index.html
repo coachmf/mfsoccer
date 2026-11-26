@@ -2061,6 +2061,11 @@ html[dir="ltr"] .tl-ev.a .tl-card{text-align:right;align-items:flex-end}
 .tl-ev.pk .pk-ico{flex:none;display:grid;place-items:center;width:24px;height:24px;border-radius:50%;color:#fff}
 .tl-ev.pk.ok .pk-ico{background:#12B76A}.tl-ev.pk.no .pk-ico{background:#D92D20}
 .tl-ev.pk.no .tl-name{color:#6B7F9A}
+.tl .tl-ev.pk .tl-card{display:block!important;min-width:0}
+.tl .tl-ev.pk .tl-sub{display:block;white-space:normal!important;font-size:.72rem;line-height:1.5}
+.pso-st{margin-top:10px}.pso-st h4{font-family:var(--display);font-weight:800;font-size:.85rem;margin:14px 0 4px}.pso-st .stat small{opacity:.6;font-size:.72rem;margin-inline-start:6px}
+.tl-psomaps{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin:10px 0 4px}
+.tl-psomap > b{display:block;font-family:var(--display);font-weight:800;font-size:.8rem;color:var(--head);margin:0 2px 6px}
 .tl-mark.end::before{bottom:50%}
 @media(max-width:640px){.tl{padding:8px 10px 12px}.tl-row{grid-template-columns:1fr 52px 1fr;min-height:48px}.tl-name{font-size:.82rem}.tl-score{display:none}.tl-min span{min-width:38px;height:24px;font-size:.72rem}}
 /* ===== /v15 ===== */
@@ -6205,6 +6210,9 @@ const hasET = m => !!(m && etAllowed(m) && (m.et || m.status==="e1" || m.status=
 const etAbs = (m, mm, x) => 90 + add1Of(m) + add2Of(m) + (mm - 90) + (mm > 105 ? add3Of(m) : 0) + (+x || 0);
 /* ركلات الترجيح للعرض فقط (منصور 2026-10-03): m.psk = [{t:"h"|"a", p:اسم, ok:سجّل؟}] بالترتيب — لا تدخل أهدافاً ولا ركلات جزاء
    ولا أي إحصاء؛ النتيجة تُحسب من الركلات، أو من m.pso إن أُدخلت النتيجة وحدها */
+/* نتيجة ركلة الترجيح ومكانها k.z (منصور 2026-11-26): الإضاعة تُستنتج من المكان — داخل الشبكة = صدّها الحارس، الإطار = العارضة/القائم، وإلا خارج المرمى */
+const pskRes = k => { if(k.ok) return "سجّل"; const z=penPlaceOf(k.z||""); return !z ? "أضاع" : PZ_CELLS.includes(z) ? "صدّها الحارس" : z; };
+const pskPen = k => ({place:k.z||"", res: k.ok ? "سجلت" : PZ_CELLS.includes(penPlaceOf(k.z||"")) ? "تصدى لها الحارس" : "أضاع"});
 const pskOf = m => Array.isArray((m||{}).psk) ? m.psk.filter(k=>k && (k.t==="h"||k.t==="a")) : [];
 const psoOf = m => { const K=pskOf(m); if(K.length) return {h:K.filter(k=>k.t==="h"&&k.ok).length, a:K.filter(k=>k.t==="a"&&k.ok).length};
   const p=(m||{}).pso; return p && p.h!=null && p.a!=null && p.h!=="" && p.a!=="" ? {h:+p.h, a:+p.a} : null; };
@@ -8493,9 +8501,13 @@ function goalsTimeline(m,gs,mc){
       const body=`<div class="tl-ev pk${isH?" h":" a"}${k.ok?" ok":" no"}"><i class="pk-ico" aria-hidden="true">${k.ok
           ?'<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>'
           :'<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M7 7l10 10M17 7L7 17"/></svg>'}</i>
-        <div class="tl-card"><div class="tl-name">${esc(k.p||"—")}</div><div class="tl-sub">${k.ok?"سجّل":"أضاع"}</div>${k.z?`<div class="tl-pz">${esc(k.z)}</div>`:""}</div></div>`;
+        <div class="tl-card"><div class="tl-name">${esc(k.p||"—")}</div><div class="tl-sub">${esc(pskRes(k))}</div>${k.z&&PZ_CELLS.includes(penPlaceOf(k.z))?`<div class="tl-pz">${esc(k.z)}</div>`:""}</div></div>`;
       rows.push(`<div class="tl-row pk${isH?" home":" away"}"><div class="tl-side r">${isH?body:""}</div><div class="tl-min pk"><span>${ph}-${pa}</span></div><div class="tl-side l">${isH?"":body}</div></div>`); });
     rows.push(`<div class="tl-mark"><span>ركلات الترجيح <b dir="ltr">${P.h} - ${P.a}</b></span></div>`);
+    /* أماكن التسديد على المرمى لكل فريق (متى حُدّد مكان ركلة واحدة على الأقل) */
+    const pmap = t => { const K=pskOf(m).filter(k=>k.t===t && k.z); return K.length ? `<div class="tl-psomap"><b>${esc(t==="h"?m.home:m.away)}</b>${anGoalSVG(K.map(pskPen))}</div>` : ""; };
+    const maps = pmap("h")+pmap("a");
+    if(maps) rows.push(`<div class="tl-psomaps">${maps}</div>`);
   }
   if(over) rows.push(`<div class="tl-mark end"><span>${ET?"النهاية بعد الأشواط الإضافية":"النهاية"} <b dir="ltr">${m.hg??h} - ${m.ag??a}</b></span></div>`);
   return `<div class="tl"><div class="tl-head"><span>${esc(m.home)}</span><span>${esc(m.away)}</span></div>${rows.join("")}</div>`;
@@ -9625,6 +9637,31 @@ document.addEventListener("click", e=>{
   box.scrollIntoView({block:"nearest", behavior:"smooth"});
 });
 document.addEventListener("keydown", e=>{ const t=e.target.closest && e.target.closest(".pz[data-pz]"); if(t && (e.key==="Enter"||e.key===" ")){ e.preventDefault(); t.dispatchEvent(new MouseEvent("click",{bubbles:true})); } });
+/* ركلات الترجيح قسم مستقل عن ركلات الجزاء (منصور 2026-11-26: «سو قسم بروحه ركلات الترجيح… مو ركلة جزاء بالمباراة»).
+   المصدر m.psk لمباريات المسابقة المختارة (MATCHES)؛ لا تدخل PENS ولا الأهداف. كأس الموسم السابق تظهر في تبويبها لا في «الكل» كبقية الإحصاءات */
+const pskMatches = () => MATCHES;
+function pskList(ms){
+  const L=[];
+  (ms||pskMatches()).forEach(m=>pskOf(m).forEach(k=>{ const h=k.t==="h";
+    L.push({...pskPen(k), p:k.p||"", by:h?m.home:m.away, vs:h?m.away:m.home, r:"", m:"", ok:!!k.ok, mk:m});   /* بلا «الجولة»: الترجيح في الكؤوس فقط */ }));
+  return L;
+}
+function anShootouts(){
+  const L=pskList(); if(!L.length) return "";
+  const ms=pskMatches().filter(m=>pskOf(m).length);
+  const tm={}; ms.forEach(m=>{ const P=psoOf(m); if(!P) return; const w=P.h>P.a?m.home:m.away, l=P.h>P.a?m.away:m.home;
+    (tm[w]=tm[w]||{w:0,l:0}).w++; (tm[l]=tm[l]||{w:0,l:0}).l++; });
+  const pl={}; L.filter(x=>x.p).forEach(x=>{ const k=x.p+"|"+x.by; (pl[k]=pl[k]||{p:x.p,by:x.by,n:0,ok:0}).n++; if(x.ok) pl[k].ok++; });
+  const P=Object.values(pl).sort((a,b)=>b.n-a.n||b.ok-a.ok).slice(0,8);
+  const sv=L.filter(x=>/تصد/.test(x.res)).length;
+  return `${anPens(L)}
+    <div class="an-card pso-st">
+      <div class="an-tiles t3"><div><b>${ms.length}</b><span>${ms.length===1?"مباراة":"مباريات"} بالترجيح</span></div>
+        <div><b>${L.length-L.filter(x=>x.ok).length}</b><span>ضائعة</span></div><div><b>${sv}</b><span>صدّها الحارس</span></div></div>
+      <h4>الفرق</h4>${Object.entries(tm).sort((a,b)=>b[1].w-a[1].w).map(([c,v])=>`<div class="stat"><span>${esc(c)}</span><span class="v">فاز ${v.w} · خسر ${v.l}</span></div>`).join("")}
+      ${P.length?`<h4>المنفّذون</h4>${P.map(x=>`<div class="stat"><span>${esc(x.p)} <small>${esc(x.by)}</small></span><span class="v">${x.ok} من ${x.n}</span></div>`).join("")}`:""}
+    </div>`;
+}
 function anPens(list){
   const L=list||PENS, has=L.some(x=>x.place);
   const scored=L.filter(x=>/سجل/.test(x.res||"")).length;
@@ -9731,6 +9768,11 @@ function anOverviewHTML(){
           <p class="hint">أين توضع ركلات الجزاء في هذا الدوري؟</p>
           ${anPens()}
         </section>
+        ${(()=>{ const h=anShootouts(); return h?`<section>
+          <h2 class="sec">ركلات الترجيح</h2>
+          <p class="hint">بعد نهاية المباراة، منفصلة عن ركلات الجزاء ولا تُحسب أهدافاً.</p>
+          ${h}
+        </section>`:""; })()}
         <section>
           <h2 class="sec">أثر الهدف الأول</h2>
           ${anFirstGoal()}
@@ -13943,7 +13985,8 @@ function playerProfileData(name, club){
   const rd= sum(c=>CARDS.filter(x=>x.p===name && x.club===c && isRed(x.type)).length);
   const pens = sum(c=>PENS.filter(x=>x.p===name && x.by===c).length);
   const pensS = sum(c=>PENS.filter(x=>x.p===name && x.by===c && x.res==="سجلت").length);
-  const penList = PENS.filter(x=>x.p===name && clubs.includes(x.by));   /* خريطة ركلاته في الملف (منصور 2026-11-02: «ابي ب بروفايل الاعب الي شات يبين وين شات») */
+  const penList = PENS.filter(x=>x.p===name && clubs.includes(x.by));
+  const psoList = pskList().filter(x=>x.p===name && clubs.includes(x.by));   /* ركلات الترجيح منفصلة (منصور 2026-11-26) */   /* خريطة ركلاته في الملف (منصور 2026-11-02: «ابي ب بروفايل الاعب الي شات يبين وين شات») */
   const pp=clubs.reduce((t,c)=>{ const e=PP.find(x=>x.n===name && x.c===c); return e?{apps:t.apps+e.apps, mins:t.mins+e.mins, cs:t.cs+e.cs}:t; }, {apps:0,mins:0,cs:0});
   const log=[]; let conceded=0;
   /* الدقائق المتاحة: طول كل مباراة لعبها ناديه الحالي (شارك أو لا)، ومن الأندية السابقة ما شارك فيه فقط؛ الجولة تُحسب مرة (منصور 2026-11-04) */
@@ -13978,7 +14021,7 @@ function playerProfileData(name, club){
   const missLog=missed.filter(x=>!x.soft || mts(x.m)>first);   /* منفصلة عن log حتى لا تدخل عدّ المباريات في fmx.js */
   /* في الإجمالي تختلط جولات المسابقات (ج1 كأس بعد ج3 دوري)، فالترتيب بالتاريخ؛ داخل مسابقة واحدة كما كان */
   log.sort(logCmp);
-  return {name, club, former, pos, num, gk, goals, assists, ownG, y, rd, pens, pensS, penList, missLog, apps:pp.apps, mins:pp.mins, minsOf:Object.values(avail).reduce((a,b)=>a+b,0), appsOf:Object.keys(avail).length, cs:pp.cs, conceded, log};
+  return {name, club, former, pos, num, gk, goals, assists, ownG, y, rd, pens, pensS, penList, psoList, missLog, apps:pp.apps, mins:pp.mins, minsOf:Object.values(avail).reduce((a,b)=>a+b,0), appsOf:Object.keys(avail).length, cs:pp.cs, conceded, log};
 }
 const logCmp=(a,b)=>(COMP==="الكل" && a.m.date && b.m.date && a.m.date!==b.m.date) ? String(b.m.date).localeCompare(String(a.m.date))
     : (b.m.round-a.m.round)||String(b.m.date).localeCompare(String(a.m.date));
@@ -14059,6 +14102,7 @@ function playerProfileHTML(D){
     ${D.former&&D.former.length?`<p class="pprof-prev">شارك هذا الموسم أيضاً مع ${D.former.map(c=>esc(c)).join(" و")}</p>`:""}
     ${played ? `<div class="pprof-stats">${cards.filter(Boolean).join("")}</div>` : `<p class="pprof-empty">لم تُرصد مشاركة لهذا اللاعب في ${esc(PK==="*" ? "أي بطولة" : ((XO.find(o=>o.key===PK)||{}).label || compLabel(PK||"الدوري")))} بعد.</p>`}
     ${(D.penList&&D.penList.length&&typeof anPens==="function")?`<div class="pprof-pens an"><h4>ركلات الجزاء</h4>${anPens(D.penList)}</div>`:""}
+    ${(D.psoList&&D.psoList.length&&typeof anPens==="function")?`<div class="pprof-pens an"><h4>ركلات الترجيح <small>${D.psoList.filter(x=>x.ok).length} من ${D.psoList.length}</small></h4>${anPens(D.psoList)}</div>`:""}
     ${logHTML}
   </div>`;
 }
