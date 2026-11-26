@@ -507,3 +507,16 @@ html:lang(pt) #mpage .tl-mark:not(.end) span::before{content:"Fim: "}
 html:lang(es) #mpage .tl-mark:not(.end) span::before{content:"Final: "}
 html:lang(fr) #mpage .tl-mark:not(.end) span::before{content:"Fin : "}
 html:lang(sh) #mpage .tl-mark:not(.end) span::before{content:"Kraj: "}
+/* ===== أحداث المباراة: الاسم سطر واحد كامل، وكل سطر تحته سطر واحد (منصور 2026-11-26) =====
+   «عبدالرحمن الرشيدي» كان يُقص، و«صناعة عبدالمحسن العجمي · عرضية من اللعب المفتوح» يلتفّ على سطرين */
+html.mf #mpage .tl-ev:not(.sub):not(.pk) .tl-name{white-space:nowrap;overflow:visible;text-overflow:clip}
+html.mf #mpage .tl-ev .tl-assist,html.mf #mpage .tl-ev .tl-assist + .tl-det,html.mf #mpage .tl-ev .tl-det,html.mf #mpage .tl-ev.xev .tl-sub{display:block;white-space:nowrap}
+html.mf #mpage .tl-ev .tl-assist + .tl-det::before{content:none}
+html.mf #mpage .tl .tl-row{grid-template-columns:minmax(0,1fr) 44px minmax(0,1fr)!important}
+html.mf #mpage .mp-card:has(.tl-row){padding-inline:8px}
+html.mf #mpage .mp-card .tl{padding-inline:0}
+html.mf #mpage .tl-side.r{padding-inline-end:6px}html.mf #mpage .tl-side.l{padding-inline-start:6px}
+html.mf #mpage .tl-ev.xev .tl-sub + .tl-sub{white-space:normal;line-height:1.45}   /* ملاحظة VAR الطويلة سطرها الخاص، وتلتف إن لم تتسع */
+/* أندرويد: لا شيء أعرض من الشاشة يزحزح صفحة المباراة جانبياً (سعد 2026-11-26: «الصفحة مو كاملة وتزحف») */
+html.mf,html.mf body{overflow-x:clip}
+html.mf #mpage{overflow-x:clip;max-width:100vw}

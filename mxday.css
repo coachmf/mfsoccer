@@ -200,7 +200,7 @@ html.mf[dir="ltr"] #v-matches .mx-head .mf-sel > select{background-position:righ
 html.mf[data-theme="dark"] .mxd .mxd-c{background:transparent;border-color:var(--mxd-ln)}
 @media(hover:hover){.mxd .mxd-c[data-mopen]:hover,.mxd .mxd-c[data-am-open]:hover{background:color-mix(in srgb,var(--mxd-tx) 3%,transparent)}}
 .mxd .mxd-c[data-mopen]:active,.mxd .mxd-c[data-am-open]:active{transform:none;background:var(--mxd-c2)}
-.mxd .mxd-c.is-live{border-color:var(--mxd-ln);box-shadow:inset -3px 0 0 var(--mxd-live)}
+.mxd .mxd-c.is-live{border-color:var(--mxd-ln);box-shadow:none}   /* بلا خط أحمر جانبي — المباشر يكفيه «مباراة جارية» والدقيقة (منصور 2026-11-26) */
 .mxd .mxd-c.is-fav{box-shadow:inset -3px 0 0 var(--mxd-acc)}
 .mxd-r{grid-template-columns:minmax(0,1fr) 88px minmax(0,1fr);gap:4px;padding:12px 14px}
 .mxd .mxd-tm{gap:10px}

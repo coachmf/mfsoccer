@@ -60,7 +60,11 @@ const SNAP={_p:{},
     return this._p[id]=fetch('/api/doc/'+id+(bust?'?v='+Math.floor(Date.now()/15000):''), {cache:'no-cache', signal:ctl&&ctl.signal})
       .then(r=>r.ok?r.json():null).catch(()=>null).finally(()=>clearTimeout(t)); }};
 /* الفتح من إشعار (#m/…): لقطة الموسم بمفتاح 15 ث من أول لحظة — كانت تُرسم النسخة القديمة ثم تُصحَّح بعد ثوانٍ (منصور 2026-11-20) */
-if(/^https?:$/.test(location.protocol)){ SNAP.get('2026-2027', false, /^#m\//.test(location.hash)); SNAP.get('assets-lite'); SNAP.get('gulf27'); }
+/* وقت مباراة اليوم (من تلميح mf-mday الذي تحفظه matchWindowNow): لقطة بمفتاح 15 ث أيضاً — كانت لقطة CDN القديمة تُظهر المباراة الجارية «لم تبدأ» حتى التحديث (منصور 2026-11-26) */
+function mfLiveHint(){ try{ const h=JSON.parse(localStorage.getItem('mf-mday')||'null'), n=new Date();
+  const iso=n.getFullYear()+'-'+String(n.getMonth()+1).padStart(2,'0')+'-'+String(n.getDate()).padStart(2,'0'), mins=n.getHours()*60+n.getMinutes();
+  return !!(h && (h[iso]||[]).some(t=>{ const x=(+t.slice(0,2))*60+(+t.slice(3,5)); return mins>=x-30 && mins<=x+150; })); }catch(e){ return false; } }
+if(/^https?:$/.test(location.protocol)){ SNAP.get('2026-2027', false, /^#m\//.test(location.hash) || mfLiveHint()); SNAP.get('assets-lite'); SNAP.get('gulf27'); }
 /* بعد التحليل تكون الحالة interactive قبل تنفيذ سكربتات defer (Firebase) — فعلامة
    DOMContentLoaded هي الدليل الوحيد على جاهزيتها (انظر domReady) */
 var DCL_FIRED=false; document.addEventListener('DOMContentLoaded', ()=>{ DCL_FIRED=true; }, {once:true});
@@ -2356,9 +2360,9 @@ html[dir="ltr"] .tl-ev.a .tl-card{text-align:right;align-items:flex-end}
 <link rel="stylesheet" href="career.css?v=6">
 <script src="player-career.js?v=5" defer></script>   <!-- مسيرة اللاعبين من FM27 (صفوف خام لكل موسم) -->
 <script src="career.js?v=5" defer></script>   <!-- تبويب «المسيرة» في ملف اللاعب: يلفّ playerProfileHTML بعد fmx.js -->
-<link rel="stylesheet" href="mxday.css?v=3">
+<link rel="stylesheet" href="mxday.css?v=4">
 <script src="mxday.js?v=6" defer></script>
-<link rel="stylesheet" href="premium.css?v=40">   <!-- Premium UI: طبقة الشكل الموحّدة لكل الأقسام عدا الفانتسي (منصور 2026-11-26) -->
+<link rel="stylesheet" href="premium.css?v=41">   <!-- Premium UI: طبقة الشكل الموحّدة لكل الأقسام عدا الفانتسي (منصور 2026-11-26) -->
 <script src="premium.js?v=6" defer></script>   <!-- Premium: بطاقة مباشرة مثبّتة، حركة الهدف، السحب للتحديث (منصور 2026-11-26) -->
 <script src="visitors.js?v=3" defer></script>   <!-- الزوار: قياس مجهول + العين للطاقم + «الزوار بالتفصيل» في الإدارة (2026-11-14) -->   <!-- صفحة المباريات حسب اليوم (منصور 2026-11-07) -->
 <style>
@@ -5459,7 +5463,7 @@ function watchPulse(){
     pulseFull(p.updated);
   }, ()=>{});
   clearInterval(PULSE.t);
-  PULSE.t = setInterval(()=>{ if(matchWindowNow()) pulseCheck(); }, 45000);
+  PULSE.t = setInterval(()=>{ if(matchWindowNow()) pulseCheck(); }, 45000); setTimeout(matchWindowNow, 3000);   /* يحفظ تلميح mf-mday مبكراً */
   pulseCheck(true);   /* اللقطة التي رُسم منها الإقلاع قد تكون قديمة (CDN) — كان المستمع الكامل يصحّحها فوراً */
 }
 let PULSE_CHK = 0;
@@ -8368,7 +8372,9 @@ function goalsTimeline(m,gs,mc){
   let h=0,a=0; const rows=[]; let htDone=false, etDone=false;
   ev.forEach(e=>{
     if(ET && !etDone && tlKey(e)>=1000 && tlKey(e)<1e6){ etDone=true; rows.push(`<div class="tl-mark"><span>الوقت الأصلي <b dir="ltr">${h} - ${a}</b></span></div>`); }
-    const club = e.t==="g" ? e.g.sc : e.t==="c" ? e.c.club : e.t==="e" ? e.v.club : e.t==="p" ? e.p.by : e.sb.club;
+    /* مراجعة VAR لركلة جزاء تظهر في جهة الفريق المستفيد من الركلة لا جهة اللاعب المرتكب (منصور 2026-11-26: وليد سعد → جهة السالمية) */
+    const varPk = e.t==="e" && e.v.k==="var" && e.v.club && /جزاء/.test(String(e.v.note||"")) ? pk.find(p=>p.by && p.by!==e.v.club && Math.abs((+p.m||0)-e.m)<=5) : null;
+    const club = e.t==="g" ? e.g.sc : e.t==="c" ? e.c.club : e.t==="e" ? (varPk ? varPk.by : e.v.club) : e.t==="p" ? e.p.by : e.sb.club;
     const isH = club===m.home;
     const afterHT = e.t==="g" ? (e.m>45 && !(e.m===45 && e.x))
                   : (e.t==="c"||e.t==="e"||e.t==="p") ? (e.m>45)
@@ -8402,7 +8408,7 @@ function goalsTimeline(m,gs,mc){
       if(!v.club){ rows.push(`<div class="tl-xnote">${K.ico}<b>${K.t}</b><span dir="ltr">${mn}</span>${v.note?`<em>${esc(v.note)}</em>`:""}</div>`); return; }
       const body=`<div class="tl-ev xev${isH?" h":" a"}"><div class="tl-card">
           <div class="tl-name"${v.p?` data-player="${esc(v.p)}" data-club="${esc(v.club)}"`:""}>${K.ico}${v.p?esc(v.p):K.t}</div>
-          <div class="tl-sub">${v.p?K.t:""}${v.note?`${v.p?" · ":""}${esc(v.note)}`:""}</div></div></div>`;
+          ${v.p?`<div class="tl-sub">${K.t}</div>`:""}${v.note?`<div class="tl-sub">${esc(v.note)}</div>`:""}</div></div>`;   /* «مراجعة VAR» سطر والملاحظة سطر (منصور 2026-11-26) */
       rows.push(`<div class="tl-row xev${isH?" home":" away"}">
         <div class="tl-side r">${isH?body:""}</div>
         <div class="tl-min xev"><span>${mn}</span></div>
@@ -10968,6 +10974,9 @@ function matchWindowNow(){
   try{
     const iso=todayISO(), now=new Date(), mins=now.getHours()*60+now.getMinutes();
     const near=t=>{ const k=/^(\d{1,2}):(\d{2})/.exec(String(t||"")); if(!k) return true; const x=(+k[1])*60+(+k[2]); return mins>=x-90 && mins<=x+180; };
+    /* تلميح للإقلاع القادم: مواعيد مباريات اليوم، فيُطلب أول فتح للموقع في وقت مباراة لقطةً طازجة (منصور 2026-11-26: «وقتها باديه إلا لمن سويت ريفرش») */
+    try{ const H={}; (ALL.matches||[]).forEach(m=>{ const t=String(m.time||""); if(m.date>=iso && /^\d{2}:\d{2}/.test(t)) (H[m.date]=H[m.date]||[]).push(t.slice(0,5)); });
+      localStorage.setItem("mf-mday", JSON.stringify(H)); }catch(e){}   /* {تاريخ: [مواعيد]} لليوم وما بعده — يكفي لأول فتح في يوم مباراة */
     if((ALL.matches||[]).some(m=>LIVE_PHASES.includes(m.status) || (m.date===iso && near(m.time)))) return true;
     if(window.EXT && EXT.today && (EXT.today(iso)||[]).some(m=>near(m && m.time))) return true;
     if(window.DIV1 && DIV1.todayRows && DIV1.todayRows(iso)) return true;
@@ -12442,7 +12451,7 @@ html.mf .mf-ib.mf-bell.on{color:var(--mf-gold,#E7D093);border-color:rgba(231,208
 .mpt-bench{display:grid;grid-template-columns:repeat(auto-fill,minmax(72px,1fr));gap:12px 8px}
 .mpt-b{display:flex;flex-direction:column;align-items:center;gap:5px;cursor:pointer;min-width:0}
 .mpt-b .mpt-ph{width:50px;height:50px}
-.mpt-b>span{max-width:100%;font-size:.7rem;color:var(--text-primary,#fff);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mpt-b>span{max-width:100%;font-size:.7rem;color:var(--text-primary,#fff);white-space:normal;text-align:center;line-height:1.4;overflow-wrap:anywhere}   /* الاحتياط: الاسم كاملاً بدل «عبدالله الايو…» (منصور 2026-11-26) */
 .mpt-b>span em{font-style:normal;color:var(--text-muted,#8fa6c4);margin-inline-end:3px}
 /* ===== تقييم اللاعبين ===== */
 .rtg{display:inline-grid;place-items:center;min-width:34px;height:22px;padding:0 5px;border-radius:5px;font-family:var(--display);font-weight:800;font-size:.8rem;color:#fff;font-variant-numeric:tabular-nums;flex:none}
@@ -15468,7 +15477,7 @@ const mpTabs=m=>{ const T=mpHasTable(m) ? MP_TABS : MP_TABS.filter(([k])=>k!=="t
   return mpHasEff(m) ? [...T.slice(0,2),["eff","اللعب الفعلي"],...T.slice(2)] : T; };
 function mpInfoRows(m){
   const rows=[];
-  rows.push(["المسابقة", `${esc(compOf(m))} · ${esc(SEASON)}`]);
+  rows.push(["المسابقة", /\d{4}\/\d{4}/.test(compOf(m)) ? esc(compOf(m)) : `${esc(compOf(m))} · ${esc(SEASON)}`]);   /* «كأس الأمير 2025/2026» موسمها في اسمها — لا يُضاف الموسم الحالي (منصور 2026-11-26) */
   rows.push(["الجولة", String(m.round)]);
   if(m.date) rows.push(["التاريخ", `${mpDateLabel(m)}${m.time?` · <span dir="ltr">${esc(m.time)}</span>`:""}`]);
   if(m.venue) rows.push(["الملعب", esc(m.venue)]);
@@ -16499,8 +16508,9 @@ html[data-theme="light"] .mo-tip{color:#0B1F3A;background:#fff;border-color:#E2E
 <!-- site-motion: نفس لغة حركة الرئيسية على كل صفحات الموقع + تجربة سينمائية عند التمرير (منصور 2026-09-17، محلي) — بصري فقط -->
 <style id="site-motion-css">
 /* ========== 1) دخول الصفحة: ارتفاع ناعم بدل الوميض ========== */
-.view.on:not(#v-admin){animation:moViewIn .52s var(--mo-out) both}
-@keyframes moViewIn{from{opacity:0;transform:translate3d(0,22px,0)}to{opacity:1;transform:none}}
+/* التنقل بين الأقسام أسرع (منصور 2026-11-26: «فيه تأخير تناقل بين مكان لي اخر»): كان 0.52 ث يبدأ من شفافية كاملة فتبدو الصفحة فارغة لحظة */
+.view.on:not(#v-admin){animation:moViewIn .18s var(--mo-out) both}
+@keyframes moViewIn{from{opacity:.55;transform:translate3d(0,6px,0)}to{opacity:1;transform:none}}
 .ctab-panel.on{animation:moPanelIn .45s var(--mo-out) both}
 @keyframes moPanelIn{from{opacity:0;transform:translate3d(0,14px,0) scale(.992)}to{opacity:1;transform:none}}
 .ctabs .ctab-ind{transition:transform var(--mo-slow) var(--mo-out)!important}
