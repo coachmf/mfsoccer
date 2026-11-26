@@ -1653,3 +1653,12 @@ html.mf[data-theme="light"] .mf-sel.mf-sel-x > select{box-shadow:0 4px 14px rgba
 .mf-sheet-o svg{width:20px;height:20px;flex:none;color:var(--mf-acc-tx)}
 .mf-sheet-o:disabled{opacity:.4}
 @media (prefers-reduced-motion:reduce){ .mf-sheet-p,.mf-sheet-bg{transition:none} }
+
+/* ================= خلفية نظيفة بشكل التطبيقات العالمية (منصور 2026-11-26: «الباكراوند كلش مو حلو لازم نرتبه كتطبيق عالمي») =================
+   بدل صورة سقف الملعب ونقشة المعيّنات (2026-11-25): كحلي عميق موحّد مع توهّج أزرق خافت جداً أعلى الشاشة فقط،
+   والتذييل بحافة مستقيمة بلا القطع المائل والشريط الذهبي (بقايا الثيم القديم). */
+@media screen{
+  html.mf[data-theme="dark"]::before{background:radial-gradient(130% 42% at 50% -6%,rgba(38,62,124,.38) 0%,rgba(16,28,64,.16) 45%,transparent 72%),var(--mf-bg)}
+}
+html.mf .lfoot{clip-path:none!important;border-top:1px solid var(--mf-ln)}
+html.mf .lfoot::after{display:none!important}
