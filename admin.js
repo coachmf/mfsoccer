@@ -1513,7 +1513,7 @@ ADMX.rma = __admRenderMatchAdmin;
     const m=EDIT.match;
     return `<div class="mx-card"><h3>مرحلة المباراة<small>تظهر للجمهور كحالة المباراة</small></h3>
         <div class="mx-phase">${PHASES.map(([k,t])=>`<button class="mx-ph${(m.status||"")===k?" on":""}" data-mstatus="${k}">${t}</button>`).join("")}</div>
-        ${isKO(m)?`<div class="mx-phase" style="margin-top:8px">${PHASES_KO.map(([k,t])=>`<button class="mx-ph${(m.status||"")===k?" on":""}" data-mstatus="${k}">${t}</button>`).join("")}</div>`:""}
+        ${isKO(m)?`<div class="mx-phase ko" style="margin-top:8px">${PHASES_KO.map(([k,t])=>`<button class="mx-ph${(m.status||"")===k?" on":""}" data-mstatus="${k}">${t}</button>`).join("")}</div>`:""}
         ${PH_CLOCK[m.status]&&+m.pst?`<div class="mx-clk"><span class="mx-lbl">الدقيقة عند الجمهور</span>${mclkHTML(m)}
           <span class="mx-clk-adj"><button type="button" class="mx-ghost" data-mclk="-1">− دقيقة</button><button type="button" class="mx-ghost" data-mclk="1">+ دقيقة</button></span></div>`:""}
         <p class="mx-hint">اضغط «الشوط الأول» مع صافرة البداية فتبدأ الدقيقة عند الجمهور وتُحفظ المباراة فوراً. تقف الساعة عند 45 (و90) حتى تُدخل الوقت بدل الضائع فتكمل 45+1، 45+2… ثم اختر «بين الشوطين» و«الشوط الثاني» و«انتهت» في وقتها. «− / + دقيقة» لتصحيح الساعة إن تأخّرت الضغطة.</p></div>
@@ -1567,7 +1567,7 @@ ADMX.rma = __admRenderMatchAdmin;
   /* مباريات خروج المغلوب فقط (نصف نهائي ونهائي الخليج، والكؤوس): أشواط إضافية وركلات ترجيح (منصور 2026-10-03) */
   /* دور المجموعات في المشاركات الخارجية ليس خروج مغلوب حتى خارج تبويبها (منصور 2026-10-29: دقيقة 93 في ناساف × الكويت فعّلت الإضافي) */
   const isKO=m=>EDIT && EDIT.gulf ? +m.round>=4 : window.EXT && EXT.isGroup && EXT.isGroup(m) ? false : EDIT && EDIT.ext && window.EXT ? EXT.isKO(m) : String(m.comp||"")!=="الدوري";
-  const PHASES_KO=[["e1","الشوط الإضافي الأول"],["e2","الشوط الإضافي الثاني"],["pso","ركلات الترجيح"]];
+  const PHASES_KO=[["e1","الشوط الإضافي الأول"],["e2","الشوط الإضافي الثاني"],["etb","نهاية الأشواط الإضافية"],["pso","بداية ركلات الترجيح"]];   /* etb قبل الترجيح (منصور 2026-11-26) */
   const TV_LIST=["كويت سبورت","كويت سبورت بلس","الكويت الأولى","غير منقولة"];
   const stadiums=()=>{ const set=new Set(); if(typeof CLUB_INFO!=="undefined") Object.values(CLUB_INFO).forEach(i=>i&&i.st&&set.add(i.st)); (ALL.matches||[]).forEach(x=>x.venue&&set.add(String(x.venue).trim())); return [...set].filter(Boolean).slice(0,16); };
   /* اختصارات الدقائق حسب المرحلة */
@@ -1575,14 +1575,14 @@ ADMX.rma = __admRenderMatchAdmin;
      خروج المغلوب. للتبديل يُحفظ في h (3/4 = الإضافيان)؛ لبقية الأحداث يضبط الدقيقة على مدى الشوط فقط. */
   const PERS=[["1","الشوط الأول",1,45],["2","الشوط الثاني",46,90],["3","الإضافي الأول",91,105],["4","الإضافي الثاني",106,120]];
   const perOf=(k,d)=>{ if(k==="sub") return String(d.h||"1"); if(d._per) return d._per; const m=+d.m||0;
-    if(!m){ const st=EDIT.match.status; return st==="h2"?"2":st==="e1"?"3":st==="e2"?"4":"1"; }
+    if(!m){ const st=EDIT.match.status; return st==="h2"?"2":st==="e1"?"3":(st==="e2"||st==="etb"||st==="pso")?"4":"1"; }
     /* دقيقة فوق 90 لا تعني شوطاً إضافياً (منصور 2026-11-20: هدف 95' في بدل ضائع طويل أظهر «بعد الأشواط الإضافية»): الإضافي فقط إن فُعّل للمباراة */
     const et=hasET(EDIT.match); return m<=45?"1":(m<=90||!et)?"2":m<=105?"3":"4"; };
   const perChips=(k,d)=>{ const ko=isKO(EDIT.match); if(!ko && k!=="sub") return "";
     const L=ko&&hasET(EDIT.match)?PERS:PERS.slice(0,2), cur=perOf(k,d);   /* شوطا الإضافي يظهران بعد تفعيله من المراحل فقط */
     return `<div class="mx-span"><span class="mx-lbl">الشوط</span><div class="mx-chips">${L.map(([v,t])=>`<button class="mx-chip${cur===v?" on":""}" data-mper="${v}">${t}</button>`).join("")}</div></div>`; };
   const PER_MIN={"1":[1,15,30,45],"2":[46,60,75,90],"3":[91,95,100,105],"4":[106,110,115,120]};
-  const minChips=(key,per)=>{ const st=EDIT.match.status; const L=per&&isKO(EDIT.match)?PER_MIN[per]:st==="h1"?[1,15,30,45]:st==="h2"?[46,60,75,90]:st==="e1"?[91,95,100,105]:st==="e2"?[106,110,115,120]:
+  const minChips=(key,per)=>{ const st=EDIT.match.status; const L=per&&isKO(EDIT.match)?PER_MIN[per]:st==="h1"?[1,15,30,45]:st==="h2"?[46,60,75,90]:st==="e1"?[91,95,100,105]:(st==="e2"||st==="etb"||st==="pso")?[106,110,115,120]:
       hasET(EDIT.match)?[1,15,30,45,60,75,90,105,120]:[1,15,30,45,60,75,90];
     return `<div class="mx-chips" style="margin-top:8px">${L.map(v=>`<button class="mx-chip" data-mset="${key}" data-mval="${v}">${v}'</button>`).join("")}</div>`; };
   function openEv(k,i,preset){
@@ -1919,10 +1919,10 @@ ADMX.rma = __admRenderMatchAdmin;
     q("[data-mpsk-ok]",b=>b.onclick=()=>{ const k=(EDIT.match.psk||[])[+b.dataset.mpskOk]; if(k){ k.ok=b.dataset.v==="1"; rerender(); } });
     q("[data-mpsk-del]",b=>b.onclick=()=>{ (EDIT.match.psk||[]).splice(+b.dataset.mpskDel,1); rerender(); });
     q("[data-mpso]",el=>{ el.oninput=()=>{ EDIT.match.pso=EDIT.match.pso||{h:"",a:""}; EDIT.match.pso[el.dataset.mpso]=el.value; }; });
-    q("[data-mstatus]",b=>b.onclick=()=>{ const st=b.dataset.mstatus; const was=EDIT.match.status; EDIT.match.status=st; if(["e1","e2"].includes(st)) EDIT.match.et=true;
+    q("[data-mstatus]",b=>b.onclick=()=>{ const st=b.dataset.mstatus; const was=EDIT.match.status; EDIT.match.status=st; if(["e1","e2","etb"].includes(st)) EDIT.match.et=true;
       if(st!==was) EDIT.match.pst = PH_CLOCK[st] ? Date.now() : 0;   /* بداية ساعة الشوط */
       /* تغيير المرحلة يسجّل حدثاً محايداً مرة واحدة: بداية المباراة/نهاية الشوط الأول/بداية الشوط الثاني/نهاية المباراة */
-      const auto=st==="ft" && hasET(EDIT.match) ? [120,"نهاية المباراة"] : st==="pso" ? null : PHASE_NOTE[st];
+      const auto=st==="ft" && hasET(EDIT.match) ? [120,"نهاية المباراة"] : (st==="pso"||st==="etb") ? null : PHASE_NOTE[st];
       if(auto){ EDIT.mev=EDIT.mev||[];
         if(!EDIT.mev.some(x=>x.k==="note"&&x.note===auto[1])){ EDIT.mev.push({k:"note",club:"",p:"",m:String(auto[0]),x:0,note:auto[1]}); toast(auto[1],"ok"); } }
       if(st!==was && clockSave()) return;

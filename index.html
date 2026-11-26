@@ -2326,8 +2326,8 @@ html[dir="ltr"] .tl-ev.a .tl-card{text-align:right;align-items:flex-end}
 <script src="admin-tabs.js?v=12" defer></script>
 <!-- كأس الخليج 27: قسم مستقل ببيانات منفصلة (seasons/gulf27) -->
 <link rel="stylesheet" href="gulf.css?v=18">
-<script src="gulf.js?v=51" defer></script>
-<script src="livepush.js?v=16" defer></script>
+<script src="gulf.js?v=52" defer></script>
+<script src="livepush.js?v=17" defer></script>
 <script src="fantasy/js/push.js?v=290" defer></script>
 <script src="notify.js?v=8" defer></script>
 <script src="presence.js?v=1" defer></script>   <!-- حضور فريق العمل: نبضة صامتة إلى presence/<uid>، تقرأها office.html -->
@@ -2344,7 +2344,7 @@ html[dir="ltr"] .tl-ev.a .tl-card{text-align:right;align-items:flex-end}
 <link rel="stylesheet" href="video.css?v=6">
 <script src="video.js?v=9" defer></script>   <!-- تحليل الفيديو: seasons/videos + القائمة الأولى المضمّنة (يوتيوب @mfsoccerkw) -->
 <link rel="stylesheet" href="ext.css?v=3">
-<script src="ext.js?v=19" defer></script>   <!-- المشاركات الخارجية لأنديتنا: تحرير كامل مثل الدوري في وثيقة مستقلة (seasons/ext2627) -->
+<script src="ext.js?v=20" defer></script>   <!-- المشاركات الخارجية لأنديتنا: تحرير كامل مثل الدوري في وثيقة مستقلة (seasons/ext2627) -->
 <!-- التحليل الموسّع + تقييم اللاعبين 0–100 + البحث العام (منصور 2026-09-29) -->
 <link rel="stylesheet" href="analysis.css?v=11">
 <script src="tstats-data.js?v=1" defer></script>
@@ -2362,7 +2362,7 @@ html[dir="ltr"] .tl-ev.a .tl-card{text-align:right;align-items:flex-end}
 <script src="career.js?v=5" defer></script>   <!-- تبويب «المسيرة» في ملف اللاعب: يلفّ playerProfileHTML بعد fmx.js -->
 <link rel="stylesheet" href="mxday.css?v=4">
 <script src="mxday.js?v=6" defer></script>
-<link rel="stylesheet" href="premium.css?v=41">   <!-- Premium UI: طبقة الشكل الموحّدة لكل الأقسام عدا الفانتسي (منصور 2026-11-26) -->
+<link rel="stylesheet" href="premium.css?v=42">   <!-- Premium UI: طبقة الشكل الموحّدة لكل الأقسام عدا الفانتسي (منصور 2026-11-26) -->
 <script src="premium.js?v=7" defer></script>   <!-- Premium: بطاقة مباشرة مثبّتة، حركة الهدف، السحب للتحديث (منصور 2026-11-26) -->
 <script src="visitors.js?v=3" defer></script>   <!-- الزوار: قياس مجهول + العين للطاقم + «الزوار بالتفصيل» في الإدارة (2026-11-14) -->   <!-- صفحة المباريات حسب اليوم (منصور 2026-11-07) -->
 <style>
@@ -3454,7 +3454,7 @@ function upcomingItems(){
   const loc=(ALL?.matches||[]).filter(m=>{ const k=kickoffTS(m); if(k===null) return false;
       /* الجارية تبقى حتى صافرة النهاية — كانت تختفي مع أول هدف (منصور 2026-11-02: «وين المباره الحاليه ماتطلع هني») */
       if(m.status==="ft") return m.date===todayIso;   /* مباريات اليوم المنتهية تبقى في القائمة حتى نهاية اليوم (منصور 2026-11-06: «المفروض مباريات اليوم تطلع هني») */
-      if(["h1","ht","h2","e1","e2","pso"].includes(m.status)) return true;
+      if(["h1","ht","h2","e1","e2","etb","pso"].includes(m.status)) return true;
       return (k>now) || (m.time && now>=k && now<k+2*3600e3 && !matchGoalsAll(m)); })
     .map(m=>({d:m.date, time:normTime(m.time)||"", ts:kickoffTS(m), m, past:m.status==="ft"}));
   const ext=[];
@@ -3619,10 +3619,10 @@ function isUpcoming(m){
 /* شارة المباراة الجارية في البطاقات: «استراحة» بين الشوطين كما في صفحة المباراة، وإلا «جارية الآن» (منصور 2026-09-23) */
 const isGulfMatch = m => !!(m && (m.__gulf || String(m.comp||"")==="كأس الخليج"));
 /* اسم المرحلة بدل «جارية الآن» حين تُحدَّد (منصور 2026-10-03: «ابي الحالة تطلع هني بدال جارية») */
-const LIVE_PH_AR = {h1:"الشوط الأول", h2:"الشوط الثاني", e1:"الشوط الإضافي الأول", e2:"الشوط الإضافي الثاني", pso:"ركلات الترجيح"};
+const LIVE_PH_AR = {h1:"الشوط الأول", h2:"الشوط الثاني", e1:"الشوط الإضافي الأول", e2:"الشوط الإضافي الثاني", etb:"نهاية الأشواط الإضافية", pso:"ركلات الترجيح"};
 /* ساعة المباراة من المحرّر (منصور 2026-10-09: «ابي المستخدم يشوف جم الدقيقة»): لا بداية تلقائية من موعد المباراة —
    العدّ يبدأ لحظة اختيار المحرّر للشوط (pst = وقت الضغط)، ويقف عند 45/90/105/120 حتى يُدخل الوقت بدل الضائع فيكمل 45+1، 45+2… */
-const LIVE_PHASES = ["h1","ht","h2","e1","e2","pso"];
+const LIVE_PHASES = ["h1","ht","h2","e1","e2","etb","pso"];
 const PH_CLOCK = {h1:[0,45,"add1"], h2:[45,90,"add2"], e1:[90,105,"add3"], e2:[105,120,"add4"]};
 function phaseMinute(m){
   const P=m&&PH_CLOCK[m.status], t=+(m&&m.pst); if(!P||!t) return "";
@@ -3646,7 +3646,7 @@ function staleLive(m){
 }
 function matchOver(m){
   if(!m) return false; if(m.status==="ft" || staleLive(m)) return true;
-  if(["pre","h1","ht","h2","e1","e2","pso"].includes(m.status)) return false;
+  if(["pre","h1","ht","h2","e1","e2","etb","pso"].includes(m.status)) return false;
   return !isUpcoming(m) && !isLive(m);
 }
 function isLive(m){
@@ -6194,13 +6194,13 @@ const add1Of = m => Math.max(0, Math.min(30, +((m||{}).add1) || 0));
 const add2Of = m => Math.max(0, Math.min(30, +((m||{}).add2) || 0));
 /* الأشواط الإضافية (منصور 2026-10-03، نصف نهائي ونهائي كأس الخليج): مرحلتا e1/e2 كغرفة التحكم، وpso لركلات الترجيح.
    الدقيقة 91–120 في مباراة امتدت (m.et) تأتي بعد بدل ضائع الشوط الثاني؛ 105+x بدل الإضافي الأول؛ 106+ يبدأ بعد add3. */
-const ET_PH = ["e1","e2","pso"];
+const ET_PH = ["e1","e2","etb","pso"];
 const add3Of = m => Math.max(0, Math.min(30, +((m||{}).add3) || 0));
 const add4Of = m => Math.max(0, Math.min(30, +((m||{}).add4) || 0));
 /* مباريات الدوري بلا أشواط إضافية أصلاً (منصور 2026-10-11): علامة et خاطئة من المحرّر لا تُظهر «بعد الأشواط الإضافية» */
 /* ودور المجموعات في المشاركات الخارجية كذلك (منصور 2026-10-29: ناساف × الكويت ظهرت «بعد الأشواط الإضافية») */
 const etAllowed = m => !(compOf(m)==="الدوري" && !(typeof isGulfMatch==="function" && isGulfMatch(m))) && !(window.EXT && EXT.isGroup && EXT.isGroup(m));
-const hasET = m => !!(m && etAllowed(m) && (m.et || m.status==="e1" || m.status==="e2"));
+const hasET = m => !!(m && etAllowed(m) && (m.et || m.status==="e1" || m.status==="e2" || m.status==="etb"));
 const etAbs = (m, mm, x) => 90 + add1Of(m) + add2Of(m) + (mm - 90) + (mm > 105 ? add3Of(m) : 0) + (+x || 0);
 /* ركلات الترجيح للعرض فقط (منصور 2026-10-03): m.psk = [{t:"h"|"a", p:اسم, ok:سجّل؟}] بالترتيب — لا تدخل أهدافاً ولا ركلات جزاء
    ولا أي إحصاء؛ النتيجة تُحسب من الركلات، أو من m.pso إن أُدخلت النتيجة وحدها */
@@ -7406,8 +7406,8 @@ function admLoad(){
   if(ADMX.ready) return Promise.resolve();
   if(ADMX_P) return ADMX_P;
   return (ADMX_P = new Promise((res, rej)=>{
-    const css = document.createElement("link"); css.rel = "stylesheet"; css.href = "admin.css?v=2";
-    const s = document.createElement("script"); s.src = "admin.js?v=9";
+    const css = document.createElement("link"); css.rel = "stylesheet"; css.href = "admin.css?v=3";
+    const s = document.createElement("script"); s.src = "admin.js?v=10";
     s.onload = ()=>{ ADMX.ready = true; res(); };
     s.onerror = ()=>{ ADMX_P = null; css.remove(); s.remove(); rej(new Error("admin.js")); };
     document.head.appendChild(css); document.head.appendChild(s);
@@ -8480,12 +8480,13 @@ function goalsTimeline(m,gs,mc){
     </div>`);
   });
   /* الفواصل حسب حالة المباراة (منصور 2026-09-23): أثناء اللعب لا «النهاية»، ولا «الشوط الأول» قبل انتهائه */
-  const over=matchOver(m), pastHT=over || ["ht","h2","e1","e2","pso"].includes(m.status);
+  const over=matchOver(m), pastHT=over || ["ht","h2","e1","e2","etb","pso"].includes(m.status);
   if(!htDone && pastHT) rows.push(`<div class="tl-mark"><span>الشوط الأول <b dir="ltr">${h} - ${a}</b></span></div>`);
-  etMarks(over || m.status==="pso" ? 3 : m.status==="e2" ? 2 : m.status==="e1" ? 1 : 0);
+  etMarks(over || m.status==="pso" || m.status==="etb" ? 3 : m.status==="e2" ? 2 : m.status==="e1" ? 1 : 0);
   const P=psoOf(m);
+  /* «بداية ركلات الترجيح» فاصل مستقل من لحظة اختيار المرحلة، والنتيجة بعد آخر ركلة (منصور 2026-11-26) */
+  if(m.status==="pso" || (P && over)) rows.push(`<div class="tl-mark start"><span>بداية ركلات الترجيح</span></div>`);
   if(P && (over || m.status==="pso")){
-    rows.push(`<div class="tl-mark"><span>ركلات الترجيح <b dir="ltr">${P.h} - ${P.a}</b></span></div>`);
     let ph=0, pa=0;
     pskOf(m).forEach(k=>{ const isH=k.t==="h"; if(k.ok){ if(isH) ph++; else pa++; }
       const body=`<div class="tl-ev pk${isH?" h":" a"}${k.ok?" ok":" no"}"><i class="pk-ico" aria-hidden="true">${k.ok
@@ -8493,6 +8494,7 @@ function goalsTimeline(m,gs,mc){
           :'<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M7 7l10 10M17 7L7 17"/></svg>'}</i>
         <div class="tl-card"><div class="tl-name">${esc(k.p||"—")}</div><div class="tl-sub">${k.ok?"سجّل":"أضاع"}</div></div></div>`;
       rows.push(`<div class="tl-row pk${isH?" home":" away"}"><div class="tl-side r">${isH?body:""}</div><div class="tl-min pk"><span>${ph}-${pa}</span></div><div class="tl-side l">${isH?"":body}</div></div>`); });
+    rows.push(`<div class="tl-mark"><span>ركلات الترجيح <b dir="ltr">${P.h} - ${P.a}</b></span></div>`);
   }
   if(over) rows.push(`<div class="tl-mark end"><span>${ET?"النهاية بعد الأشواط الإضافية":"النهاية"} <b dir="ltr">${m.hg??h} - ${m.ag??a}</b></span></div>`);
   return `<div class="tl"><div class="tl-head"><span>${esc(m.home)}</span><span>${esc(m.away)}</span></div>${rows.join("")}</div>`;
@@ -15433,8 +15435,8 @@ function tvOf(m){
 }
 function mpHeader(m){
   const soon=isUpcoming(m), live=isLive(m);
-  const MS={pre:"لم تبدأ", h1:"الشوط الأول", ht:"استراحة بين الشوطين",   /* سعد المنصور 2026-10-09 */ h2:"الشوط الثاني", e1:"الشوط الإضافي الأول", e2:"الشوط الإضافي الثاني", pso:"ركلات الترجيح", ft:"انتهت"};
-  const stLive = ["h1","h2","e1","e2","pso"].includes(m.status) || (!m.status && live);
+  const MS={pre:"لم تبدأ", h1:"الشوط الأول", ht:"استراحة بين الشوطين",   /* سعد المنصور 2026-10-09 */ h2:"الشوط الثاني", e1:"الشوط الإضافي الأول", e2:"الشوط الإضافي الثاني", etb:"نهاية الأشواط الإضافية", pso:"ركلات الترجيح", ft:"انتهت"};
+  const stLive = ["h1","h2","e1","e2","etb","pso"].includes(m.status) || (!m.status && live);
   const st = m.status ? MS[m.status]||"" : soon ? "لم تبدأ" : live ? "جارية الآن" : "انتهت";
   /* القنوات في سطر مستقل تحت الموعد، كلها في صف واحد (منصور 2026-09-23) */
   const tvH=tvOf(m), when=[mpDateLabel(m), m.time?`<span dir="ltr">${esc(m.time)}</span>`:""].filter(Boolean).join(" · ") + (tvH?`<span class="mp-when-tv">${esc(tvH)}</span>`:"");
@@ -15442,7 +15444,7 @@ function mpHeader(m){
      وبعد صافرة النهاية يظهر المجموع */
   const addSum=["add1","add2","add3","add4"].reduce((t,k)=>t+(+m[k]>0?+m[k]:0),0);
   const addCur={h1:"add1",h2:"add2",e1:"add3",e2:"add4"}[m.status];
-  const addT = addCur ? (+m[addCur]>0 ? +m[addCur] : 0) : (matchOver(m) && !["ht","pso"].includes(m.status)) ? addSum : 0;
+  const addT = addCur ? (+m[addCur]>0 ? +m[addCur] : 0) : (matchOver(m) && !["ht","etb","pso"].includes(m.status)) ? addSum : 0;
   /* منصور 2026-11-26: «الـconcept مالك وايد قوي لازم نعتمده» — الرأس بتصميم التصور المعتمد:
      سطر واحد أعلى (البطولة · الجولة · التاريخ · الوقت) يفتح الترتيب، النتيجة مع شارة الحالة + بدل الضائع، الخاسر باهت، الملعب والقناة سطر صغير */
   const addH=soon||!addT?"":`<span class="mp-chip-add"> · بدل ضائع <b dir="ltr">+${addT}</b></span>`;

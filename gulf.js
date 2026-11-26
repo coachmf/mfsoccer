@@ -126,7 +126,7 @@ const TV_G = "الكويت الرياضية · الكأس · شاشا · أبو�
 G.extra = (d, h, a) => { const same = (x,y) => (x===h&&y===a)||(x===a&&y===h);
   const m = DATA && DATA.matches.find(x=>x.date===d && same(x.home,x.away));
   if(m){ /* st: حالة المباراة كما في صفحتها (لم تبدأ/جارية/انتهت)، والنتيجة بترتيب البطاقة (h أولاً) */
-    const st = withGulf(()=>{ if(m.status==="ft") return "done"; if(["h1","ht","h2","e1","e2","pso"].includes(m.status)) return "live";
+    const st = withGulf(()=>{ if(m.status==="ft") return "done"; if(["h1","ht","h2","e1","e2","etb","pso"].includes(m.status)) return "live";
       const up = typeof isUpcoming==="function" ? isUpcoming(m) : true; if(up) return "soon"; return (typeof isLive==="function" && isLive(m)) ? "live" : "done"; });
     const same = m.home===h;
     return {tv:m.tv||"", ref:m.ref||"", v:(m.refs||{}).var||"", k:(typeof matchKey==="function" ? matchKey(m) : ""), st, ph:m.status||"", hg:same?+m.hg:+m.ag, ag:same?+m.ag:+m.hg}; }
@@ -607,11 +607,11 @@ function hookEditor(){
 
 /* ───────────── الإدارة: قسم «كأس الخليج» ───────────── */
 /* حالة المباراة في قائمة الإدارة: جارية / لم تبدأ / انتهت (المحررون 2026-09-30: «حط جارية على المباراة وافصل الأيام») */
-const PH_AR = {h1:"الشوط الأول", ht:"استراحة", h2:"الشوط الثاني", e1:"الإضافي الأول", e2:"الإضافي الثاني", pso:"ركلات الترجيح"};
+const PH_AR = {h1:"الشوط الأول", ht:"استراحة", h2:"الشوط الثاني", e1:"الإضافي الأول", e2:"الإضافي الثاني", etb:"نهاية الإضافي", pso:"ركلات الترجيح"};
 function admState(m){
   return withGulf(()=>{
     if(m.status==="ft" || matchOver(m)) return "done";
-    if(["h1","ht","h2","e1","e2","pso"].includes(m.status) || isLive(m)) return "live";
+    if(["h1","ht","h2","e1","e2","etb","pso"].includes(m.status) || isLive(m)) return "live";
     return "soon";
   });
 }

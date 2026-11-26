@@ -89,6 +89,7 @@ html[data-theme="dark"] .mx select option{color:#E6EEF8;background:#0F1E35}   /*
 .mx-et input{width:20px;height:20px;accent-color:#ffb547}
 .mx-phase{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px}
 @media(max-width:620px){.mx-phase{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.mx-phase.ko{grid-template-columns:repeat(4,minmax(0,1fr))} @media(max-width:620px){.mx-phase.ko{grid-template-columns:repeat(2,minmax(0,1fr))}}   /* 4 مراحل للإضافي والترجيح: 2×2 بالجوال */
 .mx-ph{padding:11px 4px;border-radius:12px;border:1px solid var(--mx-ln)!important;background:var(--mx-soft)!important;font-weight:800;font-size:.8rem;color:var(--slate)}
 .mx-ph.on{background:linear-gradient(135deg,#1c6fd1,#0e3f86)!important;border-color:#1c6fd1!important;color:#fff}
 .mx-auto{font-size:.72rem;font-weight:800;color:#3ecf8e;white-space:nowrap;align-self:center;background:none;border:0;padding:6px 4px;cursor:pointer;font-family:inherit}

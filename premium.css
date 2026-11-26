@@ -300,7 +300,7 @@ html.mf #mpage .tl-xnote em{font-style:normal}
 html.mf #mpage .tl-xnote:has(+ .tl-mark),html.mf #mpage .tl-mark + .tl-xnote{display:none}
 html.mf #mpage .tl-mark{text-align:center;margin:6px 0 10px;position:relative;z-index:1;background:none!important;border:0!important}
 html.mf #mpage .tl-mark span{display:inline-block;padding:4px 12px;border-radius:999px;background:var(--pm-s2);font:600 11px/1.6 var(--mf-f,inherit);color:var(--pm-tx2)}
-html.mf #mpage .tl-mark:not(.end) span::before{content:"نهاية "}
+html.mf #mpage .tl-mark:not(.end):not(.start) span::before{content:"نهاية "}
 html.mf #mpage .tl-mark span b{direction:rtl;unicode-bidi:isolate;font-family:var(--mf-fh,inherit);color:var(--pm-tx);margin-inline-start:6px}
 /* احتساب ركلة جزاء: الأيقونة ثم «احتساب ركلة جزاء» عريض، واسم النادي صغير تحته */
 html.mf #mpage .tl-ev.pk .tl-card{display:grid;grid-template-columns:auto 1fr;column-gap:8px;align-items:center;font-size:11px;font-weight:500;color:var(--pm-tx3)}

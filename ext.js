@@ -392,7 +392,7 @@ setTimeout(()=>store.watch(d=>{
 }), 0);
 
 /* ───────────── العرض في صفحة المباريات (index.html: extEvents / extCardsHTML / extTableHTML) ───────────── */
-const PHX = ["h1","ht","h2","e1","e2","pso"];
+const PHX = ["h1","ht","h2","e1","e2","etb","pso"];
 function stateOf(m){
   return withExt(()=>{
     if(m.status==="ft") return "done";
@@ -643,7 +643,7 @@ function addBox(box){
 }
 
 /* ───────────── الإدارة: تبويب «المشاركات الخارجية» ───────────── */
-const PH_AR = {h1:"الشوط الأول", ht:"استراحة", h2:"الشوط الثاني", e1:"الإضافي الأول", e2:"الإضافي الثاني", pso:"ركلات الترجيح"};
+const PH_AR = {h1:"الشوط الأول", ht:"استراحة", h2:"الشوط الثاني", e1:"الإضافي الأول", e2:"الإضافي الثاني", etb:"نهاية الإضافي", pso:"ركلات الترجيح"};
 const crestOf = c => withExt(()=>typeof crest==="function" ? crest(c) : "");
 const rLbl = m => { const c = cOfName(m.comp); return c && +m.round>c.g ? `الدور الإقصائي ${+m.round-c.g}` : `الجولة ${m.round}`; };
 function admRowHTML(m){
