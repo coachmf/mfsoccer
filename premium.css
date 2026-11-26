@@ -289,7 +289,7 @@ html.mf #mpage .tl-ev.sub .tl-sub-out{font-size:11px;font-weight:500;color:var(-
 html.mf #mpage .tl-ev.sub .tl-sub-out::before{content:"بدلاً من "}
 html.mf #mpage .tl-ev.sub :is(.tl-sub-in,.tl-sub-out) > i{display:none}
 html.mf #mpage .tl-ev.sub.a .tl-card{align-items:flex-start}
-html.mf #mpage .tl-ev.sub :is(.tl-sub-in,.tl-sub-out){display:block!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+html.mf #mpage .tl-ev.sub :is(.tl-sub-in,.tl-sub-out){display:block!important;white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:break-word;max-width:100%;line-height:1.4}
 html.mf #mpage .tl-ev.sub .tl-card{min-width:0}
 
 /* ===== بقية أحداث المباراة بالتصور حرفياً ===== */
