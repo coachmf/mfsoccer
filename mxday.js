@@ -108,9 +108,9 @@ window.MXDAY = (function(){
     const mid = x.st==="soon"
       ? `<span class="mxd-time" dir="ltr">${x.time?H(x.time):"—"}</span><span class="mxd-lb">لم تبدأ</span>`
       : `<span class="mxd-sc" dir="ltr">${x.sc}</span>${x.st==="live" ? `<span class="mxd-lb live"><i></i>${x.lab}</span>` : `<span class="mxd-lb">انتهت</span>`}`;
-    /* وجه الحكم الصغير قبل اسمه (منصور 2026-11-26 «صورة الحكم من برا؟ ويهه») — من REF_PHOTOS، وبلا صورة يبقى النص كما هو */
+    /* وجه الحكم الصغير يسار اسمه (بعده) — منصور 2026-11-26 (منصور 2026-11-26 «صورة الحكم من برا؟ ويهه») — من REF_PHOTOS، وبلا صورة يبقى النص كما هو */
     const rfImg = n => { const f = (typeof REF_PHOTOS !== "undefined") && REF_PHOTOS[String(n||"").trim()]; return f ? `<img class="mxd-rf" src="assets/referees/${f}.webp?v=3" alt="" loading="lazy" decoding="async">` : ""; };
-    const meta = x.meta.map(z=>`<span class="${z.off?"off":""}${z.rf&&rfImg(z.t)?" has-rf":""}">${z.k?`<em>${H(z.k)}</em> `:""}${z.rf?rfImg(z.t):""}<bdi>${H(z.t)}</bdi></span>`).join("");
+    const meta = x.meta.map(z=>`<span class="${z.off?"off":""}${z.rf&&rfImg(z.t)?" has-rf":""}">${z.k?`<em>${H(z.k)}</em> `:""}<bdi>${H(z.t)}</bdi>${z.rf?rfImg(z.t):""}</span>`).join("");
     return `<article class="mc mxd-c is-${x.st}${fav?" is-fav":""}" ${x.open}${x.open?' tabindex="0" role="link"':""}>
       <div class="mxd-r"><div class="mc-team h mxd-tm${x.w==="a"?" lose":x.w==="h"?" win":""}">${x.h}</div><div class="mxd-mid">${mid}</div><div class="mc-team a mxd-tm${x.w==="h"?" lose":x.w==="a"?" win":""}">${x.a}</div></div>
       ${x.notes?`<div class="mxd-nt">${x.notes}</div>`:""}
