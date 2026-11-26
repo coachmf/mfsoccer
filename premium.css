@@ -364,3 +364,9 @@ html.mf[data-theme="light"] .pm-live{background:rgba(255,255,255,.9);color:#0006
 .pm-live{top:auto;bottom:calc(var(--mf-bar-h,64px) + env(safe-area-inset-bottom) + 18px);transform:translate(-50%,14px)}
 .pm-live.on{transform:translate(-50%,0)}
 @media (min-width:900px){ .pm-live{bottom:24px} }
+
+/* ===== رأس المباراة المعتمد: الخيار 3 (أشرطة القميص) — منصور 2026-11-26
+   لون صاحب الأرض يمتد من الحافة اليمنى عبر الرأس، ولون الضيف من اليسار، يلتقيان في الوسط، مع شريطي القميص على الحافتين ===== */
+html.mf #mpage .mp-head{background:
+  linear-gradient(180deg,transparent 40%,rgba(0,6,26,.88) 100%),
+  linear-gradient(270deg,var(--hc) 0 6px,color-mix(in srgb,var(--hc) 42%,#00061A) 6px,color-mix(in srgb,var(--hc) 20%,#00061A) 32%,#0A1330 50%,color-mix(in srgb,var(--ac) 20%,#00061A) 68%,color-mix(in srgb,var(--ac) 42%,#00061A) calc(100% - 6px),var(--ac) calc(100% - 6px))!important}
