@@ -114,11 +114,30 @@
     (window.requestIdleCallback || (f => setTimeout(f, 800)))(step);
   }
 
+  /* ---------------- 5) أسماء ملعب التشكيلة داخل الملعب (منصور 2026-11-26 «عبدالمحسن العجمي على الطرف مقطوع») ----------------
+     لاعب الطرف يتوسّط اسمُه نقطته فيخرج طرف الاسم عن الملعب (overflow:hidden) فيُقص. يُزاح الاسم وحده أفقياً
+     بقدر ما خرج فيبقى كاملاً داخل الملعب، والصورة في مكانها. للعرض فقط، ويُعاد الحساب مع كل رسم وتغيير مقاس. */
+  function fitPitchNames(){
+    D.querySelectorAll(".mpx-pitch").forEach(pt => {
+      const P = pt.getBoundingClientRect(); if(!P.width) return;
+      pt.querySelectorAll(".mpx-nm").forEach(n => {
+        const old = n.style.transform; n.style.transform = "";
+        const r = n.getBoundingClientRect(); let dx = 0;
+        if(r.width > P.width - 8) dx = 0;
+        else if(r.left < P.left + 4) dx = P.left + 4 - r.left;
+        else if(r.right > P.right - 4) dx = P.right - 4 - r.right;
+        const t = dx ? `translateX(${dx.toFixed(1)}px)` : "";
+        n.style.transform = t; if(t !== old) n.classList.toggle("pm-fit", !!dx);
+      });
+    });
+  }
+  window.addEventListener("resize", () => safe(fitPitchNames));
+
   /* ---------------- التشغيل ---------------- */
   let q = 0;
   /* 13) الكؤوس: «—» مكان الموعد غير المحدد يُخفى (العرض فقط) */
   function tidyCups(){ D.querySelectorAll("#v-matches .mc .mc-time:not(.pm-nt)").forEach(t => { if(/^[—–-]$/.test(t.textContent.trim())) t.classList.add("pm-nt"); }); }
-  const tick = () => { q = 0; safe(paintLive); safe(scanGoals); safe(tidyCups); if(!warmed) safe(warmCrests); };
+  const tick = () => { q = 0; safe(paintLive); safe(scanGoals); safe(tidyCups); safe(fitPitchNames); if(!warmed) safe(warmCrests); };
   new MutationObserver(() => { if(!q) q = requestAnimationFrame(tick); }).observe(D.body, {childList: true, subtree: true, characterData: true});
   setInterval(tick, 5000);   /* الساعة في البطاقة تتقدّم حتى بلا تحديث بيانات */
   window.addEventListener("hashchange", () => setTimeout(tick, 60));
