@@ -147,7 +147,7 @@ function matchesHTML(){
     const ms = DATA.matches.filter(m=>m.round===r).sort((a,b)=>String(a.date+a.time).localeCompare(String(b.date+b.time))); if(!ms.length) return "";
     const dates = [...new Set(ms.map(m=>m.date).filter(Boolean))];
     return `<section class="d1-rnd" data-amr="${r}">
-      <div class="d1-rh"><h3>الجولة ${r}</h3><span>${dates.map(dLbl).join(" · ")}</span></div>
+      <div class="d1-rh"><h3>الجولة ${r}</h3><span>${[...dates.map(dLbl), "ملعب مشرف"].join(" · ")}</span></div>   <!-- منصور 2026-11-26: الهواة دايماً ملعب مشرف -->
       ${dates.length>1 ? dates.map(d=>`<div class="am-day">${dLbl(d)}</div><div class="d1-card d1-ml">${ms.filter(m=>m.date===d).map(matchHTML).join("")}</div>`).join("")
         : `<div class="d1-card d1-ml">${ms.map(matchHTML).join("")}</div>`}
       ${(()=>{ const inR = new Set(ms.flatMap(m=>[m.home, m.away])), rest = Object.keys(TEAMS).filter(c=>!inR.has(c)); return rest.length ? `<p class="d1-bye">راحة: ${rest.map(H).join("، ")}</p>` : ""; })()}

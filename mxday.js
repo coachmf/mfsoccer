@@ -98,7 +98,7 @@ window.MXDAY = (function(){
     const cr=c=>{ const s=window.AMATEUR && AMATEUR.crestSrc ? AMATEUR.crestSrc(c) : ""; return s?`<div class="crest has-logo" style="background:transparent"><img src="${s}" alt="" decoding="async"></div>`:`<div class="crest">${H(String(c).slice(0,2))}</div>`; };
     x.st = p ? "done" : "soon"; x.time = m.time||""; if(p){ x.sc = scp(m.hg, m.ag); x.w = +m.hg>+m.ag ? "h" : +m.ag>+m.hg ? "a" : ""; }
     x.h = `${cr(m.home)}<b>${H(m.home)}</b>`; x.a = `${cr(m.away)}<b>${H(m.away)}</b>`;
-    if(m.venue) x.meta.push({t:m.venue});
+    x.meta.push({t:m.venue||"ملعب مشرف"});   /* منصور 2026-11-26: «دوري الهواة دايماً خلّه ملعب مشرف» */
     x.rnd = `الجولة ${+m.round||1}`; x.open = 'data-am-open="1"';
     return x;
   }
