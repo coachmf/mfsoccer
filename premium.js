@@ -126,7 +126,9 @@
 
   /* ---------------- التشغيل ---------------- */
   let q = 0;
-  const tick = () => { q = 0; safe(paintLive); safe(scanGoals); };
+  /* 13) الكؤوس: «—» مكان الموعد غير المحدد يُخفى (العرض فقط) */
+  function tidyCups(){ D.querySelectorAll("#v-matches .mc .mc-time:not(.pm-nt)").forEach(t => { if(/^[—–-]$/.test(t.textContent.trim())) t.classList.add("pm-nt"); }); }
+  const tick = () => { q = 0; safe(paintLive); safe(scanGoals); safe(tidyCups); };
   new MutationObserver(() => { if(!q) q = requestAnimationFrame(tick); }).observe(D.body, {childList: true, subtree: true, characterData: true});
   setInterval(tick, 5000);   /* الساعة في البطاقة تتقدّم حتى بلا تحديث بيانات */
   window.addEventListener("hashchange", () => setTimeout(tick, 60));

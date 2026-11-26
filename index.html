@@ -2358,8 +2358,8 @@ html[dir="ltr"] .tl-ev.a .tl-card{text-align:right;align-items:flex-end}
 <script src="career.js?v=5" defer></script>   <!-- تبويب «المسيرة» في ملف اللاعب: يلفّ playerProfileHTML بعد fmx.js -->
 <link rel="stylesheet" href="mxday.css?v=3">
 <script src="mxday.js?v=4" defer></script>
-<link rel="stylesheet" href="premium.css?v=33">   <!-- Premium UI: طبقة الشكل الموحّدة لكل الأقسام عدا الفانتسي (منصور 2026-11-26) -->
-<script src="premium.js?v=2" defer></script>   <!-- Premium: بطاقة مباشرة مثبّتة، حركة الهدف، السحب للتحديث (منصور 2026-11-26) -->
+<link rel="stylesheet" href="premium.css?v=35">   <!-- Premium UI: طبقة الشكل الموحّدة لكل الأقسام عدا الفانتسي (منصور 2026-11-26) -->
+<script src="premium.js?v=3" defer></script>   <!-- Premium: بطاقة مباشرة مثبّتة، حركة الهدف، السحب للتحديث (منصور 2026-11-26) -->
 <script src="visitors.js?v=3" defer></script>   <!-- الزوار: قياس مجهول + العين للطاقم + «الزوار بالتفصيل» في الإدارة (2026-11-14) -->   <!-- صفحة المباريات حسب اليوم (منصور 2026-11-07) -->
 <style>
 /* تبويب التحليل — التصميم الجديد (منصور 2026-09-17) */
@@ -15737,7 +15737,7 @@ function mpSquad(m){
     <button type="button" data-mp-sq="away" aria-pressed="${MP_SQ==="away"}">${crest(m.away)}<span>${esc(m.away)}</span></button></div>`;
   return `<div class="mp-card mp-squad" style="${accentVars(c)}">${seg}${clubSquadHTML(c)}</div>`;
 }
-/* جداول مجموعات الكأس: نقاط ← فارق الأهداف ← الأهداف المسجّلة ← الاسم. مجموعة المباراة أولاً وطرفاها مميّزان. تُستدعى داخل سياق المسابقة. */
+/* جداول مجموعات الكأس: الترتيب حسب اللائحة (انظر rowsOf)؛ أفضل ثانٍ: النقاط ← فارق الأهداف العام ← الأهداف. مجموعة المباراة أولاً وطرفاها مميّزان. تُستدعى داخل سياق المسابقة. */
 function cupGroupsHTML(m, comp){
   comp = comp || compOf(m); m = m || {};
   const G = CUP_GROUPS[comp] || [], mine = m.home ? cupGroupOf(m) : null, ms = playedMatches().filter(x=>cupGroupOf(x));
@@ -15746,7 +15746,17 @@ function cupGroupsHTML(m, comp){
     ms.filter(x=>cupGroupOf(x)===g).forEach(x=>{ const H=t[x.home], A=t[x.away]; if(!H||!A) return;
       H.P++;A.P++;H.GF+=x.hg;H.GA+=x.ag;A.GF+=x.ag;A.GA+=x.hg;
       if(x.hg>x.ag){H.W++;A.L++;H.Pts+=3;H.form.push("w");A.form.push("l");} else if(x.hg<x.ag){A.W++;H.L++;A.Pts+=3;A.form.push("w");H.form.push("l");} else {H.D++;A.D++;H.Pts++;A.Pts++;H.form.push("d");A.form.push("d");} });
-    return Object.values(t).map(r=>({...r,GD:r.GF-r.GA})).sort(cmp); };
+    /* ترتيب المجموعة حسب لائحة المسابقات 2026-2027 (دور المجموعات — كأس سمو ولي العهد، منصور 2026-11-26):
+       النقاط ← نقاط المواجهات بين المتساوين ← فارق أهدافها ← فارق الأهداف العام ← الأهداف المسجّلة ← عدد الانتصارات ← اللعب النظيف */
+    const rows = Object.values(t).map(r=>({...r,GD:r.GF-r.GA,h2hPts:0,h2hGD:0,fp:0}));
+    const gms = ms.filter(x=>cupGroupOf(x)===g);
+    const R0 = Object.fromEntries(rows.map(r=>[r.c,r]));
+    ((ALL&&ALL.cards)||CARDS).filter(x=>compOf(x)===comp && R0[x.club] && gms.some(q=>+q.round===+x.r && (q.home===x.club||q.away===x.club))).forEach(x=>{ R0[x.club].fp += isRed(x.type)?3:isYellow(x.type)?1:0; });
+    const byPts={}; rows.forEach(r=>(byPts[r.Pts]??=[]).push(r));
+    Object.values(byPts).filter(q=>q.length>1).forEach(q=>{ const set=new Set(q.map(r=>r.c)), RR=Object.fromEntries(q.map(r=>[r.c,r]));
+      gms.filter(x=>set.has(x.home)&&set.has(x.away)).forEach(x=>{ const H=RR[x.home], A=RR[x.away];
+        H.h2hGD+=x.hg-x.ag; A.h2hGD+=x.ag-x.hg; if(x.hg>x.ag) H.h2hPts+=3; else if(x.hg<x.ag) A.h2hPts+=3; else {H.h2hPts++;A.h2hPts++;} }); });
+    return rows.sort((a,b)=>b.Pts-a.Pts||b.h2hPts-a.h2hPts||b.h2hGD-a.h2hGD||b.GD-a.GD||b.GF-a.GF||b.W-a.W||a.fp-b.fp||a.c.localeCompare(b.c,"ar")); };
   /* نظام التأهل (منصور 2026-11-20): متصدر كل مجموعة + أفضل صاحب مركز ثانٍ إلى ربع النهائي. العلامة تظهر بعد أن يلعب الفريق،
      وخصوم ربع النهائي بالقرعة فلا يُنقل المتأهل إلى الشجرة تلقائياً. */
   const R = new Map(G.map(g=>[g, rowsOf(g)]));

@@ -457,3 +457,53 @@ html.mf[data-theme="dark"] .pprof-pens .pgoal,html.mf:not([data-theme="light"]) 
 html.mf:not([data-theme="light"]) .pprof-pens .pgoal{box-shadow:inset 0 0 0 999px rgba(0,6,26,.7);border-color:rgba(255,255,255,.08)!important;outline:0}
 html.mf .pprof-pens .an-card{border-top-color:var(--pm-ln,rgba(255,255,255,.07))!important;background-image:none}
 html.mf .pprof-pens .an-card::before,html.mf .pprof-pens .an-card::after{display:none!important}
+
+/* ================= 10) جولة الفخامة الثالثة (منصور 2026-11-26: 5، 8، 9، 10، 11، 12، 13، 15) ================= */
+/* 5) رأس موحّد لكل صفحة: عنوان 26px ثقيل، بلا خطوط تحته، والمعلومة الثانوية خفيفة */
+html.mf :is(.mf-ptitle,#v-news .nw-mast h1,#v-videos h1,#v-matches .mx-title,#v-predict > h2.sec:first-child,#v-fans > h2.sec:first-child,.mf-hub-hd > b){
+  font-size:26px!important;font-weight:800!important;line-height:1.25!important;letter-spacing:0!important;color:var(--pm-tx)!important}
+html.mf[data-theme="light"] :is(.mf-ptitle,#v-news .nw-mast h1,#v-videos h1,#v-matches .mx-title,#v-predict > h2.sec:first-child,#v-fans > h2.sec:first-child,.mf-hub-hd > b){color:#00061A!important}
+html.mf #v-predict > h2.sec:first-child,html.mf #v-fans > h2.sec:first-child{margin:14px 0 12px!important}
+html.mf #v-predict > h2.sec:first-child::before,html.mf #v-fans > h2.sec:first-child::before{display:none!important}
+html.mf .nw-mast,html.mf .nw-sec-hd,html.mf[data-theme="light"] .nw-mast,html.mf[data-theme="light"] .nw-sec-hd{border-bottom:0!important;padding-bottom:6px}
+html.mf .nw-mast span,html.mf .mf-hub-season{font-size:12px!important;font-weight:600;color:var(--pm-tx3)!important}
+
+/* 8) خريطة ركلات الجزاء داكنة بالكامل: الصورة تُدمج مع لون الصفحة */
+html.mf:not([data-theme="light"]) .pprof-pens .pgoal,html.mf:not([data-theme="light"]) .an-pens .pgoal{background-color:#16224A!important;background-blend-mode:multiply;box-shadow:none!important;border:1px solid var(--pm-ln,rgba(255,255,255,.07))!important}
+html.mf:not([data-theme="light"]) .an-pens .pgoal > svg path[fill-rule]{fill:rgba(0,6,26,.35)}
+
+/* 10) الحكام: الأرقام بيضاء، واللون فقط على البطاقات بعلامة بطاقة صغيرة */
+html.mf .rf-kpis > div b{color:var(--pm-tx)!important}
+html.mf[data-theme="light"] .rf-kpis > div b{color:#00061A!important}
+html.mf .rf-kpis > div.y b::after,html.mf .rf-kpis > div.r b::after{content:"";display:inline-block;width:9px;height:13px;border-radius:2px;margin-inline-start:6px;vertical-align:2px;transform:rotate(8deg)}
+html.mf .rf-kpis > div.y b::after{background:#F2C230}
+html.mf .rf-kpis > div.r b::after{background:#E5484D}
+
+/* 11) فلاتر تحليل الفيديو: صف واحد من ثلاث خانات مضغوطة (السهم صغير بدل الدائرة) */
+html.mf .va-filters.mf-sels{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+html.mf .va-filters .mf-sel.mf-sel-x{flex:none}
+html.mf .va-filters .mf-sel.mf-sel-x > .mf-lbl{top:7px;inset-inline-start:10px;font-size:.6rem}
+html.mf .va-filters .mf-sel.mf-sel-x > select{min-height:50px;padding:18px 10px 5px;padding-inline-end:24px;border-radius:14px;font-size:.78rem;
+  background-size:10px 10px!important;background-position:left 9px center!important;text-overflow:ellipsis}
+html.mf[dir="ltr"] .va-filters .mf-sel.mf-sel-x > select{background-position:right 9px center!important}
+html.mf .va-mast{border-bottom:0!important}
+
+/* 12) الأقسام: كل المربعات نفس الارتفاع، والمجموعات تبدأ من نفس الحافة */
+html.mf .mf-tiles{grid-auto-rows:1fr}
+html.mf .mf-node.mf-tile{min-height:92px;height:100%}
+html.mf .mf-node.mf-tile span{line-height:1.25}
+
+/* 13) الكؤوس: المباراة بلا موعد بلا «—» ولا «التفاصيل» (الصف كله يُضغط)، والملاحظة سطر صغير */
+html.mf #v-matches .mc .mc-time.pm-nt{display:none}
+html.mf #v-matches .mc.soon .mc-go{display:none}
+html.mf #v-matches .mc-note{padding:0 14px 10px!important;font-size:.7rem!important;color:var(--pm-tx3)!important;text-align:center;background:none!important;border:0!important}
+
+/* 15) الإحساس: دخول ناعم لكل صفحة + هيكل تحميل لأي صفحة ما زالت فارغة */
+@media (prefers-reduced-motion:no-preference){
+  html.mf .view.on{animation:pmIn .24s cubic-bezier(.2,.8,.2,1) both}
+  html.mf #pprof.on .pprof-body,html.mf .mf-hub.on .mf-hub-sheet{animation:pmIn .26s cubic-bezier(.2,.8,.2,1) both}
+}
+html.mf .view.on:empty{min-height:70vh;margin:16px;border-radius:var(--pm-r,18px);
+  background:linear-gradient(90deg,rgba(255,255,255,.03) 0,rgba(255,255,255,.07) 40%,rgba(255,255,255,.03) 80%) 0 0/200% 100%,
+    repeating-linear-gradient(180deg,transparent 0 96px,var(--pm-bg,#00061A) 96px 110px);animation:pmSk 1.3s linear infinite}
+@keyframes pmSk{to{background-position:-200% 0,0 0}}
