@@ -124,3 +124,57 @@ html.mf #v-news .nw-panel::after{background:linear-gradient(0deg,rgba(0,6,26,.98
 html.mf #v-news .nw-panel{border:1px solid var(--pm-ln);border-radius:var(--pm-r);overflow:hidden}
 html.mf #v-videos :is(.va-card,.va-row){border-radius:var(--pm-r-s)}
 html.mf #v-videos .va-hero-ph::after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(0deg,rgba(0,6,26,.97) 0%,rgba(0,6,26,.86) 36%,rgba(0,6,26,.25) 66%,transparent 100%)}
+
+/* ===== صفحة المباراة بالتصور المعتمد حرفياً (منصور 2026-11-26) ===== */
+html.mf #mpage .mp-head{padding:14px 18px 16px;background:
+  radial-gradient(60% 80% at 100% 0%,rgba(46,160,90,.14),transparent 70%),
+  radial-gradient(60% 80% at 0% 0%,rgba(52,120,220,.14),transparent 70%),
+  linear-gradient(180deg,#0B1636,#00061A)!important}
+html.mf #mpage .mp-head::before,html.mf #mpage .mp-head::after{display:none}
+html.mf #mpage .mp-top{padding:0;height:38px;align-items:center}
+html.mf #mpage .mp-top button{width:36px;height:36px;color:var(--pm-tx2)}
+html.mf #mpage .mp-top button svg{width:18px;height:18px}
+html.mf #mpage .mp-when,html.mf #mpage .mp-add{display:none}
+html.mf #mpage .mp-meta{display:block;width:100%;margin:2px 0 0;padding:0;border:0;background:none;text-align:center;cursor:pointer;
+  font:600 12px/1.6 var(--mf-f,inherit);color:var(--pm-tx2)}
+html.mf #mpage .mp-meta b{color:var(--pm-tx);font-weight:700}
+html.mf #mpage .mp-score{display:grid;grid-template-columns:1fr 120px 1fr;align-items:center;margin-top:14px;padding:0}
+html.mf #mpage .mp-team{display:flex;flex-direction:column;align-items:center;gap:8px}
+html.mf #mpage .mp-team .crest.lg{width:56px!important;height:56px!important;background:transparent!important;box-shadow:none}
+html.mf #mpage .mp-team .crest.lg img{width:56px;height:56px;object-fit:contain}
+html.mf #mpage .mp-team b{font-size:15px;font-weight:700;color:var(--pm-tx)}
+html.mf #mpage .mp-team.lose b{color:var(--pm-tx2);font-weight:600}
+html.mf #mpage .mp-mid{display:flex;flex-direction:column;align-items:center}
+html.mf #mpage .mp-res{display:flex;align-items:center;direction:ltr;gap:0}
+html.mf #mpage .mp-res b{font:800 40px/1 var(--mf-fh,inherit);letter-spacing:.04em}
+html.mf #mpage .mp-res i{font-style:normal;color:var(--pm-tx3);opacity:1;font-weight:500;margin:0 8px;font-size:28px}
+html.mf #mpage .mp-st{display:inline-block;margin-top:8px;padding:3px 10px;border-radius:999px;background:rgba(255,255,255,.07);
+  font:600 11px/1.6 var(--mf-f,inherit);color:var(--pm-tx2);opacity:1}
+html.mf #mpage .mp-st.live{color:var(--pm-live);background:rgba(255,90,95,.12)}
+html.mf #mpage .mp-st .mp-chip-add b{font-family:var(--mf-fh,inherit)}
+html.mf #mpage .mp-scorers{grid-template-columns:1fr 40px 1fr;padding:12px 0 0;font:500 12px/1.75 var(--mf-f,inherit);color:var(--pm-tx2);opacity:1}
+html.mf #mpage .mp-scorers .h,html.mf #mpage .mp-scorers .a{align-items:center;text-align:center;gap:0;font-size:12px;color:var(--pm-tx2)}
+html.mf #mpage .mp-scorers em{color:var(--pm-tx3);opacity:1;font-family:var(--mf-fh,inherit)}
+html.mf #mpage .mp-scorers .ball{place-items:start center;padding-top:3px}
+html.mf #mpage .mp-scorers .ball svg{width:14px;height:14px;opacity:.85;filter:none}
+html.mf #mpage .mp-foot{display:flex;justify-content:center;gap:14px;margin-top:12px;font:500 11.5px var(--mf-f,inherit);color:var(--pm-tx3)}
+/* «الدوري · الجولة» صارت في السطر العلوي (نفس الوظيفة: تفتح الترتيب) */
+html.mf #mpage .mp-compcard{display:none}
+html.mf #mpage .mp-tabs{gap:22px;padding:0 18px}
+html.mf #mpage .mp-tabs button{font-size:13.5px}
+/* بطاقات المحتوى مثل التصور */
+html.mf #mpage .mp-card{padding:14px 16px}
+html.mf #mpage .mp-hd h3{font-size:15px}
+html.mf #mpage .fmx-says li{font-size:13px;line-height:1.75}
+html.mf #mpage .fmx-says li::marker,html.mf #mpage .fmx-says li::before{color:var(--pm-tx3);background:var(--pm-tx3)}
+/* الأحداث: خط في الوسط، وسم الدقيقة مستطيل صغير */
+html.mf #mpage .tl::before{background:var(--pm-ln2)!important;width:1px!important}
+html.mf #mpage .tl-min span{border-radius:8px;padding:3px 6px;font-size:12px;background:var(--pm-bg)}
+html.mf #mpage .tl-name{font-size:13px}
+html.mf #mpage .tl-head{display:none}
+html.mf #mpage .mp-res{direction:rtl}
+html.mf #mpage .fmx-says{display:flex;flex-direction:column;gap:0}
+html.mf #mpage .fmx-says li{margin:0;padding-block:1px}
+html.mf #mpage .tl-row{min-height:46px}
+html.mf #mpage .mp-team .crest.lg{padding:0!important;width:58px!important;height:58px!important}
+html.mf #mpage .mp-team .crest.lg img{width:58px!important;height:58px!important;max-width:none;max-height:none}

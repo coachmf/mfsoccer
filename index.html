@@ -2355,7 +2355,7 @@ html[dir="ltr"] .tl-ev.a .tl-card{text-align:right;align-items:flex-end}
 <script src="career.js?v=5" defer></script>   <!-- تبويب «المسيرة» في ملف اللاعب: يلفّ playerProfileHTML بعد fmx.js -->
 <link rel="stylesheet" href="mxday.css?v=3">
 <script src="mxday.js?v=3" defer></script>
-<link rel="stylesheet" href="premium.css?v=10">   <!-- Premium UI: طبقة الشكل الموحّدة لكل الأقسام عدا الفانتسي (منصور 2026-11-26) -->
+<link rel="stylesheet" href="premium.css?v=13">   <!-- Premium UI: طبقة الشكل الموحّدة لكل الأقسام عدا الفانتسي (منصور 2026-11-26) -->
 <script src="visitors.js?v=3" defer></script>   <!-- الزوار: قياس مجهول + العين للطاقم + «الزوار بالتفصيل» في الإدارة (2026-11-14) -->   <!-- صفحة المباريات حسب اليوم (منصور 2026-11-07) -->
 <style>
 /* تبويب التحليل — التصميم الجديد (منصور 2026-09-17) */
@@ -15400,15 +15400,18 @@ function mpHeader(m){
   const addSum=["add1","add2","add3","add4"].reduce((t,k)=>t+(+m[k]>0?+m[k]:0),0);
   const addCur={h1:"add1",h2:"add2",e1:"add3",e2:"add4"}[m.status];
   const addT = addCur ? (+m[addCur]>0 ? +m[addCur] : 0) : (matchOver(m) && !["ht","pso"].includes(m.status)) ? addSum : 0;
-  const addH=soon||!addT?"":`<div class="mp-add"><small>الوقت بدل الضائع</small><b dir="ltr">+${addT}</b></div>`;
-  const team=c=>`<div class="mp-team" data-club-open="${esc(c)}">${crest(c,true)}<b>${esc(c)}</b></div>`;
+  /* منصور 2026-11-26: «الـconcept مالك وايد قوي لازم نعتمده» — الرأس بتصميم التصور المعتمد:
+     سطر واحد أعلى (البطولة · الجولة · التاريخ · الوقت) يفتح الترتيب، النتيجة مع شارة الحالة + بدل الضائع، الخاسر باهت، الملعب والقناة سطر صغير */
+  const addH=soon||!addT?"":`<span class="mp-chip-add"> · بدل ضائع <b dir="ltr">+${addT}</b></span>`;
+  const over=!soon && matchOver(m), hgN=+m.hg||0, agN=+m.ag||0, P0=psoOf(m);
+  const winS = over ? (hgN>agN ? "h" : agN>hgN ? "a" : (P0 ? (+P0.h>+P0.a ? "h" : +P0.a>+P0.h ? "a" : "") : "")) : "";
+  const team=c=>`<div class="mp-team${winS && ((c===m.home)!==(winS==="h")) ? " lose" : ""}" data-club-open="${esc(c)}">${crest(c,true)}<b>${esc(c)}</b></div>`;
   const hs=soon?"":mpScorers(m,m.home), as=soon?"":mpScorers(m,m.away);
   return `<div class="mp-top">
       <button type="button" class="mp-back" data-mp-close aria-label="رجوع"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
       <button type="button" class="mp-share" data-share-match="${esc(matchKey(m))}" aria-label="مشاركة بطاقة المباراة" title="مشاركة"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="2.6"/><circle cx="6" cy="12" r="2.6"/><circle cx="18" cy="19" r="2.6"/><path d="M8.6 13.4l6.9 4.1M15.5 6.5l-6.9 4.1"/></svg></button>
     </div>
-    ${when?`<div class="mp-when">${when}</div>`:""}
-    ${addH}
+    <button type="button" class="mp-meta" data-mp-tab="table"><b>${esc(compOf(m))}</b>${rndLabel(m)?` · ${esc(rndLabel(m))}`:""}${mpDateLabel(m)?` · ${esc(mpDateLabel(m))}`:""}${m.time?` · <span dir="ltr">${esc(m.time)}</span>`:""}</button>
     <div class="mp-score">
       ${team(m.home)}
       <div class="mp-mid">
@@ -15416,11 +15419,12 @@ function mpHeader(m){
                : `<span class="mp-res"><b>${m.hg}</b><i>-</i><b>${m.ag}</b></span>`}
         ${!soon && psoOf(m) ? `<span class="mp-pso">ركلات الترجيح <span class="n"><b>${psoOf(m).h}</b><i>-</i><b>${psoOf(m).a}</b></span></span>`
           : !soon && hasET(m) && matchOver(m) ? `<span class="mp-pso">بعد الأشواط الإضافية</span>` : ""}
-        <span class="mp-st${stLive?" live":m.status==="ht"?" ht":soon?" soon":""}">${stLive?"<i></i>":""}${st}${mclkHTML(m)?` · ${mclkHTML(m)}`:""}</span>
+        <span class="mp-st${stLive?" live":m.status==="ht"?" ht":soon?" soon":""}">${stLive?"<i></i>":""}${st}${mclkHTML(m)?` · ${mclkHTML(m)}`:""}${addH}</span>
       </div>
       ${team(m.away)}
     </div>
-    ${(hs||as)?`<div class="mp-scorers"><div class="h">${hs}</div><span class="ball">${MP_BALL}</span><div class="a">${as}</div></div>`:""}`;
+    ${(hs||as)?`<div class="mp-scorers"><div class="h">${hs}</div><span class="ball">${MP_BALL}</span><div class="a">${as}</div></div>`:""}
+    ${(m.venue||tvH)?`<div class="mp-foot">${m.venue?`<span>${esc(m.venue)}</span>`:""}${tvH?`<span>${esc(tvH)}</span>`:""}</div>`:""}`;
 }
 const MP_TABS=[["details","التفاصيل"],["lineups","التشكيلة"],["squad","القائمة"],["table","الترتيب"],["matches","المباريات"]];
 /* تبويب «اللعب الفعلي» بعد التشكيلة، يظهر فقط إذا رُصدت المباراة في أداة الوقت الفعلي (منصور 2026-10-28) */
