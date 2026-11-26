@@ -9,7 +9,7 @@
 
    عند كل نشر: ارفع رقم VER فتُبنى ذاكرة جديدة وتُحذف القديمة.
    ========================================================= */
-const VER   = 'mf-2026-11-26-872-subwrap';
+const VER   = 'mf-2026-11-26-873-crestwarm';
 const SHELL = 'shell-' + VER;
 const RUN   = 'run-'   + VER;
 /* الصور (لاعبون، شعارات، خلفيات) في ذاكرة ثابتة لا ترتبط برقم النسخة (منصور 2026-11-20: «الصور قاعده تطول»):
@@ -107,6 +107,18 @@ self.addEventListener('fetch', e => {
   if (req.method !== 'GET') return;
 
   const url = new URL(req.url);
+
+  /* أعلام المنتخبات (flagcdn): ثابتة — تُحفظ في ذاكرة الصور وتُعرض فوراً (منصور 2026-11-26 «الشعارات تتأخر») */
+  if (url.hostname === 'flagcdn.com') {
+    e.respondWith((async () => {
+      const c = await caches.open(IMG);
+      const hit = await c.match(req);
+      if (hit) return hit;
+      try { const res = await fetch(req); if (res.ok || res.type === 'opaque') c.put(req, res.clone()); return res; }
+      catch (err) { return Response.error(); }
+    })());
+    return;
+  }
 
   /* Firestore وكل خدمة حيّة: لا تخزين ولا اعتراض */
   if (url.origin !== location.origin && !isFont(url)) return;

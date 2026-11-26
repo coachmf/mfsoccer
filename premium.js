@@ -94,11 +94,30 @@
     setTimeout(() => { p.classList.remove("show","spin"); p.style.transform = ""; busy = false; }, 650);
   }, {passive: true});
 
+  /* ---------------- 4) تسخين الشعارات والأعلام (منصور 2026-11-26 «تتأخر») ----------------
+     بعد جاهزية البيانات وفي وقت الفراغ: كل شعار/علم لفرق المباريات يُحمَّل ويُفكّ مسبقاً مرة واحدة،
+     فيظهر فوراً في ملف اللاعب و«مباراة بمباراة» وكل القوائم بدل أن يبدأ تحميله لحظة فتحها. للعرض فقط. */
+  let warmed = false;
+  function warmCrests(){
+    if(warmed) return;
+    const all = safe(() => (typeof ALL !== "undefined" && ALL && ALL.matches) || (typeof MATCHES !== "undefined" ? MATCHES : null));
+    if(!all || !all.length || typeof crest !== "function") return;
+    warmed = true;
+    const names = new Set(); all.forEach(m => { if(m){ names.add(m.home); names.add(m.away); } });
+    safe(() => (typeof EXT_COMPS !== "undefined" ? EXT_COMPS : []).forEach(c => (c.teams || []).forEach(t => names.add(t))));   /* المنتخب والبطولات الخارجية */
+    const srcs = new Set();
+    names.forEach(n => { const h = safe(() => crest(n)) || ""; const r = /src="([^"]+)"/.exec(h); if(r) srcs.add(r[1]); });
+    const list = [...srcs]; let i = 0;
+    const step = () => { for(let k = 0; k < 6 && i < list.length; k++, i++){ const im = new Image(); im.decoding = "async"; im.src = list[i]; safe(() => im.decode().catch(() => {})); }
+      if(i < list.length) (window.requestIdleCallback || (f => setTimeout(f, 120)))(step); };
+    (window.requestIdleCallback || (f => setTimeout(f, 800)))(step);
+  }
+
   /* ---------------- التشغيل ---------------- */
   let q = 0;
   /* 13) الكؤوس: «—» مكان الموعد غير المحدد يُخفى (العرض فقط) */
   function tidyCups(){ D.querySelectorAll("#v-matches .mc .mc-time:not(.pm-nt)").forEach(t => { if(/^[—–-]$/.test(t.textContent.trim())) t.classList.add("pm-nt"); }); }
-  const tick = () => { q = 0; safe(paintLive); safe(scanGoals); safe(tidyCups); };
+  const tick = () => { q = 0; safe(paintLive); safe(scanGoals); safe(tidyCups); if(!warmed) safe(warmCrests); };
   new MutationObserver(() => { if(!q) q = requestAnimationFrame(tick); }).observe(D.body, {childList: true, subtree: true, characterData: true});
   setInterval(tick, 5000);   /* الساعة في البطاقة تتقدّم حتى بلا تحديث بيانات */
   window.addEventListener("hashchange", () => setTimeout(tick, 60));
