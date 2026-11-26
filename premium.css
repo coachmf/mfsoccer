@@ -216,3 +216,57 @@ html.mf #v-matches .mx-list .mc{display:flex;flex-wrap:wrap;justify-content:cent
 html.mf #v-matches .mx-list .mc-row{flex:1 1 100%}
 html.mf #v-matches .mx-list :is(.mc-foot,.mc-note){flex:0 0 auto;margin:-4px 0 0;padding:0}
 html.mf #v-matches .mx-list .mc-mid{gap:2px}
+
+/* ===== ألوان الناديين في رأس المباراة — خيارات (منصور 2026-11-26: «الخلفية ألوان ناديه بس شي مميز، عطني خيارات») ===== */
+/* 1) قطري: لون صاحب الأرض من اليمين والضيف من اليسار يلتقيان بخط مائل، وتعتيم أسفل */
+html.mf.mp-hv-1 #mpage .mp-head{background:
+  linear-gradient(180deg,transparent 45%,rgba(0,6,26,.92) 100%),
+  linear-gradient(105deg,color-mix(in srgb,var(--ac) 70%,#00061A) 0%,color-mix(in srgb,var(--ac) 38%,#00061A) 49.6%,color-mix(in srgb,var(--hc) 38%,#00061A) 50.4%,color-mix(in srgb,var(--hc) 70%,#00061A) 100%)!important}
+/* 2) توهّج: هالتان واسعتان بلون كل نادٍ خلف شعاره على كحلي عميق */
+html.mf.mp-hv-2 #mpage .mp-head{background:
+  radial-gradient(55% 70% at 82% 42%,color-mix(in srgb,var(--hc) 62%,transparent),transparent 70%),
+  radial-gradient(55% 70% at 18% 42%,color-mix(in srgb,var(--ac) 62%,transparent),transparent 70%),
+  linear-gradient(180deg,#07112B,#00061A)!important}
+/* 3) أشرطة القميص: شريطان رأسيان بلون كل نادٍ على الحافتين مع ظل لوني خفيف */
+html.mf.mp-hv-3 #mpage .mp-head{background:
+  linear-gradient(90deg,var(--ac) 0 6px,color-mix(in srgb,var(--ac) 22%,transparent) 6px,transparent 38%),
+  linear-gradient(270deg,var(--hc) 0 6px,color-mix(in srgb,var(--hc) 22%,transparent) 6px,transparent 38%),
+  linear-gradient(180deg,#0B1636,#00061A)!important}
+/* 4) نصفان: كل نصف بلون ناديه، فاصل رفيع في الوسط، والنتيجة على شريحة داكنة */
+html.mf.mp-hv-4 #mpage .mp-head{background:
+  linear-gradient(180deg,transparent 55%,rgba(0,6,26,.95) 100%),
+  linear-gradient(90deg,color-mix(in srgb,var(--ac) 55%,#00061A) 0 calc(50% - 1px),rgba(255,255,255,.18) calc(50% - 1px) calc(50% + 1px),color-mix(in srgb,var(--hc) 55%,#00061A) calc(50% + 1px))!important}
+html.mf.mp-hv-4 #mpage .mp-mid{background:rgba(0,6,26,.55);border-radius:16px;padding:8px 6px;backdrop-filter:blur(6px)}
+
+/* ================= 7) تفاصيل الإحساس (Premium feel) ================= */
+/* أرقام بعرض ثابت في كل مكان: النتائج والجداول والتقييمات لا «ترقص» عند التحديث */
+html.mf :is(td,th,.rtg,.mp-res,.mxd-sc,.mxd-time,.hm-td-time,.tl-min,.mc-time,.mc-sc,.sq-n,.sec-n){font-variant-numeric:tabular-nums}
+/* تحديد النص وشريط التمرير بلون الهوية */
+html.mf ::selection{background:color-mix(in srgb,var(--pm-acc) 35%,transparent);color:var(--pm-tx)}
+/* ضغطة محسوسة على كل ما يُفتح (صفوف المباريات، البطاقات، الأخبار، الفيديو، اللاعبين) */
+@media (prefers-reduced-motion:no-preference){
+  html.mf :is(.mxd-c[data-mopen],.mxd-c[data-am-open],.mc[data-mopen],.hm-td-row,.mf-rc,.tp,.va-card,.va-row,.nw-panel,.nw-item,.mf-circ,.chon-it,.crew-go,.af-row,.af-app,.mf-sheet-o,.mxd-day,.mxd-cp,[data-player],[data-club-open]){
+    transition:transform .16s cubic-bezier(.2,.8,.2,1),background-color .16s ease,opacity .16s ease}
+  html.mf :is(.mxd-c[data-mopen],.mxd-c[data-am-open],.mc[data-mopen],.hm-td-row,.mf-rc,.tp,.va-card,.va-row,.nw-panel,.nw-item,.chon-it,.crew-go,.af-row):active{transform:scale(.985)}
+  html.mf :is(.mf-circ,.af-app,.mxd-day,.mxd-cp,.mf-sheet-o):active{transform:scale(.94)}
+  /* تبديل تبويبات صفحة المباراة والنادي: ظهور ناعم للمحتوى الجديد */
+  html.mf #mpage .mp-body > *,html.mf #v-clubs .ctab-body > *{animation:pmIn .22s cubic-bezier(.2,.8,.2,1) both}
+  html.mf #mpage .mp-body > *:nth-child(2){animation-delay:.03s} html.mf #mpage .mp-body > *:nth-child(3){animation-delay:.06s}
+}
+@keyframes pmIn{from{opacity:0;transform:translate3d(0,8px,0)}to{opacity:1;transform:none}}
+/* الأشرطة الثابتة شبه شفافة بضبابية (زجاجية) مثل التطبيقات العالمية */
+@supports ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
+  html.mf #mpage .mp-tabs{background:color-mix(in srgb,var(--pm-bg) 82%,transparent)!important;-webkit-backdrop-filter:saturate(160%) blur(16px);backdrop-filter:saturate(160%) blur(16px)}
+  html.mf .mxd-bar{background:color-mix(in srgb,var(--mxd-bg) 84%,transparent)!important;-webkit-backdrop-filter:saturate(160%) blur(16px);backdrop-filter:saturate(160%) blur(16px)}
+  html.mf .mf-bar{background:color-mix(in srgb,var(--pm-bg) 86%,transparent);-webkit-backdrop-filter:saturate(170%) blur(18px);backdrop-filter:saturate(170%) blur(18px)}
+  html.mf .mf-top{background:color-mix(in srgb,var(--pm-bg) 86%,transparent);-webkit-backdrop-filter:saturate(170%) blur(18px);backdrop-filter:saturate(170%) blur(18px)}
+}
+/* الشريط السفلي: مؤشر صغير ذهبي فوق القسم الحالي */
+html.mf .mf-bar button:not(.mf-orb){position:relative}
+html.mf .mf-bar button:not(.mf-orb)::before{content:"";position:absolute;top:0;left:50%;width:22px;height:3px;border-radius:0 0 3px 3px;background:var(--pm-acc);transform:translateX(-50%) scaleX(0);transition:transform .25s cubic-bezier(.2,.8,.2,1)}
+html.mf .mf-bar button.on:not(.mf-orb)::before{transform:translateX(-50%) scaleX(1)}
+html.mf .mf-bar button svg{transition:color .2s ease,transform .2s ease}
+/* الحالات الفارغة: هادئة ومركزية */
+html.mf :is(.mxd-empty,.empty,.va-empty,.nw-empty){border:1px dashed var(--pm-ln2)!important;background:transparent!important;border-radius:var(--pm-r);color:var(--pm-tx2)}
+/* هياكل التحميل بلمعة أنعم */
+html.mf .mxd-sk :is(i,b){background:linear-gradient(90deg,var(--pm-s2) 0%,color-mix(in srgb,var(--pm-tx) 7%,var(--pm-s2)) 50%,var(--pm-s2) 100%);background-size:200% 100%}
