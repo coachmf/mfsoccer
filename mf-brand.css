@@ -1578,3 +1578,41 @@ html.mf .rf-f span{font-size:.74rem;font-weight:700;color:var(--mf-tx3)}
   html.mf[data-theme="dark"]::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
     background:url(assets/brand/bg-stadium-diamond.webp) center top/cover no-repeat,var(--mf-bg)}
 }
+
+/* ================= التذييل بشكل التطبيق (منصور 2026-11-26: «رتبها كأنه أبلكيشن») ================= */
+html.mf .lfoot-top{display:none}
+html.mf .lfoot-bottom{display:block;color:var(--mf-tx2)}
+html.mf .lfoot-in{max-width:560px;margin-inline:auto}
+.af{display:flex;flex-direction:column;gap:18px;direction:rtl;padding:4px 0 6px}
+.af-brand{display:flex;flex-direction:column;align-items:center;gap:4px;text-align:center}
+.af-brand img{height:44px;width:auto}
+.af-brand b{font-weight:800;font-size:.95rem;line-height:1.2;letter-spacing:.18em;color:var(--mf-tx);margin-top:4px}
+.af-brand small{font-size:.74rem;color:var(--mf-tx3)}
+.af-h{margin:0 4px 8px;font-size:.74rem;font-weight:700;color:var(--mf-tx3)}
+.af-soc{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.af-app{display:flex;flex-direction:column;align-items:center;gap:7px;text-decoration:none;color:var(--mf-tx2);font-size:.72rem;font-weight:600}
+.af-app i{width:52px;height:52px;border-radius:15px;display:grid;place-items:center;color:#fff;box-shadow:0 6px 16px rgba(0,0,0,.25)}
+.af-app i svg{width:26px;height:26px}
+.af-app.ig i{background:radial-gradient(circle at 30% 110%,#FFD86B 0%,#FA7E1E 28%,#D62976 55%,#962FBF 78%,#4F5BD5 100%)}
+.af-app.x i{background:#000;border:1px solid rgba(255,255,255,.14)}
+.af-app.tt i{background:#000;border:1px solid rgba(255,255,255,.14)}
+.af-app.yt i{background:#FF0033}
+.af-app:active i{transform:scale(.92)}
+.af-list{border-radius:16px;overflow:hidden;background:var(--mf-c1);border:1px solid var(--mf-ln)}
+.af-row,.af-nt .hchip.nt{display:flex;align-items:center;gap:12px;width:100%;min-height:52px;padding:0 14px;margin:0;border:0;border-radius:0;
+  background:none;color:var(--mf-tx);font-weight:600;font-size:.86rem;line-height:1.4;font-family:inherit;text-decoration:none;cursor:pointer;direction:rtl;text-align:start}
+.af-list > * + *{border-top:1px solid var(--mf-ln)}
+.af-nt{display:block;margin:0!important;gap:0}
+.af-nt:empty{display:none}
+.af-nt:empty + .af-row{border-top:0}
+.af-row span,.af-nt .hchip.nt span{flex:1}
+.af-ic,.af-nt .hchip.nt svg{flex:none;width:32px;height:32px;border-radius:9px;display:grid;place-items:center;background:var(--mf-c3);color:var(--mf-acc-tx)}
+.af-ic svg{width:18px;height:18px}
+.af-nt .hchip.nt svg{padding:7px;box-sizing:border-box}
+.af-ic.wa{background:#25D366;color:#fff}
+.af-nt .hchip.nt.on svg{background:rgba(231,208,147,.16)}
+.af-chv{width:16px;height:16px;flex:none;color:var(--mf-tx3)}
+.af-nt .hchip.nt::after{content:"";width:7px;height:7px;flex:none;border:solid var(--mf-tx3);border-width:0 2px 2px 0;transform:rotate(135deg);margin-inline-end:5px}
+.af-row:active,.af-nt .hchip.nt:active{background:var(--mf-c2)}
+.af-cp{margin:0;text-align:center;font-size:.7rem;color:var(--mf-tx3)}
+html.mf[data-theme="light"] .af-app.x i,html.mf[data-theme="light"] .af-app.tt i{border-color:transparent}

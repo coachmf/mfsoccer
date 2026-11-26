@@ -2343,7 +2343,7 @@ html[dir="ltr"] .tl-ev.a .tl-card{text-align:right;align-items:flex-end}
 <script src="tstats-data.js?v=1" defer></script>
 <script src="analysis.js?v=34" defer></script>
 <!-- هوية MF SOCCER الذهبية + هيكل التطبيق (منصور 2026-10-05) -->
-<link rel="stylesheet" href="mf-brand.css?v=27">
+<link rel="stylesheet" href="mf-brand.css?v=28">
 <link rel="stylesheet" href="notif-prefs.css?v=1">
 <script>document.documentElement.classList.add("mf")</script>
 <script src="mf-shell.js?v=51" defer></script>
@@ -11087,16 +11087,24 @@ const domParsed = () => new Promise(r => document.readyState!=="loading" ? r() :
       if(cb && Array.isArray(CLUBS) && CLUBS.length) setHTML(cb,`<div class="crestbar-nt"><button type="button" class="kfa-btn" title="${KFA_INFO.name}" aria-label="${KFA_INFO.name}" data-club="${KFA_KEY}"><img src="assets/kfa/logo-240.webp" alt="${KFA_KEY}" width="76" height="76"></button></div><div class="crestbar-in">${crestButtons()}</div>`);   /* المنتخب أولاً بشعار كبير ثم الأندية أصغر (منصور 2026-09-16)؛ لا يُعاد البناء إن لم يتغيّر */
       const fc=document.querySelector("#footCrests"); if(fc && Array.isArray(CLUBS)) setHTML(fc,crestButtons());
       const fb=document.querySelector("#footBottom");
-      if(fb) setHTML(fb,`<img src="${BRAND}" alt="${esc(OWNER)}">
-        <div class="handles">
-          <a class="hchip" href="${IG_URL}" target="_blank" rel="noopener">${IG_SVG}@mfsoccerkw</a>
-          <a class="hchip" href="${X_URL}" target="_blank" rel="noopener" aria-label="X">${X_SVG}</a>
-          <a class="hchip" href="${TT_URL}" target="_blank" rel="noopener" aria-label="تيك توك">${TT_SVG}</a>
-          <a class="hchip wa" href="${WA_URL}" target="_blank" rel="noopener">${WA_SVG}اقتراحاتكم</a>
-        </div>
-        <div class="legal" style="margin-top:12px;font-size:.78rem;opacity:.75;text-align:center">
-          <a href="/privacy.html">سياسة الخصوصية</a> · <a href="/terms.html">شروط الاستخدام</a>
-        </div>`);
+      /* منصور 2026-11-26: «رتبها كأنه أبلكيشن» — تذييل بشكل التطبيق: الشعار، «تابعنا» أيقونات مربعة، ثم قائمة صفوف بسهم */
+      const CHV='<svg class="af-chv" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>';
+      const YT_SVG='<svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 7.2a3 3 0 0 0-2.1-2.1C19 4.6 12 4.6 12 4.6s-7 0-8.9.5A3 3 0 0 0 1 7.2 31 31 0 0 0 .5 12a31 31 0 0 0 .5 4.8 3 3 0 0 0 2.1 2.1c1.9.5 8.9.5 8.9.5s7 0 8.9-.5a3 3 0 0 0 2.1-2.1 31 31 0 0 0 .5-4.8 31 31 0 0 0-.5-4.8ZM9.75 15.02V8.98L15.5 12l-5.75 3.02Z"/></svg>';
+      const DOC='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h4"/></svg>';
+      const SHD='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 4.5 6v5.5c0 4.6 3.2 8.4 7.5 9.5 4.3-1.1 7.5-4.9 7.5-9.5V6z"/><path d="m9 12 2 2 4-4"/></svg>';
+      const soc=[[IG_URL,"إنستغرام","ig",IG_SVG],[X_URL,"إكس","x",X_SVG],[TT_URL,"تيك توك","tt",TT_SVG],["https://youtube.com/@mfsoccerkw","يوتيوب","yt",YT_SVG]];
+      if(fb) setHTML(fb,`<div class="af">
+        <div class="af-brand"><img src="assets/brand/mf-emblem.webp" alt="MF SOCCER" width="96" height="46"><small dir="ltr">@mfsoccerkw</small></div>
+        <div class="af-sec"><h4 class="af-h">تابعنا</h4>
+          <div class="af-soc">${soc.map(([u,t,k,ic])=>`<a href="${u}" target="_blank" rel="noopener" class="af-app ${k}"><i>${ic}</i><span>${t}</span></a>`).join("")}</div></div>
+        <div class="af-sec"><div class="af-list">
+          <div class="handles af-nt"></div>
+          <a class="af-row" href="${WA_URL}" target="_blank" rel="noopener"><i class="af-ic wa">${WA_SVG}</i><span>اقتراحاتكم</span>${CHV}</a>
+          <a class="af-row" href="/privacy.html"><i class="af-ic">${SHD}</i><span>سياسة الخصوصية</span>${CHV}</a>
+          <a class="af-row" href="/terms.html"><i class="af-ic">${DOC}</i><span>شروط الاستخدام</span>${CHV}</a>
+        </div></div>
+        <p class="af-cp">موسم 2026/2027 · <span dir="ltr">© MF SOCCER</span></p>
+      </div>`);
       /* يُشغَّل الشريط: يُكرَّر المحتوى مرة واحدة ليكون الدوران متصلاً،
          وتُحسب المدة من عرضه فتبقى السرعة ثابتة مهما كثرت المباريات.
          لا يتحرك إن كان المحتوى أقصر من الإطار. */
