@@ -212,3 +212,8 @@ details p{margin:8px 0 0;color:var(--muted)}
 @media print{.topbar,.foot,.no-print{display:none!important}body{background:#fff}.card{box-shadow:none}}
 .stSel{border:1.5px solid var(--line);border-radius:9px;padding:5px 8px;background:#fff;font-weight:700}
 body{min-height:100vh;display:flex;flex-direction:column}.view{flex:1}
+.chips label.chip{user-select:none}
+.course{border-top-color:var(--c,var(--blue))}
+.price small s{opacity:.7}
+.admf{display:flex;gap:8px;flex-wrap:wrap}
+.admf input,.admf select{border:1.5px solid var(--line);border-radius:10px;padding:7px 10px;background:#fff;min-width:0}

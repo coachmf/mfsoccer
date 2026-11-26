@@ -151,8 +151,17 @@
   status = 200
   force = true
 
+[[redirects]]
+  from = "/api/kfa-edu"
+  to = "/.netlify/functions/kfa-edu"
+  status = 200
+  force = true
+
 [functions."kfa-pay"]
-  included_files = ["kfa-edu/config.js"]
+  included_files = ["kfa-edu/config.js", "kfa-edu/rules.js"]
+
+[functions."kfa-edu"]
+  included_files = ["kfa-edu/config.js", "kfa-edu/rules.js"]
 
 [[headers]]
   for = "/*"
