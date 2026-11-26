@@ -2352,13 +2352,13 @@ html[dir="ltr"] .tl-ev.a .tl-card{text-align:right;align-items:flex-end}
 <script src="mf-shell.js?v=54" defer></script>
 <script src="app-shell.js?v=2" defer></script>   <!-- تجربة التطبيق: تعمل مع html.mfa فقط -->
 <link rel="stylesheet" href="fmx.css?v=3">
-<script src="fmx.js?v=9" defer></script>   <!-- أفكار FM27: fmx.js يلفّ صفحات المباراة والنادي واللاعب والمباريات والتحليل -->
+<script src="fmx.js?v=10" defer></script>   <!-- أفكار FM27: fmx.js يلفّ صفحات المباراة والنادي واللاعب والمباريات والتحليل -->
 <link rel="stylesheet" href="career.css?v=6">
 <script src="player-career.js?v=5" defer></script>   <!-- مسيرة اللاعبين من FM27 (صفوف خام لكل موسم) -->
 <script src="career.js?v=5" defer></script>   <!-- تبويب «المسيرة» في ملف اللاعب: يلفّ playerProfileHTML بعد fmx.js -->
 <link rel="stylesheet" href="mxday.css?v=3">
 <script src="mxday.js?v=4" defer></script>
-<link rel="stylesheet" href="premium.css?v=29">   <!-- Premium UI: طبقة الشكل الموحّدة لكل الأقسام عدا الفانتسي (منصور 2026-11-26) -->
+<link rel="stylesheet" href="premium.css?v=30">   <!-- Premium UI: طبقة الشكل الموحّدة لكل الأقسام عدا الفانتسي (منصور 2026-11-26) -->
 <script src="premium.js?v=2" defer></script>   <!-- Premium: بطاقة مباشرة مثبّتة، حركة الهدف، السحب للتحديث (منصور 2026-11-26) -->
 <script src="visitors.js?v=3" defer></script>   <!-- الزوار: قياس مجهول + العين للطاقم + «الزوار بالتفصيل» في الإدارة (2026-11-14) -->   <!-- صفحة المباريات حسب اليوم (منصور 2026-11-07) -->
 <style>
@@ -3714,7 +3714,7 @@ function suspensions(){
     const [comp,c,n]=key.split("|"), ms=ofClub(comp,c);
     const {slots,y}=banSlots(ms,cards,c);
     const miss=[]; let why="", from=null;
-    slots.forEach(t=>{ if(isUp(comp,t.m)){ if(!miss.length){ why=t.why; from=t.from; } miss.push(t.m); } });
+    slots.forEach(t=>{ if(isUp(comp,t.m)){ if(!miss.length){ why=t.why; from=t.from; } else if(t.from===from && !why.includes(t.why)) why+=" + "+t.why; miss.push(t.m); } });   /* عقوبتان من نفس المباراة (تراكم + طرد مباشر، مادة 89) تظهران معاً */
     const risk=!miss.length && y%3===2;
     if(!miss.length && !risk) return;
     out.push({n,c,comp,y,miss,next:miss[0]||null,why,from,risk});

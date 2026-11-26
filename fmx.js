@@ -489,13 +489,17 @@ function roundupHTML(){
 
 /* ═════════════ التحليل — نظرة عامة ═════════════ */
 function suspendedHTML(){
-  /* من suspensions() في index.html (لائحة المسابقات 2026-2027 — منصور 2026-10-30) */
+  /* من suspensions() في index.html (لائحة المسابقات 2026-2027 — منصور 2026-10-30)
+     الإيقاف يُحسب ويُنفَّذ داخل كل مسابقة، فالقائمة مجمّعة حسب البطولة التي سيغيب فيها اللاعب (منصور 2026-11-26) */
   if(!fnOK("suspensions")) return "";
-  const rows = suspensions().filter(s=>s.next).map(s=>({x:{p:s.n, club:s.c}, next:s.next, opp: s.next.home===s.c?s.next.away:s.next.home, why:s.why, more:s.miss.length-1}));
+  const rows = suspensions().filter(s=>s.next).map(s=>({x:{p:s.n, club:s.c}, comp:s.comp, next:s.next, opp: s.next.home===s.c?s.next.away:s.next.home, why:s.why, more:s.miss.length-1}));
   if(!rows.length) return "";
-  return `<h2 class="sec">الموقوفون للمباراة القادمة</h2><div class="an-card fmx-susp">${rows.map(r=>`<div class="fmx-susp-r">
+  const comps = [...new Set(rows.map(r=>r.comp))];
+  const lg = c => { try{ return typeof compLogo==="function" ? compLogo(c,20) : ""; }catch(e){ return ""; } };
+  const rl = m => { try{ return typeof rndLabel==="function" ? rndLabel(m) : (m.round?"الجولة "+m.round:""); }catch(e){ return ""; } };
+  return `<h2 class="sec">الموقوفون للمباراة القادمة</h2>${comps.map(c=>`<div class="an-card fmx-susp"><div class="fmx-susp-c">${lg(c)}<b>${H(c)}</b><small>${rows.filter(r=>r.comp===c).length}</small></div>${rows.filter(r=>r.comp===c).map(r=>`<div class="fmx-susp-r">
     ${crest(r.x.club)}${plBtn(r.x.p, r.x.club, `<b>${H(r.x.p)}</b>`)}<small>${H(r.why)}${r.more>0?` · <span>${r.more===1?"مباراتان":(r.more+1)+" مباريات"}</span>`:""}</small>
-    <span class="fmx-tag r" data-mopen="${keyOf(r.next)}">يغيب أمام ${H(r.opp)}</span></div>`).join("")}</div>`;
+    <span class="fmx-tag r" data-mopen="${keyOf(r.next)}">يغيب أمام ${H(r.opp)}${rl(r.next)?`<i> · ${H(rl(r.next))}</i>`:""}</span></div>`).join("")}</div>`).join("")}`;
 }
 function seasonRecordsHTML(){
   const rows = [];

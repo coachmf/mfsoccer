@@ -402,3 +402,13 @@ html.mf #mpage .mp-head{background:
 html.mf[data-theme="light"] .pm-ls{background:linear-gradient(180deg,rgba(214,58,47,.07),#fff 60%);border-color:rgba(214,58,47,.25);box-shadow:0 8px 22px rgba(0,6,26,.06)}
 html.mf[data-theme="light"] .pm-ls-r{color:#00061A;border-top-color:rgba(0,6,26,.07)}
 html.mf[data-theme="light"] .pm-ls-clk{color:#D63A2F}
+
+/* الموقوفون: مجموعة لكل بطولة (الإيقاف يُنفَّذ داخل نفس المسابقة) */
+html.mf .fmx-susp + .fmx-susp{margin-top:12px}
+html.mf .fmx-susp-c{display:flex;align-items:center;gap:8px;padding:10px 0 8px;border-bottom:1px solid var(--pm-ln,rgba(255,255,255,.07));font-size:13px}
+html.mf .fmx-susp-c b{font-weight:800;color:var(--pm-tx,#F4F1E8)}
+html.mf .fmx-susp-c img{width:20px;height:20px;object-fit:contain}
+html.mf .fmx-susp-c small{margin-inline-start:auto;color:var(--pm-tx2,#A6AEC4);font-size:11.5px;font-weight:700;font-variant-numeric:tabular-nums}
+html.mf .fmx-susp-c + .fmx-susp-r{border-top:0}
+html.mf .fmx-susp-r .fmx-tag i{font-style:normal;opacity:.75;font-weight:600}
+html.mf[data-theme="light"] .fmx-susp-c b{color:#00061A}
