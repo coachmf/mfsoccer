@@ -8354,7 +8354,7 @@ function goalsTimeline(m,gs,mc){
   /* ترتيب زمني حقيقي (منصور 2026-09-24): 90+4 بعد بطاقة مسجّلة 93، و«نهاية المباراة» آخر شيء دائماً.
      بدل الشوط الأول (45+x) يبقى قبل 46 */
   const tlKey=e=>{ if(e.t==="e" && !e.v.club && /^نهاية المباراة/.test(String(e.v.note||"").trim())) return 1e6;
-    if(e.t==="e" && !e.v.club && /^نهاية الشوط الأول/.test(String(e.v.note||"").trim())) return 45.99;   /* بعد كل أحداث 45+x (هدف 45+5، إنذار 45+1) — المحررون 2026-09-30 */
+    if(e.t==="e" && !e.v.club && /^نهاية الشوط الأول/.test(String(e.v.note||"").trim())) return 45.99;
     if(e.t==="s" && e.half>=2 && e.m<=45) return 45.999;   /* تبديل بين الشوطين بعد كل أحداث 45+x (منصور 2026-09-30) */
     /* الأشواط الإضافية: الدقيقة 91+ بعد كل بدل ضائع الشوط الثاني (90+12 قبل 91)، و105+x قبل 106 */
     const raw = e.t==="s" ? e.raw : e.m;
@@ -8370,9 +8370,12 @@ function goalsTimeline(m,gs,mc){
             /* نتيجة الركلة حدث مستقل بدقيقتها (منصور 2026-11-04: «55 احتُسبت، 56 سجلت/ضاعت/أُلغيت») — المسجّلة صفّها هدفها */
             ...pk.filter(p=>p.res && p.res!=="احتُسبت" && p.res!=="سجلت").map(p=>({t:"p",m:+p.rm||+p.m||0,x:0,p,part:"o"}))]
     .sort((a,b)=>(tlKey(a)-tlKey(b))||(tlRank(a)-tlRank(b)));
-  let h=0,a=0; const rows=[]; let htDone=false, etDone=false;
+  let h=0,a=0; const rows=[]; let htDone=false, etDone=false, e1Done=false, e2Done=false;
+  /* فواصل الأشواط الإضافية بنتيجتها مثل «الشوط الأول» (منصور 2026-11-26: «بالتفاصيل مو قاعده تطلع نهاية الشوط الاضافي الاول والنهاية») */
+  const mk=t=>rows.push(`<div class="tl-mark"><span>${t} <b dir="ltr">${h} - ${a}</b></span></div>`);
+  const etMarks=lv=>{ if(!ET) return; if(lv>=1 && !etDone){ etDone=true; mk("الوقت الأصلي"); } if(lv>=2 && !e1Done){ e1Done=true; mk("الشوط الإضافي الأول"); } if(lv>=3 && !e2Done){ e2Done=true; mk("الشوط الإضافي الثاني"); } };
   ev.forEach(e=>{
-    if(ET && !etDone && tlKey(e)>=1000 && tlKey(e)<1e6){ etDone=true; rows.push(`<div class="tl-mark"><span>الوقت الأصلي <b dir="ltr">${h} - ${a}</b></span></div>`); }
+    const k=tlKey(e); if(ET && k>=1000) etMarks(k>=1e6 ? 3 : k>=1105.995 ? 2 : 1);
     /* مراجعة VAR لركلة جزاء تظهر في جهة الفريق المستفيد من الركلة لا جهة اللاعب المرتكب (منصور 2026-11-26: وليد سعد → جهة السالمية) */
     const varPk = e.t==="e" && e.v.k==="var" && e.v.club && /جزاء/.test(String(e.v.note||"")) ? pk.find(p=>p.by && p.by!==e.v.club && Math.abs((+p.m||0)-e.m)<=5) : null;
     const club = e.t==="g" ? e.g.sc : e.t==="c" ? e.c.club : e.t==="e" ? (varPk ? varPk.by : e.v.club) : e.t==="p" ? e.p.by : e.sb.club;
@@ -8479,7 +8482,7 @@ function goalsTimeline(m,gs,mc){
   /* الفواصل حسب حالة المباراة (منصور 2026-09-23): أثناء اللعب لا «النهاية»، ولا «الشوط الأول» قبل انتهائه */
   const over=matchOver(m), pastHT=over || ["ht","h2","e1","e2","pso"].includes(m.status);
   if(!htDone && pastHT) rows.push(`<div class="tl-mark"><span>الشوط الأول <b dir="ltr">${h} - ${a}</b></span></div>`);
-  if(ET && !etDone && (over || ["e1","e2","pso"].includes(m.status))) rows.push(`<div class="tl-mark"><span>الوقت الأصلي <b dir="ltr">${h} - ${a}</b></span></div>`);
+  etMarks(over || m.status==="pso" ? 3 : m.status==="e2" ? 2 : m.status==="e1" ? 1 : 0);
   const P=psoOf(m);
   if(P && (over || m.status==="pso")){
     rows.push(`<div class="tl-mark"><span>ركلات الترجيح <b dir="ltr">${P.h} - ${P.a}</b></span></div>`);
