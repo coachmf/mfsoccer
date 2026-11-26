@@ -6303,6 +6303,8 @@ function refShirtSVG(name){
     <path d="M27 49v66a4 4 0 0 0 4 4h58a4 4 0 0 0 4-4V49" fill="none" stroke="rgba(0,0,0,.07)" stroke-width="3"/>
   </svg>`;
 }
+/* منصور 2026-11-26: طاقم التحكيم في صفحة المباراة يعرض صورة الحكم (إن وُجدت في REF_PHOTOS) ورمز دوره شارة صغيرة عليها؛ بلا صورة = رمز الدور كما كان */
+function crewIco(name, k){ const f=REF_PHOTOS[String(name||"").trim()]; return f ? `<span class="crew-fw"><img class="ref-face crew-fc" src="assets/referees/${f}.webp?v=3" alt="" loading="lazy">${refRoleIco(k)}</span>` : refRoleIco(k); }
 function refFace(name, cls){
   const f=REF_PHOTOS[String(name||"").trim()];
   return f ? `<img class="ref-face${cls?" "+cls:""}" src="assets/referees/${f}.webp?v=3" alt="" loading="lazy">`
@@ -12530,6 +12532,9 @@ html.mp-open{overflow:hidden}
 .mp-crew .crew-go .crew-ar{margin-inline-start:auto;width:7px;height:7px;border:solid var(--text-muted,#8fa6c4);border-width:0 1.6px 1.6px 0;transform:rotate(135deg);flex:none;opacity:.7}
 .mp-crew .crew-p>div{min-width:0}
 .mp-crew .crew-p .ref-role{width:30px;height:30px}
+.mp-crew .crew-fw{position:relative;flex:0 0 auto;width:40px;height:40px}
+.mp-crew .crew-fw .crew-fc{width:40px;height:40px;border-radius:50%;object-fit:cover;display:block;border:1.5px solid rgba(231,208,147,.55)}
+.mp-crew .crew-fw .ref-role{position:absolute;left:-5px;bottom:-4px;width:19px;height:19px;border-width:1px}
 .mp-crew .crew-p small{font-size:.62rem;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .mp-crew .crew-p b{font-size:.78rem;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
@@ -15430,7 +15435,7 @@ function mpInfoRows(m){
   const none=v=>v==="لا يوجد";
   const crewCard = people.length ? `<div class="mp-card mp-crew"><div class="mp-hd"><h3>طاقم التحكيم</h3></div>
     <div class="crew-grid">${people.map(([l,n,k])=>none(n) ? `<div class="crew-p none">${refRoleIco(k)}<div><small>${l}</small><b>${esc(n)}</b></div></div>`
-      : `<button type="button" class="crew-p crew-go" data-rf-open="${esc(n)}">${refRoleIco(k)}<div><small>${l}</small><b>${esc(n)}</b></div><i class="crew-ar" aria-hidden="true"></i></button>`).join("")}</div></div>` : "";
+      : `<button type="button" class="crew-p crew-go" data-rf-open="${esc(n)}">${crewIco(n,k)}<div><small>${l}</small><b>${esc(n)}</b></div><i class="crew-ar" aria-hidden="true"></i></button>`).join("")}</div></div>` : "";
   return `<div class="mp-card mp-info">${rows.map(([k,v])=>`<div class="mp-irow"><span>${k}</span><b>${v}</b></div>`).join("")}
     ${m.note?`<div class="mp-note">${esc(m.note)}</div>`:""}</div>${crewCard}`;
 }
