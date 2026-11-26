@@ -486,3 +486,7 @@ html.mf .view.on:empty{min-height:70vh;margin:16px;border-radius:var(--pm-r,18px
 /* ملف اللاعب: الصف الثاني يملأ العرض كاملاً مهما كان عدد مربعاته (2 أو 3 أو 4) */
 html.mf .pprof-stats:has(> .pstat.rt:nth-child(6)) > .pstat:nth-child(n+4):not(.rt){grid-column:span 6}
 html.mf .pprof-stats:has(> .pstat.rt:nth-child(8)) > .pstat:nth-child(n+4):not(.rt){grid-column:span 3}
+
+/* وجه الحكم في صف المباراة (قائمة المباريات) */
+html.mf .mxd-c span.has-rf{display:inline-flex;align-items:center;gap:6px}
+html.mf .mxd-rf{width:20px;height:20px;border-radius:50%;object-fit:cover;flex:none;box-shadow:0 0 0 1.5px rgba(231,208,147,.45);background:#0B1838}
