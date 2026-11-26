@@ -65,7 +65,7 @@
   /* ---------- بيانات اللغات (i18n-data.js، 913KB) — لغير العربية فقط (أداء 2026-11-14) ----------
      العربية لا تقرأ هذه البيانات، فالصفحة لا تحمّلها إلا إذا كانت اللغة المحفوظة غيرها.
      التبديل من العربية يحمّلها أولاً ثم يترجم (I18N.setLang). من يضيف ترجمات فوقها يستعمل I18N.onData. */
-  const DATA_V = 34;
+  const DATA_V = 35;
   const hasData = () => typeof I18N_EN_ADD !== 'undefined';
   const ONDATA = [];
   let merged = false, loading = null;

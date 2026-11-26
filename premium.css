@@ -490,3 +490,20 @@ html.mf .pprof-stats:has(> .pstat.rt:nth-child(8)) > .pstat:nth-child(n+4):not(.
 /* وجه الحكم في صف المباراة (قائمة المباريات) */
 html.mf .mxd-c span.has-rf{display:inline-flex;align-items:center;gap:6px}
 html.mf .mxd-rf{width:20px;height:20px;border-radius:50%;object-fit:cover;flex:none;box-shadow:0 0 0 1.5px rgba(231,208,147,.45);background:#0B1838}
+
+/* بادئات أحداث المباراة بلغة الزائر (كانت «صناعة / بدلاً من / نهاية» عربية في كل اللغات — مراجعة الترجمة 2026-11-26) */
+html:lang(en) #mpage .tl-ev .tl-assist::before{content:"Assist: "}
+html:lang(pt) #mpage .tl-ev .tl-assist::before{content:"Assistência: "}
+html:lang(es) #mpage .tl-ev .tl-assist::before{content:"Asistencia: "}
+html:lang(fr) #mpage .tl-ev .tl-assist::before{content:"Passe décisive : "}
+html:lang(sh) #mpage .tl-ev .tl-assist::before{content:"Asistencija: "}
+html:lang(en) #mpage .tl-ev.sub .tl-sub-out::before{content:"for "}
+html:lang(pt) #mpage .tl-ev.sub .tl-sub-out::before{content:"no lugar de "}
+html:lang(es) #mpage .tl-ev.sub .tl-sub-out::before{content:"por "}
+html:lang(fr) #mpage .tl-ev.sub .tl-sub-out::before{content:"à la place de "}
+html:lang(sh) #mpage .tl-ev.sub .tl-sub-out::before{content:"umjesto "}
+html:lang(en) #mpage .tl-mark:not(.end) span::before{content:"End of "}
+html:lang(pt) #mpage .tl-mark:not(.end) span::before{content:"Fim: "}
+html:lang(es) #mpage .tl-mark:not(.end) span::before{content:"Final: "}
+html:lang(fr) #mpage .tl-mark:not(.end) span::before{content:"Fin : "}
+html:lang(sh) #mpage .tl-mark:not(.end) span::before{content:"Kraj: "}
