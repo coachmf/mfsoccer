@@ -178,3 +178,41 @@ html.mf #mpage .fmx-says li{margin:0;padding-block:1px}
 html.mf #mpage .tl-row{min-height:46px}
 html.mf #mpage .mp-team .crest.lg{padding:0!important;width:58px!important;height:58px!important}
 html.mf #mpage .mp-team .crest.lg img{width:58px!important;height:58px!important;max-width:none;max-height:none}
+
+/* ===== تبويبات صفحة المباراة الأخرى (التصور) ===== */
+/* مبدّل الفريقين: سطح مرفوع بدل الحبّة البيضاء (مثل .seg في التصور) */
+html.mf #mpage .mp-seg{display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:4px;border-radius:14px;background:var(--pm-bg);border:1px solid var(--pm-ln)}
+html.mf #mpage .mp-seg button{display:flex;align-items:center;justify-content:center;gap:8px;height:40px;border-radius:11px;border:0;background:none!important;color:var(--pm-tx3)!important;font-weight:700;box-shadow:none}
+html.mf #mpage .mp-seg button[aria-pressed="true"]{background:var(--pm-s2)!important;color:var(--pm-tx)!important;box-shadow:inset 0 0 0 1px var(--pm-ln2)}
+html.mf #mpage .mp-seg .crest{width:22px;height:22px;background:transparent!important;padding:0}
+html.mf #mpage .mp-seg .crest img{width:22px;height:22px}
+/* اللعب الفعلي والبطاقات الصغيرة داخل التبويبات */
+html.mf #mpage :is(.eff-box,.eff-half,.mp-card .card){background:var(--pm-bg);border:1px solid var(--pm-ln);border-radius:var(--pm-r-s)}
+/* الترتيب: حروف الفورمة أصغر وأهدأ */
+html.mf :is(#mpage,#v-home,.view) .form i,html.mf :is(#mpage,#v-home,.view) .fm{transform:scale(.86)}
+
+/* ===== صفحة البطولة/قائمة المباريات القديمة (.mx-list .mc) بنفس صفوف قسم المباريات ===== */
+html.mf #v-matches .mx-list{display:flex;flex-direction:column;gap:0}
+html.mf #v-matches .mx-list .mc-day{margin:14px 4px 6px;font-size:.8rem;font-weight:700;color:var(--pm-tx2);border:0;background:none}
+html.mf #v-matches .mx-list .mc{margin:0;background:var(--pm-s1);border:1px solid var(--pm-ln);border-radius:0;box-shadow:none;border-top-width:0}
+html.mf #v-matches .mx-list .mc-day + .mc{border-top-width:1px;border-top-left-radius:var(--pm-r);border-top-right-radius:var(--pm-r)}
+html.mf #v-matches .mx-list .mc:has(+ .mc-day),html.mf #v-matches .mx-list .mc:last-child{border-bottom-left-radius:var(--pm-r);border-bottom-right-radius:var(--pm-r)}
+html.mf #v-matches .mx-list .mc + .mc{box-shadow:inset 0 1px 0 var(--pm-ln)}
+html.mf #v-matches .mx-list .mc-row{padding:12px 14px;grid-template-columns:minmax(0,1fr) 88px minmax(0,1fr)}
+html.mf #v-matches .mx-list .mc-team .crest{width:28px;height:28px;background:transparent!important}
+html.mf #v-matches .mx-list .mc-team b{font-size:.9rem;font-weight:700}
+html.mf #v-matches .mx-list .mc-time{font:700 1.05rem var(--mf-fh,inherit);font-variant-numeric:tabular-nums}
+html.mf #v-matches .mx-list .mc.soon .mc-st{display:none}
+html.mf #v-matches .mx-list .mc-go{background:none;border:0;padding:0;font-size:.68rem;color:var(--pm-tx3)}
+html.mf #v-matches .mx-list .mc-foot{border:0;padding:0 14px 4px;margin-top:-6px;font-size:.7rem;color:var(--pm-tx3);background:none;justify-content:center}
+html.mf #v-matches .mx-list .mc-note{padding:0 14px 10px;font-size:.7rem;color:var(--pm-tx3);text-align:center;background:none;border:0}
+html.mf #v-matches .mx-list .mc-note b,html.mf #v-matches .mx-list .mc-note strong{color:var(--pm-tx3);font-weight:600}
+/* مبدّلات بحبّة ذهبية (المباريات/الأدوار، بالاسم/بريد…) → سطح مرفوع محايد */
+html.mf .cpx-tabs,html.mf .mf-stdsw{background:var(--pm-s1);border:1px solid var(--pm-ln);border-radius:14px;padding:4px}
+html.mf :is(.cpx-tabs,.mf-stdsw) button{background:none!important;color:var(--pm-tx3)!important;border:0;box-shadow:none!important}
+html.mf :is(.cpx-tabs,.mf-stdsw) button[aria-selected="true"]{background:var(--pm-s2)!important;color:var(--pm-tx)!important;box-shadow:inset 0 0 0 1px var(--pm-ln2)!important}
+html.mf #v-matches .mx-list .mc-time{border:0!important;background:none!important;padding:0!important;min-height:0}
+html.mf #v-matches .mx-list .mc{display:flex;flex-wrap:wrap;justify-content:center;column-gap:14px;padding-bottom:8px}
+html.mf #v-matches .mx-list .mc-row{flex:1 1 100%}
+html.mf #v-matches .mx-list :is(.mc-foot,.mc-note){flex:0 0 auto;margin:-4px 0 0;padding:0}
+html.mf #v-matches .mx-list .mc-mid{gap:2px}
