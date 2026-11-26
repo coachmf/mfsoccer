@@ -482,3 +482,7 @@ html.mf .view.on:empty{min-height:70vh;margin:16px;border-radius:var(--pm-r,18px
   background:linear-gradient(90deg,rgba(255,255,255,.03) 0,rgba(255,255,255,.07) 40%,rgba(255,255,255,.03) 80%) 0 0/200% 100%,
     repeating-linear-gradient(180deg,transparent 0 96px,var(--pm-bg,#00061A) 96px 110px);animation:pmSk 1.3s linear infinite}
 @keyframes pmSk{to{background-position:-200% 0,0 0}}
+
+/* ملف اللاعب: الصف الثاني يملأ العرض كاملاً مهما كان عدد مربعاته (2 أو 3 أو 4) */
+html.mf .pprof-stats:has(> .pstat.rt:nth-child(6)) > .pstat:nth-child(n+4):not(.rt){grid-column:span 6}
+html.mf .pprof-stats:has(> .pstat.rt:nth-child(8)) > .pstat:nth-child(n+4):not(.rt){grid-column:span 3}

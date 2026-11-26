@@ -9,7 +9,7 @@
 
    عند كل نشر: ارفع رقم VER فتُبنى ذاكرة جديدة وتُحذف القديمة.
    ========================================================= */
-const VER   = 'mf-2026-11-26-873-crestwarm';
+const VER   = 'mf-2026-11-26-874-swfast';
 const SHELL = 'shell-' + VER;
 const RUN   = 'run-'   + VER;
 /* الصور (لاعبون، شعارات، خلفيات) في ذاكرة ثابتة لا ترتبط برقم النسخة (منصور 2026-11-20: «الصور قاعده تطول»):
@@ -64,22 +64,32 @@ self.addEventListener('install', e => {
   })());
 });
 
-self.addEventListener('activate', e => {
-  e.waitUntil((async () => {
-    const keys = await caches.keys();
-    /* صور النسخة السابقة تُنقل إلى الذاكرة الثابتة قبل حذفها — لا يعاد تنزيلها */
+/* نقل صور النسخ السابقة إلى الذاكرة الثابتة — في الخلفية بعد التفعيل لا قبله (منصور 2026-11-26 «صورة اللاعب تختفي / الشعارات تتأخر»):
+   كان النقل داخل activate، وطلبات الصفحة كلها تنتظر انتهاء التفعيل، فبعد كل نشر تتأخر الصور أو تفشل على الجوال.
+   الآن يُفعَّل الخادم فوراً، والصورة غير الموجودة في الذاكرة الثابتة تُؤخذ من ذاكرة النسخة السابقة إن وُجدت. */
+let MIGRATING = null;
+function migrateOld(){
+  return MIGRATING || (MIGRATING = (async () => {
     try {
       const img = await caches.open(IMG);
-      for (const k of keys.filter(k => k.indexOf('run-') === 0 && k !== RUN)) {
+      const olds = (await caches.keys()).filter(k => k.indexOf('run-') === 0 && k !== RUN);
+      for (const k of olds) {
         const old = await caches.open(k);
         for (const rq of await old.keys()) {
           if (!isImg(new URL(rq.url)) || await img.match(rq)) continue;
           const rs = await old.match(rq); if (rs && rs.ok) await img.put(rq, rs);
         }
+        await caches.delete(k);
       }
     } catch (err) {}
-    /* mf-np = تفضيلات الإشعارات (notif-prefs.js) — ليست ذاكرة ملفات فلا تُحذف مع كل نسخة */
-    await Promise.all(keys.filter(k => k !== SHELL && k !== RUN && k !== IMG && k !== 'mf-np').map(k => caches.delete(k)));
+  })());
+}
+
+self.addEventListener('activate', e => {
+  e.waitUntil((async () => {
+    const keys = await caches.keys();
+    /* mf-np = تفضيلات الإشعارات (notif-prefs.js) — ليست ذاكرة ملفات فلا تُحذف مع كل نسخة؛ ذاكرات run- القديمة تبقى حتى ينقل migrateOld صورها */
+    await Promise.all(keys.filter(k => k !== SHELL && k !== RUN && k !== IMG && k !== 'mf-np' && k.indexOf('run-') !== 0).map(k => caches.delete(k)));
     await self.clients.claim();
   })());
 });
@@ -214,6 +224,7 @@ self.addEventListener('fetch', e => {
   if (isImg(url)) {
     e.respondWith((async () => {
       const c = await caches.open(IMG);
+      e.waitUntil(migrateOld());   /* في الخلفية — لا ينتظره أي طلب */
       const hit = await c.match(req);
       const get = () => fetch(req).then(res => { if (res.ok) c.put(req, res.clone()); return res; }).catch(() => null);
       if (hit) {
@@ -221,6 +232,9 @@ self.addEventListener('fetch', e => {
         if (d && Date.now() - d > 3 * 864e5) e.waitUntil(get());
         return hit;
       }
+      /* لم تُنقل بعد؟ من ذاكرة النسخة السابقة فوراً */
+      const prev = await caches.match(req);
+      if (prev && prev.ok) { e.waitUntil(c.put(req, prev.clone())); return prev; }
       return (await get()) || Response.error();
     })());
     return;
