@@ -2057,6 +2057,7 @@ html[dir="ltr"] .tl-ev.a .tl-card{text-align:right;align-items:flex-end}
 .tl-mark.end span{background:var(--head);color:#fff} .tl-mark.end span b{color:#FFD97A}
 /* ركلات الترجيح في الخط الزمني (للعرض فقط) */
 .tl-min.pk span{background:#E8EFF7;color:#34517A;box-shadow:0 0 0 4px #FAFCFE}
+.tl-pz{font-size:.72rem;opacity:.72;white-space:nowrap}
 .tl-ev.pk .pk-ico{flex:none;display:grid;place-items:center;width:24px;height:24px;border-radius:50%;color:#fff}
 .tl-ev.pk.ok .pk-ico{background:#12B76A}.tl-ev.pk.no .pk-ico{background:#D92D20}
 .tl-ev.pk.no .tl-name{color:#6B7F9A}
@@ -2362,7 +2363,7 @@ html[dir="ltr"] .tl-ev.a .tl-card{text-align:right;align-items:flex-end}
 <script src="career.js?v=5" defer></script>   <!-- تبويب «المسيرة» في ملف اللاعب: يلفّ playerProfileHTML بعد fmx.js -->
 <link rel="stylesheet" href="mxday.css?v=4">
 <script src="mxday.js?v=6" defer></script>
-<link rel="stylesheet" href="premium.css?v=42">   <!-- Premium UI: طبقة الشكل الموحّدة لكل الأقسام عدا الفانتسي (منصور 2026-11-26) -->
+<link rel="stylesheet" href="premium.css?v=43">   <!-- Premium UI: طبقة الشكل الموحّدة لكل الأقسام عدا الفانتسي (منصور 2026-11-26) -->
 <script src="premium.js?v=7" defer></script>   <!-- Premium: بطاقة مباشرة مثبّتة، حركة الهدف، السحب للتحديث (منصور 2026-11-26) -->
 <script src="visitors.js?v=3" defer></script>   <!-- الزوار: قياس مجهول + العين للطاقم + «الزوار بالتفصيل» في الإدارة (2026-11-14) -->   <!-- صفحة المباريات حسب اليوم (منصور 2026-11-07) -->
 <style>
@@ -6366,7 +6367,7 @@ function loadEditRaw(m){
   (ALL.shapes||[]).filter(x=>x.r===m.round && compOf(x)===compOf(m) && (x.club===m.home||x.club===m.away))
     .forEach(x=>{ shp[x.club]={f:x.f||"", pos:JSON.parse(JSON.stringify(x.pos||{}))}; });
   return {orig:mkey(m), shapes:shp,
-    match:{round:m.round, comp:compOf(m), stage:m.stage||"", home:m.home, away:m.away, venue:m.venue||"", date:m.date||"", time:m.time||"", note:m.note||"", ref:crewOf(m).ref, refs:crewOf(m).refs, tv:m.tv||"", status:m.status||"", manH:m.manH??"", manA:m.manA??"", pst:+m.pst||0, add1:(m.add1??""), add2:(m.add2??""), et:!!m.et, add3:(m.add3??""), add4:(m.add4??""), abs:(m.abs||[]).map(x=>({c:x.c, p:x.p})), pres:(m.pres||[]).map(x=>({c:x.c, p:x.p})), pso:{h:(m.pso&&m.pso.h!=null?m.pso.h:""), a:(m.pso&&m.pso.a!=null?m.pso.a:"")}, psk:pskOf(m).map(k=>({t:k.t, p:k.p||"", ok:!!k.ok})), rec:m.rec||""},
+    match:{round:m.round, comp:compOf(m), stage:m.stage||"", home:m.home, away:m.away, venue:m.venue||"", date:m.date||"", time:m.time||"", note:m.note||"", ref:crewOf(m).ref, refs:crewOf(m).refs, tv:m.tv||"", status:m.status||"", manH:m.manH??"", manA:m.manA??"", pst:+m.pst||0, add1:(m.add1??""), add2:(m.add2??""), et:!!m.et, add3:(m.add3??""), add4:(m.add4??""), abs:(m.abs||[]).map(x=>({c:x.c, p:x.p})), pres:(m.pres||[]).map(x=>({c:x.c, p:x.p})), pso:{h:(m.pso&&m.pso.h!=null?m.pso.h:""), a:(m.pso&&m.pso.a!=null?m.pso.a:"")}, psk:pskOf(m).map(k=>({t:k.t, p:k.p||"", ok:!!k.ok, z:k.z||""})), rec:m.rec||""},
     mev:(ALL.mev||[]).filter(x=>x.r===m.round && compOf(x)===compOf(m) && x.home===m.home && x.away===m.away).map(x=>({k:x.k, club:x.club||"", p:x.p||"", m:x.m||"", x:x.x||0, note:x.note||"", lid:x.lid||"", uid:x.uid||""})),
     lineup:lus.map(x=>({club:x.club, p:x.p})),
     subs:sbs.map(x=>({club:x.club, out:x.out||"", in:x.in||"", h:x.h||1, m:x.m||"", x:x.x||0, lid:x.lid||"", uid:x.uid||"", ...(x.b?{b:x.b}:{})})),
@@ -7190,7 +7191,7 @@ function applyEdit(E){
   ALL.matches.push({n:ALL.matches.length+1, round, comp:m.comp, date:m.date, time:m.time,
                     venue:m.venue, home:m.home, away:m.away, note:(m.note||"").trim(), ref:(m.ref||"").trim(), refs:REF_ROLES.reduce((o,[k])=>{ const v=String((m.refs||{})[k]||"").trim(); if(v) o[k]=v; return o; },{}), tv:(m.tv||"").trim(), status:m.status||"", ...(PH_CLOCK[m.status]&&+m.pst?{pst:+m.pst}:{}), ...(m.rec?{rec:m.rec}:{}), ...(isCupComp(m.comp)&&m.stage?{stage:String(m.stage)}:{}), add1:+m.add1||0, add2:+m.add2||0,
                     ...((m.et || ["e1","e2"].includes(m.status)) ? {et:true, add3:+m.add3||0, add4:+m.add4||0} : {}),
-                    ...(pskOf(m).length ? {psk:pskOf(m).map(k=>({t:k.t, p:String(k.p||""), ok:!!k.ok})), pso:psoOf({psk:m.psk})}
+                    ...(pskOf(m).length ? {psk:pskOf(m).map(k=>({t:k.t, p:String(k.p||""), ok:!!k.ok, ...(k.z?{z:String(k.z)}:{})})), pso:psoOf({psk:m.psk})}
                         : m.pso && m.pso.h!=="" && m.pso.a!=="" && m.pso.h!=null && m.pso.a!=null ? {pso:{h:+m.pso.h, a:+m.pso.a}} : {}),
                     ...(absList(m).length ? {abs:absList(m)} : {}), ...(plList(m, m.pres).length ? {pres:plList(m, m.pres)} : {}),
                     ...(m.manH!==""&&m.manH!=null&&m.manA!==""&&m.manA!=null ? {manH:+m.manH, manA:+m.manA} : {}), hg:0, ag:0});   /* abs = الغائبون عن قائمة المباراة */   /* ref = حكم الساحة، refs = بقية الطاقم */
@@ -7406,8 +7407,8 @@ function admLoad(){
   if(ADMX.ready) return Promise.resolve();
   if(ADMX_P) return ADMX_P;
   return (ADMX_P = new Promise((res, rej)=>{
-    const css = document.createElement("link"); css.rel = "stylesheet"; css.href = "admin.css?v=3";
-    const s = document.createElement("script"); s.src = "admin.js?v=11";
+    const css = document.createElement("link"); css.rel = "stylesheet"; css.href = "admin.css?v=4";
+    const s = document.createElement("script"); s.src = "admin.js?v=12";
     s.onload = ()=>{ ADMX.ready = true; res(); };
     s.onerror = ()=>{ ADMX_P = null; css.remove(); s.remove(); rej(new Error("admin.js")); };
     document.head.appendChild(css); document.head.appendChild(s);
@@ -8492,7 +8493,7 @@ function goalsTimeline(m,gs,mc){
       const body=`<div class="tl-ev pk${isH?" h":" a"}${k.ok?" ok":" no"}"><i class="pk-ico" aria-hidden="true">${k.ok
           ?'<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>'
           :'<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M7 7l10 10M17 7L7 17"/></svg>'}</i>
-        <div class="tl-card"><div class="tl-name">${esc(k.p||"—")}</div><div class="tl-sub">${k.ok?"سجّل":"أضاع"}</div></div></div>`;
+        <div class="tl-card"><div class="tl-name">${esc(k.p||"—")}</div><div class="tl-sub">${k.ok?"سجّل":"أضاع"}</div>${k.z?`<div class="tl-pz">${esc(k.z)}</div>`:""}</div></div>`;
       rows.push(`<div class="tl-row pk${isH?" home":" away"}"><div class="tl-side r">${isH?body:""}</div><div class="tl-min pk"><span>${ph}-${pa}</span></div><div class="tl-side l">${isH?"":body}</div></div>`); });
     rows.push(`<div class="tl-mark"><span>ركلات الترجيح <b dir="ltr">${P.h} - ${P.a}</b></span></div>`);
   }

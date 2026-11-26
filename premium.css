@@ -316,6 +316,7 @@ html.mf #mpage .tl-ev.a:not(.pk) .tl-name{flex-direction:row-reverse}
 html.mf #mpage .tl-ev .tl-name .cardpill{width:11px;height:15px;border-radius:2px;flex:none}
 html.mf #mpage .tl-ev.pk .tl-name{font-size:11px;font-weight:500;color:var(--pm-tx3)}
 html.mf #mpage .tl-ev.pk .tl-sub{white-space:nowrap}
+html.mf #mpage .tl-ev.pk .tl-pz{grid-column:1/-1;font-size:11px;font-weight:600;color:var(--pm-tx3);opacity:1}   /* مكان تسديد ركلة الترجيح سطراً وحده */
 html.mf #mpage .tl-row{display:grid!important;grid-template-columns:minmax(0,1fr) 50px minmax(0,1fr)!important;align-items:center;min-height:44px;padding:3px 0!important;margin:0!important}
 html.mf #mpage .tl-row .tl-side{padding:0 6px!important;min-width:0;width:auto!important}
 html.mf #mpage .tl-row .tl-min{width:auto!important;justify-self:center}

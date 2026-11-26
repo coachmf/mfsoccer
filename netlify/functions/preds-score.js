@@ -17,7 +17,7 @@ const OWNER = 'iiTgVfDryXNLb9IrOyLkkNMHDxq2';
 const DOCS = `https://firestore.googleapis.com/v1/projects/${PROJECT}/databases/(default)/documents`;
 const PT_EXACT = 5, PT_RIGHT = 2, PT_SCORER = 3;
 const RULE = 'top-scorer';
-const LIVE = ['h1','ht','h2','e1','e2','pso'];
+const LIVE = ['h1','ht','h2','e1','e2','etb','pso'];
 const H = { 'Content-Type':'application/json; charset=utf-8', 'Access-Control-Allow-Origin':'https://mfsoccer.com',
   'Access-Control-Allow-Headers':'Content-Type', 'Access-Control-Allow-Methods':'POST, OPTIONS', 'Cache-Control':'no-store' };
 const out = (code, body) => ({ statusCode:code, headers:H, body:JSON.stringify(body) });

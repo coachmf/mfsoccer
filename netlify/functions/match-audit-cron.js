@@ -10,7 +10,7 @@ const { accessToken } = require('./lib/google');
 const PROJECT = 'mfsoccer-c7ee4', SEASON = '2026-2027';
 const OWNER_UID = 'iiTgVfDryXNLb9IrOyLkkNMHDxq2';
 const DOCS = `https://firestore.googleapis.com/v1/projects/${PROJECT}/databases/(default)/documents`;
-const LIVE = ['h1','ht','h2','e1','e2','pso','ft'];
+const LIVE = ['h1','ht','h2','e1','e2','etb','pso','ft'];
 
 function val(v){
   if(!v || typeof v !== 'object') return null;

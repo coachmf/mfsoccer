@@ -1492,6 +1492,8 @@ ADMX.rma = __admRenderMatchAdmin;
       <div class="acts"><button data-medit="${k}.${i}" aria-label="تعديل">${SV.edit}</button><button class="del" data-mdel="${k}.${i}" aria-label="حذف">${SV.trash}</button></div></div>`;
   }
   /* ركلات الترجيح ركلة بركلة: في «المباراة» وأيضاً أعلى «الأحداث» من لحظة «بداية ركلات الترجيح» (منصور 2026-11-26: «شلون نسجل ركله بركله») */
+  /* مكان تسديد ركلة الترجيح (منصور 2026-11-26): مرمى واحد مفتوح للركلة المختارة (الأخيرة افتراضياً) */
+  const pskSel=m=>{ const n=pskOf(m).length; return MX.pskSel!=null && MX.pskSel<n ? MX.pskSel : n-1; };
   function pskBox(m){
     return `<span class="mx-lbl" style="margin-top:14px">ركلات الترجيح بالترتيب${pskOf(m).length?` — النتيجة <b dir="ltr">${psoOf(m).h} - ${psoOf(m).a}</b>`:""}</span>
         <div class="mx-psk">${pskOf(m).map((k,i)=>{ const club=k.t==="h"?m.home:m.away;
@@ -1501,7 +1503,9 @@ ADMX.rma = __admRenderMatchAdmin;
             <select data-mpsk-p="${i}" aria-label="المنفّذ">${opt(names,k.p,"اختر اللاعب")}</select>
             <button class="mx-chip${k.ok?" on ok":""}" data-mpsk-ok="${i}" data-v="1">سجّل</button>
             <button class="mx-chip${!k.ok?" on red":""}" data-mpsk-ok="${i}" data-v="0">أضاع</button>
-            <button class="mx-pkdel" data-mpsk-del="${i}" aria-label="حذف الركلة">${SV.trash}</button></div>`; }).join("")}</div>
+            <button class="mx-pkdel" data-mpsk-del="${i}" aria-label="حذف الركلة">${SV.trash}</button>
+            <button type="button" class="mx-pkz${k.z?" set":""}${i===pskSel(m)?" open":""}" data-mpsk-sel="${i}">مكان التسديد: <b>${esc(k.z||"اختر")}</b></button></div>
+            ${i===pskSel(m)?`<div class="mx-pkpick">${penPickSVG(k.z, z=>`data-mpsk-z="${i}" data-v="${esc(z)}"`)}</div>`:""}`; }).join("")}</div>
         <div class="mx-chips" style="margin-top:8px">
           <button class="mx-chip" data-mpsk-add="h">+ ركلة ${esc(m.home||"المضيف")}</button>
           <button class="mx-chip" data-mpsk-add="a">+ ركلة ${esc(m.away||"الضيف")}</button></div>
@@ -1919,7 +1923,11 @@ ADMX.rma = __admRenderMatchAdmin;
     q("[data-mvenue]",b=>b.onclick=()=>{ EDIT.match.venue=b.dataset.mvenue; rerender(); });
     q("[data-mref]",el=>{ el.oninput=()=>{ EDIT.match.refs=EDIT.match.refs||{}; EDIT.match.refs[el.dataset.mref]=el.value; }; });
     q("[data-met]",el=>el.onchange=()=>{ if(!el.checked) EDIT.match.et=false; rerender(); });   /* إلغاء فقط — التفعيل من زر «الشوط الإضافي الأول» */
-    q("[data-mpsk-add]",b=>b.onclick=()=>{ EDIT.match.psk=EDIT.match.psk||[]; EDIT.match.psk.push({t:b.dataset.mpskAdd, p:"", ok:true}); rerender(); });
+    q("[data-mpsk-add]",b=>b.onclick=()=>{ EDIT.match.psk=EDIT.match.psk||[]; EDIT.match.psk.push({t:b.dataset.mpskAdd, p:"", ok:true}); MX.pskSel=EDIT.match.psk.length-1; rerender(); });
+    q("[data-mpsk-sel]",b=>b.onclick=()=>{ const i=+b.dataset.mpskSel; MX.pskSel = MX.pskSel===i ? -1 : i; rerender(); });
+    /* العارضة والقائمان وخارج المرمى = «أضاع» تلقائياً */
+    q("[data-mpsk-z]",g=>g.onclick=()=>{ const k=(EDIT.match.psk||[])[+g.dataset.mpskZ]; if(!k) return; const v=g.dataset.v; k.z = k.z===v ? "" : v;
+      if(k.z && (PZ_FRAME.includes(k.z) || k.z==="خارج المرمى")) k.ok=false; rerender(); });
     q("[data-mpsk-p]",el=>el.onchange=()=>{ const k=(EDIT.match.psk||[])[+el.dataset.mpskP]; if(k){ k.p=el.value; rerender(); } });
     q("[data-mpsk-ok]",b=>b.onclick=()=>{ const k=(EDIT.match.psk||[])[+b.dataset.mpskOk]; if(k){ k.ok=b.dataset.v==="1"; rerender(); } });
     q("[data-mpsk-del]",b=>b.onclick=()=>{ (EDIT.match.psk||[]).splice(+b.dataset.mpskDel,1); rerender(); });

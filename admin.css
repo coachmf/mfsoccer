@@ -335,3 +335,7 @@ html .squadbox .sqrow{grid-template-columns:40px 50px minmax(0,1fr) 96px 132px 4
   html .squadbox .sqrow .sqbw{grid-column:1/-2}
   html .squadbox .sqrow .sqage{grid-column:-2/-1}
 }
+/* مكان تسديد ركلة الترجيح (2026-11-26) */
+.mx-pkz{grid-column:3/-1;justify-self:start;margin-top:-2px;padding:4px 10px;border-radius:999px;border:1px dashed rgba(143,166,196,.45);background:none;color:inherit;font:inherit;font-size:.78rem;opacity:.85;cursor:pointer}
+.mx-pkz b{font-weight:700}.mx-pkz.set{border-style:solid;border-color:rgba(231,208,147,.6)}.mx-pkz.open{opacity:1;border-color:#E7D093}
+.mx-pkpick .pen-pick{max-width:340px;margin:2px auto 6px}
