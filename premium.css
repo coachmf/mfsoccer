@@ -291,3 +291,33 @@ html.mf #mpage .tl-ev.sub :is(.tl-sub-in,.tl-sub-out) > i{display:none}
 html.mf #mpage .tl-ev.sub.a .tl-card{align-items:flex-start}
 html.mf #mpage .tl-ev.sub :is(.tl-sub-in,.tl-sub-out){display:block!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
 html.mf #mpage .tl-ev.sub .tl-card{min-width:0}
+
+/* ===== بقية أحداث المباراة بالتصور حرفياً ===== */
+/* العلامات: حبّة صغيرة بلا دقيقة؛ «نهاية الشوط الأول 2 - 3» حبّة واحدة (تُخفى الحبّة المكررة قبلها و«بداية الشوط الثاني») */
+html.mf #mpage .tl-xnote{display:block;width:fit-content;margin:6px auto 10px;padding:4px 12px;border-radius:999px;background:var(--pm-s2);font:600 11px/1.6 var(--mf-f,inherit);color:var(--pm-tx2);position:relative;z-index:1}
+html.mf #mpage .tl-xnote span{display:none}
+html.mf #mpage .tl-xnote em{font-style:normal}
+html.mf #mpage .tl-xnote:has(+ .tl-mark),html.mf #mpage .tl-mark + .tl-xnote{display:none}
+html.mf #mpage .tl-mark{text-align:center;margin:6px 0 10px;position:relative;z-index:1;background:none!important;border:0!important}
+html.mf #mpage .tl-mark span{display:inline-block;padding:4px 12px;border-radius:999px;background:var(--pm-s2);font:600 11px/1.6 var(--mf-f,inherit);color:var(--pm-tx2)}
+html.mf #mpage .tl-mark:not(.end) span::before{content:"نهاية "}
+html.mf #mpage .tl-mark span b{direction:rtl;unicode-bidi:isolate;font-family:var(--mf-fh,inherit);color:var(--pm-tx);margin-inline-start:6px}
+/* احتساب ركلة جزاء: الأيقونة ثم «احتساب ركلة جزاء» عريض، واسم النادي صغير تحته */
+html.mf #mpage .tl-ev.pk .tl-card{display:grid;grid-template-columns:auto 1fr;column-gap:8px;align-items:center;font-size:11px;font-weight:500;color:var(--pm-tx3)}
+html.mf #mpage .tl-ev.pk .tl-name{display:contents}
+html.mf #mpage .tl-ev.pk .pkdot{grid-area:1/1/3/2;width:18px;height:18px}
+html.mf #mpage .tl-ev.pk .tl-sub{grid-area:1/2;font-size:13px;font-weight:700;color:var(--pm-tx)}
+html.mf #mpage .tl-ev.pk.a .tl-card{grid-template-columns:1fr auto}
+html.mf #mpage .tl-ev.pk.a .pkdot{grid-area:1/2/3/3}
+html.mf #mpage .tl-ev.pk.a .tl-sub{grid-area:1/1}
+/* أيقونة الكرة والبطاقة على الحافة الخارجية لكل فريق (يمين لصاحب الأرض، يسار للضيف) */
+html.mf #mpage .tl-ev .tl-name{display:inline-flex;align-items:center;gap:6px}
+html.mf #mpage .tl-ev.a:not(.pk) .tl-name{flex-direction:row-reverse}
+html.mf #mpage .tl-ev .tl-name .cardpill{width:11px;height:15px;border-radius:2px;flex:none}
+html.mf #mpage .tl-ev.pk .tl-name{font-size:11px;font-weight:500;color:var(--pm-tx3)}
+html.mf #mpage .tl-ev.pk .tl-sub{white-space:nowrap}
+html.mf #mpage .tl-row{display:grid!important;grid-template-columns:minmax(0,1fr) 50px minmax(0,1fr)!important;align-items:center;min-height:44px;padding:3px 0!important;margin:0!important}
+html.mf #mpage .tl-row .tl-side{padding:0 6px!important;min-width:0;width:auto!important}
+html.mf #mpage .tl-row .tl-min{width:auto!important;justify-self:center}
+html.mf #mpage .tl-ev{width:100%!important;max-width:none!important}
+html.mf #mpage .tl-sub,html.mf #mpage .tl-det,html.mf #mpage .tl-assist{line-height:1.45}
