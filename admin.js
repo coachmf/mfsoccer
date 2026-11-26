@@ -1392,24 +1392,7 @@ ADMX.rma = __admRenderMatchAdmin;
       ${isKO(m)?`<div class="mx-card"><h3>الأشواط الإضافية وركلات الترجيح<small>لمباريات خروج المغلوب</small></h3>
         ${hasET(m)?`<label class="mx-et"><input type="checkbox" data-met checked> امتدت المباراة للأشواط الإضافية (30 دقيقة) — أزل العلامة إن لم تُلعب</label>`:""}
         <p class="mx-hint">${hasET(m)?"أحداث الأشواط الإضافية تُسجَّل بدقيقتها الحقيقية: 91 إلى 120 (مثلاً هدف في الدقيقة 100). وبدل ضائع الإضافي على 105 أو 120.":"الأشواط الإضافية تُفعَّل بالضغط على «الشوط الإضافي الأول» في مراحل المباراة. بدل الضائع وحده لا يعني أشواطاً إضافية."}</p>
-        <span class="mx-lbl" style="margin-top:14px">ركلات الترجيح بالترتيب${pskOf(m).length?` — النتيجة <b dir="ltr">${psoOf(m).h} - ${psoOf(m).a}</b>`:""}</span>
-        <div class="mx-psk">${pskOf(m).map((k,i)=>{ const club=k.t==="h"?m.home:m.away;
-          const names=(typeof roster==="function"?roster(club):[]).map(e=>e.n);
-          if(k.p && !names.includes(k.p)) names.unshift(k.p);
-          return `<div class="mx-pkr"><span class="n">${i+1}</span><span class="c">${club?crest(club):""}</span>
-            <select data-mpsk-p="${i}" aria-label="المنفّذ">${opt(names,k.p,"اختر اللاعب")}</select>
-            <button class="mx-chip${k.ok?" on ok":""}" data-mpsk-ok="${i}" data-v="1">سجّل</button>
-            <button class="mx-chip${!k.ok?" on red":""}" data-mpsk-ok="${i}" data-v="0">أضاع</button>
-            <button class="mx-pkdel" data-mpsk-del="${i}" aria-label="حذف الركلة">${SV.trash}</button></div>`; }).join("")}</div>
-        <div class="mx-chips" style="margin-top:8px">
-          <button class="mx-chip" data-mpsk-add="h">+ ركلة ${esc(m.home||"المضيف")}</button>
-          <button class="mx-chip" data-mpsk-add="a">+ ركلة ${esc(m.away||"الضيف")}</button></div>
-        ${pskOf(m).length?"":`<div class="mx-grid" style="margin-top:10px">
-          <div><span class="mx-lbl">أو النتيجة فقط: ${esc(m.home||"المضيف")}</span>
-            <input data-mpso="h" type="number" min="0" max="30" inputmode="numeric" value="${esc(String((m.pso||{}).h??""))}" placeholder="—"></div>
-          <div><span class="mx-lbl">${esc(m.away||"الضيف")}</span>
-            <input data-mpso="a" type="number" min="0" max="30" inputmode="numeric" value="${esc(String((m.pso||{}).a??""))}" placeholder="—"></div>
-        </div>`}
+        ${pskBox(m)}
         <p class="mx-hint">للعرض فقط: تظهر للمتابع في صفحة المباراة بالترتيب (من سدّد، سجّل أو أضاع). لا تُحسب أهدافاً ولا ركلات جزاء ولا مكان تسديد في أي إحصاء بالموقع. النتيجة الأصلية للمباراة لا تتغير.</p></div>`:""}
       <div class="mx-card"><h3>الملعب والحكم</h3>
         <div class="mx-grid">
@@ -1508,6 +1491,27 @@ ADMX.rma = __admRenderMatchAdmin;
       <div class="who">${face(who,club)}<div class="tx"><b>${esc(who||"بلا لاعب")}</b><small>${esc(sub)}</small></div></div>
       <div class="acts"><button data-medit="${k}.${i}" aria-label="تعديل">${SV.edit}</button><button class="del" data-mdel="${k}.${i}" aria-label="حذف">${SV.trash}</button></div></div>`;
   }
+  /* ركلات الترجيح ركلة بركلة: في «المباراة» وأيضاً أعلى «الأحداث» من لحظة «بداية ركلات الترجيح» (منصور 2026-11-26: «شلون نسجل ركله بركله») */
+  function pskBox(m){
+    return `<span class="mx-lbl" style="margin-top:14px">ركلات الترجيح بالترتيب${pskOf(m).length?` — النتيجة <b dir="ltr">${psoOf(m).h} - ${psoOf(m).a}</b>`:""}</span>
+        <div class="mx-psk">${pskOf(m).map((k,i)=>{ const club=k.t==="h"?m.home:m.away;
+          const names=(typeof roster==="function"?roster(club):[]).map(e=>e.n);
+          if(k.p && !names.includes(k.p)) names.unshift(k.p);
+          return `<div class="mx-pkr"><span class="n">${i+1}</span><span class="c">${club?crest(club):""}</span>
+            <select data-mpsk-p="${i}" aria-label="المنفّذ">${opt(names,k.p,"اختر اللاعب")}</select>
+            <button class="mx-chip${k.ok?" on ok":""}" data-mpsk-ok="${i}" data-v="1">سجّل</button>
+            <button class="mx-chip${!k.ok?" on red":""}" data-mpsk-ok="${i}" data-v="0">أضاع</button>
+            <button class="mx-pkdel" data-mpsk-del="${i}" aria-label="حذف الركلة">${SV.trash}</button></div>`; }).join("")}</div>
+        <div class="mx-chips" style="margin-top:8px">
+          <button class="mx-chip" data-mpsk-add="h">+ ركلة ${esc(m.home||"المضيف")}</button>
+          <button class="mx-chip" data-mpsk-add="a">+ ركلة ${esc(m.away||"الضيف")}</button></div>
+        ${pskOf(m).length?"":`<div class="mx-grid" style="margin-top:10px">
+          <div><span class="mx-lbl">أو النتيجة فقط: ${esc(m.home||"المضيف")}</span>
+            <input data-mpso="h" type="number" min="0" max="30" inputmode="numeric" value="${esc(String((m.pso||{}).h??""))}" placeholder="—"></div>
+          <div><span class="mx-lbl">${esc(m.away||"الضيف")}</span>
+            <input data-mpso="a" type="number" min="0" max="30" inputmode="numeric" value="${esc(String((m.pso||{}).a??""))}" placeholder="—"></div>
+        </div>`}`;
+  }
   /* مرحلة المباراة والوقت بدل الضائع أعلى تبويب الأحداث (منصور 2026-11-02: «لسهولة الإدخال») */
   function liveCards(){
     const m=EDIT.match;
@@ -1517,6 +1521,7 @@ ADMX.rma = __admRenderMatchAdmin;
         ${PH_CLOCK[m.status]&&+m.pst?`<div class="mx-clk"><span class="mx-lbl">الدقيقة عند الجمهور</span>${mclkHTML(m)}
           <span class="mx-clk-adj"><button type="button" class="mx-ghost" data-mclk="-1">− دقيقة</button><button type="button" class="mx-ghost" data-mclk="1">+ دقيقة</button></span></div>`:""}
         <p class="mx-hint">اضغط «الشوط الأول» مع صافرة البداية فتبدأ الدقيقة عند الجمهور وتُحفظ المباراة فوراً. تقف الساعة عند 45 (و90) حتى تُدخل الوقت بدل الضائع فتكمل 45+1، 45+2… ثم اختر «بين الشوطين» و«الشوط الثاني» و«انتهت» في وقتها. «− / + دقيقة» لتصحيح الساعة إن تأخّرت الضغطة.</p></div>
+      ${m.status==="pso"?`<div class="mx-card"><h3>ركلات الترجيح<small>سجّل كل ركلة لحظة تنفيذها</small></h3>${pskBox(m)}</div>`:""}
       <div class="mx-card"><h3>الوقت بدل الضائع</h3>
         <div class="mx-grid">
           <div><span class="mx-lbl">الشوط الأول +</span>
