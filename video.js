@@ -158,10 +158,13 @@ function demoSeed(){
 /* ───────────── القائمة الأولى (منصور 2026-11-23: فيديوهات فريق MF SOCCER على يوتيوب @mfsoccerkw) ─────────────
    تُعرض ما دامت وثيقة seasons/videos غير موجودة؛ أول حفظ من لوحة الإدارة ينسخها إلى الوثيقة ثم تصبح الوثيقة هي المصدر. */
 const CPC = "كأس سمو ولي العهد", mk = (h, a) => [CPC, 3, h, a].map(v=>encodeURIComponent(String(v))).join("/");
+/* 2026-11-26 كأس الأمير 2025/2026 ربع النهائي (الجولة 1): القادسية 2-3 الفحيحيل */
+const QF = ["كأس الأمير 2025/2026", 1, "القادسية", "الفحيحيل"].map(v=>encodeURIComponent(String(v))).join("/");
 const FB = mk("الفحيحيل","برقان"), NS = mk("النصر","الصليبخات"), TJ = mk("التضامن","الجزيرة");
 const sd = (id, yt, match, h, a, date, cat, title, dur, pub, o) => Object.assign({id:"yt-"+id, src:"https://www.youtube.com/watch?v="+yt, thumb:"", matchId:match, home:h, away:a,
   comp:CPC, mdate:date, cat, title, desc:"", dur, pub, status:"published", pinned:false}, o||{});
 const SEED = [
+  sd("qadfah", "Clx_b_Veais", QF, "القادسية", "الفحيحيل", "2026-11-25", "goals", "تحليل أهداف مباراة القادسية والفحيحيل", 75, "2026-11-26T08:30:00.000Z", {comp:"كأس الأمير 2025/2026", pinned:true}),
   sd("fah1", "9naOgd12lZ4", FB, "الفحيحيل", "برقان", "2026-11-21", "goals",     "هدف الفحيحيل الأول",                      40, "2026-11-23T10:00:00.000Z"),
   sd("fah2", "hqBKKDWMFfE", FB, "الفحيحيل", "برقان", "2026-11-21", "goals",     "هدف الفحيحيل الثاني",                     43, "2026-11-23T10:01:00.000Z"),
   sd("brg2", "7RncvLJauJk", FB, "الفحيحيل", "برقان", "2026-11-21", "goals",     "هدف برقان الثاني",                        38, "2026-11-23T10:02:00.000Z"),
