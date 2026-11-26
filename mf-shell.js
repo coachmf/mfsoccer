@@ -115,13 +115,13 @@
   }
 
   /* ---------- الشريط السفلي (الهاتف) ---------- */
+  /* منصور 2026-11-26: بلا «الرئيسية» (الرئيسية من شعار MF SOCCER أعلى الصفحة وزر الرجوع)، وعلى اليمين المباريات ثم الإحصائيات */
   function buildBar(){
     const bar=D.createElement("nav"); bar.className="mf-bar"; bar.setAttribute("aria-label","التنقل الرئيسي");
     bar.innerHTML=`<div class="mf-bar-in">
-      <button type="button" data-mf="home">${IC.home}<span>الرئيسية</span></button>
       <button type="button" data-mf="matches">${IC.matches}<span>المباريات</span></button>
-      <button type="button" data-mf="hub" class="mf-orb" aria-haspopup="dialog"><i><img src="assets/brand/mf-mark.webp" alt="" width="34" height="16"></i><span>الأقسام</span></button>
       <button type="button" data-mf="stats">${IC.stats}<span>الإحصائيات</span></button>
+      <button type="button" data-mf="hub" class="mf-orb" aria-haspopup="dialog"><i><img src="assets/brand/mf-mark.webp" alt="" width="34" height="16"></i><span>الأقسام</span></button>
       <button type="button" data-mf="news">${IC.news}<span>الأخبار</span></button>
       <button type="button" data-mf="fantasy" class="mf-fan">${IC.fantasy}<span>الفانتسي</span></button>
     </div>`;
