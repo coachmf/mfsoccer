@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>إدارة التعليم وتطوير الدارسين — الاتحاد الكويتي لكرة القدم</title>
+<meta name="description" content="رزنامة دورات التدريب والتعليم، التسجيل الإلكتروني، والدفع عبر الموقع — إدارة التعليم وتطوير الدارسين بالاتحاد الكويتي لكرة القدم.">
+<meta name="theme-color" content="#0f3f94">
+<link rel="icon" type="image/png" href="assets/kfa-logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css?v=1">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="wrap topbar-in">
+    <a class="brand" href="#home" aria-label="الرئيسية">
+      <img src="assets/kfa-logo.png" alt="شعار الاتحاد الكويتي لكرة القدم" width="52" height="52">
+      <span class="brand-txt">
+        <b>الاتحاد الكويتي لكرة القدم</b>
+        <small>إدارة التعليم وتطوير الدارسين</small>
+      </span>
+    </a>
+    <button class="menu-btn" id="menuBtn" aria-label="القائمة" aria-expanded="false">☰</button>
+    <nav class="nav" id="nav">
+      <a href="#home" data-r="home">الرئيسية</a>
+      <a href="#calendar" data-r="calendar">رزنامة الدورات</a>
+      <a href="#register" data-r="register">التسجيل</a>
+      <a href="#status" data-r="status">طلباتي والدفع</a>
+      <a href="#admin" data-r="admin" class="nav-admin">الإدارة</a>
+    </nav>
+  </div>
+  <div class="flagline" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+</header>
+
+<main id="view" class="view" tabindex="-1"></main>
+
+<footer class="foot">
+  <div class="wrap foot-in">
+    <div class="foot-brand">
+      <img src="assets/kfa-logo-blue.jpg" alt="" width="56" height="56">
+      <div>
+        <b>إدارة التعليم وتطوير الدارسين</b>
+        <p>الاتحاد الكويتي لكرة القدم — تأهيل المدربين والدارسين وفق مناهج الاتحاد الآسيوي.</p>
+      </div>
+    </div>
+    <div class="foot-links">
+      <a href="#calendar">رزنامة الدورات</a>
+      <a href="#register">التسجيل</a>
+      <a href="#status">متابعة طلب</a>
+      <a href="#faq">الأسئلة الشائعة</a>
+    </div>
+    <p class="foot-copy">© <span id="yr"></span> الاتحاد الكويتي لكرة القدم — جميع الحقوق محفوظة.</p>
+  </div>
+</footer>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script src="config.js?v=1"></script>
+<script src="app.js?v=1"></script>
+</body>
+</html>
