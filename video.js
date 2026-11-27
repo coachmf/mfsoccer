@@ -160,11 +160,15 @@ function demoSeed(){
 const CPC = "كأس سمو ولي العهد", mk = (h, a) => [CPC, 3, h, a].map(v=>encodeURIComponent(String(v))).join("/");
 /* 2026-11-26 كأس الأمير 2025/2026 ربع النهائي (الجولة 1): القادسية 2-3 الفحيحيل */
 const QF = ["كأس الأمير 2025/2026", 1, "القادسية", "الفحيحيل"].map(v=>encodeURIComponent(String(v))).join("/");
+/* 2026-11-27 كأس الأمير 2025/2026 ربع النهائي (الجولة 1): السالمية 1-2 التضامن */
+const QF2 = ["كأس الأمير 2025/2026", 1, "السالمية", "التضامن"].map(v=>encodeURIComponent(String(v))).join("/");
 const FB = mk("الفحيحيل","برقان"), NS = mk("النصر","الصليبخات"), TJ = mk("التضامن","الجزيرة"), SK = mk("السالمية","خيطان");
 const sd = (id, yt, match, h, a, date, cat, title, dur, pub, o) => Object.assign({id:"yt-"+id, src:"https://www.youtube.com/watch?v="+yt, thumb:"", matchId:match, home:h, away:a,
   comp:CPC, mdate:date, cat, title, desc:"", dur, pub, status:"published", pinned:false}, o||{});
 /* العناوين تمر بالقاموس (2026-11-26): المترجَم يظهر بلغة الزائر، وغير المترجَم يبقى عربياً كاملاً */
 const SEED = [
+  /* 2026-11-27 منصور: «حطه بالموقع» — تحليل أهداف التضامن والسالمية (يوتيوب @mfsoccerkw M8Cki1kJztY، 42 ث) */
+  sd("tdmsal", "M8Cki1kJztY", QF2, "السالمية", "التضامن", "2026-11-26", "goals", "تحليل أهداف مباراة التضامن والسالمية", 42, "2026-11-27T15:00:00.000Z", {comp:"كأس الأمير 2025/2026", pinned:true}),
   /* 2026-11-26 السالمية 4-2 خيطان (كأس سمو ولي العهد ج3): الأهداف مع بعض، والحالات بروحها (منصور) */
   sd("salkhn-g", "QDYf_hEuyJs", SK, "السالمية", "خيطان", "2026-11-20", "goals", "تحليل أهداف مباراة السالمية وخيطان", 87, "2026-11-26T14:07:00.000Z", {pinned:true}),
   sd("salkhn-c", "CBYPXda6ZE8", SK, "السالمية", "خيطان", "2026-11-20", "transitions", "الحالات الفنية بين السالمية وخيطان", 30, "2026-11-26T10:12:00.000Z"),
