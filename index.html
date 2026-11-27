@@ -8594,10 +8594,12 @@ function renderMatches(){
     ${CPX_TABS}
     ${CPX_TABS && CPX_TAB==="groups" ? `<div class="mp-std mp-cgrp cpx-body">${cupGroupsHTML(null, COMP)}</div>`
       : CPX_TABS && CPX_TAB==="bracket" ? `<div class="cpx-body">${cupBracketHTML(COMP)}</div>`
+      : CPX_TABS && CPX_TAB==="stats" ? `<div class="cpx-body cpx-stats">${topScorersHTML()}</div>`
       : `${roundStrip()}
     ${roundSummary(list)}
     <div class="mx-list">${list.length?matchCards:'<div class="mx-empty">لا توجد مباريات ضمن هذا التحديد.</div>'}</div>`}`;
   $("#v-matches").querySelectorAll("[data-cpx]").forEach(b=>b.onclick=()=>{ CPX_TAB=b.dataset.cpx; renderMatches(); });
+  if(CPX_TABS && CPX_TAB==="stats"){ wireTS($("#v-matches")); wireMore($("#v-matches")); }
   /* الحبّة النشطة (الجولة/اليوم) تُجلب إلى مجال الرؤية بلا تحريك الصفحة */
   $("#v-matches").querySelectorAll('.rp[aria-pressed="true"], .dp[aria-pressed="true"], .dp.today').forEach(el=>{
     try{ el.scrollIntoView({block:"nearest", inline:"center"}); }catch(e){} });
@@ -12659,6 +12661,9 @@ html.mp-open{overflow:hidden}
 .mp-std tr[data-mp-hl]{background:rgba(95,178,232,.14)}
 /* صفحة بطولة المجموعات: تبويبات + شجرة الأدوار الإقصائية */
 .cpx-tabs{margin:4px auto 16px}
+/* 4 تبويبات (مع «الإحصائيات») تتسع لعرض الهاتف: أزرار مرنة بالتساوي بدل عرض المحتوى */
+.cpx-tabs{width:100%;box-sizing:border-box}
+.cpx-tabs button{flex:1 1 auto;min-width:0;padding-inline:6px!important;font-size:clamp(.72rem,3.3vw,.86rem)!important}
 .cpx-leg{margin:12px 4px 4px;line-height:1.6}
 .cpx-body .hm-std:first-child h2.sec{margin-top:6px}
 .cpb-note{margin:0 0 14px;text-align:center;font-size:.84rem;line-height:1.7;opacity:.72}
@@ -15845,7 +15850,8 @@ function cupGroupsHTML(m, comp){
 let CPX_TAB = "matches";
 /* كل كأس فيها نهائي لها شجرة (منصور 2026-11-20: «والبطولات الثانية بعد… سويت لهم brackets؟») — كأس الأمير، كأس الأمير 2025/2026، كأس السوبر، كأس سمو ولي العهد */
 const cupHasKO = comp => isCupComp(comp) && MATCHES.some(m=>compOf(m)===comp && String(m.stage||"")==="النهائي");
-const cupTabsOf = comp => [["matches","المباريات"]].concat(CUP_GROUPS[comp] ? [["groups","المجموعات"]] : [], cupHasKO(comp) ? [["bracket","الأدوار الإقصائية"]] : []);
+/* «الإحصائيات» = الهدافون وصنّاع الأهداف لهذه الكأس فقط (منصور 2026-11-27: «بالكووس ينحط الهدافين و الاسيستات احصائيات بصفحة البطوله الا موسم ٢٥/٢٦ لان مو مسجلين المباريات من قبل») */
+const cupTabsOf = comp => [["matches","المباريات"]].concat(CUP_GROUPS[comp] ? [["groups","المجموعات"]] : [], cupHasKO(comp) ? [["bracket","الأدوار الإقصائية"]] : [], PREV_COMPS.includes(comp) ? [] : [["stats","الإحصائيات"]]);
 const cupTabsHTML = comp => { const T = cupTabsOf(comp); if(T.length<2) return ""; if(!T.some(([k])=>k===CPX_TAB)) CPX_TAB = "matches";
   return `<div class="mf-stdsw cpx-tabs" role="tablist">${T.map(([k,t])=>`<button type="button" role="tab" data-cpx="${k}" aria-selected="${k===CPX_TAB}">${t}</button>`).join("")}</div>`; };
 /* الشجرة تُبنى من النهائي رجوعاً: طرفا كل مباراة «الفائز من المباراة N» يشيران إلى مباراتي الدور السابق، فتصلح لأي شكل
